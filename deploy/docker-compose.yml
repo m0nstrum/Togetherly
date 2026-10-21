@@ -26,6 +26,8 @@ services:
       TETHERED_BACKUP__CRON: ${BACKUP_CRON:-0 3 * * *}
       TETHERED_BACKUP__MAX_KEEP: ${BACKUP_MAX_KEEP:-7}
       TETHERED_POISKKINO_KEY: ${POISKKINO_KEY:-}
+      # Адрес клиента для лимитов — от Caddy (снаружи сервер не виден).
+      TETHERED_TRUSTED_PROXY_HEADER: X-Forwarded-For
     volumes:
       - server-data:/data
     depends_on:

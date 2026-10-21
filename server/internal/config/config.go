@@ -30,6 +30,12 @@ type Config struct {
 	CompatAddr string `koanf:"compat_addr"`
 	// LogLevel — debug, info, warn, error.
 	LogLevel string `koanf:"log_level"`
+	// TrustedProxyHeader — заголовок с адресом клиента от своего прокси
+	// (X-Forwarded-For за Caddy). Пусто — адрес соединения. Без него за
+	// прокси все клиенты для лимитов — один IP.
+	TrustedProxyHeader string `koanf:"trusted_proxy_header"`
+	// RateLimits — защита входа, сброса пароля и регистрации от перебора.
+	RateLimits bool `koanf:"rate_limits"`
 	// PoiskkinoKey — свой ключ api.poiskkino.dev: запасной источник поиска
 	// фильмов, когда Викиданные пусты. Пустой — только Викиданные.
 	PoiskkinoKey string `koanf:"poiskkino_key"`
@@ -96,6 +102,7 @@ func Load() (Config, error) {
 		AppName:    "Tethered",
 		CompatAddr: "127.0.0.1:8120",
 		LogLevel:   "info",
+		RateLimits: true,
 		Centrifugo: Centrifugo{Timeout: 5 * time.Second},
 		SMTP:       SMTP{Port: 587, TLS: false},
 		TURN:       TURN{Port: 3478, TTL: 12 * time.Hour},

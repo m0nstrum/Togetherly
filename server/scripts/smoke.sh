@@ -28,6 +28,7 @@ if [ -z "${SMOKE_BASE:-}" ]; then
 TETHERED_HTTP_ADDR="127.0.0.1:$port" \
 TETHERED_DATA_DIR="$work/pb_data" \
 TETHERED_HOOKS_DIR="$work/pb_hooks" \
+TETHERED_RATE_LIMITS=false \
 TETHERED_PUBLIC_DIR="$here/../pocketbase/pb_public" \
 CENTRIFUGO_TOKEN_HMAC="smoke-secret" \
   "$work/tethered" >"$work/server.log" 2>&1 &

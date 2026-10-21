@@ -61,6 +61,7 @@ docker run -d --name "$cf_name" -p "127.0.0.1:$cf_port:8000" \
 TETHERED_HTTP_ADDR="127.0.0.1:$port" \
 TETHERED_DATA_DIR="$work/pb_data" \
 TETHERED_HOOKS_DIR="$work/pb_hooks" \
+TETHERED_RATE_LIMITS=false \
 TETHERED_CENTRIFUGO__API="http://127.0.0.1:$cf_port/api" \
 TETHERED_CENTRIFUGO__API_KEY="$secret" \
 CENTRIFUGO_TOKEN_HMAC="$secret" \

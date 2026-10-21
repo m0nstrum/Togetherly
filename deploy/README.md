@@ -41,6 +41,11 @@ docker compose exec server /app/tethered superuser upsert admin@example.org 'д�
 PocketBase пишет туда же, в `backups/` (`BACKUP_CRON`, `BACKUP_MAX_KEEP`).
 Шифрование бэкапов и вынос на другую машину — S10.
 
+Вход, сброс пароля и регистрация ограничены по IP клиента (10 попыток входа в
+минуту, 10 регистраций в час). Адрес клиента сервер берёт из
+`X-Forwarded-For`, который ставит Caddy (`TETHERED_TRUSTED_PROXY_HEADER`), —
+поэтому порт сервера наружу не открывать: заголовок можно подделать.
+
 ## Проверка
 
 ```sh
@@ -48,7 +53,9 @@ SMOKE_BASE=https://tethered.example.org server/scripts/smoke.sh
 ```
 
 Регистрирует двух тестовых пользователей, собирает из них пару по коду
-приглашения и проверяет чат, токен Centrifugo и `/api/watch/rtc`.
+приглашения и проверяет чат, токен Centrifugo и `/api/watch/rtc`. Две
+регистрации за прогон укладываются в лимит; паритет (`server/scripts/parity.sh`)
+гоняется только против своего бинарника.
 
 ## Обновление
 

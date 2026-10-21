@@ -177,27 +177,52 @@ func bindSettings(app core.App, cfg config.Config, log *slog.Logger) {
 			return err
 		}
 		s := e.App.Settings()
-		s.Meta.AppName = cfg.AppName
-		if cfg.AppURL != "" {
-			s.Meta.AppURL = cfg.AppURL
-		}
-		if cfg.SMTP.Enabled() {
-			s.SMTP.Enabled = true
-			s.SMTP.Host = cfg.SMTP.Host
-			s.SMTP.Port = cfg.SMTP.Port
-			s.SMTP.Username = cfg.SMTP.Username
-			s.SMTP.Password = cfg.SMTP.Password
-			s.SMTP.TLS = cfg.SMTP.TLS
-			s.Meta.SenderAddress = cfg.SMTP.Sender
-			s.Meta.SenderName = cfg.AppName
-		}
-		s.Backups.Cron = cfg.Backup.Cron
-		s.Backups.CronMaxKeep = cfg.Backup.MaxKeep
+		applySettings(s, cfg)
 		if err := e.App.Save(s); err != nil {
 			log.Error("настройки PocketBase не сохранены", "err", err)
 		}
 		return nil
 	})
+}
+
+// applySettings переносит конфиг в настройки PocketBase.
+func applySettings(s *core.Settings, cfg config.Config) {
+	s.Meta.AppName = cfg.AppName
+	if cfg.AppURL != "" {
+		s.Meta.AppURL = cfg.AppURL
+	}
+	if cfg.SMTP.Enabled() {
+		s.SMTP.Enabled = true
+		s.SMTP.Host = cfg.SMTP.Host
+		s.SMTP.Port = cfg.SMTP.Port
+		s.SMTP.Username = cfg.SMTP.Username
+		s.SMTP.Password = cfg.SMTP.Password
+		s.SMTP.TLS = cfg.SMTP.TLS
+		s.Meta.SenderAddress = cfg.SMTP.Sender
+		s.Meta.SenderName = cfg.AppName
+	}
+	s.RateLimits.Enabled = cfg.RateLimits
+	s.RateLimits.Rules = rateLimitRules
+	if cfg.TrustedProxyHeader != "" {
+		s.TrustedProxy.Headers = []string{cfg.TrustedProxyHeader}
+		// Caddy затирает присланный клиентом заголовок своим: адрес
+		// клиента — правый.
+		s.TrustedProxy.UseLeftmostIP = false
+	}
+	s.Backups.Cron = cfg.Backup.Cron
+	s.Backups.CronMaxKeep = cfg.Backup.MaxKeep
+}
+
+// rateLimitRules — лимиты на IP (решение 3: вход только по паролю, значит
+// нужна защита от перебора). Общих лимитов на запись нет: рисование и чат
+// создают записи пачками.
+var rateLimitRules = []core.RateLimitRule{
+	{Label: "*:authWithPassword", MaxRequests: 10, Duration: 60},
+	{Label: "*:requestPasswordReset", MaxRequests: 3, Duration: 300},
+	{Label: "*:confirmPasswordReset", MaxRequests: 10, Duration: 300},
+	{Label: "*:requestVerification", MaxRequests: 3, Duration: 300},
+	{Label: "*:requestEmailChange", MaxRequests: 3, Duration: 300},
+	{Label: "users:create", Audience: "@guest", MaxRequests: 10, Duration: 3600},
 }
 
 // recordAdapter отдаёт запись PocketBase домену realtime.
