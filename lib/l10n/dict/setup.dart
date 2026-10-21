@@ -268,14 +268,14 @@ const Map<String, Map<String, String>> setupStrings = {
     'fr': 'Le mot de passe actuel ne convient pas',
     'de': 'Das aktuelle Passwort stimmt nicht',
   },
-  'passwordTooShort': {
-    'ru': 'Пароль не короче 8 символов',
-    'en': 'Password must be at least 8 characters',
-    'pt': 'A senha precisa de 8 caracteres ou mais',
-    'it': 'La password deve avere almeno 8 caratteri',
-    'es': 'La contraseña necesita 8 caracteres o más',
-    'fr': 'Le mot de passe doit faire 8 caractères ou plus',
-    'de': 'Das Passwort braucht mindestens 8 Zeichen',
+  'passwordTooShort': { // fork (UX A15): минимум форка — 12
+    'ru': 'Пароль не короче 12 символов',
+    'en': 'Password must be at least 12 characters',
+    'pt': 'A senha precisa de 12 caracteres ou mais',
+    'it': 'La password deve avere almeno 12 caratteri',
+    'es': 'La contraseña necesita 12 caracteres o más',
+    'fr': 'Le mot de passe doit faire 12 caractères ou plus',
+    'de': 'Das Passwort braucht mindestens 12 Zeichen',
   },
   'passwordsDiffer': {
     'ru': 'Пароли не совпадают',

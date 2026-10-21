@@ -164,6 +164,12 @@ class MainActivity : FlutterActivity() {
             SoundClipChannel.CHANNEL
         ).setMethodCallHandler(SoundClipChannel())
 
+        // fork (UX N2): системные настройки уведомлений своего пакета.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            ForkSettingsChannel.CHANNEL
+        ).setMethodCallHandler(ForkSettingsChannel(this))
+
         // Запись номеров фото-виджетов для фонового Dart: виджеты, стоявшие
         // до обновления, ещё не успели записать себя сами.
         WidgetIdRegistry.refresh(applicationContext)

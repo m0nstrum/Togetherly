@@ -7,6 +7,7 @@ library;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,6 +32,14 @@ Future<bool> openSystemNotificationSettings({
   Future<String> Function()? packageName,
 }) async {
   if (Platform.isAndroid) {
+    // Нативный канал (ForkSettingsChannel.kt): url_launcher intent:-ссылки
+    // не открывает.
+    try {
+      final ok = await _channel.invokeMethod<bool>('openNotificationSettings');
+      if (ok == true) return true;
+    } catch (e) {
+      debugPrint('openSystemNotificationSettings: канал: $e');
+    }
     final String package;
     try {
       package = await (packageName ?? _packageName)();
@@ -59,3 +68,5 @@ Future<bool> openSystemNotificationSettings({
 }
 
 Future<String> _packageName() async => (await PackageInfo.fromPlatform()).packageName;
+
+const MethodChannel _channel = MethodChannel('tethered/settings');

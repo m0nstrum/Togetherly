@@ -33,7 +33,7 @@ const Map<String, String> midBZh = {
   'passwordRepeat': '再次输入新密码',
   'passwordChanged': '密码已修改',
   'passwordCurrentWrong': '当前密码不对',
-  'passwordTooShort': '密码至少要 8 个字符',
+  'passwordTooShort': '密码至少要 12 个字符', // fork (UX A15)
   'passwordsDiffer': '两次输入的密码不一致',
   'passwordSameAsOld': '新密码和旧密码一样',
   'passwordForgotCurrent': '忘了当前密码？给我发邮件',

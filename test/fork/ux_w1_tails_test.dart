@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:love_app/fork/flags.dart';
 import 'package:love_app/fork/ui/feedback.dart';
 import 'package:love_app/models/chest.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -18,7 +17,6 @@ void main() {
     );
   });
 
-  test('allFree включён в сборке форка', () {
-    expect(ForkFlags.allFree, isTrue);
-  });
+  // allFree в сборке форка проверяет flags_runtime_test (тег fork-runtime):
+  // с env/test.json флаги возвращают поведение апстрима.
 }

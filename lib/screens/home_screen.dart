@@ -1542,6 +1542,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
               children: [
                 HomeHeader(
+                  onOpenTab: (i) => setState(() => _selectedNavIndex = i), // fork (UX N5, N13)
                   missKey: _missKey,
                   // Сезонный призрак за стеклом приходит по «Скучаю».
                   onMissYou: () => _backdropKey.currentState?.summon(),
