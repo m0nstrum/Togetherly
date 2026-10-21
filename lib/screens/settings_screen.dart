@@ -11,7 +11,7 @@ import '../widgets/settings_scaffold.dart';
 import '../fork/crash_reports.dart'; // fork
 import '../fork/flags.dart'; // fork
 import '../fork/meta_direct.dart'; // fork
-import '../fork/e2e/backup_ui.dart'; // fork
+import '../fork/ui/settings_parts.dart'; // fork
 
 /// Экран настроек.
 ///
@@ -193,8 +193,75 @@ class SettingsScreen extends StatelessWidget {
               MediaQuery.of(context).padding.bottom + 32,
             ),
             children: [
-              // Togetherly+ первым: это главное, что можно тут сделать.
-              if (plusVisible)
+              // fork: бэкап ключей — отдельная секция вверху, а не строка в «О приложении».
+              const ForkEncryptionSection(),
+
+              SettingsCollapsible(
+                prefsKey: 'account',
+                title: s.settingsAccountSection,
+                icon: Icons.person_rounded,
+                children: [
+                  // Почта с опечаткой (gmail.con и подобные): письмо для смены
+                  // пароля туда не дойдёт — строка предупреждает и ведёт
+                  // исправлять, а не копировать.
+                  if (accountEmail.isNotEmpty &&
+                      emailTypoFix(accountEmail) != null &&
+                      onChangeEmail != null)
+                    SettingsRow(
+                      icon: Icons.alternate_email_rounded,
+                      title: accountEmail,
+                      subtitle: trKey('emailTypoAccountHint'),
+                      iconBg: scheme.errorContainer,
+                      iconFg: scheme.onErrorContainer,
+                      trailing: const SettingsChevron(),
+                      onTap: onChangeEmail,
+                    )
+                  else if (accountEmail.isNotEmpty)
+                    SettingsRow(
+                      icon: Icons.alternate_email_rounded,
+                      title: accountEmail,
+                      subtitle: s.settingsAccountEmailHint,
+                      iconBg: scheme.surfaceContainerHighest,
+                      iconFg: scheme.onSurfaceVariant,
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: accountEmail));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(s.accountEmailCopied),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                    ),
+                  // Смена почты кодом: раньше её правили руками по просьбе
+                  // в приёмную («у меня не та почта»).
+                  if (onChangeEmail != null)
+                    SettingsRow(
+                      icon: Icons.mark_email_read_rounded,
+                      title: trKey('emailChangeTitle'),
+                      subtitle: trKey('emailChangeHint'),
+                      trailing: const SettingsChevron(),
+                      onTap: onChangeEmail,
+                    ),
+                  SettingsRow(
+                    icon: Icons.lock_reset_rounded,
+                    title: s.changePasswordTitle,
+                    subtitle: s.changePasswordHint,
+                    trailing: const SettingsChevron(),
+                    onTap: onChangePassword,
+                  ),
+                  SettingsRow(
+                    icon: Icons.logout_rounded,
+                    title: s.logout,
+                    iconBg: scheme.surfaceContainerHighest,
+                    iconFg: scheme.onSurfaceVariant,
+                    onTap: onLogout,
+                  ),
+                ],
+              ),
+
+              // fork: при ForkFlags.allFree Плюс открыт всем, продавать нечего — строки нет.
+              if (plusVisible && !ForkFlags.allFree)
                 SettingsGroup([
                   SettingsRow(
                     icon: Icons.workspace_premium_rounded,
@@ -213,7 +280,7 @@ class SettingsScreen extends StatelessWidget {
 
               SettingsCollapsible(
                 prefsKey: 'appearance',
-                title: s.appearanceTitle,
+                title: ruEn('Внешний вид и язык', 'Look & language'), // fork
                 icon: Icons.brush_rounded,
                 children: [
                   SettingsRow(
@@ -264,7 +331,7 @@ class SettingsScreen extends StatelessWidget {
 
               SettingsCollapsible(
                 prefsKey: 'notifications',
-                title: s.notifications,
+                title: ruEn('Телефон и экран блокировки', 'Phone & lock screen'), // fork
                 icon: Icons.campaign_rounded,
                 children: [
                   SettingsRow(
@@ -284,6 +351,15 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     onTap: () => onLockScreenMoodChanged(!lockScreenMood),
                   ),
+                ],
+              ),
+
+              // fork: рисование и боковая кнопка — не «уведомления», своя секция.
+              SettingsCollapsible(
+                prefsKey: 'tools',
+                title: ruEn('Рисование и главная', 'Drawing & home'),
+                icon: Icons.draw_rounded,
+                children: [
                   SettingsRow(
                     icon: Icons.draw_rounded,
                     title: s.drawToolsTitle,
@@ -343,6 +419,21 @@ class SettingsScreen extends StatelessWidget {
               ],
 
               SettingsCollapsible(
+                prefsKey: 'coins',
+                title: ruEn('Монеты', 'Coins'), // fork
+                icon: Icons.shopping_bag_rounded,
+                children: [
+                  SettingsRow(
+                    icon: Icons.monetization_on_rounded,
+                    title: forkCoinsRowTitle(), // fork
+                    subtitle: s.settingsCoinsHint,
+                    trailing: const SettingsChevron(),
+                    onTap: onCoinShop,
+                  ),
+                ],
+              ),
+
+              SettingsCollapsible(
                 prefsKey: 'data',
                 title: s.settingsDataSection,
                 icon: Icons.storage_rounded,
@@ -350,14 +441,14 @@ class SettingsScreen extends StatelessWidget {
                   SettingsRow(
                     icon: Icons.folder_zip_outlined,
                     title: s.exportMyData,
-                    subtitle: s.exportMyDataHint,
+                    subtitle: ruEn('Полный архив всех ваших данных', 'Full archive of all your data'), // fork
                     trailing: const SettingsChevron(),
                     onTap: onExportMyData,
                   ),
                   SettingsRow(
                     icon: Icons.download_rounded,
                     title: s.exportMemories,
-                    subtitle: s.settingsExportHint,
+                    subtitle: ruEn('Только воспоминания — файлом на память', 'Just your memories, as a file'), // fork
                     trailing: const SettingsChevron(),
                     onTap: onExport,
                   ),
@@ -374,21 +465,6 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: s.settingsPrivacyHint,
                     trailing: const SettingsChevron(),
                     onTap: onPrivacyPolicy,
-                  ),
-                ],
-              ),
-
-              SettingsCollapsible(
-                prefsKey: 'coins',
-                title: s.coinShopTitle,
-                icon: Icons.shopping_bag_rounded,
-                children: [
-                  SettingsRow(
-                    icon: Icons.monetization_on_rounded,
-                    title: s.coinShopTitle,
-                    subtitle: s.settingsCoinsHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onCoinShop,
                   ),
                 ],
               ),
@@ -416,7 +492,6 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   const ForkCrashReportsRow(), // fork
                   const ForkMetaDirectRow(), // fork
-                  const ForkE2EBackupRow(), // fork
                   SettingsRow(
                     icon: Icons.info_rounded,
                     title: s.aboutApp,
@@ -430,6 +505,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onTerms,
                   ),
+                  if (SettingsScreen.supportEmail.isNotEmpty) // fork
                   SettingsRow(
                     icon: Icons.mail_rounded,
                     title: s.supportTitle,
@@ -440,6 +516,7 @@ class SettingsScreen extends StatelessWidget {
                   // Официальные обращения идут в отдельный ящик: письма от
                   // магазинов, юристов и правообладателей нельзя терять в
                   // потоке жалоб на ошибки.
+                  if (SettingsScreen.officialEmail.isNotEmpty) // fork
                   SettingsRow(
                     icon: Icons.gavel_rounded,
                     title: s.officialTitle,
@@ -466,68 +543,9 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
 
-              SettingsCollapsible(
-                prefsKey: 'account',
-                title: s.settingsAccountSection,
-                icon: Icons.person_rounded,
-                color: scheme.error,
-                children: [
-                  // Почта с опечаткой (gmail.con и подобные): письмо для смены
-                  // пароля туда не дойдёт — строка предупреждает и ведёт
-                  // исправлять, а не копировать.
-                  if (accountEmail.isNotEmpty &&
-                      emailTypoFix(accountEmail) != null &&
-                      onChangeEmail != null)
-                    SettingsRow(
-                      icon: Icons.alternate_email_rounded,
-                      title: accountEmail,
-                      subtitle: trKey('emailTypoAccountHint'),
-                      iconBg: scheme.errorContainer,
-                      iconFg: scheme.onErrorContainer,
-                      trailing: const SettingsChevron(),
-                      onTap: onChangeEmail,
-                    )
-                  else if (accountEmail.isNotEmpty)
-                    SettingsRow(
-                      icon: Icons.alternate_email_rounded,
-                      title: accountEmail,
-                      subtitle: s.settingsAccountEmailHint,
-                      iconBg: scheme.surfaceContainerHighest,
-                      iconFg: scheme.onSurfaceVariant,
-                      onTap: () {
-                        Clipboard.setData(ClipboardData(text: accountEmail));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(s.accountEmailCopied),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                    ),
-                  // Смена почты кодом: раньше её правили руками по просьбе
-                  // в приёмную («у меня не та почта»).
-                  if (onChangeEmail != null)
-                    SettingsRow(
-                      icon: Icons.mark_email_read_rounded,
-                      title: trKey('emailChangeTitle'),
-                      subtitle: trKey('emailChangeHint'),
-                      trailing: const SettingsChevron(),
-                      onTap: onChangeEmail,
-                    ),
-                  SettingsRow(
-                    icon: Icons.lock_reset_rounded,
-                    title: s.changePasswordTitle,
-                    subtitle: s.changePasswordHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onChangePassword,
-                  ),
-                  SettingsRow(
-                    icon: Icons.logout_rounded,
-                    title: s.logout,
-                    iconBg: scheme.surfaceContainerHighest,
-                    iconFg: scheme.onSurfaceVariant,
-                    onTap: onLogout,
-                  ),
+              // fork: удаление аккаунта — отдельно и внизу, не в общем списке.
+              const SizedBox(height: 28),
+              SettingsGroup([
                   SettingsRow(
                     icon: Icons.delete_forever_rounded,
                     title: s.deleteAccount,
@@ -537,8 +555,7 @@ class SettingsScreen extends StatelessWidget {
                     titleColor: scheme.error,
                     onTap: onDeleteAccount,
                   ),
-                ],
-              ),
+              ]),
             ],
           ),
         ),
