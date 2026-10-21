@@ -52,6 +52,7 @@ type Config struct {
 	TURN       TURN       `koanf:"turn"`
 	Backup     Backup     `koanf:"backup"`
 	WatchProxy WatchProxy `koanf:"watch_proxy"`
+	FCM        FCM        `koanf:"fcm"`
 }
 
 // Backup — встроенные бэкапы PocketBase (zip в pb_data/backups). Cron пуст —
@@ -83,6 +84,18 @@ type WatchProxy struct {
 	Hosts string `koanf:"hosts"`
 	// DailyMB — лимит на человека в сутки; 0 — без лимита.
 	DailyMB int `koanf:"daily_mb"`
+}
+
+// FCM — будильник через свой Firebase-проект (PLAN S12): JSON сервисного
+// аккаунта строкой или путём к файлу. Оба пусты — выключен, телефоны будит
+// только сокет фонового сервиса.
+type FCM struct {
+	Credentials     string        `koanf:"credentials"`
+	CredentialsFile string        `koanf:"credentials_file"`
+	TTL             time.Duration `koanf:"ttl"`
+	Timeout         time.Duration `koanf:"timeout"`
+	// Endpoint — адрес FCM вместо fcm.googleapis.com (тесты).
+	Endpoint string `koanf:"endpoint"`
 }
 
 // TURN — свой coturn для голоса в комнатах «Смотрим вместе». Secret — тот же,
@@ -140,6 +153,7 @@ func Load() (Config, error) {
 		TURN:       TURN{Port: 3478, TTL: 12 * time.Hour},
 		Backup:     Backup{MaxKeep: 7},
 		WatchProxy: WatchProxy{Addr: "0.0.0.0:8443", DailyMB: 3072},
+		FCM:        FCM{TTL: 10 * time.Minute, Timeout: 10 * time.Second},
 	}
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return Config{}, fmt.Errorf("config: разбор: %w", err)

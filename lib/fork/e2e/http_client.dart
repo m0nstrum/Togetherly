@@ -45,15 +45,28 @@ class E2EHttpClient extends http.BaseClient {
     r'/api/collections/([^/]+)/records(?:/([^/]+))?$',
   );
 
+  /// Ответы входа несут запись профиля (`record`) — её тоже открываем.
+  static final _authPath = RegExp(
+    r'/api/collections/users/auth-(?:refresh|with-password|with-oauth2|with-otp)$',
+  );
+
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (request is http.Request &&
         request.method == 'POST' &&
-        _routes.containsKey(request.url.path)) {
+        (_routes.containsKey(request.url.path) ||
+            _giftRoutes.containsKey(request.url.path))) {
       final codec = await _codec();
+      if (codec == null) return _inner.send(request);
+      final route = _routes[request.url.path];
       return _inner.send(
-        codec == null ? request : _routes[request.url.path]!(request, codec),
+        route != null
+            ? route(request, codec)
+            : await _encodeGift(request, codec, _giftRoutes[request.url.path]!),
       );
+    }
+    if (_authPath.hasMatch(request.url.path)) {
+      return _decodeAuth(request);
     }
     final m = _path.firstMatch(request.url.path);
     final col = m?.group(1);
@@ -97,6 +110,36 @@ class E2EHttpClient extends http.BaseClient {
     );
   }
 
+  Future<http.StreamedResponse> _decodeAuth(http.BaseRequest request) async {
+    final resp = await _inner.send(request);
+    if (resp.statusCode >= 400) return resp;
+    final codec = await _codec();
+    if (codec == null) return resp;
+    final bytes = await resp.stream.toBytes();
+    var out = bytes;
+    try {
+      final json = jsonDecode(utf8.decode(bytes));
+      final rec = json is Map<String, dynamic> ? json['record'] : null;
+      if (rec is Map<String, dynamic>) {
+        out = utf8.encode(
+          jsonEncode({...json, 'record': codec.decode('users', rec)}),
+        );
+      }
+    } on FormatException {
+      // Не JSON — отдаём как есть.
+    }
+    return http.StreamedResponse(
+      Stream.value(out),
+      resp.statusCode,
+      contentLength: out.length,
+      request: resp.request,
+      headers: Map.of(resp.headers)..remove('content-length'),
+      isRedirect: resp.isRedirect,
+      persistentConnection: resp.persistentConnection,
+      reasonPhrase: resp.reasonPhrase,
+    );
+  }
+
   Future<http.Request> _encodeRequest(
     http.Request request,
     RecordCodec codec,
@@ -129,13 +172,19 @@ class E2EHttpClient extends http.BaseClient {
       // AAD привязан к id: без него шифровать не к чему. PocketBase берёт
       // id клиента, так что даём его сами.
       final gen = _newId;
-      if (gen == null) return null;
+      if (gen == null) return _noKey(col, body);
       id = gen();
       body = {...body, 'id': id};
     }
-    if (id.isEmpty) return null;
+    if (id.isEmpty) return _noKey(col, body);
     var group = e2eGroupOf(col, id, body) ?? '';
+    // Файл без пары (аватар, баннер) — личным ключом владельца.
+    if (group.isEmpty && col == 'media' && body['uid'] is String) {
+      group = body['uid'] as String;
+    }
+    final sticker = stickerOp(col, body);
     final needContext =
+        sticker ||
         group.isEmpty ||
         (method == 'PATCH' && RecordCodec.covers(col)) ||
         e2eRecordKey(col, {...body, 'id': id}) == null;
@@ -143,7 +192,8 @@ class E2EHttpClient extends http.BaseClient {
         ? await _context(col, id, body)
         : null;
     if (group.isEmpty) group = '${ctx?['group_id'] ?? ''}';
-    if (group.isEmpty) return null;
+    if (sticker) body = applySticker(body, ctx);
+    if (group.isEmpty) return _noKey(col, body);
     final locked = ctx?[e2eLockedKey];
     if (locked is Map<String, dynamic>) {
       body = codec.restoreLocked(col, body, locked);
@@ -156,12 +206,110 @@ class E2EHttpClient extends http.BaseClient {
     return (id: id, group: group, body: enc);
   }
 
+  /// Наклейка на воспоминание: апстрим шлёт `{sticker_put}`/`{sticker_del}`,
+  /// а кладёт её в `data.stickers` сервер. Сервер форка `data` не читает —
+  /// наклейку кладём сами и шлём правку всего `data` шифром.
+  /// Имя файла для сервера: `<поле>.<расширение>`.
+  static String neutralFileName(String field, String? name) {
+    final n = name ?? '';
+    final dot = n.lastIndexOf('.');
+    final ext = dot < 0 ? '' : n.substring(dot).toLowerCase();
+    final safe = RegExp(r'^\.[a-z0-9]{1,5}$').hasMatch(ext) ? ext : '';
+    return '${field.isEmpty ? 'file' : field}$safe';
+  }
+
+  static bool stickerOp(String col, Map<String, dynamic> body) =>
+      col == 'memories' &&
+      (body.containsKey('sticker_put') || body.containsKey('sticker_del'));
+
+  /// Тело правки `data` с наклейкой из [body] поверх записи [ctx].
+  /// Записи не знаем — [E2ENoKeyError]: открытой наклейка не уйдёт.
+  static Map<String, dynamic> applySticker(
+    Map<String, dynamic> body,
+    Map<String, dynamic>? ctx,
+  ) {
+    final cur = ctx?['data'];
+    if (cur is! Map) throw E2ENoKeyError('memories');
+    final data = Map<String, dynamic>.from(cur)..remove(e2ePartialKey);
+    final stickers = Map<String, dynamic>.from(
+      data['stickers'] is Map ? data['stickers'] as Map : const {},
+    );
+    final put = body['sticker_put'];
+    if (put is Map && put['id'] != null) stickers['${put['id']}'] = put;
+    final del = body['sticker_del'];
+    if (del != null) stickers.remove('$del');
+    return {
+      for (final e in body.entries)
+        if (e.key != 'sticker_put' && e.key != 'sticker_del') e.key: e.value,
+      'data': {...data, 'stickers': stickers},
+    };
+  }
+
+  /// Пару записи не узнать — шифровать нечем. Открытое содержимое не
+  /// уходит: [E2ENoKeyError].
+  static Null _noKey(String col, Map<String, dynamic> body) {
+    if (RecordCodec.hasPlainContent(col, body)) throw E2ENoKeyError(col);
+    return null;
+  }
+
   /// Маршруты сервера, которые сами пишут в записи то, что прислал клиент.
   static final Map<String, http.Request Function(http.Request, RecordCodec)>
   _routes = {
     '/api/group/miss-you': _encodeMissYou,
     '/api/group/patch-map': _encodePatchMap,
   };
+
+  /// Подарки: поля тела → поле записи `gifts`. Запись заводит сервер, но id
+  /// у неё клиентский (`giftId`, у сундука — `openId`): к нему и привязан
+  /// шифр, как у обычной записи.
+  static const Map<String, ({String idKey, Map<String, String> fields})>
+  _giftRoutes = {
+    '/api/gifts/send': (
+      idKey: 'giftId',
+      fields: {
+        'note': 'note',
+        'date': 'date',
+        'place': 'place',
+        'photo': 'photo',
+        'sound': 'sound',
+        'soundMeta': 'sound_meta',
+      },
+    ),
+    '/api/gifts/react': (idKey: 'giftId', fields: {'reply': 'reply'}),
+    '/api/chest/give': (idKey: 'openId', fields: {'note': 'note'}),
+  };
+
+  Future<http.Request> _encodeGift(
+    http.Request request,
+    RecordCodec codec,
+    ({String idKey, Map<String, String> fields}) route,
+  ) async {
+    final body = _jsonBody(request);
+    if (body == null) return request;
+    final plain = {
+      for (final e in route.fields.entries)
+        if (body[e.key] is String &&
+            (body[e.key] as String).isNotEmpty &&
+            !isSealedValue(body[e.key]))
+          e.key: body[e.key] as String,
+    };
+    if (plain.isEmpty) return request;
+    final id = '${body[route.idKey] ?? ''}';
+    var group = '${body['groupId'] ?? ''}';
+    if (group.isEmpty && id.isNotEmpty && _context != null) {
+      final ctx = await _context('gifts', id, const {});
+      group = '${ctx?['group_id'] ?? ''}';
+    }
+    final key = id.isEmpty || group.isEmpty || codec.crypto == null
+        ? null
+        : codec.keys.currentKey(group);
+    if (key == null) throw E2ENoKeyError('gifts');
+    return _copy(request, {
+      ...body,
+      for (final e in plain.entries)
+        e.key: codec.sealField('gifts', id, route.fields[e.key]!, e.value, key),
+    });
+  }
 
   static Map<String, dynamic>? _jsonBody(http.Request r) {
     try {
@@ -183,12 +331,11 @@ class E2EHttpClient extends http.BaseClient {
     final spec = e2eFields['groups']?[field];
     if (spec?.kind != SealKind.mapValues ||
         value == null ||
-        isSealedValue(value) ||
-        codec.crypto == null) {
+        isSealedValue(value)) {
       return request;
     }
-    final key = codec.keys.currentKey(group);
-    if (key == null) return request;
+    final key = codec.crypto == null ? null : codec.keys.currentKey(group);
+    if (key == null) throw E2ENoKeyError('groups');
     final sealed = codec.sealField(
       'groups',
       group,
@@ -206,11 +353,12 @@ class E2EHttpClient extends http.BaseClient {
     if (body == null) return request;
     final text = body['text'], group = body['groupId'], uid = body['uid'];
     if (text is! String || text.isEmpty || isSealedValue(text)) return request;
-    if (group is! String || uid is! String || codec.crypto == null) {
-      return request;
+    final key = group is! String || uid is! String || codec.crypto == null
+        ? null
+        : codec.keys.currentKey(group);
+    if (key == null || group is! String || uid is! String) {
+      throw E2ENoKeyError('miss_you');
     }
-    final key = codec.keys.currentKey(group);
-    if (key == null) return request;
     final sealed = codec.sealField(
       'miss_you',
       '$group/$uid',
@@ -254,14 +402,21 @@ class E2EHttpClient extends http.BaseClient {
       files = r.files;
     }
     final enc = await _encodeBody(codec, col, request.method, pathId, fields);
+    final c = codec.crypto;
+    final key = enc == null || c == null
+        ? null
+        : codec.keys.currentKey(enc.group);
+    final sealFiles =
+        (col == 'media' &&
+            !plainMediaKinds.contains('${fields['kind'] ?? ''}')) ||
+        col == 'watch_videos';
+    // Файл пары без ключа открытым не уходит.
+    if (sealFiles && files.isNotEmpty && key == null) {
+      throw E2ENoKeyError('media');
+    }
     if (enc == null) return request;
     var outFiles = files;
-    final c = codec.crypto;
-    final key = codec.keys.currentKey(enc.group);
-    if (col == 'media' &&
-        c != null &&
-        key != null &&
-        !plainMediaKinds.contains('${fields['kind'] ?? ''}')) {
+    if (sealFiles && c != null && key != null) {
       final cipher = MediaCipher(c);
       outFiles = [
         for (final f in files)
@@ -273,7 +428,9 @@ class E2EHttpClient extends http.BaseClient {
               enc.id,
               mime: mimeFromName(f.filename),
             ),
-            filename: f.filename,
+            // Имя файла видно серверу: своё имя с телефона (IMG_…, название
+            // ролика) не отдаём — только поле и расширение.
+            filename: neutralFileName(f.field, f.filename),
           ),
       ];
     } else if (col == 'media') {

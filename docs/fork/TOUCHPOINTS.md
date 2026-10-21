@@ -6,8 +6,9 @@
 `.github/workflows/fork-*.yml`, `.dockerignore`, `dart_test.yaml`) в реестр не
 попадают: с апстримом они не конфликтуют.
 
-Отдельный случай — **JS-хуки апстрима** (`pocketbase/pb_hooks`). Форк их не
-правит: сервер берёт файлы по списку `server/hooks.allow` как есть, а
+Отдельный случай — **JS-хуки апстрима** (`pocketbase/pb_hooks`). Форк правит
+их только там, где без этого не работает сквозное шифрование (строки ниже с
+пометкой E2E-max); сервер берёт файлы по списку `server/hooks.allow`, а
 недостающий hotpath заменяет внутренним API на Go (`server/internal/handler/compat.go`).
 После мёржа апстрима: `server/scripts/sync-hooks.sh` (упадёт, если файл из
 списка переименован), `python3 tool/fork/api_inventory.py --missing`, смоук
@@ -88,6 +89,28 @@
 | `lib/screens/together/watch_room_screen.dart` | S9, S11 | Встроенная комната (не ленты, не нативное окно): скрипт `forkNativeChatScript` для страницы и `ForkRoomChatOverlay` последним в `Stack`. S11: `ForkWatchProxy.enable()` в `initState`, `disable()` в `dispose`, `onReceivedHttpAuthRequest` → `ForkWatchProxy.answer`. | Сохранить: иначе чат комнаты снова на странице, которую отдаёт сервер, а ролики не идут через прокси. |
 | `pocketbase/pb_public/watch/room/room.js` | S9 | `NATIVE_CHAT = !!window.__forkNativeChat`: страница прячет чат, не принимает `chat` (и шифрованные `chat` в браузере), не пересказывает журнал в `state`. | Повторить правку в `onMessage`, ответе на `hello`, `adoptState` и `start()`. |
 | `pocketbase/pb_public/watch/pair.js` | S9 | `hello` вкладки браузера несёт `web: true`. | Повторить. |
+| `lib/main.dart` (E2E) | E2E-max | После `LocalStore.ensureOwner` — `unawaited(ForkE2E.ensure(uid))`, импорт. | Повторить: без поднятых ключей профиль и записи без пары не уходят вовсе. |
+| `lib/services/pb_auth_service.dart` (E2E) | E2E-max | `signUpWithEmail`: в `create` нет `name`/`display_name`. `_ensureProfile`: сначала `ForkE2E.ensure`, затем запись профиля перечитывается (`getOne`) и кладётся в `authStore`. | Повторить: иначе имя уходит открытым при регистрации. |
+| `lib/services/pb_data_service.dart` (E2E) | E2E-max | `startDate` пары — `start_date ?? created_at`. `waitingCreate` шлёт имя-заглушку `ForkE2E.waitingNameOnServer`, затем `ForkE2E.sealWaiting`; `waitingUpdate` целиком — `ForkE2E.sealWaiting`. `loadPartnerCard` — через `ForkProfile.partnerCard`. Импорты `fork_e2e.dart`, `profile.dart`. | Повторить. Новые поля карточки партнёра — добавить и в `ForkProfile`. |
+| `lib/services/couple_stats_service.dart` | E2E-max | Ответ статистики правится `ForkE2E.patchCoupleStats`: даты пары из расшифрованной записи. Импорт. | Повторить. |
+| `lib/services/canvas_repository.dart`, `lib/services/live_location_service.dart` (E2E) | E2E-max | Нет ключа пары — живой штрих и точка не публикуются вовсе (`sealLive`/`sealPoint` вернули null). | Повторить. |
+| `pocketbase/pb_hooks/gifts.pb.js`, `pocketbase/pb_hooks/chest.pb.js` | E2E-max | Поля подарка шифром (`e2e1.…`) не режутся и не разбираются: записка, ответ, место, дата, снимок, звук и его meta. | Взять версию апстрима и повторить ветки `sealed(...)`. Новое поле подарка — добавить в `E2EHttpClient._giftRoutes` и `e2eFields['gifts']`. |
+| `pocketbase/pb_hooks/groups.pb.js` | E2E-max | `patch-map` пускает ещё `member_birthdays` и `member_cards`. | Повторить список. |
+| `pocketbase/pb_hooks/users_guard.pb.js` | E2E-max | Шифрованные имя или аватар профиля в карты пары не копируются (`sealedProfile`). | Повторить: иначе шифр личного ключа затрёт имя под ключом пары. |
+| `pocketbase/pb_hooks/invite_web.pb.js` | E2E-max | Шифрованное имя пригласившего на публичную страницу не попадает. | Повторить. |
+| `lib/services/chat_service.dart`, `lib/services/presence_service.dart` | E2E-max | «Печатает» и «в сети» уходят `ForkE2E.sealSignal` (нет ключа — не шлём), приём — через `ForkE2E.openSignal`. Импорт. | Повторить: открытые сигналы принимать нельзя — их может подделать сервер. |
+| `lib/services/watch_channel_service.dart` | E2E-max | Сигнализация звонка (`voice-*`: SDP с отпечатком DTLS, ICE) — только шифром ключа пары; открытые `voice-*` отбрасываются. Импорт. | Повторить: открытый SDP даёт серверу встать посередине звонка. |
+| `lib/services/watch_videos_service.dart` | E2E-max | Ссылки на ролик и обложку — `pb://watch_videos/…`: показ и плеер идут через токен и локальный прокси расшифровки. | Повторить. |
+| `lib/services/watch_history_service.dart` | E2E-max | Дубль истории ищется у себя (адрес шифром), а не фильтром `url = …` на сервере. | Повторить. |
+| `lib/screens/setup_screen.dart` (пароль), `lib/widgets/settings/change_password_sheet.dart` | Пароль | Пароль аккаунта по правилам пароля бэкапа (`ForkAccountPassword`, `ForkPasswordChecks`): 12 символов, все классы, без утечек и почты. Индикаторы апстрима `_buildPasswordChecks` и импорт `password_rules` убраны. | Повторить. |
+| `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml`, `android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt`, `android/app/src/main/kotlin/com/togetherly/love/ForkFcmService.kt` | S12 | Канал `love_app/fcm` — по `ForkFcmService`. firebase-messaging снова в зависимостях, плагин google-services — только при `google-services.json`; сервис `.ForkFcmService` вместо `.FcmService` апстрима; канал отвечает по `ForkFcmService.available/token`. | Повторить; `FcmService.kt` апстрима не возвращать. |
+| `lib/services/fcm_service.dart` | S12 | Токен — в `/api/fork/push-token` (`ForkPushToken`) вместо `users.fcm_token`; `ready` ещё и при `ForkPushToken.accepted`. | Повторить. |
+| `lib/services/centrifugo_service.dart` | S12 | Разбор публикации вынесен в `_dispatch`, `deliver` отдаёт слушателям публикацию из будильника FCM. | Повторить. |
+| `lib/services/widget_background_refresh_service.dart`, `lib/models/user_data.dart` | S12 | Задача `fcmWake` диспетчера → `ForkFcmWake.run`; при выходе (`logout`) токен забывается. | Повторить. |
+| `lib/services/watch_voice_service.dart` | Ленты UX | Входящий звонок: зов при выключенном микрофоне показывается (`ringingFrom`), `decline` шлёт `voice-decline`; звонящий повторяет зов раз в 4 с и снимает его через 45 с; «вежливая» сторона отвечает зовом. | Повторить. |
+| `lib/screens/together/watch_room_screen.dart` (звонок, чат ленты) | Ленты UX | Карточка `ForkIncomingCall`, `onUnanswered`; в ленте флаг `__forkNativeChat` и мост `forkChat` к `ForkReelsChatBridge`. | Повторить. |
+| `lib/widgets/reels/reels_start_sheet.dart` | Ленты UX | Строка `ForkReelsAccountRow`: вход в аккаунт площадки. | Повторить. |
+| `pocketbase/pb_public/watch/reels/reels.js`, `pocketbase/pb_public/watch/reels/index.html` | Ленты UX | Кнопка «назад» и в приложении на Android; с `__forkNativeChat` реплики идут мостом `forkChat`, приходят `window.forkChatIn`, открытый `chat` и история `state` игнорируются; версия скрипта в index.html поднята. Замер «ролик не пошёл» (апстрим, обращение 407) без Umami не пингует площадки. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 

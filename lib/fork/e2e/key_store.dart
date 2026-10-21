@@ -141,8 +141,29 @@ class E2EKeys implements E2EKeyring {
   /// Пары, которым нужна новая эпоха ключа (§6.5).
   final Set<String> rotateNeeded;
 
+  /// Личный ключ аккаунта: свой профиль и записи без пары. Выводится из
+  /// секрета ключа аккаунта ([deriveSelf]), поэтому есть на всех своих
+  /// устройствах и восстанавливается вместе с бэкапом; в Keystore не лежит.
+  PairKey? self;
+
+  /// Вывести [self] для [uid]. «Начать заново» меняет ключ аккаунта — и
+  /// личный ключ вместе с ним: старое личное не читается, как и старое пары.
+  void deriveSelf(E2ECrypto c, String uid) {
+    self = PairKey(
+      uid,
+      0,
+      c.keyFromBytes(
+        c.hash(
+          Uint8List.fromList(utf8.encode('tethered/self/v1')),
+          key: account.secretKey,
+        ),
+      ),
+    );
+  }
+
   @override
-  PairKey? keyFor(String keyId) => pairKeys[keyId];
+  PairKey? keyFor(String keyId) =>
+      pairKeys[keyId] ?? (self?.keyId == keyId ? self : null);
 
   /// Ключ пары последней эпохи — им шифруется новое.
   @override
@@ -160,6 +181,7 @@ class E2EKeys implements E2EKeyring {
 
   @override
   PairKey? currentKey(String groupId) {
+    if (groupId == self?.groupId) return self;
     PairKey? best;
     for (final k in pairKeys.values) {
       if (k.groupId == groupId && (best == null || k.epoch > best.epoch)) {

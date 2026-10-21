@@ -67,8 +67,8 @@ class PbAuthService {
           'email': email,
           'password': password,
           'passwordConfirm': password,
-          'name': displayName,
-          'display_name': displayName,
+          // fork (E2E): имя — не здесь, а после входа шифром личного ключа
+          // (_ensureProfile); при создании аккаунта ключей ещё нет.
           'emailVisibility': true,
         }).timeout(createTimeout);
       } on TimeoutException {
@@ -497,8 +497,16 @@ class PbAuthService {
   /// Дозаполняет имя/аватар в профиле, если там пусто (id юзер не трогает —
   /// им управляет PocketBase). Патчит только недостающее.
   Future<void> _ensureProfile({String? displayName, String? avatarUrl}) async {
-    final rec = _svc.currentUser;
-    if (rec == null) return;
+    final cur = _svc.currentUser;
+    if (cur == null) return;
+    // fork (E2E): профиль — шифром личного ключа. Ключи поднимаем сейчас, а
+    // запись из ответа входа (там ещё шифр) перечитываем уже открытой.
+    await ForkE2E.ensure(cur.id);
+    var rec = cur;
+    try {
+      rec = await _pb.collection(_usersCol).getOne(cur.id);
+      _pb.authStore.save(_pb.authStore.token, rec);
+    } catch (_) {}
     final patch = <String, dynamic>{};
 
     final curName = rec.data['display_name'];

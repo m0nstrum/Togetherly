@@ -177,16 +177,18 @@ class WatchVideosService {
 
   static PocketBase get _pb => PocketBaseService.instance.pb;
 
+  // fork (E2E): ролик и обложка шифрованы — ссылка `pb://`, показ и плеер
+  // идут через токен и локальный прокси расшифровки (resolveUrlAuthed).
   static String _fileUrl(RecordModel r) {
     final file = (r.data['file'] ?? '').toString();
     if (file.isEmpty) return '';
-    return '${PocketBaseService.baseUrl}/api/files/$_col/${r.id}/$file';
+    return 'pb://$_col/${r.id}/$file';
   }
 
   static String _thumbUrl(RecordModel r) {
     final file = (r.data['thumb'] ?? '').toString();
     if (file.isEmpty) return '';
-    return '${PocketBaseService.baseUrl}/api/files/$_col/${r.id}/$file';
+    return 'pb://$_col/${r.id}/$file';
   }
 
   static WatchVideo _fromRecord(RecordModel r) => WatchVideo(

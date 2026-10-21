@@ -796,7 +796,8 @@ routerAdd("POST", "/api/chest/give", (e) => {
   const groupId = String(body.groupId || "").trim();
   // Записка, как у купленного подарка (обращение 244, 13.10.2026); предел —
   // тот же, что в gifts.pb.js, против мусора, а не против письма.
-  const note = String(body.note || "").trim().slice(0, 20000);
+  const rawNote = String(body.note || "").trim();
+  const note = rawNote.indexOf("e2e1.") === 0 ? rawNote.slice(0, 32000) : rawNote.slice(0, 20000); // fork: шифром не режем
   if (!/^[a-z0-9]{15}$/.test(openId) || !groupId) return e.json(400, { ok: false, error: "bad_request" });
   const me = e.auth.id;
 

@@ -62,6 +62,7 @@ import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
 import 'fork/config/endpoints.dart'; // fork
 import 'fork/crash_reports.dart'; // fork
+import 'fork/e2e/fork_e2e.dart'; // fork
 
 // ATT/трекинг убран НАМЕРЕННО: приложение НЕ отслеживает пользователей
 // (в App Store Connect: App Privacy → Tracking = None). Без ATT-авторизации
@@ -307,6 +308,9 @@ void main() async {
   // Привязываем кэш к владельцу: если на устройстве сменился аккаунт — кэш
   // полностью чистится (защита от утечки данных между пользователями).
   await LocalStore.instance.ensureOwner(PocketBaseService().userId);
+  // fork: ключи E2E поднимаем сразу, а не только у пары на главном экране —
+  // без них запись профиля и записи без пары открытыми не уйдут.
+  unawaited(ForkE2E.ensure(PocketBaseService().userId ?? ''));
   // Виджеты рабочего стола держат свои данные отдельно, в общем хранилище
   // устройства, — их тоже надо привязать к владельцу. Иначе после смены
   // аккаунта на столе остаётся пара из прошлой жизни: «на аккаунте где Настя

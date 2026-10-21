@@ -165,7 +165,8 @@ func (s *Service) Accept(ctx context.Context, in AcceptInput) (AcceptResult, err
 			g.Set("max_members", 2)
 			g.Set("relationship_type", "couple")
 			g.Set("custom_relationship_types", []any{})
-			g.Set("start_date", now())
+			// start_date не ставим: дата начала пары — шифром на клиенте,
+			// по умолчанию телефон считает от created_at.
 			g.Set("created_at", now())
 			g.Set("disbanded", false)
 			if err := tx.Save(g); err != nil {

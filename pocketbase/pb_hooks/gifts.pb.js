@@ -52,7 +52,10 @@ routerAdd("POST", "/api/gifts/send", (e) => {
   // Записка внутри коробки, предсказание в печенье, текст письма. Прежние
   // 500 символов резали письмо молча — человек отправлял целое, а партнёр
   // получал обрывок. Потолок оставлен только против мусора в поле.
-  const note = String(body.note || "").slice(0, 20000);
+  // fork (E2E): поля подарка приходят шифром ключа пары (`e2e1.…`) — их не
+  // режем и не разбираем, только ограничиваем длину.
+  const sealed = (v) => { const s = String(v || ""); return s.indexOf("e2e1.") === 0 && s.length <= 32000; };
+  const note = sealed(body.note) ? String(body.note) : String(body.note || "").slice(0, 20000);
   const byAd = body.ad === true;
   // Цена из серверного каталога (запись gift_<ключ>) главнее таблицы выше:
   // так её можно поменять без сборки и без правки хука. Таблица остаётся
@@ -75,7 +78,7 @@ routerAdd("POST", "/api/gifts/send", (e) => {
   // ссылка наружу превратила бы подарок в способ подсунуть что угодно.
   const PHOTO_GIFTS = { photo: true };
   const photo = String(body.photo || "").trim();
-  if (photo) {
+  if (photo && !sealed(photo)) { // fork: шифром — ссылку не проверить
     const m = /^pb:\/\/media\/([a-z0-9]{15})\/[A-Za-z0-9_.\-]{1,200}$/.exec(photo);
     let okPhoto = false;
     if (m && PHOTO_GIFTS[giftKey]) {
@@ -97,7 +100,10 @@ routerAdd("POST", "/api/gifts/send", (e) => {
   const SOUND_GIFTS = { song: true };
   const sound = String(body.sound || "").trim();
   let soundMeta = "";
-  if (sound) {
+  if (sound && sealed(sound)) { // fork: ссылка и волна шифром
+    if (!sealed(body.soundMeta)) return e.json(400, { ok: false, error: "bad_sound" });
+    soundMeta = String(body.soundMeta);
+  } else if (sound) {
     const m = /^pb:\/\/media\/([a-z0-9]{15})\/[A-Za-z0-9_.\-]{1,200}$/.exec(sound);
     let okSound = false;
     if (m && SOUND_GIFTS[giftKey]) {
@@ -216,8 +222,8 @@ routerAdd("POST", "/api/gifts/send", (e) => {
       rec.set("price", price);
       rec.set("state", "sent");
       // Дата для обратного отсчёта (отпуск, билет, ужин) и место (лапка).
-      if (body.date) rec.set("date", String(body.date).slice(0, 40));
-      if (body.place) rec.set("place", String(body.place).slice(0, 80));
+      if (body.date) rec.set("date", sealed(body.date) ? String(body.date) : String(body.date).slice(0, 40)); // fork
+      if (body.place) rec.set("place", sealed(body.place) ? String(body.place) : String(body.place).slice(0, 80)); // fork
       if (photo) rec.set("photo", photo);
       if (sound) {
         rec.set("sound", sound);
@@ -320,7 +326,9 @@ routerAdd("POST", "/api/gifts/react", (e) => {
   const giftId = (body.giftId || "").trim();
   // Желание на звезду: текст получателя, который вернётся дарителю. Потолок
   // тот же, что у записки, и по той же причине.
-  const reply = String(body.reply || "").slice(0, 20000);
+  const reply = String(body.reply || "").indexOf("e2e1.") === 0 // fork: шифром не режем
+    ? String(body.reply).slice(0, 32000)
+    : String(body.reply || "").slice(0, 20000);
   if (!giftId) return e.json(400, { ok: false, error: "gift_not_found" });
 
   let out = { s: 500, b: { ok: false, error: "internal" } };

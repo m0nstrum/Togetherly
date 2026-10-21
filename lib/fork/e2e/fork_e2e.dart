@@ -25,6 +25,7 @@ import 'key_store.dart';
 import 'media_proxy.dart';
 import 'password_policy.dart';
 import 'pb_backend.dart';
+import 'profile.dart';
 import 'record_codec.dart';
 
 abstract final class ForkE2E {
@@ -81,7 +82,11 @@ abstract final class ForkE2E {
     _group = groupId;
     final s = await ensure(uid);
     if (s == null || _group != groupId) return;
-    unawaited(sync(groupId).then((_) => migrateOwn(groupId, uid)));
+    unawaited(
+      sync(groupId)
+          .then((_) => migrateOwn(groupId, uid))
+          .then((_) => ForkProfile.publish(groupId)),
+    );
     for (final col in const ['e2e_handshake', 'e2e_grants']) {
       try {
         _subs.add(
@@ -164,6 +169,13 @@ abstract final class ForkE2E {
     if (s != null) return RecordCodec(s.crypto, s);
     final uid = _currentUid();
     if (uid.isEmpty) return null;
+    // Сервис как раз поднимается (вход, холодный старт) — ждём его: у нового
+    // аккаунта ключей в Keystore ещё нет, они появятся при старте.
+    final starting = _starting;
+    if (starting != null && _uid == uid) {
+      final st = await starting;
+      if (st != null) return RecordCodec(st.crypto, st);
+    }
     final fresh = DateTime.now().difference(_roAt) < const Duration(minutes: 1);
     if (_ro == null || _roUid != uid || !fresh) {
       _roUid = uid;
@@ -183,7 +195,7 @@ abstract final class ForkE2E {
       ).load();
       return _roReady = keys == null
           ? RecordCodec.locked()
-          : RecordCodec(c, keys);
+          : RecordCodec(c, keys..deriveSelf(c, uid));
     } catch (e) {
       // Ключи на телефоне, может быть, есть, а прочитать не вышло: писать
       // открытым нельзя. Запрос падает, очередь повторит; в кэш ошибку не
@@ -240,8 +252,8 @@ abstract final class ForkE2E {
       ChannelPlace('loc:$channel', 'point:$uid', at is int ? at : 0);
 
   /// Живая точка геопозиции для канала `loc:<channel>`. Нет ключа пары —
-  /// как есть.
-  static Map<String, dynamic> sealPoint(
+  /// null: открытой точка не уходит.
+  static Map<String, dynamic>? sealPoint(
     String channel,
     Map<String, dynamic> msg,
   ) {
@@ -250,7 +262,7 @@ abstract final class ForkE2E {
     final group = members == null ? null : codec.keys.groupWith(members);
     final key = group == null ? null : codec.keys.currentKey(group);
     final uid = '${msg['uid'] ?? ''}';
-    if (key == null || uid.isEmpty) return msg;
+    if (key == null || uid.isEmpty) return null;
     final at = msg['updatedAt'];
     final inner = Map<String, dynamic>.of(msg)
       ..remove('t')
@@ -263,14 +275,14 @@ abstract final class ForkE2E {
     };
   }
 
-  /// Обратное к [sealPoint]; открытая точка (старый клиент, нет ключа) —
-  /// как есть, подделка — null.
+  /// Обратное к [sealPoint]; открытая точка или подделка — null: открытое
+  /// в канале пары подсунуть может только сервер.
   static Map<String, dynamic>? openPoint(
     String channel,
     Map<String, dynamic> msg,
   ) {
     final sealed = msg['e2e'];
-    if (sealed is! String) return msg;
+    if (sealed is! String) return null;
     final uid = '${msg['uid'] ?? ''}';
     final inner = _syncCodec().openChannel(
       _pointPlace(channel, uid, msg['at']),
@@ -284,7 +296,8 @@ abstract final class ForkE2E {
       ChannelPlace(channel, type, 0);
 
   /// Эфемерные данные пары [groupId] для канала [channel] (живые штрихи):
-  /// `{e2e: шифр}`, AAD — канал и [type] (автор, холст). Нет ключа — как есть.
+  /// `{e2e: шифр}`, AAD — канал и [type] (автор, холст). Нет ключа — null:
+  /// открытыми живые данные не уходят.
   static Map<String, dynamic>? sealLive(
     String groupId,
     String channel,
@@ -294,14 +307,14 @@ abstract final class ForkE2E {
     if (data == null) return null;
     final codec = _syncCodec();
     final key = codec.crypto == null ? null : codec.keys.currentKey(groupId);
-    if (key == null) return data;
+    if (key == null) return null;
     return {
       e2ePartialKey: codec.sealChannel(_livePlace(channel, type), data, key),
     };
   }
 
-  /// Обратное к [sealLive]: `ok == false` — подделка или нечем открыть,
-  /// пакет не показываем.
+  /// Обратное к [sealLive]: `ok == false` — подделка, открытый пакет или
+  /// нечем открыть: не показываем.
   static ({bool ok, Map<String, dynamic>? data}) openLive(
     String channel,
     String type,
@@ -309,11 +322,88 @@ abstract final class ForkE2E {
   ) {
     if (data is! Map) return (ok: true, data: null);
     final sealed = data[e2ePartialKey];
-    if (sealed is! String) {
-      return (ok: true, data: Map<String, dynamic>.from(data));
-    }
+    if (sealed is! String) return (ok: false, data: null);
     final open = _syncCodec().openChannel(_livePlace(channel, type), sealed);
     return (ok: open != null, data: open);
+  }
+
+  /// Даты пары для экрана статистики: сервер видит в колонках заглушку,
+  /// настоящие — в расшифрованной записи пары. Правит ответ сервера на месте.
+  static Future<void> patchCoupleStats(
+    String groupId,
+    Map<String, dynamic> json,
+  ) async {
+    try {
+      final g = await PocketBaseService().pb
+          .collection('groups')
+          .getOne(groupId);
+      final couple = json['couple'];
+      if (couple is! Map) return;
+      couple['start'] = g.data['start_date'];
+      couple['anniversary'] = g.data['anniversary_date'];
+    } catch (e) {
+      debugPrint('ForkE2E: даты пары для статистики — $e');
+    }
+  }
+
+  /// Имя заглушки, которое видит сервер: настоящее уходит следом шифром.
+  static const String waitingNameOnServer = '…';
+
+  /// Заглушка пары с пустым местом — шифром ключа пары: сервер (waiting.pb.js)
+  /// заводит пару с [waitingNameOnServer], а имя, фото и дату возвращения
+  /// пишем правкой записи. Ключ одиночной пары заводится при синхронизации.
+  /// `returnDate == ''` — стереть дату.
+  static Future<bool> sealWaiting(
+    String groupId, {
+    String? name,
+    String? avatar,
+    String? returnDate,
+  }) async {
+    final body = <String, dynamic>{
+      'placeholder_name': ?name,
+      'placeholder_avatar': ?avatar,
+      if (returnDate != null)
+        'return_date': returnDate.isEmpty ? null : returnDate,
+    };
+    if (body.isEmpty) return true;
+    try {
+      final uid = _currentUid();
+      await ensure(uid);
+      await sync(groupId);
+      await PocketBaseService().pb
+          .collection('groups')
+          .update(groupId, body: body);
+      return true;
+    } catch (e) {
+      debugPrint('ForkE2E: заглушка пары — $e');
+      return false;
+    }
+  }
+
+  /// Пара на главном экране (её ключом шифруются сигналы комнаты).
+  static String get activeGroup => _group;
+
+  /// Сигнал в канале пары или комнаты — «печатает», «в сети», сигнализация
+  /// звонка (SDP с отпечатком DTLS, ICE с адресами): весь пакет шифром
+  /// ключа пары `{t: 'e2e', e2e: …}`. Нет ключа — null, не шлём: открытый
+  /// SDP дал бы серверу встать посередине звонка.
+  static Map<String, dynamic>? sealSignal(
+    String groupId,
+    String channel,
+    Map<String, dynamic> msg,
+  ) {
+    final s = sealLive(groupId, channel, 'signal', msg);
+    return s == null ? null : {'t': 'e2e', ...s};
+  }
+
+  /// Обратное к [sealSignal]; открытый сигнал или подделка — null.
+  static Map<String, dynamic>? openSignal(
+    String channel,
+    Map<String, dynamic> raw,
+  ) {
+    if (raw['t'] != 'e2e') return null;
+    final r = openLive(channel, 'signal', raw);
+    return r.ok ? r.data : null;
   }
 
   /// Шифруются ли новые записи пары [groupId].
@@ -340,11 +430,21 @@ abstract final class ForkE2E {
     final local = await LocalStore.instance.getRecord(collection, id);
     if (local != null) return local.toJson();
     final needAuthor = e2eRecordKey(collection, {...body, 'id': id}) == null;
-    if (e2eGroupOf(collection, id, body) != null && !needAuthor) return null;
+    // Переехавшие поля (числа и даты в `enc`) нужны целиком: правка одного
+    // не должна стереть остальные. Наклейке нужен весь `data`.
+    final full =
+        E2EHttpClient.stickerOp(collection, body) ||
+        (e2eFields[collection]?.entries.any(
+              (f) => f.value.kind == SealKind.moved && body.containsKey(f.key),
+            ) ??
+            false);
+    if (e2eGroupOf(collection, id, body) != null && !needAuthor && !full) {
+      return null;
+    }
     try {
       final r = await PocketBaseService().pb
           .collection(collection)
-          .getOne(id, fields: 'id,group_id,user_uid');
+          .getOne(id, fields: full ? null : 'id,group_id,user_uid');
       return r.toJson();
     } catch (_) {
       return null;
@@ -477,16 +577,21 @@ abstract final class ForkE2E {
           .where((w) => w.isNotEmpty)
           .toList(growable: false);
 
-  /// Словарь утёкших паролей из ассетов (фильтр Блума).
+  /// Словарь утёкших паролей из ассетов (фильтр Блума). Нужен и до входа —
+  /// при регистрации, — поэтому без сервиса ключей.
   static Future<LeakedPasswords?> leakedPasswords() async {
-    final s = service.value;
-    if (s == null) return null;
     if (_leaked != null) return _leaked;
-    final data = await rootBundle.load('assets/fork/leaked_passwords.bloom');
-    return _leaked = LeakedPasswords.parse(
-      s.crypto,
-      data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-    );
+    try {
+      final c = service.value?.crypto ?? await E2ECrypto.init();
+      final data = await rootBundle.load('assets/fork/leaked_passwords.bloom');
+      return _leaked = LeakedPasswords.parse(
+        c,
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+      );
+    } catch (e) {
+      debugPrint('ForkE2E: словарь утечек — $e');
+      return null;
+    }
   }
 
   /// Почта входа — пароль бэкапа не должен её содержать.

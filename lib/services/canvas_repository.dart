@@ -331,13 +331,17 @@ class CanvasRepository {
 
   /// Опубликовать свой in-progress штрих (эфемерно, мимо БД).
   Future<void> setLive(String groupId, String canvasId, String uid,
-          Map<String, dynamic> liveData) =>
-      CentrifugoService.instance.publish(_liveChannel(groupId), {
-        'uid': uid,
-        'canvasId': canvasId,
-        'data': ForkE2E.sealLive(groupId, // fork
-            _liveChannel(groupId), 'stroke:$uid:$canvasId', liveData),
-      });
+      Map<String, dynamic> liveData) async {
+    // fork (S9): шифром ключа пары; нет ключа — не шлём вовсе.
+    final sealed = ForkE2E.sealLive(
+        groupId, _liveChannel(groupId), 'stroke:$uid:$canvasId', liveData);
+    if (sealed == null) return;
+    await CentrifugoService.instance.publish(_liveChannel(groupId), {
+      'uid': uid,
+      'canvasId': canvasId,
+      'data': sealed,
+    });
+  }
 
   /// Снять свой in-progress штрих (надгробие data:null).
   Future<void> clearLive(String groupId, String canvasId, String uid) =>

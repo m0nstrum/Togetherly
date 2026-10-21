@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../fork/e2e/fork_e2e.dart'; // fork
 import 'pocketbase_service.dart';
 
 /// Развёрнутая статистика пары одним запросом.
@@ -43,9 +44,9 @@ class CoupleStatsService {
         debugPrint('CoupleStatsService: HTTP ${res.statusCode}');
         return hit?.data;
       }
-      final stats = CoupleStats.fromJson(
-        jsonDecode(res.body) as Map<String, dynamic>,
-      );
+      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      await ForkE2E.patchCoupleStats(groupId, json); // fork: даты пары шифром
+      final stats = CoupleStats.fromJson(json);
       _cache[groupId] = _Cached(stats, DateTime.now());
       return stats;
     } catch (e) {

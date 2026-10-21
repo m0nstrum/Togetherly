@@ -92,7 +92,11 @@ onRecordUpdateRequest((e) => {
 
   e.next(); // сохраняем users
 
-  if (newAvatar !== prevAvatar || newName !== prevName) {
+  // fork (E2E): в профиле — шифр личного ключа, партнёру он не откроется.
+  // Имя и аватар в пару пишет клиент шифром ключа пары (ForkE2E.publishProfile).
+  const sealedProfile = String(newName || "").indexOf("e2e1.") === 0 ||
+    String(newAvatar || "").indexOf("e2e1.") === 0;
+  if (!sealedProfile && (newAvatar !== prevAvatar || newName !== prevName)) {
     try {
       const uid = e.record.id;
       // Подписи участников лежат в записи пары, а пары живут в Postgres.

@@ -233,7 +233,8 @@ void main() {
   });
 
   group('загрузка', () {
-    test('файл пары уходит шифром, аватар — открытым', () async {
+    test('файл пары уходит шифром, аватар — личным ключом', () async {
+      keys.add(PairKey('useraaaaaaaaaa', 0, c.symmetricKey()));
       final sent = <String, Uint8List>{};
       final pb = PocketBase(
         'http://pb',
@@ -268,7 +269,7 @@ void main() {
       await pb
           .collection('media')
           .create(
-            body: {'group_id': 'useraaaaaaaaaa', 'kind': 'avatar'},
+            body: {'uid': 'useraaaaaaaaaa', 'kind': 'avatar'},
             files: [
               http.MultipartFile.fromBytes('file', plain, filename: 'a.jpg'),
             ],
@@ -277,10 +278,9 @@ void main() {
       expect(mem, contains('mediaid00000001'));
       expect(mem, isNot(contains('ОТКРЫТЫЕ')));
       expect(mem, contains('TTHE2EF1'));
-      expect(
-        utf8.decode(sent['avatar']!, allowMalformed: true),
-        contains('ОТКРЫТЫЕ'),
-      );
+      final ava = utf8.decode(sent['avatar']!, allowMalformed: true);
+      expect(ava, isNot(contains('ОТКРЫТЫЕ')));
+      expect(ava, contains('TTHE2EF1'));
     });
   });
 }

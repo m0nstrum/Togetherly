@@ -184,6 +184,11 @@ class CentrifugoService {
   Future<void> publish(String channel, Map<String, dynamic> data) =>
       _hub(channel).publish(data);
 
+  /// fork: публикация, пришедшая не по сокету (будильник FCM,
+  /// lib/fork/push/fcm_wake.dart), — слушателям канала, как с сокета.
+  void deliver(String channel, Map<String, dynamic> publication) =>
+      _channels[channel]?._dispatch(publication);
+
   /// Полный сброс (logout/смена аккаунта): рвём все подписки и соединение.
   Future<void> reset() async {
     for (final hub in _channels.values) {
@@ -238,7 +243,14 @@ class _ChannelHub {
 
   void _onPublication(centrifuge.PublicationEvent ev) {
     try {
-      final map = jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>;
+      _dispatch(jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>); // fork
+    } catch (e) {
+      debugPrint('Centrifugo publication parse error ($channel): $e');
+    }
+  }
+
+  void _dispatch(Map<String, dynamic> map) { // fork: и для CentrifugoService.deliver
+    try {
       // Сырые слушатели (эфемерные публикации без PB-формата {collection,record}).
       if (_rawListeners.isNotEmpty) {
         for (final r in List<void Function(Map<String, dynamic>)>.of(_rawListeners)) {

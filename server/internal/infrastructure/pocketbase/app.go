@@ -24,6 +24,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/handler"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/backup"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/centrifugo"
+	"github.com/m0nstrum/togetherly/server/internal/infrastructure/fcm"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/metrics"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
 	wproxy "github.com/m0nstrum/togetherly/server/internal/infrastructure/watchproxy"
@@ -84,7 +85,11 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		log.Warn("бэкапы без шифрования: задайте TETHERED_BACKUP__AGE_RECIPIENTS")
 	}
 
-	bindCompat(app, cfg.CompatAddr, pub, log)
+	notify := bindWake(app, fcm.Options{
+		Credentials: cfg.FCM.Credentials, CredentialsFile: cfg.FCM.CredentialsFile,
+		TTL: cfg.FCM.TTL, Timeout: cfg.FCM.Timeout, Endpoint: cfg.FCM.Endpoint,
+	}, pub, cfg.FCM.Timeout, log)
+	bindCompat(app, cfg.CompatAddr, notify, log)
 	proxyInfo := bindWatchProxy(app, cfg, mx, log)
 
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
@@ -198,7 +203,7 @@ func bindMetrics(app core.App, addr string, mx *metrics.Metrics, log *slog.Logge
 
 // bindCompat поднимает на петле внутренний API для JS-хуков апстрима
 // (handler.Compat). Адрес зашит в хуках — 127.0.0.1:8120.
-func bindCompat(app core.App, addr string, pub *centrifugo.Publisher, log *slog.Logger) {
+func bindCompat(app core.App, addr string, pub handler.Publisher, log *slog.Logger) {
 	if addr == "" {
 		return
 	}
@@ -232,7 +237,7 @@ func bindRealtime(app core.App, pub *centrifugo.Publisher, observe func(error), 
 		if len(channels) == 0 {
 			return
 		}
-		payload := map[string]any{"event": ev, "collection": r.CollectionName(), "record": sanitizeForBroadcast(rec, time.Now())}
+		payload := broadcastPayload(ev, rec)
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
@@ -257,6 +262,12 @@ func bindRealtime(app core.App, pub *centrifugo.Publisher, observe func(error), 
 		publish(realtime.EventDelete, e.Record)
 		return e.Next()
 	})
+}
+
+// broadcastPayload — публикация изменения записи: то, что получает клиент из
+// Centrifugo и из ящика будильника FCM.
+func broadcastPayload(ev realtime.Event, rec *core.Record) map[string]any {
+	return map[string]any{"event": ev, "collection": rec.Collection().Name, "record": sanitizeForBroadcast(rec, time.Now())}
 }
 
 // bindSettings переносит в настройки PocketBase адрес, имя и свой SMTP
@@ -301,6 +312,12 @@ func applySettings(s *core.Settings, cfg config.Config) {
 	}
 	s.Backups.Cron = cfg.Backup.Cron
 	s.Backups.CronMaxKeep = cfg.Backup.MaxKeep
+	// Журнал запросов PocketBase хранит URL с id пользователя: адреса превью,
+	// поиск фильмов и мест — то, что в записях лежит шифром. Не храним
+	// вовсе (MaxDays = 0 выключает и запись журнала).
+	s.Logs.MaxDays = 0
+	s.Logs.LogIP = false
+	s.Logs.LogAuthId = false
 }
 
 // rateLimitRules — лимиты на IP (решение 3: вход только по паролю, значит

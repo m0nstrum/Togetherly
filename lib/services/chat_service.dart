@@ -16,6 +16,7 @@ import 'voice_recorder_service.dart';
 import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/pb_id.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork
 import 'centrifugo_service.dart';
 import 'media_service.dart';
 import 'pb_data_service.dart';
@@ -508,10 +509,11 @@ class ChatService {
   Future<void> setTyping(String groupId, bool typing) async {
     if (groupId.isEmpty || _uid.isEmpty) return;
     final at = typing ? DateTime.now().millisecondsSinceEpoch : 0;
-    await CentrifugoService().publish(
-      'pair:$groupId',
-      {'t': 'typing', 'uid': _uid, 'at': at},
-    );
+    // fork (E2E): сигнал шифром ключа пары; нет ключа — не шлём.
+    final msg = ForkE2E.sealSignal(
+        groupId, 'pair:$groupId', {'t': 'typing', 'uid': _uid, 'at': at});
+    if (msg == null) return;
+    await CentrifugoService().publish('pair:$groupId', msg);
   }
 
   /// true — партнёр сейчас печатает (его отметка свежее восьми секунд).
@@ -556,8 +558,9 @@ class ChatService {
           emit();
         }, onError: (_) {});
 
-        unsub = await CentrifugoService().subscribeRaw('pair:$groupId', (data) {
-          if (data['t'] != 'typing') return;
+        unsub = await CentrifugoService().subscribeRaw('pair:$groupId', (raw) {
+          final data = ForkE2E.openSignal('pair:$groupId', raw); // fork
+          if (data == null || data['t'] != 'typing') return;
           final uid = (data['uid'] ?? '').toString();
           if (uid.isEmpty || uid == _uid) return;
           final at = data['at'];

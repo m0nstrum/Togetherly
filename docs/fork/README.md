@@ -128,6 +128,7 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 | Secrets | `ANDROID_KEYSTORE_PASSWORD` | пароль хранилища |
 | Secrets | `ANDROID_KEY_ALIAS` | `tethered` |
 | Secrets | `ANDROID_KEY_PASSWORD` | пароль ключа; пусто — тот же, что у хранилища |
+| Secrets | `GOOGLE_SERVICES_JSON` | необязательно: содержимое `google-services.json` своего Firebase-проекта — пуши-будильник FCM (deploy/README.md, «Пуши»); пусто — сборка без FCM |
 
 Без ключа подписи воркфлоу падает намеренно: debug-ключ у каждого раннера
 свой, и следующая сборка не встала бы поверх установленной. Номер сборки —

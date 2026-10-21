@@ -69,16 +69,23 @@ void main() {
     await t.pump();
     expect(find.byIcon(Icons.chat_bubble_outline), findsOneWidget);
 
+    // Открытая реплика: браузер в комнате (или подделка сервера) — не
+    // показываем, пока человек не разрешит.
     loop.deliver({'t': 'chat', 'from': 'guest', 'text': 'привет'});
     await t.pump();
-    expect(find.text('1'), findsOneWidget);
-
+    expect(find.text('1'), findsNothing);
     await t.tap(find.byIcon(Icons.chat_bubble_outline));
     await t.pump();
+    expect(find.text('привет'), findsNothing);
+    expect(find.textContaining(RegExp('браузер|browser')), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+
+    await t.tap(find.byType(TextButton));
+    await t.pump();
+    loop.deliver({'t': 'chat', 'from': 'guest', 'text': 'привет'});
+    await t.pump();
     expect(find.text('привет'), findsOneWidget);
-    // Открытая реплика значит браузер в комнате — строка говорит прямо.
     expect(find.byIcon(Icons.lock_open), findsOneWidget);
-    expect(find.textContaining(RegExp('браузере|browser')), findsOneWidget);
     chat.dispose();
   });
 }

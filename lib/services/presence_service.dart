@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../models/presence_liveness.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork
 import 'centrifugo_service.dart';
 import 'pocketbase_service.dart';
 import 'pb_data_service.dart';
@@ -74,8 +75,9 @@ class PresenceService with WidgetsBindingObserver {
 
   Future<void> _listenChannel(String groupId) async {
     _unsub?.call();
-    _unsub = await CentrifugoService().subscribeRaw(_channel(groupId), (data) {
-      if (data['t'] != 'alive') return;
+    _unsub = await CentrifugoService().subscribeRaw(_channel(groupId), (raw) {
+      final data = ForkE2E.openSignal(_channel(groupId), raw); // fork
+      if (data == null || data['t'] != 'alive') return;
       final uid = (data['uid'] ?? '').toString();
       if (uid.isEmpty || uid == _uid) return;
       final at = data['at'];
@@ -93,8 +95,10 @@ class PresenceService with WidgetsBindingObserver {
 
     if (_groupId.isNotEmpty) {
       // Публикация не касается диска: её видит только тот, кто сейчас в канале.
-      CentrifugoService()
-          .publish(_channel(_groupId), {'t': 'alive', 'uid': uid, 'at': now});
+      // fork (E2E): сигнал шифром ключа пары; нет ключа — не шлём.
+      final msg = ForkE2E.sealSignal(_groupId, _channel(_groupId),
+          {'t': 'alive', 'uid': uid, 'at': now});
+      if (msg != null) CentrifugoService().publish(_channel(_groupId), msg);
     }
 
     // Отметка «был в сети» нужна для подписи в шапке чата, и только для неё.

@@ -29,6 +29,19 @@
   let ch = null;
   const send = (type, extra) => { if (ch) ch.send(type, 0, extra); };
   const subscribed = () => !!(ch && ch.subscribed());
+  // fork (E2E §10.1): в приложении переписку шифрует оно (ключ сессии), а
+  // страница только рисует — текст уходит мостом `forkChat`, реплики
+  // приходят вызовом `window.forkChatIn`.
+  const NATIVE_CHAT = !!window.__forkNativeChat;
+  const chatIn = [];
+  window.forkChatIn = (m) => { chatIn.push(m); if (el && el.root) drainChatIn(); };
+  function drainChatIn() {
+    while (chatIn.length) {
+      const m = chatIn.shift() || {};
+      if (m.sys) { if (m.text) addMsg({ text: String(m.text), sys: true }); continue; }
+      addMsg({ who: m.mine ? T.you : (String(m.name || '') || T.guest), text: String(m.text || ''), mine: !!m.mine });
+    }
+  }
 
   const RU = (window.I18N && window.I18N.lang) !== 'en';
   // В плашке — чья лента сейчас играет. Имена не склоняем («лента Бори» из
@@ -158,7 +171,7 @@
       </div>
       <div class="rl-ui">
         <div class="rl-top">
-          ${IOS ? `<button class="rl-ib rl-back" aria-label="${T.back}">${ic(IC.back)}</button>` : ''}
+          ${IOS || window.__togetherlyChrome ? `<button class="rl-ib rl-back" aria-label="${T.back}">${ic(IC.back)}</button>` : ''}
           <button class="rl-ib rl-refresh" aria-label="${T.refresh}">${ic(IC.refresh)}</button>
           <span class="rl-pill"><span class="rl-av"></span><b></b><span class="rl-src">SHORTS</span></span>
         </div>
@@ -209,7 +222,9 @@
       el.pick.appendChild(b);
     });
 
-    if (IOS) $('.rl-back', root).addEventListener('click', leave);
+    // fork: и на Android в приложении — жест «назад» там просит двойного
+    // нажатия, и без кнопки из ленты не выйти.
+    if (IOS || window.__togetherlyChrome) $('.rl-back', root).addEventListener('click', leave);
     el.refresh.addEventListener('click', refreshFeed);
     el.react.addEventListener('click', (e) => { e.stopPropagation(); el.pick.hidden ? openPick() : closePick(); });
     $('.rl-chatbtn', root).addEventListener('click', () => setChat(!el.root.classList.contains('chat-open')));
@@ -227,6 +242,7 @@
 
     wireVoice();
     wireChat();
+    drainChatIn(); // fork
     wireGestures();
     loadArt();
     showWait(T.loading, T.loadingSub, true);
@@ -376,6 +392,13 @@
     const text = el.input.value.trim();
     if (!text) return;
     const name = S.name || T.guest;
+    if (NATIVE_CHAT) { // fork: шифрует и возвращает реплику приложение
+      const b = bridge();
+      if (b) try { b.callHandler('forkChat', { text }); } catch (_) {}
+      el.input.value = '';
+      syncTyping();
+      return;
+    }
     addMsg({ who: T.you, text, mine: true });
     remember(S.me, name, text);
     // До подписки реплика придерживается и уходит, когда канал встал.
@@ -719,6 +742,85 @@
     if (card.live || card.dead) return;
     card.live = true;
     card.el.classList.add('is-live');
+    if (card.shownAt && !liveTracked) {
+      liveTracked = true;
+      track('reels-live', Object.assign(probeFacts(card), { ms: Date.now() - card.shownAt }));
+    }
+  }
+
+  /** Замер (21.10.2026, обращение 407): на iPhone ролики TikTok стояли
+   *  обложкой и не запускались, а проверить это на устройстве нечем — WebKit
+   *  на Linux не играет H.264. Ролик, который на экране за 8 секунд так и не
+   *  пошёл, страница отмечает в статистике: площадка, система, сборка и
+   *  последнее, что сказал плеер. Первый пошедший за заход — с задержкой
+   *  старта, чтобы было с чем сравнить. */
+  const STUCK_MS = 8000;
+  let liveTracked = false;
+
+  function track(name, data) {
+    try { if (window.umami && window.umami.track) window.umami.track(name, data); } catch (_) { /* статистика не важнее ленты */ }
+  }
+
+  function probeFacts(card) {
+    const ua = navigator.userAgent;
+    const osm = ua.match(/OS (\d+)_/) || ua.match(/Android (\d+)/);
+    return {
+      src: keySrc(card.id),
+      platform: /iPhone|iPad|iPod/.test(ua) ? 'ios' : 'android',
+      os: osm ? Number(osm[1]) : 0,
+      b: Number(new URLSearchParams(location.search).get('b')) || 0,
+      ready: card.ready ? 1 : 0,
+      last: card.last || '',
+      muted: S.wantMuted ? 1 : 0,
+    };
+  }
+
+  /** Сообщение плеера площадки одной строкой: `onStateChange:3`,
+   *  `onPlayerError:3001`, `player:changeState:playing`, `started`. */
+  function playerSaid(m) {
+    if (!m || typeof m !== 'object') return '';
+    if (m.type === 'onPlayerError') return 'onPlayerError:' + ((m.value && m.value.errorCode) || '');
+    if (m.type === 'onStateChange' || m.type === 'onError') return m.type + ':' + m.value;
+    if (m.type === 'player:changeState' && m.data) return 'player:changeState:' + m.data.state;
+    if (m.type === 'player:error') return 'player:error';
+    if (m.event) return String(m.event);
+    return '';
+  }
+
+  /** Карточка встала на экран: через 8 секунд проверяем, пошла ли. Ролик,
+   *  загруженный заранее под экраном, мог пойти ещё до показа — у него
+   *  задержка старта нулевая. */
+  function watchStart(card) {
+    if (card.shownAt) return;
+    card.shownAt = Date.now();
+    if (card.live && !liveTracked) {
+      liveTracked = true;
+      track('reels-live', Object.assign(probeFacts(card), { ms: 0 }));
+    }
+    setTimeout(async () => {
+      if (card.dead || card.live || !card.active || document.hidden || S.paused) return;
+      // fork: статистики нет — и площадки зря не дёргаем.
+      if (!(window.umami && window.umami.track)) return;
+      // На iPhone 21.10.2026 плееры не загрузились вовсе: ни `load`, ни одного
+      // сообщения. Отметка различает сеть и браузер: есть ли на странице сам
+      // плеер, доехал ли скрипт YouTube, отвечают ли площадки этой странице.
+      const facts = Object.assign(probeFacts(card), {
+        frame: card.el.querySelector('iframe') ? 1 : 0,
+        ytApi: window.YT && window.YT.Player ? 1 : 0,
+      });
+      const [tt, yt] = await Promise.all([reach('https://www.tiktok.com/favicon.ico'), reach('https://www.youtube.com/favicon.ico')]);
+      track('reels-stuck', Object.assign(facts, { tt, yt }));
+    }, STUCK_MS);
+  }
+
+  /** Отвечает ли площадка этой странице: `ok`, `fail` (отказ сети) или
+   *  `slow` (молчит дольше 5 секунд). Ответ не читается, нужен сам факт. */
+  function reach(url) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 5000);
+    return fetch(url + '?r=' + Date.now(), { mode: 'no-cors', cache: 'no-store', signal: ctl.signal })
+      .then(() => 'ok', (e) => (e && e.name === 'AbortError' ? 'slow' : 'fail'))
+      .finally(() => clearTimeout(timer));
   }
 
   function makeCard(key, lazy) {
@@ -793,8 +895,11 @@
             // Останавливать его нельзя — пауза снова вызывает кнопки.
             else card.api.shelve();
           },
-          onError: () => failed(card),
-          onStateChange: (ev) => { if (ev && ev.data === 1) live(card); },
+          onError: (ev) => { card.last = 'error:' + (ev && ev.data); failed(card); },
+          onStateChange: (ev) => {
+            if (ev) card.last = 'state:' + ev.data;
+            if (ev && ev.data === 1) live(card);
+          },
         },
       });
       card.api = {
@@ -876,6 +981,7 @@
     if (!card || !card.spec) return;
     let m = e.data;
     if (typeof m === 'string') { try { m = JSON.parse(m); } catch (_) { return; } }
+    card.last = playerSaid(m) || card.last;
     if (card.spec.playing && card.spec.playing(m)) { card.playing = true; live(card); }
     if (card.active && card.spec.ended && card.spec.ended(m)) card.api.play();
   });
@@ -952,6 +1058,7 @@
     const ms = slideMs;
     cards.cur = card;
     card.active = true;
+    watchStart(card);
     card.el.classList.add('is-cur');
     if (!old) card.el.classList.add('is-first');
     requestAnimationFrame(() => place(card, '0', old ? ms : 0));
@@ -1370,10 +1477,12 @@
         if (log.length) send('state', { to: data.from, url: '', file: null, playing: false, log: log.slice(-LOG_LIMIT) });
         return;
       case 'state':
+        if (NATIVE_CHAT) return; // fork: историю держит приложение
         adoptHistory(data);
         return;
       case 'chat':
         if (data.name) notePartner(data);
+        if (NATIVE_CHAT || data.e2e) return; // fork: открытый текст мимо
         theirText(data);
         return;
       case 'reels-state':

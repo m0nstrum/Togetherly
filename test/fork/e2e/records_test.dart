@@ -95,16 +95,87 @@ void main() {
       expect(locked['reactions'], <String, dynamic>{});
     });
 
-    test('чужие коллекции и пара без ключа — как есть', () {
+    test('чужие коллекции — как есть; без ключа открытым не пишем', () {
       final b = {'text': 'x'};
-      expect(codec.encode('users', 'm1', _gid, b), same(b));
-      expect(codec.encode(_col, 'm1', 'other', b), same(b));
-      expect(RecordCodec.locked().encode(_col, 'm1', _gid, b), same(b));
+      expect(codec.encode('app_config', 'm1', _gid, b), same(b));
+      expect(
+        () => codec.encode(_col, 'm1', 'other', b),
+        throwsA(isA<E2ENoKeyError>()),
+      );
+      expect(
+        () => RecordCodec.locked().encode(_col, 'm1', _gid, b),
+        throwsA(isA<E2ENoKeyError>()),
+      );
+      // Без содержимого (служебные поля, заглушка, уже шифр) — можно.
+      final meta = {'ts': 1, 'deleted': true};
+      expect(codec.encode(_col, 'm1', 'other', meta), same(meta));
+      final ph = {'text': e2eLockedText, 'reactions': <String, dynamic>{}};
+      expect(codec.encode(_col, 'm1', 'other', ph), same(ph));
+      final sealed = codec.encode(_col, 'm1', _gid, {'text': 'x'});
+      expect(codec.encode(_col, 'm1', 'other', sealed), same(sealed));
     });
 
-    test('старое открытое сообщение читается (двойное чтение)', () {
-      final r = {'id': 'm1', 'text': 'до E2E'};
-      expect(codec.decode(_col, r), same(r));
+    test('открытое содержимое по видам полей', () {
+      bool has(String col, Map<String, dynamic> b) =>
+          RecordCodec.hasPlainContent(col, b);
+      expect(
+        has('memories', {
+          'data': {'type': 'photo'},
+        }),
+        isFalse,
+      );
+      expect(
+        has('memories', {
+          'data': {'type': 'photo', 'text': 'x'},
+        }),
+        isTrue,
+      );
+      expect(
+        has('groups', {
+          'member_moods': {'a': null},
+        }),
+        isFalse,
+      );
+      expect(
+        has('groups', {
+          'member_moods': {
+            'a': {'m': 1},
+          },
+        }),
+        isTrue,
+      );
+      expect(has('cycle_entries', {'day': e2eClearedDate}), isFalse);
+      expect(has('cycle_entries', {'day': '2025-01-01'}), isTrue);
+      expect(has('live_location', {'data': <String, dynamic>{}}), isFalse);
+      expect(
+        has('live_location', {
+          'data': {'lat': 1},
+        }),
+        isTrue,
+      );
+    });
+
+    test('открытое в шифрованном поле — подделка сервера, не показываем', () {
+      final r = {'id': 'm1', 'text': 'подсунул сервер', 'ts': 3};
+      final d = codec.decode(_col, r);
+      expect(d['text'], e2eLockedText);
+      expect(d['ts'], 3);
+      final mem = codec.decode('memories', {
+        'id': 'mem1',
+        'data': {'type': 'photo', 'text': 'фальшивка', 'authorUid': 'bob'},
+      });
+      expect(mem['data'], {'type': 'photo', 'authorUid': 'bob'});
+      final g = codec.decode('groups', {
+        'id': _gid,
+        'member_names': {'alice': 'Фальшивое имя'},
+      });
+      expect(g['member_names'], <String, dynamic>{});
+      // «Салют» сервер пишет сам — его показываем.
+      final salute = codec.decode('memories', {
+        'id': 'mem2',
+        'data': {'type': 'gift', 'giftKey': 'salute', 'title': 'Салют'},
+      });
+      expect((salute['data'] as Map)['title'], 'Салют');
     });
 
     test('шифртекст из другой записи или поля не открывается', () {
@@ -147,7 +218,7 @@ void main() {
         ],
       });
       final items = (page! as Map)['items'] as List;
-      expect([for (final i in items) (i as Map)['text']], ['a', 'b']);
+      expect([for (final i in items) (i as Map)['text']], ['a', e2eLockedText]);
     });
   });
 
@@ -307,7 +378,7 @@ void main() {
   });
 
   group('желания, виджеты, скучаю', () {
-    test('желание и виджет — текст на месте, цены и даты открыты', () {
+    test('желание и виджет — текст на месте, цена шифром', () {
       final w = codec.encode('wishes', 'w1', _gid, {
         'title': 'Плед',
         'url': 'https://shop/x',
@@ -316,7 +387,7 @@ void main() {
       });
       expect(w['title'], startsWith(e2eFieldPrefix));
       expect(w['url'], startsWith(e2eFieldPrefix));
-      expect(w['price'], 990);
+      expect(w['price'], 0, reason: 'цена в enc');
       final wd = codec.encode('widget_data', 'wd1', _gid, {
         'status': 'на работе',
         'photo_grid_urls': ['pb://media/a/b.jpg'],
@@ -407,7 +478,7 @@ void main() {
       expect(moods['bob'], isNull);
       expect(enc['members'], ['alice', 'bob']);
       expect(enc['first_kiss_date'], '');
-      expect(enc['start_date'], '2025-01-01 00:00:00.000Z');
+      expect(enc['start_date'], '', reason: 'дата начала — в enc');
       final dec = codec.decode('groups', {'id': _gid, ...enc});
       expect(dec['member_moods'], {
         'alice': {'emoji': '😊', 'label': 'счастлива'},
@@ -465,8 +536,8 @@ void main() {
       expect(dec['member_moods'], {
         'alice': {'emoji': '😊'},
       });
-      // Имена участников — профиль, не шифруются.
-      expect(jsonDecode(wire[1])['value'], 'Аня');
+      // Имена участников — тоже шифром ключа пары.
+      expect(jsonDecode(wire[1])['value'], startsWith(e2eFieldPrefix));
     });
   });
 
@@ -501,23 +572,40 @@ void main() {
       },
     );
 
-    test('новая дата в колонке новее старой в enc; null стирает дату', () {
+    test('открытая дата в колонке — подделка, верим enc; null стирает', () {
       final enc = codec.encode('groups', _gid, _gid, {
         'first_kiss_date': '2020-01-01',
       });
-      // Клиент без ключа записал новую дату открыто, enc остался старым.
+      // Без ключа клиент не пишет: открытую дату подложил сервер.
       final dec = codec.decode('groups', {
         'id': _gid,
         ...enc,
         'first_kiss_date': '2021-05-05',
       });
-      expect(dec['first_kiss_date'], '2021-05-05');
+      expect(dec['first_kiss_date'], '2020-01-01');
       final cleared = codec.encode('groups', _gid, _gid, {
         'first_kiss_date': null,
       });
       expect(cleared[e2eMovedField], startsWith(e2eFieldPrefix));
       final back = codec.decode('groups', {'id': _gid, ...cleared});
       expect(back['first_kiss_date'], isNull);
+    });
+
+    test('три даты пары в одном enc: правка одной не стирает другие', () {
+      final first = codec.encode('groups', _gid, _gid, {
+        'start_date': '2024-02-14',
+        'anniversary_date': '2024-06-01',
+        'first_kiss_date': '2024-02-20',
+      });
+      expect(first['start_date'], '');
+      final ctx = codec.decode('groups', {'id': _gid, ...first});
+      final edit = codec.encode('groups', _gid, _gid, {
+        'anniversary_date': '2024-07-07',
+      }, context: ctx);
+      final back = codec.decode('groups', {'id': _gid, ...first, ...edit});
+      expect(back['start_date'], '2024-02-14');
+      expect(back['anniversary_date'], '2024-07-07');
+      expect(back['first_kiss_date'], '2024-02-20');
     });
 
     test('запись с файлом в шифруемую коллекцию — поля шифром', () async {
@@ -672,6 +760,93 @@ void main() {
       expect(back['text'], 'x');
     });
 
+    test('подарок и сундук: записка, место, звук — шифром', () async {
+      final pb = PocketBase('http://pb', httpClientFactory: client);
+      wire.clear();
+      server['gift00000000001'] = {'id': 'gift00000000001', 'group_id': _gid};
+      final raw = <http.Request>[];
+      final c2 = E2EHttpClient(
+        MockClient((req) async {
+          raw.add(req);
+          return _json('{"ok":true}');
+        }),
+        codec: () async => codec,
+        context: (col, id, body) async => server[id],
+      );
+      final pb2 = PocketBase('http://pb', httpClientFactory: () => c2);
+      await pb2.send(
+        '/api/gifts/send',
+        method: 'POST',
+        body: {
+          'giftId': 'gift00000000001',
+          'groupId': _gid,
+          'giftKey': 'letter',
+          'note': 'люблю',
+          'place': 'Питер',
+          'soundMeta': '{"title":"Кино"}',
+        },
+      );
+      await pb2.send(
+        '/api/gifts/react',
+        method: 'POST',
+        body: {'giftId': 'gift00000000001', 'reply': 'и я'},
+      );
+      final sent = raw.map((r) => r.body).join();
+      for (final leak in ['люблю', 'Питер', 'Кино', 'и я']) {
+        expect(sent, isNot(contains(leak)), reason: leak);
+      }
+      final send = jsonDecode(raw.first.body) as Map<String, dynamic>;
+      expect(send['giftKey'], 'letter');
+      // Сервер кладёт шифр в запись как есть — приложение читает открытым.
+      final rec = codec.decode('gifts', {
+        'id': 'gift00000000001',
+        'note': send['note'],
+        'sound_meta': send['soundMeta'],
+      });
+      expect(rec['note'], 'люблю');
+      expect(rec['sound_meta'], '{"title":"Кино"}');
+      // Без ключа пары подарок с запиской не уходит.
+      final c3 = E2EHttpClient(
+        MockClient((req) async => _json('{}')),
+        codec: () async => RecordCodec(c, _Keys()),
+      );
+      await expectLater(
+        PocketBase('http://pb', httpClientFactory: () => c3).send(
+          '/api/chest/give',
+          method: 'POST',
+          body: {'openId': 'o1', 'groupId': _gid, 'note': 'x'},
+        ),
+        throwsA(isA<ClientException>()),
+      );
+      expect(pb, isNotNull);
+    });
+
+    test('профиль: личным ключом, ответ входа открыт приложению', () async {
+      keys.add(PairKey('alice', 0, c.symmetricKey()));
+      final enc = codec.encode('users', 'alice', 'alice', {
+        'display_name': 'Аня',
+        'birth_date': '1999-05-01',
+        'coins': 10,
+      });
+      expect(jsonEncode(enc), isNot(contains('Аня')));
+      expect(enc['coins'], 10);
+      final c4 = E2EHttpClient(
+        MockClient(
+          (req) async => _json(
+            jsonEncode({
+              'token': 't',
+              'record': {'id': 'alice', ...enc},
+            }),
+          ),
+        ),
+        codec: () async => codec,
+      );
+      final pb4 = PocketBase('http://pb', httpClientFactory: () => c4);
+      final auth = await pb4.collection('users').authRefresh();
+      expect(auth.record.getStringValue('display_name'), 'Аня');
+      expect(auth.record.getStringValue('birth_date'), '1999-05-01');
+    });
+
     test('чужие коллекции идут как есть', () async {
       final pb = PocketBase('http://pb', httpClientFactory: client);
       await pb
@@ -680,17 +855,143 @@ void main() {
       expect(wire.single.body, contains('видно'));
     });
 
-    test('пара без ключа — открытым, как до E2E', () async {
+    test('пара без ключа — запрос не уходит вовсе', () async {
       final pb = PocketBase(
         'http://pb',
         httpClientFactory: () => client(withCodec: RecordCodec(c, _Keys())),
       );
-      await pb
-          .collection(_col)
-          .create(
-            body: {'id': 'msg000000000002', 'group_id': _gid, 'text': 'ok'},
-          );
-      expect(wire.single.body, contains('ok'));
+      await expectLater(
+        pb
+            .collection(_col)
+            .create(
+              body: {'id': 'msg000000000002', 'group_id': _gid, 'text': 'ok'},
+            ),
+        throwsA(
+          isA<ClientException>().having(
+            (e) => e.originalError,
+            'причина',
+            isA<E2ENoKeyError>(),
+          ),
+        ),
+      );
+      expect(wire, isEmpty);
+    });
+
+    test('пару не узнать — тоже не уходит', () async {
+      final pb = PocketBase('http://pb', httpClientFactory: client);
+      await expectLater(
+        pb.collection(_col).update('unknown00000001', body: {'text': 'x'}),
+        throwsA(isA<ClientException>()),
+      );
+      expect(wire, isEmpty);
+    });
+
+    test('файл пары без ключа не уходит', () async {
+      final pb = PocketBase(
+        'http://pb',
+        httpClientFactory: () => client(withCodec: RecordCodec(c, _Keys())),
+      );
+      await expectLater(
+        pb
+            .collection('media')
+            .create(
+              body: {'group_id': _gid, 'kind': 'photo'},
+              files: [
+                http.MultipartFile.fromBytes(
+                  'file',
+                  utf8.encode('фото'),
+                  filename: 'a.jpg',
+                ),
+              ],
+            ),
+        throwsA(isA<ClientException>()),
+      );
+      expect(wire, isEmpty);
+    });
+  });
+
+  group('шифровать всё', () {
+    test('облик сообщения и числа — шифром, в колонках заглушки', () {
+      final enc = codec.encode(_col, 'm1', _gid, {
+        'text': 'x',
+        'voice_url': 'pb://media/abc/voice.m4a',
+        'voice_peaks': '0123456789',
+        'face': 'smile',
+        'color': 7,
+        'call_ms': 252000,
+        'ts': 5,
+      });
+      expect(enc['voice_url'], startsWith(e2eFieldPrefix));
+      expect(enc['face'], startsWith(e2eFieldPrefix));
+      expect(enc['color'], 0);
+      expect(enc['call_ms'], 0);
+      expect(enc['ts'], 5, reason: 'по ts сортирует сервер');
+      expect(jsonEncode(enc), isNot(contains('252000')));
+      final back = codec.decode(_col, {'id': 'm1', ...enc});
+      expect(back['voice_url'], 'pb://media/abc/voice.m4a');
+      expect(back['color'], 7);
+      expect(back['call_ms'], 252000);
+    });
+
+    test('автор воспоминания, реакции и наклейки — шифром', () {
+      final enc = codec.encode('memories', 'mem1', _gid, {
+        'author_name': 'Аня',
+        'author_avatar': 'pb://media/a/ava.jpg',
+        'data': {
+          'type': 'photo',
+          'authorName': 'Аня',
+          'reactions': {'bob': '❤'},
+          'stickers': {
+            's1': {'id': 's1', 'mood': 'happy'},
+          },
+          'dailyTaskId': 'q7',
+        },
+      });
+      final wire = jsonEncode(enc);
+      for (final leak in ['Аня', 'ava.jpg', '❤', 'happy', 'q7']) {
+        expect(wire, isNot(contains(leak)), reason: leak);
+      }
+      expect((enc['data'] as Map)['type'], 'photo');
+    });
+
+    test('наклейка: правка data шифром вместо sticker_put', () {
+      final ctx = {
+        'id': 'mem1',
+        'group_id': _gid,
+        'data': {
+          'type': 'photo',
+          'text': 'море',
+          'stickers': {
+            'old': {'id': 'old'},
+          },
+        },
+      };
+      final put = E2EHttpClient.applySticker({
+        'sticker_put': {'id': 's2', 'mood': 'happy'},
+      }, ctx);
+      expect(put.containsKey('sticker_put'), isFalse);
+      final stickers = (put['data'] as Map)['stickers'] as Map;
+      expect(stickers.keys, containsAll(['old', 's2']));
+      expect((put['data'] as Map)['text'], 'море');
+      final del = E2EHttpClient.applySticker({'sticker_del': 'old'}, ctx);
+      expect(((del['data'] as Map)['stickers'] as Map).keys, isEmpty);
+      expect(
+        () => E2EHttpClient.applySticker({'sticker_del': 'x'}, null),
+        throwsA(isA<E2ENoKeyError>()),
+      );
+    });
+
+    test('желание: цена и валюта шифром', () {
+      final enc = codec.encode('wishes', 'w1', _gid, {
+        'title': 'Велосипед',
+        'price': 49990,
+        'currency': 'RUB',
+      });
+      expect(enc['price'], 0);
+      expect(jsonEncode(enc), isNot(contains('49990')));
+      expect(jsonEncode(enc), isNot(contains('RUB')));
+      final back = codec.decode('wishes', {'id': 'w1', ...enc});
+      expect(back['price'], 49990);
     });
   });
 

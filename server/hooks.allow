@@ -6,6 +6,10 @@
 # push_apns/apple_*/lava*/plus_*/donations/income*/redeem/wallet_waitlist/
 # migrate_bridge/profile_web/gmail_mailer/widget_plus/filecheck/link_preview
 # (выкинуты или переписываются в S5).
+# gift_push*.js — тоже нет: подарок будит получателя будильник форка
+# (domain/wake, push-рассылка в user:<uid> не нужна), а онлайн-проверка
+# хука ходит в /internal/online hotpath, которого у форка нет — без неё
+# уведомление о подарке дублировалось бы с уведомлением приложения.
 
 # Пары, группы, приглашения
 invite.pb.js
@@ -16,7 +20,6 @@ groups_membership.pb.js
 waiting.pb.js
 user_card.pb.js
 couple_stats.pb.js
-birthdays.pb.js
 counters.pb.js
 comments_count.pb.js
 comments_count.js

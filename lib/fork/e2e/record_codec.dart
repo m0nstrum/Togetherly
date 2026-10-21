@@ -43,8 +43,6 @@ const Set<String> memoryOpenKeys = {
   'groupId',
   'type',
   'authorUid',
-  'authorName',
-  'authorAvatar',
   'createdAt',
   'editedAt',
   'addedAt',
@@ -53,11 +51,8 @@ const Set<String> memoryOpenKeys = {
   'openAt',
   'isPinned',
   'savedBy',
-  'reactions',
   'commentsCount',
-  'dailyTaskId',
   'capsuleOpened',
-  'stickers',
   'deleted',
 };
 
@@ -87,8 +82,8 @@ class SealedField {
       locked = null,
       cleared = null;
 
-  /// Переезжает в [e2eMovedField], в колонке остаётся [cleared]. Правка
-  /// записи шлёт все такие поля разом (иначе пропущенные сотрутся из `enc`).
+  /// Переезжает в [e2eMovedField], в колонке остаётся [cleared]. Поля, которых
+  /// нет в правке, `encode` добирает из контекста записи.
   const SealedField.moved({this.locked = '', this.cleared = ''})
     : kind = SealKind.moved,
       open = const {};
@@ -112,13 +107,38 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'user_name': SealedField.text(),
     'text': SealedField.text(locked: e2eLockedText),
     'pin_title': SealedField.text(),
+    'pin_thumb': SealedField.text(),
     'reply_to_name': SealedField.text(),
     'reply_to_text': SealedField.text(),
     'reactions': SealedField.json(locked: <String, dynamic>{}),
+    // Ссылки на файлы (сами файлы — шифром), облик кружка и голосового.
+    'voice_url': SealedField.text(),
+    'voice_peaks': SealedField.text(),
+    'note_url': SealedField.text(),
+    'note_thumb': SealedField.text(),
+    'note_shape': SealedField.text(),
+    'note_hearts': SealedField.text(),
+    'face': SealedField.text(),
+    // Числа — в `enc`: цвета, положение лица, длительности.
+    'color': SealedField.moved(cleared: 0, locked: 0),
+    'text_color': SealedField.moved(cleared: 0, locked: 0),
+    'face_x': SealedField.moved(cleared: 0, locked: 0),
+    'face_y': SealedField.moved(cleared: 0, locked: 0),
+    'call_ms': SealedField.moved(cleared: 0, locked: 0),
+    'voice_ms': SealedField.moved(cleared: 0, locked: 0),
+    'note_ms': SealedField.moved(cleared: 0, locked: 0),
   },
   'live_location': {'data': SealedField.json()},
-  'memories': {'data': SealedField.jsonPartial(memoryOpenKeys)},
-  'memory_comments': {'text': SealedField.text(locked: e2eLockedText)},
+  'memories': {
+    'data': SealedField.jsonPartial(memoryOpenKeys),
+    'author_name': SealedField.text(),
+    'author_avatar': SealedField.text(),
+  },
+  'memory_comments': {
+    'text': SealedField.text(locked: e2eLockedText),
+    'author_name': SealedField.text(),
+    'author_avatar': SealedField.text(),
+  },
   'wishes': {
     'title': SealedField.text(),
     'note': SealedField.text(),
@@ -127,6 +147,11 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'image': SealedField.text(),
     'shop': SealedField.text(),
     'symbol': SealedField.text(),
+    'kind': SealedField.text(),
+    'category': SealedField.text(),
+    'currency': SealedField.text(),
+    'price': SealedField.moved(cleared: 0, locked: 0),
+    'done_at': SealedField.moved(),
   },
   'wish_categories': {
     'title': SealedField.text(),
@@ -134,6 +159,46 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'symbol': SealedField.text(),
   },
   'canvas_catalogue': {'name': SealedField.text()},
+  'canvas_meta': {
+    'coloring_id': SealedField.text(),
+    'coloring_mode': SealedField.text(),
+    'coloring_outline': SealedField.text(),
+    'coloring_done': SealedField.json(),
+    'bg_color': SealedField.moved(cleared: 0, locked: 0),
+  },
+  'mascots': {'name': SealedField.text(), 'image_url': SealedField.text()},
+  // Свой профиль — личным ключом (видят только свои устройства). Партнёру
+  // тот же профиль уходит карточкой в записи пары (`groups.member_cards`).
+  'users': {
+    'name': SealedField.text(),
+    'display_name': SealedField.text(),
+    'avatar_url': SealedField.text(),
+    'banner_url': SealedField.text(),
+    'gender': SealedField.text(),
+    'birth_date': SealedField.text(),
+    'solo_timers': SealedField.json(),
+    'mascot_sleep': SealedField.json(),
+    'custom_themes': SealedField.json(),
+    'miss_you_wishes': SealedField.json(),
+  },
+  // «Смотрим вместе»: история и свои ролики (файлы — шифром, как media).
+  'watch_history': {
+    'url': SealedField.text(),
+    'title': SealedField.text(),
+    'thumb': SealedField.text(),
+    'kind': SealedField.text(),
+  },
+  'watch_videos': {'title': SealedField.text()},
+  // Пишет сервер (gifts.pb.js, chest.pb.js) — шифр от клиента как есть.
+  'gifts': {
+    'note': SealedField.text(),
+    'reply': SealedField.text(),
+    'place': SealedField.text(),
+    'date': SealedField.text(),
+    'photo': SealedField.text(),
+    'sound': SealedField.text(),
+    'sound_meta': SealedField.text(),
+  },
   'canvas_strokes': {'data': SealedField.json()},
   'mood_entries': {
     'mood_id': SealedField.text(),
@@ -161,9 +226,15 @@ const Map<String, Map<String, SealedField>> e2eFields = {
   // клиент не знает, — шифр привязан к паре и автору (`e2eRecordKey`).
   'miss_you': {'last_vibe_text': SealedField.text()},
   'miss_you_events': {'text': SealedField.text()},
-  // Даты начала и годовщины пока открыты: по ним сервер считает «дни
-  // вместе» (couple_stats.pb.js). Аватары и имена участников — профиль.
   'groups': {
+    // Профиль участников для партнёра: имя, аватар, карточка (баннер, пол,
+    // день рождения) — каждый пишет своё (ForkE2E.publishProfile).
+    'member_names': SealedField.mapValues(),
+    'member_avatars': SealedField.mapValues(),
+    'member_cards': SealedField.mapValues(),
+    // Имя того, кто занимает пустое место, сервер берёт из его профиля — там
+    // шифр чужого личного ключа: не откроется, видна заглушка.
+    'claim_name': SealedField.text(),
     'member_moods': SealedField.mapValues(),
     'member_ailments': SealedField.mapValues(),
     'current_status': SealedField.json(),
@@ -172,7 +243,18 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'custom_relationship_label': SealedField.text(),
     'custom_relationship_emoji': SealedField.text(),
     'custom_relationship_types': SealedField.json(),
+    'member_birthdays': SealedField.mapValues(),
+    // Пара с пустым местом: заглушка второго (имя, фото, дата возвращения).
+    'placeholder_name': SealedField.text(),
+    'placeholder_avatar': SealedField.text(),
+    'return_date': SealedField.moved(),
+    'daily_tasks': SealedField.json(),
+    'chat_background': SealedField.text(),
+    'mascots': SealedField.json(),
     'first_kiss_date': SealedField.moved(),
+    // «Дни вместе» и годовщину телефон считает сам; серверу даты не нужны.
+    'start_date': SealedField.moved(),
+    'anniversary_date': SealedField.moved(),
   },
   'cycle_entries': {
     'kind': SealedField.text(),
@@ -185,6 +267,16 @@ const Map<String, Map<String, SealedField>> e2eFields = {
 };
 
 const String e2eFieldPrefix = 'e2e1.';
+
+/// Писать нечем: ключа пары (или личного) нет, а в теле есть то, что уходит
+/// только шифром. Запрос не отправляется — очередь повторит его, когда ключ
+/// придёт. Открытым текстом не пишем никогда.
+class E2ENoKeyError implements Exception {
+  E2ENoKeyError(this.collection);
+  final String collection;
+  @override
+  String toString() => 'E2ENoKeyError: нет ключа шифрования для $collection';
+}
 
 /// Дата в обязательной колонке, чьё значение переехало в `enc`.
 const String e2eClearedDate = '2000-01-01 00:00:00.000Z';
@@ -214,7 +306,10 @@ String? e2eRecordKey(String collection, Map<String, dynamic> rec) {
 
 /// Пара записи по телу запроса: у записи пары это она сама.
 String? e2eGroupOf(String collection, String id, Map<String, dynamic> body) {
-  if (collection == 'groups') return id.isEmpty ? null : id;
+  // Запись пары — сама пара; свой профиль — личный ключ (группа = uid).
+  if (collection == 'groups' || collection == 'users') {
+    return id.isEmpty ? null : id;
+  }
   final g = body['group_id'];
   return g is String && g.isNotEmpty ? g : null;
 }
@@ -248,8 +343,10 @@ String plaintextFilter(String collection) => e2eFields[collection]!.entries
         SealKind.mapValues => "${e.key} ~ '\":{'",
         SealKind.jsonPartial =>
           "(${e.key} ~ '\":' && ${e.key} !~ '$e2eFieldPrefix')",
-        SealKind.moved =>
-          "(${e.key} != '' && ${e.key} != '${e.value.cleared}')",
+        SealKind.moved => switch (e.value.cleared) {
+          final num n => '${e.key} != $n',
+          final c => "(${e.key} != '' && ${e.key} != '$c')",
+        },
       },
     )
     .join(' || ');
@@ -335,8 +432,89 @@ class RecordCodec {
     }
   }
 
-  /// Шифрует поля тела запроса записи [recordId] пары [groupId]. Нет ключа
-  /// пары — тело как есть (пара ещё не обменялась ключами).
+  /// Строгое чтение: открытое значение в шифрованном поле написал не
+  /// клиент (он без ключа не пишет вовсе), а сервер — его не показываем.
+  /// Единственное открытое, что сервер пишет сам, — служебное воспоминание
+  /// «Салют» из подарка (gifts.pb.js): фиксированный текст.
+  static Map<String, dynamic> dropPlain(
+    String collection,
+    Map<String, dynamic> rec,
+  ) {
+    final fields = e2eFields[collection];
+    if (fields == null || !hasPlainContent(collection, rec)) return rec;
+    final out = Map<String, dynamic>.of(rec);
+    for (final e in fields.entries) {
+      final spec = e.value;
+      if (!rec.containsKey(e.key) ||
+          !hasPlainContent(collection, {
+            e.key: rec[e.key],
+            if (spec.kind == SealKind.moved) e2eMovedField: null,
+          })) {
+        continue;
+      }
+      final v = rec[e.key];
+      switch (spec.kind) {
+        case SealKind.text:
+          out[e.key] = spec.locked ?? '';
+        case SealKind.json:
+          out[e.key] = spec.locked;
+        case SealKind.moved:
+          out[e.key] = spec.cleared;
+        case SealKind.mapValues:
+          out[e.key] = {
+            for (final kv in (v as Map).entries)
+              if (kv.value == null || isSealedValue(kv.value))
+                '${kv.key}': kv.value,
+          };
+        case SealKind.jsonPartial:
+          final m = v as Map;
+          if (collection == 'memories' &&
+              m['type'] == 'gift' &&
+              m['giftKey'] == 'salute') {
+            continue;
+          }
+          out[e.key] = {
+            for (final kv in m.entries)
+              if (spec.open.contains('${kv.key}') || kv.key == e2ePartialKey)
+                '${kv.key}': kv.value,
+          };
+      }
+    }
+    return out;
+  }
+
+  /// Есть ли в теле [collection] открытое содержимое шифрованных полей —
+  /// то, что без ключа ушло бы на сервер как есть.
+  static bool hasPlainContent(String collection, Map<String, dynamic> body) {
+    final fields = e2eFields[collection];
+    if (fields == null) return false;
+    for (final e in fields.entries) {
+      final spec = e.value;
+      if (!body.containsKey(e.key)) continue;
+      final v = body[e.key];
+      if (v == null || isSealedValue(v)) continue;
+      if (spec.locked != null && v == spec.locked) continue;
+      final has = switch (spec.kind) {
+        SealKind.text => '$v'.isNotEmpty,
+        SealKind.json => _plain(spec.kind, v) != null,
+        SealKind.jsonPartial =>
+          v is Map &&
+              v[e2ePartialKey] == null &&
+              v.entries.any(
+                (kv) => kv.value != null && !spec.open.contains('${kv.key}'),
+              ),
+        SealKind.mapValues =>
+          v is Map && v.values.any((x) => x != null && !isSealedValue(x)),
+        SealKind.moved =>
+          v != spec.cleared && !isSealedValue(body[e2eMovedField]),
+      };
+      if (has) return true;
+    }
+    return false;
+  }
+
+  /// Шифрует поля тела запроса записи [recordId] пары [groupId]. Нечего
+  /// шифровать — тело как есть; есть что, а ключа нет — [E2ENoKeyError].
   Map<String, dynamic> encode(
     String collection,
     String recordId,
@@ -353,7 +531,9 @@ class RecordCodec {
       ...body,
       'id': recordId,
     });
-    if (fields == null || key == null || recKey == null || recKey.isEmpty) {
+    if (fields == null) return body;
+    if (key == null || recKey == null || recKey.isEmpty) {
+      if (hasPlainContent(collection, body)) throw E2ENoKeyError(collection);
       return body;
     }
     final out = Map<String, dynamic>.of(body);
@@ -415,13 +595,31 @@ class RecordCodec {
       out[e.key] = sealField(collection, recKey, e.key, plain, key);
     }
     if (moved.isNotEmpty) {
-      out[e2eMovedField] = sealField(
-        collection,
-        recKey,
-        e2eMovedField,
-        jsonEncode(moved),
-        key,
-      );
+      final ctxLocked = context?[e2eLockedKey];
+      if (ctxLocked is Map && ctxLocked.containsKey(e2eMovedField)) {
+        // Прежний `enc` не открылся — переписать его значило бы стереть
+        // остальные даты. Правка уходит в колонку как есть (она новее enc).
+        for (final f in moved.keys) {
+          out[f] = body[f];
+        }
+      } else {
+        // `enc` один на все переехавшие поля: правка одной даты не должна
+        // стереть другие — недостающие берём из записи (кэш или сервер).
+        for (final e in fields.entries) {
+          if (e.value.kind != SealKind.moved || moved.containsKey(e.key)) {
+            continue;
+          }
+          final v = context?[e.key];
+          if (v != null && v != '' && v != e.value.cleared) moved[e.key] = v;
+        }
+        out[e2eMovedField] = sealField(
+          collection,
+          recKey,
+          e2eMovedField,
+          jsonEncode(moved),
+          key,
+        );
+      }
     }
     out.remove(e2eLockedKey);
     return out;
@@ -477,6 +675,7 @@ class RecordCodec {
     final fields = e2eFields[collection];
     final id = e2eRecordKey(collection, rec);
     if (fields == null || id == null) return rec;
+    rec = dropPlain(collection, rec);
     Map<String, dynamic>? out;
     Map<String, dynamic>? locked;
     final enc = rec[e2eMovedField];
@@ -492,10 +691,6 @@ class RecordCodec {
       }
       for (final e in fields.entries) {
         if (e.value.kind != SealKind.moved) continue;
-        // Шифрованная запись всегда оставляет в колонке [cleared]; иное
-        // значение записали позже (клиент без ключа) — оно и новее.
-        final col = rec[e.key];
-        if (col != null && col != '' && col != e.value.cleared) continue;
         out[e.key] = moved != null && moved.containsKey(e.key)
             ? moved[e.key]
             : e.value.locked;

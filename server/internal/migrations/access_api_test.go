@@ -283,6 +283,8 @@ func TestSealedFieldsFitCiphertext(t *testing.T) {
 	for col, fields := range map[string][]string{
 		"wishes": {"title", "url"}, "custom_moods": {"label", "emoji"},
 		"widget_data": {"status", "message"}, "miss_you": {"last_vibe_text"},
+		"chat_messages": {"voice_url", "voice_peaks", "face"}, "memories": {"author_name"},
+		"canvas_meta": {"coloring_outline"}, "mascots": {"name"}, "groups": {"chat_background"},
 	} {
 		c, err := app.FindCollectionByNameOrId(col)
 		require.NoError(t, err, col)
@@ -304,7 +306,7 @@ func TestMovedFieldsHaveEnc(t *testing.T) {
 	app := newApp(t)
 	defer app.Cleanup()
 
-	for _, name := range []string{"cycle_entries", "groups"} {
+	for _, name := range []string{"cycle_entries", "groups", "chat_messages", "wishes", "canvas_meta"} {
 		col, err := app.FindCollectionByNameOrId(name)
 		require.NoError(t, err)
 		tf, ok := col.Fields.GetByName("enc").(*core.TextField)

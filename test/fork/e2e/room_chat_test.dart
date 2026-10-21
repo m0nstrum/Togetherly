@@ -197,7 +197,7 @@ void main() {
     eve.dispose();
   });
 
-  test('браузер в комнате — открытый чат с пометкой', () async {
+  test('браузер в комнате — открытый чат только по согласию', () async {
     final bus = _Bus();
     final a = app(bus, 'alice');
     await a.start();
@@ -205,6 +205,20 @@ void main() {
     bus.publish({'t': 'hello', 'from': 'guest', 'web': true});
     await _settle();
     expect(a.browser, isTrue);
+    expect(
+      a.openMode,
+      isFalse,
+      reason: 'hello с web:true мог подделать сервер',
+    );
+    expect(a.secure, isTrue);
+    bus.publish({'t': 'chat', 'from': 'guest', 'text': 'подсунул сервер'});
+    await _settle();
+    expect(a.messages, isEmpty);
+    await a.send('шифром');
+    expect(bus.wire.last['text'], isNull);
+
+    a.allowOpen();
+    expect(a.openMode, isTrue);
     expect(a.secure, isFalse);
     await a.send('видно серверу');
     expect(bus.wire.last['text'], 'видно серверу');
@@ -215,14 +229,14 @@ void main() {
     a.dispose();
   });
 
-  test('ключей пары нет — пишем открыто', () async {
+  test('ключей пары нет — чата нет, открыто не пишем', () async {
     final bus = _Bus();
     final a = app(bus, 'alice', noKey: true);
     await a.start();
     await _settle();
-    expect(a.openMode, isTrue);
-    expect(await a.send('ок'), isTrue);
-    expect(bus.wire.last['text'], 'ок');
+    expect(a.openMode, isFalse);
+    expect(await a.send('ок'), isFalse);
+    expect(bus.wire, isEmpty);
     a.dispose();
   });
 }

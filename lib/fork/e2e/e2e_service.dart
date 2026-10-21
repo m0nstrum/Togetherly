@@ -195,7 +195,8 @@ class E2EService implements E2EKeyring {
         return;
       }
     }
-    _keys = loaded ?? E2EKeys.generate(crypto, b64(crypto.random(9)));
+    _keys = (loaded ?? E2EKeys.generate(crypto, b64(crypto.random(9))))
+      ..deriveSelf(crypto, uid);
     backupMethod.value = keys.backup?.method;
     await _publish();
     await store.save(keys);
@@ -251,7 +252,7 @@ class E2EService implements E2EKeyring {
       device: DeviceKeys.generate(crypto, b64(crypto.random(9))),
       pairKeys: {for (final k in contents.pairKeys) k.keyId: k},
       backup: bk,
-    );
+    )..deriveSelf(crypto, uid);
     _serverBackup = null;
     await _publish();
     await store.save(keys);
@@ -262,7 +263,8 @@ class E2EService implements E2EKeyring {
   /// Без фразы и пароля: новые ключи, старая история не читается, партнёр
   /// увидит смену ключа. Бэкап нужно включить заново.
   Future<void> startFresh() async {
-    _keys = E2EKeys.generate(crypto, b64(crypto.random(9)));
+    _keys = E2EKeys.generate(crypto, b64(crypto.random(9)))
+      ..deriveSelf(crypto, uid);
     _serverBackup = null;
     await _publish();
     await store.save(keys);
@@ -488,8 +490,10 @@ class E2EService implements E2EKeyring {
     List<String> members,
     Map<String, DeviceList> lists,
   ) async {
-    if (keys.currentKey(groupId) != null || members.length < 2) return;
-    // Ключ создаёт участник с наименьшим uid, и только когда ключи
+    if (keys.currentKey(groupId) != null || members.isEmpty) return;
+    // Пара с пустым местом (человек в армии): ключ заводит единственный
+    // участник — написанное до возвращения партнёр прочтёт, получив ключ.
+    // Иначе ключ создаёт участник с наименьшим uid, и только когда ключи
     // опубликованы у всех: иначе двое могли бы создать разные эпохи 1.
     if (members.any((m) => !lists.containsKey(m))) return;
     if ((members.toList()..sort()).first != uid) return;
@@ -802,11 +806,12 @@ class E2EService implements E2EKeyring {
     return ok;
   }
 
-  /// Ключи пары для конверта (S9).
+  /// Ключи пары для конверта (S9). Ждём восстановления — ключей нет вовсе:
+  /// писать нечем, читать тоже.
   @override
-  PairKey? keyFor(String keyId) => keys.keyFor(keyId);
+  PairKey? keyFor(String keyId) => _keys?.keyFor(keyId);
   @override
-  PairKey? currentKey(String groupId) => keys.currentKey(groupId);
+  PairKey? currentKey(String groupId) => _keys?.currentKey(groupId);
   @override
-  String? groupWith(Set<String> members) => keys.groupWith(members);
+  String? groupWith(Set<String> members) => _keys?.groupWith(members);
 }

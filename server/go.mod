@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	filippo.io/age v1.2.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/knadh/koanf/providers/env v1.1.0
 	github.com/knadh/koanf/v2 v2.4.1
 	github.com/pocketbase/dbx v1.12.0
@@ -30,7 +31,6 @@ require (
 	github.com/ganigeorgiev/fexpr v0.6.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/pprof v0.0.0-20260709232956-b9395ee17fa0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

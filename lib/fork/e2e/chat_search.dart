@@ -10,17 +10,16 @@ import 'package:pocketbase/pocketbase.dart';
 
 import '../../models/chat_search.dart';
 import '../../services/pocketbase_service.dart';
-import 'fork_e2e.dart';
 
 abstract final class ForkChatSearch {
   /// Сколько сообщений просматриваем за один запрос экрана.
   static const int scanLimit = 10000;
   static const int _pageSize = 200;
 
-  /// Нужен ли локальный поиск для вкладки [kind] пары [groupId].
+  /// Нужен ли локальный поиск для вкладки [kind] пары [groupId]. Текст
+  /// запроса серверу не уходит никогда — даже у пары без ключа.
   static bool applies(String groupId, ChatSearchKind kind) =>
-      (kind == ChatSearchKind.all || kind == ChatSearchKind.links) &&
-      ForkE2E.encrypts(groupId);
+      kind == ChatSearchKind.all || kind == ChatSearchKind.links;
 
   /// Совпадает ли сообщение с запросом — так же, как искал сервер.
   static bool matches(ChatSearchKind kind, String text, String query) {

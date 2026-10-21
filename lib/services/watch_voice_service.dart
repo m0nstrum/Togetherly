@@ -61,6 +61,47 @@ class WatchVoiceService extends ChangeNotifier {
 
   bool get active => _state != VoiceCallState.off;
 
+  // fork: входящий звонок. Раньше зов при выключенном микрофоне молча
+  // пропадал: у звонящего вечное «Звоним…», у партнёра — ничего.
+  String _ringing = '';
+  Timer? _ringTimer;
+  Timer? _helloTimer;
+  Timer? _noAnswerTimer;
+
+  /// Кто зовёт поговорить (uid), пока мы не ответили; пусто — никто.
+  String get ringingFrom => _ringing;
+
+  /// Звонок ушёл без ответа или партнёр отказался — экран говорит об этом.
+  void Function(bool declined)? onUnanswered;
+
+  /// Сколько звать партнёра, прежде чем сдаться.
+  static const Duration ringFor = Duration(seconds: 45);
+
+  void _setRinging(String uid) {
+    _ringTimer?.cancel();
+    _ringing = uid;
+    if (uid.isNotEmpty) {
+      _ringTimer = Timer(ringFor, () => _setRinging(''));
+    }
+    notifyListeners();
+  }
+
+  /// Не отвечать: звонящему уходит отказ, и он кладёт трубку.
+  Future<void> decline() async {
+    if (_ringing.isEmpty) return;
+    _setRinging('');
+    try {
+      await channel.send('voice-decline', extra: {'uid': me});
+    } catch (_) {/* канал мог закрыться */}
+  }
+
+  void _stopCalling() {
+    _helloTimer?.cancel();
+    _helloTimer = null;
+    _noAnswerTimer?.cancel();
+    _noAnswerTimer = null;
+  }
+
   /// Разговор кончился: сколько говорили и с кем. Экран кладёт запись в чат
   /// пары (`call_record.dart`).
   void Function(Duration talked, String peer)? onCallEnded;
@@ -100,7 +141,26 @@ class WatchVoiceService extends ChangeNotifier {
       _micOn = true;
       await _ensurePeer();
       // Зовём собеседника: он поднимет свою сторону и ответит.
+      final answering = _ringing.isNotEmpty; // fork
+      _setRinging(''); // fork
       await channel.send('voice-hello', extra: {'uid': me});
+      // fork: зов повторяется, пока партнёр не ответит (он мог зайти в
+      // комнату позже), и снимается через [ringFor].
+      _stopCalling();
+      if (!answering) {
+        _helloTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+          if (_peer.isNotEmpty || _state != VoiceCallState.connecting) {
+            _stopCalling();
+            return;
+          }
+          unawaited(channel.send('voice-hello', extra: {'uid': me}));
+        });
+        _noAnswerTimer = Timer(ringFor, () async {
+          if (_peer.isNotEmpty || _state != VoiceCallState.connecting) return;
+          await stop();
+          onUnanswered?.call(false);
+        });
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('WatchVoice.start failed: $e');
@@ -111,6 +171,7 @@ class WatchVoiceService extends ChangeNotifier {
 
   /// Выключить микрофон и разорвать связь.
   Future<void> stop() async {
+    _stopCalling(); // fork
     _negotiating = false;
     _pending.clear();
     try {
@@ -156,10 +217,21 @@ class WatchVoiceService extends ChangeNotifier {
       case 'voice-hello':
         // Нас зовут. Если микрофон уже включён — отвечаем предложением, если
         // нет, сообщение просто игнорируем: навязывать разговор нельзя.
-        if (_state == VoiceCallState.off) return true;
+        // fork: но показываем входящий — ответить или отклонить.
+        if (_state == VoiceCallState.off) {
+          if (from.isNotEmpty && from != me) _setRinging(from);
+          return true;
+        }
+        final fresh = _peer != from; // fork
         _peer = from;
         _polite = me.compareTo(from) < 0;
-        if (!_polite) await _offer();
+        if (!_polite) {
+          await _offer();
+        } else if (fresh) {
+          // fork: предложение делает партнёр — зовём его в ответ, иначе он
+          // ждал бы нашего следующего зова.
+          await channel.send('voice-hello', extra: {'uid': me});
+        }
         break;
       case 'voice-offer':
         if (_state == VoiceCallState.off) return true;
@@ -195,7 +267,14 @@ class WatchVoiceService extends ChangeNotifier {
         }
         break;
       case 'voice-bye':
+        if (from == _ringing) _setRinging(''); // fork: передумал звонить
         if (from == _peer) await stop();
+        break;
+      case 'voice-decline': // fork
+        if (_state == VoiceCallState.connecting && _peer.isEmpty) {
+          await stop();
+          onUnanswered?.call(true);
+        }
         break;
     }
     return true;
@@ -277,6 +356,7 @@ class WatchVoiceService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _ringTimer?.cancel(); // fork
     unawaited(stop());
     super.dispose();
   }

@@ -3,7 +3,6 @@ import '../widgets/storage_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-import '../utils/password_rules.dart';
 import '../utils/email_typo.dart';
 import '../dict_strings.dart' show ruEn, trKey;
 import 'package:flutter/services.dart';
@@ -28,6 +27,7 @@ import '../theme/theme_scope.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/common/app_dialog.dart';
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/e2e/account_password.dart'; // fork
 
 
 class SetupScreen extends StatefulWidget {
@@ -272,13 +272,11 @@ class _SetupScreenState extends State<SetupScreen>
       if (!auth.isLoggedIn) {
         // Проверяем пароль только для ручной регистрации: 8 символов +
         // заглавная буква + спецсимвол (те же правила, что индикаторы под полем).
-        final pwdOk = passwordProblems(password).isEmpty;
-        if (!pwdOk) {
-          _showError(
-            '${LocaleService.current.min8Chars}, '
-            '${LocaleService.current.oneUppercase}, '
-            '${LocaleService.current.oneSpecialChar}',
-          );
+        // fork: правила пароля бэкапа ключей (lib/fork/e2e/account_password.dart).
+        final weak = await ForkAccountPassword.problems(password,
+            email: email, name: name);
+        if (weak.isNotEmpty) {
+          _showError(ForkAccountPassword.describe(weak));
           if (mounted) setState(() => _isLoading = false);
           return;
         }
@@ -829,7 +827,12 @@ class _SetupScreenState extends State<SetupScreen>
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 14),
-                  _buildPasswordChecks(),
+                  ForkPasswordChecks( // fork
+                    password: _passwordController.text,
+                    email: _emailController.text.trim(),
+                    name: _nameController.text.trim(),
+                    row: _passwordCheckRow,
+                  ),
                   const SizedBox(height: 18),
                   _termsCheckbox(s),
                   const SizedBox(height: 24),
@@ -1043,34 +1046,6 @@ class _SetupScreenState extends State<SetupScreen>
                 ),
               ),
       ),
-    );
-  }
-
-  /// Живые индикаторы требований к паролю (8 символов + заглавная + спецсимвол).
-  /// Те же правила, что проверяет _completeSetup перед регистрацией.
-  Widget _buildPasswordChecks() {
-    final pwd = _passwordController.text;
-    final s = LocaleService.current;
-    return Wrap(
-      spacing: 12,
-      runSpacing: 6,
-      children: [
-        // Правила живут в одном месте (`utils/password_rules.dart`): раньше
-        // индикаторы и проверка при отправке считали по своим регуляркам, и
-        // список знаков в них не совпадал ни с чем.
-        _passwordCheckRow(
-          s.min8Chars,
-          !passwordProblems(pwd).contains(PasswordProblem.tooShort),
-        ),
-        _passwordCheckRow(
-          s.oneUppercase,
-          !passwordProblems(pwd).contains(PasswordProblem.noUppercase),
-        ),
-        _passwordCheckRow(
-          s.oneSpecialChar,
-          !passwordProblems(pwd).contains(PasswordProblem.noSpecial),
-        ),
-      ],
     );
   }
 

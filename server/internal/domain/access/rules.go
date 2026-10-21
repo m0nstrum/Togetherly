@@ -186,6 +186,10 @@ var Collections = map[string]Rules{
 	},
 	"e2e_backups": own("user_uid"),
 
+	// Токены FCM устройств (PLAN S12): пишет и читает только сервер через
+	// /api/fork/push-token — чужой токен не прочитать и не подменить.
+	"push_tokens": {},
+
 	// Справочники: читают все, пишет сервер.
 	"catalog_items": readOnly(""),
 	"app_config":    readOnly(""),
