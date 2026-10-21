@@ -341,4 +341,82 @@ void main() {
       },
     );
   });
+
+  group('ротация эпохи (§6.5)', () {
+    test('участник ушёл — новая эпоха, ему не выдана', () async {
+      const carol = 'carol';
+      final db = ServerDb()..members[gid] = [alice, bob, carol];
+      final a = await install(db, alice);
+      final b = await install(db, bob);
+      final cl = await install(db, carol);
+      for (var i = 0; i < 2; i++) {
+        for (final x in [a, b, cl]) {
+          await x.syncGroup(gid);
+        }
+      }
+      expect(keyBytes(cl), keyBytes(a));
+
+      db.members[gid] = [alice, bob];
+      await syncBoth(a, b);
+      expect(a.currentKey(gid)!.epoch, 2);
+      expect(keyBytes(b), keyBytes(a));
+      expect(
+        b.keyFor('g1:1'),
+        isNotNull,
+        reason: 'старые эпохи остаются для истории',
+      );
+      expect(
+        db.grants.keys.where(
+          (k) => k.startsWith('g1|2|') && k.endsWith(cl.keys.device.id),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('после сверки сменившегося ключа — новая эпоха у обоих', () async {
+      final db = ServerDb();
+      final a = await install(db, alice);
+      final b = await install(db, bob);
+      await syncBoth(a, b);
+      final b2 = await install(db, bob); // переустановка без бэкапа
+      await syncBoth(a, b2);
+      expect(a.status.value[gid], PairE2EStatus.keyChanged);
+
+      await a.sasStart(gid, bob);
+      await b2.syncGroup(gid);
+      await b2.sasAccept();
+      await a.syncGroup(gid);
+      await b2.syncGroup(gid);
+      await a.sasConfirm(match: true);
+      await b2.sasConfirm(match: true);
+      await syncBoth(a, b2, 3);
+      expect(a.currentKey(gid)!.epoch, 2);
+      expect(keyBytes(b2), keyBytes(a));
+      expect(a.status.value[gid], PairE2EStatus.verified);
+    });
+
+    test(
+      'ротацию создаёт участник с наименьшим uid, остальные просят',
+      () async {
+        final db = ServerDb();
+        final a = await install(db, alice);
+        final b = await install(db, bob);
+        await syncBoth(a, b);
+        b.keys.rotateNeeded.add(gid);
+        await b.syncGroup(gid);
+        expect(
+          b.currentKey(gid)!.epoch,
+          1,
+          reason: 'bob > alice — сам не ротирует',
+        );
+        expect(
+          db.handshakes.where((m) => m.kind == 'rotate_request'),
+          hasLength(1),
+        );
+        await syncBoth(a, b, 2);
+        expect(a.currentKey(gid)!.epoch, 2);
+        expect(keyBytes(b), keyBytes(a));
+      },
+    );
+  });
 }

@@ -104,7 +104,11 @@ class E2EKeys {
     Map<String, String>? inviteSecrets,
     this.listVersion = 0,
     this.backup,
-  }) : pairKeys = pairKeys ?? {},
+    Map<String, List<String>>? groupMembers,
+    Set<String>? rotateNeeded,
+  }) : groupMembers = groupMembers ?? {},
+       rotateNeeded = rotateNeeded ?? {},
+       pairKeys = pairKeys ?? {},
        peers = peers ?? {},
        granted = granted ?? {},
        inviteSecrets = inviteSecrets ?? {};
@@ -129,6 +133,12 @@ class E2EKeys {
 
   /// Ключ бэкапа ключей (§7); null — бэкап не включён.
   BackupKey? backup;
+
+  /// Состав пар при последней синхронизации: ушёл участник — новая эпоха.
+  final Map<String, List<String>> groupMembers;
+
+  /// Пары, которым нужна новая эпоха ключа (§6.5).
+  final Set<String> rotateNeeded;
 
   PairKey? keyFor(String keyId) => pairKeys[keyId];
 
@@ -191,6 +201,8 @@ class E2EKeyStore {
       'invites': k.inviteSecrets,
       'list_version': k.listVersion,
       if (k.backup != null) 'backup': k.backup!.toJson(),
+      'members': k.groupMembers,
+      'rotate': k.rotateNeeded.toList()..sort(),
     }),
   );
 
@@ -226,6 +238,11 @@ class E2EKeyStore {
       inviteSecrets: ((j['invites'] as Map?) ?? const {})
           .cast<String, String>(),
       listVersion: j['list_version'] as int? ?? 0,
+      groupMembers: {
+        for (final e in ((j['members'] as Map?) ?? const {}).entries)
+          e.key as String: (e.value as List).cast<String>(),
+      },
+      rotateNeeded: {...((j['rotate'] as List?) ?? const []).cast<String>()},
       backup: j['backup'] == null
           ? null
           : BackupKey.fromJson(

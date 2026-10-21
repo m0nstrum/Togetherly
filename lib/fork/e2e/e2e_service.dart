@@ -402,8 +402,15 @@ class E2EService {
     if (await _checkAcceptedInvite(groupId, lists)) {
       per.add(PairE2EStatus.tampered);
     }
+    final before = keys.groupMembers[groupId];
+    if (before != null && before.any((m) => !members.contains(m))) {
+      keys.rotateNeeded.add(groupId); // ушедший не читает новое (§6.5)
+    }
+    keys.groupMembers[groupId] = List.of(members);
+
     await _receiveGrants(groupId, lists, per);
     await _createKeyIfFirst(groupId, members, lists);
+    await _rotateIfNeeded(groupId, members);
     if (keys.pairKeys.length != keysBefore) await _uploadBackup();
     await _grantAll(groupId, lists);
     await _handshakes(groupId, lists, per);
@@ -489,12 +496,38 @@ class E2EService {
     keys.pairKeys[k.keyId] = k;
   }
 
+  /// Новая эпоха ключа пары (§6.5). Создаёт её участник с наименьшим uid —
+  /// иначе двое создали бы разные эпохи с одним номером; остальные просят.
+  Future<void> _rotateIfNeeded(String groupId, List<String> members) async {
+    if (!keys.rotateNeeded.contains(groupId)) return;
+    final cur = keys.currentKey(groupId);
+    if (cur == null) {
+      keys.rotateNeeded.remove(groupId);
+      return;
+    }
+    keys.rotateNeeded.remove(groupId);
+    if ((members.toList()..sort()).first == uid) {
+      final k = PairKey(groupId, cur.epoch + 1, crypto.symmetricKey());
+      keys.pairKeys[k.keyId] = k;
+    } else {
+      await backend.postHandshake(
+        groupId,
+        uid,
+        'rotate:${cur.epoch}',
+        'rotate_request',
+        {'epoch': cur.epoch},
+      );
+    }
+  }
+
   Future<void> _grantAll(String groupId, Map<String, DeviceList> lists) async {
     final mine = keys.pairKeys.values
         .where((k) => k.groupId == groupId)
         .toList();
     if (mine.isEmpty) return;
     for (final e in lists.entries) {
+      // Помеченному как подмена ключи не выдаём, пока сверка не подтвердит.
+      if (e.key != uid && (keys.peers[e.key]?.tampered ?? false)) continue;
       for (final d in e.value.devices) {
         if (d.kind != DeviceKind.full || d.id == keys.device.id) continue;
         for (final k in mine) {
@@ -620,6 +653,10 @@ class E2EService {
           } finally {
             res.dispose();
           }
+        case 'rotate_request':
+          if ((m.data['epoch'] as int?) == keys.currentKey(groupId)?.epoch) {
+            keys.rotateNeeded.add(groupId);
+          }
         case 'sas_done' || 'sas_cancel':
           final cur = sas.value;
           if (cur != null &&
@@ -672,10 +709,8 @@ class E2EService {
     final cur = sas.value;
     if (cur is! SasShowCode) return;
     if (match) {
-      keys.peers[cur.partnerUid]
-        ?..verified = true
-        ..keyChanged = false
-        ..tampered = false;
+      final peer = keys.peers[cur.partnerUid];
+      if (peer != null) _markVerified(cur.groupId, peer);
       await store.save(keys);
       status.value = {
         ...status.value,
@@ -718,6 +753,16 @@ class E2EService {
     _responders.remove(session)?.dispose();
   }
 
+  /// Партнёр подтверждён сверкой. Если до этого ключ сменился или была
+  /// подмена, старый ключ пары мог уйти чужому устройству — новая эпоха.
+  void _markVerified(String groupId, PeerState peer) {
+    if (peer.keyChanged || peer.tampered) keys.rotateNeeded.add(groupId);
+    peer
+      ..verified = true
+      ..keyChanged = false
+      ..tampered = false;
+  }
+
   // --- QR (§6.3) ---
 
   static const String _qrPrefix = 'tethered-verify:';
@@ -742,10 +787,7 @@ class E2EService {
     final ok = bytesEqual(utf8Bytes(mine), utf8Bytes(scanned.trim()));
     final peer = keys.peers[partnerUid]!;
     if (ok) {
-      peer
-        ..verified = true
-        ..keyChanged = false
-        ..tampered = false;
+      _markVerified(groupId, peer);
     } else {
       peer
         ..verified = false
