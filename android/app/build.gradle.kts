@@ -42,7 +42,8 @@ val forkManifestPlaceholders = mapOf(
 
 // fork: google-services.json кладёт сборка (fork-release.yml), в репозитории
 // его нет. Без него FirebaseApp не поднимается, и пуши идут через сокет.
-if (file("google-services.json").exists()) {
+// Пустой файл тоже «нет»: воркфлоу апстрима пишет его без секрета.
+if (file("google-services.json").let { it.exists() && it.length() > 0 }) {
     apply(plugin = "com.google.gms.google-services")
 }
 
