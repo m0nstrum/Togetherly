@@ -5,9 +5,9 @@ name: tethered
 
 services:
   server:
-    build:
-      context: ..
-      dockerfile: server/Dockerfile
+    # Готовый образ из GHCR (fork-server-image.yml): на VPS ничего не
+    # собирается. Собрать у себя — docker-compose.build.yml.
+    image: ${TETHERED_IMAGE:-ghcr.io/m0nstrum/tethered-server:latest}
     restart: unless-stopped
     environment:
       TETHERED_APP_URL: https://${TETHERED_DOMAIN}
