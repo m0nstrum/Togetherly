@@ -44,6 +44,11 @@ jobs:
           mkdir -p "$HOME/snap/flutter/common"
           ln -sfn "$(dirname "$(dirname "$(command -v flutter)")")" "$HOME/snap/flutter/common/flutter"
 
+      # Правки форка на месте, роуты клиента есть на сервере, состав
+      # апстрима разобран (docs/fork/MERGE.md).
+      - name: проверки мёржа
+        run: python3 tool/fork/merge_check.py
+
       # Ошибки фатальны всегда. Предупреждения апстрима записаны в
       # tool/fork/analyze_baseline.txt, новые валят проверку.
       - name: flutter analyze

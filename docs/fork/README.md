@@ -1,7 +1,7 @@
 # Tethered — форк Togetherly
 
 Self-hosted форк с E2E. Что и зачем делаем — [PLAN.md](PLAN.md), исходные
-находки — [AUDIT.md](AUDIT.md), правки чужих файлов — [TOUCHPOINTS.md](TOUCHPOINTS.md).
+находки — [AUDIT.md](AUDIT.md), правки чужих файлов — [TOUCHPOINTS.md](TOUCHPOINTS.md), мёрж апстрима — [MERGE.md](MERGE.md).
 
 ## Ветки и апстрим
 
@@ -18,13 +18,7 @@ Self-hosted форк с E2E. Что и зачем делаем — [PLAN.md](PLA
 - Апстрим **мёржим, а не ребейзим**: история форка публичная, и merge-коммит
   не ломает чужие клоны.
 
-  ```sh
-  git fetch upstream
-  git switch -c merge-upstream-$(date +%Y%m%d) main
-  git merge upstream/main
-  # конфликты — по TOUCHPOINTS.md
-  flutter test test/fork && flutter analyze --no-fatal-infos
-  ```
+  Порядок и проверки — [MERGE.md](MERGE.md) (`tool/fork/merge_check.py`).
 
 ## Идентичность
 

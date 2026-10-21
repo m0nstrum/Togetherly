@@ -1,0 +1,12 @@
+# Роуты, которые клиент апстрима зовёт, а сервер форка сознательно не
+# реализует (python3 tool/fork/api_inventory.py --missing --fork).
+# Формат: путь, затем причина. Новый роут в выводе — разобрать и либо
+# перенести, либо записать сюда.
+/api/apple/native          решение 2: iOS и Apple Sign-In не нужны
+/api/coins/redeem          решение 1: промокоды на деньги автора (redeem.pb.js) не переносим
+/api/lava/checkout         решение 1: оплаты нет
+/api/lava/gift             решение 1: оплаты нет
+/api/wallet/waitlist       Togetherly Wallet — продукт автора, вход скрыт (ForkFlags.hideUpstreamChannels)
+/api/stats/collect         аналитика выключена (ForkFlags.analyticsDisabled), запросов нет
+/api/migrate/verify-password  перенос аккаунтов с Firebase автора — у инстанса форка его нет
+/api/note/export           ffmpeg на сервере; после E2E (S9) сервер медиа не видит — сборку переносить на клиент

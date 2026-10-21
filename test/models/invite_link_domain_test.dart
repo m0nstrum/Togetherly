@@ -65,7 +65,7 @@ void main() {
     test('у готового кода всё по-прежнему', () {
       final c = Connection(id: 'g1', inviteCode: 'HQ792S');
       expect(c.inviteLink, 'https://togetherly.day/invite/HQ792S');
-      expect(c.inviteDeepLink, 'tethered://invite/HQ792S');
+      expect(c.inviteDeepLink, 'tethered://invite/HQ792S'); // fork
     });
   });
 }

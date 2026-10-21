@@ -7,6 +7,9 @@
 
     python3 tool/fork/api_inventory.py            # таблица TSV
     python3 tool/fork/api_inventory.py --missing  # клиент зовёт, сервера нет
+    python3 tool/fork/api_inventory.py --missing --fork
+        # то же для сервера форка: Go-роуты (server/internal/handler) и хуки
+        # из server/hooks.allow; осознанно отсутствующие — tool/fork/api_absent.txt
 
 Сканирует:
   - lib/**/*.dart: строки `/api/...`, плюс динамические `_call('x')` в
@@ -62,13 +65,34 @@ def server_routes() -> dict[str, set[str]]:
     return out
 
 
+def fork_server_routes() -> dict[str, set[str]]:
+    out: dict[str, set[str]] = collections.defaultdict(set)
+    allow = ROOT / "server/hooks.allow"
+    for name in allow.read_text().split():
+        p = ROOT / "pocketbase/pb_hooks" / name
+        if name.endswith(".pb.js") and p.exists():
+            for method, path in re.findall(r"routerAdd\(\s*['\"]([A-Z]+)['\"]\s*,\s*['\"]([^'\"]+)", p.read_text()):
+                out[path].add(f"{method} {p.name}")
+    for p in ROOT.glob("server/internal/handler/*.go"):
+        for method, path in re.findall(r'\.(GET|POST|PATCH|PUT|DELETE)\("(/api/[^"]+)"', p.read_text()):
+            out[path].add(f"{method} {p.name}")
+    return out
+
+
+def absent() -> set[str]:
+    p = ROOT / "tool/fork/api_absent.txt"
+    return {l.split()[0] for l in p.read_text().splitlines() if l.strip() and not l.startswith("#")}
+
+
 def main() -> None:
-    client, server = client_routes(), server_routes()
+    fork = "--fork" in sys.argv
+    client, server = client_routes(), (fork_server_routes() if fork else server_routes())
     missing_only = "--missing" in sys.argv
+    skip = absent() if fork and missing_only else set()
     for path in sorted(set(client) | set(server)):
         if path.startswith(BUILTIN_PREFIXES) or path in BUILTIN or path in EXTERNAL:
             continue
-        if missing_only and (path in server or path not in client):
+        if missing_only and (path in server or path not in client or path in skip):
             continue
         srv = ", ".join(sorted(server.get(path, ()))) or "—"
         cli = ", ".join(sorted(client.get(path, ()))) or "—"
