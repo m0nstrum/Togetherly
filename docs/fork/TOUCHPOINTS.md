@@ -56,7 +56,7 @@
 | `lib/services/plus_service.dart` | S2 | `_open` и `canPurchase` учитывают `ForkFlags.allFree`, импорт. | Повторить. |
 | `lib/services/coin_store.dart` | S2 | `createCoinStore()` всегда `_DisabledCoinStore`; импорты IAP-сервисов убраны; дефолт `STORE` = `fork`. | Повторить. |
 | `lib/services/iap_service.dart`, `lib/services/rustore_iap_service.dart`, `lib/config/rustore_config.dart` | S2 | Удалены (вместе с зависимостями). | Конфликт modify/delete — оставить удалёнными. |
-| `pubspec.yaml` | S2 | Убраны `google_sign_in`, `google_mobile_ads`, `yandex_mobileads`, `in_app_purchase`, `flutter_rustore_billing` (на их месте комментарии `fork`). | Не возвращать; новые рекламные/платёжные зависимости апстрима — тоже убрать. `pubspec.lock` — перегенерировать `flutter pub get`. |
+| `pubspec.yaml` | S2 | Убраны `google_sign_in`, `google_mobile_ads`, `yandex_mobileads`, `in_app_purchase`, `flutter_rustore_billing` (на их месте комментарии `fork`). S8: `sodium` (E2E) и ассеты `assets/fork/`. | Не возвращать; новые рекламные/платёжные зависимости апстрима — тоже убрать. `pubspec.lock` — перегенерировать `flutter pub get`. |
 | `android/app/build.gradle.kts` (S2) | S2 | Убраны `firebase-bom`, `firebase-messaging`, `play-services-base` и плагин `google-services`. | Не возвращать. |
 | `android/app/src/main/AndroidManifest.xml` (S10) | S10 | `TransportBackendDiscovery` (datatransport, через который ML Kit шлёт статистику в Google) с `tools:node="remove"` в конце `<application>`. | Повторить. |
 | `android/app/src/main/AndroidManifest.xml` (S2) | S2 | `AD_ID` с `tools:node="remove"`; AdMob App ID, сервис `.FcmService` и мета-данные Firebase убраны. | Повторить. |

@@ -136,7 +136,9 @@ dependencies:
   visibility_detector: ^0.4.0+2
   image: ^4.8.0
   camera: ^0.12.0+2
+  # fork: E2E (docs/fork/E2E.md) — libsodium; пакет сам собирает её из исходников.
   sodium: ^4.0.3
+
 
 dev_dependencies:
   integration_test:
@@ -186,6 +188,9 @@ flutter:
     # не константой в коде: 4334 записи в Dart раздували бы сборку исходника,
     # а нужны они только на экране выбора.
     - assets/symbols/material_symbols.json
+    # fork: E2E — список слов BIP39 и словарь утёкших паролей (docs/fork/E2E.md §7).
+    - assets/fork/bip39_english.txt
+    - assets/fork/leaked_passwords.bloom
     # Карта «Где мы»: базовый стиль подложки и контуры суши для глобуса
     # (tool/gen_map_assets.py).
     - assets/map/
