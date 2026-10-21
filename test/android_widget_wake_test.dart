@@ -15,15 +15,13 @@ String _kt(String name) =>
 
 void main() {
   final wake = _kt('WidgetRefreshWake.kt');
-  final fcm = _kt('FcmService.kt');
+  // fork: FcmService.kt удалён — FCM в форке нет (TOUCHPOINTS.md).
   final map = _kt('PairMapWidgetProvider.kt');
   final dispatcher =
       File('lib/services/widget_background_refresh_service.dart').readAsStringSync();
 
   test('тихий пуш и виджет карты не зовут HomeWidgetBackgroundIntent', () {
-    expect(fcm, isNot(contains('HomeWidgetBackgroundIntent')));
     expect(map, isNot(contains('HomeWidgetBackgroundIntent')));
-    expect(fcm, contains('WidgetRefreshWake.enqueue('));
     expect(map, contains('WidgetRefreshWake.enqueue('));
     expect(map, contains('WidgetRefreshWake.TASK_MAP'));
   });

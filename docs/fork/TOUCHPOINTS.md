@@ -42,6 +42,24 @@
 | `lib/widgets/together/watch_home_blocks.dart` | S1 | `WatchBento.games` необязательный, раскладка без игр (`_gamesAndComputer`). | Повторить; если апстрим перекроил раскладку — заново сделать `games` nullable. |
 | `lib/screens/together/watch_home_screen.dart` | S1 | `games: null` при пустом `GAMES_URL`. | Повторить. |
 
+| `lib/services/analytics_service.dart` | S2 | `flush()` и `_add()` выходят по `ForkFlags.analyticsDisabled`, импорт. | Повторить две строки. |
+| `lib/services/rewarded_ad_service.dart`, `lib/services/interstitial_ad_service.dart`, `lib/widgets/common/ad_banner.dart` | S2 | Заменены целиком заглушками с прежним публичным API (без SDK). | Брать нашу версию. Если апстрим поменял API (новый геттер, параметр) — добавить его в заглушку. |
+| `lib/main.dart` (S2) | S2 | Импорты `google_mobile_ads`/`yandex_mobileads` убраны; тело `_initConsentAndAds` заменено вызовом `ForkCrashReports.askOnceIfNeeded`; перед `SentryFlutter.init` — `ForkCrashReports.load()`, в конце колбэка — `ForkCrashReports.configure(...)`; `Sentry.configureScope(setUser)` убран. | Повторить. Если апстрим правил `_initConsentAndAds` — взять нашу однострочную версию. |
+| `lib/services/plus_service.dart` | S2 | `_open` и `canPurchase` учитывают `ForkFlags.allFree`, импорт. | Повторить. |
+| `lib/services/coin_store.dart` | S2 | `createCoinStore()` всегда `_DisabledCoinStore`; импорты IAP-сервисов убраны; дефолт `STORE` = `fork`. | Повторить. |
+| `lib/services/iap_service.dart`, `lib/services/rustore_iap_service.dart`, `lib/config/rustore_config.dart` | S2 | Удалены (вместе с зависимостями). | Конфликт modify/delete — оставить удалёнными. |
+| `pubspec.yaml` | S2 | Убраны `google_mobile_ads`, `yandex_mobileads`, `in_app_purchase`, `flutter_rustore_billing` (на их месте комментарии `fork`). | Не возвращать; новые рекламные/платёжные зависимости апстрима — тоже убрать. `pubspec.lock` — перегенерировать `flutter pub get`. |
+| `android/app/build.gradle.kts` (S2) | S2 | Убраны `firebase-bom`, `firebase-messaging`, `play-services-base` и плагин `google-services`. | Не возвращать. |
+| `android/app/src/main/AndroidManifest.xml` (S2) | S2 | `AD_ID` с `tools:node="remove"`; AdMob App ID, сервис `.FcmService` и мета-данные Firebase убраны. | Повторить. |
+| `android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt` | S2 | Канал `love_app/fcm`: `hasServices` → `false`, `getToken` → `null`; импорты GMS/Firebase убраны. | Повторить. |
+| `android/app/src/main/kotlin/com/togetherly/love/FcmService.kt` | S2 | Удалён. | Оставить удалённым. Логику, которую апстрим добавит в него (пуш-события), переносить на путь Centrifugo. |
+| `lib/screens/settings_screen.dart` (S2) | S2 | `ForkCrashReportsRow` в разделе «О приложении»; строки Telegram-канала и бота автора под `!ForkFlags.hideUpstreamChannels`. | Повторить. |
+| `lib/screens/profile_screen.dart` (S2) | S2 | Донат-карточка под `!ForkFlags.hideUpstreamChannels`, импорт. | Повторить. |
+| `lib/models/help_items.dart` | S2 | Пункты «telegram» и покупки Плюса — под флагами форка, импорт. | Повторить. |
+| `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
+| `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
+
+
 ## Что сознательно не трогали
 
 - `namespace = "com.togetherly.love"` и пакет Kotlin-кода. Это внутреннее имя;
@@ -60,6 +78,16 @@
   проверяют `test/fork/endpoints_test.dart` и сторож `no_author_hosts_test.dart`.
 - Предупреждения анализатора в коде апстрима: записаны в
   `tool/fork/analyze_baseline.txt`, CI валится только на новых.
-- `PLUS_URL` (lava.top) и прочая монетизация — S2.
+- Монеты, сундуки и кошелёк как игровая механика: остаются до решения в S3
+  (решение 1). Покупки монет и донаты скрыты (`STORE=fork`), заработок монет
+  за рекламу недоступен (рекламы нет) — его судьбу тоже решаем в S3.
+- `in_app_update`: работает только для установок из Google Play; APK форка
+  ставится вручную, путь Play не срабатывает.
+- `google_sign_in`, `sign_in_with_apple`: решение 3 (вход только по почте)
+  ещё не выполнено — отдельная задача.
+- Платное поведение апстрима в тестах: `FORK_UPSTREAM_BEHAVIOR=true` из
+  `env/test.json` выключает флаги `allFree`/`hideUpstreamChannels`, чтобы тесты
+  апстрима проверяли то, для чего написаны. Поведение сборки форка проверяет
+  `test/fork/flags_runtime_test.dart` (тег `fork-runtime`, без env/test.json).
 - Воркфлоу апстрима в `.github/workflows/`: не правим, лишние выключаем в
   настройках Actions (см. [README.md](README.md)).

@@ -49,10 +49,15 @@ jobs:
       - name: flutter analyze
         run: tool/fork/analyze_check.sh
 
-      # env/test.json повторяет адреса апстрима: его тесты проверяют их
-      # буквально. Логику конфига форка проверяют test/fork/*.
+      # env/test.json повторяет адреса и платное поведение апстрима: его тесты
+      # проверяют их буквально. Логику форка проверяют test/fork/*.
       - name: flutter test
-        run: flutter test --dart-define-from-file=env/test.json
+        run: flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime
+
+      # Поведение сборки форка (всё бесплатно, без рекламы и каналов автора) —
+      # без env/test.json, как в настоящей сборке.
+      - name: flutter test (сборка форка)
+        run: flutter test test/fork --tags fork-runtime
 
   apk:
     name: build APK
@@ -88,14 +93,15 @@ jobs:
           apk=build/app/outputs/flutter-apk/app-release.apk
           aapt2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
           badging=$("$aapt2" dump badging "$apk")
-          echo "$badging" | grep -q "package: name='io.github.m0nstrum.tethered'"
-          echo "$badging" | grep -q "application-label:'Tethered'"
+          grep -q "package: name='io.github.m0nstrum.tethered'" <<< "$badging"
+          grep -q "application-label:'Tethered'" <<< "$badging"
           # Хост App Links пришёл из env/example.json, хостов апстрима нет.
           manifest=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk")
-          echo "$manifest" | grep -q '"pb.example.org"'
-          # `! cmd` под set -e не валит шаг, поэтому явный exit.
-          if echo "$manifest" | grep -qE 'togetherly\.(day|duckdns)|web\.app'; then
-            echo "в манифесте остались хосты апстрима" >&2
+          grep -q '"pb.example.org"' <<< "$manifest"
+          # here-string, а не `echo | grep -q`: под pipefail ранний выход grep
+          # роняет echo по SIGPIPE. `! cmd` под set -e не валит шаг — явный exit.
+          if grep -qE 'togetherly\.(day|duckdns)|web\.app|appmetrica|gms\.ads' <<< "$manifest"; then
+            echo "в манифесте остались хосты апстрима или реклама" >&2
             exit 1
           fi
 

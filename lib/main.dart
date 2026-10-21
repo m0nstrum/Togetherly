@@ -12,8 +12,6 @@ import 'services/crash_noise.dart';
 import 'services/stale_pointer_sweeper.dart';
 import 'utils/safe_pick.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:yandex_mobileads/mobile_ads.dart' as yandex;
 import 'package:image_picker_android/image_picker_android.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,6 +61,7 @@ import 'widgets/offline_sync_banner.dart';
 import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
 import 'fork/config/endpoints.dart'; // fork
+import 'fork/crash_reports.dart'; // fork
 
 // ATT/трекинг убран НАМЕРЕННО: приложение НЕ отслеживает пользователей
 // (в App Store Connect: App Privacy → Tracking = None). Без ATT-авторизации
@@ -76,45 +75,11 @@ import 'fork/config/endpoints.dart'; // fork
 /// рекламу в ЕЭЗ показывать нельзя. UMP пишет стандартную строку согласия
 /// IAB TCF, её читает и SDK Яндекса. Инициализация — только ПОСЛЕ согласия,
 /// иначе на устройствах из ЕЭЗ SDK стартует без него.
-Future<void> _initConsentAndAds() async {
-  final params = ConsentRequestParameters(
-    consentDebugSettings: kDebugMode
-        ? ConsentDebugSettings(
-            debugGeography: DebugGeography.debugGeographyEea,
-            testIdentifiers: <String>[],
-          )
-        : null,
-  );
-
-  final completer = Completer<void>();
-
-  ConsentInformation.instance.requestConsentInfoUpdate(
-    params,
-    () async {
-      try {
-        await ConsentForm.loadAndShowConsentFormIfRequired((error) {
-          if (error != null) debugPrint('UMP form error: $error');
-        });
-      } finally {
-        completer.complete();
-      }
-    },
-    (FormError error) {
-      debugPrint('UMP update error: $error');
-      completer.complete();
-    },
-  );
-
-  // Таймаут 5 с — не блокируем запуск если UMP завис
-  await completer.future.timeout(const Duration(seconds: 5), onTimeout: () {});
-
-  // Реклама одна — Яндекс.
-  try {
-    await yandex.MobileAds.initialize();
-  } catch (e) {
-    debugPrint('Yandex Ads init failed: $e');
-  }
-}
+// fork: рекламы в форке нет (PLAN.md, решение 1) — ни SDK, ни окна согласия
+// на рекламу. На этом месте (после первого кадра) спрашиваем согласие на
+// крашрепорты.
+Future<void> _initConsentAndAds() =>
+    ForkCrashReports.askOnceIfNeeded(LoveApp.rootNavigatorKey);
 
 // FCM-фоновый хендлер удалён: пуши на PocketBase (PbPushService).
 
@@ -362,6 +327,7 @@ void main() async {
   //  • PlatformDispatcher.onError — необработанные асинхронные ошибки (Future/
   //    Stream), которые иначе молча гасились.
   // В debug DSN пустой → SDK no-op (не шлём тестовые краши на прод-бэкенд).
+  await ForkCrashReports.load(); // fork: согласие на крашрепорты
   await SentryFlutter.init((options) {
     options.dsn = kDebugMode ? '' : SentryConfig.dsn;
     options.environment = kDebugMode ? 'debug' : 'production';
@@ -377,10 +343,10 @@ void main() async {
       }
       return event;
     };
+    // fork: DSN только с согласия, без PII и user.id, чистка событий.
+    ForkCrashReports.configure(options, upstreamFilter: isCrashNoise);
   });
-  Sentry.configureScope(
-    (scope) => scope.setUser(SentryUser(id: PocketBaseService().userId ?? '')),
-  );
+  // fork: user.id в Sentry не ставится (PLAN.md, решение 6).
   // Отказ выбора фото — не краш, поэтому он и не попадал в трекер: жалоба
   // «при добавлении фото выскакивает окно Google Play» (realme C67, Android 14,
   // 01.09.2026) разбиралась вслепую, потому что за месяц по галерее не нашлось

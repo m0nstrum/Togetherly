@@ -99,6 +99,7 @@ import '../widgets/common/email_change_sheet.dart';
 import '../widgets/unfold/unfold_route.dart';
 import 'help_screen.dart';
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/flags.dart'; // fork
 
 /// Entry for a partner across all connections
 class _PartnerEntry {
@@ -887,7 +888,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       // (111). Гейта `kDonationsEnabled` тут мало: IPA
                       // собирается с `STORE=github`, и по флагу карточка
                       // осталась бы видимой (как и в листе монет, стр. 3925).
-                      if (!Platform.isIOS) ...[
+                      if (!Platform.isIOS && !ForkFlags.hideUpstreamChannels) ...[ // fork
                         const SizedBox(height: 22),
                         _buildDonationCard(context),
                       ],

@@ -10,6 +10,7 @@ import 'pb_auth_service.dart';
 import 'pb_coins_service.dart';
 import 'plus_access.dart';
 import 'pocketbase_service.dart';
+import '../fork/flags.dart'; // fork
 
 /// Что открывает Togetherly+.
 ///
@@ -61,7 +62,7 @@ class PlusService extends ChangeNotifier {
   bool get _trialOn => DateTime.now().millisecondsSinceEpoch < _trialUntilMs;
 
   /// Открыт ли Плюс прямо сейчас: куплен или идёт неделя из сундука.
-  bool get _open => _active || _trialOn;
+  bool get _open => ForkFlags.allFree || _active || _trialOn; // fork
 
   /// Чей ответ сервера лежит в [_active]. Пусто — не читали ни разу.
   String _knownUid = '';
@@ -114,7 +115,8 @@ class PlusService extends ChangeNotifier {
   /// Можно ли предлагать покупку в этой сборке. GitHub и RuStore ведут на
   /// lava.top, Play — в свой биллинг (мимо него платить нельзя, забанят).
   static bool get canPurchase =>
-      buysInStore || kStore == 'github' || kStore == 'rustore';
+      !ForkFlags.allFree && // fork: покупок нет
+      (buysInStore || kStore == 'github' || kStore == 'rustore');
 
   /// Валюта этого человека: рубли, евро или доллары — по стране устройства.
   ///

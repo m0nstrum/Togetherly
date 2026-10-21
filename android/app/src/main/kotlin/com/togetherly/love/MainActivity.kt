@@ -15,9 +15,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.GoogleApiAvailability
-import com.google.firebase.messaging.FirebaseMessaging
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
@@ -425,29 +422,10 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 // Есть ли на телефоне сервисы Google. Где их нет (кастомные
                 // прошивки), пушей не будет вовсе и остаётся foreground-сервис.
-                "hasServices" -> {
-                    val code = GoogleApiAvailability.getInstance()
-                        .isGooglePlayServicesAvailable(this)
-                    result.success(code == ConnectionResult.SUCCESS)
-                }
+                // fork: FCM в форке нет — Dart уходит на сокет Centrifugo.
+                "hasServices" -> result.success(false)
 
-                "getToken" -> {
-                    try {
-                        FirebaseMessaging.getInstance().token
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    result.success(task.result)
-                                } else {
-                                    // Молчим об ошибке: телефон без сервисов
-                                    // Google сюда и приходит, а пуши там не
-                                    // работают в принципе.
-                                    result.success(null)
-                                }
-                            }
-                    } catch (e: Exception) {
-                        result.success(null)
-                    }
-                }
+                "getToken" -> result.success(null) // fork
 
                 else -> result.notImplemented()
             }

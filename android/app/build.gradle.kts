@@ -8,8 +8,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // fork: плагин применяется ниже, только если есть google-services.json.
-    id("com.google.gms.google-services") apply false
+    // fork: com.google.gms.google-services убран — Firebase в форке нет.
 }
 
 // ── fork: Tethered ── (docs/fork/TOUCHPOINTS.md)
@@ -38,12 +37,6 @@ val forkManifestPlaceholders = mapOf(
     "appScheme" to "tethered",
     "inviteHost" to forkInviteHost,
 )
-// FCM форку не нужен (push идёт через Centrifugo). Без google-services.json
-// плагин валит сборку, а FirebaseMessaging без него тихо отдаёт null, и
-// клиент уходит на foreground-сервис. Полностью Firebase убирается в S2.
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
-}
 
 val keyPropertiesFile = rootProject.file("key.properties")
 val keyProperties = Properties()
@@ -144,11 +137,8 @@ dependencies {
     // Пуши. Свой foreground-сервис держал сокет и стоил строки в шторке у
     // каждого плюс шести часов в сутки лимита Android 14 на dataSync — с FCM
     // сокет держит система. Версии тянет BOM, руками их не прописывать.
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-messaging")
-    // Проверка «есть ли на телефоне сервисы Google»: где их нет, остаётся
-    // прежний foreground-сервис.
-    implementation("com.google.android.gms:play-services-base:18.5.0")
+    // fork: firebase-messaging и play-services-base убраны — push только через
+    // Centrifugo WS в foreground-сервисе, канал love_app/fcm отвечает «нет».
 
     // EXIF в снимки, сохраняемые в галерею (GallerySaver.kt): дата и место
     // воспоминания. Встроенный в систему ExifInterface на старых Android WebP

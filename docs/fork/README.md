@@ -64,6 +64,13 @@ flutter build apk --release --dart-define-from-file=env/prod.local.json
 `PB_URL`). Сборка без них регистрирует `unconfigured.invalid` и чужих ссылок не
 перехватывает.
 
+Крашрепорты (`SENTRY_DSN`) уходят только с согласия: вопрос появляется один
+раз после первого запуска, переключатель — в настройках, раздел «О приложении».
+Без `user.id`, текстов, URL с токенами и координат (`lib/fork/crash_reports.dart`).
+
+`STORE` в сборках форка не задаётся: по умолчанию `fork` — без покупок и
+донатов.
+
 `env/test.json` — только для `flutter test`: в нём адреса апстрима, потому что
 его тесты сверяют их буквально.
 
@@ -97,8 +104,12 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 - `tool/fork/analyze_check.sh` — падает на любой ошибке и на предупреждении,
   которого нет в `tool/fork/analyze_baseline.txt` (там предупреждения
   апстрима; после мёржа обновить: `tool/fork/analyze_check.sh --update`);
-- `flutter test --dart-define-from-file=env/test.json`, включая сторожа
-  `test/fork/no_author_hosts_test.dart` (адреса апстрима в `lib/`, `android/`);
+- `flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime`,
+  включая сторожа `test/fork/no_author_hosts_test.dart` (адреса апстрима в
+  `lib/`, `android/`). `env/test.json` возвращает тестам апстрима его адреса и
+  платное поведение (`FORK_UPSTREAM_BEHAVIOR`);
+- `flutter test test/fork --tags fork-runtime` — поведение настоящей сборки
+  форка, без `env/test.json`;
 - release APK под arm64 с `env/example.json` (debug-подпись) и проверка
   `applicationId`, имени и хоста App Links в нём.
 
@@ -114,7 +125,8 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 flutter pub get
 flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons \
   --dart-define-from-file=env/prod.local.json
-flutter test --dart-define-from-file=env/test.json
+flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime
+flutter test test/fork --tags fork-runtime
 ```
 
 Нужен Flutter той же версии, что в `fork-ci.yml` (`FLUTTER_VERSION`).

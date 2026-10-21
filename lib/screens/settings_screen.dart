@@ -8,6 +8,8 @@ import '../utils/email_typo.dart';
 import '../widgets/app_icon_sheet.dart';
 import '../widgets/home_layout_editor.dart';
 import '../widgets/settings_scaffold.dart';
+import '../fork/crash_reports.dart'; // fork
+import '../fork/flags.dart'; // fork
 
 /// Экран настроек.
 ///
@@ -410,6 +412,7 @@ class SettingsScreen extends StatelessWidget {
                 title: s.aboutApp,
                 icon: Icons.help_rounded,
                 children: [
+                  const ForkCrashReportsRow(), // fork
                   SettingsRow(
                     icon: Icons.info_rounded,
                     title: s.aboutApp,
@@ -440,6 +443,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onOfficial,
                   ),
+                  if (!ForkFlags.hideUpstreamChannels) ...[ // fork
                   SettingsRow(
                     icon: Icons.campaign_rounded,
                     title: s.telegramChannelTitle,
@@ -454,6 +458,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onBugBot,
                   ),
+                  ], // fork
                 ],
               ),
 

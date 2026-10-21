@@ -12,18 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   String read(String path) => File(path).readAsStringSync();
 
-  test('ответ о начислении за ролик ждётся не дольше kAdGrantWait', () {
-    final source = read('lib/services/rewarded_ad_service.dart');
-    final offenders = <String>[];
-    for (final match in RegExp(r'await\s+(grantFuture!?|_grantAdReward\(\))([^;]*);').allMatches(source)) {
-      if ((match.group(2) ?? '').contains('.timeout(kAdGrantWait')) continue;
-      final line = '\n'.allMatches(source.substring(0, match.start)).length + 1;
-      offenders.add('rewarded_ad_service.dart:$line');
-    }
-    expect(RegExp(r'await\s+grantFuture').hasMatch(source), isTrue,
-        reason: 'ожидание начисления не найдено — тест устарел, поправьте его вместе с сервисом');
-    expect(offenders, isEmpty, reason: 'ожидание начисления без предела: ${offenders.join(', ')}');
-  });
+  // fork: «ответ о начислении за ролик ждётся не дольше kAdGrantWait» убран — рекламы в форке нет (TOUCHPOINTS.md).
 
   test('запрос открытия сундука ограничен openLimit', () {
     final source = read('lib/services/chest_service.dart');
@@ -39,10 +28,7 @@ void main() {
         reason: 'без повтора человек видит отказ на первом же обрыве');
   });
 
-  test('сам вызов показа рекламы ограничен', () {
-    final source = read('lib/services/rewarded_ad_service.dart');
-    expect(source.contains('ad.show().timeout(kAdShowStart'), isTrue);
-  });
+  // fork: «сам вызов показа рекламы ограничен» убран — рекламы в форке нет (TOUCHPOINTS.md).
 
   test('файл анимации ждётся с пределом, экран и виджет ждут одну загрузку', () {
     final source = read('lib/widgets/chest/chest_frames.dart');
