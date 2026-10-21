@@ -54,6 +54,8 @@ import '../services/media_service.dart';
 import '../services/locale_service.dart';
 import '../services/chat_service.dart';
 import '../dict_strings.dart';
+import '../fork/ui/feedback.dart'; // fork: D3/D4
+import '../fork/ui/upload_notice.dart'; // fork: D4
 import '../services/pocketbase_service.dart';
 import '../services/rewarded_ad_service.dart';
 import '../utils/canvas_pinch.dart';
@@ -712,7 +714,20 @@ class _DrawScreenState extends State<DrawScreen>
     // всё решает сервер — и частоту, и выключатель, и то, что человеку в
     // приложении звать незачем. В одиночном холсте звать некого.
     if (_hasSharedCanvas) {
-      unawaited(PbDataService().inviteToDraw(_groupId));
+      unawaited(_inviteToDraw());
+    }
+  }
+
+  // fork: D8 — человек видит, что партнёра позвали (сервер отвечает sent:true).
+  // Если не позвали (частота, выключатель, нет связи) — молчим: причину клиент
+  // не различает, а лишняя плашка при каждом входе только мешает.
+  Future<void> _inviteToDraw() async {
+    final sent = await PbDataService().inviteToDraw(_groupId);
+    if (sent && mounted) {
+      ForkNotice.info(
+        context,
+        ruEn('Позвали партнёра порисовать', 'Your partner was invited to draw'),
+      );
     }
   }
 
@@ -2427,7 +2442,9 @@ class _DrawScreenState extends State<DrawScreen>
     _localImagePaths[localStrokeId] = localPath;
     final ext = localPath.split('.').last.toLowerCase();
     final dest = 'canvas/$_groupId/$_canvasId/$localStrokeId.$ext';
-    final url = await _fb.uploadFile(localPath, dest);
+    // fork: D4 — причину отказа заливки называем человеку
+    final uploadOutcome = await _fb.uploadFileWithReason(localPath, dest);
+    final url = uploadOutcome.ref;
     if (!mounted) return;
 
     // Штрих могли отменить/удалить, пока шла загрузка — тогда ничего не коммитим.
@@ -2437,6 +2454,15 @@ class _DrawScreenState extends State<DrawScreen>
     if (url == null) {
       // Загрузка не удалась — убираем оптимистичный штрих и историю undo.
       debugPrint('[Draw] image upload failed, dropping stroke $localStrokeId');
+      showUploadFailure(
+        context,
+        uploadOutcome.failure,
+        what: localStrokeId.startsWith('fill_')
+            ? ruEn('Заливка не добавилась на холст',
+                'The fill wasn’t added to the canvas')
+            : ruEn('Картинка не добавилась на холст',
+                'The image wasn’t added to the canvas'),
+      );
       _cancelledPendingStrokeIds.remove(localStrokeId);
       _myStrokeIds.remove(localStrokeId);
       setState(() {
@@ -3149,6 +3175,14 @@ class _DrawScreenState extends State<DrawScreen>
       unawaited(_uploadImageAsync(id, file.path));
     } catch (e) {
       debugPrint('заливка не удалась: $e');
+      // fork: D4 — заливка ведром больше не молчит
+      if (mounted) {
+        ForkNotice.error(
+          context,
+          e,
+          what: ruEn('Заливка не удалась', 'The fill failed'),
+        );
+      }
     }
   }
 
@@ -3171,6 +3205,8 @@ class _DrawScreenState extends State<DrawScreen>
     final prevRemote = List<DrawStroke>.from(_remoteStrokes);
     final prevPending = Map<String, DrawStroke>.from(_pendingLocalStrokes);
     final prevBg = _bgColor;
+    // fork: D3 — всё, что стирает очистка, возвращаем при отказе сервера
+    final prevMyIds = Set<String>.from(_myStrokeIds);
 
     _myStrokeIds.clear();
     _redoStack.clear();
@@ -3188,10 +3224,12 @@ class _DrawScreenState extends State<DrawScreen>
       return;
     }
 
+    var cleared = false;
+    Object? clearError;
     try {
       // clearCanvas разом чистит штрихи + live-курсоры и пишет clear_version +
       // bg в canvas_meta (паритет с прежними двумя вызовами).
-      await _canvas.clear(
+      cleared = await _canvas.clear(
         _groupId,
         _canvasId,
         clearVersion: DateTime.now().millisecondsSinceEpoch,
@@ -3199,16 +3237,26 @@ class _DrawScreenState extends State<DrawScreen>
       );
     } catch (e) {
       debugPrint('[Draw] clear error: $e');
-      if (!mounted) return;
-      _remoteStrokes = prevRemote;
-      _pendingLocalStrokes
-        ..clear()
-        ..addAll(prevPending);
-      setState(() {
-        _visibleStrokes = prevVisible;
-        _bgColor = prevBg;
-      });
+      clearError = e;
     }
+    if (cleared || !mounted) return;
+    // fork: D3 — сервер не очистил: возвращаем рисунок и говорим об этом
+    // (раньше результат терялся, и у меня было пусто, а у партнёра рисунок).
+    _remoteStrokes = prevRemote;
+    _myStrokeIds.addAll(prevMyIds);
+    _pendingLocalStrokes
+      ..clear()
+      ..addAll(prevPending);
+    setState(() {
+      _visibleStrokes = prevVisible;
+      _bgColor = prevBg;
+    });
+    ForkNotice.failure(
+      context,
+      clearError == null ? ForkFailure.network : ForkFailure.of(clearError),
+      what: ruEn('Холст не очищен', 'The canvas wasn’t cleared'),
+      retry: _confirmClear,
+    );
   }
 
   //  Save / Share
@@ -3681,8 +3729,11 @@ class _DrawScreenState extends State<DrawScreen>
   Future<void> _coloringToMemories(File file) async {
     final destination =
         'memories/$_groupId/coloring_${DateTime.now().millisecondsSinceEpoch}.png';
-    final url = await MediaService().uploadFile(file.path, destination);
-    if (url == null) throw Exception('upload failed');
+    // fork: D4 — причина отказа, а не `Exception: upload failed`
+    final outcome =
+        await MediaService().uploadFileWithReason(file.path, destination);
+    final url = outcome.ref;
+    if (url == null) throw ForkFailureError(forkFailureOfUpload(outcome.failure));
     await MemoryRepository().add(
       groupId: _groupId,
       authorName: widget.userData.displayName,

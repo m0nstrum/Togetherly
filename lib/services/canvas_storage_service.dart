@@ -160,18 +160,32 @@ class CanvasStorageService {
   }
 
   /// Removes the canvas with [canvasId] from the list.
-  Future<void> deleteCanvas(
+  ///
+  /// fork: D9 — для пары сперва удаляем запись у сервера и только по успеху
+  /// убираем холст локально: иначе при отказе сервера холст «воскресал» из
+  /// каталога партнёра. `false` — не удалось, ничего не тронуто.
+  Future<bool> deleteCanvas(
     String uid,
     String canvasId, {
     String groupId = '',
   }) async {
+    if (groupId.isNotEmpty) {
+      bool removed;
+      try {
+        removed = await _canvas.deleteCatalogue(groupId, canvasId);
+      } catch (e) {
+        debugPrint('[Storage] deleteCanvas remote failed: $e');
+        removed = false;
+      }
+      if (!removed) return false;
+    }
     final canvases = await getCanvases(uid, groupId: groupId);
     await _save(uid, groupId, canvases.where((c) => c.id != canvasId).toList());
 
     if (groupId.isNotEmpty) {
-      _canvas.deleteCatalogue(groupId, canvasId);
-      _canvas.incrementDrawings(groupId, -1);
+      unawaited(_canvas.incrementDrawings(groupId, -1));
     }
+    return true;
   }
 
   // ── Firebase real-time sync ───────────────────────────────────────────────
