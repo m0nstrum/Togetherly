@@ -28,6 +28,9 @@
   const HEARTBEAT = 3000;     // как часто ведущий шлёт своё время
 
   const $ = (sel) => document.querySelector(sel);
+  // fork (E2E §10.1): в приложении чат и ключи нативные, страница — только
+  // плеер. Переписку она не показывает и никому не пересказывает.
+  const NATIVE_CHAT = !!window.__forkNativeChat;
   const state = {
     room: '', me: '',
     player: null, kind: '', applying: false, aimAt: null, touchedAt: 0, lead: false, actedAt: 0, lastSent: 0, viewers: 1,
@@ -738,6 +741,9 @@
         break;
       }
       case 'chat':
+        // fork: шифрованное сообщение приложения браузеру не прочесть, а
+        // в приложении переписку показывает само приложение.
+        if (NATIVE_CHAT || data.e2e) break;
         remember(data.from, data.name, data.text);
         addMessage(data.name || I18N.t('room.guest'), data.text, false);
         cinChat.incoming(data.name || I18N.t('room.guest'), data.text);
@@ -751,7 +757,7 @@
           url: state.url,
           file: state.file,
           playing: isPlaying(),
-          log: state.log.slice(-LOG_LIMIT),
+          log: NATIVE_CHAT ? [] : state.log.slice(-LOG_LIMIT), // fork
         });
         break;
       case 'state':
@@ -807,7 +813,7 @@
     // Пришёл в комнату, где уже смотрят: веду не я.
     followHere();
 
-    (data.log || []).forEach((m) => {
+    (NATIVE_CHAT ? [] : data.log || []).forEach((m) => { // fork
       remember(m.from, m.name, m.text);
       addMessage(m.name || I18N.t('room.guest'), m.text, m.from === state.me);
     });
@@ -1386,6 +1392,11 @@
     TgPair.viewport(['#link', '#message']);
     cinemaToggle();
     chatToggle();
+    if (NATIVE_CHAT) { // fork
+      document.body.classList.add('chat-off');
+      const t = $('#chatToggle');
+      if (t) t.hidden = true;
+    }
     cinChat.mount();
     voiceBridge();
     $('#chat').dataset.empty = I18N.t('room.chatEmpty');

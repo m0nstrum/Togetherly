@@ -203,7 +203,9 @@
         refreshViewers();
         flush(ch);
         // Просим тех, кто уже внутри, прислать своё: ролик, переписку.
-        send(ch, 'hello');
+        // fork (E2E §10.1): вкладка браузера помечает себя — приложения
+        // переходят на открытый чат с пометкой, иначе ей нечего прочесть.
+        send(ch, 'hello', 0, window.__togetherlyChrome ? {} : { web: true });
         if (h.subscribed) h.subscribed(ch);
       });
       sub.on('join', refreshViewers);

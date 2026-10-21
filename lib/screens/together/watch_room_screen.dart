@@ -9,6 +9,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOv
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../fork/e2e/room_chat_ui.dart'; // fork
 import '../../models/call_record.dart';
 import '../../models/exit_guard.dart';
 import '../../services/chat_service.dart';
@@ -350,6 +351,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       ),
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
+    // fork (E2E §10.1): чат комнаты — в приложении, страница только плеер.
+    if (!widget.reels && !_native)
+      UserScript(source: forkNativeChatScript, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START),
     // Лента идёт под строку состояния, нативное окно — во весь экран: обеим
     // страницам отступы сообщаем сами.
     if (widget.reels || _native)
@@ -592,6 +596,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
               onRenderProcessGone: (_, _) => _onRendererGone(),
             ),
             if (_loading) Center(child: M3Loading(color: Theme.of(context).colorScheme.primary)),
+            if (!widget.reels) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId), // fork
           ],
         ),
       ),

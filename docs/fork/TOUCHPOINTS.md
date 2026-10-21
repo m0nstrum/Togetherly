@@ -85,6 +85,9 @@
 | `lib/services/live_location_service.dart` | S9 | Живая точка в `loc:<канал>` уходит через `ForkE2E.sealPoint`, приходит через `ForkE2E.openPoint` (null — подделка, точку не показываем). | Сохранить обе стороны: иначе координаты летят через сервер открыто. |
 | `lib/services/pb_media_service.dart` | S9 | `resolveUrlAuthed` отдаёт адрес через `ForkE2E.mediaUrl` — локальный прокси расшифровки файлов пары. | Сохранить: иначе картинки, голосовые и видео пары придут шифром. Новый способ получить адрес файла в апстриме — пропустить через `ForkE2E.mediaUrl` тоже. |
 | `lib/services/canvas_repository.dart` | S9 | Живой штрих: `data` уходит через `ForkE2E.sealLive`, приходит через `ForkE2E.openLive` (не открылся — пакет не показываем). | Сохранить обе стороны. |
+| `lib/screens/together/watch_room_screen.dart` | S9 | Встроенная комната (не ленты, не нативное окно): скрипт `forkNativeChatScript` для страницы и `ForkRoomChatOverlay` последним в `Stack`. | Сохранить: иначе чат комнаты снова на странице, которую отдаёт сервер. |
+| `pocketbase/pb_public/watch/room/room.js` | S9 | `NATIVE_CHAT = !!window.__forkNativeChat`: страница прячет чат, не принимает `chat` (и шифрованные `chat` в браузере), не пересказывает журнал в `state`. | Повторить правку в `onMessage`, ответе на `hello`, `adoptState` и `start()`. |
+| `pocketbase/pb_public/watch/pair.js` | S9 | `hello` вкладки браузера несёт `web: true`. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 
