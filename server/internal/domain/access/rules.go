@@ -58,8 +58,8 @@ func own(ownerField string) Rules {
 // (их нет и в схеме форка, см. migrations.Dropped).
 var Collections = map[string]Rules{
 	// Пара. Список и чтение — по своему members (до появления group_ids у
-	// создателя группа уже должна быть ему видна). Состав защищает хук
-	// groups_guard. Создание: см. TODO(S6) ниже.
+	// создателя группа уже должна быть ему видна). Состав при правке
+	// защищает хук groups_guard, при создании — страж на Go (только ты).
 	"groups": same(authed + ` && members ?~ @request.auth.id`),
 
 	// Своя запись пользователя: остальных видно только через /api/user/card.
@@ -125,19 +125,21 @@ var Collections = map[string]Rules{
 		Delete: s(authed + ` && uid = @request.auth.id`),
 	},
 
-	// TODO(S6): только участники пары (сейчас — любой вошедший, как в апстриме).
+	// Присутствие видят только участники твоих пар (у апстрима — любой
+	// вошедший, AUDIT §2).
 	"user_presence": {
-		List:   s(authed),
-		View:   s(authed),
+		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
+		View:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
 		Create: s(authed + ` && user_uid = @request.auth.id`),
 		Update: s(authed + ` && user_uid = @request.auth.id`),
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
 	},
 
-	// TODO(S6): аватары и баннеры видны любому вошедшему, как в апстриме.
+	// Аватары и баннеры видят только участники твоих пар (у апстрима —
+	// любой вошедший, AUDIT §2).
 	"media": {
-		List: s(authed + ` && (uid = @request.auth.id || kind = "avatars" || kind = "avatar" || kind = "banners" || kind = "banner" || @request.auth.group_ids.id ?= group_id)`),
-		View: s(authed + ` && (uid = @request.auth.id || kind = "avatars" || kind = "avatar" || kind = "banners" || kind = "banner" || @request.auth.group_ids.id ?= group_id)`),
+		List: s(authed + ` && (uid = @request.auth.id || @request.auth.group_ids.id ?= group_id || @request.auth.group_ids.members ?~ uid)`),
+		View: s(authed + ` && (uid = @request.auth.id || @request.auth.group_ids.id ?= group_id || @request.auth.group_ids.members ?~ uid)`),
 		// Апстрим пускал создать запись с чужим group_id, если uid — свой
 		// (условие через «или»): посторонний подкладывал файл в чужую пару.
 		// Теперь автор — всегда ты, а пара — только твоя. group_id = свой id —
@@ -147,15 +149,16 @@ var Collections = map[string]Rules{
 		Delete: s(authed + ` && (uid = @request.auth.id || @request.auth.group_ids.id ?= group_id)`),
 	},
 
-	// Геопозиция. Канал — строка `pair_<uidA>_<uidB>`. В апстриме создать
-	// точку можно было в любом канале (AUDIT §2): createRule проверял только
-	// автора. Теперь канал обязан содержать id автора, а читать можно только
-	// свои каналы. TODO(S6): привязать канал к группе автора записи.
+	// Геопозиция. Канал — `pair_<uidA>_<uidB>` или id группы (если партнёр
+	// неизвестен). В апстриме создать точку можно было в любом канале (AUDIT
+	// §2): createRule проверял только автора. Теперь канал обязан быть своим;
+	// что `pair_a_b` — настоящая пара автора, проверяет страж на Go
+	// (infrastructure/pocketbase/guards.go).
 	"live_location": {
-		List:   s(authed + ` && channel ~ @request.auth.id`),
-		View:   s(authed + ` && channel ~ @request.auth.id`),
-		Create: s(authed + ` && user_uid = @request.auth.id && channel ~ @request.auth.id`),
-		Update: s(authed + ` && user_uid = @request.auth.id && channel ~ @request.auth.id`),
+		List:   s(authed + ` && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
+		View:   s(authed + ` && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
+		Create: s(authed + ` && user_uid = @request.auth.id && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
+		Update: s(authed + ` && user_uid = @request.auth.id && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
 	},
 
@@ -167,7 +170,3 @@ var Collections = map[string]Rules{
 	// пока на неё ссылаются хуки сундука (см. API_INVENTORY.md). Только сервер.
 	"pair_jars": {},
 }
-
-// TODO(S6): groups.createRule пускает создать группу с любым составом
-// (`members ?~ @request.auth.id` проверяет лишь, что ты в ней есть). Нужна
-// проверка, что при создании в members ровно ты.

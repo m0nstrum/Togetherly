@@ -1,7 +1,6 @@
 package migrations_test
 
 import (
-	"bytes"
 	"net/http"
 	"os"
 	"strings"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/m0nstrum/togetherly/server/internal/migrations"
 	"github.com/m0nstrum/togetherly/server/internal/migrations/schema"
+	"github.com/m0nstrum/togetherly/server/internal/testutil"
 )
 
 const (
@@ -124,16 +124,7 @@ func newFixture(t testing.TB) *fixture {
 
 func call(t testing.TB, app *tests.TestApp, method, url, token, body string) (int, string) {
 	t.Helper()
-	pbRouter, err := apisRouter(app)
-	require.NoError(t, err)
-	req, _ := http.NewRequest(method, url, bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		req.Header.Set("Authorization", token)
-	}
-	rec := newRecorder()
-	pbRouter.ServeHTTP(rec, req)
-	return rec.Code, rec.Body.String()
+	return testutil.Do(t, app, method, url, token, body)
 }
 
 // Посторонний не читает, не создаёт, не правит и не удаляет записи чужой

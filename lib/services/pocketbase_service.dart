@@ -3,12 +3,12 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'centrifugo_service.dart';
 import 'widget_owner.dart';
 import 'pb_data_service.dart';
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/secure_auth_store.dart'; // fork
 
 /// Ядро клиента PocketBase — единая точка доступа к нашему self-hosted бэкенду
 /// на VPS (миграция Firebase→PocketBase, Этап 6).
@@ -45,20 +45,8 @@ class PocketBaseService {
   /// Идемпотентно — повторные вызовы игнорируются.
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_authPrefsKey);
-
-    final authStore = AsyncAuthStore(
-      initial: stored,
-      save: (String data) async {
-        final p = await SharedPreferences.getInstance();
-        await p.setString(_authPrefsKey, data);
-      },
-      clear: () async {
-        final p = await SharedPreferences.getInstance();
-        await p.remove(_authPrefsKey);
-      },
-    );
+    // fork: сессия в Keystore, а не в SharedPreferences (lib/fork/secure_auth_store.dart).
+    final authStore = await ForkSecureAuthStore.open(_authPrefsKey);
 
     _pb = PocketBase(baseUrl, authStore: authStore);
     _initialized = true;

@@ -303,7 +303,7 @@ IP сервера, а не пользователя.
 | S3 | готово | [API_INVENTORY.md](API_INVENTORY.md), генератор `tool/fork/api_inventory.py`. Основа S4 — `pocketbase/pb-cgo/main.go`. Не хватает реализации `/api/account/schedule-delete`. Ждут решения владельца: монеты/сундуки как игровая механика, публичный профиль пары (§9 инвентаря). |
 | S4 | готово | `server/` (Go, PocketBase 0.39.11 как библиотека): миграции схемы, правила доступа в `internal/domain/access`, 31 JS-хук апстрима по `hooks.allow`, внутренний API вместо hotpath (`pair-accept`, `group-read/write`, `groups-of`), рассылка в Centrifugo и `/api/watch/rtc` (временные ключи coturn) на Go. `deploy/`: compose (server, Centrifugo, Caddy, coturn, Bugsink по профилю), бэкапы PocketBase. Проверено: тесты правил через HTTP API (посторонний не трогает чужую пару ни в одной коллекции), смоук на бинарнике и на стеке compose через Caddy/HTTPS, живая доставка в канал пары. Исправлены попутно: вброс в чужой `live_location` (гипотеза AUDIT подтверждена), создание `media` с чужим `group_id`. |
 | S5 | — | |
-| S6 | — | |
+| S6 | готово | Сессия в Keystore с переносом из SharedPreferences (`lib/fork/secure_auth_store.dart`). Сервер: капсула — содержимое не отдаётся ни в API, ни в Centrifugo до даты, обрезанная копия от клиента его не затирает, распечатать раньше может только автор, в срок cron трогает запись (`internal/domain/capsule`); `live_location` — канал `pair_a_b` только своей реальной пары; `user_presence`, аватары и баннеры — только участникам твоих пар; группу создаёшь только с собой. APNs не переносится (S4). Попутно: дубль id при создании отвечает как hotpath (`Value must be unique`) — иначе клиентский upsert ломается на PocketBase 0.39. |
 | S7 | — | |
 | S8 | — | |
 | S9 | — | |

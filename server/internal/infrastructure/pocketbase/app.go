@@ -50,6 +50,8 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	}
 
 	bindRealtime(app, centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout), cfg.Centrifugo.Timeout, log)
+	bindCapsules(app, time.Now, log)
+	bindGuards(app)
 	bindSettings(app, cfg, log)
 
 	bindCompat(app, cfg.CompatAddr, log)
@@ -100,7 +102,7 @@ func bindRealtime(app core.App, pub *centrifugo.Publisher, timeout time.Duration
 		if len(channels) == 0 {
 			return
 		}
-		payload := map[string]any{"event": ev, "collection": r.CollectionName(), "record": rec}
+		payload := map[string]any{"event": ev, "collection": r.CollectionName(), "record": sanitizeForBroadcast(rec, time.Now())}
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()

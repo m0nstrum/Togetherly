@@ -198,6 +198,11 @@ func (s *Service) GroupsOf(ctx context.Context, uid string, live bool) ([]*core.
 	return groupsOf(s.app, uid, live, 20)
 }
 
+// GroupsOfUser — то же без контекста запроса: для стражей внутри хуков.
+func (s *Service) GroupsOfUser(uid string, live bool) ([]*core.Record, error) {
+	return groupsOf(s.app, uid, live, 20)
+}
+
 func groupsOf(app core.App, uid string, live bool, limit int) ([]*core.Record, error) {
 	filter := "members ~ {:uid}"
 	if live {

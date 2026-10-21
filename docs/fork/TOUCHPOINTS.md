@@ -63,6 +63,7 @@
 | `android/app/src/main/kotlin/com/togetherly/love/FcmService.kt` | S2 | Удалён. | Оставить удалённым. Логику, которую апстрим добавит в него (пуш-события), переносить на путь Centrifugo. |
 | `lib/screens/settings_screen.dart` (S2) | S2 | `ForkCrashReportsRow` в разделе «О приложении»; строки Telegram-канала и бота автора под `!ForkFlags.hideUpstreamChannels`. | Повторить. |
 | `lib/screens/profile_screen.dart` (S2) | S2 | Донат-карточка под `!ForkFlags.hideUpstreamChannels`, импорт. | Повторить. |
+| `lib/services/pocketbase_service.dart` | S6 | Хранилище сессии: `ForkSecureAuthStore.open(_authPrefsKey)` вместо `AsyncAuthStore` на SharedPreferences; импорт `shared_preferences` убран, добавлен `../fork/secure_auth_store.dart`. | Повторить. Если апстрим сменил хранение сессии — перенести его логику в `lib/fork/secure_auth_store.dart`. |
 | `lib/services/pb_data_service.dart` | S4 | Запасной список ICE-серверов: вместо STUN Google — пустой (решение 4). | Повторить; сторож `no_author_hosts_test.dart` ловит `stun.l.google.com`. |
 | `lib/widgets/auth_widgets.dart` | S2 | `AuthSocialRow.build` при `ForkFlags.emailOnlyAuth` возвращает пустое место (решение 3), импорт. | Повторить. |
 | `lib/models/help_items.dart` | S2 | Пункты «telegram» и покупки Плюса — под флагами форка, импорт. | Повторить. |
