@@ -18,6 +18,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_scope.dart';
 import 'mood_image.dart';
 import '../models/catalog_price.dart';
+import '../fork/flags.dart'; // fork: M2
 
 /// Выбор пака настроений в пикере: таблетки без обводки.
 ///
@@ -105,6 +106,8 @@ class MoodPackSelector extends StatelessWidget {
         // партнёром с другой платформы) виден везде: отбирать оплаченное
         // нельзя.
         final packs = CatalogService.instance.allPacks
+            // fork: M2 — платных за деньги закрытых наборов в форке нет
+            .where((p) => !(ForkFlags.allFree && p.unlock.isMoney && !isOpen(p)))
             .where((p) => moodPackVisible(
                   isIOS: Platform.isIOS,
                   isMoney: p.unlock.isMoney,
@@ -247,6 +250,11 @@ Future<void> buyMoodPack(
   // сервер на почту аккаунта — по витринной ссылке уведомление об оплате не
   // приходит вовсе, и набор пришлось бы выдавать руками.
   if (pack.unlock.isMoney) {
+    // fork: M2 — в форке всё бесплатно, внешней оплаты (lava.top) нет
+    if (ForkFlags.allFree) {
+      say(ru ? 'Этот набор недоступен' : 'This pack is not available');
+      return;
+    }
     final featureKey = Unlock.featureKey(kMoodPackFeatureKind, pack.id);
     // На iPhone покупка идёт только через StoreKit: внешняя оплата — 3.1.1.
     // Товара там нет (сборка старее самого товара) — молчим, а не ведём на

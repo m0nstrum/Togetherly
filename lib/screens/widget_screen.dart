@@ -1,3 +1,4 @@
+import '../fork/flags.dart'; // fork: M3
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -4830,7 +4831,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                 ),
               ),
             ),
-          if (!owned) ...[
+          if (!owned && !ForkFlags.allFree) ...[ // fork: M3 — рекламной пробы в форке нет
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
@@ -4841,7 +4842,7 @@ class _WidgetScreenState extends State<WidgetScreen>
               ),
             ),
           ]
-          else ...[
+          else if (owned) ...[ // fork: M3
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: _daysPhotosEnabled,
