@@ -90,7 +90,7 @@ class PlatformAccount {
     for (final d in domains) {
       try {
         await cm.deleteCookies(url: WebUri(d));
-      } catch (_) {}
+      } catch (_) {} // тихо: куки уже нет — выход и так состоялся
     }
   }
 }

@@ -109,7 +109,7 @@ abstract final class ForkE2E {
     for (final u in _subs) {
       try {
         await u();
-      } catch (_) {}
+      } catch (_) {} // тихо: подписка уже снята вместе с сокетом
     }
     _subs.clear();
   }

@@ -126,12 +126,12 @@ class MediaProxy {
       if (!started) {
         try {
           res.statusCode = HttpStatus.badGateway;
-        } catch (_) {}
+        } catch (_) {} // тихо: ответ уже начат или закрыт
       }
     } finally {
       try {
         await res.close();
-      } catch (_) {}
+      } catch (_) {} // тихо: клиент уже ушёл
     }
   }
 

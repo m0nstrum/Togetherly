@@ -29,7 +29,7 @@ abstract final class ForkMetaDirect {
     try {
       final prefs = await SharedPreferences.getInstance();
       enabled.value = prefs.getBool(prefsKey) ?? false;
-    } catch (_) {}
+    } catch (_) {} // тихо: без настроек — значение по умолчанию
   }
 
   static Future<void> set(bool value) async {
@@ -37,7 +37,7 @@ abstract final class ForkMetaDirect {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(prefsKey, value);
-    } catch (_) {}
+    } catch (_) {} // тихо: переключатель в памяти уже сменён
   }
 }
 
