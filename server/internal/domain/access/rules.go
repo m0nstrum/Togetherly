@@ -162,6 +162,30 @@ var Collections = map[string]Rules{
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
 	},
 
+	// E2E (docs/fork/E2E.md). Ключ аккаунта и список устройств видят свои и
+	// партнёры по парам; правка — только своя, версию списка держит страж.
+	"e2e_identities": {
+		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
+		View:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
+		Create: s(authed + ` && user_uid = @request.auth.id`),
+		Update: s(authed + ` && user_uid = @request.auth.id`),
+	},
+	// Выданный ключ пары видят выдавший и получатель. Выдать — только в своей
+	// паре и от своего имени; что получатель — участник пары, проверяет страж.
+	// Править нельзя: выдача неизменна, новая эпоха — новая запись.
+	"e2e_grants": {
+		List:   s(authed + ` && (to_uid = @request.auth.id || user_uid = @request.auth.id)`),
+		View:   s(authed + ` && (to_uid = @request.auth.id || user_uid = @request.auth.id)`),
+		Create: s(memberExpr("group_id") + ` && user_uid = @request.auth.id`),
+	},
+	"e2e_handshake": {
+		List:   s(memberExpr("group_id")),
+		View:   s(memberExpr("group_id")),
+		Create: s(memberExpr("group_id") + ` && user_uid = @request.auth.id`),
+		Delete: s(authed + ` && user_uid = @request.auth.id`),
+	},
+	"e2e_backups": own("user_uid"),
+
 	// Справочники: читают все, пишет сервер.
 	"catalog_items": readOnly(""),
 	"app_config":    readOnly(""),

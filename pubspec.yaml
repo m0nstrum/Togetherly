@@ -136,6 +136,7 @@ dependencies:
   visibility_detector: ^0.4.0+2
   image: ^4.8.0
   camera: ^0.12.0+2
+  sodium: ^4.0.3
 
 dev_dependencies:
   integration_test:

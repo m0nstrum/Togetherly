@@ -64,6 +64,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindRealtime(app, pub, mx.Published, cfg.Centrifugo.Timeout, log)
 	bindCapsules(app, time.Now, log)
 	bindGuards(app)
+	bindE2EGuards(app)
 	bindAllFree(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
