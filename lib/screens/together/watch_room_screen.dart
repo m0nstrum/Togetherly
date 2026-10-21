@@ -11,6 +11,9 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../fork/e2e/room_chat_ui.dart'; // fork
 import '../../fork/watch_proxy.dart'; // fork
+import '../../fork/watch/incoming_call.dart'; // fork
+import '../../fork/e2e/reels_chat_bridge.dart'; // fork
+import '../../dict_strings.dart' show ruEn; // fork
 import '../../models/call_record.dart';
 import '../../models/exit_guard.dart';
 import '../../services/chat_service.dart';
@@ -119,6 +122,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     unawaited(_openVoice());
     WidgetsBinding.instance.addObserver(this);
     if (widget.reels) unawaited(_startFeed());
+    if (widget.reels) unawaited(_reelsChat.start()); // fork: чат ленты на ключе сессии
     // Ленту запускает купивший — он и зовёт партнёра: тому придёт пуш
     // «Аня зовёт смотреть TikTok», по которому он войдёт без своего Плюса.
     if (widget.reels && PlusService.instance.active) {
@@ -128,6 +132,15 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   }
 
   bool _invited = false;
+
+  // fork (E2E §10.1): переписку ленты шифрует приложение, страница рисует.
+  late final ForkReelsChatBridge _reelsChat = ForkReelsChatBridge(
+    room: widget.room,
+    groupId: widget.pairId,
+    eval: (js) async {
+      await _web?.evaluateJavascript(source: js);
+    },
+  );
 
   /// Скрытая страница раскачивается несколько секунд — поднимаем её сразу,
   /// пока грузится комната. Посредник для TikTok нужен обоим: ролик из ленты
@@ -221,6 +234,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     final voice = WatchVoiceService(channel: room, me: me);
     voice.addListener(_onVoiceChanged);
     voice.onCallEnded = (talked, peer) => _recordCall(me, talked, peer);
+    voice.onUnanswered = (declined) => _say(declined // fork
+        ? ruEn('Партнёр сейчас не может говорить', 'Your partner can’t talk right now')
+        : ruEn('Партнёр не ответил', 'Your partner didn’t answer'));
     setState(() {
       _room = room;
       _voice = voice;
@@ -354,7 +370,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // fork (E2E §10.1): чат комнаты — в приложении, страница только плеер.
-    if (!widget.reels && !_native)
+    if (!_native) // и в ленте: её чат тоже держит приложение
       UserScript(source: forkNativeChatScript, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START),
     // Лента идёт под строку состояния, нативное окно — во весь экран: обеим
     // страницам отступы сообщаем сами.
@@ -489,6 +505,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     unawaited(_feed?.dispose() ?? Future<void>.value());
     if (widget.reels) unawaited(ReelsProxy.disable());
     if (_invited) unawaited(ReelsInvite.stop(widget.pairId));
+    if (widget.reels) _reelsChat.dispose(); // fork
     super.dispose();
   }
 
@@ -601,6 +618,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
             ),
             if (_loading) Center(child: M3Loading(color: Theme.of(context).colorScheme.primary)),
             if (!widget.reels) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId), // fork
+            ForkIncomingCall(voice: _voice, onAnswer: () => _onVoiceAction('call')), // fork
           ],
         ),
       ),
@@ -611,6 +629,15 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// окно.
   void _wire(InAppWebViewController c) {
     _web = c;
+    // fork: реплика ленты — шифрует приложение (ForkReelsChatBridge).
+    c.addJavaScriptHandler(
+      handlerName: 'forkChat',
+      callback: (args) {
+        final m = args.isNotEmpty && args.first is Map ? args.first as Map : const {};
+        if (widget.reels) unawaited(_reelsChat.send('${m['text'] ?? ''}'));
+        return null;
+      },
+    );
     // Кнопка звонка стоит в шапке комнаты, а связь поднимает
     // приложение: у страницы нет ни микрофона пары, ни сигналинга.
     // Кнопки шапки страницы: «назад», «скопировать», «поделиться».
@@ -735,6 +762,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       unawaited(c.evaluateJavascript(source: _insetScript(MediaQuery.paddingOf(context))));
     }
     if (widget.reels && _thumbs.isNotEmpty) _pushThumbs(Map.of(_thumbs));
+    if (widget.reels) _reelsChat.pageReady(); // fork
   }
 }
 

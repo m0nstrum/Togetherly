@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/reels_source.dart';
 import '../../services/locale_service.dart';
 import '../app_sheet.dart';
+import '../../fork/reels/platform_account.dart'; // fork
 
 /// Лист перед «Лентами вдвоём»: откуда смотреть. Возвращает выбранную
 /// площадку или null, если лист закрыли. Макет — шаг 2 артефакта «Ленты
@@ -53,6 +54,7 @@ class _ReelsStartSheetState extends State<_ReelsStartSheet> {
               _SourceRow(source: src, picked: src == _picked, onTap: () => setState(() => _picked = src)),
               const SizedBox(height: 4),
             ],
+            ForkReelsAccountRow(source: _picked), // fork: вход в аккаунт площадки
           ],
         ),
       ),

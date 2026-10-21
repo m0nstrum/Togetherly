@@ -29,6 +29,19 @@
   let ch = null;
   const send = (type, extra) => { if (ch) ch.send(type, 0, extra); };
   const subscribed = () => !!(ch && ch.subscribed());
+  // fork (E2E §10.1): в приложении переписку шифрует оно (ключ сессии), а
+  // страница только рисует — текст уходит мостом `forkChat`, реплики
+  // приходят вызовом `window.forkChatIn`.
+  const NATIVE_CHAT = !!window.__forkNativeChat;
+  const chatIn = [];
+  window.forkChatIn = (m) => { chatIn.push(m); if (el && el.root) drainChatIn(); };
+  function drainChatIn() {
+    while (chatIn.length) {
+      const m = chatIn.shift() || {};
+      if (m.sys) { if (m.text) addMsg({ text: String(m.text), sys: true }); continue; }
+      addMsg({ who: m.mine ? T.you : (String(m.name || '') || T.guest), text: String(m.text || ''), mine: !!m.mine });
+    }
+  }
 
   const RU = (window.I18N && window.I18N.lang) !== 'en';
   // В плашке — чья лента сейчас играет. Имена не склоняем («лента Бори» из
@@ -158,7 +171,7 @@
       </div>
       <div class="rl-ui">
         <div class="rl-top">
-          ${IOS ? `<button class="rl-ib rl-back" aria-label="${T.back}">${ic(IC.back)}</button>` : ''}
+          ${IOS || window.__togetherlyChrome ? `<button class="rl-ib rl-back" aria-label="${T.back}">${ic(IC.back)}</button>` : ''}
           <button class="rl-ib rl-refresh" aria-label="${T.refresh}">${ic(IC.refresh)}</button>
           <span class="rl-pill"><span class="rl-av"></span><b></b><span class="rl-src">SHORTS</span></span>
         </div>
@@ -209,7 +222,9 @@
       el.pick.appendChild(b);
     });
 
-    if (IOS) $('.rl-back', root).addEventListener('click', leave);
+    // fork: и на Android в приложении — жест «назад» там просит двойного
+    // нажатия, и без кнопки из ленты не выйти.
+    if (IOS || window.__togetherlyChrome) $('.rl-back', root).addEventListener('click', leave);
     el.refresh.addEventListener('click', refreshFeed);
     el.react.addEventListener('click', (e) => { e.stopPropagation(); el.pick.hidden ? openPick() : closePick(); });
     $('.rl-chatbtn', root).addEventListener('click', () => setChat(!el.root.classList.contains('chat-open')));
@@ -227,6 +242,7 @@
 
     wireVoice();
     wireChat();
+    drainChatIn(); // fork
     wireGestures();
     loadArt();
     showWait(T.loading, T.loadingSub, true);
@@ -376,6 +392,13 @@
     const text = el.input.value.trim();
     if (!text) return;
     const name = S.name || T.guest;
+    if (NATIVE_CHAT) { // fork: шифрует и возвращает реплику приложение
+      const b = bridge();
+      if (b) try { b.callHandler('forkChat', { text }); } catch (_) {}
+      el.input.value = '';
+      syncTyping();
+      return;
+    }
     addMsg({ who: T.you, text, mine: true });
     remember(S.me, name, text);
     // До подписки реплика придерживается и уходит, когда канал встал.
@@ -1370,10 +1393,12 @@
         if (log.length) send('state', { to: data.from, url: '', file: null, playing: false, log: log.slice(-LOG_LIMIT) });
         return;
       case 'state':
+        if (NATIVE_CHAT) return; // fork: историю держит приложение
         adoptHistory(data);
         return;
       case 'chat':
         if (data.name) notePartner(data);
+        if (NATIVE_CHAT || data.e2e) return; // fork: открытый текст мимо
         theirText(data);
         return;
       case 'reels-state':
