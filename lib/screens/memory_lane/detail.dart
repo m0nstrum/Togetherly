@@ -3476,6 +3476,21 @@ class _CommentsSectionState extends State<_CommentsSection> {
                         style: AppFonts.onest(
                             size: 11.5, weight: 500, color: t.textSecondary),
                       ),
+                      // fork (D11): удалить свой комментарий можно не только
+                      // долгим нажатием — у него есть видимая кнопка.
+                      if (isMe)
+                        InkWell(
+                          onTap: () => _confirmDeleteComment(comment),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Tooltip(
+                              message: LocaleService.current.delete,
+                              child: Icon(Icons.delete_outline_rounded,
+                                  size: 18, color: t.textSecondary),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 3),

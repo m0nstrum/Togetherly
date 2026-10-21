@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../dict_strings.dart' show ruEn; // fork
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -342,7 +343,10 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     }
     _showToast(s.liveMapMissYouSent);
     final ok = await MissYouRepository().sendMissYou(widget.pairId);
-    if (!ok && mounted) _showToast(s.giftFailed);
+    // fork (G16): своя строка вместо подарочной («Не получилось отправить»).
+    if (!ok && mounted) {
+      _showToast(ruEn('«Скучаю» не отправилось', 'Miss-you wasn’t sent'));
+    }
   }
 
   void _openRoute() {
@@ -448,7 +452,9 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
 
   Widget _mapLayer(MapPalette palette, ColorScheme cs) {
     final me = _me, partner = _partner;
-    final center = widget.initialCenter ?? partner?.latLng ?? me ?? const LatLng(47.0105, 28.8638);
+    // fork (G16): без точек показываем весь мир, а не Кишинёв автора апстрима.
+    final known = widget.initialCenter ?? partner?.latLng ?? me;
+    final center = known ?? const LatLng(25, 10);
     return IgnorePointer(
       ignoring: !_inMap,
       child: FadeTransition(
@@ -457,7 +463,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
           mapController: _map,
           options: MapOptions(
             initialCenter: center,
-            initialZoom: widget.initialZoom,
+            initialZoom: known == null ? 2 : widget.initialZoom, // fork
             minZoom: 1.5,
             maxZoom: 18,
             backgroundColor: palette.land,
