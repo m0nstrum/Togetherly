@@ -59,23 +59,37 @@ class PeerState {
     required this.accountKey,
     this.seenVersion = 0,
     this.verified = false,
+    this.keyChanged = false,
+    this.tampered = false,
   });
 
   /// Ключ аккаунта, впервые увиденный (TOFU) или подтверждённый сверкой.
-  final Uint8List accountKey;
+  Uint8List accountKey;
   int seenVersion;
   bool verified;
+
+  /// Ключ аккаунта сменился после первого знакомства (переустановка без
+  /// бэкапа или подмена сервером). Сбрасывается сверкой.
+  bool keyChanged;
+
+  /// Ключ не сошёлся с отпечатком из ссылки или с MAC подтверждения —
+  /// сервер подменил ключи. Сбрасывается только сверкой эмодзи или QR.
+  bool tampered;
 
   Map<String, dynamic> toJson() => {
     'ak': b64(accountKey),
     'seen': seenVersion,
     'verified': verified,
+    'changed': keyChanged,
+    'tampered': tampered,
   };
 
   factory PeerState.fromJson(Map<String, dynamic> j) => PeerState(
     accountKey: unb64(j['ak'] as String),
     seenVersion: j['seen'] as int,
     verified: j['verified'] as bool,
+    keyChanged: j['changed'] as bool? ?? false,
+    tampered: j['tampered'] as bool? ?? false,
   );
 }
 
@@ -85,8 +99,13 @@ class E2EKeys {
     required this.device,
     Map<String, PairKey>? pairKeys,
     Map<String, PeerState>? peers,
+    Set<String>? granted,
+    Map<String, String>? inviteSecrets,
+    this.listVersion = 0,
   }) : pairKeys = pairKeys ?? {},
-       peers = peers ?? {};
+       peers = peers ?? {},
+       granted = granted ?? {},
+       inviteSecrets = inviteSecrets ?? {};
 
   final KeyPair account;
   final DeviceKeys device;
@@ -97,14 +116,24 @@ class E2EKeys {
   /// uid партнёра → состояние.
   final Map<String, PeerState> peers;
 
+  /// Кому этот ключ уже выдан: `group:epoch|device`.
+  final Set<String> granted;
+
+  /// Секреты приглашений по коду (§6.2), base64url.
+  final Map<String, String> inviteSecrets;
+
+  /// Версия своего опубликованного списка устройств.
+  int listVersion;
+
   PairKey? keyFor(String keyId) => pairKeys[keyId];
 
   /// Ключ пары последней эпохи — им шифруется новое.
   PairKey? currentKey(String groupId) {
     PairKey? best;
     for (final k in pairKeys.values) {
-      if (k.groupId == groupId && (best == null || k.epoch > best.epoch))
+      if (k.groupId == groupId && (best == null || k.epoch > best.epoch)) {
         best = k;
+      }
     }
     return best;
   }
@@ -153,6 +182,9 @@ class E2EKeyStore {
           },
       ],
       'peers': {for (final e in k.peers.entries) e.key: e.value.toJson()},
+      'granted': k.granted.toList()..sort(),
+      'invites': k.inviteSecrets,
+      'list_version': k.listVersion,
     }),
   );
 
@@ -184,6 +216,10 @@ class E2EKeyStore {
         for (final e in (j['peers'] as Map).cast<String, dynamic>().entries)
           e.key: PeerState.fromJson((e.value as Map).cast<String, dynamic>()),
       },
+      granted: {...((j['granted'] as List?) ?? const []).cast<String>()},
+      inviteSecrets: ((j['invites'] as Map?) ?? const {})
+          .cast<String, String>(),
+      listVersion: j['list_version'] as int? ?? 0,
     );
   }
 

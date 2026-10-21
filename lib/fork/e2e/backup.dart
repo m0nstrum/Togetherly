@@ -71,8 +71,9 @@ class RecoveryPhrase {
   }
 
   static void _checkList(List<String> l) {
-    if (l.length != 2048)
+    if (l.length != 2048) {
       throw ArgumentError('список BIP39 — 2048 слов, а не ${l.length}');
+    }
   }
 }
 
@@ -166,12 +167,14 @@ abstract final class KeyBackup {
     if (data['v'] != 1) throw FormatException('бэкап: версия ${data['v']}');
     final method = BackupMethod.values.byName(data['method'] as String);
     final kdf = (data['kdf'] as Map).cast<String, dynamic>();
-    if (kdf['alg'] != 'argon2id13')
+    if (kdf['alg'] != 'argon2id13') {
       throw FormatException('бэкап: ${kdf['alg']}');
+    }
     // Параметры пришли с сервера: не даём ему заставить телефон съесть
     // гигабайты памяти.
-    if ((kdf['mem'] as int) > 1 << 30)
+    if ((kdf['mem'] as int) > 1 << 30) {
       throw const FormatException('бэкап: слишком много памяти для Argon2id');
+    }
     final key = c.pwhash(
       _secret(method, secret),
       unb64(kdf['salt'] as String),

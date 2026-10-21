@@ -184,23 +184,16 @@ void main() {
   });
 
   group('приглашение по ссылке', () {
-    test('MAC секретом из фрагмента ловит подмену ключей', () {
+    test('MAC секретом из фрагмента ловит подмену ключа', () {
       final secret = c.symmetricKey();
-      final akB = c.signKeyPair();
-      final listB = DeviceList.create(c, akB, 'ub', 1, [
-        DeviceKeys.generate(c, 'b1').entry(),
-      ]);
-      final tag = InviteProof.make(c, secret, akB.publicKey, listB);
-      InviteProof.check(c, secret, akB.publicKey, listB, tag);
-
-      final akS = c.signKeyPair();
-      final listS = DeviceList.create(c, akS, 'ub', 1, [
-        DeviceKeys.generate(c, 'b1').entry(),
-      ]);
+      final akB = c.signKeyPair().publicKey;
+      final tag = InviteProof.make(c, secret, akB);
+      expect(InviteProof.valid(c, secret, akB, tag), isTrue);
       expect(
-        () => InviteProof.check(c, secret, akS.publicKey, listS, tag),
-        throwsA(isA<E2EVerifyError>()),
+        InviteProof.valid(c, secret, c.signKeyPair().publicKey, tag),
+        isFalse,
       );
+      expect(InviteProof.valid(c, c.symmetricKey(), akB, tag), isFalse);
     });
   });
 

@@ -98,15 +98,17 @@ class DeviceList {
     required String user,
     int seenVersion = 0,
   }) {
-    if (this.user != user)
+    if (this.user != user) {
       throw E2EVerifyError('список устройств чужого аккаунта');
+    }
     if (!c.verify(signedBytes(user, version, devices), sig, accountKey)) {
       throw E2EVerifyError('подпись списка устройств не сходится');
     }
-    if (version < seenVersion)
+    if (version < seenVersion) {
       throw E2EVerifyError(
         'список устройств откатили: $version < $seenVersion',
       );
+    }
   }
 
   DeviceEntry? device(String id) {
@@ -228,10 +230,12 @@ class PairKeyGrant {
   /// Открыть выданный ключ. [senders] — проверенный список устройств
   /// отправителя (свой или партнёра).
   PairKey open(E2ECrypto c, DeviceKeys me, DeviceList senders) {
-    if (toDevice != me.id)
+    if (toDevice != me.id) {
       throw E2EVerifyError('ключ выдан другому устройству');
-    if (senders.user != fromUser)
+    }
+    if (senders.user != fromUser) {
       throw E2EVerifyError('список устройств не того отправителя');
+    }
     final from = senders.device(fromDevice);
     if (from == null || from.kind != DeviceKind.full) {
       throw E2EVerifyError('отправителя нет в подписанном списке устройств');
@@ -274,33 +278,26 @@ class PairKeyGrant {
 }
 
 /// Подтверждение приглашения по ссылке или QR (§6.2): MAC секретом из
-/// фрагмента ссылки над ключом аккаунта и списком устройств принимающего.
+/// фрагмента ссылки над ключом аккаунта принимающего. Список устройств им
+/// подписан, поэтому MAC над ключом аккаунта покрывает и устройства.
 abstract final class InviteProof {
-  static Uint8List _msg(Uint8List accountKey, DeviceList list) => frame([
-    utf8Bytes('tethered-invite-v1'),
-    accountKey,
-    utf8Bytes(canonicalJson(list.toJson())),
-  ]);
+  static Uint8List _msg(Uint8List accountKey) =>
+      frame([utf8Bytes('tethered-invite-v1'), accountKey]);
 
-  static Uint8List make(
+  static Uint8List make(E2ECrypto c, SecureKey secret, Uint8List accountKey) =>
+      c.mac(_msg(accountKey), secret);
+
+  static bool valid(
     E2ECrypto c,
     SecureKey secret,
     Uint8List accountKey,
-    DeviceList list,
-  ) => c.mac(_msg(accountKey, list), secret);
-
-  static void check(
-    E2ECrypto c,
-    SecureKey secret,
-    Uint8List accountKey,
-    DeviceList list,
     Uint8List tag,
-  ) {
-    if (!c.macVerify(_msg(accountKey, list), tag, secret)) {
-      throw E2EVerifyError('ключи принимающего подменены');
-    }
-  }
+  ) => c.macVerify(_msg(accountKey), tag, secret);
 }
+
+/// Короткий отпечаток ключа аккаунта для фрагмента ссылки (`f=`): 128 бит.
+Uint8List accountFingerprint(E2ECrypto c, Uint8List accountKey) =>
+    c.hash(frame([utf8Bytes('tethered-ak-v1'), accountKey]), outLen: 16);
 
 /// Полный отпечаток пары для QR (§6.3): 256 бит, порядок ключей не важен.
 Uint8List pairFingerprint(E2ECrypto c, Uint8List accountA, Uint8List accountB) {
