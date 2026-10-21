@@ -43,11 +43,18 @@ void main() {
     expect(taps, ['camera']);
   });
 
-  testWidgets('нижняя половина аватара открывает рамки', (tester) async {
+  // fork: N4 — тап по самому фото правит фото и имя, рамки — своя кнопка.
+  testWidgets('нижняя половина аватара открывает правку фото', (tester) async {
     final (taps, camera) = await pump(tester);
     // Точка левее камеры, в свисающей части аватара.
     final c = tester.getCenter(camera);
     await tester.tapAt(c.translate(-45, -8));
+    expect(taps, ['camera']);
+  });
+
+  testWidgets('рамки открываются отдельной кнопкой', (tester) async {
+    final (taps, _) = await pump(tester);
+    await tester.tap(find.byIcon(Icons.filter_frames_rounded));
     expect(taps, ['frame']);
   });
 }

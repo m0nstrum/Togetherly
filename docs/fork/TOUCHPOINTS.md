@@ -110,6 +110,15 @@
 | `lib/services/watch_voice_service.dart` | Ленты UX | Входящий звонок: зов при выключенном микрофоне показывается (`ringingFrom`), `decline` шлёт `voice-decline`; звонящий повторяет зов раз в 4 с и снимает его через 45 с; «вежливая» сторона отвечает зовом. | Повторить. |
 | `lib/screens/together/watch_room_screen.dart` (звонок, чат ленты) | Ленты UX | Карточка `ForkIncomingCall`, `onUnanswered`; в ленте флаг `__forkNativeChat` и мост `forkChat` к `ForkReelsChatBridge`. | Повторить. |
 | `lib/widgets/reels/reels_start_sheet.dart` | Ленты UX | Строка `ForkReelsAccountRow`: вход в аккаунт площадки. | Повторить. |
+| `lib/widgets/mood_pack_selector.dart` | UX W1 | M2: закрытые наборы за деньги скрыты, `buyMoodPack` не ведёт на lava.top при `allFree`. | Повторить. |
+| `lib/screens/widget_screen.dart` | UX W1 | M3: рекламная проба фото виджета дней скрыта при `allFree`. | Повторить. |
+| `lib/screens/gifts/gift_shop_screen.dart` | UX W1 | M4: при «Бесплатно» нет «Не хватает монет». | Повторить. |
+| `lib/screens/gifts/gift_receive_sheet.dart` | UX W1 | M6: отказ «Не сейчас» — `ForkNotice.failure`. | Повторить. |
+| `lib/services/chest_service.dart` | UX W1 | M7: `stashOutcome()` (сбой запроса/каталога — `Failed`), `stash()` как раньше. | Повторить. |
+| `lib/screens/chest_screen.dart` | UX W1 | M7: `_restoreStash` показывает сбой с «Повторить»; M11: в таблице шансов нет призов Плюса при `allFree`. | Повторить. |
+| `lib/screens/profile_screen.dart` (UX W1) | UX W1 | M12: код из бота и «Восстановить покупки» под флагами; N7: нет строки «Смотреть видео»; N14: без паков монет заголовок «Заработать»; N2: настройки уведомлений через `lib/fork/system_settings.dart`; A4: подтверждение выхода через `ForkLogoutGuard.message`; A14: 401 при удалении — `deleteAccountReauth`. | Повторить. |
+| `lib/screens/profile/profile_hero.dart` | UX W1 | N4: тап по фото — правка профиля, рамки — отдельная кнопка слева внизу. | Повторить. |
+| `test/widgets/profile_hero_tap_test.dart` | UX W1 | N4: тап по аватару — правка фото, рамки — кнопка `filter_frames_rounded`. | Повторить. |
 | `pocketbase/pb_public/watch/reels/reels.js`, `pocketbase/pb_public/watch/reels/index.html` | Ленты UX | Кнопка «назад» и в приложении на Android; с `__forkNativeChat` реплики идут мостом `forkChat`, приходят `window.forkChatIn`, открытый `chat` и история `state` игнорируются; версия скрипта в index.html поднята. Замер «ролик не пошёл» (апстрим, обращение 407) без Umami не пингует площадки. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |

@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import '../../l10n/zh/gifts.dart';
 import '../../models/gift.dart';
 import '../../models/sound_clip.dart';
+import '../../dict_strings.dart' show ruEn; // fork: M6
+import '../../fork/ui/feedback.dart'; // fork: M6
+import '../../services/gift_result.dart' show GiftError; // fork: M6
 import '../../services/gifts_service.dart';
 import '../../services/locale_service.dart';
 import '../../theme/app_theme.dart';
@@ -138,7 +141,16 @@ class _GiftReceiveSheetState extends State<GiftReceiveSheet>
     final res = await GiftsService.instance.decline(widget.giftId);
     if (!mounted) return;
     setState(() => _busy = false);
-    if (res.ok) Navigator.of(context).pop(false);
+    if (res.ok) {
+      Navigator.of(context).pop(false);
+    } else {
+      // fork: M6 — отказ не молчит
+      ForkNotice.failure(
+        context,
+        res.error == GiftError.network ? ForkFailure.network : ForkFailure.unknown,
+        what: ruEn('Не удалось отклонить подарок', 'Couldn’t decline the gift'),
+      );
+    }
   }
 
   /// Пицца: монетка решает, кто заказывает.
