@@ -19,6 +19,8 @@ func TestLoginRateLimit(t *testing.T) {
 	applySettings(s, config.Config{AppName: "Tethered", RateLimits: true, TrustedProxyHeader: "X-Forwarded-For"})
 	require.NoError(t, app.Save(s))
 	assert.Equal(t, []string{"X-Forwarded-For"}, app.Settings().TrustedProxy.Headers)
+	assert.Zero(t, app.Settings().Logs.MaxDays, "журнал запросов не хранится")
+	assert.False(t, app.Settings().Logs.LogIP)
 
 	u, _ := testutil.User(t, app, "limituser000001")
 	body := fmt.Sprintf(`{"identity":%q,"password":"wrong-password"}`, u.Email())

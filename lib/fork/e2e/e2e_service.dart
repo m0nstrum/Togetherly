@@ -195,7 +195,8 @@ class E2EService implements E2EKeyring {
         return;
       }
     }
-    _keys = loaded ?? E2EKeys.generate(crypto, b64(crypto.random(9)));
+    _keys = (loaded ?? E2EKeys.generate(crypto, b64(crypto.random(9))))
+      ..deriveSelf(crypto, uid);
     backupMethod.value = keys.backup?.method;
     await _publish();
     await store.save(keys);
@@ -251,7 +252,7 @@ class E2EService implements E2EKeyring {
       device: DeviceKeys.generate(crypto, b64(crypto.random(9))),
       pairKeys: {for (final k in contents.pairKeys) k.keyId: k},
       backup: bk,
-    );
+    )..deriveSelf(crypto, uid);
     _serverBackup = null;
     await _publish();
     await store.save(keys);
@@ -262,7 +263,8 @@ class E2EService implements E2EKeyring {
   /// Без фразы и пароля: новые ключи, старая история не читается, партнёр
   /// увидит смену ключа. Бэкап нужно включить заново.
   Future<void> startFresh() async {
-    _keys = E2EKeys.generate(crypto, b64(crypto.random(9)));
+    _keys = E2EKeys.generate(crypto, b64(crypto.random(9)))
+      ..deriveSelf(crypto, uid);
     _serverBackup = null;
     await _publish();
     await store.save(keys);

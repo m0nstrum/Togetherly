@@ -186,6 +186,16 @@ const Map<String, Map<String, SealedField>> e2eFields = {
 
 const String e2eFieldPrefix = 'e2e1.';
 
+/// Писать нечем: ключа пары (или личного) нет, а в теле есть то, что уходит
+/// только шифром. Запрос не отправляется — очередь повторит его, когда ключ
+/// придёт. Открытым текстом не пишем никогда.
+class E2ENoKeyError implements Exception {
+  E2ENoKeyError(this.collection);
+  final String collection;
+  @override
+  String toString() => 'E2ENoKeyError: нет ключа шифрования для $collection';
+}
+
 /// Дата в обязательной колонке, чьё значение переехало в `enc`.
 const String e2eClearedDate = '2000-01-01 00:00:00.000Z';
 
@@ -335,8 +345,38 @@ class RecordCodec {
     }
   }
 
-  /// Шифрует поля тела запроса записи [recordId] пары [groupId]. Нет ключа
-  /// пары — тело как есть (пара ещё не обменялась ключами).
+  /// Есть ли в теле [collection] открытое содержимое шифрованных полей —
+  /// то, что без ключа ушло бы на сервер как есть.
+  static bool hasPlainContent(String collection, Map<String, dynamic> body) {
+    final fields = e2eFields[collection];
+    if (fields == null) return false;
+    for (final e in fields.entries) {
+      final spec = e.value;
+      if (!body.containsKey(e.key)) continue;
+      final v = body[e.key];
+      if (v == null || isSealedValue(v)) continue;
+      if (spec.locked != null && v == spec.locked) continue;
+      final has = switch (spec.kind) {
+        SealKind.text => '$v'.isNotEmpty,
+        SealKind.json => _plain(spec.kind, v) != null,
+        SealKind.jsonPartial =>
+          v is Map &&
+              v[e2ePartialKey] == null &&
+              v.entries.any(
+                (kv) => kv.value != null && !spec.open.contains('${kv.key}'),
+              ),
+        SealKind.mapValues =>
+          v is Map && v.values.any((x) => x != null && !isSealedValue(x)),
+        SealKind.moved =>
+          v != spec.cleared && !isSealedValue(body[e2eMovedField]),
+      };
+      if (has) return true;
+    }
+    return false;
+  }
+
+  /// Шифрует поля тела запроса записи [recordId] пары [groupId]. Нечего
+  /// шифровать — тело как есть; есть что, а ключа нет — [E2ENoKeyError].
   Map<String, dynamic> encode(
     String collection,
     String recordId,
@@ -353,7 +393,9 @@ class RecordCodec {
       ...body,
       'id': recordId,
     });
-    if (fields == null || key == null || recKey == null || recKey.isEmpty) {
+    if (fields == null) return body;
+    if (key == null || recKey == null || recKey.isEmpty) {
+      if (hasPlainContent(collection, body)) throw E2ENoKeyError(collection);
       return body;
     }
     final out = Map<String, dynamic>.of(body);

@@ -183,7 +183,7 @@ abstract final class ForkE2E {
       ).load();
       return _roReady = keys == null
           ? RecordCodec.locked()
-          : RecordCodec(c, keys);
+          : RecordCodec(c, keys..deriveSelf(c, uid));
     } catch (e) {
       // Ключи на телефоне, может быть, есть, а прочитать не вышло: писать
       // открытым нельзя. Запрос падает, очередь повторит; в кэш ошибку не
@@ -240,8 +240,8 @@ abstract final class ForkE2E {
       ChannelPlace('loc:$channel', 'point:$uid', at is int ? at : 0);
 
   /// Живая точка геопозиции для канала `loc:<channel>`. Нет ключа пары —
-  /// как есть.
-  static Map<String, dynamic> sealPoint(
+  /// null: открытой точка не уходит.
+  static Map<String, dynamic>? sealPoint(
     String channel,
     Map<String, dynamic> msg,
   ) {
@@ -250,7 +250,7 @@ abstract final class ForkE2E {
     final group = members == null ? null : codec.keys.groupWith(members);
     final key = group == null ? null : codec.keys.currentKey(group);
     final uid = '${msg['uid'] ?? ''}';
-    if (key == null || uid.isEmpty) return msg;
+    if (key == null || uid.isEmpty) return null;
     final at = msg['updatedAt'];
     final inner = Map<String, dynamic>.of(msg)
       ..remove('t')
@@ -263,14 +263,14 @@ abstract final class ForkE2E {
     };
   }
 
-  /// Обратное к [sealPoint]; открытая точка (старый клиент, нет ключа) —
-  /// как есть, подделка — null.
+  /// Обратное к [sealPoint]; открытая точка или подделка — null: открытое
+  /// в канале пары подсунуть может только сервер.
   static Map<String, dynamic>? openPoint(
     String channel,
     Map<String, dynamic> msg,
   ) {
     final sealed = msg['e2e'];
-    if (sealed is! String) return msg;
+    if (sealed is! String) return null;
     final uid = '${msg['uid'] ?? ''}';
     final inner = _syncCodec().openChannel(
       _pointPlace(channel, uid, msg['at']),
@@ -284,7 +284,8 @@ abstract final class ForkE2E {
       ChannelPlace(channel, type, 0);
 
   /// Эфемерные данные пары [groupId] для канала [channel] (живые штрихи):
-  /// `{e2e: шифр}`, AAD — канал и [type] (автор, холст). Нет ключа — как есть.
+  /// `{e2e: шифр}`, AAD — канал и [type] (автор, холст). Нет ключа — null:
+  /// открытыми живые данные не уходят.
   static Map<String, dynamic>? sealLive(
     String groupId,
     String channel,
@@ -294,14 +295,14 @@ abstract final class ForkE2E {
     if (data == null) return null;
     final codec = _syncCodec();
     final key = codec.crypto == null ? null : codec.keys.currentKey(groupId);
-    if (key == null) return data;
+    if (key == null) return null;
     return {
       e2ePartialKey: codec.sealChannel(_livePlace(channel, type), data, key),
     };
   }
 
-  /// Обратное к [sealLive]: `ok == false` — подделка или нечем открыть,
-  /// пакет не показываем.
+  /// Обратное к [sealLive]: `ok == false` — подделка, открытый пакет или
+  /// нечем открыть: не показываем.
   static ({bool ok, Map<String, dynamic>? data}) openLive(
     String channel,
     String type,
@@ -309,9 +310,7 @@ abstract final class ForkE2E {
   ) {
     if (data is! Map) return (ok: true, data: null);
     final sealed = data[e2ePartialKey];
-    if (sealed is! String) {
-      return (ok: true, data: Map<String, dynamic>.from(data));
-    }
+    if (sealed is! String) return (ok: false, data: null);
     final open = _syncCodec().openChannel(_livePlace(channel, type), sealed);
     return (ok: open != null, data: open);
   }

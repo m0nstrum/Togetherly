@@ -95,11 +95,64 @@ void main() {
       expect(locked['reactions'], <String, dynamic>{});
     });
 
-    test('чужие коллекции и пара без ключа — как есть', () {
+    test('чужие коллекции — как есть; без ключа открытым не пишем', () {
       final b = {'text': 'x'};
       expect(codec.encode('users', 'm1', _gid, b), same(b));
-      expect(codec.encode(_col, 'm1', 'other', b), same(b));
-      expect(RecordCodec.locked().encode(_col, 'm1', _gid, b), same(b));
+      expect(
+        () => codec.encode(_col, 'm1', 'other', b),
+        throwsA(isA<E2ENoKeyError>()),
+      );
+      expect(
+        () => RecordCodec.locked().encode(_col, 'm1', _gid, b),
+        throwsA(isA<E2ENoKeyError>()),
+      );
+      // Без содержимого (служебные поля, заглушка, уже шифр) — можно.
+      final meta = {'ts': 1, 'deleted': true};
+      expect(codec.encode(_col, 'm1', 'other', meta), same(meta));
+      final ph = {'text': e2eLockedText, 'reactions': <String, dynamic>{}};
+      expect(codec.encode(_col, 'm1', 'other', ph), same(ph));
+      final sealed = codec.encode(_col, 'm1', _gid, {'text': 'x'});
+      expect(codec.encode(_col, 'm1', 'other', sealed), same(sealed));
+    });
+
+    test('открытое содержимое по видам полей', () {
+      bool has(String col, Map<String, dynamic> b) =>
+          RecordCodec.hasPlainContent(col, b);
+      expect(
+        has('memories', {
+          'data': {'type': 'photo'},
+        }),
+        isFalse,
+      );
+      expect(
+        has('memories', {
+          'data': {'type': 'photo', 'text': 'x'},
+        }),
+        isTrue,
+      );
+      expect(
+        has('groups', {
+          'member_moods': {'a': null},
+        }),
+        isFalse,
+      );
+      expect(
+        has('groups', {
+          'member_moods': {
+            'a': {'m': 1},
+          },
+        }),
+        isTrue,
+      );
+      expect(has('cycle_entries', {'day': e2eClearedDate}), isFalse);
+      expect(has('cycle_entries', {'day': '2025-01-01'}), isTrue);
+      expect(has('live_location', {'data': <String, dynamic>{}}), isFalse);
+      expect(
+        has('live_location', {
+          'data': {'lat': 1},
+        }),
+        isTrue,
+      );
     });
 
     test('старое открытое сообщение читается (двойное чтение)', () {
@@ -680,17 +733,58 @@ void main() {
       expect(wire.single.body, contains('видно'));
     });
 
-    test('пара без ключа — открытым, как до E2E', () async {
+    test('пара без ключа — запрос не уходит вовсе', () async {
       final pb = PocketBase(
         'http://pb',
         httpClientFactory: () => client(withCodec: RecordCodec(c, _Keys())),
       );
-      await pb
-          .collection(_col)
-          .create(
-            body: {'id': 'msg000000000002', 'group_id': _gid, 'text': 'ok'},
-          );
-      expect(wire.single.body, contains('ok'));
+      await expectLater(
+        pb
+            .collection(_col)
+            .create(
+              body: {'id': 'msg000000000002', 'group_id': _gid, 'text': 'ok'},
+            ),
+        throwsA(
+          isA<ClientException>().having(
+            (e) => e.originalError,
+            'причина',
+            isA<E2ENoKeyError>(),
+          ),
+        ),
+      );
+      expect(wire, isEmpty);
+    });
+
+    test('пару не узнать — тоже не уходит', () async {
+      final pb = PocketBase('http://pb', httpClientFactory: client);
+      await expectLater(
+        pb.collection(_col).update('unknown00000001', body: {'text': 'x'}),
+        throwsA(isA<ClientException>()),
+      );
+      expect(wire, isEmpty);
+    });
+
+    test('файл пары без ключа не уходит', () async {
+      final pb = PocketBase(
+        'http://pb',
+        httpClientFactory: () => client(withCodec: RecordCodec(c, _Keys())),
+      );
+      await expectLater(
+        pb
+            .collection('media')
+            .create(
+              body: {'group_id': _gid, 'kind': 'photo'},
+              files: [
+                http.MultipartFile.fromBytes(
+                  'file',
+                  utf8.encode('фото'),
+                  filename: 'a.jpg',
+                ),
+              ],
+            ),
+        throwsA(isA<ClientException>()),
+      );
+      expect(wire, isEmpty);
     });
   });
 

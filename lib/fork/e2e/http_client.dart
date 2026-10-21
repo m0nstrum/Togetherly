@@ -133,7 +133,7 @@ class E2EHttpClient extends http.BaseClient {
       id = gen();
       body = {...body, 'id': id};
     }
-    if (id.isEmpty) return null;
+    if (id.isEmpty) return _noKey(col, body);
     var group = e2eGroupOf(col, id, body) ?? '';
     final needContext =
         group.isEmpty ||
@@ -143,7 +143,7 @@ class E2EHttpClient extends http.BaseClient {
         ? await _context(col, id, body)
         : null;
     if (group.isEmpty) group = '${ctx?['group_id'] ?? ''}';
-    if (group.isEmpty) return null;
+    if (group.isEmpty) return _noKey(col, body);
     final locked = ctx?[e2eLockedKey];
     if (locked is Map<String, dynamic>) {
       body = codec.restoreLocked(col, body, locked);
@@ -154,6 +154,13 @@ class E2EHttpClient extends http.BaseClient {
     final enc = codec.encode(col, id, group, body, context: ctx);
     if (identical(enc, body) && identical(body, decoded)) return null;
     return (id: id, group: group, body: enc);
+  }
+
+  /// Пару записи не узнать — шифровать нечем. Открытое содержимое не
+  /// уходит: [E2ENoKeyError].
+  static Null _noKey(String col, Map<String, dynamic> body) {
+    if (RecordCodec.hasPlainContent(col, body)) throw E2ENoKeyError(col);
+    return null;
   }
 
   /// Маршруты сервера, которые сами пишут в записи то, что прислал клиент.
@@ -183,12 +190,11 @@ class E2EHttpClient extends http.BaseClient {
     final spec = e2eFields['groups']?[field];
     if (spec?.kind != SealKind.mapValues ||
         value == null ||
-        isSealedValue(value) ||
-        codec.crypto == null) {
+        isSealedValue(value)) {
       return request;
     }
-    final key = codec.keys.currentKey(group);
-    if (key == null) return request;
+    final key = codec.crypto == null ? null : codec.keys.currentKey(group);
+    if (key == null) throw E2ENoKeyError('groups');
     final sealed = codec.sealField(
       'groups',
       group,
@@ -206,11 +212,12 @@ class E2EHttpClient extends http.BaseClient {
     if (body == null) return request;
     final text = body['text'], group = body['groupId'], uid = body['uid'];
     if (text is! String || text.isEmpty || isSealedValue(text)) return request;
-    if (group is! String || uid is! String || codec.crypto == null) {
-      return request;
+    final key = group is! String || uid is! String || codec.crypto == null
+        ? null
+        : codec.keys.currentKey(group);
+    if (key == null || group is! String || uid is! String) {
+      throw E2ENoKeyError('miss_you');
     }
-    final key = codec.keys.currentKey(group);
-    if (key == null) return request;
     final sealed = codec.sealField(
       'miss_you',
       '$group/$uid',
@@ -254,14 +261,19 @@ class E2EHttpClient extends http.BaseClient {
       files = r.files;
     }
     final enc = await _encodeBody(codec, col, request.method, pathId, fields);
+    final c = codec.crypto;
+    final key = enc == null || c == null
+        ? null
+        : codec.keys.currentKey(enc.group);
+    final sealFiles =
+        col == 'media' && !plainMediaKinds.contains('${fields['kind'] ?? ''}');
+    // Файл пары без ключа открытым не уходит.
+    if (sealFiles && files.isNotEmpty && key == null) {
+      throw E2ENoKeyError('media');
+    }
     if (enc == null) return request;
     var outFiles = files;
-    final c = codec.crypto;
-    final key = codec.keys.currentKey(enc.group);
-    if (col == 'media' &&
-        c != null &&
-        key != null &&
-        !plainMediaKinds.contains('${fields['kind'] ?? ''}')) {
+    if (sealFiles && c != null && key != null) {
       final cipher = MediaCipher(c);
       outFiles = [
         for (final f in files)

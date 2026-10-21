@@ -301,6 +301,12 @@ func applySettings(s *core.Settings, cfg config.Config) {
 	}
 	s.Backups.Cron = cfg.Backup.Cron
 	s.Backups.CronMaxKeep = cfg.Backup.MaxKeep
+	// Журнал запросов PocketBase хранит URL с id пользователя: адреса превью,
+	// поиск фильмов и мест — то, что в записях лежит шифром. Не храним
+	// вовсе (MaxDays = 0 выключает и запись журнала).
+	s.Logs.MaxDays = 0
+	s.Logs.LogIP = false
+	s.Logs.LogAuthId = false
 }
 
 // rateLimitRules — лимиты на IP (решение 3: вход только по паролю, значит

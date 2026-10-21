@@ -1,6 +1,7 @@
 // fork: хранилище ключей E2E (docs/fork/E2E.md §5).
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
+import 'package:love_app/fork/e2e/devices.dart';
 import 'package:love_app/fork/e2e/envelope.dart';
 import 'package:love_app/fork/e2e/key_store.dart';
 
@@ -46,5 +47,28 @@ void main() {
 
     await store.wipe();
     expect(await store.load(), isNull);
+  });
+
+  test('личный ключ: из ключа аккаунта, один на всех своих устройствах', () {
+    final a = E2EKeys.generate(c, 'dev1')..deriveSelf(c, 'alice');
+    final restored = E2EKeys(
+      account: KeyPair(
+        publicKey: a.account.publicKey,
+        secretKey: c.keyFromBytes(a.account.secretKey.extractBytes()),
+      ),
+      device: DeviceKeys.generate(c, 'dev2'),
+    )..deriveSelf(c, 'alice');
+    const place = RecordPlace('users', 'alice', 'birth_date');
+    final e = EnvelopeCipher(
+      c,
+    ).seal({'d': '1990'}, a.currentKey('alice')!, place);
+    expect(EnvelopeCipher(c).open(e, restored.keyFor, place), {'d': '1990'});
+    // «Начать заново» — новый ключ аккаунта, старое личное не открыть.
+    final fresh = E2EKeys.generate(c, 'dev3')..deriveSelf(c, 'alice');
+    expect(
+      () => EnvelopeCipher(c).open(e, fresh.keyFor, place),
+      throwsA(anything),
+    );
+    expect(a.pairKeys, isEmpty, reason: 'в Keystore и бэкап не попадает');
   });
 }

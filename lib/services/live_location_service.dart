@@ -351,10 +351,11 @@ class LiveLocationService with WidgetsBindingObserver {
     };
 
     // Партнёру — сразу через канал, минуя диск.
-    await CentrifugoService().publish(
-      'loc:$channel',
-      ForkE2E.sealPoint(channel, {'t': 'point', 'uid': _uid, ...point}), // fork
-    );
+    final sealed = ForkE2E.sealPoint(
+        channel, {'t': 'point', 'uid': _uid, ...point}); // fork: нет ключа — null
+    if (sealed != null) {
+      await CentrifugoService().publish('loc:$channel', sealed);
+    }
 
     final stored = _storedAtMs;
     if (stored == null || now - stored >= _storeEvery.inMilliseconds) {
