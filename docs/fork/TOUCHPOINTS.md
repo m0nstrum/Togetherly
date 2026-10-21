@@ -113,6 +113,22 @@
 | `pocketbase/pb_public/watch/reels/reels.js`, `pocketbase/pb_public/watch/reels/index.html` | Ленты UX | Кнопка «назад» и в приложении на Android; с `__forkNativeChat` реплики идут мостом `forkChat`, приходят `window.forkChatIn`, открытый `chat` и история `state` игнорируются; версия скрипта в index.html поднята. Замер «ролик не пошёл» (апстрим, обращение 407) без Umami не пингует площадки. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
+| `lib/screens/settings_screen.dart` | Волна 2 UX | N1,N6,N8–N10,N14,N15: секция «Шифрование» (`ForkEncryptionSection` из `lib/fork/ui/settings_parts.dart`) вместо строки в «О приложении»; «Аккаунт» вверху и не красный; удаление отдельной группой внизу; Плюс скрыт при `allFree`; «Поддержка»/«Официально» скрыты при пустом адресе; секции переименованы, рисование и боковая кнопка в своей секции. | Повторить: порядок секций, `ForkEncryptionSection` первой, `if (… isNotEmpty) // fork` у почт. |
+| `lib/screens/home/home_header.dart` | Волна 2 UX | N5,N13: тап по аватару — профиль (партнёра — `PartnerProfileScreen`, свой — `onOpenTab(3)`), долгое нажатие — фото; пилюля «Не в паре» — `onOpenTab(2)`. Параметр `onOpenTab`. | Повторить; `home_screen.dart` должен передавать `onOpenTab`. |
+| `lib/screens/home/home_bottom_nav.dart` | Волна 2 UX | N11: подпись, Tooltip и подсказка долгого нажатия у круглой кнопки. | Повторить. |
+| `lib/screens/miss_you_button.dart` | Волна 2 UX | M8,N12: откат счётчика на всю пачку, повтор не больше 2 раз, ошибка через `ForkNotice`; Semantics/Tooltip у счёта и сердца. | Повторить. |
+| `lib/screens/miss_you_screen.dart` | Волна 2 UX | M5: вайб — сердечки после ответа, ошибка через `ForkNotice` с «Повторить». | Повторить. |
+| `lib/models/optimistic_count.dart` | Волна 2 UX | M8: `failed({count})` снимает всю пачку. | Повторить. |
+| `lib/models/password_change.dart` | Волна 2 UX | A15: минимум пароля — `PasswordPolicy.minLength` (12). | Повторить. |
+| `lib/screens/wishes_screen.dart` | Волна 2 UX | D11: видимая кнопка «Удалить» у своего желания. | Повторить. |
+| `lib/screens/memory_lane/detail.dart` | Волна 2 UX | D11: видимая кнопка удаления у своего комментария. | Повторить. |
+| `lib/widgets/draw/draw_tools_panel.dart` | Волна 2 UX | D12: иконка ластика (`backspace`) вместо «палочки». | Повторить. |
+| `lib/screens/live_map_screen.dart` | Волна 2 UX | G16: без точек — весь мир, а не Кишинёв; своя строка ошибки «скучаю». | Повторить. |
+| `pocketbase/pb_public/watch/room/room.js` | Волна 2 UX | V13,V14: значок и подпись кнопки полного экрана по состоянию; поле ссылки возвращает адрес на `blur`. | Повторить правки в `setCinema` и обработчике `#link`. |
+| `pocketbase/pb_public/watch/room/index.html` | Волна 2 UX | Версии скриптов `i18n.js`/`room.js` подняты (`<!-- fork -->`). | Повторить. |
+| `pocketbase/pb_public/watch/i18n.js` | Волна 2 UX | V13: ключи `room.cinema`, `room.cinemaExit` (ru, en). | Повторить. |
+| `test/models/optimistic_count_test.dart` | Волна 2 UX | Тесты `failed(count)`. | Сохранить. |
+| `test/models/password_change_test.dart` | Волна 2 UX | Минимум 12 символов. | Сохранить. |
 
 
 ## Что сознательно не трогали
