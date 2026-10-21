@@ -29,6 +29,9 @@ pb_hooks/email_case.pb.js
 pb_hooks/email_change.pb.js
 pb_hooks/filecheck.pb.js
 pb_hooks/frame_gift.pb.js
+pb_hooks/gift_push.js
+pb_hooks/gift_push.pb.js
+pb_hooks/gift_push.test.js
 pb_hooks/gifts.pb.js
 pb_hooks/gmail_mailer.pb.js
 pb_hooks/groups.pb.js

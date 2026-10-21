@@ -3,12 +3,15 @@ package pocketbase
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	validation "github.com/pocketbase/ozzo-validation/v4"
 
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
+	"github.com/spf13/cast"
 
+	"github.com/m0nstrum/togetherly/server/internal/domain/chat"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 )
 
@@ -55,6 +58,19 @@ func bindGuards(app core.App) {
 	}
 	app.OnRecordCreateRequest("live_location").BindFunc(guardLocation)
 	app.OnRecordUpdateRequest("live_location").BindFunc(guardLocation)
+
+	// Время сообщения ставит сервер: сбитые часы телефона не перемешивают
+	// переписку, а сообщение из офлайна встаёт на время написания
+	// (domain/chat). `sent_at` в коллекции нет — читается из тела запроса.
+	app.OnRecordCreateRequest("chat_messages").BindFunc(func(e *core.RecordRequestEvent) error {
+		var sent int64
+		if info, err := e.RequestInfo(); err == nil {
+			sent = cast.ToInt64(info.Body["sent_at"])
+		}
+		now := time.Now().UnixMilli()
+		e.Record.Set("ts", chat.MessageTime(int64(e.Record.GetFloat("ts")), now, sent))
+		return e.Next()
+	})
 }
 
 // sharePair — есть ли у a и b общая живая пара.
