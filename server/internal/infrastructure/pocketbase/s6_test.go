@@ -147,3 +147,24 @@ func TestCapsule(t *testing.T) {
 		assert.Contains(t, body, "секрет")
 	})
 }
+
+// S5: удаление аккаунта через API и отмена входом паролем.
+func TestScheduleDeleteAndLoginCancels(t *testing.T) {
+	w := newWorld(t)
+	code, body := w.do(t, http.MethodPost, "/api/account/schedule-delete", w.aTok, `{}`)
+	require.Equal(t, http.StatusOK, code, body)
+	u, err := w.app.FindRecordById("users", alice)
+	require.NoError(t, err)
+	assert.False(t, u.GetDateTime("delete_after").IsZero())
+
+	code, _ = w.do(t, http.MethodPost, "/api/account/schedule-delete", "", `{}`)
+	assert.NotEqual(t, http.StatusOK, code, "без входа")
+
+	code, body = w.do(t, http.MethodPost, "/api/collections/users/auth-with-password", "",
+		`{"identity":"`+alice+`@example.org","password":"password123"}`)
+	require.Equal(t, http.StatusOK, code, body)
+	assert.NotContains(t, body, "delete_after", "поле скрыто")
+	u, err = w.app.FindRecordById("users", alice)
+	require.NoError(t, err)
+	assert.True(t, u.GetDateTime("delete_after").IsZero(), "вход паролем снял пометку")
+}

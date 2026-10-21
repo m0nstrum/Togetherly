@@ -21,7 +21,9 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/domain/realtime"
 	"github.com/m0nstrum/togetherly/server/internal/handler"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/centrifugo"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 
 	// Миграции регистрируются в init().
 	_ "github.com/m0nstrum/togetherly/server/internal/migrations"
@@ -52,6 +54,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindRealtime(app, centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout), cfg.Centrifugo.Timeout, log)
 	bindCapsules(app, time.Now, log)
 	bindGuards(app)
+	acc := bindAccount(app, log)
 	bindSettings(app, cfg, log)
 
 	bindCompat(app, cfg.CompatAddr, log)
@@ -59,11 +62,39 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		handler.WatchRTC(e.Router, turn, time.Now)
+		handler.ScheduleDelete(e.Router, acc, time.Now, log)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
 			e.Router.GET("/{path...}", apis.Static(os.DirFS(cfg.PublicDir), false))
 		}
 		return e.Next()
 	})
+}
+
+// bindAccount — отложенное удаление аккаунтов: вход паролем снимает пометку,
+// ночная задача стирает тех, чей срок наступил.
+func bindAccount(app core.App, log *slog.Logger) *account.Service {
+	svc := account.New(app)
+	app.OnRecordAuthWithPasswordRequest("users").BindFunc(func(e *core.RecordAuthWithPasswordRequestEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+		if e.Record != nil {
+			if err := svc.Cancel(e.Record); err != nil {
+				log.Error("отмена удаления аккаунта", "err", err)
+			}
+		}
+		return nil
+	})
+	app.Cron().MustAdd("accounts_purge", "30 3 * * *", func() {
+		n, err := svc.PurgeDue(context.Background(), time.Now())
+		if err != nil {
+			log.Error("удаление аккаунтов", "err", err)
+		}
+		if n > 0 {
+			log.Info("аккаунты стёрты по сроку", "count", n)
+		}
+	})
+	return svc
 }
 
 // bindCompat поднимает на петле внутренний API для JS-хуков апстрима
@@ -72,7 +103,7 @@ func bindCompat(app core.App, addr string, log *slog.Logger) {
 	if addr == "" {
 		return
 	}
-	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), log), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), log), ReadHeaderTimeout: 5 * time.Second}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

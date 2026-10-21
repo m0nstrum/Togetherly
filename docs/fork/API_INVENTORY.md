@@ -40,7 +40,9 @@
 | `POST /internal/pair-accept` | перенесён (S4), ветвление один в один |
 | `GET /internal/group-read`, `POST /internal/group-write`, `GET /internal/groups-of` | перенесены (S4) |
 | `GET /internal/geo` | пустой ответ: страна нужна только правилам рекламы |
-| `POST /internal/{waiting-create,waiting-reset,pair-claim-approve,record,group-sync}`, `GET /internal/{count,couple-agg,online,profiles}` | 501, перенос в S5 |
+| `POST /internal/{waiting-create,waiting-reset,pair-claim-approve,record}` | перенесены (S5) |
+| `GET /internal/{count,couple-agg}` | не переносятся: статистика пары (`couple_stats.pb.js`) при отказе показывает нули по чату и настроениям; после E2E сервер этих данных не прочтёт, статистику считает клиент (E2E.md §10) |
+| `POST /internal/group-sync`, `GET /internal/{online,profiles,product-stats}` | хуками форка не используются; 501 с записью в журнал |
 
 ## 2. Роуты
 
@@ -64,7 +66,7 @@
 |---|---|---|---|
 | `POST /api/auth/password-reset` | `email_case.pb.js` | `pb_auth_service` | перенос + лимит попыток (решение 3) |
 | `POST /api/account/email-change/{request,confirm}` | `email_change.pb.js` | `email_change_service` | перенос, письма через свой SMTP |
-| `POST /api/account/schedule-delete` | **нет** | `user_data.dart` | **написать** (S5) |
+| `POST /api/account/schedule-delete` | Go (S5): `usecase/account` | `user_data.dart` | готово: неделя отсрочки, вход паролем отменяет, ночная задача распускает пары и стирает запись |
 | `POST /api/migrate/verify-password` | `migrate_bridge.pb.js` | `pb_auth_service` | выкинуть: мост Firebase → PB, у форка нет старой базы |
 | `POST /api/apple/native`, `POST /api/apple/notifications` | `apple_*.pb.js` | `pb_auth_service` (iOS) | выкинуть (решения 2, 3) |
 | `/api/oauth2-redirect` | встроенный PB | `pb_auth_service` | не настраиваем провайдеров (решение 3) |

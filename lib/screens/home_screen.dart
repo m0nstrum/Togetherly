@@ -162,6 +162,7 @@ import '../widgets/common/coin_image.dart';
 import '../widgets/season/season_backdrop_layer.dart';
 import '../widgets/theme/theme_pattern_layer.dart';
 import '../widgets/unfold/unfold_route.dart';
+import '../fork/flags.dart'; // fork
 
 
 class HomeScreen extends StatefulWidget {
@@ -1998,7 +1999,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             onCalendar: _openMoodCalendar,
                             onPost: _postPhoto,
                             onPostHold: _postSnap,
-                            onWallet: _openWallet,
+                            // fork: Wallet — отдельный продукт автора апстрима.
+                            onWallet: ForkFlags.hideUpstreamChannels ? null : _openWallet,
                             // С Плюсом лишние кнопки ряда можно спрятать в
                             // настройках, раздел «Главный экран».
                             hidden: HomeLayoutService.instance.current

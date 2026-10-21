@@ -66,6 +66,7 @@
 | `lib/services/pocketbase_service.dart` | S6 | Хранилище сессии: `ForkSecureAuthStore.open(_authPrefsKey)` вместо `AsyncAuthStore` на SharedPreferences; импорт `shared_preferences` убран, добавлен `../fork/secure_auth_store.dart`. | Повторить. Если апстрим сменил хранение сессии — перенести его логику в `lib/fork/secure_auth_store.dart`. |
 | `lib/services/pb_data_service.dart` | S4 | Запасной список ICE-серверов: вместо STUN Google — пустой (решение 4). | Повторить; сторож `no_author_hosts_test.dart` ловит `stun.l.google.com`. |
 | `lib/widgets/auth_widgets.dart` | S2 | `AuthSocialRow.build` при `ForkFlags.emailOnlyAuth` возвращает пустое место (решение 3), импорт. | Повторить. |
+| `lib/screens/home_screen.dart` | S5 | `onWallet` ряда действий — `null` при `ForkFlags.hideUpstreamChannels` (Togetherly Wallet — продукт автора), импорт. | Повторить. |
 | `lib/models/help_items.dart` | S2 | Пункты «telegram» и покупки Плюса — под флагами форка, импорт. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
