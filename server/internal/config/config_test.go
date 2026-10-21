@@ -45,3 +45,18 @@ func TestValidate(t *testing.T) {
 	_, err = config.Load()
 	assert.ErrorContains(t, err, "SENDER")
 }
+
+func TestWatchProxy(t *testing.T) {
+	t.Setenv("TETHERED_APP_URL", "https://pair.example.org")
+	t.Setenv("TETHERED_WATCH_PROXY__ENABLED", "true")
+	_, err := config.Load()
+	require.Error(t, err, "без сертификата прокси не включить")
+
+	t.Setenv("TETHERED_WATCH_PROXY__CADDY_DIR", "/caddy")
+	t.Setenv("TETHERED_WATCH_PROXY__HOSTS", ".youtube.com, .googlevideo.com ,")
+	cfg, err := config.Load()
+	require.NoError(t, err)
+	assert.Equal(t, "https://pair.example.org:8443", cfg.WatchProxyURL())
+	assert.Equal(t, []string{".youtube.com", ".googlevideo.com"}, cfg.WatchProxy.HostList())
+	assert.Equal(t, 3072, cfg.WatchProxy.DailyMB)
+}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,11 +20,13 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/config"
 	"github.com/m0nstrum/togetherly/server/internal/domain/ice"
 	"github.com/m0nstrum/togetherly/server/internal/domain/realtime"
+	"github.com/m0nstrum/togetherly/server/internal/domain/watchproxy"
 	"github.com/m0nstrum/togetherly/server/internal/handler"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/backup"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/centrifugo"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/metrics"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
+	wproxy "github.com/m0nstrum/togetherly/server/internal/infrastructure/watchproxy"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
@@ -82,6 +85,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	}
 
 	bindCompat(app, cfg.CompatAddr, pub, log)
+	proxyInfo := bindWatchProxy(app, cfg, mx, log)
 
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
@@ -89,11 +93,58 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
 		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
 		handler.Movies(e.Router, films, log)
+		handler.WatchProxy(e.Router, proxyInfo)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
 			e.Router.GET("/{path...}", apis.Static(os.DirFS(cfg.PublicDir), false))
 		}
 		return e.Next()
 	})
+}
+
+// bindWatchProxy поднимает прокси роликов (PLAN S11), если оператор его
+// включил. Пускает по токену входа: Basic uid:токен.
+func bindWatchProxy(app core.App, cfg config.Config, mx *metrics.Metrics, log *slog.Logger) handler.WatchProxyInfo {
+	w := cfg.WatchProxy
+	if !w.Enabled {
+		return handler.WatchProxyInfo{}
+	}
+	hosts := w.HostList()
+	if len(hosts) == 0 {
+		hosts = watchproxy.DefaultHosts
+	}
+	domain := ""
+	if u, err := url.Parse(cfg.WatchProxyURL()); err == nil {
+		domain = u.Hostname()
+	}
+	certs := &wproxy.CertFiles{CertFile: w.CertFile, KeyFile: w.KeyFile, CaddyDir: w.CaddyDir, Domain: domain}
+	p := wproxy.New(wproxy.Options{
+		Policy: watchproxy.Policy{Hosts: hosts},
+		Quota:  &watchproxy.Quota{Daily: int64(w.DailyMB) << 20},
+		Auth: func(_ context.Context, user, token string) bool {
+			rec, err := app.FindAuthRecordByToken(token, core.TokenTypeAuth)
+			return err == nil && rec.Id == user && rec.Collection().Name == "users"
+		},
+		Log:     log,
+		Observe: mx.ProxyConn,
+		Bytes:   mx.ProxyBytes,
+	})
+	srv := wproxy.Server(w.Addr, p, certs.GetCertificate)
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		go func() {
+			if err := srv.ListenAndServeTLS("", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Error("прокси роликов", "err", err)
+			}
+		}()
+		log.Info("прокси роликов включён", "addr", w.Addr, "url", cfg.WatchProxyURL())
+		return e.Next()
+	})
+	app.OnTerminate().BindFunc(func(e *core.TerminateEvent) error {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(ctx)
+		return e.Next()
+	})
+	return handler.WatchProxyInfo{Enabled: true, URL: cfg.WatchProxyURL(), Hosts: hosts}
 }
 
 // bindAccount — отложенное удаление аккаунтов: вход паролем снимает пометку,

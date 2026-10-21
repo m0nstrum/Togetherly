@@ -25,6 +25,16 @@ if [ -z "${SMOKE_BASE:-}" ]; then
 (cd "$here" && go build -o "$work/tethered" ./cmd/tethered)
 "$here/scripts/sync-hooks.sh" "$work/pb_hooks" >/dev/null
 
+# Прокси роликов (S11) — на самоподписанном сертификате.
+proxy_port=$((port + 1))
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=127.0.0.1 \
+  -keyout "$work/proxy.key" -out "$work/proxy.crt" >/dev/null 2>&1
+
+TETHERED_WATCH_PROXY__ENABLED=true \
+TETHERED_WATCH_PROXY__ADDR="127.0.0.1:$proxy_port" \
+TETHERED_WATCH_PROXY__PUBLIC_URL="https://127.0.0.1:$proxy_port" \
+TETHERED_WATCH_PROXY__CERT_FILE="$work/proxy.crt" \
+TETHERED_WATCH_PROXY__KEY_FILE="$work/proxy.key" \
 TETHERED_HTTP_ADDR="127.0.0.1:$port" \
 TETHERED_DATA_DIR="$work/pb_data" \
 TETHERED_HOOKS_DIR="$work/pb_hooks" \
@@ -91,6 +101,24 @@ echo "ok: токен Centrifugo"
 ice=$(get /api/watch/rtc "$btok")
 echo "$ice" | json "d['success']" | grep -q True || fail "watch/rtc: $ice"
 echo "ok: watch/rtc"
+
+if [ -z "${SMOKE_BASE:-}" ]; then
+  # Прокси роликов: сервер говорит, где он, пускает только по токену и
+  # только к площадкам из списка.
+  info=$(get /api/fork/watch-proxy "$atok")
+  echo "$info" | json "d['enabled'] and d['url'].endswith(':$proxy_port')" | grep -q True || fail "watch-proxy: $info"
+  through() { # пользователь:пароль адрес → код ответа прокси на CONNECT
+    command curl -sS -o /dev/null --max-time 15 --proxy "https://127.0.0.1:$proxy_port" --proxy-insecure \
+      --proxy-user "$1" "$2" >"$work/through.log" 2>&1
+    # Без конвейера от curl: pipefail уронил бы его на коде выхода curl.
+    grep -oE 'response [0-9]+' "$work/through.log" | grep -oE '[0-9]+' || echo passed
+  }
+  [ "$(through "$aid:bad" https://www.youtube.com/)" = 407 ] || fail "прокси пустил с чужим токеном"
+  [ "$(through "$aid:$atok" https://example.com/)" = 403 ] || fail "прокси пустил к площадке не из списка"
+  code=$(through "$aid:$atok" https://www.youtube.com/)
+  case "$code" in 407|403) fail "прокси не пустил к YouTube со своим токеном: $code" ;; esac
+  echo "ok: прокси роликов (YouTube: ${code})"
+fi
 
 # Доп. проверка поверх готовой пары (например, обмен ключами E2E клиента:
 # test/fork/e2e/live_test.dart). Команда получает адрес, токены и пару.

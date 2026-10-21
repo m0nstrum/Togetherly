@@ -29,6 +29,8 @@ type Metrics struct {
 	publishes  *prometheus.CounterVec
 	backups    *prometheus.CounterVec
 	lastBackup prometheus.Gauge
+	proxyConns *prometheus.CounterVec
+	proxyBytes prometheus.Counter
 }
 
 // New — реестр со стандартными метриками Go и процесса.
@@ -56,11 +58,20 @@ func New() *Metrics {
 			Name: "tethered_backup_last_success_timestamp_seconds",
 			Help: "Когда последний бэкап удался (unix).",
 		}),
+		proxyConns: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "tethered_watch_proxy_connections_total",
+			Help: "Соединения прокси роликов по исходу (ok, auth, denied, quota, dial) — без доменов и людей.",
+		}, []string{"result"}),
+		proxyBytes: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "tethered_watch_proxy_bytes_total",
+			Help: "Байты через прокси роликов, всего.",
+		}),
 	}
 	m.Registry.MustRegister(
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		m.requests, m.duration, m.publishes, m.backups, m.lastBackup,
+		m.proxyConns, m.proxyBytes,
 	)
 	return m
 }
@@ -142,3 +153,9 @@ func (m *Metrics) Published(err error) {
 func (m *Metrics) Handler() http.Handler {
 	return promhttp.HandlerFor(m.Registry, promhttp.HandlerOpts{})
 }
+
+// ProxyConn — исход попытки соединения через прокси роликов.
+func (m *Metrics) ProxyConn(result string) { m.proxyConns.WithLabelValues(result).Inc() }
+
+// ProxyBytes — байты закрытого соединения прокси роликов.
+func (m *Metrics) ProxyBytes(n int64) { m.proxyBytes.Add(float64(n)) }

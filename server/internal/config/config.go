@@ -4,6 +4,8 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"strings"
 	"time"
 
@@ -49,6 +51,7 @@ type Config struct {
 	SMTP       SMTP       `koanf:"smtp"`
 	TURN       TURN       `koanf:"turn"`
 	Backup     Backup     `koanf:"backup"`
+	WatchProxy WatchProxy `koanf:"watch_proxy"`
 }
 
 // Backup — встроенные бэкапы PocketBase (zip в pb_data/backups). Cron пуст —
@@ -61,6 +64,25 @@ type Backup struct {
 	AgeRecipients string `koanf:"age_recipients"`
 	// Dir — каталог зашифрованных бэкапов, вне pb_data.
 	Dir string `koanf:"dir"`
+}
+
+// WatchProxy — прокси роликов «Смотрим вместе» (PLAN S11). По умолчанию
+// выключен: трафик площадок идёт через сервер, а в РФ это может подпадать
+// под запрет средств обхода блокировок — решает оператор.
+type WatchProxy struct {
+	Enabled bool `koanf:"enabled"`
+	// Addr — где слушает TLS-прокси.
+	Addr string `koanf:"addr"`
+	// PublicURL — как его видит телефон; пусто — домен AppURL и порт Addr.
+	PublicURL string `koanf:"public_url"`
+	// Сертификат: явные файлы или хранилище Caddy (том caddy-data).
+	CertFile string `koanf:"cert_file"`
+	KeyFile  string `koanf:"key_file"`
+	CaddyDir string `koanf:"caddy_dir"`
+	// Hosts — белый список через запятую; пусто — площадки по умолчанию.
+	Hosts string `koanf:"hosts"`
+	// DailyMB — лимит на человека в сутки; 0 — без лимита.
+	DailyMB int `koanf:"daily_mb"`
 }
 
 // TURN — свой coturn для голоса в комнатах «Смотрим вместе». Secret — тот же,
@@ -117,6 +139,7 @@ func Load() (Config, error) {
 		SMTP:       SMTP{Port: 587, TLS: false},
 		TURN:       TURN{Port: 3478, TTL: 12 * time.Hour},
 		Backup:     Backup{MaxKeep: 7},
+		WatchProxy: WatchProxy{Addr: "0.0.0.0:8443", DailyMB: 3072},
 	}
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return Config{}, fmt.Errorf("config: разбор: %w", err)
@@ -133,6 +156,14 @@ func (c Config) Validate() error {
 	if (c.Centrifugo.API == "") != (c.Centrifugo.APIKey == "") {
 		errs = append(errs, errors.New("TETHERED_CENTRIFUGO__API и TETHERED_CENTRIFUGO__API_KEY задаются вместе"))
 	}
+	if w := c.WatchProxy; w.Enabled {
+		if (w.CertFile == "" || w.KeyFile == "") && w.CaddyDir == "" {
+			errs = append(errs, errors.New("TETHERED_WATCH_PROXY: нужен сертификат — CERT_FILE и KEY_FILE или CADDY_DIR"))
+		}
+		if w.PublicURL == "" && c.AppURL == "" {
+			errs = append(errs, errors.New("TETHERED_WATCH_PROXY__PUBLIC_URL пуст, и вывести его из TETHERED_APP_URL нечем"))
+		}
+	}
 	if c.Backup.AgeRecipients != "" {
 		if _, err := backup.ParseRecipients(c.Backup.AgeRecipients); err != nil {
 			errs = append(errs, fmt.Errorf("TETHERED_BACKUP__AGE_RECIPIENTS: %w", err))
@@ -145,4 +176,32 @@ func (c Config) Validate() error {
 		errs = append(errs, errors.New("TETHERED_SMTP__SENDER обязателен при заданном SMTP"))
 	}
 	return errors.Join(errs...)
+}
+
+// HostList — белый список прокси; пусто — nil (берутся площадки по умолчанию).
+func (w WatchProxy) HostList() []string {
+	var out []string
+	for _, h := range strings.Split(w.Hosts, ",") {
+		if h = strings.TrimSpace(h); h != "" {
+			out = append(out, h)
+		}
+	}
+	return out
+}
+
+// WatchProxyURL — адрес прокси для телефона: PublicURL или домен AppURL с
+// портом Addr.
+func (c Config) WatchProxyURL() string {
+	if c.WatchProxy.PublicURL != "" {
+		return c.WatchProxy.PublicURL
+	}
+	u, err := url.Parse(c.AppURL)
+	if err != nil || u.Hostname() == "" {
+		return ""
+	}
+	_, port, err := net.SplitHostPort(c.WatchProxy.Addr)
+	if err != nil || port == "" {
+		return ""
+	}
+	return "https://" + net.JoinHostPort(u.Hostname(), port)
 }

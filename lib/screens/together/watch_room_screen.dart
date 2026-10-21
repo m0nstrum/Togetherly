@@ -10,6 +10,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../fork/e2e/room_chat_ui.dart'; // fork
+import '../../fork/watch_proxy.dart'; // fork
 import '../../models/call_record.dart';
 import '../../models/exit_guard.dart';
 import '../../services/chat_service.dart';
@@ -114,6 +115,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     // сам не держит, а играет ли ролик, знает только страница, поэтому
     // держим всё время, пока комната открыта.
     ScreenAwake.hold(this);
+    unawaited(ForkWatchProxy.enable()); // fork (S11): ролики через свой сервер
     unawaited(_openVoice());
     WidgetsBinding.instance.addObserver(this);
     if (widget.reels) unawaited(_startFeed());
@@ -475,6 +477,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
 
   @override
   void dispose() {
+    unawaited(ForkWatchProxy.disable()); // fork
     _covered?.removeStatusListener(_onCovered);
     unawaited(_closeWindow());
     ScreenAwake.release(this);
@@ -594,6 +597,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
               onWebViewCreated: _wire,
               onLoadStop: (c, _) => _onPageLoaded(c),
               onRenderProcessGone: (_, _) => _onRendererGone(),
+              onReceivedHttpAuthRequest: (_, ch) async => ForkWatchProxy.answer(ch), // fork
             ),
             if (_loading) Center(child: M3Loading(color: Theme.of(context).colorScheme.primary)),
             if (!widget.reels) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId), // fork

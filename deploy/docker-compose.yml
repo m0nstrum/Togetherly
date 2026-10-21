@@ -31,8 +31,16 @@ services:
       TETHERED_TRUSTED_PROXY_HEADER: X-Forwarded-For
       # /metrics для Prometheus — только во внутренней сети compose.
       TETHERED_METRICS_ADDR: 0.0.0.0:9100
+      # Прокси роликов (PLAN S11): выключен, пока WATCH_PROXY не true.
+      TETHERED_WATCH_PROXY__ENABLED: ${WATCH_PROXY:-false}
+      TETHERED_WATCH_PROXY__DAILY_MB: ${WATCH_PROXY_DAILY_MB:-3072}
+      TETHERED_WATCH_PROXY__CADDY_DIR: /caddy/caddy
+    ports:
+      - "8443:8443"
     volumes:
       - server-data:/data
+      # Сертификат домена для прокси — тот, что получил Caddy.
+      - caddy-data:/caddy:ro
       # Зашифрованные бэкапы: этот том и уносят с машины (deploy/README.md).
       - server-backups:/backups
     depends_on:
