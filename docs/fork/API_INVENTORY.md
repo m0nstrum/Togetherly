@@ -28,6 +28,20 @@
   `love_tests` живёт только в hotpath (Postgres). Схему восстанавливать по
   Dart-моделям.
 
+## 1a. hotpath внутри хуков (найдено в S4)
+
+Половина отобранных JS-хуков ходит в hotpath по `http://127.0.0.1:8120/internal/*`
+(группы у апстрима жили в Postgres): приём приглашения, счётчики, сундук,
+подарки, «ожидание». Хуки форк не правит — сервер отвечает на те же пути
+поверх PocketBase (`server/internal/handler/compat.go`, слушает только петлю).
+
+| Путь | Статус |
+|---|---|
+| `POST /internal/pair-accept` | перенесён (S4), ветвление один в один |
+| `GET /internal/group-read`, `POST /internal/group-write`, `GET /internal/groups-of` | перенесены (S4) |
+| `GET /internal/geo` | пустой ответ: страна нужна только правилам рекламы |
+| `POST /internal/{waiting-create,waiting-reset,pair-claim-approve,record,group-sync}`, `GET /internal/{count,couple-agg,online,profiles}` | 501, перенос в S5 |
+
 ## 2. Роуты
 
 ### Пары, группы, приглашения

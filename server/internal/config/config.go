@@ -25,12 +25,23 @@ type Config struct {
 	AppURL string `koanf:"app_url"`
 	// AppName — имя отправителя писем.
 	AppName string `koanf:"app_name"`
+	// CompatAddr — внутренний API для JS-хуков апстрима (их hotpath). Адрес
+	// зашит в хуках; пустой — не поднимать.
+	CompatAddr string `koanf:"compat_addr"`
 	// LogLevel — debug, info, warn, error.
 	LogLevel string `koanf:"log_level"`
 
 	Centrifugo Centrifugo `koanf:"centrifugo"`
 	SMTP       SMTP       `koanf:"smtp"`
 	TURN       TURN       `koanf:"turn"`
+	Backup     Backup     `koanf:"backup"`
+}
+
+// Backup — встроенные бэкапы PocketBase (zip в pb_data/backups). Cron пуст —
+// выключены. Шифрование и вынос наружу — S10.
+type Backup struct {
+	Cron    string `koanf:"cron"`
+	MaxKeep int    `koanf:"max_keep"`
 }
 
 // TURN — свой coturn для голоса в комнатах «Смотрим вместе». Secret — тот же,
@@ -80,10 +91,12 @@ func Load() (Config, error) {
 		HooksDir:   "pb_hooks",
 		PublicDir:  "pb_public",
 		AppName:    "Tethered",
+		CompatAddr: "127.0.0.1:8120",
 		LogLevel:   "info",
 		Centrifugo: Centrifugo{Timeout: 5 * time.Second},
 		SMTP:       SMTP{Port: 587, TLS: false},
 		TURN:       TURN{Port: 3478, TTL: 12 * time.Hour},
+		Backup:     Backup{MaxKeep: 7},
 	}
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return Config{}, fmt.Errorf("config: разбор: %w", err)

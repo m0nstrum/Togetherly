@@ -772,11 +772,9 @@ class PbDataService {
     } catch (e) {
       debugPrint('PbData.iceServers failed: $e');
     }
-    return [
-      {
-        'urls': ['stun:stun.l.google.com:19302'],
-      }
-    ];
+    // fork: без чужих STUN (решение 4) — сервер не ответил, значит только
+    // прямое соединение в одной сети.
+    return [];
   }
 
   /// Карточка товара по ссылке: название, картинка, магазин, цена.

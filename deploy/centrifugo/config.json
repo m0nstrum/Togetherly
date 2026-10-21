@@ -1,0 +1,14 @@
+{
+  "client": {
+    "allowed_origins": []
+  },
+  "channel": {
+    "namespaces": [
+      { "name": "pair",  "allow_publish_for_subscriber": true },
+      { "name": "draw",  "allow_publish_for_subscriber": true },
+      { "name": "loc",   "allow_publish_for_subscriber": true },
+      { "name": "watch", "allow_publish_for_subscriber": true, "presence": true },
+      { "name": "user" }
+    ]
+  }
+}

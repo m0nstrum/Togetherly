@@ -12,6 +12,8 @@ void main() {
     'домен апстрима': RegExp(r'togetherly\.(day|app)\b'),
     'duckdns': RegExp(r'duckdns'),
     'Firebase Hosting': RegExp(r'web\.app\b'),
+    // Решение 4: только свой STUN/TURN, публичный STUN видит IP обоих.
+    'STUN Google': RegExp(r'stun\.l\.google\.com'),
     // IP как адрес: после схемы или @, либо целой строкой/значением
     // элемента. Голые числа (SVG-пути, версии в User-Agent) не трогаем.
     'IP-литерал': RegExp(

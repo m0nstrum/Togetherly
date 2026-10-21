@@ -1,0 +1,10 @@
+# Внешний вход: HTTPS (Let's Encrypt сам), WebSocket Centrifugo и сервер.
+# HTTP API Centrifugo (/api на его порту) наружу не выпускается.
+{$TETHERED_DOMAIN} {
+	encode zstd gzip
+
+	@ws path /connection/websocket
+	reverse_proxy @ws centrifugo:8000
+
+	reverse_proxy server:8090
+}

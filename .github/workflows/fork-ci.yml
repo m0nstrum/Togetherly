@@ -89,6 +89,10 @@ jobs:
       - name: go test
         run: go test -race ./...
 
+      # Настоящий бинарник с JS-хуками апстрима: вход, пара по коду, чат.
+      - name: смоук
+        run: scripts/smoke.sh
+
   apk:
     name: build APK
     runs-on: ubuntu-latest

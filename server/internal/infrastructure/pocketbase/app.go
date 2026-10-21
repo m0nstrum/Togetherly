@@ -4,7 +4,9 @@ package pocketbase
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/domain/realtime"
 	"github.com/m0nstrum/togetherly/server/internal/handler"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/centrifugo"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 
 	// Миграции регистрируются в init().
 	_ "github.com/m0nstrum/togetherly/server/internal/migrations"
@@ -49,12 +52,37 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindRealtime(app, centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout), cfg.Centrifugo.Timeout, log)
 	bindSettings(app, cfg, log)
 
+	bindCompat(app, cfg.CompatAddr, log)
+
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		handler.WatchRTC(e.Router, turn, time.Now)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
 			e.Router.GET("/{path...}", apis.Static(os.DirFS(cfg.PublicDir), false))
 		}
+		return e.Next()
+	})
+}
+
+// bindCompat поднимает на петле внутренний API для JS-хуков апстрима
+// (handler.Compat). Адрес зашит в хуках — 127.0.0.1:8120.
+func bindCompat(app core.App, addr string, log *slog.Logger) {
+	if addr == "" {
+		return
+	}
+	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), log), ReadHeaderTimeout: 5 * time.Second}
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Error("внутренний API для хуков", "addr", addr, "err", err)
+			}
+		}()
+		return e.Next()
+	})
+	app.OnTerminate().BindFunc(func(e *core.TerminateEvent) error {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(ctx)
 		return e.Next()
 	})
 }
@@ -119,6 +147,8 @@ func bindSettings(app core.App, cfg config.Config, log *slog.Logger) {
 			s.Meta.SenderAddress = cfg.SMTP.Sender
 			s.Meta.SenderName = cfg.AppName
 		}
+		s.Backups.Cron = cfg.Backup.Cron
+		s.Backups.CronMaxKeep = cfg.Backup.MaxKeep
 		if err := e.App.Save(s); err != nil {
 			log.Error("настройки PocketBase не сохранены", "err", err)
 		}

@@ -2,9 +2,17 @@
 
 Каждая правка файла, который пришёл из апстрима (`THET1ME-1/togetherly`), — здесь.
 Новые файлы форка (`lib/fork/**`, `test/fork/**`, `tool/fork/**`,
-`android/app/src/fork/**`, `docs/fork/**`, `server/**`, `deploy/**`,
-`.github/workflows/fork-*.yml`) в реестр не попадают: с апстримом они не
-конфликтуют.
+`android/app/src/fork/**`, `docs/fork/**`, `server/**`, `deploy/**`, `env/**`,
+`.github/workflows/fork-*.yml`, `.dockerignore`, `dart_test.yaml`) в реестр не
+попадают: с апстримом они не конфликтуют.
+
+Отдельный случай — **JS-хуки апстрима** (`pocketbase/pb_hooks`). Форк их не
+правит: сервер берёт файлы по списку `server/hooks.allow` как есть, а
+недостающий hotpath заменяет внутренним API на Go (`server/internal/handler/compat.go`).
+После мёржа апстрима: `server/scripts/sync-hooks.sh` (упадёт, если файл из
+списка переименован), `python3 tool/fork/api_inventory.py --missing`, смоук
+`server/scripts/smoke.sh`. Новый хук апстрима сам в сервер не попадает — его
+надо осознанно добавить в `hooks.allow`.
 
 Правки в чужих файлах помечены комментарием `fork` (`// fork`, `<!-- fork -->`),
 поэтому их можно найти так: `git grep -n "fork:\|// fork"`.
@@ -55,6 +63,7 @@
 | `android/app/src/main/kotlin/com/togetherly/love/FcmService.kt` | S2 | Удалён. | Оставить удалённым. Логику, которую апстрим добавит в него (пуш-события), переносить на путь Centrifugo. |
 | `lib/screens/settings_screen.dart` (S2) | S2 | `ForkCrashReportsRow` в разделе «О приложении»; строки Telegram-канала и бота автора под `!ForkFlags.hideUpstreamChannels`. | Повторить. |
 | `lib/screens/profile_screen.dart` (S2) | S2 | Донат-карточка под `!ForkFlags.hideUpstreamChannels`, импорт. | Повторить. |
+| `lib/services/pb_data_service.dart` | S4 | Запасной список ICE-серверов: вместо STUN Google — пустой (решение 4). | Повторить; сторож `no_author_hosts_test.dart` ловит `stun.l.google.com`. |
 | `lib/widgets/auth_widgets.dart` | S2 | `AuthSocialRow.build` при `ForkFlags.emailOnlyAuth` возвращает пустое место (решение 3), импорт. | Повторить. |
 | `lib/models/help_items.dart` | S2 | Пункты «telegram» и покупки Плюса — под флагами форка, импорт. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
