@@ -19,6 +19,7 @@ import '../../services/offline/pb_id.dart';
 import '../../services/pocketbase_service.dart';
 import 'crypto.dart';
 import 'e2e_service.dart';
+import 'envelope.dart';
 import 'http_client.dart';
 import 'key_store.dart';
 import 'password_policy.dart';
@@ -79,7 +80,7 @@ abstract final class ForkE2E {
     _group = groupId;
     final s = await ensure(uid);
     if (s == null || _group != groupId) return;
-    unawaited(sync(groupId).then((_) => migrateChat(groupId, uid)));
+    unawaited(sync(groupId).then((_) => migrateOwn(groupId, uid)));
     for (final col in const ['e2e_handshake', 'e2e_grants']) {
       try {
         _subs.add(
@@ -207,11 +208,58 @@ abstract final class ForkE2E {
     Map<String, dynamic> rec,
   ) {
     if (collection == null || !RecordCodec.covers(collection)) return rec;
+    return _syncCodec().decode(collection, rec);
+  }
+
+  static RecordCodec _syncCodec() {
     final s = service.value;
-    final codec = s != null
+    return s != null
         ? RecordCodec(s.crypto, s)
         : (_roReady ?? RecordCodec.locked());
-    return codec.decode(collection, rec);
+  }
+
+  static ChannelPlace _pointPlace(String channel, String uid, Object? at) =>
+      ChannelPlace('loc:$channel', 'point:$uid', at is int ? at : 0);
+
+  /// Живая точка геопозиции для канала `loc:<channel>`. Нет ключа пары —
+  /// как есть.
+  static Map<String, dynamic> sealPoint(
+    String channel,
+    Map<String, dynamic> msg,
+  ) {
+    final members = pairChannelMembers(channel);
+    final codec = _syncCodec();
+    final group = members == null ? null : codec.keys.groupWith(members);
+    final key = group == null ? null : codec.keys.currentKey(group);
+    final uid = '${msg['uid'] ?? ''}';
+    if (key == null || uid.isEmpty) return msg;
+    final at = msg['updatedAt'];
+    final inner = Map<String, dynamic>.of(msg)
+      ..remove('t')
+      ..remove('uid');
+    return {
+      't': msg['t'],
+      'uid': uid,
+      'at': at,
+      'e2e': codec.sealChannel(_pointPlace(channel, uid, at), inner, key),
+    };
+  }
+
+  /// Обратное к [sealPoint]; открытая точка (старый клиент, нет ключа) —
+  /// как есть, подделка — null.
+  static Map<String, dynamic>? openPoint(
+    String channel,
+    Map<String, dynamic> msg,
+  ) {
+    final sealed = msg['e2e'];
+    if (sealed is! String) return msg;
+    final uid = '${msg['uid'] ?? ''}';
+    final inner = _syncCodec().openChannel(
+      _pointPlace(channel, uid, msg['at']),
+      sealed,
+    );
+    if (inner == null) return null;
+    return {...inner, 't': msg['t'], 'uid': uid};
   }
 
   /// Шифруются ли новые записи пары [groupId].
@@ -220,9 +268,15 @@ abstract final class ForkE2E {
     return s != null && s.currentKey(groupId) != null;
   }
 
-  static Future<String?> _groupOf(String collection, String id) async {
+  static Future<String?> _groupOf(
+    String collection,
+    String id,
+    Map<String, dynamic> body,
+  ) async {
     final hint = _groupHints[id];
     if (hint != null) return hint;
+    final members = pairChannelMembers(body['channel']);
+    if (members != null) return (await codec())?.keys.groupWith(members);
     final local = await LocalStore.instance.getRecord(collection, id);
     final g = local?.data['group_id'];
     if (g is String && g.isNotEmpty) return g;
@@ -256,22 +310,25 @@ abstract final class ForkE2E {
     }
   }
 
-  /// Свои сообщения, отправленные до E2E, перешифровать на сервере. Чужие
-  /// перешифрует их автор: править чужое сервер не даёт (chat_guard.pb.js).
-  static Future<int> migrateChat(String groupId, String uid) async {
+  /// Коллекции пары, где своё старое перешифровывает сам автор: править
+  /// чужое сервер не даёт (chat_guard.pb.js, правила цикла).
+  static const List<String> migrated = ['chat_messages', 'cycle_entries'];
+
+  /// Свои записи, сохранённые до E2E, перешифровать на сервере.
+  static Future<int> migrateOwn(String groupId, String uid) async {
+    var done = 0;
+    for (final col in migrated) {
+      done += await _migrate(col, groupId, uid);
+    }
+    return done;
+  }
+
+  static Future<int> _migrate(String col, String groupId, String uid) async {
     if (!encrypts(groupId) || uid.isEmpty) return 0;
-    const col = 'chat_messages';
     final fields = e2eFields[col]!;
     final pb = PocketBaseService().pb;
-    // Открытое поле: строка без префикса или непустой JSON-объект (`":`
-    // внутри; у шифртекста в JSON-колонке его нет).
-    final open = fields.entries.map(
-      (e) => e.value.kind == SealKind.text
-          ? "(${e.key} != '' && ${e.key} !~ '$e2eFieldPrefix')"
-          : "${e.key} ~ '\":'",
-    );
     final filter = pb.filter(
-      'group_id = {:g} && user_uid = {:u} && (${open.join(' || ')})',
+      'group_id = {:g} && user_uid = {:u} && (${plaintextFilter(col)})',
       {'g': groupId, 'u': uid},
     );
     final seen = <String>{};
@@ -304,9 +361,9 @@ abstract final class ForkE2E {
         }
       }
     } catch (e) {
-      debugPrint('ForkE2E: перешифровка чата $groupId — $e');
+      debugPrint('ForkE2E: перешифровка $col $groupId — $e');
     }
-    if (done > 0) debugPrint('ForkE2E: перешифровано сообщений: $done');
+    if (done > 0) debugPrint('ForkE2E: перешифровано $col: $done');
     return done;
   }
 

@@ -29,8 +29,9 @@ void main() {
     'две установки получают общий ключ пары через сервер; сверка эмодзи; бэкап',
     () async {
       final c = await E2ECrypto.init();
+      final url = base!;
       E2EService install(String tok, String uid) {
-        final pb = PocketBase(base!)..authStore.save(tok, null);
+        final pb = PocketBase(url)..authStore.save(tok, null);
         return E2EService(
           crypto: c,
           store: E2EKeyStore(c, MemoryVault()),
@@ -58,11 +59,14 @@ void main() {
       // Чат (S9): сервер хранит шифртекст, партнёр читает текст. Длинное
       // кириллическое сообщение влезает в поле после шифрования.
       PocketBase chat(String tok, E2EService s) => PocketBase(
-        base!,
+        url,
         httpClientFactory: () => E2EHttpClient(
           http.Client(),
           codec: () async => RecordCodec(c, s),
-          groupOf: (_, _) async => pair,
+          groupOf: (_, _, body) async {
+            final m = pairChannelMembers(body['channel']);
+            return m == null ? pair : s.groupWith(m);
+          },
           newId: newPbId,
         ),
       )..authStore.save(tok, null);
@@ -82,7 +86,7 @@ void main() {
           );
       expect(sent.getStringValue('text'), long);
       final raw =
-          await (PocketBase(base!)..authStore.save(env['SMOKE_BTOK']!, null))
+          await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
               .collection('chat_messages')
               .getOne(id);
       expect(raw.getStringValue('text'), startsWith(e2eFieldPrefix));
@@ -104,6 +108,53 @@ void main() {
         ),
         'правка',
       );
+
+      // Цикл и геопозиция (S9.2): дата отметки и координаты — только шифром.
+      final cycleId = newPbId();
+      await chat(env['SMOKE_ATOK']!, a)
+          .collection('cycle_entries')
+          .create(
+            body: {
+              'id': cycleId,
+              'group_id': pair,
+              'user_uid': a.uid,
+              'day': '2026-10-01 00:00:00.000Z',
+              'kind': 'period',
+              'flow': 'heavy',
+              'shared': true,
+            },
+          );
+      final rawCycle =
+          await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+              .collection('cycle_entries')
+              .getOne(cycleId);
+      expect(rawCycle.getStringValue('day'), e2eClearedDate);
+      expect(rawCycle.getStringValue('kind'), startsWith(e2eFieldPrefix));
+      expect(rawCycle.getStringValue('enc'), startsWith(e2eFieldPrefix));
+      final bobCycle = await bobChat
+          .collection('cycle_entries')
+          .getOne(cycleId);
+      expect(bobCycle.getStringValue('day'), '2026-10-01 00:00:00.000Z');
+      expect(bobCycle.getStringValue('kind'), 'period');
+
+      final ids = [a.uid, b.uid]..sort();
+      final channel = 'pair_${ids[0]}_${ids[1]}';
+      final loc = await chat(env['SMOKE_ATOK']!, a)
+          .collection('live_location')
+          .create(
+            body: {
+              'channel': channel,
+              'user_uid': a.uid,
+              'data': {'lat': 55.75, 'lng': 37.61},
+            },
+          );
+      final rawLoc =
+          await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+              .collection('live_location')
+              .getOne(loc.id);
+      expect(rawLoc.data['data'], startsWith(e2eFieldPrefix));
+      final bobLoc = await bobChat.collection('live_location').getOne(loc.id);
+      expect(bobLoc.data['data'], {'lat': 55.75, 'lng': 37.61});
 
       await a.sasStart(pair, b.uid);
       await b.syncGroup(pair);

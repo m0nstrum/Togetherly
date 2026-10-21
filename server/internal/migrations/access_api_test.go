@@ -281,3 +281,15 @@ func TestSealedFieldsFitCiphertext(t *testing.T) {
 		assert.Equal(t, migrations.E2ESealedMax, tf.Max, f)
 	}
 }
+
+// У цикла есть поле `enc`, куда клиент переносит дату отметки.
+func TestMovedFieldsHaveEnc(t *testing.T) {
+	app := newApp(t)
+	defer app.Cleanup()
+
+	col, err := app.FindCollectionByNameOrId("cycle_entries")
+	require.NoError(t, err)
+	tf, ok := col.Fields.GetByName("enc").(*core.TextField)
+	require.True(t, ok)
+	assert.Equal(t, migrations.E2ESealedMax, tf.Max)
+}

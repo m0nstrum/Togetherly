@@ -14,6 +14,7 @@ import 'centrifugo_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import 'pocketbase_service.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 const String _kSharingEnabledKey = 'live_location_sharing_enabled';
 
@@ -350,8 +351,10 @@ class LiveLocationService with WidgetsBindingObserver {
     };
 
     // Партнёру — сразу через канал, минуя диск.
-    await CentrifugoService()
-        .publish('loc:$channel', {'t': 'point', 'uid': _uid, ...point});
+    await CentrifugoService().publish(
+      'loc:$channel',
+      ForkE2E.sealPoint(channel, {'t': 'point', 'uid': _uid, ...point}), // fork
+    );
 
     final stored = _storedAtMs;
     if (stored == null || now - stored >= _storeEvery.inMilliseconds) {
@@ -441,8 +444,9 @@ class LiveLocationService with WidgetsBindingObserver {
           emit();
         });
 
-        unsub = await CentrifugoService().subscribeRaw('loc:$channel', (data) {
-          if (data['t'] != 'point') return;
+        unsub = await CentrifugoService().subscribeRaw('loc:$channel', (raw) {
+          final data = ForkE2E.openPoint(channel, raw); // fork
+          if (data == null || data['t'] != 'point') return;
           if ((data['uid'] ?? '').toString() != uid) return;
           fromChannel = LivePoint.fromMap(data);
           emit();

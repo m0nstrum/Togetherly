@@ -146,6 +146,19 @@ class E2EKeys implements E2EKeyring {
 
   /// Ключ пары последней эпохи — им шифруется новое.
   @override
+  String? groupWith(Set<String> members) {
+    for (final e in groupMembers.entries) {
+      final m = e.value.toSet();
+      if (m.length == members.length &&
+          m.containsAll(members) &&
+          currentKey(e.key) != null) {
+        return e.key;
+      }
+    }
+    return null;
+  }
+
+  @override
   PairKey? currentKey(String groupId) {
     PairKey? best;
     for (final k in pairKeys.values) {

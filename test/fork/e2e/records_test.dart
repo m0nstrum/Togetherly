@@ -21,6 +21,12 @@ class _Keys implements E2EKeyring {
   PairKey? keyFor(String keyId) => byId[keyId];
 
   @override
+  String? groupWith(Set<String> members) =>
+      members.containsAll(['alice', 'bob']) && members.length == 2
+      ? _gid
+      : null;
+
+  @override
   PairKey? currentKey(String groupId) {
     PairKey? best;
     for (final k in byId.values) {
@@ -145,6 +151,93 @@ void main() {
     });
   });
 
+  group('геопозиция и цикл', () {
+    test('цикл: kind и flow на месте, дата переезжает в enc', () {
+      final enc = codec.encode('cycle_entries', 'c1', _gid, {
+        'group_id': _gid,
+        'day': '2026-10-01 00:00:00.000Z',
+        'kind': 'period',
+        'flow': 'heavy',
+        'shared': true,
+      });
+      expect(enc['day'], e2eClearedDate);
+      expect(enc['kind'], startsWith(e2eFieldPrefix));
+      expect(enc['flow'], startsWith(e2eFieldPrefix));
+      expect(enc[e2eMovedField], startsWith(e2eFieldPrefix));
+      expect(enc['shared'], isTrue);
+      final dec = codec.decode('cycle_entries', {'id': 'c1', ...enc});
+      expect(dec['day'], '2026-10-01 00:00:00.000Z');
+      expect(dec['kind'], 'period');
+      expect(dec.containsKey(e2eMovedField), isFalse);
+
+      // Переключатель видимости шлёт только `shared` — дату не трогает.
+      final shared = codec.encode('cycle_entries', 'c1', _gid, {
+        'shared': false,
+      });
+      expect(shared, {'shared': false});
+    });
+
+    test('цикл: без ключа дата за календарём, ключ пришёл — вернулась', () {
+      final later = PairKey(_gid, 2, c.symmetricKey());
+      final other = RecordCodec(c, _Keys()..add(later));
+      final enc = other.encode('cycle_entries', 'c1', _gid, {
+        'day': '2026-10-02',
+        'kind': 'pms',
+      });
+      final locked = codec.decode('cycle_entries', {'id': 'c1', ...enc});
+      expect(locked['day'], e2eClearedDate);
+      expect(locked['kind'], '');
+      keys.add(later);
+      final open = codec.retry('cycle_entries', locked)!;
+      expect(open['day'], '2026-10-02');
+      expect(open['kind'], 'pms');
+      expect(open.containsKey(e2eLockedKey), isFalse);
+    });
+
+    test('точка геопозиции: data — JSON, пара по каналу', () {
+      expect(pairChannelMembers('pair_alice_bob'), {'alice', 'bob'});
+      expect(pairChannelMembers('pair_alice'), isNull);
+      expect(pairChannelMembers(_gid), isNull);
+      final point = {'lat': 55.75, 'lng': 37.61, 'updatedAt': 1};
+      final enc = codec.encode('live_location', 'l1', _gid, {
+        'channel': 'pair_alice_bob',
+        'data': point,
+      });
+      expect(enc['data'], startsWith(e2eFieldPrefix));
+      expect(enc['channel'], 'pair_alice_bob');
+      expect(
+        codec.decode('live_location', {'id': 'l1', ...enc})['data'],
+        point,
+      );
+    });
+
+    test('живая точка в канале: AAD — канал, автор и время', () {
+      final k = keys.currentKey(_gid)!;
+      const place = ChannelPlace('loc:pair_alice_bob', 'point:alice', 7);
+      final sealed = codec.sealChannel(place, {'lat': 1.5}, k);
+      expect(codec.openChannel(place, sealed), {'lat': 1.5});
+      for (final other in const [
+        ChannelPlace('loc:pair_alice_bob', 'point:bob', 7),
+        ChannelPlace('loc:pair_alice_bob', 'point:alice', 8),
+        ChannelPlace('loc:pair_alice_eve', 'point:alice', 7),
+      ]) {
+        expect(codec.openChannel(other, sealed), isNull);
+      }
+    });
+
+    test('фильтр открытых полей для перешифровки', () {
+      expect(
+        plaintextFilter('cycle_entries'),
+        contains("(day != '' && day != '$e2eClearedDate')"),
+      );
+      expect(
+        plaintextFilter('cycle_entries'),
+        contains("(kind != '' && kind !~ 'e2e1.')"),
+      );
+      expect(plaintextFilter('chat_messages'), contains('reactions ~ \'":\''));
+    });
+  });
+
   group('HTTP-клиент', () {
     late List<http.Request> wire;
     late Map<String, Map<String, dynamic>> server;
@@ -166,7 +259,7 @@ void main() {
         return _json(jsonEncode(server[id]));
       }),
       codec: () async => withCodec ?? codec,
-      groupOf: (col, id) async => server[id]?['group_id'] as String?,
+      groupOf: (col, id, body) async => server[id]?['group_id'] as String?,
       newId: () => 'generatedid0001',
     );
 

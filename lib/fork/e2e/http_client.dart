@@ -12,8 +12,14 @@ import 'package:http/http.dart' as http;
 
 import 'record_codec.dart';
 
-/// Пара записи, когда в теле правки её нет: кэш или сервер.
-typedef GroupLookup = Future<String?> Function(String collection, String id);
+/// Пара записи, когда в теле нет `group_id`: по телу (канал геопозиции),
+/// кэшу или серверу.
+typedef GroupLookup =
+    Future<String?> Function(
+      String collection,
+      String id,
+      Map<String, dynamic> body,
+    );
 
 class E2EHttpClient extends http.BaseClient {
   E2EHttpClient(
@@ -99,7 +105,7 @@ class E2EHttpClient extends http.BaseClient {
     }
     var group = body['group_id'] is String ? body['group_id'] as String : '';
     if (group.isEmpty && _groupOf != null) {
-      group = await _groupOf(col, id) ?? '';
+      group = await _groupOf(col, id, body) ?? '';
     }
     if (group.isEmpty) return request;
     final enc = codec.encode(col, id, group, body);

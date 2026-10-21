@@ -122,3 +122,26 @@ func init() {
 		return nil
 	}, nil, "1760000003_e2e_sealed_fields.go")
 }
+
+// e2eMovedCollections — коллекции, где часть полей не зашифровать на месте
+// (даты): они переезжают в текстовое поле `enc` (SealKind.moved на клиенте).
+var e2eMovedCollections = []string{"cycle_entries"}
+
+func init() {
+	m.Register(func(app core.App) error {
+		for _, name := range e2eMovedCollections {
+			col, err := app.FindCollectionByNameOrId(name)
+			if err != nil {
+				continue
+			}
+			if col.Fields.GetByName("enc") != nil {
+				continue
+			}
+			col.Fields.Add(&core.TextField{Name: "enc", Max: E2ESealedMax})
+			if err := app.Save(col); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, nil, "1760000004_e2e_moved_fields.go")
+}

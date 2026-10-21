@@ -807,4 +807,6 @@ class E2EService implements E2EKeyring {
   PairKey? keyFor(String keyId) => keys.keyFor(keyId);
   @override
   PairKey? currentKey(String groupId) => keys.currentKey(groupId);
+  @override
+  String? groupWith(Set<String> members) => keys.groupWith(members);
 }
