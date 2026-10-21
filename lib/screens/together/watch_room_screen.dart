@@ -557,6 +557,23 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// 20.09.2026). Первое нажатие предупреждает, второе выпускает.
   DateTime? _backAt;
 
+  // fork (UX V7): «назад» в полном экране выводит из полного экрана, а не
+  // из комнаты — иначе кино останавливалось у обоих.
+  Future<void> _onBack() async {
+    final web = _web;
+    if (web != null && !widget.reels) {
+      try {
+        final r = await web.evaluateJavascript(
+          source: 'window.forkExitCinema ? window.forkExitCinema() : false',
+        );
+        if (r == true) return;
+      } catch (e) {
+        debugPrint('WatchRoom: полный экран не ответил: $e');
+      }
+    }
+    if (_allowLeave() && mounted) await _leave();
+  }
+
   /// Отпускать ли из комнаты. Первое нажатие показывает подсказку.
   bool _allowLeave() {
     final now = DateTime.now();
@@ -584,7 +601,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (_allowLeave() && mounted) unawaited(_leave());
+        unawaited(_onBack()); // fork (UX V7)
       },
       // В лентах строка состояния светлыми значками по чёрному.
       child: widget.reels

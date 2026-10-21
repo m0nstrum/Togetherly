@@ -26,4 +26,24 @@ void main() {
     expect(reels, contains('S.pausedAt'));
     expect(reels, contains("el.root.classList.remove('is-paused');\n        }"));
   });
+
+  test('видео говорит, что не так (V2, V7, V8, V6)', () {
+    expect(room, contains('onError: (e) =>'));
+    expect(room, contains("'room.ytNoEmbed'"));
+    expect(room, contains("I18N.t('room.badFile')"));
+    expect(room, contains("addEventListener('loadedmetadata', announce"));
+    expect(room, contains('window.forkExitCinema'));
+    expect(room, contains('function cinemaViewers'));
+    for (final k in ['room.opening', 'room.ytNoApi', 'room.ytNoEmbed', 'room.ytGone', 'room.ytFailed', 'room.badFile']) {
+      expect(i18n.split("'$k'").length - 1, 2, reason: '$k: ru и en');
+    }
+    final screen = File('lib/screens/together/watch_room_screen.dart').readAsStringSync();
+    expect(screen, contains('window.forkExitCinema ? window.forkExitCinema() : false'));
+  });
+
+  test('лента не висит молча (L9, L10, L13)', () {
+    expect(reels, contains('function armStall'));
+    expect(reels, contains('say(T.nothingNew)'));
+    expect(reels, contains('T.takeHint'));
+  });
 }

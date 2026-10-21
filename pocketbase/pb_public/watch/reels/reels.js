@@ -59,7 +59,7 @@
     save: 'Сохранить в воспоминания', saved: 'Ролик в воспоминаниях', savedSub: 'Он ждёт вас в ленте воспоминаний',
     savedBy: (n) => n + ' сохраняет ролик', saveFailed: 'Не сохранилось, попробуйте ещё раз', needApp: 'Сохранять можно из приложения Togetherly',
     leads: (n) => 'Листает ' + n, take: 'Листать мне', tookLead: (n) => 'Теперь листает ' + n, youLead: 'Теперь листаете вы',
-    you: 'Вы', guest: 'Гость', joined: 'Партнёр в ленте', left: 'Партнёр вышел из ленты', offline: 'Нет связи — переподключаемся…', lost: 'Связь потеряна, переподключаемся…',
+    you: 'Вы', guest: 'Гость', joined: 'Партнёр в ленте', left: 'Партнёр вышел из ленты', stuck: 'Площадка не отдаёт ролики', stuckSub: 'Бывает капча или сбой площадки. Попробуйте ещё раз или выберите другую площадку.', retry: 'Попробовать ещё раз', takeHint: 'Нажмите «Листать мне», чтобы листать самим', nothingNew: 'Новых роликов пока нет', offline: 'Нет связи — переподключаемся…', lost: 'Связь потеряна, переподключаемся…',
     authTitle: 'Нужно войти', authSub: 'Ленту пары открывают её участники. Войдите на странице комнаты.',
     strangerTitle: 'Это лента другой пары', strangerSub: 'Откройте совместную ленту из своего приложения.',
     missingTitle: 'Такой комнаты нет', missingSub: 'Откройте совместную ленту из приложения Togetherly.',
@@ -78,7 +78,7 @@
     save: 'Save to memories', saved: 'Saved to memories', savedSub: 'Find it in your memory lane',
     savedBy: (n) => n + ' saved this clip', saveFailed: 'Didn’t save, try again', needApp: 'Saving works in the Togetherly app',
     leads: (n) => n + ' is scrolling', take: 'Let me scroll', tookLead: (n) => n + ' is scrolling now', youLead: 'You’re scrolling now',
-    you: 'You', guest: 'Guest', joined: 'Your partner is here', left: 'Your partner left', offline: 'No connection — reconnecting…', lost: 'Connection lost, reconnecting…',
+    you: 'You', guest: 'Guest', joined: 'Your partner is here', left: 'Your partner left', stuck: 'The platform isn’t sending videos', stuckSub: 'It may be a captcha or an outage. Try again or pick another platform.', retry: 'Try again', takeHint: 'Tap “Let me scroll” to take over', nothingNew: 'No new videos yet', offline: 'No connection — reconnecting…', lost: 'Connection lost, reconnecting…',
     authTitle: 'Sign in first', authSub: 'Only the couple can open their feed. Sign in on the room page.',
     strangerTitle: 'This is another couple’s feed', strangerSub: 'Open the shared feed from your own app.',
     missingTitle: 'No such room', missingSub: 'Open the shared feed from the Togetherly app.',
@@ -590,7 +590,10 @@
     if (together && (!S.cur || S.cur.owner === S.me)) { fromTheirs(); fromMine(); } else { fromMine(); if (together) fromTheirs(); }
     if (S.mine.length < 4) pull(8);
     if (!id) {
-      if (!S.cur) showWait(bridge() ? T.loading : T.noFeed, bridge() ? T.loadingSub : T.noFeedSub, !!bridge());
+      if (!S.cur) {
+        showWait(bridge() ? T.loading : T.noFeed, bridge() ? T.loadingSub : T.noFeedSub, !!bridge());
+        if (bridge()) armStall(); // fork (UX L9)
+      }
       return false;
     }
     if (owner === S.me) announce();
@@ -599,6 +602,27 @@
     show(cur);
     send('reels-reel', { id, owner, by: S.me, name: S.name, lead: S.lead });
     return true;
+  }
+
+  // fork (UX L9): «Собираем ленту…» висело вечно, если площадка ничего не
+  // отдала. Через 20 с — честно и с кнопкой повтора.
+  let stallTimer = 0;
+  function armStall() {
+    clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      if (S.cur) return;
+      showWait(T.stuck, T.stuckSub, false, { href: '#retry', label: T.retry });
+      const a = $('.rl-go', el.wait);
+      if (a) {
+        a.onclick = (e) => {
+          e.preventDefault();
+          a.onclick = null;
+          showWait(T.loading, T.loadingSub, true);
+          armStall();
+          pull(8).then(() => { if (!S.cur) next(); });
+        };
+      }
+    }, 20000);
   }
 
   /** Человек листает сам (палец, колесо, кнопка): лента у него. Сам запуск
@@ -1136,6 +1160,8 @@
     if (S.viewers > 1 && S.partnerId) { S.lead = S.me; paintLead(); }
     refreshing = true;
     el.refresh.classList.add('is-busy');
+    say(T.refreshing); // fork (UX L13)
+    const keep = S.mine; // fork (UX L13): старый запас — пока не придут новые
     S.mine = [];
     if (cards.next) { drop(cards.next); cards.next = null; }
     // Сборка без этого обработчика может не ответить вовсе — ждём недолго.
@@ -1148,7 +1174,12 @@
     refreshing = false;
     el.refresh.classList.remove('is-busy');
     const id = S.mine.find((x) => !S.seen.has(x));
-    if (!id) return;
+    if (!id) {
+      // fork (UX L13): новых нет — возвращаем запас и говорим об этом.
+      S.mine = keep.concat(S.mine);
+      say(T.nothingNew);
+      return;
+    }
     S.mine = S.mine.filter((x) => x !== id);
     announce();
     if (S.cur) { S.back.push(S.cur); if (S.back.length > 30) S.back.shift(); }
@@ -1238,11 +1269,18 @@
   }
 
   /** Ведомый тянет ленту — подсвечиваем, кто листает и как забрать. */
+  let nudgeTold = 0; // fork (UX L10)
   function nudgeLead() {
     paintLead();
     el.lead.classList.remove('is-nudge');
     void el.lead.offsetWidth;
     el.lead.classList.add('is-nudge');
+    // fork (UX L10): свайп ведомого молча не работал — объясняем, но не
+    // на каждый свайп.
+    if (performance.now() - nudgeTold > 15000) {
+      nudgeTold = performance.now();
+      toast(T.leads(S.partnerName || T.partner), T.takeHint, '');
+    }
   }
 
   function takeLead() {

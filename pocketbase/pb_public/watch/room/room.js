@@ -230,6 +230,10 @@
     // Свой файл (blob:) сюда не относится — ссылки у него нет.
     if (!String(src).startsWith('blob:')) {
       v.addEventListener('error', () => setStatus(I18N.t('room.badLink'), true), { once: true });
+    } else {
+      // fork (UX V8): свой файл, который телефон не декодирует (MKV, HEVC…), —
+      // тоже словами, а не пустым плеером со статусом «Играет».
+      v.addEventListener('error', () => setStatus(I18N.t('room.badFile'), true), { once: true });
     }
     holder.appendChild(v);
 
@@ -316,8 +320,14 @@
     mountVideo(URL.createObjectURL(file), I18N.t('room.filePlaying', { name: file.name }));
     state.url = '';
     state.file = info;
-    send('file', 0, info);
-    reportSource({ kind: 'file', id: file.name }, 'file://' + file.name);
+    // fork (UX V8): партнёра зовём, только когда файл у нас открылся.
+    const v = state.player && state.player.video;
+    const announce = () => {
+      send('file', 0, info);
+      reportSource({ kind: 'file', id: file.name }, 'file://' + file.name);
+    };
+    if (v) v.addEventListener('loadedmetadata', announce, { once: true });
+    else announce();
   }
 
   /** Публичная ссылка Диска ведёт на страницу, а нам нужен сам файл: его адрес
@@ -379,17 +389,28 @@
         if (!ready) {
           // API не доехал: командовать плеером нечем, зато ролик играет. Отдаём
           // комнате пульт — смотреть по отсчёту всё равно можно.
+          setStatus(I18N.t('room.ytNoApi'), true); // fork (UX V2): раньше молча
           setManual(true);
           return;
         }
         state.player = new YT.Player('frame', {
           events: {
             onReady: () => {
+              setStatus(I18N.t('room.playing', { name: labelOf('youtube') })); // fork (UX V2)
               // Позиция, доставшаяся от того, кто уже смотрит: применяем её,
               // как только плеер готов принимать команды.
               if (!state.pending) return;
               apply(state.pending.cmd, state.pending.at);
               state.pending = null;
+            },
+            // fork (UX V2): закрытый, удалённый или запрещённый к встраиванию
+            // ролик раньше оставлял пустую рамку и статус «Играет».
+            onError: (e) => {
+              const code = Number(e && e.data);
+              const key = code === 101 || code === 150 || code === 152 || code === 153
+                ? 'room.ytNoEmbed'
+                : code === 100 || code === 105 ? 'room.ytGone' : 'room.ytFailed';
+              setStatus(I18N.t(key), true);
             },
             onStateChange: (e) => {
               if (state.applying) return;
@@ -420,7 +441,10 @@
       }
       // Отложенная команда сама применится, как только плеер отзовётся.
     }
-    setStatus(I18N.t('room.playing', { name: labelOf(src.kind) }));
+    // fork (UX V2): ютуб скажет «играет» сам, когда плеер поднимется.
+    setStatus(src.kind === 'youtube'
+      ? I18N.t('room.opening', { name: labelOf(src.kind) })
+      : I18N.t('room.playing', { name: labelOf(src.kind) }));
     reportSource(src, url || state.url);
   }
 
@@ -888,6 +912,7 @@
     state.viewers = n;
     const el = $('#viewers');
     if (el) el.textContent = n === 1 ? I18N.t('room.alone') : I18N.t('room.viewers', { n });
+    cinemaViewers(); // fork (UX V6)
     // Комната открыта сразу, поэтому приход партнёра отмечаем строкой в чате.
     // Переподключения дают дребезг 1↔2, поэтому строка не чаще раза в полминуты.
     if (n > 1) {
@@ -1090,8 +1115,36 @@
   }
 
   /// Включает или снимает свой полноэкранный режим.
+  // fork (UX V7): системное «назад» в полном экране сначала выводит из
+  // полного экрана, а не из комнаты. Зовёт приложение.
+  window.forkExitCinema = () => {
+    if (!document.body.classList.contains('cinema')) return false;
+    setCinema(false);
+    return true;
+  };
+
+  // fork (UX V6): в полном экране шапка со счётчиком скрыта — и не понять,
+  // смотрит ли партнёр. Тихая пилюля сверху: «вместе» или «вы один».
+  function cinemaViewers() {
+    let p = document.querySelector('.fork-cin-viewers');
+    const on = document.body.classList.contains('cinema');
+    if (!on) { if (p) p.remove(); return; }
+    if (!p) {
+      p = document.createElement('div');
+      p.className = 'fork-cin-viewers';
+      p.setAttribute('role', 'status');
+      p.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);' +
+        'transform:translateX(-50%);z-index:55;padding:4px 12px;border-radius:12px;' +
+        'background:rgba(0,0,0,.55);color:#fff;font:500 13px/1.3 system-ui,sans-serif;pointer-events:none';
+      document.body.appendChild(p);
+    }
+    const n = state.viewers || 1;
+    p.textContent = n > 1 ? I18N.t('room.viewers', { n }) : I18N.t('room.alone');
+  }
+
   function setCinema(on) {
     document.body.classList.toggle('cinema', on);
+    setTimeout(cinemaViewers, 0); // fork (UX V6)
     const btn = $('#cinema');
     if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     // В режим входят с чистым кадром, из режима выходят с обычным чатом.
