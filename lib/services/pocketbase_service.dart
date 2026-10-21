@@ -8,6 +8,7 @@ import 'centrifugo_service.dart';
 import 'widget_owner.dart';
 import 'pb_data_service.dart';
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
 import '../fork/http_gateway.dart'; // fork
 import '../fork/secure_auth_store.dart'; // fork
 
@@ -49,8 +50,13 @@ class PocketBaseService {
     // fork: сессия в Keystore, а не в SharedPreferences (lib/fork/secure_auth_store.dart).
     final authStore = await ForkSecureAuthStore.open(_authPrefsKey);
 
-    _pb = PocketBase(baseUrl, authStore: authStore);
+    _pb = PocketBase(
+      baseUrl,
+      authStore: authStore,
+      httpClientFactory: ForkE2E.httpClient, // fork: шифрование полей (S9)
+    );
     _initialized = true;
+    ForkE2E.preload(); // fork
     ForkHttpGateway.install(); // fork: сторонние сайты — через свой сервер
     debugPrint('PocketBaseService: init, авторизован=$isLoggedIn');
   }
@@ -90,9 +96,9 @@ class PocketBaseService {
     try {
       final parts = token.split('.');
       if (parts.length != 3) return null;
-      final payload = jsonDecode(
-        utf8.decode(base64Decode(base64.normalize(parts[1]))),
-      ) as Map<String, dynamic>;
+      final payload =
+          jsonDecode(utf8.decode(base64Decode(base64.normalize(parts[1]))))
+              as Map<String, dynamic>;
       final id = payload['id'];
       return (id is String && id.isNotEmpty) ? id : null;
     } catch (_) {
@@ -141,6 +147,8 @@ class PocketBaseService {
     // «печатает»), принадлежали прошлому аккаунту — забываем их вместе с сессией.
     try {
       PbDataService().forgetCachedRecordIds();
-    } catch (_) { /* сервис мог быть ещё не создан */ }
+    } catch (_) {
+      /* сервис мог быть ещё не создан */
+    }
   }
 }

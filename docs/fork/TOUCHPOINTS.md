@@ -79,6 +79,9 @@
 | `lib/screens/connect_partner_screen.dart` | S8 | Сканер QR отрезает фрагмент ссылки и отдаёт его `ForkE2E.rememberFragment`. | Сохранить: иначе код с фрагментом не пройдёт проверку длины. |
 | `lib/services/pb_auth_service.dart` | S8 | `signOut` сбрасывает `ForkE2E`. | Сохранить. |
 | `lib/screens/chat_screen.dart` | S8 | Над лентой — `ForkE2EBanner`: «ключи не проверены», «ключ сменился», «возможна подмена», входящая сверка. | Сохранить первым элементом колонки ленты. |
+| `lib/services/pocketbase_service.dart` | S9 | `PocketBase(..., httpClientFactory: ForkE2E.httpClient)` — шифрование полей записей на входе и выходе; после `_initialized = true` — `ForkE2E.preload()`. | Сохранить в любом изоляте: иначе очередь уйдёт открытым текстом, а ответы сервера придут шифртекстом. |
+| `lib/services/centrifugo_service.dart` | S9 | В `_onPublication` запись дельты проходит `ForkE2E.decodeSync(collection, …)` перед `RecordModel.fromJson`. | Сохранить: иначе живые сообщения чата покажут шифртекст. Если апстрим заведёт второй разбор дельт — обернуть и его. |
+| `lib/screens/chat/chat_search_screen.dart` | S9 | Вкладки «Всё» и «Ссылки» у пары с ключом ищут через `ForkChatSearch.search` вместо `searchChat` с фильтром по тексту. | Сохранить: сервер в шифртексте ничего не найдёт. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 

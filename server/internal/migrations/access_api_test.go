@@ -267,3 +267,17 @@ func ruleOf(t testing.TB, app core.App, name string) *string {
 	require.NoError(t, err)
 	return col.ViewRule
 }
+
+// Шифрованные поля чата вмещают шифртекст длинного сообщения.
+func TestSealedFieldsFitCiphertext(t *testing.T) {
+	app := newApp(t)
+	defer app.Cleanup()
+
+	col, err := app.FindCollectionByNameOrId("chat_messages")
+	require.NoError(t, err)
+	for _, f := range []string{"user_name", "text", "pin_title", "reply_to_name", "reply_to_text"} {
+		tf, ok := col.Fields.GetByName(f).(*core.TextField)
+		require.True(t, ok, f)
+		assert.Equal(t, migrations.E2ESealedMax, tf.Max, f)
+	}
+}

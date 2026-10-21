@@ -23,6 +23,7 @@ import 'crypto.dart';
 import 'devices.dart';
 import 'envelope.dart';
 import 'key_store.dart';
+import 'record_codec.dart';
 import 'sas.dart';
 
 /// Состояние пары для UI.
@@ -131,7 +132,7 @@ class SasFinished extends SasState {
   final bool match;
 }
 
-class E2EService {
+class E2EService implements E2EKeyring {
   E2EService({
     required this.crypto,
     required this.store,
@@ -802,6 +803,8 @@ class E2EService {
   }
 
   /// Ключи пары для конверта (S9).
+  @override
   PairKey? keyFor(String keyId) => keys.keyFor(keyId);
+  @override
   PairKey? currentKey(String groupId) => keys.currentKey(groupId);
 }

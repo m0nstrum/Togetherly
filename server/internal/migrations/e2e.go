@@ -83,3 +83,42 @@ func e2eBackups() *core.Collection {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+// e2eSealedFields — текстовые поля, которые клиент шифрует на месте
+// (lib/fork/e2e/record_codec.dart, PLAN S9). Шифртекст длиннее текста: UTF-8,
+// тег, nonce и base64 — до 4/3 от байтов плюс ~60 символов. Стандартный
+// предел PocketBase в 5000 символов кириллическое сообщение в 5000 знаков
+// уже не пропустит.
+var e2eSealedFields = map[string][]string{
+	"chat_messages": {"user_name", "text", "pin_title", "reply_to_name", "reply_to_text"},
+}
+
+// E2ESealedMax — предел длины шифрованного поля.
+const E2ESealedMax = 32000
+
+func init() {
+	m.Register(func(app core.App) error {
+		for name, fields := range e2eSealedFields {
+			col, err := app.FindCollectionByNameOrId(name)
+			if err != nil {
+				continue // коллекции нет — схема ещё не накатана, нечего расширять
+			}
+			changed := false
+			for _, f := range fields {
+				tf, ok := col.Fields.GetByName(f).(*core.TextField)
+				if !ok || (tf.Max >= E2ESealedMax) {
+					continue
+				}
+				tf.Max = E2ESealedMax
+				changed = true
+			}
+			if !changed {
+				continue
+			}
+			if err := app.Save(col); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, nil, "1760000003_e2e_sealed_fields.go")
+}

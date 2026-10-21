@@ -17,6 +17,7 @@ import 'backup.dart';
 import 'crypto.dart';
 import 'devices.dart';
 import 'envelope.dart';
+import 'record_codec.dart';
 
 /// Где лежат байты. В тестах — [MemoryVault].
 abstract interface class KeyVault {
@@ -94,7 +95,7 @@ class PeerState {
   );
 }
 
-class E2EKeys {
+class E2EKeys implements E2EKeyring {
   E2EKeys({
     required this.account,
     required this.device,
@@ -140,9 +141,11 @@ class E2EKeys {
   /// Пары, которым нужна новая эпоха ключа (§6.5).
   final Set<String> rotateNeeded;
 
+  @override
   PairKey? keyFor(String keyId) => pairKeys[keyId];
 
   /// Ключ пары последней эпохи — им шифруется новое.
+  @override
   PairKey? currentKey(String groupId) {
     PairKey? best;
     for (final k in pairKeys.values) {

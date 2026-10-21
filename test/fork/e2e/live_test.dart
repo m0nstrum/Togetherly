@@ -8,12 +8,17 @@ library;
 
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
 import 'package:love_app/fork/e2e/key_store.dart';
+import 'package:love_app/fork/e2e/http_client.dart';
 import 'package:love_app/fork/e2e/pb_backend.dart';
+import 'package:love_app/fork/e2e/record_codec.dart';
+import 'package:love_app/services/offline/pb_id.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 void main() {
@@ -49,6 +54,56 @@ void main() {
         b.currentKey(pair)!.key.extractBytes(),
       );
       expect(a.status.value[pair], PairE2EStatus.unverified);
+
+      // Чат (S9): сервер хранит шифртекст, партнёр читает текст. Длинное
+      // кириллическое сообщение влезает в поле после шифрования.
+      PocketBase chat(String tok, E2EService s) => PocketBase(
+        base!,
+        httpClientFactory: () => E2EHttpClient(
+          http.Client(),
+          codec: () async => RecordCodec(c, s),
+          groupOf: (_, _) async => pair,
+          newId: newPbId,
+        ),
+      )..authStore.save(tok, null);
+      final long = 'Ж' * 5000;
+      final id = newPbId();
+      final sent = await chat(env['SMOKE_ATOK']!, a)
+          .collection('chat_messages')
+          .create(
+            body: {
+              'id': id,
+              'group_id': pair,
+              'user_uid': a.uid,
+              'user_name': 'Алиса',
+              'text': long,
+              'ts': DateTime.now().millisecondsSinceEpoch,
+            },
+          );
+      expect(sent.getStringValue('text'), long);
+      final raw =
+          await (PocketBase(base!)..authStore.save(env['SMOKE_BTOK']!, null))
+              .collection('chat_messages')
+              .getOne(id);
+      expect(raw.getStringValue('text'), startsWith(e2eFieldPrefix));
+      expect(raw.getStringValue('user_name'), isNot(contains('Алиса')));
+      final bobChat = chat(env['SMOKE_BTOK']!, b);
+      expect(
+        (await bobChat.collection('chat_messages').getOne(id)).getStringValue(
+          'text',
+        ),
+        long,
+      );
+      await chat(
+        env['SMOKE_ATOK']!,
+        a,
+      ).collection('chat_messages').update(id, body: {'text': 'правка'});
+      expect(
+        (await bobChat.collection('chat_messages').getOne(id)).getStringValue(
+          'text',
+        ),
+        'правка',
+      );
 
       await a.sasStart(pair, b.uid);
       await b.syncGroup(pair);

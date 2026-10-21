@@ -9,6 +9,7 @@ import 'pocketbase_service.dart';
 import 'publish_gate.dart';
 import 'reconnect_detector.dart';
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 /// Транспорт realtime через Centrifugo (замена встроенного SSE PocketBase).
 ///
@@ -253,7 +254,9 @@ class _ChannelHub {
       RecordModel? rec;
       final recMap = map['record'];
       if (recMap is Map) {
-        rec = RecordModel.fromJson(Map<String, dynamic>.from(recMap));
+        rec = RecordModel.fromJson(
+          ForkE2E.decodeSync(collection, Map<String, dynamic>.from(recMap)), // fork
+        );
       }
       // Копия списка: слушатель может отписаться из колбэка.
       for (final l in List<_ChannelListener>.of(_listeners)) {
