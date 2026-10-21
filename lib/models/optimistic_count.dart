@@ -38,12 +38,17 @@ class OptimisticCount {
   OptimisticCount tap(DateTime now) =>
       OptimisticCount(confirmed: confirmed, pending: [..._pending, now]);
 
-  /// Отправка не удалась — надбавку снимаем сразу, самую свежую.
-  OptimisticCount failed() {
-    if (_pending.isEmpty) return this;
+  /// Отправка не удалась — надбавку снимаем сразу, самые свежие.
+  ///
+  /// fork (M8): [count] — сколько тапов было в сорвавшейся пачке. Снимать по
+  /// одному было неверно: пачка из двадцати тапов оставляла девятнадцать
+  /// висеть до протухания.
+  OptimisticCount failed({int count = 1}) {
+    if (_pending.isEmpty || count <= 0) return this;
+    final keep = _pending.length > count ? _pending.length - count : 0;
     return OptimisticCount(
       confirmed: confirmed,
-      pending: _pending.sublist(0, _pending.length - 1),
+      pending: _pending.sublist(0, keep),
     );
   }
 

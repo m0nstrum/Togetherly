@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../dict_strings.dart' show trKey;
+import '../dict_strings.dart' show ruEn, trKey; // fork
+import '../fork/ui/feedback.dart'; // fork
 import '../models/miss_you_event.dart';
 import '../models/miss_you_state.dart';
 import '../models/optimistic_count.dart';
@@ -230,28 +231,45 @@ class _MissYouScreenState extends State<MissYouScreen>
     } catch (_) {
       ok = false;
     }
-    if (!ok && mounted) setState(() => _mine = _mine.failed());
+    if (!ok && mounted) {
+      setState(() => _mine = _mine.failed());
+      // fork (M5): отказ не молчит, у сообщения есть «Повторить».
+      ForkNotice.failure(
+        context,
+        ForkFailure.unknown,
+        what: ruEn('«Скучаю» не отправилось', 'Miss-you wasn’t sent'),
+        retry: () => _sendMissYou(replyTo: replyTo),
+      );
+    }
   }
 
   Future<void> _sendVibe(String type, {String? text, String? replyTo}) async {
     if (widget.groupId.isEmpty) return;
-    widget.onSent?.call();
-    HapticFeedback.mediumImpact();
-    _spawnHearts(icon: vibeIcon(type));
-    try {
-      await _repo.sendVibe(
+    // fork (M5): сердечки и «отправлено» — после ответа сервера, а не до него.
+    final sent = await Outcome.guard(
+      () => _repo.sendVibe(
         groupId: widget.groupId,
         vibeType: type,
         customText: text,
         replyTo: replyTo,
+      ),
+    );
+    if (!mounted) return;
+    if (sent.failure != null || sent.value != true) {
+      ForkNotice.failure(
+        context,
+        sent.failure ?? ForkFailure.unknown,
+        what: ruEn('Не отправилось', 'Couldn’t send'),
+        retry: () => _sendVibe(type, text: text, replyTo: replyTo),
       );
-      if (text != null && text.isNotEmpty) {
-        final next = await CustomWishesStore.add(_wishes, text);
-        if (mounted) setState(() => _wishes = next);
-      }
-    } catch (_) {
-      // Отправка молча не удалась — счётчик просто не вырастет, врать
-      // подтверждением нельзя.
+      return;
+    }
+    widget.onSent?.call();
+    HapticFeedback.mediumImpact();
+    _spawnHearts(icon: vibeIcon(type));
+    if (text != null && text.isNotEmpty) {
+      final next = await CustomWishesStore.add(_wishes, text);
+      if (mounted) setState(() => _wishes = next);
     }
   }
 
