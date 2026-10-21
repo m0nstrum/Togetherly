@@ -46,6 +46,14 @@ class E2EHttpClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request is http.Request &&
+        request.method == 'POST' &&
+        _routes.containsKey(request.url.path)) {
+      final codec = await _codec();
+      return _inner.send(
+        codec == null ? request : _routes[request.url.path]!(request, codec),
+      );
+    }
     final m = _path.firstMatch(request.url.path);
     final col = m?.group(1);
     if (m == null ||
@@ -121,14 +129,81 @@ class E2EHttpClient extends http.BaseClient {
     if (group.isEmpty) return request;
     final enc = codec.encode(col, id, group, body);
     if (identical(enc, body)) return request;
-    final copy = http.Request(request.method, request.url)
-      ..headers.addAll(request.headers)
-      ..followRedirects = request.followRedirects
-      ..maxRedirects = request.maxRedirects
-      ..persistentConnection = request.persistentConnection
-      ..body = jsonEncode(enc);
-    return copy;
+    return _copy(request, enc);
   }
+
+  /// Маршруты сервера, которые сами пишут в записи то, что прислал клиент.
+  static final Map<String, http.Request Function(http.Request, RecordCodec)>
+  _routes = {
+    '/api/group/miss-you': _encodeMissYou,
+    '/api/group/patch-map': _encodePatchMap,
+  };
+
+  static Map<String, dynamic>? _jsonBody(http.Request r) {
+    try {
+      final b = jsonDecode(r.body);
+      return b is Map<String, dynamic> ? b : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Правка словаря группы по одному участнику: значение — отдельный шифр
+  /// (`SealedField.mapValues`).
+  static http.Request _encodePatchMap(http.Request request, RecordCodec codec) {
+    final body = _jsonBody(request);
+    if (body == null) return request;
+    final group = body['groupId'], field = body['field'], uid = body['uid'];
+    final value = body['value'];
+    if (group is! String || field is! String || uid is! String) return request;
+    final spec = e2eFields['groups']?[field];
+    if (spec?.kind != SealKind.mapValues ||
+        value == null ||
+        isSealedValue(value) ||
+        codec.crypto == null) {
+      return request;
+    }
+    final key = codec.keys.currentKey(group);
+    if (key == null) return request;
+    final sealed = codec.sealField(
+      'groups',
+      group,
+      '$field/$uid',
+      jsonEncode(value),
+      key,
+    );
+    return _copy(request, {...body, 'value': sealed});
+  }
+
+  /// «Скучаю» с текстом: сервер разложит его по записям сам, шифр привязан
+  /// к паре и автору (`e2eRecordKey`).
+  static http.Request _encodeMissYou(http.Request request, RecordCodec codec) {
+    final body = _jsonBody(request);
+    if (body == null) return request;
+    final text = body['text'], group = body['groupId'], uid = body['uid'];
+    if (text is! String || text.isEmpty || isSealedValue(text)) return request;
+    if (group is! String || uid is! String || codec.crypto == null) {
+      return request;
+    }
+    final key = codec.keys.currentKey(group);
+    if (key == null) return request;
+    final sealed = codec.sealField(
+      'miss_you',
+      '$group/$uid',
+      'text',
+      text,
+      key,
+    );
+    return _copy(request, {...body, 'text': sealed});
+  }
+
+  static http.Request _copy(http.Request r, Map<String, dynamic> body) =>
+      http.Request(r.method, r.url)
+        ..headers.addAll(r.headers)
+        ..followRedirects = r.followRedirects
+        ..maxRedirects = r.maxRedirects
+        ..persistentConnection = r.persistentConnection
+        ..body = jsonEncode(body);
 
   /// Файл в `media` шифруется ключом пары; id записи даём сами — от него
   /// выводится ключ файла. PocketBase кладёт поля формы JSON-ом в

@@ -276,6 +276,42 @@ abstract final class ForkE2E {
     return {...inner, 't': msg['t'], 'uid': uid};
   }
 
+  static ChannelPlace _livePlace(String channel, String type) =>
+      ChannelPlace(channel, type, 0);
+
+  /// Эфемерные данные пары [groupId] для канала [channel] (живые штрихи):
+  /// `{e2e: шифр}`, AAD — канал и [type] (автор, холст). Нет ключа — как есть.
+  static Map<String, dynamic>? sealLive(
+    String groupId,
+    String channel,
+    String type,
+    Map<String, dynamic>? data,
+  ) {
+    if (data == null) return null;
+    final codec = _syncCodec();
+    final key = codec.crypto == null ? null : codec.keys.currentKey(groupId);
+    if (key == null) return data;
+    return {
+      e2ePartialKey: codec.sealChannel(_livePlace(channel, type), data, key),
+    };
+  }
+
+  /// Обратное к [sealLive]: `ok == false` — подделка или нечем открыть,
+  /// пакет не показываем.
+  static ({bool ok, Map<String, dynamic>? data}) openLive(
+    String channel,
+    String type,
+    Object? data,
+  ) {
+    if (data is! Map) return (ok: true, data: null);
+    final sealed = data[e2ePartialKey];
+    if (sealed is! String) {
+      return (ok: true, data: Map<String, dynamic>.from(data));
+    }
+    final open = _syncCodec().openChannel(_livePlace(channel, type), sealed);
+    return (ok: open != null, data: open);
+  }
+
   /// Шифруются ли новые записи пары [groupId].
   static bool encrypts(String groupId) {
     final s = service.value;
@@ -332,30 +368,43 @@ abstract final class ForkE2E {
     'cycle_entries': 'user_uid',
     'memories': 'author_uid',
     'memory_comments': 'author_uid',
+    'wishes': 'author_uid',
+    'wish_categories': 'author_uid',
+    'mood_entries': 'user_uid',
+    'custom_moods': 'author_uid',
+    'love_tests': 'user_uid',
+    'widget_data': 'user_uid',
+    'canvas_catalogue': 'created_by',
   };
 
   /// Свои записи, сохранённые до E2E, перешифровать на сервере.
   static Future<int> migrateOwn(String groupId, String uid) async {
     var done = 0;
+    if (uid.isEmpty) return 0;
+    final pb = PocketBaseService().pb;
     for (final e in migrated.entries) {
-      done += await _migrate(e.key, e.value, groupId, uid);
+      done += await _migrate(
+        e.key,
+        pb.filter(
+          'group_id = {:g} && ${e.value} = {:u} && (${plaintextFilter(e.key)})',
+          {'g': groupId, 'u': uid},
+        ),
+        groupId,
+      );
     }
+    // Запись пары правит любой участник.
+    done += await _migrate(
+      'groups',
+      pb.filter('id = {:g} && (${plaintextFilter('groups')})', {'g': groupId}),
+      groupId,
+    );
     return done;
   }
 
-  static Future<int> _migrate(
-    String col,
-    String owner,
-    String groupId,
-    String uid,
-  ) async {
-    if (!encrypts(groupId) || uid.isEmpty) return 0;
+  static Future<int> _migrate(String col, String filter, String groupId) async {
+    if (!encrypts(groupId)) return 0;
     final fields = e2eFields[col]!;
     final pb = PocketBaseService().pb;
-    final filter = pb.filter(
-      'group_id = {:g} && $owner = {:u} && (${plaintextFilter(col)})',
-      {'g': groupId, 'u': uid},
-    );
     final seen = <String>{};
     var done = 0;
     try {

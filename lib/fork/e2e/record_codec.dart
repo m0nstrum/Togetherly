@@ -27,7 +27,7 @@ abstract interface class E2EKeyring {
 /// Как поле лежит в колонке: строка или JSON. Шифртекст в обоих случаях —
 /// строка `e2e1.…`; JSON-колонка PocketBase строку принимает. Поля других
 /// типов (даты) переезжают в общее поле [e2eMovedField], а колонка пустеет.
-enum SealKind { text, json, jsonPartial, moved }
+enum SealKind { text, json, jsonPartial, mapValues, moved }
 
 /// Поле записи, куда переезжают поля, которые на месте не зашифровать.
 const String e2eMovedField = 'enc';
@@ -71,6 +71,15 @@ class SealedField {
       cleared = null,
       open = const {};
 
+  /// Словарь «участник → значение», где каждое значение — отдельный шифр
+  /// (AAD — поле и ключ): сервер правит словарь по одному участнику
+  /// (`/api/group/patch-map`) и всё остальное не трогает.
+  const SealedField.mapValues()
+    : kind = SealKind.mapValues,
+      locked = null,
+      cleared = null,
+      open = const {};
+
   /// JSON-объект, где ключи [open] остаются открытыми (их читает сервер),
   /// а остальное уходит шифром в ключ [e2ePartialKey].
   const SealedField.jsonPartial(this.open)
@@ -110,6 +119,61 @@ const Map<String, Map<String, SealedField>> e2eFields = {
   'live_location': {'data': SealedField.json()},
   'memories': {'data': SealedField.jsonPartial(memoryOpenKeys)},
   'memory_comments': {'text': SealedField.text(locked: e2eLockedText)},
+  'wishes': {
+    'title': SealedField.text(),
+    'note': SealedField.text(),
+    'done_note': SealedField.text(),
+    'url': SealedField.text(),
+    'image': SealedField.text(),
+    'shop': SealedField.text(),
+    'symbol': SealedField.text(),
+  },
+  'wish_categories': {
+    'title': SealedField.text(),
+    'note': SealedField.text(),
+    'symbol': SealedField.text(),
+  },
+  'canvas_catalogue': {'name': SealedField.text()},
+  'canvas_strokes': {'data': SealedField.json()},
+  'mood_entries': {
+    'mood_id': SealedField.text(),
+    'label': SealedField.text(),
+    'image_path': SealedField.text(),
+  },
+  'custom_moods': {'label': SealedField.text(), 'emoji': SealedField.text()},
+  'love_tests': {'data': SealedField.json()},
+  'widget_data': {
+    'status': SealedField.text(),
+    'mood_emoji': SealedField.text(),
+    'mood_label': SealedField.text(),
+    'message': SealedField.text(),
+    'music_title': SealedField.text(),
+    'music_artist': SealedField.text(),
+    'music_url': SealedField.text(),
+    'music_cover_url': SealedField.text(),
+    'photo_url': SealedField.text(),
+    'photo_for_partner_url': SealedField.text(),
+    'photo_for_partner_urls': SealedField.json(),
+    'photo_grid_urls': SealedField.json(),
+    'data': SealedField.json(),
+  },
+  // Текст «скучаю» пишет сервер (/api/group/miss-you) в запись, id которой
+  // клиент не знает, — шифр привязан к паре и автору (`e2eRecordKey`).
+  'miss_you': {'last_vibe_text': SealedField.text()},
+  'miss_you_events': {'text': SealedField.text()},
+  // Даты начала и годовщины пока открыты: по ним сервер считает «дни
+  // вместе» (couple_stats.pb.js). Аватары и имена участников — профиль.
+  'groups': {
+    'member_moods': SealedField.mapValues(),
+    'member_ailments': SealedField.mapValues(),
+    'current_status': SealedField.json(),
+    'custom_statuses': SealedField.json(),
+    'timers': SealedField.json(),
+    'custom_relationship_label': SealedField.text(),
+    'custom_relationship_emoji': SealedField.text(),
+    'custom_relationship_types': SealedField.json(),
+    'first_kiss_date': SealedField.moved(),
+  },
   'cycle_entries': {
     'kind': SealedField.text(),
     'flow': SealedField.text(),
@@ -134,6 +198,28 @@ const String e2eLockedText = '🔒';
 
 bool isSealedValue(Object? v) => v is String && v.startsWith(e2eFieldPrefix);
 
+/// К чему привязан шифр записи: обычно её id. Текст «скучаю» сервер
+/// раскладывает по записям сам, поэтому там — пара и автор.
+String? e2eRecordKey(String collection, Map<String, dynamic> rec) {
+  switch (collection) {
+    case 'miss_you' || 'miss_you_events':
+      final g = rec['group_id'], u = rec['user_uid'];
+      if (g is! String || u is! String || g.isEmpty || u.isEmpty) return null;
+      return '$g/$u';
+    default:
+      final id = rec['id'];
+      return id is String ? id : null;
+  }
+}
+
+/// AAD поля: «скучаю» — одно место на обе коллекции, сервер копирует текст
+/// из запроса и в счётчик, и в историю.
+EnvelopePlace e2ePlace(String collection, String key, String field) =>
+    switch (collection) {
+      'miss_you' || 'miss_you_events' => RecordPlace('miss_you', key, 'text'),
+      _ => RecordPlace(collection, key, field),
+    };
+
 /// Участники канала геопозиции `pair_<a>_<b>`; null — канал не такой.
 Set<String>? pairChannelMembers(Object? channel) {
   if (channel is! String || !channel.startsWith('pair_')) return null;
@@ -150,6 +236,7 @@ String plaintextFilter(String collection) => e2eFields[collection]!.entries
       (e) => switch (e.value.kind) {
         SealKind.text => "(${e.key} != '' && ${e.key} !~ '$e2eFieldPrefix')",
         SealKind.json => "${e.key} ~ '\":'",
+        SealKind.mapValues => "${e.key} ~ '\":{'",
         SealKind.jsonPartial =>
           "(${e.key} ~ '\":' && ${e.key} !~ '$e2eFieldPrefix')",
         SealKind.moved =>
@@ -188,7 +275,7 @@ class RecordCodec {
       Envelope.aad(
         envelopeVersion,
         key.keyId,
-        RecordPlace(collection, recordId, field),
+        e2ePlace(collection, recordId, field),
       ),
     );
     return '$e2eFieldPrefix${key.keyId}.${b64(nonce)}.${b64(ct)}';
@@ -214,7 +301,7 @@ class RecordCodec {
         Envelope.aad(
           envelopeVersion,
           key.keyId,
-          RecordPlace(collection, recordId, field),
+          e2ePlace(collection, recordId, field),
         ),
       );
       return utf8.decode(plain);
@@ -234,6 +321,7 @@ class RecordCodec {
         return jsonEncode(v);
       case SealKind.moved:
       case SealKind.jsonPartial:
+      case SealKind.mapValues:
         return null;
     }
   }
@@ -248,7 +336,12 @@ class RecordCodec {
   ) {
     final fields = e2eFields[collection];
     final key = _c == null ? null : keys.currentKey(groupId);
-    if (fields == null || key == null || recordId.isEmpty) return body;
+    // Для «скучаю» шифр привязан к паре и автору; правка без них (запасной
+    // путь без маршрута сервера) уходит как есть.
+    final recKey = e2eRecordKey(collection, {...body, 'id': recordId});
+    if (fields == null || key == null || recKey == null || recKey.isEmpty) {
+      return body;
+    }
     final out = Map<String, dynamic>.of(body);
     final moved = <String, dynamic>{};
     for (final e in fields.entries) {
@@ -260,6 +353,23 @@ class RecordCodec {
           moved[e.key] = v;
           out[e.key] = e.value.cleared;
         }
+        continue;
+      }
+      if (e.value.kind == SealKind.mapValues) {
+        final v = out[e.key];
+        if (v is! Map) continue;
+        out[e.key] = {
+          for (final kv in v.entries)
+            kv.key.toString(): kv.value == null || isSealedValue(kv.value)
+                ? kv.value
+                : sealField(
+                    collection,
+                    recKey,
+                    '${e.key}/${kv.key}',
+                    jsonEncode(kv.value),
+                    key,
+                  ),
+        };
         continue;
       }
       if (e.value.kind == SealKind.jsonPartial) {
@@ -274,7 +384,7 @@ class RecordCodec {
         if (rest.isEmpty) continue;
         kept[e2ePartialKey] = sealField(
           collection,
-          recordId,
+          recKey,
           e.key,
           jsonEncode(rest),
           key,
@@ -284,12 +394,12 @@ class RecordCodec {
       }
       final plain = _plain(e.value.kind, out[e.key]);
       if (plain == null) continue;
-      out[e.key] = sealField(collection, recordId, e.key, plain, key);
+      out[e.key] = sealField(collection, recKey, e.key, plain, key);
     }
     if (moved.isNotEmpty) {
       out[e2eMovedField] = sealField(
         collection,
-        recordId,
+        recKey,
         e2eMovedField,
         jsonEncode(moved),
         key,
@@ -303,8 +413,8 @@ class RecordCodec {
   /// шифртекст уходит в [e2eLockedKey].
   Map<String, dynamic> decode(String collection, Map<String, dynamic> rec) {
     final fields = e2eFields[collection];
-    final id = rec['id'];
-    if (fields == null || id is! String) return rec;
+    final id = e2eRecordKey(collection, rec);
+    if (fields == null || id == null) return rec;
     Map<String, dynamic>? out;
     Map<String, dynamic>? locked;
     final enc = rec[e2eMovedField];
@@ -326,6 +436,43 @@ class RecordCodec {
       }
       out.remove(e2eMovedField);
       if (moved == null) (locked ??= {})[e2eMovedField] = enc;
+    }
+    for (final e in fields.entries) {
+      if (e.value.kind != SealKind.mapValues) continue;
+      final v = rec[e.key];
+      if (v is! Map || !v.values.any(isSealedValue)) continue;
+      out ??= Map<String, dynamic>.of(rec);
+      final open = <String, dynamic>{};
+      Map<String, dynamic>? bad;
+      for (final kv in v.entries) {
+        final k = kv.key.toString();
+        if (!isSealedValue(kv.value)) {
+          open[k] = kv.value;
+          continue;
+        }
+        final plain = openField(
+          collection,
+          id,
+          '${e.key}/$k',
+          kv.value as String,
+        );
+        Object? value;
+        var ok = plain != null;
+        if (ok) {
+          try {
+            value = jsonDecode(plain);
+          } on FormatException {
+            ok = false;
+          }
+        }
+        if (ok) {
+          open[k] = value;
+        } else {
+          (bad ??= {})[k] = kv.value;
+        }
+      }
+      out[e.key] = open;
+      if (bad != null) (locked ??= {})[e.key] = {...open, ...bad};
     }
     for (final e in fields.entries) {
       if (e.value.kind != SealKind.jsonPartial) continue;
@@ -356,6 +503,7 @@ class RecordCodec {
       final v = rec[f];
       if (e.value.kind == SealKind.moved ||
           e.value.kind == SealKind.jsonPartial ||
+          e.value.kind == SealKind.mapValues ||
           !isSealedValue(v)) {
         continue;
       }

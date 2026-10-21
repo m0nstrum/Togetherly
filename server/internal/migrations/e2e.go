@@ -103,6 +103,23 @@ func init() {
 	m.Register(func(app core.App) error {
 		return widenSealed(app, map[string][]string{"memory_comments": {"text"}})
 	}, nil, "1760000005_e2e_sealed_comments.go")
+	m.Register(func(app core.App) error {
+		return widenSealed(app, e2eSealedRest)
+	}, nil, "1760000006_e2e_sealed_rest.go")
+}
+
+// e2eSealedRest — поля шага 4 (PLAN S9): желания, рисунки, настроения,
+// виджеты, «скучаю».
+var e2eSealedRest = map[string][]string{
+	"wishes":           {"title", "note", "done_note", "url", "image", "shop", "symbol"},
+	"wish_categories":  {"title", "note", "symbol"},
+	"canvas_catalogue": {"name"},
+	"mood_entries":     {"mood_id", "label", "image_path"},
+	"custom_moods":     {"label", "emoji"},
+	"widget_data": {"status", "mood_emoji", "mood_label", "message", "music_title", "music_artist",
+		"music_url", "music_cover_url", "photo_url", "photo_for_partner_url"},
+	"miss_you":        {"last_vibe_text"},
+	"miss_you_events": {"text"},
 }
 
 // widenSealed поднимает предел длины текстовых полей до E2ESealedMax.
@@ -131,25 +148,30 @@ func widenSealed(app core.App, sealed map[string][]string) error {
 	return nil
 }
 
-// e2eMovedCollections — коллекции, где часть полей не зашифровать на месте
-// (даты): они переезжают в текстовое поле `enc` (SealKind.moved на клиенте).
-var e2eMovedCollections = []string{"cycle_entries"}
-
 func init() {
 	m.Register(func(app core.App) error {
-		for _, name := range e2eMovedCollections {
-			col, err := app.FindCollectionByNameOrId(name)
-			if err != nil {
-				continue
-			}
-			if col.Fields.GetByName("enc") != nil {
-				continue
-			}
-			col.Fields.Add(&core.TextField{Name: "enc", Max: E2ESealedMax})
-			if err := app.Save(col); err != nil {
-				return err
-			}
-		}
-		return nil
+		return addEncField(app, "cycle_entries")
 	}, nil, "1760000004_e2e_moved_fields.go")
+	m.Register(func(app core.App) error {
+		return addEncField(app, "groups")
+	}, nil, "1760000007_e2e_moved_groups.go")
+}
+
+// addEncField заводит текстовое поле `enc`: туда клиент переносит поля,
+// которые на месте не зашифровать (даты; SealKind.moved).
+func addEncField(app core.App, names ...string) error {
+	for _, name := range names {
+		col, err := app.FindCollectionByNameOrId(name)
+		if err != nil {
+			continue
+		}
+		if col.Fields.GetByName("enc") != nil {
+			continue
+		}
+		col.Fields.Add(&core.TextField{Name: "enc", Max: E2ESealedMax})
+		if err := app.Save(col); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -306,6 +306,170 @@ void main() {
     });
   });
 
+  group('желания, виджеты, скучаю', () {
+    test('желание и виджет — текст на месте, цены и даты открыты', () {
+      final w = codec.encode('wishes', 'w1', _gid, {
+        'title': 'Плед',
+        'url': 'https://shop/x',
+        'price': 990,
+        'done': false,
+      });
+      expect(w['title'], startsWith(e2eFieldPrefix));
+      expect(w['url'], startsWith(e2eFieldPrefix));
+      expect(w['price'], 990);
+      final wd = codec.encode('widget_data', 'wd1', _gid, {
+        'status': 'на работе',
+        'photo_grid_urls': ['pb://media/a/b.jpg'],
+        'display_name': 'Аня',
+      });
+      expect(wd['status'], startsWith(e2eFieldPrefix));
+      expect(wd['photo_grid_urls'], startsWith(e2eFieldPrefix));
+      expect(wd['display_name'], 'Аня');
+      expect(
+        codec.decode('widget_data', {'id': 'wd1', ...wd})['photo_grid_urls'],
+        ['pb://media/a/b.jpg'],
+      );
+    });
+
+    test('«скучаю»: шифр привязан к паре и автору, а не к id записи', () {
+      expect(
+        e2eRecordKey('miss_you', {'group_id': _gid, 'user_uid': 'alice'}),
+        '$_gid/alice',
+      );
+      final sealed = codec.sealField(
+        'miss_you',
+        '$_gid/alice',
+        'text',
+        'обнимаю',
+        keys.currentKey(_gid)!,
+      );
+      final rec = {
+        'id': 'любой',
+        'group_id': _gid,
+        'user_uid': 'alice',
+        'last_vibe_text': sealed,
+      };
+      expect(codec.decode('miss_you', rec)['last_vibe_text'], 'обнимаю');
+      // Сервер не выдаст текст одного за текст другого.
+      expect(
+        codec.decode('miss_you', {...rec, 'user_uid': 'bob'})['last_vibe_text'],
+        '',
+      );
+    });
+
+    test('маршрут miss-you: текст уходит шифром', () async {
+      final wire = <String>[];
+      final pb = PocketBase(
+        'http://pb',
+        httpClientFactory: () => E2EHttpClient(
+          MockClient((req) async {
+            wire.add(req.body);
+            return _json('{"ok":true,"count":1}');
+          }),
+          codec: () async => codec,
+        ),
+      );
+      await pb.send(
+        '/api/group/miss-you',
+        method: 'POST',
+        body: {
+          'groupId': _gid,
+          'uid': 'alice',
+          'vibe': 'custom',
+          'text': 'обнимаю',
+        },
+      );
+      final sent = jsonDecode(wire.single) as Map<String, dynamic>;
+      expect(sent['text'], startsWith(e2eFieldPrefix));
+      expect(sent['vibe'], 'custom');
+      final back = codec.decode('miss_you', {
+        'group_id': _gid,
+        'user_uid': 'alice',
+        'last_vibe_text': sent['text'],
+      });
+      expect(back['last_vibe_text'], 'обнимаю');
+    });
+  });
+
+  group('запись пары', () {
+    test('словарь участников: каждое значение — свой шифр', () {
+      final enc = codec.encode('groups', _gid, _gid, {
+        'member_moods': {
+          'alice': {'emoji': '😊', 'label': 'счастлива'},
+          'bob': null,
+        },
+        'members': ['alice', 'bob'],
+        'first_kiss_date': '2025-02-14 00:00:00.000Z',
+        'start_date': '2025-01-01 00:00:00.000Z',
+      });
+      final moods = enc['member_moods'] as Map;
+      expect(moods['alice'], startsWith(e2eFieldPrefix));
+      expect(moods['bob'], isNull);
+      expect(enc['members'], ['alice', 'bob']);
+      expect(enc['first_kiss_date'], '');
+      expect(enc['start_date'], '2025-01-01 00:00:00.000Z');
+      final dec = codec.decode('groups', {'id': _gid, ...enc});
+      expect(dec['member_moods'], {
+        'alice': {'emoji': '😊', 'label': 'счастлива'},
+        'bob': null,
+      });
+      expect(dec['first_kiss_date'], '2025-02-14 00:00:00.000Z');
+
+      // Значение одного участника не выдать за значение другого.
+      final swapped = codec.decode('groups', {
+        'id': _gid,
+        'member_moods': {'bob': moods['alice']},
+      });
+      expect(swapped['member_moods'], <String, dynamic>{});
+      expect(swapped[e2eLockedKey], isNotNull);
+    });
+
+    test('маршрут patch-map: значение уходит шифром', () async {
+      final wire = <String>[];
+      final pb = PocketBase(
+        'http://pb',
+        httpClientFactory: () => E2EHttpClient(
+          MockClient((req) async {
+            wire.add(req.body);
+            return _json('{"ok":true}');
+          }),
+          codec: () async => codec,
+        ),
+      );
+      await pb.send(
+        '/api/group/patch-map',
+        method: 'POST',
+        body: {
+          'groupId': _gid,
+          'field': 'member_moods',
+          'uid': 'alice',
+          'value': {'emoji': '😊'},
+        },
+      );
+      await pb.send(
+        '/api/group/patch-map',
+        method: 'POST',
+        body: {
+          'groupId': _gid,
+          'field': 'member_names',
+          'uid': 'alice',
+          'value': 'Аня',
+        },
+      );
+      final first = jsonDecode(wire[0]) as Map<String, dynamic>;
+      expect(first['value'], startsWith(e2eFieldPrefix));
+      final dec = codec.decode('groups', {
+        'id': _gid,
+        'member_moods': {'alice': first['value']},
+      });
+      expect(dec['member_moods'], {
+        'alice': {'emoji': '😊'},
+      });
+      // Имена участников — профиль, не шифруются.
+      expect(jsonDecode(wire[1])['value'], 'Аня');
+    });
+  });
+
   group('HTTP-клиент', () {
     late List<http.Request> wire;
     late Map<String, Map<String, dynamic>> server;

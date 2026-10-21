@@ -6,6 +6,7 @@
 @Tags(['fork-live'])
 library;
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -198,6 +199,71 @@ void main() {
       expect(part.bodyBytes, photo.sublist(70000, 70010));
       await proxy.close();
 
+      // Желание и «скучаю» через маршрут сервера (S9.4).
+      final wish = await chat(env['SMOKE_ATOK']!, a)
+          .collection('wishes')
+          .create(
+            body: {
+              'group_id': pair,
+              'author_uid': a.uid,
+              'title': 'Плед',
+              'price': 990,
+            },
+          );
+      final rawWish =
+          await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+              .collection('wishes')
+              .getOne(wish.id);
+      expect(rawWish.getStringValue('title'), startsWith(e2eFieldPrefix));
+      expect(
+        (await bobChat.collection('wishes').getOne(wish.id)).getStringValue(
+          'title',
+        ),
+        'Плед',
+      );
+      await chat(env['SMOKE_ATOK']!, a).send(
+        '/api/group/miss-you',
+        method: 'POST',
+        body: {
+          'groupId': pair,
+          'uid': a.uid,
+          'vibe': 'custom',
+          'text': 'обнимаю',
+          'weekday': 1,
+        },
+      );
+      final miss = await bobChat
+          .collection('miss_you')
+          .getFirstListItem('group_id = "$pair" && user_uid = "${a.uid}"');
+      expect(miss.getStringValue('last_vibe_text'), 'обнимаю');
+      final rawMiss =
+          await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+              .collection('miss_you')
+              .getOne(miss.id);
+      expect(
+        rawMiss.getStringValue('last_vibe_text'),
+        startsWith(e2eFieldPrefix),
+      );
+
+      // Запись пары: настроение участника через маршрут сервера.
+      await chat(env['SMOKE_ATOK']!, a).send(
+        '/api/group/patch-map',
+        method: 'POST',
+        body: {
+          'groupId': pair,
+          'field': 'member_moods',
+          'uid': a.uid,
+          'value': {'emoji': '😊'},
+        },
+      );
+      final rawGroup =
+          await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+              .collection('groups')
+              .getOne(pair);
+      expect(rawGroup.data['member_moods'][a.uid], startsWith(e2eFieldPrefix));
+      final bobGroup = await bobChat.collection('groups').getOne(pair);
+      expect(bobGroup.data['member_moods'][a.uid], {'emoji': '😊'});
+
       final ids = [a.uid, b.uid]..sort();
       final channel = 'pair_${ids[0]}_${ids[1]}';
       final loc = await chat(env['SMOKE_ATOK']!, a)
@@ -216,6 +282,33 @@ void main() {
       expect(rawLoc.data['data'], startsWith(e2eFieldPrefix));
       final bobLoc = await bobChat.collection('live_location').getOne(loc.id);
       expect(bobLoc.data['data'], {'lat': 55.75, 'lng': 37.61});
+
+      // Главная проверка S9: в базе и файлах сервера нет открытого текста
+      // из всего, что выше ушло шифром.
+      final dataDir = env['SMOKE_DATA_DIR'] ?? '';
+      if (dataDir.isNotEmpty) {
+        final markers = <String, List<int>>{
+          for (final m in [
+            'Алиса',
+            'правка',
+            'море',
+            'Плед',
+            'обнимаю',
+            'Ж' * 10,
+          ])
+            m: utf8.encode(m),
+          'фото': photo.sublist(1000, 1032),
+        };
+        final leaks = <String>[];
+        for (final f in Directory(dataDir).listSync(recursive: true)) {
+          if (f is! File) continue;
+          final bytes = f.readAsBytesSync();
+          for (final e in markers.entries) {
+            if (_contains(bytes, e.value)) leaks.add('${e.key} в ${f.path}');
+          }
+        }
+        expect(leaks, isEmpty);
+      }
 
       await a.sasStart(pair, b.uid);
       await b.syncGroup(pair);
@@ -245,4 +338,15 @@ void main() {
         ? 'нужен сервер: запускайте через server/scripts/smoke.sh'
         : false,
   );
+}
+
+bool _contains(List<int> hay, List<int> needle) {
+  outer:
+  for (var i = 0; i + needle.length <= hay.length; i++) {
+    for (var j = 0; j < needle.length; j++) {
+      if (hay[i + j] != needle[j]) continue outer;
+    }
+    return true;
+  }
+  return false;
 }

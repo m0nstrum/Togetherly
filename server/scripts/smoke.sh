@@ -95,6 +95,11 @@ echo "ok: watch/rtc"
 # Доп. проверка поверх готовой пары (например, обмен ключами E2E клиента:
 # test/fork/e2e/live_test.dart). Команда получает адрес, токены и пару.
 if [ -n "${SMOKE_AFTER:-}" ]; then
+  # Каталог данных своего сервера — чтобы проверить, что в базе и файлах
+  # нет открытого текста (на живом инстансе пусто).
+  data_dir=""
+  if [ -z "${SMOKE_BASE:-}" ]; then data_dir="$work/pb_data"; fi
+  SMOKE_DATA_DIR="$data_dir" \
   SMOKE_BASE_URL="$base" SMOKE_PAIR="$pair" SMOKE_AID="$aid" SMOKE_BID="$bid" \
   SMOKE_ATOK="$atok" SMOKE_BTOK="$btok" sh -c "$SMOKE_AFTER" || fail "SMOKE_AFTER: $SMOKE_AFTER"
   echo "ok: $SMOKE_AFTER"

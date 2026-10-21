@@ -280,6 +280,18 @@ func TestSealedFieldsFitCiphertext(t *testing.T) {
 		require.True(t, ok, f)
 		assert.Equal(t, migrations.E2ESealedMax, tf.Max, f)
 	}
+	for col, fields := range map[string][]string{
+		"wishes": {"title", "url"}, "custom_moods": {"label", "emoji"},
+		"widget_data": {"status", "message"}, "miss_you": {"last_vibe_text"},
+	} {
+		c, err := app.FindCollectionByNameOrId(col)
+		require.NoError(t, err, col)
+		for _, f := range fields {
+			tf, ok := c.Fields.GetByName(f).(*core.TextField)
+			require.True(t, ok, col+"."+f)
+			assert.Equal(t, migrations.E2ESealedMax, tf.Max, col+"."+f)
+		}
+	}
 	comments, err := app.FindCollectionByNameOrId("memory_comments")
 	require.NoError(t, err)
 	tf, ok := comments.Fields.GetByName("text").(*core.TextField)
@@ -292,9 +304,11 @@ func TestMovedFieldsHaveEnc(t *testing.T) {
 	app := newApp(t)
 	defer app.Cleanup()
 
-	col, err := app.FindCollectionByNameOrId("cycle_entries")
-	require.NoError(t, err)
-	tf, ok := col.Fields.GetByName("enc").(*core.TextField)
-	require.True(t, ok)
-	assert.Equal(t, migrations.E2ESealedMax, tf.Max)
+	for _, name := range []string{"cycle_entries", "groups"} {
+		col, err := app.FindCollectionByNameOrId(name)
+		require.NoError(t, err)
+		tf, ok := col.Fields.GetByName("enc").(*core.TextField)
+		require.True(t, ok, name)
+		assert.Equal(t, migrations.E2ESealedMax, tf.Max, name)
+	}
 }

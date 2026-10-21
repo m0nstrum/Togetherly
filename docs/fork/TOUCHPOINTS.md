@@ -84,6 +84,7 @@
 | `lib/screens/chat/chat_search_screen.dart` | S9 | Вкладки «Всё» и «Ссылки» у пары с ключом ищут через `ForkChatSearch.search` вместо `searchChat` с фильтром по тексту. | Сохранить: сервер в шифртексте ничего не найдёт. |
 | `lib/services/live_location_service.dart` | S9 | Живая точка в `loc:<канал>` уходит через `ForkE2E.sealPoint`, приходит через `ForkE2E.openPoint` (null — подделка, точку не показываем). | Сохранить обе стороны: иначе координаты летят через сервер открыто. |
 | `lib/services/pb_media_service.dart` | S9 | `resolveUrlAuthed` отдаёт адрес через `ForkE2E.mediaUrl` — локальный прокси расшифровки файлов пары. | Сохранить: иначе картинки, голосовые и видео пары придут шифром. Новый способ получить адрес файла в апстриме — пропустить через `ForkE2E.mediaUrl` тоже. |
+| `lib/services/canvas_repository.dart` | S9 | Живой штрих: `data` уходит через `ForkE2E.sealLive`, приходит через `ForkE2E.openLive` (не открылся — пакет не показываем). | Сохранить обе стороны. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 
