@@ -85,6 +85,9 @@ class PbMediaService {
     for (var attempt = 1; attempt <= 2; attempt++) {
       try {
         final body = <String, dynamic>{};
+        // fork: сервер форка пускает файл только с автором (`uid` = вошедший),
+        // а маскот, холст и фото настроения шли без него и падали 400.
+        uid ??= PocketBaseService().userId;
         if (uid != null) body['uid'] = uid;
         if (groupId != null) body['group_id'] = groupId;
         if (kind != null) body['kind'] = kind;
