@@ -1,5 +1,7 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.net.URI // fork
+import java.util.Base64 // fork
 
 plugins {
     id("com.android.application")
@@ -21,7 +23,7 @@ val forkApplicationId = "io.github.m0nstrum.tethered"
 val forkDartDefines: Map<String, String> =
     (project.findProperty("dart-defines") as String?).orEmpty()
         .split(",").filter { it.isNotBlank() }
-        .map { String(java.util.Base64.getDecoder().decode(it)) }
+        .map { String(Base64.getDecoder().decode(it)) }
         .filter { "=" in it }
         .associate { it.substringBefore("=") to it.substringAfter("=") }
 // .invalid (RFC 2606) не резолвится никогда: сборка без адреса сервера не
@@ -29,7 +31,7 @@ val forkDartDefines: Map<String, String> =
 val forkInviteHost: String = listOf("SITE_URL", "PB_URL")
     .mapNotNull { forkDartDefines[it]?.takeIf { v -> v.isNotBlank() } }
     .firstOrNull()
-    ?.let { java.net.URI(it).host }
+    ?.let { URI(it).host }
     ?: "unconfigured.invalid"
 val forkManifestPlaceholders = mapOf(
     "appLabel" to "Tethered",
