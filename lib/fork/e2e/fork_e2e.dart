@@ -160,6 +160,15 @@ abstract final class ForkE2E {
     newId: newPbId,
   );
 
+  /// Есть ли ключ пары [groupId], чтобы записать в неё шифром. Нет —
+  /// запись в очереди не уйдёт никогда (UX_AUDIT C1): экран должен сказать
+  /// об этом сразу, а не ставить «отправлено».
+  static Future<bool> canSeal(String groupId) async {
+    if (groupId.isEmpty) return false;
+    final c = await codec();
+    return c != null && c.crypto != null && c.keys.currentKey(groupId) != null;
+  }
+
   /// Кодек записей. Пока сервис не поднялся (старт приложения, фоновый
   /// изолят) — ключи только на чтение прямо из Keystore: так и очередь
   /// не уйдёт открытым текстом в первые секунды, и уведомление из фона

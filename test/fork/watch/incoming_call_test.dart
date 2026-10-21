@@ -11,12 +11,13 @@ class _Channel extends WatchChannel {
   final sent = <String>[];
 
   @override
-  Future<void> send(
+  Future<bool> send(
     String type, {
     double at = 0,
     Map<String, dynamic>? extra,
   }) async {
     sent.add(type);
+    return true;
   }
 }
 

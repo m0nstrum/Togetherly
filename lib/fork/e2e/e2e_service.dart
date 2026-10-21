@@ -25,6 +25,7 @@ import 'envelope.dart';
 import 'key_store.dart';
 import 'record_codec.dart';
 import 'sas.dart';
+import '../ui/feedback.dart';
 
 /// Состояние пары для UI.
 enum PairE2EStatus {
@@ -206,6 +207,9 @@ class E2EService implements E2EKeyring {
 
   /// Включить бэкап (или сменить фразу/пароль): шифруется и уходит на сервер.
   Future<void> enableBackup(BackupMethod method, String secret) async {
+    // Новый телефон до восстановления: ключей ещё нет — сначала восстановить
+    // (UX_AUDIT A3), а не падать «start() не вызван».
+    if (_keys == null) throw const ForkFailureError(ForkFailure.noKey);
     final bk = await BackupKey.deriveAsync(
       crypto,
       method,
@@ -247,15 +251,24 @@ class E2EService implements E2EKeyring {
       publicKey: Uint8List.fromList(contents.accountSecret.sublist(32)),
       secretKey: crypto.keyFromBytes(contents.accountSecret),
     );
+    final prev = _keys;
     _keys = E2EKeys(
       account: account,
       device: DeviceKeys.generate(crypto, b64(crypto.random(9))),
       pairKeys: {for (final k in contents.pairKeys) k.keyId: k},
       backup: bk,
     )..deriveSelf(crypto, uid);
+    // Сбой сети на публикации не должен оставить полусостояние, после
+    // которого повтор отвечает «нечего восстанавливать» (UX_AUDIT A5):
+    // бэкап с сервера забываем только после успеха.
+    try {
+      await _publish();
+      await store.save(keys);
+    } catch (_) {
+      _keys = prev;
+      rethrow;
+    }
     _serverBackup = null;
-    await _publish();
-    await store.save(keys);
     backupMethod.value = bk.method;
     needsRestore.value = false;
   }
@@ -263,11 +276,17 @@ class E2EService implements E2EKeyring {
   /// Без фразы и пароля: новые ключи, старая история не читается, партнёр
   /// увидит смену ключа. Бэкап нужно включить заново.
   Future<void> startFresh() async {
+    final prev = _keys;
     _keys = E2EKeys.generate(crypto, b64(crypto.random(9)))
       ..deriveSelf(crypto, uid);
+    try {
+      await _publish();
+      await store.save(keys);
+    } catch (_) {
+      _keys = prev; // повтор начнёт с того же места (UX_AUDIT A7)
+      rethrow;
+    }
     _serverBackup = null;
-    await _publish();
-    await store.save(keys);
     backupMethod.value = null;
     needsRestore.value = false;
   }

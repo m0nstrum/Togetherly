@@ -7,6 +7,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../services/locale_service.dart';
+import 'backup.dart' show BackupMethod;
+import '../ui/feedback.dart';
 import 'backup_ui.dart';
 import 'e2e_service.dart';
 import 'fork_e2e.dart';
@@ -39,12 +41,19 @@ class ForkE2EBanner extends StatelessWidget {
       valueListenable: ForkE2E.service,
       builder: (context, svc, _) {
         if (svc == null || groupId.isEmpty) return const SizedBox.shrink();
-        return ValueListenableBuilder<SasState?>(
+        return ValueListenableBuilder<BackupMethod?>(
+          valueListenable: svc.backupMethod,
+          builder: (context, backup, _) => ValueListenableBuilder<SasState?>(
           valueListenable: svc.sas,
           builder: (context, sas, _) => ValueListenableBuilder<Map<String, PairE2EStatus>>(
             valueListenable: svc.status,
             builder: (context, all, _) {
               final incoming = sas is SasIncoming && sas.groupId == groupId;
+              // Ключи без бэкапа: потеря телефона = потеря переписки, а
+              // сказано об этом было только в настройках (UX_AUDIT A2).
+              final backupOff = backup == null &&
+                  !svc.needsRestore.value &&
+                  all[groupId] != PairE2EStatus.needsRestore;
               final (text, danger) = switch (all[groupId]) {
                 _ when incoming => (
                   _t(
@@ -62,15 +71,15 @@ class ForkE2EBanner extends StatelessWidget {
                 ),
                 PairE2EStatus.unverified => (
                   _t(
-                    'Ключи не проверены — сверьте эмодзи',
-                    'Keys not verified — compare emoji',
+                    'Переписка зашифрована. Сверьте 7 эмодзи с $partnerName — так вы убедитесь, что ключи ваши',
+                    'Your chat is encrypted. Compare 7 emoji with $partnerName to make sure the keys are yours',
                   ),
                   false,
                 ),
                 PairE2EStatus.keyChanged => (
                   _t(
-                    'Ключ $partnerName сменился. Если не переустанавливали — сверьте эмодзи',
-                    '$partnerName\'s key changed. If they didn\'t reinstall, compare emoji',
+                    'Ключ $partnerName сменился — обычно это новый телефон или переустановка. Если не ожидали, сверьте эмодзи',
+                    '$partnerName\'s key changed — usually a new phone or a reinstall. If you didn\'t expect it, compare emoji',
                   ),
                   true,
                 ),
@@ -81,9 +90,33 @@ class ForkE2EBanner extends StatelessWidget {
                   ),
                   true,
                 ),
+                PairE2EStatus.waitingPartner => (
+                  _t(
+                    'Ждём, пока $partnerName войдёт в новую версию: пока нет ключей партнёра, писать нельзя',
+                    'Waiting for $partnerName to open the new version: you can’t write until their keys arrive',
+                  ),
+                  false,
+                ),
+                PairE2EStatus.waitingKey => (
+                  _t(
+                    'Договариваемся о ключе пары — сообщения можно будет писать через пару секунд',
+                    'Agreeing on the pair key — you’ll be able to write in a moment',
+                  ),
+                  false,
+                ),
+                _ when backupOff => (
+                  _t(
+                    'Ключи без бэкапа: потеряете телефон — потеряете переписку. Включить бэкап',
+                    'Keys have no backup: lose your phone, lose your history. Turn on backup',
+                  ),
+                  false,
+                ),
                 _ => ('', false),
               };
               if (text.isEmpty) return const SizedBox.shrink();
+              final toBackup = backupOff &&
+                  !incoming &&
+                  (all[groupId] == null || all[groupId] == PairE2EStatus.verified);
               final scheme = Theme.of(context).colorScheme;
               final bg = danger
                   ? scheme.errorContainer
@@ -96,7 +129,9 @@ class ForkE2EBanner extends StatelessWidget {
                 child: InkWell(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => all[groupId] == PairE2EStatus.needsRestore
+                      builder: (_) => toBackup
+                          ? const ForkE2EBackupScreen()
+                          : all[groupId] == PairE2EStatus.needsRestore
                           ? const ForkE2ERestoreScreen()
                           : ForkE2EVerifyScreen(
                               groupId: groupId,
@@ -129,7 +164,11 @@ class ForkE2EBanner extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          _t('Сверить', 'Verify'),
+                          toBackup
+                              ? _t('Включить', 'Turn on')
+                              : all[groupId] == PairE2EStatus.needsRestore
+                              ? _t('Восстановить', 'Restore')
+                              : _t('Сверить', 'Verify'),
                           style: TextStyle(
                             color: fg,
                             decoration: TextDecoration.underline,
@@ -141,6 +180,7 @@ class ForkE2EBanner extends StatelessWidget {
                 ),
               );
             },
+          ),
           ),
         );
       },
@@ -177,8 +217,11 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
       await f();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('Не получилось: $e', 'Failed: $e'))),
+        ForkNotice.error(
+          context,
+          e,
+          what: _t('Сверка не прошла', 'Verification failed'),
+          retry: () => _run(f),
         );
       }
     } finally {
@@ -254,9 +297,16 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
             const SizedBox(height: 16),
             _p(
               _t(
-                'Ждём, пока $name откроет экран сверки…',
-                'Waiting for $name to open verification…',
+                'Ждём, пока $name откроет экран сверки и нажмёт «Сверить». '
+                    'Если ничего не происходит — пусть откроет чат: там будет плашка с приглашением.',
+                'Waiting for $name to open verification and tap “Verify”. '
+                    'If nothing happens, ask them to open the chat — an invite banner is there.',
               ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: _busy ? null : () => _run(svc.sasCancel),
+              child: Text(_t('Отменить', 'Cancel')),
             ),
           ],
           SasIncoming() => [
@@ -401,8 +451,10 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
                         ok
                             ? _t('Ключи проверены', 'Keys verified')
                             : _t(
-                                'QR не совпал — возможна подмена ключей',
-                                'QR mismatch — keys may be swapped',
+                                'Отпечатки не совпали. Если ${widget.partnerName} недавно переустанавливал(а) приложение — '
+                                    'пусть заново откроет этот экран и покажет свежий QR. Если нет — возможна подмена ключей.',
+                                'Fingerprints don’t match. If ${widget.partnerName} reinstalled the app recently, ask them to reopen '
+                                    'this screen and show a fresh QR. If not, the keys may have been swapped.',
                               ),
                       ),
                     ),

@@ -11,9 +11,10 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../fork/e2e/room_chat_ui.dart'; // fork
 import '../../fork/watch_proxy.dart'; // fork
+import '../../fork/watch/voice_stage.dart'; // fork
+import '../../fork/watch/voice_status.dart'; // fork
 import '../../fork/watch/incoming_call.dart'; // fork
 import '../../fork/e2e/reels_chat_bridge.dart'; // fork
-import '../../dict_strings.dart' show ruEn; // fork
 import '../../models/call_record.dart';
 import '../../models/exit_guard.dart';
 import '../../services/chat_service.dart';
@@ -225,6 +226,12 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       await room.connect(_onRoomMessage);
     } catch (e) {
       debugPrint('WatchRoom: канал не поднялся: $e');
+      // fork (UX L3): не сдаёмся молча — пробуем снова, звонок скажет причину.
+      if (mounted) {
+        Future<void>.delayed(const Duration(seconds: 5), () {
+          if (mounted && _voice == null) unawaited(_openVoice());
+        });
+      }
       return;
     }
     if (!mounted) {
@@ -234,9 +241,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     final voice = WatchVoiceService(channel: room, me: me);
     voice.addListener(_onVoiceChanged);
     voice.onCallEnded = (talked, peer) => _recordCall(me, talked, peer);
-    voice.onUnanswered = (declined) => _say(declined // fork
-        ? ruEn('Партнёр сейчас не может говорить', 'Your partner can’t talk right now')
-        : ruEn('Партнёр не ответил', 'Your partner didn’t answer'));
+    // fork: «не ответил / не может» показывает плашка звонка (ForkVoiceStatus).
     setState(() {
       _room = room;
       _voice = voice;
@@ -300,10 +305,22 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     final voice = _voice;
     // Канал ещё не поднялся — звонить некуда, страница просто останется
     // в покое: своего состояния она не выдумывает.
-    if (voice == null) return;
+    if (voice == null) {
+      // fork (UX L3): раньше кнопка молчала.
+      if (action == 'call') {
+        _say(voiceStageText(VoiceStage.failed, VoiceProblem.noChannel));
+        unawaited(_openVoice());
+      }
+      return;
+    }
     switch (action) {
       case 'call':
-        if (!voice.active) await _toggleVoice();
+        // fork (UX L2): после «не вышло» — звоним заново.
+        if (voice.state == VoiceCallState.failed) {
+          await voice.start();
+        } else if (!voice.active) {
+          await _toggleVoice();
+        }
       case 'hangup':
         if (voice.active) await voice.stop();
       case 'mic':
@@ -320,10 +337,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     if (voice.active) {
       await voice.stop();
     } else {
-      await voice.start();
-      if (mounted && voice.state == VoiceCallState.failed) {
-        _say(LocaleService.current.voiceNoPermission);
-      }
+      await voice.start(); // fork: отказ в микрофоне показывает плашка звонка
     }
   }
 
@@ -619,6 +633,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
             if (_loading) Center(child: M3Loading(color: Theme.of(context).colorScheme.primary)),
             if (!widget.reels) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId), // fork
             ForkIncomingCall(voice: _voice, onAnswer: () => _onVoiceAction('call')), // fork
+            ForkVoiceStatus(voice: _voice, onRetry: () => _onVoiceAction('call')), // fork (UX L2–L7)
           ],
         ),
       ),

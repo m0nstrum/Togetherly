@@ -37,7 +37,7 @@
     lastLink: '',
     // Что показывать пришедшему позже: ссылка, переписка этой вкладки и
     // отложенная команда для плеера, который ещё грузится.
-    url: '', log: [], synced: false, pending: null, joinedAt: 0,
+    url: '', log: [], synced: false, pending: null, joinedAt: -Infinity, // fork (UX L8): приход видно и в первые 30 с
     // Ролик из адреса комнаты (?src=): включаем его, как только канал ожил.
     wanted: '',
     // Как подписывать свои сообщения. Приложение присылает имя (?name=), у
@@ -890,10 +890,42 @@
     if (el) el.textContent = n === 1 ? I18N.t('room.alone') : I18N.t('room.viewers', { n });
     // Комната открыта сразу, поэтому приход партнёра отмечаем строкой в чате.
     // Переподключения дают дребезг 1↔2, поэтому строка не чаще раза в полминуты.
-    if (n > 1 && was <= 1 && performance.now() - state.joinedAt > 30000) {
-      state.joinedAt = performance.now();
-      addSystem(I18N.t('room.partnerJoined'));
+    if (n > 1) {
+      clearTimeout(state.leftTimer);
+      if (!state.partnerHere && performance.now() - state.joinedAt > 30000) {
+        state.joinedAt = performance.now();
+        addSystem(I18N.t('room.partnerJoined'));
+        note(I18N.t('room.partnerJoined'));
+      }
+      state.partnerHere = true;
+    } else if (was > 1 && state.partnerHere) {
+      // fork (UX L8): уход партнёра тоже видно; дребезг переподключения не
+      // считается.
+      clearTimeout(state.leftTimer);
+      state.leftTimer = setTimeout(() => {
+        if (state.viewers > 1) return;
+        state.partnerHere = false;
+        addSystem(I18N.t('room.partnerLeft'));
+        note(I18N.t('room.partnerLeft'));
+      }, 4000);
     }
+  }
+
+  // fork (UX L15): без связи плашка висит, пока связь не вернётся.
+  function netBanner(text) {
+    let b = document.querySelector('.fork-net');
+    if (!text) { if (b) b.remove(); return; }
+    if (!b) {
+      b = document.createElement('div');
+      b.className = 'fork-net';
+      b.setAttribute('role', 'status');
+      b.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 60px);' +
+        'transform:translateX(-50%);z-index:60;padding:8px 14px;border-radius:14px;' +
+        'background:rgba(20,20,20,.82);color:#fff;font:500 14px/1.3 system-ui,sans-serif;' +
+        'max-width:calc(100% - 32px);text-align:center;pointer-events:none';
+      document.body.appendChild(b);
+    }
+    b.textContent = text;
   }
 
   function addSystem(text) {
@@ -913,6 +945,7 @@
     message: onMessage,
     viewers: setViewers,
     status: (kind) => {
+      netBanner(kind === 'offline' || kind === 'lost' ? I18N.t(kind === 'lost' ? 'room.lost' : 'room.offline') : ''); // fork (UX L15)
       if (kind === 'ready') setStatus(I18N.t('room.ready'));
       else if (kind === 'offline') setStatus(I18N.t('room.offline'));
       else if (kind === 'connecting') setStatus(I18N.t('room.connecting'));
