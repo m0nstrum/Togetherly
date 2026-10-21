@@ -30,6 +30,9 @@ type Config struct {
 	// CompatAddr — внутренний API для JS-хуков апстрима (их hotpath). Адрес
 	// зашит в хуках; пустой — не поднимать.
 	CompatAddr string `koanf:"compat_addr"`
+	// MetricsAddr — где отдавать /metrics для Prometheus. Пусто — не
+	// отдавать. Наружу не публиковать.
+	MetricsAddr string `koanf:"metrics_addr"`
 	// LogLevel — debug, info, warn, error.
 	LogLevel string `koanf:"log_level"`
 	// TrustedProxyHeader — заголовок с адресом клиента от своего прокси

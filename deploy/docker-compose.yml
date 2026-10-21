@@ -29,6 +29,8 @@ services:
       TETHERED_POISKKINO_KEY: ${POISKKINO_KEY:-}
       # Адрес клиента для лимитов — от Caddy (снаружи сервер не виден).
       TETHERED_TRUSTED_PROXY_HEADER: X-Forwarded-For
+      # /metrics для Prometheus — только во внутренней сети compose.
+      TETHERED_METRICS_ADDR: 0.0.0.0:9100
     volumes:
       - server-data:/data
       # Зашифрованные бэкапы: этот том и уносят с машины (deploy/README.md).

@@ -22,6 +22,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/handler"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/backup"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/centrifugo"
+	"github.com/m0nstrum/togetherly/server/internal/infrastructure/metrics"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
@@ -55,8 +56,12 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		log.Warn("JS-хуки не найдены, роуты апстрима недоступны", "dir", cfg.HooksDir)
 	}
 
+	mx := metrics.New()
+	mx.Bind(app)
+	bindMetrics(app, cfg.MetricsAddr, mx, log)
+
 	pub := centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout)
-	bindRealtime(app, pub, cfg.Centrifugo.Timeout, log)
+	bindRealtime(app, pub, mx.Published, cfg.Centrifugo.Timeout, log)
 	bindCapsules(app, time.Now, log)
 	bindGuards(app)
 	bindAllFree(app)
@@ -117,6 +122,28 @@ func bindAccount(app core.App, log *slog.Logger) *account.Service {
 	return svc
 }
 
+// bindMetrics отдаёт /metrics на отдельном адресе (не через Caddy).
+func bindMetrics(app core.App, addr string, mx *metrics.Metrics, log *slog.Logger) {
+	if addr == "" {
+		return
+	}
+	mux := http.NewServeMux()
+	mux.Handle("GET /metrics", mx.Handler())
+	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Error("метрики", "addr", addr, "err", err)
+			}
+		}()
+		return e.Next()
+	})
+	app.OnTerminate().BindFunc(func(e *core.TerminateEvent) error {
+		_ = srv.Close()
+		return e.Next()
+	})
+}
+
 // bindCompat поднимает на петле внутренний API для JS-хуков апстрима
 // (handler.Compat). Адрес зашит в хуках — 127.0.0.1:8120.
 func bindCompat(app core.App, addr string, pub *centrifugo.Publisher, log *slog.Logger) {
@@ -142,7 +169,7 @@ func bindCompat(app core.App, addr string, pub *centrifugo.Publisher, log *slog.
 
 // bindRealtime рассылает изменения записей в Centrifugo. Отправка в фоне:
 // ответ клиенту сеть не ждёт, сбой Centrifugo запись не ломает.
-func bindRealtime(app core.App, pub *centrifugo.Publisher, timeout time.Duration, log *slog.Logger) {
+func bindRealtime(app core.App, pub *centrifugo.Publisher, observe func(error), timeout time.Duration, log *slog.Logger) {
 	if !pub.Enabled() {
 		log.Warn("Centrifugo не настроен: живых обновлений не будет")
 		return
@@ -158,7 +185,9 @@ func bindRealtime(app core.App, pub *centrifugo.Publisher, timeout time.Duration
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 			for _, ch := range channels {
-				if err := pub.Publish(ctx, ch, payload); err != nil {
+				err := pub.Publish(ctx, ch, payload)
+				observe(err)
+				if err != nil {
 					log.Warn("centrifugo: публикация", "channel", ch, "err", err)
 				}
 			}

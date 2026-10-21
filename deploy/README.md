@@ -39,6 +39,14 @@ docker compose exec server /app/tethered superuser upsert admin@example.org 'д�
 
 Данные — в томе `server-data` (`/data`): база SQLite и файлы.
 
+## Метрики
+
+Сервер отдаёт `/metrics` (Prometheus) на `server:9100` внутри сети compose;
+через Caddy этот адрес не публикуется. Там только сервер: запросы по
+шаблонам маршрутов и классам ответа, время ответа, размер базы, бэкапы
+(`tethered_backup_last_success_timestamp_seconds` — для алерта «бэкапа не было
+сутки»), публикации в Centrifugo, Go-рантайм. Ни uid, ни IP, ни id записей.
+
 ## Бэкапы
 
 PocketBase снимает бэкап по `BACKUP_CRON`. С ключом `BACKUP_AGE_RECIPIENTS`
