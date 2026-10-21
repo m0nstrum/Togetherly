@@ -142,14 +142,54 @@ class BackupKey {
     );
   }
 
-  /// Ключ существующего бэкапа [data] из фразы или пароля.
-  static BackupKey forData(
+  /// Как [derive], но Argon2id — в отдельном изоляте.
+  static Future<BackupKey> deriveAsync(
+    E2ECrypto c,
+    BackupMethod method,
+    String secret, {
+    KdfParams? params,
+  }) async {
+    final p = params ?? KdfParams.standard(c);
+    final salt = c.random(c.pwhashSaltBytes);
+    final bytes = await E2ECrypto.pwhashInIsolate(
+      _normalize(method, secret),
+      salt,
+      opsLimit: p.ops,
+      memLimit: p.mem,
+    );
+    return BackupKey(
+      method: method,
+      params: p,
+      salt: salt,
+      key: c.keyFromBytes(bytes),
+    );
+  }
+
+  /// Как [forData], но Argon2id — в отдельном изоляте.
+  static Future<BackupKey> forDataAsync(
     E2ECrypto c,
     Map<String, dynamic> data,
     String secret,
+  ) async {
+    final header = _header(data);
+    final bytes = await E2ECrypto.pwhashInIsolate(
+      _normalize(header.method, secret),
+      header.salt,
+      opsLimit: header.params.ops,
+      memLimit: header.params.mem,
+    );
+    return BackupKey(
+      method: header.method,
+      params: header.params,
+      salt: header.salt,
+      key: c.keyFromBytes(bytes),
+    );
+  }
+
+  static ({BackupMethod method, KdfParams params, Uint8List salt}) _header(
+    Map<String, dynamic> data,
   ) {
     if (data['v'] != 1) throw FormatException('бэкап: версия ${data['v']}');
-    final method = BackupMethod.values.byName(data['method'] as String);
     final kdf = (data['kdf'] as Map).cast<String, dynamic>();
     if (kdf['alg'] != 'argon2id13') {
       throw FormatException('бэкап: ${kdf['alg']}');
@@ -159,17 +199,29 @@ class BackupKey {
     if ((kdf['mem'] as int) > 1 << 30) {
       throw const FormatException('бэкап: слишком много памяти для Argon2id');
     }
-    final params = KdfParams(ops: kdf['ops'] as int, mem: kdf['mem'] as int);
-    final salt = unb64(kdf['salt'] as String);
+    return (
+      method: BackupMethod.values.byName(data['method'] as String),
+      params: KdfParams(ops: kdf['ops'] as int, mem: kdf['mem'] as int),
+      salt: unb64(kdf['salt'] as String),
+    );
+  }
+
+  /// Ключ существующего бэкапа [data] из фразы или пароля.
+  static BackupKey forData(
+    E2ECrypto c,
+    Map<String, dynamic> data,
+    String secret,
+  ) {
+    final h = _header(data);
     return BackupKey(
-      method: method,
-      params: params,
-      salt: salt,
+      method: h.method,
+      params: h.params,
+      salt: h.salt,
       key: c.pwhash(
-        _normalize(method, secret),
-        salt,
-        opsLimit: params.ops,
-        memLimit: params.mem,
+        _normalize(h.method, secret),
+        h.salt,
+        opsLimit: h.params.ops,
+        memLimit: h.params.mem,
       ),
     );
   }

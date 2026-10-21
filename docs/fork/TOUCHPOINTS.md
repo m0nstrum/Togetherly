@@ -43,7 +43,7 @@
 | `lib/models/memory_sticker.dart` | S1 | Разрешённые префиксы картинок наклеек строятся из `ownHosts`. | Повторить. |
 | `lib/config/sentry_config.dart` | S1 | `dsn = String.fromEnvironment('SENTRY_DSN')`. В S2 сюда же придёт opt-in. | Повторить. |
 | `lib/screens/profile_screen.dart`, `lib/screens/setup_screen.dart`, `lib/screens/home/widgets/cycle_consent_sheet.dart` | S1 | Ссылки на политику, условия и лендинг — из `Endpoints.current`. | Повторить. |
-| `lib/screens/settings_screen.dart` | S1 | `supportEmail`/`officialEmail` из `SUPPORT_EMAIL`/`OFFICIAL_EMAIL`. | Повторить. |
+| `lib/screens/settings_screen.dart` | S1, S8 | `supportEmail`/`officialEmail` из `SUPPORT_EMAIL`/`OFFICIAL_EMAIL`. S8: `ForkE2EBackupRow` — бэкап ключей шифрования. | Повторить. |
 | `lib/screens/force_update_screen.dart` | S1 | Ссылка на релизы — `RELEASES_URL`. | Повторить. |
 | `lib/screens/memory_book_form_screen.dart` | S1 | User-Agent запросов к Open Library без домена апстрима. | Повторить. |
 | `lib/widgets/chest/chest_share_card.dart`, `lib/widgets/mood/vessel_story_card.dart` | S1 | Подпись `togetherly.day` на карточках «поделиться» → `Endpoints.current.siteHost`. | Повторить. |

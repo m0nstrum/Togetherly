@@ -6,6 +6,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:sodium/sodium_sumo.dart';
@@ -182,6 +183,23 @@ class E2ECrypto {
   );
 
   int get pwhashOpsModerate => _c.pwhash.opsLimitModerate;
+
+  /// Argon2id с 256 МиБ — секунды работы: в отдельном изоляте, чтобы не
+  /// замирал интерфейс. Возвращает байты ключа.
+  static Future<Uint8List> pwhashInIsolate(
+    String secret,
+    Uint8List salt, {
+    required int opsLimit,
+    required int memLimit,
+  }) => Isolate.run(() async {
+    final c = await E2ECrypto.init();
+    final k = c.pwhash(secret, salt, opsLimit: opsLimit, memLimit: memLimit);
+    try {
+      return k.extractBytes();
+    } finally {
+      k.dispose();
+    }
+  });
 }
 
 /// Склейка кусков с длиной перед каждым (4 байта, big-endian).

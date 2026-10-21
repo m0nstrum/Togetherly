@@ -148,4 +148,27 @@ class PbE2EBackend implements E2EBackend {
         ),
     ];
   }
+
+  @override
+  Future<Map<String, dynamic>?> backup(String uid) async {
+    final r = await _pb
+        .collection('e2e_backups')
+        .getList(perPage: 1, filter: 'user_uid = ${_q(uid)}');
+    if (r.items.isEmpty) return null;
+    final d = r.items.first.data['data'];
+    return d is Map ? d.cast<String, dynamic>() : null;
+  }
+
+  @override
+  Future<void> putBackup(String uid, Map<String, dynamic> data) async {
+    final r = await _pb
+        .collection('e2e_backups')
+        .getList(perPage: 1, filter: 'user_uid = ${_q(uid)}');
+    final body = {'user_uid': uid, 'data': data};
+    if (r.items.isEmpty) {
+      await _pb.collection('e2e_backups').create(body: body);
+    } else {
+      await _pb.collection('e2e_backups').update(r.items.first.id, body: body);
+    }
+  }
 }

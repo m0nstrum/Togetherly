@@ -12,6 +12,7 @@ class ServerDb {
   final identities = <String, Map<String, dynamic>>{};
   final grants = <String, (PairKeyGrant, String)>{};
   final handshakes = <HandshakeMsg>[];
+  final backups = <String, Map<String, dynamic>>{};
   final members = <String, List<String>>{
     gid: [alice, bob],
   };
@@ -89,4 +90,11 @@ class FakeBackend implements E2EBackend {
   @override
   Future<List<HandshakeMsg>> handshakes(String groupId) async =>
       List.of(db.handshakes);
+
+  @override
+  Future<Map<String, dynamic>?> backup(String uid) async => db.backups[uid];
+
+  @override
+  Future<void> putBackup(String uid, Map<String, dynamic> data) async =>
+      db.backups[uid] = data;
 }

@@ -13,6 +13,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'backup.dart';
 import 'crypto.dart';
 import 'devices.dart';
 import 'envelope.dart';
@@ -102,6 +103,7 @@ class E2EKeys {
     Set<String>? granted,
     Map<String, String>? inviteSecrets,
     this.listVersion = 0,
+    this.backup,
   }) : pairKeys = pairKeys ?? {},
        peers = peers ?? {},
        granted = granted ?? {},
@@ -124,6 +126,9 @@ class E2EKeys {
 
   /// Версия своего опубликованного списка устройств.
   int listVersion;
+
+  /// Ключ бэкапа ключей (§7); null — бэкап не включён.
+  BackupKey? backup;
 
   PairKey? keyFor(String keyId) => pairKeys[keyId];
 
@@ -185,6 +190,7 @@ class E2EKeyStore {
       'granted': k.granted.toList()..sort(),
       'invites': k.inviteSecrets,
       'list_version': k.listVersion,
+      if (k.backup != null) 'backup': k.backup!.toJson(),
     }),
   );
 
@@ -220,6 +226,12 @@ class E2EKeyStore {
       inviteSecrets: ((j['invites'] as Map?) ?? const {})
           .cast<String, String>(),
       listVersion: j['list_version'] as int? ?? 0,
+      backup: j['backup'] == null
+          ? null
+          : BackupKey.fromJson(
+              _c,
+              (j['backup'] as Map).cast<String, dynamic>(),
+            ),
     );
   }
 

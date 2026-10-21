@@ -2,6 +2,9 @@
 // ключ пары, подмену ключа на сервере видно в состоянии для UI).
 
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:io';
+
+import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
 import 'package:love_app/fork/e2e/devices.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
@@ -23,6 +26,7 @@ void main() {
       store: E2EKeyStore(c, vault ?? MemoryVault()),
       backend: FakeBackend(db, uid),
       uid: uid,
+      kdfParams: const KdfParams(ops: 1, mem: 8 << 20),
     );
     await s.start();
     return s;
@@ -252,6 +256,89 @@ void main() {
       db.identities[alice]!['devices']['version'],
       1,
       reason: 'то же устройство — список не растёт',
+    );
+  });
+
+  group('бэкап ключей', () {
+    late List<String> words;
+    setUpAll(
+      () => words = File('assets/fork/bip39_english.txt').readAsLinesSync(),
+    );
+
+    test(
+      'новый телефон: ждёт фразу, восстанавливает тот же ключ и историю',
+      () async {
+        final db = ServerDb();
+        final a = await install(db, alice);
+        final b = await install(db, bob);
+        await syncBoth(a, b);
+        final phrase = RecoveryPhrase.generate(c, words).toString();
+        await a.enableBackup(BackupMethod.phrase, phrase);
+        expect(a.backupMethod.value, BackupMethod.phrase);
+
+        // Новый телефон Алисы: Keystore пуст, бэкап на сервере.
+        final a2 = await install(db, alice);
+        expect(a2.needsRestore.value, isTrue);
+        expect(a2.restoreMethod, BackupMethod.phrase);
+        expect(await a2.syncGroup(gid), PairE2EStatus.needsRestore);
+        expect(
+          db.identities[alice]!['devices']['version'],
+          1,
+          reason: 'до восстановления ключи не публикуются',
+        );
+
+        await expectLater(
+          a2.restore(RecoveryPhrase.generate(c, words).toString()),
+          throwsA(isA<E2EVerifyError>()),
+        );
+        await a2.restore(phrase.toUpperCase());
+        expect(a2.needsRestore.value, isFalse);
+        expect(a2.keys.account.publicKey, a.keys.account.publicKey);
+        expect(
+          a2.currentKey(gid)!.key.extractBytes(),
+          keyBytes(b),
+          reason: 'история читается',
+        );
+
+        // Партнёр не видит смены ключа: тот же ключ аккаунта, новое устройство.
+        await syncBoth(b, a2);
+        expect(b.status.value[gid], PairE2EStatus.unverified);
+        expect((db.identities[alice]!['devices']['devices'] as List).length, 2);
+      },
+    );
+
+    test('новый ключ пары сам попадает в бэкап', () async {
+      final db = ServerDb()..members['g2'] = [alice, bob];
+      final a = await install(db, alice);
+      final b = await install(db, bob);
+      await a.enableBackup(BackupMethod.password, 'Ябл0ко-Кит-Велик');
+      await syncBoth(a, b);
+      await a.syncGroup('g2');
+      await b.syncGroup('g2');
+      final back = KeyBackup.open(
+        c,
+        user: alice,
+        data: db.backups[alice]!,
+        secret: 'Ябл0ко-Кит-Велик',
+      );
+      expect({for (final k in back.pairKeys) k.keyId}, {'g1:1', 'g2:1'});
+    });
+
+    test(
+      'без фразы — начать заново: новый ключ, партнёр видит смену',
+      () async {
+        final db = ServerDb();
+        final a = await install(db, alice);
+        final b = await install(db, bob);
+        await syncBoth(a, b);
+        await a.enableBackup(BackupMethod.password, 'Ябл0ко-Кит-Велик');
+        final a2 = await install(db, alice);
+        await a2.startFresh();
+        expect(a2.keys.account.publicKey, isNot(a.keys.account.publicKey));
+        expect(a2.backupMethod.value, isNull);
+        await syncBoth(b, a2);
+        expect(b.status.value[gid], PairE2EStatus.keyChanged);
+      },
     );
   });
 }

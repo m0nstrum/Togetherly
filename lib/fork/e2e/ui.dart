@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../services/locale_service.dart';
+import 'backup_ui.dart';
 import 'e2e_service.dart';
 import 'fork_e2e.dart';
 import 'sas.dart';
@@ -52,6 +53,13 @@ class ForkE2EBanner extends StatelessWidget {
                   ),
                   false,
                 ),
+                PairE2EStatus.needsRestore => (
+                  _t(
+                    'Восстановите ключи из бэкапа, чтобы читать историю',
+                    'Restore your keys from backup to read your history',
+                  ),
+                  false,
+                ),
                 PairE2EStatus.unverified => (
                   _t(
                     'Ключи не проверены — сверьте эмодзи',
@@ -88,11 +96,13 @@ class ForkE2EBanner extends StatelessWidget {
                 child: InkWell(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => ForkE2EVerifyScreen(
-                        groupId: groupId,
-                        partnerUid: partnerUid,
-                        partnerName: partnerName,
-                      ),
+                      builder: (_) => all[groupId] == PairE2EStatus.needsRestore
+                          ? const ForkE2ERestoreScreen()
+                          : ForkE2EVerifyScreen(
+                              groupId: groupId,
+                              partnerUid: partnerUid,
+                              partnerName: partnerName,
+                            ),
                     ),
                   ),
                   child: Padding(

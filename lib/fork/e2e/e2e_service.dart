@@ -18,6 +18,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'backup.dart';
 import 'crypto.dart';
 import 'devices.dart';
 import 'envelope.dart';
@@ -26,6 +27,9 @@ import 'sas.dart';
 
 /// Состояние пары для UI.
 enum PairE2EStatus {
+  /// Новое устройство: на сервере есть бэкап ключей, нужно восстановить.
+  needsRestore,
+
   /// У партнёра ещё нет ключей (старая версия приложения или не входил).
   waitingPartner,
 
@@ -86,6 +90,10 @@ abstract interface class E2EBackend {
     Map<String, dynamic> data,
   );
   Future<List<HandshakeMsg>> handshakes(String groupId);
+
+  /// Бэкап ключей (`e2e_backups.data`); null — нет.
+  Future<Map<String, dynamic>?> backup(String uid);
+  Future<void> putBackup(String uid, Map<String, dynamic> data);
 }
 
 /// Что видно на экране сверки.
@@ -129,7 +137,23 @@ class E2EService {
     required this.store,
     required this.backend,
     required this.uid,
+    this.kdfParams,
   });
+
+  /// Параметры Argon2id для нового бэкапа; null — стандартные (§7). Тесты
+  /// ставят дешёвые.
+  final KdfParams? kdfParams;
+
+  /// Ключей на устройстве нет, а на сервере есть бэкап: ждём фразу или
+  /// пароль ([restore]) или «начать заново» ([startFresh]).
+  final ValueNotifier<bool> needsRestore = ValueNotifier(false);
+
+  /// Как защищён бэкап этого аккаунта; null — бэкапа нет.
+  final ValueNotifier<BackupMethod?> backupMethod = ValueNotifier(null);
+
+  /// Чем защищён бэкап на сервере, пока ждём восстановления.
+  BackupMethod? restoreMethod;
+  Map<String, dynamic>? _serverBackup;
 
   final E2ECrypto crypto;
   final E2EKeyStore store;
@@ -158,10 +182,91 @@ class E2EService {
 
   /// Ключи на устройстве и опубликованный список устройств.
   Future<void> start() async {
-    _keys =
-        await store.load() ?? E2EKeys.generate(crypto, b64(crypto.random(9)));
+    final loaded = await store.load();
+    if (loaded == null) {
+      final b = await backend.backup(uid);
+      if (b != null) {
+        // Новый телефон: свои ключи не создаём, иначе партнёр увидит смену
+        // ключа, а история останется нечитаемой.
+        _serverBackup = b;
+        restoreMethod = BackupMethod.values.byName(b['method'] as String);
+        needsRestore.value = true;
+        return;
+      }
+    }
+    _keys = loaded ?? E2EKeys.generate(crypto, b64(crypto.random(9)));
+    backupMethod.value = keys.backup?.method;
     await _publish();
     await store.save(keys);
+  }
+
+  // --- бэкап ключей (§7) ---
+
+  /// Включить бэкап (или сменить фразу/пароль): шифруется и уходит на сервер.
+  Future<void> enableBackup(BackupMethod method, String secret) async {
+    final bk = await BackupKey.deriveAsync(
+      crypto,
+      method,
+      secret,
+      params: kdfParams,
+    );
+    keys.backup = bk;
+    await _uploadBackup();
+    await store.save(keys);
+    backupMethod.value = method;
+  }
+
+  Future<void> _uploadBackup() async {
+    final bk = keys.backup;
+    if (bk == null) return;
+    await backend.putBackup(
+      uid,
+      KeyBackup.sealWith(
+        crypto,
+        user: uid,
+        key: bk,
+        contents: BackupContents(
+          accountSecret: keys.account.secretKey.extractBytes(),
+          pairKeys: keys.pairKeys.values.toList(),
+        ),
+      ),
+    );
+  }
+
+  /// Восстановить ключи из бэкапа фразой или паролем. Неверные —
+  /// [E2EVerifyError]; испорченная фраза — [FormatException].
+  Future<void> restore(String secret) async {
+    final data = _serverBackup;
+    if (data == null) throw StateError('восстанавливать нечего');
+    final bk = await BackupKey.forDataAsync(crypto, data, secret);
+    final contents = KeyBackup.openWith(crypto, user: uid, data: data, key: bk);
+    // Секрет Ed25519 в libsodium — seed ‖ публичный ключ.
+    final account = KeyPair(
+      publicKey: Uint8List.fromList(contents.accountSecret.sublist(32)),
+      secretKey: crypto.keyFromBytes(contents.accountSecret),
+    );
+    _keys = E2EKeys(
+      account: account,
+      device: DeviceKeys.generate(crypto, b64(crypto.random(9))),
+      pairKeys: {for (final k in contents.pairKeys) k.keyId: k},
+      backup: bk,
+    );
+    _serverBackup = null;
+    await _publish();
+    await store.save(keys);
+    backupMethod.value = bk.method;
+    needsRestore.value = false;
+  }
+
+  /// Без фразы и пароля: новые ключи, старая история не читается, партнёр
+  /// увидит смену ключа. Бэкап нужно включить заново.
+  Future<void> startFresh() async {
+    _keys = E2EKeys.generate(crypto, b64(crypto.random(9)));
+    _serverBackup = null;
+    await _publish();
+    await store.save(keys);
+    backupMethod.value = null;
+    needsRestore.value = false;
   }
 
   Future<void> _publish() async {
@@ -236,6 +341,11 @@ class E2EService {
   // --- синхронизация пары ---
 
   Future<PairE2EStatus> syncGroup(String groupId) async {
+    if (_keys == null) {
+      status.value = {...status.value, groupId: PairE2EStatus.needsRestore};
+      return PairE2EStatus.needsRestore;
+    }
+    final keysBefore = keys.pairKeys.length;
     final members = await backend.members(groupId);
     _members[groupId] = members;
     final lists = <String, DeviceList>{};
@@ -294,6 +404,7 @@ class E2EService {
     }
     await _receiveGrants(groupId, lists, per);
     await _createKeyIfFirst(groupId, members, lists);
+    if (keys.pairKeys.length != keysBefore) await _uploadBackup();
     await _grantAll(groupId, lists);
     await _handshakes(groupId, lists, per);
     await store.save(keys);

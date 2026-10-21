@@ -8,6 +8,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../services/centrifugo_service.dart';
@@ -15,6 +16,7 @@ import '../../services/pocketbase_service.dart';
 import 'crypto.dart';
 import 'e2e_service.dart';
 import 'key_store.dart';
+import 'password_policy.dart';
 import 'pb_backend.dart';
 
 abstract final class ForkE2E {
@@ -121,6 +123,41 @@ abstract final class ForkE2E {
     _uid = '';
     _starting = null;
     service.value = null;
+  }
+
+  // --- бэкап (§7) ---
+
+  static List<String>? _wordlist;
+  static LeakedPasswords? _leaked;
+
+  /// Список слов BIP39 из ассетов.
+  static Future<List<String>> wordlist() async => _wordlist ??=
+      (await rootBundle.loadString('assets/fork/bip39_english.txt'))
+          .split('\n')
+          .map((w) => w.trim())
+          .where((w) => w.isNotEmpty)
+          .toList(growable: false);
+
+  /// Словарь утёкших паролей из ассетов (фильтр Блума).
+  static Future<LeakedPasswords?> leakedPasswords() async {
+    final s = service.value;
+    if (s == null) return null;
+    if (_leaked != null) return _leaked;
+    final data = await rootBundle.load('assets/fork/leaked_passwords.bloom');
+    return _leaked = LeakedPasswords.parse(
+      s.crypto,
+      data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+    );
+  }
+
+  /// Почта входа — пароль бэкапа не должен её содержать.
+  static String get email {
+    try {
+      return PocketBaseService().pb.authStore.record?.getStringValue('email') ??
+          '';
+    } catch (_) {
+      return '';
+    }
   }
 
   // --- приглашения (§6.2) ---

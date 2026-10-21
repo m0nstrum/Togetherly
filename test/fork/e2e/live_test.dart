@@ -9,6 +9,7 @@ library;
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
 import 'package:love_app/fork/e2e/key_store.dart';
@@ -20,7 +21,7 @@ void main() {
   final base = env['SMOKE_BASE_URL'];
 
   test(
-    'две установки получают общий ключ пары через сервер; сверка эмодзи',
+    'две установки получают общий ключ пары через сервер; сверка эмодзи; бэкап',
     () async {
       final c = await E2ECrypto.init();
       E2EService install(String tok, String uid) {
@@ -61,6 +62,17 @@ void main() {
       await b.sasConfirm(match: true);
       expect(a.status.value[pair], PairE2EStatus.verified);
       expect(b.status.value[pair], PairE2EStatus.verified);
+
+      // Бэкап ключей через сервер и восстановление на «новом телефоне».
+      await a.enableBackup(BackupMethod.password, 'Ябл0ко-Кит-Велик');
+      final a2 = install(env['SMOKE_ATOK']!, env['SMOKE_AID']!);
+      await a2.start();
+      expect(a2.needsRestore.value, isTrue);
+      await a2.restore('Ябл0ко-Кит-Велик');
+      expect(
+        a2.currentKey(pair)!.key.extractBytes(),
+        b.currentKey(pair)!.key.extractBytes(),
+      );
     },
     skip: base == null
         ? 'нужен сервер: запускайте через server/scripts/smoke.sh'

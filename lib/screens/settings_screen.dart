@@ -11,6 +11,7 @@ import '../widgets/settings_scaffold.dart';
 import '../fork/crash_reports.dart'; // fork
 import '../fork/flags.dart'; // fork
 import '../fork/meta_direct.dart'; // fork
+import '../fork/e2e/backup_ui.dart'; // fork
 
 /// Экран настроек.
 ///
@@ -415,6 +416,7 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   const ForkCrashReportsRow(), // fork
                   const ForkMetaDirectRow(), // fork
+                  const ForkE2EBackupRow(), // fork
                   SettingsRow(
                     icon: Icons.info_rounded,
                     title: s.aboutApp,
