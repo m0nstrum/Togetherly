@@ -1060,7 +1060,16 @@
   function setCinema(on) {
     document.body.classList.toggle('cinema', on);
     const btn = $('#cinema');
-    if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (btn) {
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      // fork (V13): значок и подпись показывают, что кнопка сделает сейчас.
+      btn.setAttribute('aria-label', I18N.t(on ? 'room.cinemaExit' : 'room.cinema'));
+      btn.title = btn.getAttribute('aria-label');
+      const path = btn.querySelector('path');
+      if (path) path.setAttribute('d', on
+        ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'
+        : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');
+    }
     // В режим входят с чистым кадром, из режима выходят с обычным чатом.
     cinChat.set(false);
   }
@@ -1467,6 +1476,12 @@
       if (!el.value) return;
       state.lastLink = el.value;
       el.value = '';
+    });
+    // fork (V14): вышли из поля, ничего не вставив, — прежний адрес на месте,
+    // а не пустое поле.
+    $('#link').addEventListener('blur', () => {
+      const el = $('#link');
+      if (!el.value && state.lastLink) el.value = state.lastLink;
     });
 
     $('#together').addEventListener('click', () => {
