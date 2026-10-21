@@ -1,0 +1,85 @@
+# CI форка Tethered (docs/fork/PLAN.md, S0).
+#
+# Воркфлоу апстрима не трогаем: так они не конфликтуют при мёржах. Те, что
+# форку не нужны (iOS, релизы в сторы), выключаются в настройках Actions
+# репозитория — см. docs/fork/README.md.
+name: Fork CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: fork-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Та же версия, что в release-apk.yml апстрима.
+  FLUTTER_VERSION: 3.47.6
+
+jobs:
+  check:
+    name: analyze + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Базовая линия апстрима: ошибок и предупреждений нет, info — сотни.
+      # Поэтому валимся только на warning и выше.
+      - name: flutter analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: flutter test
+        run: flutter test
+
+  apk:
+    name: build APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Release-сборка ловит то, чего нет в debug (R8, shrinkResources).
+      # Без key.properties Gradle подписывает её debug-ключом — для проверки
+      # этого достаточно, боевой ключ живёт вне репозитория.
+      - name: flutter build apk
+        run: flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons
+
+      - name: проверка идентичности APK
+        run: |
+          set -euo pipefail
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          aapt2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
+          badging=$("$aapt2" dump badging "$apk")
+          echo "$badging" | grep -q "package: name='io.github.m0nstrum.tethered'"
+          echo "$badging" | grep -q "application-label:'Tethered'"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tethered-arm64-release-debugsigned
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7

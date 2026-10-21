@@ -4,6 +4,7 @@ import 'connections_manager.dart';
 import 'connection.dart';
 import 'invite_code_state.dart';
 import '../services/nickname_service.dart';
+import '../fork/identity.dart'; // fork
 
 // Re-export for convenience
 export 'connection.dart'
@@ -81,8 +82,7 @@ class PairData extends ChangeNotifier {
   /// Прямой deep link без веб-хоста: партнёр сканирует QR камерой → сразу в
   /// приложение (App Links-верификация не нужна, работает офлайн от Firebase).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.
-  String get inviteDeepLink =>
-      inviteCode.trim().isEmpty ? '' : 'loveapp://invite/$inviteCode';
+  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode); // fork
 
   // ── Multi-member getters ──
   List<GroupMember> get members => _active?.members ?? [];

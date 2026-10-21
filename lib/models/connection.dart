@@ -10,6 +10,7 @@ import '../services/pocketbase_service.dart';
 import 'invite_code_state.dart';
 import 'relationship_status.dart';
 import 'waiting_state.dart';
+import '../fork/identity.dart'; // fork
 
 /// Пора ли выходить из группы, где кроме меня никого не осталось.
 ///
@@ -254,8 +255,7 @@ class Connection {
 
   /// Прямой deep link без веб-хоста (для QR).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.
-  String get inviteDeepLink =>
-      inviteCode.trim().isEmpty ? '' : 'loveapp://invite/$inviteCode';
+  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode); // fork
 
   /// Max members allowed — always 2 (couples only)
   int get maxMembers => 2;

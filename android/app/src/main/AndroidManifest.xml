@@ -69,7 +69,7 @@
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     
     <application
-        android:label="Togetherly"
+        android:label="${appLabel}"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:enableOnBackInvokedCallback="true"
@@ -109,8 +109,10 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Обработка loveapp://invite/{code} -->
-                <data android:scheme="loveapp" android:host="invite" />
+                <!-- fork: tethered://invite/{code} (схема из appScheme в Gradle).
+                     loveapp:// остаётся только внутренней схемой виджетов: их
+                     интенты явные (MainActivity::class), фильтр им не нужен. -->
+                <data android:scheme="${appScheme}" android:host="invite" />
             </intent-filter>
             
             <!-- Web link: свой домен. Приглашения выдаются только с ним
@@ -179,7 +181,7 @@
             android:exported="true"
             android:icon="@mipmap/launcher_icon"
             android:roundIcon="@mipmap/launcher_icon_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -192,7 +194,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_pink"
             android:roundIcon="@mipmap/ic_launcher_pink_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -205,7 +207,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_purple"
             android:roundIcon="@mipmap/ic_launcher_purple_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -218,7 +220,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_blue"
             android:roundIcon="@mipmap/ic_launcher_blue_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -231,7 +233,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_green"
             android:roundIcon="@mipmap/ic_launcher_green_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -244,7 +246,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_midnight"
             android:roundIcon="@mipmap/ic_launcher_midnight_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -257,7 +259,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_orange"
             android:roundIcon="@mipmap/ic_launcher_orange_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -270,7 +272,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_lavender"
             android:roundIcon="@mipmap/ic_launcher_lavender_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -283,7 +285,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_cherry"
             android:roundIcon="@mipmap/ic_launcher_cherry_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -296,7 +298,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_mint"
             android:roundIcon="@mipmap/ic_launcher_mint_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -309,7 +311,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_sunset"
             android:roundIcon="@mipmap/ic_launcher_sunset_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -322,7 +324,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_monochrome"
             android:roundIcon="@mipmap/ic_launcher_monochrome_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -335,7 +337,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_forest"
             android:roundIcon="@mipmap/ic_launcher_forest_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -348,7 +350,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_ocean"
             android:roundIcon="@mipmap/ic_launcher_ocean_round"
-            android:label="Togetherly"
+            android:label="${appLabel}"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

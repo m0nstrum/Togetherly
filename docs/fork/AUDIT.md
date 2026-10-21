@@ -78,8 +78,13 @@
   - `openlibrary.org`, `vimeo.com/api/oembed`, `i.ytimg.com`. [код]
 - Внешние сервисы, к которым ходит сервер: `api.poiskkino.dev` и Wikidata (поиск фильмов
   в `hotpath`), Gmail (почта). [код]
-- Android push сделан без FCM: foreground-сервис держит WebSocket к Centrifugo
-  (`lib/services/pb_push_service.dart`). Для self-hosted это подходит. [код]
+- Android push: основной путь — FCM (нативный `FcmService.kt`, токен в
+  `users.fcm_token`, `firebase-messaging` в `android/app/build.gradle.kts`).
+  Где сервисов Google или токена нет, foreground-сервис держит WebSocket к
+  Centrifugo (`lib/services/pb_push_service.dart`, `lib/services/fcm_service.dart`).
+  Для форка остаётся только второй путь; в S0 плагин `google-services`
+  применяется лишь при наличии `google-services.json`, и без него клиент сам
+  уходит на сокет. (Уточнено в S0; в первой версии аудита FCM пропущен.) [код]
 
 ## 4. Как устроен прод автора на самом деле
 

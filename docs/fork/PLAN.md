@@ -113,7 +113,9 @@ IP сервера, а не пользователя.
 - Убрать AdMob и Yandex Ads: флаг сборки плюс no-op реализации рекламных сервисов.
   Убрать сами зависимости из `pubspec.yaml` (одна точка касания), вычистить
   манифест и Info.plist (ad app id, SKAdNetwork, ATT).
-- Убрать RuStore SDK, reels-прокси (`169.58.6.158`) и хвосты Firebase.
+- Убрать RuStore SDK, reels-прокси (`169.58.6.158`) и хвосты Firebase, включая
+  FCM: `firebase-messaging`/`play-services-base` в Gradle, `FcmService.kt`,
+  канал `love_app/fcm`, `users.fcm_token` (см. AUDIT §3).
 - Монетизацию (монеты, сундуки, IAP, Plus, lava, донаты) обработать по решению из
   «Открытых вопросов».
 - Проверка: собрать release, посмотреть зависимости (`flutter pub deps`, merged

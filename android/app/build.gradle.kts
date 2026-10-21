@@ -6,7 +6,24 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")
+    // fork: плагин применяется ниже, только если есть google-services.json.
+    id("com.google.gms.google-services") apply false
+}
+
+// ── fork: Tethered ── (docs/fork/TOUCHPOINTS.md)
+// Своя идентичность, чтобы форк ставился рядом с приложением апстрима и не
+// перехватывал его ссылки. namespace (пакет Kotlin-кода) не меняем: это
+// внутреннее имя, и смена потянула бы перенос всех исходников.
+val forkApplicationId = "io.github.m0nstrum.tethered"
+val forkManifestPlaceholders = mapOf(
+    "appLabel" to "Tethered",
+    "appScheme" to "tethered",
+)
+// FCM форку не нужен (push идёт через Centrifugo). Без google-services.json
+// плагин валит сборку, а FirebaseMessaging без него тихо отдаёт null, и
+// клиент уходит на foreground-сервис. Полностью Firebase убирается в S2.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 val keyPropertiesFile = rootProject.file("key.properties")
@@ -62,7 +79,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.togetherly.love"
+        applicationId = forkApplicationId // fork
+        manifestPlaceholders += forkManifestPlaceholders // fork
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -90,6 +108,12 @@ android {
         }
     }
 }
+
+// fork: ресурсы форка (иконка) перекрывают одноимённые из src/main.
+// Build-type source set стоит выше main, поэтому дубликатов не будет, а PNG
+// апстрима остаются нетронутыми. Генерирует их tool/fork/gen_icon.py.
+android.sourceSets.matching { it.name in setOf("debug", "profile", "release") }
+    .configureEach { res.srcDir("src/fork/res") }
 
 flutter {
     source = "../.."

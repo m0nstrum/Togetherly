@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'system_route_link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../fork/identity.dart'; // fork
 
 /// Сервис для обработки deep links
 class DeepLinkService {
@@ -118,8 +119,9 @@ class DeepLinkService {
       return;
     }
 
-    if (uri.scheme == 'loveapp' && uri.host == 'invite') {
-      // loveapp://invite/ABC123
+    // fork: схема приглашений форка (lib/fork/identity.dart)
+    if (uri.scheme == ForkIdentity.inviteScheme && uri.host == 'invite') {
+      // tethered://invite/ABC123
       final code = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
       if (code != null && code.length == 6) {
         _pendingInviteCode = code.toUpperCase();
