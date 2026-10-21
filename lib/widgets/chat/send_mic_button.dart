@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../dict_strings.dart' show ruEn; // fork
+import '../../fork/ui/chat_hints.dart'; // fork
+import '../memory_save/floating_note.dart'; // fork
 import 'note_shape_view.dart';
 import 'note_shapes.dart';
 
@@ -195,6 +198,7 @@ class _SendMicButtonState extends State<SendMicButton> {
     if (!wasRecording) {
       _gesture = VoiceGesture.recording;
       widget.onModeToggle?.call();
+      _hintMicTap(); // fork (UX C7)
       return;
     }
 
@@ -216,6 +220,23 @@ class _SendMicButtonState extends State<SendMicButton> {
     }
     widget.onRecordEnd(cancelled: cancelled, locked: locked);
     _gesture = VoiceGesture.recording;
+  }
+
+  // fork (UX C7): тап по микрофону молча менял режим — один раз объясняем.
+  Future<void> _hintMicTap() async {
+    if (!await ForkHints.take(ForkHints.micTap) || !mounted) return;
+    showFloatingNote(context, ForkHints.micTapText, icon: Icons.mic_rounded);
+  }
+
+  // fork (UX C8): читалка экрана озвучивает кнопку по её состоянию.
+  String _semanticLabel() {
+    if (widget.editing) return ruEn('Сохранить правку', 'Save edit');
+    if (widget.hasText) return ruEn('Отправить', 'Send');
+    return widget.noteMode
+        ? ruEn('Записать кружок: удерживайте кнопку',
+            'Record a video note: hold the button')
+        : ruEn('Записать голосовое: удерживайте кнопку',
+            'Record a voice message: hold the button');
   }
 
   /// Что нарисовано на кнопке прямо сейчас.
@@ -277,7 +298,13 @@ class _SendMicButtonState extends State<SendMicButton> {
           )
         : Offset.zero;
 
-    return Transform.translate(
+    return Semantics( // fork (UX C8)
+      button: true,
+      label: _semanticLabel(),
+      onTap: active ? widget.onSend : widget.onModeToggle,
+      onLongPress: widget.hasText && !widget.editing ? widget.onSendLater : null,
+      excludeSemantics: true,
+      child: Transform.translate(
       offset: follow,
       child: AnimatedScale(
         scale: _pressing ? 1.28 : (active ? 1 : 0.94),
@@ -325,6 +352,6 @@ class _SendMicButtonState extends State<SendMicButton> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

@@ -8,8 +8,29 @@ library;
 
 import 'package:pocketbase/pocketbase.dart';
 
+import '../../dict_strings.dart' show ruEn;
 import '../../models/chat_search.dart';
 import '../../services/pocketbase_service.dart';
+
+/// Насколько полон ответ [ForkChatSearch.search]: экран говорит об этом,
+/// чтобы «ничего не нашлось» не значило «просмотрели не всё».
+class ForkSearchScan {
+  /// Связь оборвалась посреди истории: часть переписки не просмотрена.
+  bool interrupted = false;
+
+  /// Дошли до предела [ForkChatSearch.scanLimit], а история ещё есть.
+  bool capped = false;
+
+  bool get incomplete => interrupted || capped;
+}
+
+/// Что сказать, если [ForkSearchScan.incomplete].
+String get forkSearchGapText => ruEn(
+  'Просмотрена не вся переписка (обрыв связи или слишком длинная история) — '
+      'результат может быть неполным.',
+  'Not the whole chat was searched (connection dropped or the history is '
+      'too long) — results may be incomplete.',
+);
 
 abstract final class ForkChatSearch {
   /// Сколько сообщений просматриваем за один запрос экрана.
@@ -45,6 +66,7 @@ abstract final class ForkChatSearch {
     int? beforeTs,
     int limit = 40,
     PocketBase? pb,
+    ForkSearchScan? scan,
   }) async {
     final client = pb ?? PocketBaseService().pb;
     final out = <RecordModel>[];
@@ -74,8 +96,10 @@ abstract final class ForkChatSearch {
         scanned += page.items.length;
         before = page.items.last.getIntValue('ts');
         if (page.items.length < _pageSize) break;
+        if (scanned >= scanLimit && out.length < limit) scan?.capped = true;
       }
     } catch (_) {
+      scan?.interrupted = true;
       return out.isEmpty ? null : out;
     }
     return out;
