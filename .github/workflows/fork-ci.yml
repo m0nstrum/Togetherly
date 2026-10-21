@@ -62,7 +62,7 @@ jobs:
   server:
     name: server (Go)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: server
@@ -73,6 +73,11 @@ jobs:
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
+
+      # go generate (жанры фильмов) и регрессы автора — на Python.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: gofmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
@@ -96,6 +101,12 @@ jobs:
       # Настоящий бинарник с JS-хуками апстрима: вход, пара по коду, чат.
       - name: смоук
         run: scripts/smoke.sh
+
+      # Тесты автора (хуки и живые регрессы инвайтов) против нашего сервера.
+      - name: паритет с апстримом
+        run: |
+          python -m pip install --quiet websockets
+          scripts/parity.sh
 
   apk:
     name: build APK

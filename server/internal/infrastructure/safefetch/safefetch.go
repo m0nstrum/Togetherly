@@ -42,7 +42,9 @@ type Options struct {
 // Client — безопасный загрузчик.
 type Client struct {
 	http *http.Client
-	opt  Options
+	// manual — тот же транспорт, но редирект возвращается как есть.
+	manual *http.Client
+	opt    Options
 }
 
 // New — клиент с разумными значениями по умолчанию.
@@ -83,6 +85,12 @@ func New(opt Options) *Client {
 			}
 			return checkScheme(req)
 		},
+	}, manual: &http.Client{
+		Timeout:   opt.Timeout,
+		Transport: transport,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}}
 }
 
@@ -92,10 +100,21 @@ type Response struct {
 	Status      int
 	ContentType string
 	Body        []byte
+	// Location — абсолютный адрес редиректа (только у GetManual).
+	Location string
 }
 
-// Get загружает url (GET) с заголовками headers.
+// Get загружает url (GET) с заголовками headers, проходя редиректы.
 func (c *Client) Get(ctx context.Context, url string, headers map[string]string) (Response, error) {
+	return c.do(ctx, c.http, url, headers)
+}
+
+// GetManual — как Get, но редирект не проходит: отдаёт 3xx и Location.
+func (c *Client) GetManual(ctx context.Context, url string, headers map[string]string) (Response, error) {
+	return c.do(ctx, c.manual, url, headers)
+}
+
+func (c *Client) do(ctx context.Context, hc *http.Client, url string, headers map[string]string) (Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return Response{}, fmt.Errorf("%w: %v", ErrDenied, err)
@@ -108,7 +127,7 @@ func (c *Client) Get(ctx context.Context, url string, headers map[string]string)
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	resp, err := c.http.Do(req)
+	resp, err := hc.Do(req)
 	if err != nil {
 		if errors.Is(err, ErrDenied) {
 			return Response{}, err
@@ -120,12 +139,18 @@ func (c *Client) Get(ctx context.Context, url string, headers map[string]string)
 	if err != nil {
 		return Response{}, fmt.Errorf("safefetch: чтение: %w", err)
 	}
-	return Response{
+	out := Response{
 		FinalURL:    resp.Request.URL.String(),
 		Status:      resp.StatusCode,
 		ContentType: resp.Header.Get("Content-Type"),
 		Body:        body,
-	}, nil
+	}
+	if loc := resp.Header.Get("Location"); loc != "" {
+		if u, err := resp.Request.URL.Parse(loc); err == nil {
+			out.Location = u.String()
+		}
+	}
+	return out, nil
 }
 
 func checkScheme(req *http.Request) error {

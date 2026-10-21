@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import '../services/pocketbase_service.dart';
 import 'config/endpoints.dart';
 import 'flags.dart';
+import 'meta_direct.dart';
 
 /// Все запросы приложения к сторонним сайтам — через свой сервер
 /// (meta gateway, docs/fork/PLAN.md S5).
@@ -16,6 +19,9 @@ import 'flags.dart';
 /// Прямыми остаются: свой сервер и его старые домены, Centrifugo, Bugsink
 /// (DSN), тайлы карты (исключение плана) и локальные адреса. WebView и
 /// нативные плееры сюда не попадают — это осознанное исключение решения 4.
+///
+/// Настройка «Ссылки напрямую с устройства» ([ForkMetaDirect]) выключает
+/// перехват на лету.
 ///
 /// Перехватываются только GET и HEAD: остальные методы к чужим сайтам
 /// приложение не шлёт, а слать их через сервер незачем.
@@ -35,6 +41,7 @@ abstract final class ForkHttpGateway {
       direct: directHosts(cfg),
     );
     _installed = true;
+    unawaited(ForkMetaDirect.load());
   }
 
   static bool _installed = false;
@@ -110,15 +117,16 @@ class _GatewayHttpClient implements HttpClient {
   @override
   Future<HttpClientRequest> openUrl(String method, Uri url) async {
     final m = method.toUpperCase();
-    final via = (m == 'GET' || m == 'HEAD')
+    final via = (m == 'GET' || m == 'HEAD') && !ForkMetaDirect.enabled.value
         ? ForkHttpGateway.route(url, gateway: _gateway, direct: _direct)
         : null;
     if (via == null) return _inner.openUrl(method, url);
     final req = await _inner.openUrl(method, via);
     final token = _token();
-    if (token.isNotEmpty)
+    if (token.isNotEmpty) {
       req.headers.set(HttpHeaders.authorizationHeader, token);
-    return req;
+    }
+    return _GatewayRequest(req);
   }
 
   static String _token() {
@@ -240,4 +248,80 @@ class _GatewayHttpClient implements HttpClient {
   set keyLog(Function(String line)? callback) => _inner.keyLog = callback;
   @override
   void close({bool force = false}) => _inner.close(force: force);
+}
+
+/// Запрос через gateway. Если вызывающий выключил `followRedirects` (так
+/// апстрим раскрывает короткие ссылки, читая `Location`), просит сервер не
+/// проходить редирект сам, а вернуть 3xx — следующий шаг клиент снова
+/// сделает через gateway.
+class _GatewayRequest implements HttpClientRequest {
+  _GatewayRequest(this._inner);
+
+  final HttpClientRequest _inner;
+
+  @override
+  Future<HttpClientResponse> close() {
+    if (!_inner.followRedirects) {
+      _inner.headers.set('X-Meta-Redirect', 'manual');
+    }
+    return _inner.close();
+  }
+
+  @override
+  bool get persistentConnection => _inner.persistentConnection;
+  @override
+  set persistentConnection(bool v) => _inner.persistentConnection = v;
+  @override
+  bool get followRedirects => _inner.followRedirects;
+  @override
+  set followRedirects(bool v) => _inner.followRedirects = v;
+  @override
+  int get maxRedirects => _inner.maxRedirects;
+  @override
+  set maxRedirects(int v) => _inner.maxRedirects = v;
+  @override
+  int get contentLength => _inner.contentLength;
+  @override
+  set contentLength(int v) => _inner.contentLength = v;
+  @override
+  bool get bufferOutput => _inner.bufferOutput;
+  @override
+  set bufferOutput(bool v) => _inner.bufferOutput = v;
+  @override
+  Encoding get encoding => _inner.encoding;
+  @override
+  set encoding(Encoding v) => _inner.encoding = v;
+  @override
+  String get method => _inner.method;
+  @override
+  Uri get uri => _inner.uri;
+  @override
+  HttpHeaders get headers => _inner.headers;
+  @override
+  List<Cookie> get cookies => _inner.cookies;
+  @override
+  Future<HttpClientResponse> get done => _inner.done;
+  @override
+  HttpConnectionInfo? get connectionInfo => _inner.connectionInfo;
+  @override
+  void abort([Object? exception, StackTrace? stackTrace]) =>
+      _inner.abort(exception, stackTrace);
+  @override
+  void add(List<int> data) => _inner.add(data);
+  @override
+  void addError(Object error, [StackTrace? stackTrace]) =>
+      _inner.addError(error, stackTrace);
+  @override
+  Future<void> addStream(Stream<List<int>> stream) => _inner.addStream(stream);
+  @override
+  Future<void> flush() => _inner.flush();
+  @override
+  void write(Object? object) => _inner.write(object);
+  @override
+  void writeAll(Iterable<dynamic> objects, [String separator = '']) =>
+      _inner.writeAll(objects, separator);
+  @override
+  void writeln([Object? object = '']) => _inner.writeln(object);
+  @override
+  void writeCharCode(int charCode) => _inner.writeCharCode(charCode);
 }

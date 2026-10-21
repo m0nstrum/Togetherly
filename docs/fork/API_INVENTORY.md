@@ -96,7 +96,7 @@
 | `GET /api/music/yandex` | `music.pb.js` | `music_meta_service` | готово: хук `music.pb.js` в JSVM, ходит сервер |
 | `GET /api/movies/search` | hotpath (`movies.py`: poiskkino, Wikidata) | `movie_search_service` | готово (S5): Go-порт `movies.py` (`domain/movies`, `usecase/movies`), Викиданные; poiskkino — только со своим ключом оператора (`TETHERED_POISKKINO_KEY`); общий ключ автора в клиенте выключен (`ForkFlags.noUpstreamKeys`) |
 | — | — | клиент сам ходит в Deezer, iTunes, Open Library, Vimeo oEmbed, noembed, YouTube-превью | готово (S5): `GET /api/meta/fetch?url=` — клиент перехватывает весь `dart:io` (`lib/fork/http_gateway.dart`), сервер отдаёт по белому списку (`domain/meta`), с входом — любой текст/JSON/картинку через `safefetch` |
-| `GET /api/meta/fetch` | — | любой GET/HEAD к чужому хосту | новый (S5): `safefetch` (проверка IP на каждом соединении, порты 80/443, без прокси), LRU-кэш, лимит по IP, `CSP: sandbox` на ответ |
+| `GET /api/meta/fetch` | — | любой GET/HEAD к чужому хосту | новый (S5): `safefetch` (проверка IP на каждом соединении, порты 80/443, без прокси), LRU-кэш, лимит по IP, `CSP: sandbox` на ответ; с `X-Meta-Redirect: manual` — один шаг без перехода по редиректу (3xx + `Location`) |
 
 ### Монеты, сундуки, подарки
 

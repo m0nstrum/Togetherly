@@ -72,4 +72,10 @@ func TestRedirectsAndLimits(t *testing.T) {
 
 	_, err = c.Get(context.Background(), srv.URL+"/file", nil)
 	assert.ErrorIs(t, err, safefetch.ErrDenied)
+
+	// Без перехода: 3xx и абсолютный Location, на /big не ходим.
+	resp, err = c.GetManual(context.Background(), srv.URL+"/start", nil)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusFound, resp.Status)
+	assert.Equal(t, srv.URL+"/big", resp.Location)
 }

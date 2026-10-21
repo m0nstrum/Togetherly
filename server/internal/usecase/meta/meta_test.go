@@ -24,6 +24,12 @@ func (f *fakeFetch) Get(context.Context, string, map[string]string) (safefetch.R
 	return f.resp, f.err
 }
 
+// GetManual — редирект с короткой ссылки.
+func (f *fakeFetch) GetManual(context.Context, string, map[string]string) (safefetch.Response, error) {
+	f.calls++
+	return safefetch.Response{Status: 302, Location: "https://www.deezer.com/track/1"}, f.err
+}
+
 func TestFetch(t *testing.T) {
 	ctx := context.Background()
 	now := time.Unix(0, 0)
@@ -93,4 +99,16 @@ func TestLinkPreview(t *testing.T) {
 	_, ok, err = svc.LinkPreview(context.Background(), "https://other.example.org/")
 	require.NoError(t, err)
 	assert.False(t, ok)
+}
+
+func TestFetchManual(t *testing.T) {
+	ctx := context.Background()
+	f := &fakeFetch{}
+	svc := meta.New(f, 1<<20, time.Now)
+	_, err := svc.FetchManual(ctx, "https://link.deezer.com/s/abc", false)
+	assert.ErrorIs(t, err, meta.ErrNotAllowed, "не из списка — только вошедшим")
+	r, err := svc.FetchManual(ctx, "https://link.deezer.com/s/abc", true)
+	require.NoError(t, err)
+	assert.Equal(t, 302, r.Status)
+	assert.Equal(t, "https://www.deezer.com/track/1", r.Location)
 }

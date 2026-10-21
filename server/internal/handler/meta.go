@@ -19,13 +19,19 @@ import (
 //	GET /api/meta/fetch?url=…   — ответ стороннего адреса как есть. Белый
 //	                              список — без входа, остальное — вошедшим
 //	                              (usecase/meta.Fetch). Лимит запросов на IP.
+//	                              С X-Meta-Redirect: manual — без перехода
+//	                              по редиректу: 3xx и Location как есть.
 //	GET /api/link/preview?url=… — карточка товара (форма ответа апстрима).
 func Meta(r *router.Router[*core.RequestEvent], svc *meta.Service, limit *IPLimiter, log *slog.Logger) {
 	r.GET("/api/meta/fetch", func(e *core.RequestEvent) error {
 		if !limit.Allow(e.RealIP(), time.Now()) {
 			return e.TooManyRequestsError("Слишком часто.", nil)
 		}
-		res, err := svc.Fetch(e.Request.Context(), e.Request.URL.Query().Get("url"), e.Auth != nil)
+		fetch := svc.Fetch
+		if e.Request.Header.Get("X-Meta-Redirect") == "manual" {
+			fetch = svc.FetchManual
+		}
+		res, err := fetch(e.Request.Context(), e.Request.URL.Query().Get("url"), e.Auth != nil)
 		switch {
 		case errors.Is(err, meta.ErrNotAllowed):
 			return e.ForbiddenError("Адрес не разрешён.", nil)
@@ -39,6 +45,9 @@ func Meta(r *router.Router[*core.RequestEvent], svc *meta.Service, limit *IPLimi
 		e.Response.Header().Set("Content-Security-Policy", "sandbox")
 		if res.FinalURL != "" {
 			e.Response.Header().Set("X-Final-URL", res.FinalURL)
+		}
+		if res.Location != "" {
+			e.Response.Header().Set("Location", res.Location)
 		}
 		return e.Blob(res.Status, res.ContentType, res.Body)
 	})

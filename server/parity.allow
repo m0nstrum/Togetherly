@@ -1,0 +1,5 @@
+# Живые регрессы автора (pocketbase/*.test.py), которые гоняем против своего
+# сервера (scripts/parity.sh). Остальные проверяют монеты, сундуки, подарки и
+# покупки — их в форке нет (решение 1, API_INVENTORY §9).
+invite_accept.test.py
+waiting_pair.test.py

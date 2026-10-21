@@ -67,6 +67,8 @@
 | `lib/services/pocketbase_service.dart` | S5 | В `init()` после `_initialized = true` — `ForkHttpGateway.install()` (перехват `dart:io` на meta gateway), импорт. | Повторить. `init()` зовут все изоляты; если апстрим заведёт изолят без неё — звать `install()` и там. |
 | `lib/services/movie_search_service.dart` | S5 | `_token`: без `--dart-define=KINOPOISK_TOKEN` при `ForkFlags.noUpstreamKeys` — пусто, общий ключ автора не используется (запасной путь — ручной ввод), импорт. | Повторить. Если апстрим добавит другие зашитые ключи — под тот же флаг. |
 | `lib/services/pb_data_service.dart` | S4 | Запасной список ICE-серверов: вместо STUN Google — пустой (решение 4). | Повторить; сторож `no_author_hosts_test.dart` ловит `stun.l.google.com`. |
+| `lib/services/pb_data_service.dart` | S5 | `linkPreview`: при настройке «Ссылки напрямую с устройства» — `ForkLinkPreview.fetch(url)` вместо `/api/link/preview`; импорт `../fork/meta_direct.dart`. | Повторить. Если апстрим поменяет разбор в `link_preview.pb.js` — перенести и в `server/internal/domain/linkpreview`, и в `lib/fork/meta_direct.dart` (общие случаи в тестах обоих). |
+| `lib/screens/settings_screen.dart` | S5 | `ForkMetaDirectRow()` после `ForkCrashReportsRow()`, импорт. | Повторить. |
 | `lib/widgets/auth_widgets.dart` | S2 | `AuthSocialRow.build` при `ForkFlags.emailOnlyAuth` возвращает пустое место (решение 3), импорт. | Повторить. |
 | `lib/screens/home_screen.dart` | S5 | `onWallet` ряда действий — `null` при `ForkFlags.hideUpstreamChannels` (Togetherly Wallet — продукт автора), импорт. | Повторить. |
 | `lib/models/help_items.dart` | S2 | Пункты «telegram» и покупки Плюса — под флагами форка, импорт. | Повторить. |

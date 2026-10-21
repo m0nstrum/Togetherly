@@ -19,6 +19,7 @@ import (
 // Fetcher — безопасный загрузчик (infrastructure/safefetch).
 type Fetcher interface {
 	Get(ctx context.Context, url string, headers map[string]string) (safefetch.Response, error)
+	GetManual(ctx context.Context, url string, headers map[string]string) (safefetch.Response, error)
 }
 
 // Response — ответ провайдера, который отдаётся клиенту как есть.
@@ -28,6 +29,8 @@ type Response struct {
 	Body        []byte
 	// FinalURL — адрес после переходов (заголовок X-Final-URL).
 	FinalURL string
+	// Location — куда ведёт редирект (только у FetchManual).
+	Location string
 }
 
 var (
@@ -61,6 +64,17 @@ const (
 // открывает страницы и картинки по ссылкам, которыми делятся люди), и только
 // текст, JSON или картинки.
 func (s *Service) Fetch(ctx context.Context, raw string, authed bool) (Response, error) {
+	return s.fetch1(ctx, raw, authed, false)
+}
+
+// FetchManual — как Fetch, но без перехода по редиректу: 3xx отдаётся с
+// Location. Так клиент раскрывает короткие ссылки (link.deezer.com) сам,
+// по шагу через gateway, как раньше напрямую.
+func (s *Service) FetchManual(ctx context.Context, raw string, authed bool) (Response, error) {
+	return s.fetch1(ctx, raw, authed, true)
+}
+
+func (s *Service) fetch1(ctx context.Context, raw string, authed, manual bool) (Response, error) {
 	kind, ok := dmeta.Allowed(raw)
 	if !ok {
 		if !authed {
@@ -73,13 +87,23 @@ func (s *Service) Fetch(ctx context.Context, raw string, authed bool) (Response,
 		kind = kindAny
 	}
 	key := "f:" + raw
+	get := s.fetch.Get
+	if manual {
+		key, get = "m:"+raw, s.fetch.GetManual
+	}
 	if r, ok := s.cache.get(key, s.now()); ok {
 		return r, nil
 	}
 	// Nominatim требует узнаваемый User-Agent (политика OSM).
-	resp, err := s.fetch.Get(ctx, raw, map[string]string{"User-Agent": "Tethered/1.0 (self-hosted)"})
+	resp, err := get(ctx, raw, map[string]string{"User-Agent": "Tethered/1.0 (self-hosted)"})
 	if err != nil {
 		return Response{}, fmt.Errorf("%w: %v", ErrUpstream, err)
+	}
+	if manual && resp.Status >= 300 && resp.Status < 400 && resp.Location != "" {
+		// Тела у редиректа нет смысла отдавать: клиенту нужен только адрес.
+		out := Response{Status: resp.Status, ContentType: "text/plain", Location: resp.Location}
+		s.cache.put(key, out, time.Hour, s.now())
+		return out, nil
 	}
 	ct, _, _ := mime.ParseMediaType(resp.ContentType)
 	switch kind {
