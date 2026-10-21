@@ -107,6 +107,40 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 - release APK под arm64 с `env/example.json` (debug-подпись) и проверка
   `applicationId`, имени и хоста App Links в нём.
 
+## Сборка в GitHub
+
+`Fork release APK` (`.github/workflows/fork-release.yml`) собирает боевой APK
+под свой сервер. Запуск вручную: **Actions → Fork release APK → Run workflow**,
+галочка `publish` кладёт APK в GitHub Releases, без неё он лежит артефактом
+запуска 30 дней.
+
+Что задать в **Settings → Secrets and variables → Actions**:
+
+| Где | Имя | Что |
+|---|---|---|
+| Variables | `TETHERED_URL` | обязательно: `https://<домен сервера>` без `/` в конце, становится `PB_URL` и хостом App Links |
+| Variables | `TETHERED_SITE_URL` | не нужно, если сайт на том же домене |
+| Variables | `TETHERED_CENTRIFUGO_WS` | не нужно при стандартном `deploy/` |
+| Variables | `TETHERED_SUPPORT_EMAIL` | адрес поддержки в приложении |
+| Variables | `TETHERED_SENTRY_DSN` | DSN проекта в Bugsink, если он поднят |
+| Variables | `TETHERED_RELEASES_URL` | по умолчанию `https://github.com/<репо>/releases/latest` |
+| Secrets | `ANDROID_KEYSTORE_BASE64` | `base64 -w0 tethered-release.jks` |
+| Secrets | `ANDROID_KEYSTORE_PASSWORD` | пароль хранилища |
+| Secrets | `ANDROID_KEY_ALIAS` | `tethered` |
+| Secrets | `ANDROID_KEY_PASSWORD` | пароль ключа; пусто — тот же, что у хранилища |
+
+Без ключа подписи воркфлоу падает намеренно: debug-ключ у каждого раннера
+свой, и следующая сборка не встала бы поверх установленной. Номер сборки —
+номер из `pubspec.yaml` плюс номер запуска, поэтому каждая новая ставится
+поверх прежней. Проверки после сборки: `applicationId`, хост App Links равен
+домену из `TETHERED_URL`, подпись не debug (SHA-256 сертификата — в логе).
+
+В публичном репозитории релизы видны всем, а с ними и адрес сервера. Адрес
+не секрет (он есть в каждой установленной копии), но если не хочется
+светить — собирайте без `publish` и берите APK из артефакта.
+
+## Воркфлоу апстрима
+
 Воркфлоу апстрима остаются в репозитории, чтобы не конфликтовать при мёржах.
 Форку они не нужны, их стоит выключить: **Settings → Actions** или страница
 воркфлоу → `…` → **Disable workflow**. Это все `ios-*.yml` и `release-apk.yml`

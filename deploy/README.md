@@ -4,12 +4,21 @@
 Centrifugo (живые обновления и push через WebSocket), Caddy (HTTPS), coturn
 (голос в «Смотрим вместе») и по желанию Bugsink (крашрепорты).
 
+## Что нужно
+
+- VPS: 2 vCPU, 2 ГБ памяти (образ сервера собирается на месте, сборке Go
+  меньше не хватает), 20–40 ГБ диска под базу и файлы. Linux с Docker и
+  плагином compose.
+- Домен с A-записью (и AAAA, если есть IPv6) на адрес VPS — с него Caddy
+  получает сертификат Let's Encrypt. Подойдёт и поддомен бесплатного DNS.
+- Открытые порты (ниже).
+
 ## Запуск
 
 ```sh
-cd deploy
-cp .env.example .env
-$EDITOR .env        # домен, секреты: openssl rand -hex 32
+git clone <репозиторий> tethered && cd tethered/deploy
+./init-env.sh tethered.example.org   # домен и случайные секреты в .env
+$EDITOR .env        # почта (SMTP_*), ключ бэкапов, по желанию WATCH_PROXY
 docker compose up -d
 docker compose exec server /app/tethered superuser upsert admin@example.org 'длинный-пароль'
 ```

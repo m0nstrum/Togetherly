@@ -8,8 +8,9 @@ cp env/example.json env/prod.local.json   # вписать PB_URL своего �
 flutter build apk --release --dart-define-from-file=env/prod.local.json
 ```
 
-Артефакт CI (`tethered-arm64-release-debugsigned`) собран без адреса
-сервера — для проверки на своём инстансе он не годится.
+Или в GitHub: воркфлоу `Fork release APK` (docs/fork/README.md, «Сборка в
+GitHub»). Артефакт обычного CI (`tethered-arm64-release-debugsigned`) собран
+без адреса сервера — для проверки на своём инстансе он не годится.
 
 Сначала `SMOKE_BASE=https://<домен> server/scripts/smoke.sh` — сервер жив,
 пара собирается, чат и Centrifugo отвечают.
