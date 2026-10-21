@@ -154,7 +154,7 @@ jobs:
           grep -q '"pb.example.org"' <<< "$manifest"
           # here-string, а не `echo | grep -q`: под pipefail ранний выход grep
           # роняет echo по SIGPIPE. `! cmd` под set -e не валит шаг — явный exit.
-          if grep -qE 'togetherly\.(day|duckdns)|web\.app|appmetrica|gms\.ads' <<< "$manifest"; then
+          if grep -qE 'togetherly\.(day|duckdns)|web\.app|appmetrica|gms\.ads|TransportBackendDiscovery|SignInHubActivity' <<< "$manifest"; then
             echo "в манифесте остались хосты апстрима или реклама" >&2
             exit 1
           fi

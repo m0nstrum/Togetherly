@@ -878,6 +878,14 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
+        <!-- fork: ML Kit (сканер QR из mobile_scanner) шлёт статистику
+             использования в Google через datatransport. Без описания бэкенда
+             отправлять некуда: runtime берёт пустой список, а пачки событий
+             удаляет («Unknown backend»). Планировщики не трогаем — на них
+             ссылается JobScheduler. -->
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            tools:node="remove" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
