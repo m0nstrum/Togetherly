@@ -31,6 +31,8 @@ func TestChannels(t *testing.T) {
 		{"сессия — по своему id", rec{col: "live_sessions", id: "s1"}, []string{"pair:s1"}},
 		{"чат сессии — по pair_id", rec{col: "live_session_chat", fields: map[string]string{"pair_id": "s1"}}, []string{"pair:s1"}},
 		{"группа — пара и участники", rec{col: "groups", id: "g1", members: []string{"u1", "", "u2"}}, []string{"pair:g1", "user:u1", "user:u2"}},
+		{"шаг сверки ключей — в канал пары", rec{col: "e2e_handshake", fields: map[string]string{"group_id": "g1"}}, []string{"pair:g1"}},
+		{"бэкап ключей не рассылается", rec{col: "e2e_backups", fields: map[string]string{"user_uid": "u1"}}, nil},
 		{"без группы некуда", rec{col: "memories"}, nil},
 		{"не рассылаемая коллекция", rec{col: "invite_codes", fields: map[string]string{"group_id": "g1"}}, nil},
 	}

@@ -10,6 +10,7 @@ import '../fork/identity.dart'; // fork
 export 'connection.dart'
     show RelationshipType, GroupMember, MemberMood, MemberAilment;
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
 export 'invite_code_state.dart' show InviteCodeState;
 
 /// Wrapper around ConnectionsManager for backward compatibility
@@ -77,7 +78,8 @@ class PairData extends ChangeNotifier {
   /// отправитель поломки не видел: у него ссылка выглядела как обычно. За
   /// 18–19 августа 2026 на такую ссылку зашли 30 раз с настоящих устройств —
   /// жалоба звучала как «партнёр не может перейти по пригласительной ссылке».
-  String get inviteLink => Endpoints.current.inviteLink(inviteCode); // fork
+  String get inviteLink => Endpoints.current.inviteLink(
+      inviteCode, fragment: ForkE2E.inviteFragment(inviteCode)); // fork
 
   /// Прямой deep link без веб-хоста: партнёр сканирует QR камерой → сразу в
   /// приложение (App Links-верификация не нужна, работает офлайн от Firebase).

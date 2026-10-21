@@ -7,6 +7,7 @@ import 'system_route_link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../fork/identity.dart'; // fork
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 /// Сервис для обработки deep links
 class DeepLinkService {
@@ -125,6 +126,7 @@ class DeepLinkService {
       // tethered://invite/ABC123
       final code = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
       if (code != null && code.length == 6) {
+        ForkE2E.rememberFragment(code, uri.fragment); // fork
         _pendingInviteCode = code.toUpperCase();
         _inviteCodeController.add(code.toUpperCase());
       }
@@ -144,6 +146,7 @@ class DeepLinkService {
             uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
         if (code != null && code.length == 6) {
           debugPrint('DeepLinkService: invite code from web link: $code');
+          ForkE2E.rememberFragment(code, uri.fragment); // fork
           _pendingInviteCode = code.toUpperCase();
           _inviteCodeController.add(code.toUpperCase());
         }

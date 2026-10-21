@@ -41,6 +41,7 @@ import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/unfold/unfold_route.dart';
 import '../utils/invite_code.dart';
 import '../widgets/common/badge_image.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 class ConnectPartnerScreen extends StatefulWidget {
   final PairData pairData;
@@ -3220,6 +3221,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     var code = raw;
     if (raw.contains('/invite/')) {
       code = raw.split('/invite/').last;
+    }
+    // fork: секрет приглашения во фрагменте (E2E.md §6.2) — в E2E, не в код.
+    final hash = code.indexOf('#');
+    if (hash >= 0) {
+      ForkE2E.rememberFragment(code.substring(0, hash), code.substring(hash + 1));
+      code = code.substring(0, hash);
     }
     if (code.length != 6) return;
     _codeDetected = true;

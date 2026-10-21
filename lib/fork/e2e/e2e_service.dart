@@ -207,11 +207,11 @@ class E2EService {
   /// Фрагмент для ссылки приглашения с кодом [code]: секрет и отпечаток
   /// своего ключа аккаунта. Секрет запоминается до подтверждения.
   String inviteFragment(String code) {
-    final secret = keys.inviteSecrets.putIfAbsent(
-      code,
-      () => b64(crypto.random(32)),
-    );
-    store.save(keys);
+    var secret = keys.inviteSecrets[code];
+    if (secret == null) {
+      secret = keys.inviteSecrets[code] = b64(crypto.random(32));
+      store.save(keys);
+    }
     final f = b64(accountFingerprint(crypto, keys.account.publicKey));
     return 's=$secret&f=$f';
   }
@@ -605,6 +605,47 @@ class E2EService {
   void _dropSas(String session) {
     _initiators.remove(session)?.dispose();
     _responders.remove(session)?.dispose();
+  }
+
+  // --- QR (§6.3) ---
+
+  static const String _qrPrefix = 'tethered-verify:';
+
+  /// Что показать в QR для сверки с [partnerUid]: полный отпечаток пары
+  /// в том виде, как его видит это устройство. null — ключей партнёра нет.
+  String? qrPayload(String partnerUid) {
+    final peer = keys.peers[partnerUid];
+    if (peer == null) return null;
+    return _qrPrefix +
+        b64(pairFingerprint(crypto, keys.account.publicKey, peer.accountKey));
+  }
+
+  /// Отсканирован QR партнёра. true — отпечатки совпали, партнёр проверен.
+  Future<bool> verifyByQr(
+    String groupId,
+    String partnerUid,
+    String scanned,
+  ) async {
+    final mine = qrPayload(partnerUid);
+    if (mine == null || !scanned.startsWith(_qrPrefix)) return false;
+    final ok = bytesEqual(utf8Bytes(mine), utf8Bytes(scanned.trim()));
+    final peer = keys.peers[partnerUid]!;
+    if (ok) {
+      peer
+        ..verified = true
+        ..keyChanged = false
+        ..tampered = false;
+    } else {
+      peer
+        ..verified = false
+        ..tampered = true;
+    }
+    await store.save(keys);
+    status.value = {
+      ...status.value,
+      groupId: _aggregate(groupId, _members[groupId] ?? const [], const []),
+    };
+    return ok;
   }
 
   /// Ключи пары для конверта (S9).

@@ -131,8 +131,15 @@ class EndpointsConfig {
 
   /// Ссылка-приглашение. Пустой код — пустая строка: ссылка без кода ведёт
   /// в 404, а отправитель этого не видит.
-  String inviteLink(String code) =>
-      code.trim().isEmpty || site.isEmpty ? '' : '$site/invite/$code';
+  ///
+  /// Во фрагменте — секрет приглашения и отпечаток ключа (E2E.md §6.2):
+  /// фрагмент не уходит на сервер ни из браузера, ни из приложения.
+  String inviteLink(String code, {String fragment = ''}) {
+    if (code.trim().isEmpty || site.isEmpty) return '';
+    return fragment.isEmpty
+        ? '$site/invite/$code'
+        : '$site/invite/$code#$fragment';
+  }
 
   String get privacyPolicyUrl => site.isEmpty ? '' : '$site/privacy-policy';
   String get termsUrl => site.isEmpty ? '' : '$site/terms';

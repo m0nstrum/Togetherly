@@ -25,9 +25,9 @@
 |---|---|---|---|
 | `android/app/build.gradle.kts` | S0 | Блок `── fork: Tethered ──` после `plugins`: `forkApplicationId`, `forkManifestPlaceholders` (`appLabel`, `appScheme`), условное применение `google-services`. В `plugins` у `google-services` стоит `apply false`. `applicationId = forkApplicationId`, `manifestPlaceholders += …` в `defaultConfig`. Перед `flutter {}` к build-type source set'ам подключён `src/fork/res`. | Берём файл апстрима, возвращаем четыре куска с пометкой `fork`. `namespace` не трогаем. |
 | `android/app/src/main/AndroidManifest.xml` | S0, S1 | Все `android:label="Togetherly"` → `${appLabel}`. В фильтре приглашений `scheme="loveapp"` → `${appScheme}`. S1: три https-фильтра приглашений (togetherly.day, duckdns, web.app) заменены одним с `android:host="${inviteHost}"`. | Берём файл апстрима, повторяем замену: `sed -i 's/android:label="Togetherly"/android:label="${appLabel}"/'` и правку фильтра приглашений. Новые `android:label="Togetherly"` от апстрима тоже меняем — их ловит `test/fork/identity_test.dart`. Новые хосты апстрима ловит `test/fork/no_author_hosts_test.dart`. |
-| `lib/models/pair_data.dart` | S0, S1 | `inviteDeepLink` → `ForkIdentity.inviteDeepLink(...)`, `inviteLink` → `Endpoints.current.inviteLink(...)`, два импорта. | Повторить замену геттеров и импорты. |
+| `lib/models/pair_data.dart` | S0, S1, S8 | `inviteDeepLink` → `ForkIdentity.inviteDeepLink(...)`, `inviteLink` → `Endpoints.current.inviteLink(...)`, два импорта. S8: `inviteLink` с фрагментом `ForkE2E.inviteFragment`. | Повторить замену геттеров и импорты. |
 | `lib/models/connection.dart` | S0, S1 | То же, что в `pair_data.dart`. | То же. |
-| `lib/services/deep_link_service.dart` | S0, S1 | Разбор `loveapp://invite/` → `ForkIdentity.inviteScheme`. S1: https-хосты приглашений → `Endpoints.current.ownHosts`; ветка email-ссылок Firebase убрана, `_handleEmailLink` помечен `ignore: unused_element`. Импорты. | Повторить замены. |
+| `lib/services/deep_link_service.dart` | S0, S1, S8 | Разбор `loveapp://invite/` → `ForkIdentity.inviteScheme`. S1: https-хосты приглашений → `Endpoints.current.ownHosts`; ветка email-ссылок Firebase убрана, `_handleEmailLink` помечен `ignore: unused_element`. Импорты. S8: фрагмент ссылки приглашения (секрет E2E) → `ForkE2E.rememberFragment`. | Повторить замены. |
 | `test/models/invite_link_domain_test.dart` | S0 | Ожидание `loveapp://invite/HQ792S` → `tethered://invite/HQ792S`. | Повторить замену строки. |
 | `android/app/build.gradle.kts` (S1) | S1 | В блоке fork: разбор `dart-defines` → `forkInviteHost` → плейсхолдер `inviteHost`. | Часть блока fork, см. строку выше. |
 | `android/app/src/main/res/xml/network_security_config.xml` | S1 | Cleartext-исключение для IP Bugsink апстрима убрано, файл переписан целиком. | Взять нашу версию. |
@@ -73,8 +73,12 @@
 | `lib/services/reels/reels_invite.dart` | S5 | `ReelsInviteBus.deliver(invite)` — вход для зова не через мост FCM. | Повторить. |
 | `lib/screens/settings_screen.dart` | S5 | `ForkMetaDirectRow()` после `ForkCrashReportsRow()`, импорт. | Повторить. |
 | `lib/widgets/auth_widgets.dart` | S2 | `AuthSocialRow.build` при `ForkFlags.emailOnlyAuth` возвращает пустое место (решение 3), импорт. | Повторить. |
-| `lib/screens/home_screen.dart` | S5 | `onWallet` ряда действий — `null` при `ForkFlags.hideUpstreamChannels` (Togetherly Wallet — продукт автора), импорт. | Повторить. |
+| `lib/screens/home_screen.dart` | S5, S8 | `onWallet` ряда действий — `null` при `ForkFlags.hideUpstreamChannels` (Togetherly Wallet — продукт автора), импорт. S8: `_updatePartnerPush` подключает `ForkE2E.attach`/`detach` (ключи E2E — только в главном изоляте). | Повторить. |
 | `lib/models/help_items.dart` | S2 | Пункты «telegram» и покупки Плюса — под флагами форка, импорт. | Повторить. |
+| `lib/models/connections_manager.dart` | S8 | После приёма кода — `ForkE2E.accepted(code, pairId)`: подтверждение приглашения по ссылке (E2E.md §6.2). | Сохранить вызов после проверки `pairId`. |
+| `lib/screens/connect_partner_screen.dart` | S8 | Сканер QR отрезает фрагмент ссылки и отдаёт его `ForkE2E.rememberFragment`. | Сохранить: иначе код с фрагментом не пройдёт проверку длины. |
+| `lib/services/pb_auth_service.dart` | S8 | `signOut` сбрасывает `ForkE2E`. | Сохранить. |
+| `lib/screens/chat_screen.dart` | S8 | Над лентой — `ForkE2EBanner`: «ключи не проверены», «ключ сменился», «возможна подмена», входящая сверка. | Сохранить первым элементом колонки ленты. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 
