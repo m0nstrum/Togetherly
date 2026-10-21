@@ -35,6 +35,15 @@ jobs:
 
       - run: flutter pub get
 
+      # Golden-тесты апстрима грузят шрифт иконок по пути snap-установки
+      # Flutter у автора ($HOME/snap/flutter/common/flutter/...). Без него
+      # иконки рисуются квадратами и 4 снимка расходятся. Симлинк вместо
+      # правки чужих тестов.
+      - name: путь к Flutter для golden-тестов
+        run: |
+          mkdir -p "$HOME/snap/flutter/common"
+          ln -sfn "$(dirname "$(dirname "$(command -v flutter)")")" "$HOME/snap/flutter/common/flutter"
+
       # Базовая линия апстрима: ошибок и предупреждений нет, info — сотни.
       # Поэтому валимся только на warning и выше.
       - name: flutter analyze

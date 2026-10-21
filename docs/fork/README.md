@@ -82,5 +82,16 @@ flutter build apk --release --target-platform android-arm64 --no-tree-shake-icon
 ```
 
 Нужен Flutter той же версии, что в `fork-ci.yml` (`FLUTTER_VERSION`).
+
+Golden-тесты апстрима ищут шрифт иконок в `$HOME/snap/flutter/common/flutter`
+(путь snap-установки у автора). Если Flutter стоит иначе:
+
+```sh
+mkdir -p ~/snap/flutter/common
+ln -sfn "$(dirname "$(dirname "$(command -v flutter)")")" ~/snap/flutter/common/flutter
+```
+
+Без этого 4 снимка (`home_header_test`, `de_layout_test`) падают: иконки
+рисуются квадратами.
 `google-services.json` форку не нужен: без него Gradle не применяет плагин
 Firebase, а клиент получает push через Centrifugo.
