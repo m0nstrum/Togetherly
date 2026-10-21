@@ -380,6 +380,32 @@ abstract final class ForkE2E {
     }
   }
 
+  /// Пара на главном экране (её ключом шифруются сигналы комнаты).
+  static String get activeGroup => _group;
+
+  /// Сигнал в канале пары или комнаты — «печатает», «в сети», сигнализация
+  /// звонка (SDP с отпечатком DTLS, ICE с адресами): весь пакет шифром
+  /// ключа пары `{t: 'e2e', e2e: …}`. Нет ключа — null, не шлём: открытый
+  /// SDP дал бы серверу встать посередине звонка.
+  static Map<String, dynamic>? sealSignal(
+    String groupId,
+    String channel,
+    Map<String, dynamic> msg,
+  ) {
+    final s = sealLive(groupId, channel, 'signal', msg);
+    return s == null ? null : {'t': 'e2e', ...s};
+  }
+
+  /// Обратное к [sealSignal]; открытый сигнал или подделка — null.
+  static Map<String, dynamic>? openSignal(
+    String channel,
+    Map<String, dynamic> raw,
+  ) {
+    if (raw['t'] != 'e2e') return null;
+    final r = openLive(channel, 'signal', raw);
+    return r.ok ? r.data : null;
+  }
+
   /// Шифруются ли новые записи пары [groupId].
   static bool encrypts(String groupId) {
     final s = service.value;

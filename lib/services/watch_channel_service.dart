@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../fork/e2e/fork_e2e.dart'; // fork
 import 'centrifugo_service.dart';
 
 /// Канал комнаты совместного просмотра.
@@ -22,14 +23,31 @@ class WatchChannel {
 
   /// Подписывается на комнату. [onMessage] получает разобранное сообщение.
   Future<void> connect(void Function(Map<String, dynamic>) onMessage) async {
-    _unsub = await CentrifugoService.instance.subscribeRaw(channel, (data) {
+    _unsub = await CentrifugoService.instance.subscribeRaw(channel, (raw) {
+      // fork (E2E): сигнализация звонка — только шифром ключа пары.
+      var data = raw;
+      if (raw['t'] == 'e2e') {
+        final open = ForkE2E.openSignal(channel, raw);
+        if (open == null) return;
+        data = open;
+      } else if ('${raw['t']}'.startsWith('voice-')) {
+        return;
+      }
       if ((data['from'] ?? '') == me) return; // эхо своих команд
       onMessage(data);
     });
   }
 
   Future<void> send(String type, {double at = 0, Map<String, dynamic>? extra}) async {
-    final payload = <String, dynamic>{'t': type, 'at': at, 'from': me, ...?extra};
+    var payload = <String, dynamic>{'t': type, 'at': at, 'from': me, ...?extra};
+    if (type.startsWith('voice-')) {
+      // fork (E2E): SDP несёт отпечаток DTLS, ICE — адреса: открытыми сервер
+      // встал бы посередине звонка. Нет ключа пары — звонка нет.
+      final sealed =
+          ForkE2E.sealSignal(ForkE2E.activeGroup, channel, payload);
+      if (sealed == null) return;
+      payload = sealed;
+    }
     try {
       await CentrifugoService.instance.publish(channel, payload);
     } catch (_) {

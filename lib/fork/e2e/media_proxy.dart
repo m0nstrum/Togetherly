@@ -37,7 +37,10 @@ class MediaProxy {
   Future<HttpServer>? _server;
   final Map<String, Future<MediaHeader?>> _headers = {};
 
-  static final _mediaPath = RegExp(r'^/api/files/media/([^/]+)/([^/]+)$');
+  /// Шифрованные файлы пары: `media` и свои ролики «Смотрим вместе».
+  static final _mediaPath = RegExp(
+    r'^/api/files/(?:media|watch_videos)/([^/]+)/([^/]+)$',
+  );
 
   static String _randomSecret() {
     final r = Random.secure();

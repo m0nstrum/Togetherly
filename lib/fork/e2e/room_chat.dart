@@ -108,8 +108,12 @@ class RoomChat extends ChangeNotifier {
 
   final List<RoomMessage> messages = [];
 
-  /// В комнате вкладка браузера — пишем открыто.
+  /// В комнате вкладка браузера (или кто-то пишет открыто). Сам по себе
+  /// ничего не включает: сервер может подделать и то и другое.
   bool browser = false;
+
+  /// Человек сам разрешил открытый чат с браузером ([allowOpen]).
+  bool openAllowed = false;
 
   PairKey? _rk;
   String _rkId = '';
@@ -121,11 +125,18 @@ class RoomChat extends ChangeNotifier {
   bool get secure => _rk != null && !openMode;
 
   /// Ключа пары нет — партнёры ещё не обменялись ключами, сеансовому ключу
-  /// не на чем ехать.
+  /// не на чем ехать: чата нет.
   bool get noPairKey => _keys.currentKey(groupId) == null;
 
-  /// Пишем открыто: в комнате браузер или ключа пары ещё нет.
-  bool get openMode => browser || noPairKey;
+  /// Пишем открыто: в комнате браузер, и человек на это согласился.
+  bool get openMode => browser && openAllowed;
+
+  /// Согласие на открытый чат с браузером — до конца сессии.
+  void allowOpen() {
+    if (openAllowed) return;
+    openAllowed = true;
+    notifyListeners();
+  }
 
   Future<void> start() async {
     final stop = await _t.listen(_onMessage);
@@ -243,8 +254,10 @@ class RoomChat extends ChangeNotifier {
   void _onChat(String from, Map<String, dynamic> m) {
     final sealed = m['e2e'];
     if (sealed is! String) {
-      // Открытая реплика: её пишет браузер или приложение рядом с ним.
+      // Открытая реплика: её пишет браузер или приложение рядом с ним — или
+      // сервер. Показываем, только если человек разрешил открытый чат.
       _setBrowser();
+      if (!openMode) return;
       final text = '${m['text'] ?? ''}';
       if (text.isEmpty) return;
       _add(
@@ -311,6 +324,7 @@ class RoomChat extends ChangeNotifier {
     if (t.isEmpty) return false;
     final at = DateTime.now().millisecondsSinceEpoch;
     final rk = _rk;
+    if (noPairKey) return false;
     if (openMode) {
       await _t.send({'t': 'chat', 'from': me, 'text': t, 'name': name});
     } else if (rk != null) {

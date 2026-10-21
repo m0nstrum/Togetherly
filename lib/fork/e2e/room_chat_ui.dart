@@ -135,16 +135,22 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
   }
 
   String _status(RoomChat chat) {
-    if (chat.browser) {
-      return _t(
-        'В браузере переписка видна серверу',
-        'With a browser in the room, the server can read the chat',
-      );
-    }
     if (chat.noPairKey) {
       return _t(
-        'Ключи пары ещё не обменялись — переписку видит сервер',
-        'Pair keys are not exchanged yet — the server can read the chat',
+        'Ключи пары ещё не обменялись — чат недоступен',
+        'Pair keys are not exchanged yet — chat is unavailable',
+      );
+    }
+    if (chat.openMode) {
+      return _t(
+        'Открытый чат с браузером: переписку видит сервер',
+        'Open chat with a browser: the server can read it',
+      );
+    }
+    if (chat.browser) {
+      return _t(
+        'В комнате браузер: его реплики не видны, пока вы не разрешите открытый чат',
+        'A browser is in the room: its messages stay hidden until you allow open chat',
       );
     }
     if (!chat.secure) {
@@ -182,6 +188,7 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
       );
     }
     final warn = !chat.secure;
+    final ask = chat.browser && !chat.openAllowed && !chat.noPairKey;
     return Positioned(
       left: 8,
       right: 8,
@@ -212,6 +219,11 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
                       ),
                     ),
                   ),
+                  if (ask)
+                    TextButton(
+                      onPressed: chat.allowOpen,
+                      child: Text(_t('Разрешить', 'Allow')),
+                    ),
                   IconButton(
                     tooltip: _t('Свернуть', 'Hide'),
                     icon: const Icon(Icons.close),

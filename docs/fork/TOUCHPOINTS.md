@@ -98,6 +98,10 @@
 | `pocketbase/pb_hooks/groups.pb.js` | E2E-max | `patch-map` пускает ещё `member_birthdays` и `member_cards`. | Повторить список. |
 | `pocketbase/pb_hooks/users_guard.pb.js` | E2E-max | Шифрованные имя или аватар профиля в карты пары не копируются (`sealedProfile`). | Повторить: иначе шифр личного ключа затрёт имя под ключом пары. |
 | `pocketbase/pb_hooks/invite_web.pb.js` | E2E-max | Шифрованное имя пригласившего на публичную страницу не попадает. | Повторить. |
+| `lib/services/chat_service.dart`, `lib/services/presence_service.dart` | E2E-max | «Печатает» и «в сети» уходят `ForkE2E.sealSignal` (нет ключа — не шлём), приём — через `ForkE2E.openSignal`. Импорт. | Повторить: открытые сигналы принимать нельзя — их может подделать сервер. |
+| `lib/services/watch_channel_service.dart` | E2E-max | Сигнализация звонка (`voice-*`: SDP с отпечатком DTLS, ICE) — только шифром ключа пары; открытые `voice-*` отбрасываются. Импорт. | Повторить: открытый SDP даёт серверу встать посередине звонка. |
+| `lib/services/watch_videos_service.dart` | E2E-max | Ссылки на ролик и обложку — `pb://watch_videos/…`: показ и плеер идут через токен и локальный прокси расшифровки. | Повторить. |
+| `lib/services/watch_history_service.dart` | E2E-max | Дубль истории ищется у себя (адрес шифром), а не фильтром `url = …` на сервере. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 

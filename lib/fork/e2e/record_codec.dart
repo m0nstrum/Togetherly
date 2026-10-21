@@ -181,6 +181,14 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'custom_themes': SealedField.json(),
     'miss_you_wishes': SealedField.json(),
   },
+  // «Смотрим вместе»: история и свои ролики (файлы — шифром, как media).
+  'watch_history': {
+    'url': SealedField.text(),
+    'title': SealedField.text(),
+    'thumb': SealedField.text(),
+    'kind': SealedField.text(),
+  },
+  'watch_videos': {'title': SealedField.text()},
   // Пишет сервер (gifts.pb.js, chest.pb.js) — шифр от клиента как есть.
   'gifts': {
     'note': SealedField.text(),
@@ -424,6 +432,57 @@ class RecordCodec {
     }
   }
 
+  /// Строгое чтение: открытое значение в шифрованном поле написал не
+  /// клиент (он без ключа не пишет вовсе), а сервер — его не показываем.
+  /// Единственное открытое, что сервер пишет сам, — служебное воспоминание
+  /// «Салют» из подарка (gifts.pb.js): фиксированный текст.
+  static Map<String, dynamic> dropPlain(
+    String collection,
+    Map<String, dynamic> rec,
+  ) {
+    final fields = e2eFields[collection];
+    if (fields == null || !hasPlainContent(collection, rec)) return rec;
+    final out = Map<String, dynamic>.of(rec);
+    for (final e in fields.entries) {
+      final spec = e.value;
+      if (!rec.containsKey(e.key) ||
+          !hasPlainContent(collection, {
+            e.key: rec[e.key],
+            if (spec.kind == SealKind.moved) e2eMovedField: null,
+          })) {
+        continue;
+      }
+      final v = rec[e.key];
+      switch (spec.kind) {
+        case SealKind.text:
+          out[e.key] = spec.locked ?? '';
+        case SealKind.json:
+          out[e.key] = spec.locked;
+        case SealKind.moved:
+          out[e.key] = spec.cleared;
+        case SealKind.mapValues:
+          out[e.key] = {
+            for (final kv in (v as Map).entries)
+              if (kv.value == null || isSealedValue(kv.value))
+                '${kv.key}': kv.value,
+          };
+        case SealKind.jsonPartial:
+          final m = v as Map;
+          if (collection == 'memories' &&
+              m['type'] == 'gift' &&
+              m['giftKey'] == 'salute') {
+            continue;
+          }
+          out[e.key] = {
+            for (final kv in m.entries)
+              if (spec.open.contains('${kv.key}') || kv.key == e2ePartialKey)
+                '${kv.key}': kv.value,
+          };
+      }
+    }
+    return out;
+  }
+
   /// Есть ли в теле [collection] открытое содержимое шифрованных полей —
   /// то, что без ключа ушло бы на сервер как есть.
   static bool hasPlainContent(String collection, Map<String, dynamic> body) {
@@ -616,6 +675,7 @@ class RecordCodec {
     final fields = e2eFields[collection];
     final id = e2eRecordKey(collection, rec);
     if (fields == null || id == null) return rec;
+    rec = dropPlain(collection, rec);
     Map<String, dynamic>? out;
     Map<String, dynamic>? locked;
     final enc = rec[e2eMovedField];
@@ -631,10 +691,6 @@ class RecordCodec {
       }
       for (final e in fields.entries) {
         if (e.value.kind != SealKind.moved) continue;
-        // Шифрованная запись всегда оставляет в колонке [cleared]; иное
-        // значение записали позже (клиент без ключа) — оно и новее.
-        final col = rec[e.key];
-        if (col != null && col != '' && col != e.value.cleared) continue;
         out[e.key] = moved != null && moved.containsKey(e.key)
             ? moved[e.key]
             : e.value.locked;

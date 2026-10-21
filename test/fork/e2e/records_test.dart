@@ -155,9 +155,27 @@ void main() {
       );
     });
 
-    test('старое открытое сообщение читается (двойное чтение)', () {
-      final r = {'id': 'm1', 'text': 'до E2E'};
-      expect(codec.decode(_col, r), same(r));
+    test('открытое в шифрованном поле — подделка сервера, не показываем', () {
+      final r = {'id': 'm1', 'text': 'подсунул сервер', 'ts': 3};
+      final d = codec.decode(_col, r);
+      expect(d['text'], e2eLockedText);
+      expect(d['ts'], 3);
+      final mem = codec.decode('memories', {
+        'id': 'mem1',
+        'data': {'type': 'photo', 'text': 'фальшивка', 'authorUid': 'bob'},
+      });
+      expect(mem['data'], {'type': 'photo', 'authorUid': 'bob'});
+      final g = codec.decode('groups', {
+        'id': _gid,
+        'member_names': {'alice': 'Фальшивое имя'},
+      });
+      expect(g['member_names'], <String, dynamic>{});
+      // «Салют» сервер пишет сам — его показываем.
+      final salute = codec.decode('memories', {
+        'id': 'mem2',
+        'data': {'type': 'gift', 'giftKey': 'salute', 'title': 'Салют'},
+      });
+      expect((salute['data'] as Map)['title'], 'Салют');
     });
 
     test('шифртекст из другой записи или поля не открывается', () {
@@ -200,7 +218,7 @@ void main() {
         ],
       });
       final items = (page! as Map)['items'] as List;
-      expect([for (final i in items) (i as Map)['text']], ['a', 'b']);
+      expect([for (final i in items) (i as Map)['text']], ['a', e2eLockedText]);
     });
   });
 
@@ -554,17 +572,17 @@ void main() {
       },
     );
 
-    test('новая дата в колонке новее старой в enc; null стирает дату', () {
+    test('открытая дата в колонке — подделка, верим enc; null стирает', () {
       final enc = codec.encode('groups', _gid, _gid, {
         'first_kiss_date': '2020-01-01',
       });
-      // Клиент без ключа записал новую дату открыто, enc остался старым.
+      // Без ключа клиент не пишет: открытую дату подложил сервер.
       final dec = codec.decode('groups', {
         'id': _gid,
         ...enc,
         'first_kiss_date': '2021-05-05',
       });
-      expect(dec['first_kiss_date'], '2021-05-05');
+      expect(dec['first_kiss_date'], '2020-01-01');
       final cleared = codec.encode('groups', _gid, _gid, {
         'first_kiss_date': null,
       });

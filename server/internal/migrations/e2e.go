@@ -180,6 +180,8 @@ var e2eSealedMax = map[string][]string{
 	"groups":          {"chat_background", "placeholder_name", "placeholder_avatar"},
 	"gifts":           {"note", "reply", "place", "date", "photo", "sound", "sound_meta"},
 	"users":           {"name", "display_name", "avatar_url", "banner_url", "gender", "birth_date"},
+	"watch_history":   {"url", "title", "thumb", "kind"},
+	"watch_videos":    {"title"},
 }
 
 // addMemberCards заводит groups.member_cards: карточка профиля каждого

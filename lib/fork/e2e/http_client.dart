@@ -209,6 +209,15 @@ class E2EHttpClient extends http.BaseClient {
   /// Наклейка на воспоминание: апстрим шлёт `{sticker_put}`/`{sticker_del}`,
   /// а кладёт её в `data.stickers` сервер. Сервер форка `data` не читает —
   /// наклейку кладём сами и шлём правку всего `data` шифром.
+  /// Имя файла для сервера: `<поле>.<расширение>`.
+  static String neutralFileName(String field, String? name) {
+    final n = name ?? '';
+    final dot = n.lastIndexOf('.');
+    final ext = dot < 0 ? '' : n.substring(dot).toLowerCase();
+    final safe = RegExp(r'^\.[a-z0-9]{1,5}$').hasMatch(ext) ? ext : '';
+    return '${field.isEmpty ? 'file' : field}$safe';
+  }
+
   static bool stickerOp(String col, Map<String, dynamic> body) =>
       col == 'memories' &&
       (body.containsKey('sticker_put') || body.containsKey('sticker_del'));
@@ -398,7 +407,9 @@ class E2EHttpClient extends http.BaseClient {
         ? null
         : codec.keys.currentKey(enc.group);
     final sealFiles =
-        col == 'media' && !plainMediaKinds.contains('${fields['kind'] ?? ''}');
+        (col == 'media' &&
+            !plainMediaKinds.contains('${fields['kind'] ?? ''}')) ||
+        col == 'watch_videos';
     // Файл пары без ключа открытым не уходит.
     if (sealFiles && files.isNotEmpty && key == null) {
       throw E2ENoKeyError('media');
@@ -417,7 +428,9 @@ class E2EHttpClient extends http.BaseClient {
               enc.id,
               mime: mimeFromName(f.filename),
             ),
-            filename: f.filename,
+            // Имя файла видно серверу: своё имя с телефона (IMG_…, название
+            // ролика) не отдаём — только поле и расширение.
+            filename: neutralFileName(f.field, f.filename),
           ),
       ];
     } else if (col == 'media') {

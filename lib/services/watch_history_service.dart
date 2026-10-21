@@ -88,14 +88,19 @@ class WatchHistoryService {
     };
 
     try {
-      final found = await _pb.collection(_col).getList(
+      // fork (E2E): адрес лежит шифром — сервер его не сравнит, ищем у себя.
+      final found = (await _pb.collection(_col).getList(
             page: 1,
-            perPage: 1,
-            filter: 'group_id = "$groupId" && url = "${url.replaceAll('"', '')}"',
-          );
-      if (found.items.isNotEmpty) {
+            perPage: 200,
+            sort: '-updated',
+            filter: 'group_id = "$groupId"',
+          ))
+          .items
+          .where((r) => r.data['url'] == url)
+          .toList();
+      if (found.isNotEmpty) {
         // Название и обложку не затираем пустыми: их отдаёт не каждая площадка.
-        final old = found.items.first;
+        final old = found.first;
         if (title.isEmpty) body['title'] = old.data['title'] ?? '';
         if (thumb.isEmpty) body['thumb'] = old.data['thumb'] ?? '';
         await _pb.collection(_col).update(old.id, body: body);
