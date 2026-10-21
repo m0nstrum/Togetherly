@@ -5,4 +5,11 @@
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />
+    <!--
+      fork (S9): локальный прокси расшифровки медиа (lib/fork/e2e/media_proxy.dart)
+      слушает только 127.0.0.1; плеер видео (ExoPlayer) ходит к нему по http.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
 </network-security-config>

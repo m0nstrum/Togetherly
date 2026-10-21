@@ -10,6 +10,7 @@ import '../models/upload_timeout.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import '../fork/e2e/fork_e2e.dart'; // fork
 import 'pocketbase_service.dart';
 
 /// Медиа-слой PocketBase (миграция Firebase→PB, Этап 6).
@@ -270,7 +271,9 @@ class PbMediaService {
     final base = resolveUrl(normalized);
     if (base == null) return ref;
     final tok = await _ensureFileToken();
-    return mediaUrlWithToken(base: base, token: tok);
+    final url = mediaUrlWithToken(base: base, token: tok);
+    // fork (S9): файлы пары шифрованы — показ идёт через локальный прокси.
+    return url == null ? null : ForkE2E.mediaUrl(url);
   }
 
   /// Сброс кэша токена (на выходе/смене пользователя).

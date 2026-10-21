@@ -30,7 +30,7 @@
 | `lib/services/deep_link_service.dart` | S0, S1, S8 | Разбор `loveapp://invite/` → `ForkIdentity.inviteScheme`. S1: https-хосты приглашений → `Endpoints.current.ownHosts`; ветка email-ссылок Firebase убрана, `_handleEmailLink` помечен `ignore: unused_element`. Импорты. S8: фрагмент ссылки приглашения (секрет E2E) → `ForkE2E.rememberFragment`. | Повторить замены. |
 | `test/models/invite_link_domain_test.dart` | S0 | Ожидание `loveapp://invite/HQ792S` → `tethered://invite/HQ792S`. | Повторить замену строки. |
 | `android/app/build.gradle.kts` (S1) | S1 | В блоке fork: разбор `dart-defines` → `forkInviteHost` → плейсхолдер `inviteHost`. | Часть блока fork, см. строку выше. |
-| `android/app/src/main/res/xml/network_security_config.xml` | S1 | Cleartext-исключение для IP Bugsink апстрима убрано, файл переписан целиком. | Взять нашу версию. |
+| `android/app/src/main/res/xml/network_security_config.xml` | S1, S9 | Cleartext-исключение для IP Bugsink апстрима убрано, файл переписан целиком. S9: открытый http разрешён только к `127.0.0.1` — локальный прокси расшифровки медиа. | Взять нашу версию. |
 | `.gitignore` | S1 | Строка `env/*.local.json`. | Дописать строку. |
 | `lib/main.dart` | S1 | Первая строка `main()`: `Endpoints.ensureConfigured();`, импорт. | Повторить. |
 | `lib/services/pocketbase_service.dart` | S1 | `baseUrl = Endpoints.pbUrl` (без дефолта на апстрим). | Повторить. |
@@ -83,6 +83,7 @@
 | `lib/services/centrifugo_service.dart` | S9 | В `_onPublication` запись дельты проходит `ForkE2E.decodeSync(collection, …)` перед `RecordModel.fromJson`. | Сохранить: иначе живые сообщения чата покажут шифртекст. Если апстрим заведёт второй разбор дельт — обернуть и его. |
 | `lib/screens/chat/chat_search_screen.dart` | S9 | Вкладки «Всё» и «Ссылки» у пары с ключом ищут через `ForkChatSearch.search` вместо `searchChat` с фильтром по тексту. | Сохранить: сервер в шифртексте ничего не найдёт. |
 | `lib/services/live_location_service.dart` | S9 | Живая точка в `loc:<канал>` уходит через `ForkE2E.sealPoint`, приходит через `ForkE2E.openPoint` (null — подделка, точку не показываем). | Сохранить обе стороны: иначе координаты летят через сервер открыто. |
+| `lib/services/pb_media_service.dart` | S9 | `resolveUrlAuthed` отдаёт адрес через `ForkE2E.mediaUrl` — локальный прокси расшифровки файлов пары. | Сохранить: иначе картинки, голосовые и видео пары придут шифром. Новый способ получить адрес файла в апстриме — пропустить через `ForkE2E.mediaUrl` тоже. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 

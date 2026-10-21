@@ -7,6 +7,7 @@
 library;
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -15,6 +16,8 @@ import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
 import 'package:love_app/fork/e2e/key_store.dart';
+import 'package:love_app/fork/e2e/media_cipher.dart';
+import 'package:love_app/fork/e2e/media_proxy.dart';
 import 'package:love_app/fork/e2e/http_client.dart';
 import 'package:love_app/fork/e2e/pb_backend.dart';
 import 'package:love_app/fork/e2e/record_codec.dart';
@@ -163,6 +166,37 @@ void main() {
       expect(rawMem.data['data']['e2e'], startsWith(e2eFieldPrefix));
       final bobMem = await bobChat.collection('memories').getOne(mem.id);
       expect(bobMem.data['data']['caption'], 'море');
+
+      // Файл (S9.3): на сервере шифр, партнёр получает открытые байты через
+      // локальный прокси, перемотка (Range) работает.
+      final photo = Uint8List.fromList(
+        List.generate(150000, (i) => (i * 31 + 7) & 0xff),
+      );
+      final media = await chat(env['SMOKE_ATOK']!, a)
+          .collection('media')
+          .create(
+            body: {'uid': a.uid, 'group_id': pair, 'kind': 'memory'},
+            files: [
+              http.MultipartFile.fromBytes('file', photo, filename: 'p.jpg'),
+            ],
+          );
+      final bobPb = PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null);
+      final fileUrl =
+          '$url/api/files/media/${media.id}/${media.getStringValue('file')}'
+          '?token=${await bobPb.files.getToken()}';
+      final rawFile = await http.readBytes(Uri.parse(fileUrl));
+      expect(rawFile.sublist(0, 8), mediaMagic);
+      expect(rawFile.length, greaterThan(photo.length));
+      final proxy = MediaProxy(codec: () async => RecordCodec(c, b));
+      final viaProxy = await proxy.wrap(fileUrl);
+      expect(await http.readBytes(Uri.parse(viaProxy)), photo);
+      final part = await http.get(
+        Uri.parse(viaProxy),
+        headers: {'range': 'bytes=70000-70009'},
+      );
+      expect(part.statusCode, 206);
+      expect(part.bodyBytes, photo.sublist(70000, 70010));
+      await proxy.close();
 
       final ids = [a.uid, b.uid]..sort();
       final channel = 'pair_${ids[0]}_${ids[1]}';

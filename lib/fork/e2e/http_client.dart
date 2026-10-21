@@ -9,7 +9,11 @@ library;
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+// MultipartRequest SDK не экспортирует, а шлёт именно его.
+// ignore: implementation_imports
+import 'package:pocketbase/src/multipart_request.dart' as pb;
 
+import 'media_cipher.dart';
 import 'record_codec.dart';
 
 /// Пара записи, когда в теле нет `group_id`: по телу (канал геопозиции),
@@ -44,14 +48,21 @@ class E2EHttpClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final m = _path.firstMatch(request.url.path);
     final col = m?.group(1);
-    if (m == null || col == null || !RecordCodec.covers(col)) {
+    if (m == null ||
+        col == null ||
+        !(RecordCodec.covers(col) || col == 'media')) {
       return _inner.send(request);
     }
     final codec = await _codec();
     if (codec == null) return _inner.send(request);
 
     var req = request;
-    if (request is http.Request &&
+    if ((request is pb.MultipartRequest || request is http.MultipartRequest) &&
+        request.method == 'POST' &&
+        col == 'media' &&
+        m.group(2) == null) {
+      req = await _encodeMedia(request, codec);
+    } else if (request is http.Request &&
         (request.method == 'POST' || request.method == 'PATCH') &&
         request.body.isNotEmpty) {
       req = await _encodeRequest(request, codec, col, m.group(2));
@@ -116,6 +127,73 @@ class E2EHttpClient extends http.BaseClient {
       ..maxRedirects = request.maxRedirects
       ..persistentConnection = request.persistentConnection
       ..body = jsonEncode(enc);
+    return copy;
+  }
+
+  /// Файл в `media` шифруется ключом пары; id записи даём сами — от него
+  /// выводится ключ файла. PocketBase кладёт поля формы JSON-ом в
+  /// `@jsonPayload` своего `MultipartRequest`.
+  Future<http.BaseRequest> _encodeMedia(
+    http.BaseRequest request,
+    RecordCodec codec,
+  ) async {
+    final Map<String, dynamic> fields;
+    final List<http.MultipartFile> files;
+    if (request is pb.MultipartRequest) {
+      final raw = request.fields['@jsonPayload'];
+      final Object? j = raw == null || raw.isEmpty
+          ? null
+          : jsonDecode(raw.first);
+      fields = j is Map<String, dynamic> ? Map.of(j) : <String, dynamic>{};
+      files = request.files;
+    } else {
+      final r = request as http.MultipartRequest;
+      fields = Map<String, dynamic>.of(r.fields);
+      files = r.files;
+    }
+    final group = '${fields['group_id'] ?? ''}';
+    final kind = '${fields['kind'] ?? ''}';
+    final c = codec.crypto;
+    final key = group.isEmpty ? null : codec.keys.currentKey(group);
+    if (c == null || key == null || plainMediaKinds.contains(kind)) {
+      return request;
+    }
+    var id = '${fields['id'] ?? ''}';
+    if (id.isEmpty) {
+      final gen = _newId;
+      if (gen == null) return request;
+      id = gen();
+    }
+    fields['id'] = id;
+    final cipher = MediaCipher(c);
+    final enc = <http.MultipartFile>[
+      for (final f in files)
+        http.MultipartFile.fromBytes(
+          f.field,
+          cipher.encrypt(
+            await f.finalize().toBytes(),
+            key,
+            id,
+            mime: mimeFromName(f.filename),
+          ),
+          filename: f.filename,
+        ),
+    ];
+    final http.BaseRequest copy;
+    if (request is pb.MultipartRequest) {
+      copy = pb.MultipartRequest(request.method, request.url)
+        ..fields['@jsonPayload'] = [jsonEncode(fields)]
+        ..files.addAll(enc);
+    } else {
+      copy = http.MultipartRequest(request.method, request.url)
+        ..fields.addAll({for (final e in fields.entries) e.key: '${e.value}'})
+        ..files.addAll(enc);
+    }
+    copy
+      ..headers.addAll(request.headers)
+      ..followRedirects = request.followRedirects
+      ..maxRedirects = request.maxRedirects
+      ..persistentConnection = request.persistentConnection;
     return copy;
   }
 

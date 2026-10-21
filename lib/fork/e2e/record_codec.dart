@@ -167,6 +167,9 @@ class RecordCodec {
   final E2ECrypto? _c;
   final E2EKeyring keys;
 
+  /// null — libsodium не загрузилась.
+  E2ECrypto? get crypto => _c;
+
   static bool covers(String collection) => e2eFields.containsKey(collection);
 
   String sealField(

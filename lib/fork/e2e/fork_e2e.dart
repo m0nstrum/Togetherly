@@ -22,6 +22,7 @@ import 'e2e_service.dart';
 import 'envelope.dart';
 import 'http_client.dart';
 import 'key_store.dart';
+import 'media_proxy.dart';
 import 'password_policy.dart';
 import 'pb_backend.dart';
 import 'record_codec.dart';
@@ -195,6 +196,19 @@ abstract final class ForkE2E {
       return PocketBaseService().userId ?? '';
     } catch (_) {
       return '';
+    }
+  }
+
+  static MediaProxy? _proxy;
+
+  /// Адрес файла `media` для показа и плееров: через локальный прокси,
+  /// который расшифровывает на лету (открытые файлы проходят как есть).
+  static Future<String> mediaUrl(String url) async {
+    try {
+      return await (_proxy ??= MediaProxy(codec: codec)).wrap(url);
+    } catch (e) {
+      debugPrint('ForkE2E: прокси медиа — $e');
+      return url;
     }
   }
 
