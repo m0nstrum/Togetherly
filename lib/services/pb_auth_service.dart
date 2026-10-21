@@ -15,6 +15,7 @@ import '../models/session_restore.dart';
 import '../utils/auth_failure.dart';
 import 'home_widget_service.dart';
 import 'pocketbase_service.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 /// Аутентификация через PocketBase (миграция Firebase→PB, Этап 6, слой Auth).
 ///
@@ -490,6 +491,7 @@ class PbAuthService {
   void signOut() {
     _svc.signOut();
     unawaited(HomeWidgetService.instance.wipeWidgetData());
+    unawaited(ForkE2E.reset()); // fork
   }
 
   /// Дозаполняет имя/аватар в профиле, если там пусто (id юзер не трогает —

@@ -1,0 +1,11 @@
+# Статика апстрима (pocketbase/pb_public), которую отдаёт сервер форка.
+# Собирает scripts/sync-public.sh. Строка — файл или каталог; # — комментарий.
+#
+# Не берём: лендинг и баннеры апстрима (index*.html, landing, appshots, club,
+# banners, google-play-banner, app-ads.txt, sitemap.xml, logo.jpg, shell),
+# страницы его Wallet и child-safety; privacy-policy и terms — свои (server/public).
+watch
+reset
+delete-account
+fonts
+robots.txt

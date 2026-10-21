@@ -1,0 +1,131 @@
+# Инстанс Tethered одной командой (docs/fork/PLAN.md, S4):
+#   cp .env.example .env && $EDITOR .env && docker compose up -d
+# Bugsink (крашрепорты) — по желанию: docker compose --profile crash up -d
+name: tethered
+
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      TETHERED_APP_URL: https://${TETHERED_DOMAIN}
+      TETHERED_CENTRIFUGO__API: http://centrifugo:8000/api
+      TETHERED_CENTRIFUGO__API_KEY: ${CENTRIFUGO_API_KEY}
+      # Этим же секретом JS-хук апстрима подписывает токены подключения.
+      CENTRIFUGO_TOKEN_HMAC: ${CENTRIFUGO_TOKEN_HMAC}
+      TETHERED_TURN__HOST: ${TETHERED_DOMAIN}
+      TETHERED_TURN__SECRET: ${TURN_SECRET}
+      TETHERED_SMTP__HOST: ${SMTP_HOST:-}
+      TETHERED_SMTP__PORT: ${SMTP_PORT:-587}
+      TETHERED_SMTP__USERNAME: ${SMTP_USERNAME:-}
+      TETHERED_SMTP__PASSWORD: ${SMTP_PASSWORD:-}
+      TETHERED_SMTP__SENDER: ${SMTP_SENDER:-}
+      TETHERED_SMTP__TLS: ${SMTP_TLS:-false}
+      TETHERED_BACKUP__CRON: ${BACKUP_CRON:-0 3 * * *}
+      TETHERED_BACKUP__MAX_KEEP: ${BACKUP_MAX_KEEP:-7}
+      TETHERED_BACKUP__AGE_RECIPIENTS: ${BACKUP_AGE_RECIPIENTS:-}
+      TETHERED_POISKKINO_KEY: ${POISKKINO_KEY:-}
+      # Адрес клиента для лимитов — от Caddy (снаружи сервер не виден).
+      TETHERED_TRUSTED_PROXY_HEADER: X-Forwarded-For
+      # /metrics для Prometheus — только во внутренней сети compose.
+      TETHERED_METRICS_ADDR: 0.0.0.0:9100
+      # Прокси роликов (PLAN S11): выключен, пока WATCH_PROXY не true.
+      TETHERED_WATCH_PROXY__ENABLED: ${WATCH_PROXY:-false}
+      TETHERED_WATCH_PROXY__DAILY_MB: ${WATCH_PROXY_DAILY_MB:-3072}
+      TETHERED_WATCH_PROXY__CADDY_DIR: /caddy/caddy
+    ports:
+      # Прокси роликов: наружу, только если WATCH_PROXY_LISTEN=0.0.0.0.
+      - "${WATCH_PROXY_LISTEN:-127.0.0.1}:8443:8443"
+    volumes:
+      - server-data:/data
+      # Сертификат домена для прокси — тот, что получил Caddy.
+      - caddy-data:/caddy:ro
+      # Зашифрованные бэкапы: этот том и уносят с машины (deploy/README.md).
+      - server-backups:/backups
+    depends_on:
+      - centrifugo
+
+  centrifugo:
+    image: centrifugo/centrifugo:v6
+    restart: unless-stopped
+    command: centrifugo --config=/centrifugo/config.json
+    environment:
+      CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: ${CENTRIFUGO_TOKEN_HMAC}
+      CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_API_KEY}
+      CENTRIFUGO_CLIENT_ALLOWED_ORIGINS: https://${TETHERED_DOMAIN}
+    volumes:
+      - ./centrifugo/config.json:/centrifugo/config.json:ro
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    # Только 443: сертификат по TLS-ALPN-01, порт 80 не нужен (Caddyfile).
+    ports:
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      TETHERED_DOMAIN: ${TETHERED_DOMAIN}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - server
+      - centrifugo
+
+  # TURN для голоса в «Смотрим вместе» (решение 4). Сеть хоста: ретранслятору
+  # нужны UDP-порты, через NAT Docker они ведут себя плохо. Ключи временные
+  # (use-auth-secret), их выдаёт сервер на /api/watch/rtc. Наружу — только
+  # 3478: если прямой связи нет, ICE сводит два relay на этой машине, и они
+  # говорят друг с другом локально — диапазон 49160–49200 открывать не нужно.
+  coturn:
+    image: coturn/coturn:4
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200
+      - --fingerprint
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET}
+      - --realm=${TETHERED_DOMAIN}
+      - --no-cli
+      - --no-multicast-peers
+      - --no-tcp-relay
+      # Ретранслятор не должен ходить во внутренние сети хоста.
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=100.64.0.0-100.127.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
+      - --denied-peer-ip=::1
+      - --denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+      - --denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+
+  # Крашрепорты (решение 6). Sentry-совместим, одна SQLite. Включается
+  # профилем; DSN проекта прописать в сборку клиента (SENTRY_DSN).
+  bugsink:
+    profiles: ["crash"]
+    image: bugsink/bugsink:2
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${BUGSINK_SECRET_KEY:-}
+      CREATE_SUPERUSER: ${BUGSINK_ADMIN:-}
+      BASE_URL: https://bugsink.${TETHERED_DOMAIN}
+      PORT: "8000"
+    volumes:
+      - bugsink-data:/data
+
+volumes:
+  server-data:
+  server-backups:
+  caddy-data:
+  caddy-config:
+  bugsink-data:

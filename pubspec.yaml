@@ -23,7 +23,7 @@ dependencies:
   # Через браузер вход отказывал у части людей — SFSafariViewController не мог
   # загрузить appleid.apple.com (77 обрывов против 33 входов за сутки).
   sign_in_with_apple: ^6.1.4
-  google_sign_in: ^6.2.2
+  # fork: google_sign_in убран — в коде не использовался, вход только по почте.
   sentry_flutter: ^9.0.0
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.1.4
@@ -111,13 +111,13 @@ dependencies:
   # Экраны на 90 и 120 Гц: Android по умолчанию отдаёт приложению 60.
   flutter_displaymode: ^0.6.0
   in_app_update: ^4.2.3
-  google_mobile_ads: ^5.2.0
-  yandex_mobileads: ^7.6.0
+  # fork: google_mobile_ads и yandex_mobileads убраны — рекламы нет
+  # (docs/fork/PLAN.md, решение 1).
   # app_tracking_transparency убран: приложение не отслеживает пользователей,
   # реклама неперсональная (App Privacy → Tracking = None). См. main.dart.
-  in_app_purchase: ^3.3.0
+  # fork: in_app_purchase убран — покупок нет (решение 1).
   connectivity_plus: ^7.1.1
-  flutter_rustore_billing: ^9.0.0
+  # fork: flutter_rustore_billing убран — RuStore не нужен.
   pocketbase: ^0.24.0
   # Realtime через Centrifugo (замена встроенного SSE PB): один WS на приложение,
   # приватные каналы pair/user/loc с JWT от PB. См. services/centrifugo_service.dart.
@@ -136,6 +136,9 @@ dependencies:
   visibility_detector: ^0.4.0+2
   image: ^4.8.0
   camera: ^0.12.0+2
+  # fork: E2E (docs/fork/E2E.md) — libsodium; пакет сам собирает её из исходников.
+  sodium: ^4.0.3
+
 
 dev_dependencies:
   integration_test:
@@ -185,6 +188,9 @@ flutter:
     # не константой в коде: 4334 записи в Dart раздували бы сборку исходника,
     # а нужны они только на экране выбора.
     - assets/symbols/material_symbols.json
+    # fork: E2E — список слов BIP39 и словарь утёкших паролей (docs/fork/E2E.md §7).
+    - assets/fork/bip39_english.txt
+    - assets/fork/leaked_passwords.bloom
     # Карта «Где мы»: базовый стиль подложки и контуры суши для глобуса
     # (tool/gen_map_assets.py).
     - assets/map/

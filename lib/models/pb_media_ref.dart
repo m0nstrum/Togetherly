@@ -8,14 +8,13 @@
 /// путём и получает свежий токен.
 library;
 
+import '../fork/config/endpoints.dart'; // fork
+
 /// Домены, чьи файловые адреса наши.
 ///
 /// `duckdns` — легаси: такие ссылки разосланы людьми и лежат в старых записях,
 /// понимать их обязаны, даже когда сами больше не выдаём.
-const List<String> kPbFileHosts = [
-  'togetherly.day',
-  'togetherly.duckdns.org',
-];
+final List<String> kPbFileHosts = Endpoints.current.ownHosts; // fork
 
 /// `pb://<коллекция>/<id>/<файл>` для адреса [url], если он наш файловый.
 ///

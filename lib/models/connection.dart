@@ -10,6 +10,9 @@ import '../services/pocketbase_service.dart';
 import 'invite_code_state.dart';
 import 'relationship_status.dart';
 import 'waiting_state.dart';
+import '../fork/identity.dart'; // fork
+import '../fork/config/endpoints.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 /// Пора ли выходить из группы, где кроме меня никого не осталось.
 ///
@@ -249,13 +252,12 @@ class Connection {
   /// отправитель поломки не видел: у него ссылка выглядела как обычно. За
   /// 18–19 августа 2026 на такую ссылку зашли 30 раз с настоящих устройств —
   /// жалоба звучала как «партнёр не может перейти по пригласительной ссылке».
-  String get inviteLink =>
-      inviteCode.trim().isEmpty ? '' : 'https://togetherly.day/invite/$inviteCode';
+  String get inviteLink => Endpoints.current.inviteLink(
+      inviteCode, fragment: ForkE2E.inviteFragment(inviteCode)); // fork
 
   /// Прямой deep link без веб-хоста (для QR).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.
-  String get inviteDeepLink =>
-      inviteCode.trim().isEmpty ? '' : 'loveapp://invite/$inviteCode';
+  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode); // fork
 
   /// Max members allowed — always 2 (couples only)
   int get maxMembers => 2;

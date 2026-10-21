@@ -8,6 +8,7 @@ import '../models/draw_stroke.dart';
 import 'centrifugo_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 /// Один пакет живого мазка: чей он и что в нём. `data == null` — мазок снят.
 class LivePacket {
@@ -313,12 +314,11 @@ class CanvasRepository {
           final uid = (m['uid'] ?? '').toString();
           if (uid.isEmpty || uid == myUid) return;
           if ((m['canvasId'] ?? '').toString() != canvasId) return;
-          final data = m['data'];
-          if (ctrl.isClosed) return;
-          ctrl.add(LivePacket(
-            uid: uid,
-            data: data is Map ? Map<String, dynamic>.from(data) : null,
-          ));
+          // fork (S9): живой штрих идёт шифром ключа пары.
+          final live = ForkE2E.openLive(
+              _liveChannel(groupId), 'stroke:$uid:$canvasId', m['data']);
+          if (!live.ok || ctrl.isClosed) return;
+          ctrl.add(LivePacket(uid: uid, data: live.data));
         });
       },
       onCancel: () async {
@@ -332,8 +332,12 @@ class CanvasRepository {
   /// Опубликовать свой in-progress штрих (эфемерно, мимо БД).
   Future<void> setLive(String groupId, String canvasId, String uid,
           Map<String, dynamic> liveData) =>
-      CentrifugoService.instance.publish(_liveChannel(groupId),
-          {'uid': uid, 'canvasId': canvasId, 'data': liveData});
+      CentrifugoService.instance.publish(_liveChannel(groupId), {
+        'uid': uid,
+        'canvasId': canvasId,
+        'data': ForkE2E.sealLive(groupId, // fork
+            _liveChannel(groupId), 'stroke:$uid:$canvasId', liveData),
+      });
 
   /// Снять свой in-progress штрих (надгробие data:null).
   Future<void> clearLive(String groupId, String canvasId, String uid) =>

@@ -1,0 +1,8 @@
+# fork: контекст сборки server/Dockerfile — только то, что нужно серверу.
+*
+!server/
+!pocketbase/pb_hooks/
+!pocketbase/pb_public/
+server/pb_data/
+server/pb_hooks/
+server/tethered

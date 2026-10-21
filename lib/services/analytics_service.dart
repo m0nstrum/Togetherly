@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'pocketbase_service.dart';
+import '../fork/flags.dart'; // fork
 
 /// Своя аналитика: экраны, действия, воронка новичка, показы рекламы.
 ///
@@ -61,6 +62,7 @@ class AnalyticsService {
 
   /// Сбрасывает накопленное. Зовётся по таймеру, при сворачивании и на выходе.
   Future<void> flush() async {
+    if (ForkFlags.analyticsDisabled) return; // fork: без телеметрии
     if (_sending || _queue.isEmpty) return;
     final uid = PocketBaseService().userId ?? '';
     if (uid.isEmpty) return; // до входа отправлять некому и незачем
@@ -102,6 +104,7 @@ class AnalyticsService {
 
   void _add(String kind, String name, {int? ms}) {
     if (kDebugMode) return; // отладочные запуски статистику не портят
+    if (ForkFlags.analyticsDisabled) return; // fork: без телеметрии
     _queue.add({
       'ts': DateTime.now().millisecondsSinceEpoch ~/ 1000,
       'kind': kind,

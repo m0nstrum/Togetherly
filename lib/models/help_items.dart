@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../dict_strings.dart';
+import '../fork/flags.dart'; // fork
 
 /// Справка «Как сделать»: ответы на то, о чём чаще всего пишут в приёмную.
 ///
@@ -77,8 +78,11 @@ List<HelpItem> helpItems({required bool plusInStore}) => [
           HelpAction.settings),
       const HelpItem('gender', HelpTopic.account, Icons.transgender_rounded,
           HelpAction.tabProfile),
+      // fork: Telegram автора и покупка Плюса в форке не показываются.
+      if (!ForkFlags.hideUpstreamChannels)
       const HelpItem('telegram', HelpTopic.account, Icons.send_rounded,
           HelpAction.telegram),
+      if (!ForkFlags.allFree)
       plusInStore
           ? const HelpItem('plusStore', HelpTopic.plus,
               Icons.workspace_premium_rounded, HelpAction.plusSheet)

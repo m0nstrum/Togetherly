@@ -8,6 +8,10 @@ import '../utils/email_typo.dart';
 import '../widgets/app_icon_sheet.dart';
 import '../widgets/home_layout_editor.dart';
 import '../widgets/settings_scaffold.dart';
+import '../fork/crash_reports.dart'; // fork
+import '../fork/flags.dart'; // fork
+import '../fork/meta_direct.dart'; // fork
+import '../fork/e2e/backup_ui.dart'; // fork
 
 /// Экран настроек.
 ///
@@ -88,10 +92,13 @@ class SettingsScreen extends StatelessWidget {
 
   /// Оба адреса стоят подписями к строкам: «Написать нам» не говорит, куда
   /// именно письмо уйдёт, а человеку это надо знать заранее.
-  static const String supportEmail = 'support@togetherly.day';
+  static const String supportEmail = String.fromEnvironment('SUPPORT_EMAIL'); // fork
 
   /// Ящик для писем от организаций, а не от людей.
-  static const String officialEmail = 'official@togetherly.day';
+  static const String officialEmail = String.fromEnvironment( // fork
+    'OFFICIAL_EMAIL',
+    defaultValue: supportEmail,
+  );
 
   /// Канал в Telegram и бот, принимающий жалобы. Обе ссылки жили где угодно,
   /// кроме приложения: «не могу найти ссылку на тгк» — обычный вопрос в
@@ -407,6 +414,9 @@ class SettingsScreen extends StatelessWidget {
                 title: s.aboutApp,
                 icon: Icons.help_rounded,
                 children: [
+                  const ForkCrashReportsRow(), // fork
+                  const ForkMetaDirectRow(), // fork
+                  const ForkE2EBackupRow(), // fork
                   SettingsRow(
                     icon: Icons.info_rounded,
                     title: s.aboutApp,
@@ -437,6 +447,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onOfficial,
                   ),
+                  if (!ForkFlags.hideUpstreamChannels) ...[ // fork
                   SettingsRow(
                     icon: Icons.campaign_rounded,
                     title: s.telegramChannelTitle,
@@ -451,6 +462,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onBugBot,
                   ),
+                  ], // fork
                 ],
               ),
 

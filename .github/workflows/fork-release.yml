@@ -1,0 +1,156 @@
+# Боевая сборка APK форка под свой сервер (docs/fork/README.md, «Сборка в GitHub»).
+#
+# Адреса — из переменных репозитория (Settings → Secrets and variables →
+# Actions → Variables), ключ подписи — из секретов там же. В репозитории их
+# нет: env/*.local.json и key.properties остаются только у владельца.
+#
+# Запуск: Actions → «Fork release APK» → Run workflow.
+name: Fork release APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Выложить в GitHub Releases (иначе только артефакт запуска)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fork-release
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: 3.47.6
+
+jobs:
+  apk:
+    name: release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # Значения идут через env, а не подстановкой в скрипт: так их нельзя
+      # превратить в команду оболочки.
+      - name: конфиг сборки
+        env:
+          PB_URL: ${{ vars.TETHERED_URL }}
+          CENTRIFUGO_WS: ${{ vars.TETHERED_CENTRIFUGO_WS }}
+          SITE_URL: ${{ vars.TETHERED_SITE_URL }}
+          SUPPORT_EMAIL: ${{ vars.TETHERED_SUPPORT_EMAIL }}
+          SENTRY_DSN: ${{ vars.TETHERED_SENTRY_DSN }}
+          RELEASES_URL: ${{ vars.TETHERED_RELEASES_URL }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$PB_URL" =~ ^https://[^/]+$ ]]; then
+            echo "::error::Переменная TETHERED_URL: нужен адрес вида https://tethered.example.org без / в конце"
+            exit 1
+          fi
+          : "${RELEASES_URL:=https://github.com/$REPO/releases/latest}"
+          mkdir -p env
+          jq -n \
+            --arg pb "$PB_URL" --arg ws "$CENTRIFUGO_WS" --arg site "$SITE_URL" \
+            --arg mail "$SUPPORT_EMAIL" --arg dsn "$SENTRY_DSN" --arg rel "$RELEASES_URL" \
+            '(input) + {PB_URL: $pb, CENTRIFUGO_WS: $ws, SITE_URL: $site,
+              SUPPORT_EMAIL: $mail, SENTRY_DSN: $dsn, RELEASES_URL: $rel}' \
+            env/example.json > env/release.local.json
+          cat env/release.local.json
+
+      # Без ключа не собираем: debug-ключ у каждого раннера свой, и следующая
+      # сборка не встанет поверх установленной.
+      - name: ключ подписи
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for v in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Нет секрета подписи ($v), см. docs/fork/README.md"
+              exit 1
+            fi
+          done
+          ks="$RUNNER_TEMP/tethered-release.jks"
+          base64 -d <<< "$KEYSTORE_BASE64" > "$ks"
+          {
+            echo "storeFile=$ks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=${KEY_PASSWORD:-$STORE_PASSWORD}"
+          } > android/key.properties
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Номер сборки растёт с каждым запуском — новая ставится поверх старой.
+      - name: flutter build apk
+        id: build
+        run: |
+          set -euo pipefail
+          base=$(sed -n 's/^version: .*+\([0-9]*\)$/\1/p' pubspec.yaml)
+          name=$(sed -n 's/^version: \([^+]*\)+.*$/\1/p' pubspec.yaml)
+          code=$((base + ${{ github.run_number }}))
+          flutter build apk --release --no-tree-shake-icons \
+            --build-number="$code" \
+            --dart-define-from-file=env/release.local.json
+          out="tethered-$name-$code.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk "$out"
+          echo "apk=$out" >> "$GITHUB_OUTPUT"
+          echo "tag=tethered-v$name-$code" >> "$GITHUB_OUTPUT"
+
+      - name: проверка APK
+        env:
+          PB_URL: ${{ vars.TETHERED_URL }}
+          SITE_URL: ${{ vars.TETHERED_SITE_URL }}
+          APK: ${{ steps.build.outputs.apk }}
+        run: |
+          set -euo pipefail
+          tools=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          badging=$("$tools/aapt2" dump badging "$APK")
+          grep -q "package: name='io.github.m0nstrum.tethered'" <<< "$badging"
+          host=$(sed -E 's#^https?://([^/:]+).*#\1#' <<< "${SITE_URL:-$PB_URL}")
+          manifest=$("$tools/aapt2" dump xmltree --file AndroidManifest.xml "$APK")
+          grep -qF "\"$host\"" <<< "$manifest"
+          # Подписан боевым ключом, а не debug.
+          certs=$("$tools/apksigner" verify --print-certs "$APK")
+          if grep -q 'CN=Android Debug' <<< "$certs"; then
+            echo "::error::APK подписан debug-ключом" >&2
+            exit 1
+          fi
+          grep 'SHA-256' <<< "$certs"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.tag }}
+          path: ${{ steps.build.outputs.apk }}
+          retention-days: 30
+
+      - name: GitHub Release
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK: ${{ steps.build.outputs.apk }}
+          TAG: ${{ steps.build.outputs.tag }}
+        run: >-
+          gh release create "$TAG" "$APK"
+          --target "$GITHUB_SHA" --title "$TAG" --notes "Сборка $GITHUB_SHA"
+
+      - name: убрать ключ
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/tethered-release.jks"

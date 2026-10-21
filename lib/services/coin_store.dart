@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/catalog_price.dart';
-import 'iap_service.dart';
-import 'rustore_iap_service.dart';
 
 /// Описание пака коинов, продаваемого через магазин.
 class CoinPack {
@@ -159,7 +157,9 @@ abstract class CoinStore extends ChangeNotifier {
 /// Магазин текущей сборки. Переключается флагом сборки:
 ///   flutter build apk --dart-define=STORE=rustore
 /// По умолчанию (Google Play / App Store) — `play`.
-const String kStore = String.fromEnvironment('STORE', defaultValue: 'play');
+// fork: по умолчанию «fork» — ни Play, ни сайт апстрима (у `github` включены
+// донаты автору). Тесты апстрима идут с STORE=play из env/test.json.
+const String kStore = String.fromEnvironment('STORE', defaultValue: 'fork');
 
 /// Заведены ли ПАКИ МОНЕТ этой сборки в магазине. Только Google Play: в App
 /// Store продуктов монет нет, у RuStore биллинг не работает, в sideload платит
@@ -199,19 +199,9 @@ const bool kDonationsEnabled = kStore == 'github' || kStore == 'rustore';
 /// а App Review сканирует бинарник и отклоняет версию по 2.1(b) —
 /// «products … could not be found in the submitted binary». Список товаров
 /// собирает [IapService], и на iPhone он состоит из одного Плюса.
-CoinStore createCoinStore() {
-  if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return kPlusInStore ? IapService() : _DisabledCoinStore();
-  }
-  // RuStore тоже получает заглушку: их биллинг не работает, монеты там не
-  // продаются, а Togetherly+ покупается через lava.top. Поднимать
-  // `flutter_rustore_billing` ради пустого списка товаров незачем — реализация
-  // (`rustore_iap_service.dart`) остаётся на случай, когда биллинг заработает.
-  return switch (kStore) {
-    'play' => IapService(),
-    _ => _DisabledCoinStore(),
-  };
-}
+// fork: покупок нет (решение 1) — магазин всегда заглушка, биллинга Google
+// Play и RuStore в сборке нет вовсе.
+CoinStore createCoinStore() => _DisabledCoinStore();
 
 CoinStore? _shared;
 

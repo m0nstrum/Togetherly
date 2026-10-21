@@ -1,0 +1,37 @@
+warning • A value for optional parameter 'color' isn't ever given. Try removing the unused parameter • lib/screens/mascot_gallery_screen.dart • unused_element_parameter
+warning • Argument 'codePoint' must be a constant. Try replacing the argument with a constant • lib/models/symbol_catalog.dart • non_const_argument_for_const_parameter
+warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/canvas_storage_service.dart • unawaited_return_in_try_block
+warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/canvas_storage_service.dart • unawaited_return_in_try_block
+warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/pb_data_service.dart • unawaited_return_in_try_block
+warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/pb_data_service.dart • unawaited_return_in_try_block
+warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/pb_data_service.dart • unawaited_return_in_try_block
+warning • The declaration '_ActionTile' isn't referenced. Try removing the declaration of '_ActionTile' • lib/screens/mascot_gallery_screen.dart • unused_element
+warning • The declaration '_VoiceLockTarget' isn't referenced. Try removing the declaration of '_VoiceLockTarget' • lib/screens/chat_screen.dart • unused_element
+warning • The declaration '_actionTile' isn't referenced. Try removing the declaration of '_actionTile' • lib/screens/connect_partner_screen.dart • unused_element
+warning • The declaration '_avatarFallback' isn't referenced. Try removing the declaration of '_avatarFallback' • lib/screens/connect_partner_screen.dart • unused_element
+warning • The declaration '_buildChatButton' isn't referenced. Try removing the declaration of '_buildChatButton' • lib/screens/connect_partner_screen.dart • unused_element
+warning • The declaration '_buildHero' isn't referenced. Try removing the declaration of '_buildHero' • lib/screens/memory_photo_form_screen.dart • unused_element
+warning • The declaration '_buildJoinAnotherGroupCard' isn't referenced. Try removing the declaration of '_buildJoinAnotherGroupCard' • lib/screens/connect_partner_screen.dart • unused_element
+warning • The declaration '_buildSheet' isn't referenced. Try removing the declaration of '_buildSheet' • lib/screens/memory_photo_form_screen.dart • unused_element
+warning • The declaration '_glassButton' isn't referenced. Try removing the declaration of '_glassButton' • lib/screens/memory_photo_form_screen.dart • unused_element
+warning • The declaration '_glassPill' isn't referenced. Try removing the declaration of '_glassPill' • lib/screens/memory_photo_form_screen.dart • unused_element
+warning • The declaration '_membersCard' isn't referenced. Try removing the declaration of '_membersCard' • lib/screens/connect_partner_screen.dart • unused_element
+warning • The declaration '_themedCard' isn't referenced. Try removing the declaration of '_themedCard' • lib/screens/connect_partner_screen.dart • unused_element
+warning • The declaration '_vesselDaysFor' isn't referenced. Try removing the declaration of '_vesselDaysFor' • lib/screens/mood_calendar_screen.dart • unused_element
+warning • The declaration '_viewerPill' isn't referenced. Try removing the declaration of '_viewerPill' • lib/screens/memory_lane/gallery.dart • unused_element
+warning • The declaration 'pumpEntry' isn't referenced. Try removing the declaration of 'pumpEntry' • test/widgets/pin_entry_confirm_test.dart • unused_element
+warning • The value of the field '_rotation' isn't used. Try removing the field, or using it • lib/utils/canvas_pinch.dart • unused_field
+warning • The value of the field '_userLat' isn't used. Try removing the field, or using it • lib/screens/home_screen.dart • unused_field
+warning • The value of the field '_userLng' isn't used. Try removing the field, or using it • lib/screens/home_screen.dart • unused_field
+warning • The value of the local variable 'messenger' isn't used. Try removing the variable or using it • lib/screens/draw_screen.dart • unused_local_variable
+warning • Unnecessary cast. Try removing the cast • lib/screens/vessel_story_screen.dart • unnecessary_cast
+warning • Unused import: 'dart:io'. Try removing the import directive • lib/services/export_service.dart • unused_import
+warning • Unused import: 'dart:typed_data'. Try removing the import directive • test/widgets/petal_dial_rotation_test.dart • unused_import
+warning • Unused import: 'dart:ui'. Try removing the import directive • test/widgets/petal_dial_rotation_test.dart • unused_import
+warning • Unused import: 'package:love_app/theme/app_theme.dart'. Try removing the import directive • test/goldens/add_memory_sheet_preview.dart • unused_import
+warning • Unused import: 'package:love_app/theme/app_theme.dart'. Try removing the import directive • test/goldens/de_layout_test.dart • unused_import
+warning • Unused import: 'package:love_app/theme/app_theme.dart'. Try removing the import directive • test/goldens/mood_year_grid_preview.dart • unused_import
+warning • Unused import: 'package:love_app/theme/app_theme.dart'. Try removing the import directive • test/goldens/plus_screen_review_shot.dart • unused_import
+warning • Unused import: 'package:love_app/theme/app_theme.dart'. Try removing the import directive • test/goldens/settings_sections_preview.dart • unused_import
+warning • Unused import: 'package:love_app/theme/app_theme.dart'. Try removing the import directive • test/widgets/plus_promo_theme_test.dart • unused_import
+warning • Unused import: 'package:love_app/theme/app_theme.dart'. Try removing the import directive • test/widgets/timer_sheet_buttons_test.dart • unused_import

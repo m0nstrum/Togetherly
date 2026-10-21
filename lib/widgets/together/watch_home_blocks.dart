@@ -605,12 +605,19 @@ class WatchComputerTile extends StatelessWidget {
 /// `IntrinsicHeight`, а ширину под заголовки считает [LayoutBuilder] снаружи
 /// него — внутри он запрещён.
 class WatchBento extends StatelessWidget {
-  const WatchBento({super.key, this.reels, required this.games, required this.computer});
+  const WatchBento({super.key, this.reels, this.games, required this.computer}); // fork: games необязателен
 
   /// null — ленты на этом телефоне нет.
   final Widget Function(double titleWidth)? reels;
-  final Widget Function(double titleWidth) games;
+  /// null — игр нет (fork: пустой GAMES_URL).
+  final Widget Function(double titleWidth)? games;
   final Widget Function(double titleWidth) computer;
+
+  /// fork: игры и компьютер рядом; без игр компьютер на всю ширину.
+  List<Widget> _gamesAndComputer(double title) => [
+        if (games != null) ...[Expanded(child: games!(title)), const SizedBox(width: _gap)],
+        Expanded(child: computer(title)),
+      ];
 
   static const double _gap = 8;
   static const double _pad = 16;
@@ -635,11 +642,7 @@ class WatchBento extends StatelessWidget {
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: games(title)),
-                    const SizedBox(width: _gap),
-                    Expanded(child: computer(title)),
-                  ],
+                  children: _gamesAndComputer(title), // fork
                 ),
               ),
             ],
@@ -650,7 +653,7 @@ class WatchBento extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: reelsTile == null
-                ? [Expanded(child: games(title)), const SizedBox(width: _gap), Expanded(child: computer(title))]
+                ? _gamesAndComputer(title) // fork
                 : [
                     Expanded(child: reelsTile),
                     const SizedBox(width: _gap),
@@ -658,9 +661,9 @@ class WatchBento extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(child: games(title)),
-                          const SizedBox(height: _gap),
-                          computer(title),
+                          // fork: без игр колонку целиком занимает компьютер.
+                          if (games != null) ...[Expanded(child: games!(title)), const SizedBox(height: _gap)],
+                          if (games != null) computer(title) else Expanded(child: computer(title)),
                         ],
                       ),
                     ),

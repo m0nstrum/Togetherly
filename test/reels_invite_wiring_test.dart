@@ -9,7 +9,7 @@ void main() {
   final dart = File('lib/services/reels/reels_invite.dart').readAsStringSync();
   final kotlin = File('android/app/src/main/kotlin/com/togetherly/love/ReelsInviteBridge.kt').readAsStringSync();
   final activity = File('android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt').readAsStringSync();
-  final fcm = File('android/app/src/main/kotlin/com/togetherly/love/FcmService.kt').readAsStringSync();
+  // fork: FcmService.kt удалён — FCM в форке нет (TOUCHPOINTS.md).
   final swift = File('ios/Runner/AppDelegate.swift').readAsStringSync();
   final hook = File('pocketbase/pb_hooks/reels_invite.pb.js').readAsStringSync();
 
@@ -45,7 +45,6 @@ void main() {
     expect(activity.contains('ReelsInviteBridge.attach'), isTrue);
     expect(activity.contains('ReelsInviteBridge.fromIntent(intent, warm = false)'), isTrue);
     expect(activity.contains('ReelsInviteBridge.fromIntent(intent, warm = true)'), isTrue);
-    expect(fcm.contains('ReelsInviteBridge.arrived'), isTrue);
   });
 
   test('iPhone поднимает канал вместе с движком', () {

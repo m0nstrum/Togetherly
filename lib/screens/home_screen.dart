@@ -162,6 +162,8 @@ import '../widgets/common/coin_image.dart';
 import '../widgets/season/season_backdrop_layer.dart';
 import '../widgets/theme/theme_pattern_layer.dart';
 import '../widgets/unfold/unfold_route.dart';
+import '../fork/flags.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 
 class HomeScreen extends StatefulWidget {
@@ -1357,6 +1359,8 @@ class _HomeScreenState extends State<HomeScreen> {
         partnerUid: partnerUid,
         partnerName: _pairData.partnerDisplayName,
       );
+      // fork: ключи E2E пары — только в главном изоляте (lib/fork/e2e).
+      unawaited(ForkE2E.attach(_pairData.pairId, myUid));
       // (2) Android: вдобавок foreground-сервис — чтобы доставка пережила
       // сворачивание/выгрузку приложения. Уведомления дедуплицируются по
       // детерминированному id, поэтому двойного баннера не будет.
@@ -1373,6 +1377,7 @@ class _HomeScreenState extends State<HomeScreen> {
         unawaited(WidgetBackgroundRefreshService.instance.ensureScheduled());
       }
     } else {
+      unawaited(ForkE2E.detach()); // fork
       PbPushService().stop();
       unawaited(PushBackgroundService().stop());
       unawaited(WidgetBackgroundRefreshService.instance.cancel());
@@ -1998,7 +2003,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             onCalendar: _openMoodCalendar,
                             onPost: _postPhoto,
                             onPostHold: _postSnap,
-                            onWallet: _openWallet,
+                            // fork: Wallet — отдельный продукт автора апстрима.
+                            onWallet: ForkFlags.hideUpstreamChannels ? null : _openWallet,
                             // С Плюсом лишние кнопки ряда можно спрятать в
                             // настройках, раздел «Главный экран».
                             hidden: HomeLayoutService.instance.current

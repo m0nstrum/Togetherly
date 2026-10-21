@@ -10,6 +10,7 @@ import '../services/pocketbase_service.dart';
 import '../services/offline/offline_reset.dart';
 import 'connection.dart';
 import 'waiting_cancel.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork
 
 /// Индекс активной связи, приведённый к границам списка.
 ///
@@ -188,6 +189,7 @@ class ConnectionsManager extends ChangeNotifier {
       lastAcceptMessage = 'Сервер не вернул пару — попробуйте ещё раз';
       return false;
     }
+    unawaited(ForkE2E.accepted(code, pairId)); // fork: E2E.md §6.2
 
     // Already have this group? (discovery listener might have picked it up)
     final existingConn = _connections.cast<Connection?>().firstWhere(

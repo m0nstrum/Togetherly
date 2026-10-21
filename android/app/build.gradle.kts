@@ -1,13 +1,42 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.net.URI // fork
+import java.util.Base64 // fork
 
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")
+    // fork: com.google.gms.google-services убран — Firebase в форке нет.
 }
+
+// ── fork: Tethered ── (docs/fork/TOUCHPOINTS.md)
+// Своя идентичность, чтобы форк ставился рядом с приложением апстрима и не
+// перехватывал его ссылки. namespace (пакет Kotlin-кода) не меняем: это
+// внутреннее имя, и смена потянула бы перенос всех исходников.
+val forkApplicationId = "io.github.m0nstrum.tethered"
+// Хост App Links для приглашений — из тех же --dart-define, что у Dart
+// (lib/fork/config/endpoints.dart): SITE_URL, иначе PB_URL. Flutter передаёт
+// их в Gradle свойством dart-defines (base64 "KEY=VALUE" через запятую).
+val forkDartDefines: Map<String, String> =
+    (project.findProperty("dart-defines") as String?).orEmpty()
+        .split(",").filter { it.isNotBlank() }
+        .map { String(Base64.getDecoder().decode(it)) }
+        .filter { "=" in it }
+        .associate { it.substringBefore("=") to it.substringAfter("=") }
+// .invalid (RFC 2606) не резолвится никогда: сборка без адреса сервера не
+// перехватывает ничьи ссылки (а стартовать её не даст Endpoints).
+val forkInviteHost: String = listOf("SITE_URL", "PB_URL")
+    .mapNotNull { forkDartDefines[it]?.takeIf { v -> v.isNotBlank() } }
+    .firstOrNull()
+    ?.let { URI(it).host }
+    ?: "unconfigured.invalid"
+val forkManifestPlaceholders = mapOf(
+    "appLabel" to "Tethered",
+    "appScheme" to "tethered",
+    "inviteHost" to forkInviteHost,
+)
 
 val keyPropertiesFile = rootProject.file("key.properties")
 val keyProperties = Properties()
@@ -62,7 +91,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.togetherly.love"
+        applicationId = forkApplicationId // fork
+        manifestPlaceholders += forkManifestPlaceholders // fork
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -91,6 +121,12 @@ android {
     }
 }
 
+// fork: ресурсы форка (иконка) перекрывают одноимённые из src/main.
+// Build-type source set стоит выше main, поэтому дубликатов не будет, а PNG
+// апстрима остаются нетронутыми. Генерирует их tool/fork/gen_icon.py.
+android.sourceSets.matching { it.name in setOf("debug", "profile", "release") }
+    .configureEach { res.srcDir("src/fork/res") }
+
 flutter {
     source = "../.."
 }
@@ -101,11 +137,8 @@ dependencies {
     // Пуши. Свой foreground-сервис держал сокет и стоил строки в шторке у
     // каждого плюс шести часов в сутки лимита Android 14 на dataSync — с FCM
     // сокет держит система. Версии тянет BOM, руками их не прописывать.
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-messaging")
-    // Проверка «есть ли на телефоне сервисы Google»: где их нет, остаётся
-    // прежний foreground-сервис.
-    implementation("com.google.android.gms:play-services-base:18.5.0")
+    // fork: firebase-messaging и play-services-base убраны — push только через
+    // Centrifugo WS в foreground-сервисе, канал love_app/fcm отвечает «нет».
 
     // EXIF в снимки, сохраняемые в галерею (GallerySaver.kt): дата и место
     // воспоминания. Встроенный в систему ExifInterface на старых Android WebP

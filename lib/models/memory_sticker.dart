@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../fork/config/endpoints.dart'; // fork
 
 /// Наклейка на пине: картинка из набора настроений поверх главного блока
 /// записи — фото, листа заметки или обложки.
@@ -124,11 +125,11 @@ bool stickerImageAllowed(String path) {
   if (path.isEmpty || path.length > _kMaxImageLength) return false;
   if (path.contains('..')) return false;
   if (path.startsWith('assets/images/')) return true;
-  const hosts = [
-    'https://togetherly.day/api/files/catalog_items/',
-    'https://togetherly.duckdns.org/api/files/catalog_items/',
-    'https://togetherly.day/api/files/custom_moods/',
-    'https://togetherly.duckdns.org/api/files/custom_moods/',
+  // fork: свои хосты из конфига (lib/fork/config/endpoints.dart)
+  final hosts = [
+    for (final h in Endpoints.current.ownHosts)
+      for (final c in const ['catalog_items', 'custom_moods'])
+        'https://$h/api/files/$c/',
   ];
   return hosts.any(path.startsWith);
 }

@@ -73,6 +73,7 @@ import '../utils/couple_days.dart';
 import 'gifts/partner_profile_screen.dart';
 import '../widgets/common/scaled_asset.dart';
 import '../widgets/common/coin_image.dart';
+import '../fork/e2e/ui.dart'; // fork
 
 /// Цена смены фона чата в монетах (зеркало CONSUMABLE_PRICES на сервере).
 const int _kChatBgPrice = 20;
@@ -2663,6 +2664,12 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           Column(
             children: [
+              // fork: состояние ключей E2E пары (docs/fork/E2E.md §6.3).
+              ForkE2EBanner(
+                groupId: _groupId,
+                partnerUid: widget.pairData.partnerUid,
+                partnerName: widget.pairData.partnerDisplayName,
+              ),
               Expanded(
                 // Во время съёмки лента не рисуется: сверху всё равно стоит
                 // непрозрачный экран камеры, а список сообщений продолжал бы

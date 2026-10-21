@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Bugsink (self-hosted краш-репортинг, замена Crashlytics) пока обслуживается по
-  HTTP: PocketBase занимает 80/443 на домене, Bugsink висит на 77.91.95.34:8000.
-  На Android 9+ (API 28) cleartext-трафик ЗАПРЕЩЁН по умолчанию → POST'ы Sentry в
-  Bugsink молча отваливались, и баги не доходили до панели.
-
-  Разрешаем cleartext ТОЛЬКО для этого IP. Весь остальной трафик (PocketBase
-  HTTPS, медиа, OAuth) остаётся HTTPS-only — глобально cleartext НЕ открываем.
-  TODO: перевести Bugsink на HTTPS-сабдомен через reverse-proxy и удалить это.
+  fork: cleartext-исключение для Bugsink апстрима (IP 77.91.95.34) убрано.
+  Свой Bugsink форка ходит по HTTPS (SENTRY_DSN), весь трафик HTTPS-only.
 -->
 <network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <!--
+      fork (S9): локальный прокси расшифровки медиа (lib/fork/e2e/media_proxy.dart)
+      слушает только 127.0.0.1; плеер видео (ExoPlayer) ходит к нему по http.
+    -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">77.91.95.34</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
     </domain-config>
 </network-security-config>

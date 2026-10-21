@@ -3,11 +3,14 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'centrifugo_service.dart';
 import 'widget_owner.dart';
 import 'pb_data_service.dart';
+import '../fork/config/endpoints.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/http_gateway.dart'; // fork
+import '../fork/secure_auth_store.dart'; // fork
 
 /// Ядро клиента PocketBase — единая точка доступа к нашему self-hosted бэкенду
 /// на VPS (миграция Firebase→PocketBase, Этап 6).
@@ -23,10 +26,7 @@ class PocketBaseService {
   /// Базовый URL PocketBase (HTTPS, Let's Encrypt; домен держит DuckDNS).
   /// Переопределяется под свой бэкенд: `--dart-define=PB_URL=https://...`
   /// По умолчанию — прод-инстанс автора.
-  static const String baseUrl = String.fromEnvironment(
-    'PB_URL',
-    defaultValue: 'https://togetherly.day',
-  );
+  static const String baseUrl = Endpoints.pbUrl; // fork: без дефолта на апстрим
 
   /// Ключ хранения сериализованной auth-сессии.
   static const String _authPrefsKey = 'pb_auth';
@@ -47,23 +47,17 @@ class PocketBaseService {
   /// Идемпотентно — повторные вызовы игнорируются.
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_authPrefsKey);
+    // fork: сессия в Keystore, а не в SharedPreferences (lib/fork/secure_auth_store.dart).
+    final authStore = await ForkSecureAuthStore.open(_authPrefsKey);
 
-    final authStore = AsyncAuthStore(
-      initial: stored,
-      save: (String data) async {
-        final p = await SharedPreferences.getInstance();
-        await p.setString(_authPrefsKey, data);
-      },
-      clear: () async {
-        final p = await SharedPreferences.getInstance();
-        await p.remove(_authPrefsKey);
-      },
+    _pb = PocketBase(
+      baseUrl,
+      authStore: authStore,
+      httpClientFactory: ForkE2E.httpClient, // fork: шифрование полей (S9)
     );
-
-    _pb = PocketBase(baseUrl, authStore: authStore);
     _initialized = true;
+    ForkE2E.preload(); // fork
+    ForkHttpGateway.install(); // fork: сторонние сайты — через свой сервер
     debugPrint('PocketBaseService: init, авторизован=$isLoggedIn');
   }
 
@@ -102,9 +96,9 @@ class PocketBaseService {
     try {
       final parts = token.split('.');
       if (parts.length != 3) return null;
-      final payload = jsonDecode(
-        utf8.decode(base64Decode(base64.normalize(parts[1]))),
-      ) as Map<String, dynamic>;
+      final payload =
+          jsonDecode(utf8.decode(base64Decode(base64.normalize(parts[1]))))
+              as Map<String, dynamic>;
       final id = payload['id'];
       return (id is String && id.isNotEmpty) ? id : null;
     } catch (_) {
@@ -153,6 +147,8 @@ class PocketBaseService {
     // «печатает»), принадлежали прошлому аккаунту — забываем их вместе с сессией.
     try {
       PbDataService().forgetCachedRecordIds();
-    } catch (_) { /* сервис мог быть ещё не создан */ }
+    } catch (_) {
+      /* сервис мог быть ещё не создан */
+    }
   }
 }

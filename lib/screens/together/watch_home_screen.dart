@@ -405,7 +405,8 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
                 titleWidth: w,
                 seed: _seed,
               ),
-      games: (w) => WatchGamesTile(title: s.gamesForTwo, text: s.watchGamesTileHint, onTap: _openGames, titleWidth: w, seed: _seed),
+      // fork: пустой GAMES_URL — плитки игр нет.
+      games: WatchRoomService.gamesUrl.isEmpty ? null : (w) => WatchGamesTile(title: s.gamesForTwo, text: s.watchGamesTileHint, onTap: _openGames, titleWidth: w, seed: _seed),
       computer: (w) => WatchComputerTile(
         titleWidth: w,
         code: _room,

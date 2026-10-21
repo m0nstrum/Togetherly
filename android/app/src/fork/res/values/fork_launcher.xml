@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Сгенерировано tool/fork/gen_icon.py. Фон адаптивной иконки форка. -->
+<resources>
+    <color name="ic_launcher_background">#182038</color>
+</resources>

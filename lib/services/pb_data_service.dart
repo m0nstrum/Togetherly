@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../fork/meta_direct.dart'; // fork
 import '../models/miss_you_event.dart';
 import '../models/invite_code_state.dart';
 import '../models/timer_sync.dart';
@@ -772,11 +773,9 @@ class PbDataService {
     } catch (e) {
       debugPrint('PbData.iceServers failed: $e');
     }
-    return [
-      {
-        'urls': ['stun:stun.l.google.com:19302'],
-      }
-    ];
+    // fork: без чужих STUN (решение 4) — сервер не ответил, значит только
+    // прямое соединение в одной сети.
+    return [];
   }
 
   /// Карточка товара по ссылке: название, картинка, магазин, цена.
@@ -784,6 +783,7 @@ class PbDataService {
   /// заполнить руками, а не покажет пустоту после «загрузки».
   Future<Map<String, dynamic>?> linkPreview(String url) async {
     if (url.trim().isEmpty) return null;
+    if (ForkMetaDirect.enabled.value) return ForkLinkPreview.fetch(url); // fork
     try {
       final res = await _pb
           .send('/api/link/preview?url=${Uri.encodeQueryComponent(url.trim())}')

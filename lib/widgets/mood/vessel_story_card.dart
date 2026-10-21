@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/mood_vessel.dart';
 import '../../theme/fonts.dart';
 import 'mood_vessel.dart';
+import '../../fork/config/endpoints.dart'; // fork
 
 /// Карточка сосуда для сторис: вертикаль 9:16, готовая уйти в соцсети.
 ///
@@ -98,7 +99,7 @@ class VesselStoryCard extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Text(
-          'togetherly.day',
+          Endpoints.current.siteHost, // fork
           style: AppFonts.onest(size: 10, weight: 500, color: _muted),
         ),
       ],
