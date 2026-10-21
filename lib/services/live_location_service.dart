@@ -15,6 +15,7 @@ import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import 'pocketbase_service.dart';
 import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/location_consent.dart'; // fork
 
 const String _kSharingEnabledKey = 'live_location_sharing_enabled';
 
@@ -179,11 +180,21 @@ class LiveLocationService with WidgetsBindingObserver {
         return false;
       }
       await _persist(true);
+      await LocationConsent.remember(_uid, partnerUid); // fork: согласие — этому партнёру (UX G1)
       await startSharing(pairId, partnerUid: partnerUid);
       return true;
     } else {
       await _persist(false);
+      await LocationConsent.remember(_uid, ''); // fork
+      final wasActive = _activePairId; // fork (UX G2)
       await stopSharing(removePoint: true);
+      // fork (UX G2): стрим мог и не стартовать (фон, нет партнёра) — точку
+      // прошлого запуска всё равно убираем.
+      final channel = _channel(pairId, partnerUid);
+      if (wasActive == null && pairId.isNotEmpty && partnerUid.isNotEmpty && _uid.isNotEmpty) {
+        await _data.clearLivePoint(channel, _uid);
+        await _announceStop(channel);
+      }
       return false;
     }
   }
@@ -210,6 +221,13 @@ class LiveLocationService with WidgetsBindingObserver {
     if (partnerUid.isEmpty) {
       await stopSharing(removePoint: true);
       debugPrint('LiveLocationService: партнёра нет, шеринг не запускаем');
+      return;
+    }
+    // fork: согласие давалось другому партнёру или под другим входом (UX G1).
+    if (!await LocationConsent.allows(_uid, partnerUid)) {
+      await _persist(false);
+      await stopSharing(removePoint: true);
+      debugPrint('LiveLocationService: согласие было не этому партнёру — выключено');
       return;
     }
     // Android 12+ запрещает старт foreground-сервиса из фона, а geolocator
@@ -392,6 +410,23 @@ class LiveLocationService with WidgetsBindingObserver {
     if (removePoint && pairId != null && _uid.isNotEmpty) {
       // pairId здесь — канал пары (_activePairId).
       await _data.clearLivePoint(pairId, _uid);
+      await _announceStop(pairId); // fork (UX G2)
+    }
+  }
+
+  // fork (UX G2): партнёр держит последнюю точку из канала в памяти и без
+  // этого сигнала видел бы её «живой» и после «Выключить».
+  Future<void> _announceStop(String channel) async {
+    final sealed = ForkE2E.sealPoint(channel, {
+      't': 'stop',
+      'uid': _uid,
+      'updatedAt': DateTime.now().millisecondsSinceEpoch,
+    });
+    if (sealed == null) return;
+    try {
+      await CentrifugoService().publish('loc:$channel', sealed);
+    } catch (e) {
+      debugPrint('LiveLocationService: сигнал остановки не ушёл: $e');
     }
   }
 
@@ -448,14 +483,23 @@ class LiveLocationService with WidgetsBindingObserver {
             .handleError((e) => debugPrint('live location point error: $e'))
             .listen((rec) {
           final v = rec?.data['data'];
+          final had = fromDb != null; // fork (UX G2)
           fromDb = v is Map ? LivePoint.fromMap(v) : null;
+          if (had && fromDb == null) fromChannel = null; // fork: точку убрали — показ выключен
           emit();
         });
 
         unsub = await CentrifugoService().subscribeRaw('loc:$channel', (raw) {
           final data = ForkE2E.openPoint(channel, raw); // fork
-          if (data == null || data['t'] != 'point') return;
+          if (data == null) return;
           if ((data['uid'] ?? '').toString() != uid) return;
+          if (data['t'] == 'stop') { // fork (UX G2): показ выключен
+            fromChannel = null;
+            fromDb = null;
+            emit();
+            return;
+          }
+          if (data['t'] != 'point') return;
           fromChannel = LivePoint.fromMap(data);
           emit();
         });
@@ -495,7 +539,8 @@ class LiveLocationService with WidgetsBindingObserver {
           notificationTitle: LocaleService.current.liveLocationServiceTitle,
           notificationText: LocaleService.current.liveLocationServiceText,
           enableWakeLock: tune.wakeLock,
-          setOngoing: false,
+          // fork (UX G12): смахнул — думает, что выключил, а точка уходит.
+          setOngoing: true,
           // Та же монохромная иконка, что у всех уведомлений приложения
           // (FCM/локальные). Без неё geolocator ставит свой дефолт — отсюда
           // была «не та» иконка на уведомлении.

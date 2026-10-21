@@ -148,3 +148,4 @@
 - Воркфлоу апстрима в `.github/workflows/`: не правим, лишние выключаем в
   настройках Actions (см. [README.md](README.md)).
 | `lib/screens/login_screen.dart` | UX A1 | В `_signInAllowingTypo` при `ForkFlags.strictLogin` — `rethrow` до перебора «опечаточных» доменов; импорт `fork/flags.dart`. | Повторить строку с `rethrow` и импорт. |
+| `lib/services/live_location_service.dart` (UX) | UX G1, G2, G12 | Согласие на показ привязано к партнёру и входу (`LocationConsent` из `lib/fork/location_consent.dart`: `remember` в `setSharingEnabled`, `allows` в `startSharing`); «Выключить» удаляет точку и шлёт в канал шифрованный `{'t': 'stop'}` (`_announceStop`), даже если стрим не стартовал; `_watchPoint` по `stop` или удалению записи сбрасывает точку; уведомление FGS `setOngoing: true`. | Повторить строки с `// fork (UX G…)`. |
