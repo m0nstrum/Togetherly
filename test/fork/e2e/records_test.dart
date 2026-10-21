@@ -234,7 +234,7 @@ void main() {
         plaintextFilter('cycle_entries'),
         contains("(kind != '' && kind !~ 'e2e1.')"),
       );
-      expect(plaintextFilter('chat_messages'), contains('reactions ~ \'":\''));
+      expect(plaintextFilter('chat_messages'), contains("reactions != '[]'"));
     });
   });
 
@@ -470,6 +470,140 @@ void main() {
     });
   });
 
+  group('находки ревью', () {
+    test(
+      'правка записи пары без group_id шифруется (пара — сама запись)',
+      () async {
+        final wire = <String>[];
+        final pb = PocketBase(
+          'http://pb',
+          httpClientFactory: () => E2EHttpClient(
+            MockClient((req) async {
+              wire.add(req.body);
+              return _json('{"id":"$_gid"}');
+            }),
+            codec: () async => codec,
+            context: (_, _, _) async => null,
+          ),
+        );
+        await pb
+            .collection('groups')
+            .update(
+              _gid,
+              body: {
+                'timers': [
+                  {'title': 'годовщина'},
+                ],
+              },
+            );
+        expect(wire.single, isNot(contains('годовщина')));
+        expect(jsonDecode(wire.single)['timers'], startsWith(e2eFieldPrefix));
+      },
+    );
+
+    test('новая дата в колонке новее старой в enc; null стирает дату', () {
+      final enc = codec.encode('groups', _gid, _gid, {
+        'first_kiss_date': '2020-01-01',
+      });
+      // Клиент без ключа записал новую дату открыто, enc остался старым.
+      final dec = codec.decode('groups', {
+        'id': _gid,
+        ...enc,
+        'first_kiss_date': '2021-05-05',
+      });
+      expect(dec['first_kiss_date'], '2021-05-05');
+      final cleared = codec.encode('groups', _gid, _gid, {
+        'first_kiss_date': null,
+      });
+      expect(cleared[e2eMovedField], startsWith(e2eFieldPrefix));
+      final back = codec.decode('groups', {'id': _gid, ...cleared});
+      expect(back['first_kiss_date'], isNull);
+    });
+
+    test('запись с файлом в шифруемую коллекцию — поля шифром', () async {
+      final sent = <String>[];
+      final pb = PocketBase(
+        'http://pb',
+        httpClientFactory: () => E2EHttpClient(
+          MockClient.streaming((req, body) async {
+            sent.add(utf8.decode(await body.toBytes(), allowMalformed: true));
+            return http.StreamedResponse(
+              Stream.value(utf8.encode('{"id":"m1"}')),
+              200,
+            );
+          }),
+          codec: () async => codec,
+          newId: () => 'moodid000000001',
+        ),
+      );
+      await pb
+          .collection('custom_moods')
+          .create(
+            body: {'group_id': _gid, 'label': 'вдохновение', 'emoji': '✨'},
+            files: [
+              http.MultipartFile.fromBytes('image', [
+                1,
+                2,
+                3,
+              ], filename: 'a.png'),
+            ],
+          );
+      expect(sent.single, isNot(contains('вдохновение')));
+      expect(sent.single, contains(e2eFieldPrefix));
+    });
+
+    test('пересохранение записи, что не открылась, не стирает шифр', () {
+      final later = PairKey(_gid, 2, c.symmetricKey());
+      final other = RecordCodec(c, _Keys()..add(later));
+      final enc = other.encode('memories', 'mem1', _gid, {
+        'data': {'type': 'photo', 'caption': 'море'},
+      });
+      final locked = codec.decode('memories', {'id': 'mem1', ...enc});
+      final lockedMap = locked[e2eLockedKey] as Map<String, dynamic>;
+      // Приложение сохраняет то, что видит: только служебные ключи.
+      final resaved = codec.restoreLocked('memories', {
+        'data': {'type': 'photo', 'isPinned': true},
+      }, lockedMap);
+      final data = resaved['data'] as Map;
+      expect(data[e2ePartialKey], (enc['data'] as Map)[e2ePartialKey]);
+      expect(data['isPinned'], isTrue);
+      keys.add(later);
+      expect(
+        (codec.decode('memories', {'id': 'mem1', ...resaved})['data']
+            as Map)['caption'],
+        'море',
+      );
+    });
+
+    test('«скучаю» без пары и автора в теле — берём их из контекста', () async {
+      final wire = <String>[];
+      final pb = PocketBase(
+        'http://pb',
+        httpClientFactory: () => E2EHttpClient(
+          MockClient((req) async {
+            wire.add(req.body);
+            return _json('{"id":"mx1"}');
+          }),
+          codec: () async => codec,
+          context: (_, _, _) async => {'group_id': _gid, 'user_uid': 'alice'},
+        ),
+      );
+      await pb
+          .collection('miss_you')
+          .update('mx1', body: {'count': 2, 'last_vibe_text': 'обнимаю'});
+      final sent = jsonDecode(wire.single) as Map<String, dynamic>;
+      expect(sent['last_vibe_text'], startsWith(e2eFieldPrefix));
+      expect(
+        codec.decode('miss_you', {
+          'group_id': _gid,
+          'user_uid': 'alice',
+          ...sent,
+        })['last_vibe_text'],
+        'обнимаю',
+      );
+    });
+  });
+
   group('HTTP-клиент', () {
     late List<http.Request> wire;
     late Map<String, Map<String, dynamic>> server;
@@ -491,7 +625,7 @@ void main() {
         return _json(jsonEncode(server[id]));
       }),
       codec: () async => withCodec ?? codec,
-      groupOf: (col, id, body) async => server[id]?['group_id'] as String?,
+      context: (col, id, body) async => server[id],
       newId: () => 'generatedid0001',
     );
 

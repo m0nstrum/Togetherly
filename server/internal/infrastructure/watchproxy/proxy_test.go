@@ -107,3 +107,33 @@ func TestProxyLooksLikeSiteForPlainRequests(t *testing.T) {
 	_ = res.Body.Close()
 	assert.Equal(t, http.StatusNotFound, res.StatusCode)
 }
+
+// Клиент молчит дольше простоя, а площадка всё это время шлёт — соединение
+// живо: простой считается по соединению, а не по стороне.
+func TestProxyKeepsOneWayStream(t *testing.T) {
+	site := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		f := w.(http.Flusher)
+		for i := 0; i < 6; i++ {
+			_, _ = w.Write([]byte("x"))
+			f.Flush()
+			time.Sleep(60 * time.Millisecond)
+		}
+	}))
+	t.Cleanup(site.Close)
+	p := proxy.New(proxy.Options{
+		Policy: watchproxy.Policy{Hosts: watchproxy.DefaultHosts},
+		Auth:   func(context.Context, string, string) bool { return true },
+		Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, network, site.Listener.Addr().String())
+		},
+		IdleTimeout: 150 * time.Millisecond,
+	})
+	srv := httptest.NewUnstartedServer(p)
+	srv.StartTLS()
+	t.Cleanup(srv.Close)
+	s := &setup{proxyURL: srv.URL}
+	body, err := s.get(t, "alice", "good", "https://www.youtube.com/")
+	require.NoError(t, err)
+	assert.Equal(t, "xxxxxx", body)
+}

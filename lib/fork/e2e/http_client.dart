@@ -16,10 +16,11 @@ import 'package:pocketbase/src/multipart_request.dart' as pb;
 import 'media_cipher.dart';
 import 'record_codec.dart';
 
-/// Пара записи, когда в теле нет `group_id`: по телу (канал геопозиции),
-/// кэшу или серверу.
-typedef GroupLookup =
-    Future<String?> Function(
+/// Что известно о записи помимо тела запроса: `group_id`, `user_uid`,
+/// `e2e_locked` — из кэша или с сервера. Для канала геопозиции пару
+/// находит по составу канала. null — ничего не известно.
+typedef ContextLookup =
+    Future<Map<String, dynamic>?> Function(
       String collection,
       String id,
       Map<String, dynamic> body,
@@ -29,15 +30,15 @@ class E2EHttpClient extends http.BaseClient {
   E2EHttpClient(
     this._inner, {
     required Future<RecordCodec?> Function() codec,
-    GroupLookup? groupOf,
+    ContextLookup? context,
     String Function()? newId,
   }) : _codec = codec,
-       _groupOf = groupOf,
+       _context = context,
        _newId = newId;
 
   final http.Client _inner;
   final Future<RecordCodec?> Function() _codec;
-  final GroupLookup? _groupOf;
+  final ContextLookup? _context;
   final String Function()? _newId;
 
   static final _path = RegExp(
@@ -65,14 +66,11 @@ class E2EHttpClient extends http.BaseClient {
     if (codec == null) return _inner.send(request);
 
     var req = request;
-    if ((request is pb.MultipartRequest || request is http.MultipartRequest) &&
-        request.method == 'POST' &&
-        col == 'media' &&
-        m.group(2) == null) {
-      req = await _encodeMedia(request, codec);
-    } else if (request is http.Request &&
-        (request.method == 'POST' || request.method == 'PATCH') &&
-        request.body.isNotEmpty) {
+    final write = request.method == 'POST' || request.method == 'PATCH';
+    if (write &&
+        (request is pb.MultipartRequest || request is http.MultipartRequest)) {
+      req = await _encodeMultipart(request, codec, col, m.group(2));
+    } else if (write && request is http.Request && request.body.isNotEmpty) {
       req = await _encodeRequest(request, codec, col, m.group(2));
     }
 
@@ -112,24 +110,50 @@ class E2EHttpClient extends http.BaseClient {
       return request;
     }
     if (decoded is! Map<String, dynamic>) return request;
+    final enc = await _encodeBody(codec, col, request.method, pathId, decoded);
+    return enc == null ? request : _copy(request, enc.body);
+  }
+
+  /// Шифрует тело записи. null — шифровать нечего или нечем (пара без ключа).
+  Future<({String id, String group, Map<String, dynamic> body})?> _encodeBody(
+    RecordCodec codec,
+    String col,
+    String method,
+    String? pathId,
+    Map<String, dynamic> decoded,
+  ) async {
+    if (!RecordCodec.covers(col) && col != 'media') return null;
     var body = decoded;
     var id = pathId ?? (body['id'] is String ? body['id'] as String : '');
-    if (id.isEmpty && request.method == 'POST') {
+    if (id.isEmpty && method == 'POST') {
       // AAD привязан к id: без него шифровать не к чему. PocketBase берёт
       // id клиента, так что даём его сами.
       final gen = _newId;
-      if (gen == null) return request;
+      if (gen == null) return null;
       id = gen();
       body = {...body, 'id': id};
     }
-    var group = body['group_id'] is String ? body['group_id'] as String : '';
-    if (group.isEmpty && _groupOf != null) {
-      group = await _groupOf(col, id, body) ?? '';
+    if (id.isEmpty) return null;
+    var group = e2eGroupOf(col, id, body) ?? '';
+    final needContext =
+        group.isEmpty ||
+        (method == 'PATCH' && RecordCodec.covers(col)) ||
+        e2eRecordKey(col, {...body, 'id': id}) == null;
+    final ctx = needContext && _context != null
+        ? await _context(col, id, body)
+        : null;
+    if (group.isEmpty) group = '${ctx?['group_id'] ?? ''}';
+    if (group.isEmpty) return null;
+    final locked = ctx?[e2eLockedKey];
+    if (locked is Map<String, dynamic>) {
+      body = codec.restoreLocked(col, body, locked);
     }
-    if (group.isEmpty) return request;
-    final enc = codec.encode(col, id, group, body);
-    if (identical(enc, body)) return request;
-    return _copy(request, enc);
+    if (!RecordCodec.covers(col)) {
+      return (id: id, group: group, body: body);
+    }
+    final enc = codec.encode(col, id, group, body, context: ctx);
+    if (identical(enc, body) && identical(body, decoded)) return null;
+    return (id: id, group: group, body: enc);
   }
 
   /// Маршруты сервера, которые сами пишут в записи то, что прислал клиент.
@@ -205,12 +229,15 @@ class E2EHttpClient extends http.BaseClient {
         ..persistentConnection = r.persistentConnection
         ..body = jsonEncode(body);
 
-  /// Файл в `media` шифруется ключом пары; id записи даём сами — от него
-  /// выводится ключ файла. PocketBase кладёт поля формы JSON-ом в
-  /// `@jsonPayload` своего `MultipartRequest`.
-  Future<http.BaseRequest> _encodeMedia(
+  /// Запись с файлами: PocketBase кладёт поля формы JSON-ом в `@jsonPayload`
+  /// своего `MultipartRequest`. Поля шифруются как обычно; файл в `media`
+  /// шифруется ключом пары (id записи даём сами — от него выводится ключ
+  /// файла). Файлы других коллекций (картинка своего настроения) — как есть.
+  Future<http.BaseRequest> _encodeMultipart(
     http.BaseRequest request,
     RecordCodec codec,
+    String col,
+    String? pathId,
   ) async {
     final Map<String, dynamic> fields;
     final List<http.MultipartFile> files;
@@ -226,43 +253,42 @@ class E2EHttpClient extends http.BaseClient {
       fields = Map<String, dynamic>.of(r.fields);
       files = r.files;
     }
-    final group = '${fields['group_id'] ?? ''}';
-    final kind = '${fields['kind'] ?? ''}';
+    final enc = await _encodeBody(codec, col, request.method, pathId, fields);
+    if (enc == null) return request;
+    var outFiles = files;
     final c = codec.crypto;
-    final key = group.isEmpty ? null : codec.keys.currentKey(group);
-    if (c == null || key == null || plainMediaKinds.contains(kind)) {
+    final key = codec.keys.currentKey(enc.group);
+    if (col == 'media' &&
+        c != null &&
+        key != null &&
+        !plainMediaKinds.contains('${fields['kind'] ?? ''}')) {
+      final cipher = MediaCipher(c);
+      outFiles = [
+        for (final f in files)
+          http.MultipartFile.fromBytes(
+            f.field,
+            cipher.encrypt(
+              await f.finalize().toBytes(),
+              key,
+              enc.id,
+              mime: mimeFromName(f.filename),
+            ),
+            filename: f.filename,
+          ),
+      ];
+    } else if (col == 'media') {
+      // Файл не шифруется — и id менять незачем.
       return request;
     }
-    var id = '${fields['id'] ?? ''}';
-    if (id.isEmpty) {
-      final gen = _newId;
-      if (gen == null) return request;
-      id = gen();
-    }
-    fields['id'] = id;
-    final cipher = MediaCipher(c);
-    final enc = <http.MultipartFile>[
-      for (final f in files)
-        http.MultipartFile.fromBytes(
-          f.field,
-          cipher.encrypt(
-            await f.finalize().toBytes(),
-            key,
-            id,
-            mime: mimeFromName(f.filename),
-          ),
-          filename: f.filename,
-        ),
-    ];
     final http.BaseRequest copy;
     if (request is pb.MultipartRequest) {
       copy = pb.MultipartRequest(request.method, request.url)
-        ..fields['@jsonPayload'] = [jsonEncode(fields)]
-        ..files.addAll(enc);
+        ..fields['@jsonPayload'] = [jsonEncode(enc.body)]
+        ..files.addAll(outFiles);
     } else {
       copy = http.MultipartRequest(request.method, request.url)
-        ..fields.addAll({for (final e in fields.entries) e.key: '${e.value}'})
-        ..files.addAll(enc);
+        ..fields.addAll({for (final e in enc.body.entries) e.key: '${e.value}'})
+        ..files.addAll(outFiles);
     }
     copy
       ..headers.addAll(request.headers)

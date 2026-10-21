@@ -60,7 +60,7 @@ abstract final class ForkWatchProxy {
           await WebViewFeature.isFeatureSupported(
             WebViewFeature.PROXY_OVERRIDE_REVERSE_BYPASS,
           );
-      if (!ok || _users == 0) return;
+      if (!ok || _users == 0 || _active != null) return;
       await ProxyController.instance().setProxyOverride(
         settings: ProxySettings(
           proxyRules: [ProxyRule(url: info.url.toString())],
@@ -69,6 +69,11 @@ abstract final class ForkWatchProxy {
         ),
       );
       _active = info;
+      // Комнату закрыли, пока включали, — снимаем сразу.
+      if (_users == 0) {
+        _active = null;
+        await ProxyController.instance().clearProxyOverride();
+      }
     } catch (e) {
       debugPrint('ForkWatchProxy: не включился — $e');
     }

@@ -185,6 +185,10 @@ class MediaProxy {
           final a = max(start - off, 0);
           final b = min(end - off + 1, plain.length);
           res.add(Uint8List.sublistView(plain, a, b));
+          // Ждём, пока плеер заберёт: сеть не обгоняет его, а файл не
+          // копится в памяти. Плеер закрыл соединение (перемотка) — flush
+          // бросит, `await for` отпустит закачку с сервера.
+          await res.flush();
           i++;
           if (i <= last) need = head.chunkRange(i).$2;
         }

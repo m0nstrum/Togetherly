@@ -67,9 +67,9 @@ void main() {
         httpClientFactory: () => E2EHttpClient(
           http.Client(),
           codec: () async => RecordCodec(c, s),
-          groupOf: (_, _, body) async {
+          context: (_, _, body) async {
             final m = pairChannelMembers(body['channel']);
-            return m == null ? pair : s.groupWith(m);
+            return {'group_id': m == null ? pair : s.groupWith(m)};
           },
           newId: newPbId,
         ),

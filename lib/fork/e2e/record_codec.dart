@@ -212,6 +212,13 @@ String? e2eRecordKey(String collection, Map<String, dynamic> rec) {
   }
 }
 
+/// Пара записи по телу запроса: у записи пары это она сама.
+String? e2eGroupOf(String collection, String id, Map<String, dynamic> body) {
+  if (collection == 'groups') return id.isEmpty ? null : id;
+  final g = body['group_id'];
+  return g is String && g.isNotEmpty ? g : null;
+}
+
 /// AAD поля: «скучаю» — одно место на обе коллекции, сервер копирует текст
 /// из запроса и в счётчик, и в историю.
 EnvelopePlace e2ePlace(String collection, String key, String field) =>
@@ -235,7 +242,9 @@ String plaintextFilter(String collection) => e2eFields[collection]!.entries
     .map(
       (e) => switch (e.value.kind) {
         SealKind.text => "(${e.key} != '' && ${e.key} !~ '$e2eFieldPrefix')",
-        SealKind.json => "${e.key} ~ '\":'",
+        SealKind.json =>
+          "(${e.key} != '' && ${e.key} != 'null' && ${e.key} != '[]' && "
+              "${e.key} != '{}' && ${e.key} !~ '$e2eFieldPrefix')",
         SealKind.mapValues => "${e.key} ~ '\":{'",
         SealKind.jsonPartial =>
           "(${e.key} ~ '\":' && ${e.key} !~ '$e2eFieldPrefix')",
@@ -332,13 +341,18 @@ class RecordCodec {
     String collection,
     String recordId,
     String groupId,
-    Map<String, dynamic> body,
-  ) {
+    Map<String, dynamic> body, {
+    Map<String, dynamic>? context,
+  }) {
     final fields = e2eFields[collection];
     final key = _c == null ? null : keys.currentKey(groupId);
-    // Для «скучаю» шифр привязан к паре и автору; правка без них (запасной
-    // путь без маршрута сервера) уходит как есть.
-    final recKey = e2eRecordKey(collection, {...body, 'id': recordId});
+    // Для «скучаю» шифр привязан к паре и автору: их берём из тела или из
+    // [context] (запись в кэше или на сервере).
+    final recKey = e2eRecordKey(collection, {
+      ...?context,
+      ...body,
+      'id': recordId,
+    });
     if (fields == null || key == null || recKey == null || recKey.isEmpty) {
       return body;
     }
@@ -346,13 +360,17 @@ class RecordCodec {
     final moved = <String, dynamic>{};
     for (final e in fields.entries) {
       if (e.value.kind == SealKind.moved) {
-        final v = out[e.key];
-        if (v != null &&
-            v != e.value.cleared &&
-            !isSealedValue(out[e2eMovedField])) {
-          moved[e.key] = v;
-          out[e.key] = e.value.cleared;
+        // Поле есть в теле — значит его пишут, и null тоже: так дату стирают.
+        // Заглушка (то, что видно без ключа) — не правка, её не трогаем.
+        if (!out.containsKey(e.key) || isSealedValue(out[e2eMovedField])) {
+          continue;
         }
+        final v = out[e.key];
+        if (v == e.value.cleared || (v != null && v == e.value.locked)) {
+          continue;
+        }
+        moved[e.key] = v;
+        out[e.key] = e.value.cleared;
         continue;
       }
       if (e.value.kind == SealKind.mapValues) {
@@ -409,6 +427,50 @@ class RecordCodec {
     return out;
   }
 
+  /// Приложение сохраняет запись, которую не смогло открыть: в теле —
+  /// заглушки. Возвращаем на их место прежний шифр из [locked]
+  /// (`e2e_locked` записи в кэше), чтобы не стереть содержимое на сервере.
+  Map<String, dynamic> restoreLocked(
+    String collection,
+    Map<String, dynamic> body,
+    Map<String, dynamic> locked,
+  ) {
+    final fields = e2eFields[collection];
+    if (fields == null || locked.isEmpty) return body;
+    final out = Map<String, dynamic>.of(body);
+    for (final e in fields.entries) {
+      final f = e.key, was = locked[f];
+      if (was == null || !out.containsKey(f)) continue;
+      final v = out[f];
+      switch (e.value.kind) {
+        case SealKind.text:
+        case SealKind.json:
+          if (v == e.value.locked || v == null || v == '') out[f] = was;
+        case SealKind.jsonPartial:
+          // Своё содержимое (не только служебные ключи) — это правка.
+          if (v is Map &&
+              v[e2ePartialKey] == null &&
+              v.keys.every((k) => e.value.open.contains('$k')) &&
+              was is Map &&
+              was[e2ePartialKey] != null) {
+            out[f] = {...v, e2ePartialKey: was[e2ePartialKey]};
+          }
+        case SealKind.mapValues:
+          if (v is Map && was is Map) {
+            out[f] = {
+              for (final kv in was.entries)
+                if (isSealedValue(kv.value) && !v.containsKey(kv.key))
+                  '${kv.key}': kv.value,
+              ...v.map((k, x) => MapEntry('$k', x)),
+            };
+          }
+        case SealKind.moved:
+          break;
+      }
+    }
+    return out;
+  }
+
   /// Расшифровывает поля записи с сервера. Не открылось — в поле заглушка,
   /// шифртекст уходит в [e2eLockedKey].
   Map<String, dynamic> decode(String collection, Map<String, dynamic> rec) {
@@ -430,6 +492,10 @@ class RecordCodec {
       }
       for (final e in fields.entries) {
         if (e.value.kind != SealKind.moved) continue;
+        // Шифрованная запись всегда оставляет в колонке [cleared]; иное
+        // значение записали позже (клиент без ключа) — оно и новее.
+        final col = rec[e.key];
+        if (col != null && col != '' && col != e.value.cleared) continue;
         out[e.key] = moved != null && moved.containsKey(e.key)
             ? moved[e.key]
             : e.value.locked;

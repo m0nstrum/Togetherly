@@ -151,7 +151,7 @@ abstract final class ForkE2E {
   static http.Client httpClient() => E2EHttpClient(
     http.Client(),
     codec: codec,
-    groupOf: _groupOf,
+    context: _context,
     newId: newPbId,
   );
 
@@ -185,9 +185,13 @@ abstract final class ForkE2E {
           ? RecordCodec.locked()
           : RecordCodec(c, keys);
     } catch (e) {
+      // Ключи на телефоне, может быть, есть, а прочитать не вышло: писать
+      // открытым нельзя. Запрос падает, очередь повторит; в кэш ошибку не
+      // кладём — следующий запрос попробует снова.
       debugPrint('ForkE2E: ключи на чтение — $e');
       _crypto = null;
-      return _roReady = RecordCodec.locked();
+      _ro = null;
+      rethrow;
     }
   }
 
@@ -318,23 +322,30 @@ abstract final class ForkE2E {
     return s != null && s.currentKey(groupId) != null;
   }
 
-  static Future<String?> _groupOf(
+  /// Контекст записи для шифрования (см. [ContextLookup]). Сначала кэш:
+  /// там и пара, и автор, и шифр полей, которые не открылись. В сеть — только
+  /// если без неё не узнать пару или автора.
+  static Future<Map<String, dynamic>?> _context(
     String collection,
     String id,
     Map<String, dynamic> body,
   ) async {
     final hint = _groupHints[id];
-    if (hint != null) return hint;
+    if (hint != null) return {'group_id': hint};
     final members = pairChannelMembers(body['channel']);
-    if (members != null) return (await codec())?.keys.groupWith(members);
+    if (members != null) {
+      final g = (await codec())?.keys.groupWith(members);
+      return g == null ? null : {'group_id': g};
+    }
     final local = await LocalStore.instance.getRecord(collection, id);
-    final g = local?.data['group_id'];
-    if (g is String && g.isNotEmpty) return g;
+    if (local != null) return local.toJson();
+    final needAuthor = e2eRecordKey(collection, {...body, 'id': id}) == null;
+    if (e2eGroupOf(collection, id, body) != null && !needAuthor) return null;
     try {
       final r = await PocketBaseService().pb
           .collection(collection)
-          .getOne(id, fields: 'group_id');
-      return r.getStringValue('group_id');
+          .getOne(id, fields: 'id,group_id,user_uid');
+      return r.toJson();
     } catch (_) {
       return null;
     }
@@ -407,32 +418,44 @@ abstract final class ForkE2E {
     final pb = PocketBaseService().pb;
     final seen = <String>{};
     var done = 0;
+    var page = 1;
     try {
       while (encrypts(groupId)) {
-        final page = await pb
+        final res = await pb
             .collection(col)
-            .getList(perPage: 100, filter: filter, skipTotal: true);
-        final fresh = page.items.where((r) => seen.add(r.id)).toList();
-        if (fresh.isEmpty) break;
-        for (final r in fresh) {
+            .getList(page: page, perPage: 100, filter: filter, skipTotal: true);
+        if (res.items.isEmpty) break;
+        var changed = 0;
+        for (final r in res.items) {
+          if (!seen.add(r.id)) continue;
           // Поле, что не открылось, не трогаем: в нём заглушка, а не текст.
           final locked = r.data[e2eLockedKey];
-          final body = <String, dynamic>{
-            for (final f in fields.keys)
-              if (r.data[f] != null &&
-                  r.data[f] != '' &&
-                  !(locked is Map && locked.containsKey(f)))
-                f: r.data[f],
-          };
+          final body = <String, dynamic>{};
+          for (final e in fields.entries) {
+            final v = r.data[e.key];
+            if (v == null || v == '') continue;
+            if (locked is Map && locked.containsKey(e.key)) continue;
+            // В JSON только служебные ключи — прятать нечего.
+            if (e.value.kind == SealKind.jsonPartial &&
+                v is Map &&
+                v.keys.every((k) => e.value.open.contains('$k'))) {
+              continue;
+            }
+            body[e.key] = v;
+          }
           if (body.isEmpty) continue;
           _groupHints[r.id] = groupId;
           try {
             await pb.collection(col).update(r.id, body: body);
+            changed++;
             done++;
           } finally {
             _groupHints.remove(r.id);
           }
         }
+        // Перешифрованные выпадают из выборки, остальные остаются на месте:
+        // страница ничего не дала — листаем дальше.
+        if (changed == 0) page++;
       }
     } catch (e) {
       debugPrint('ForkE2E: перешифровка $col $groupId — $e');

@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/m0nstrum/togetherly/server/internal/domain/watchproxy"
@@ -155,9 +156,13 @@ func (p *Proxy) pipe(user string, client, up net.Conn, head []byte) int64 {
 			return 0
 		}
 	}
+	// Простой считается по соединению целиком: долгая закачка идёт к
+	// клиенту, а клиент при этом минутами молчит — это не простой.
+	var active atomic.Int64
+	active.Store(time.Now().UnixNano())
 	done := make(chan struct{}, 2)
 	cp := func(dst, src net.Conn) {
-		_ = copyIdle(dst, src, p.o.IdleTimeout, count)
+		_ = copyIdle(dst, src, p.o.IdleTimeout, &active, count)
 		// Закрыть обе стороны: вторая горутина выйдет из Read.
 		_ = dst.Close()
 		_ = src.Close()
@@ -174,12 +179,13 @@ func (p *Proxy) pipe(user string, client, up net.Conn, head []byte) int64 {
 
 var errQuota = errors.New("watchproxy: лимит на сегодня исчерпан")
 
-func copyIdle(dst, src net.Conn, idle time.Duration, count func(int) error) error {
+func copyIdle(dst, src net.Conn, idle time.Duration, active *atomic.Int64, count func(int) error) error {
 	buf := make([]byte, 32<<10)
 	for {
 		_ = src.SetReadDeadline(time.Now().Add(idle))
 		n, err := src.Read(buf)
 		if n > 0 {
+			active.Store(time.Now().UnixNano())
 			if _, werr := dst.Write(buf[:n]); werr != nil {
 				return werr
 			}
@@ -188,6 +194,11 @@ func copyIdle(dst, src net.Conn, idle time.Duration, count func(int) error) erro
 			}
 		}
 		if err != nil {
+			var ne net.Error
+			if errors.As(err, &ne) && ne.Timeout() &&
+				time.Since(time.Unix(0, active.Load())) < idle {
+				continue // молчит эта сторона, а не соединение
+			}
 			if errors.Is(err, io.EOF) {
 				return nil
 			}

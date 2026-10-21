@@ -26,9 +26,13 @@ class _Bus {
   final List<Map<String, dynamic>> wire = [];
   final List<void Function(Map<String, dynamic>)> _subs = [];
 
+  /// Сеть теряет всё, пока true.
+  bool drop = false;
+
   RoomTransport transport() => _Transport(this);
 
   void publish(Map<String, dynamic> m) {
+    if (drop) return;
     wire.add(m);
     for (final s in List.of(_subs)) {
       scheduleMicrotask(() => s(m));
@@ -143,6 +147,39 @@ void main() {
     expect(b.messages.map((m) => m.text), containsAll(['раз', 'два']));
     a.dispose();
     b.dispose();
+  });
+
+  test('объявление ключа потерялось — всё равно сходятся', () async {
+    final bus = _Bus();
+    final a = app(bus, 'alice');
+    await a.start();
+    await _settle();
+    // Б входит, пока сеть теряет: его «у кого ключ?» не дошло, он завёл свой.
+    bus.drop = true;
+    final b = app(bus, 'bob');
+    await b.start();
+    await _settle();
+    bus.drop = false;
+    expect(a.secure && b.secure, isTrue);
+    // Страница Б здоровается — А объявляет свой ключ; дальше меньший id.
+    bus.publish({'t': 'hello', 'from': 'bob'});
+    await _settle();
+    await a.send('раз');
+    await b.send('два');
+    await _settle();
+    expect(a.messages.map((m) => m.text), contains('два'));
+    expect(b.messages.map((m) => m.text), contains('раз'));
+    a.dispose();
+    b.dispose();
+  });
+
+  test('закрыли, пока подписывались, — подписка снята', () async {
+    final bus = _Bus();
+    final a = app(bus, 'alice');
+    final started = a.start();
+    a.dispose();
+    await started;
+    expect(bus._subs, isEmpty);
   });
 
   test('ключ сессии под чужим ключом пары не принимается', () async {

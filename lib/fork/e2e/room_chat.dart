@@ -128,7 +128,13 @@ class RoomChat extends ChangeNotifier {
   bool get openMode => browser || noPairKey;
 
   Future<void> start() async {
-    _stop = await _t.listen(_onMessage);
+    final stop = await _t.listen(_onMessage);
+    if (_closed) {
+      // Комнату закрыли, пока подписывались.
+      await stop();
+      return;
+    }
+    _stop = stop;
     if (noPairKey) return;
     await _t.send({'t': 'rk?', 'from': me});
     _wait = Timer(keyWait, () {
@@ -213,8 +219,12 @@ class RoomChat extends ChangeNotifier {
             : null;
         final id = open?['id'], k = open?['k'];
         if (id is! String || k is! String) return;
-        // Двое завели ключ одновременно: оба берут меньший id.
-        if (_rk != null && _rkId.compareTo(id) <= 0) return;
+        // Двое завели ключ одновременно: оба берут меньший id. Свой меньше —
+        // напоминаем о нём: тот мог пропустить наше объявление.
+        if (_rk != null && _rkId.compareTo(id) <= 0) {
+          if (_rkId != id) unawaited(_announce());
+          return;
+        }
         _wait?.cancel();
         _adopt(id, _c.keyFromBytes(unb64(k)));
       case 'chat':
