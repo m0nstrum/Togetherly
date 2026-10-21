@@ -215,6 +215,7 @@ class _PlatformLoginScreenState extends State<PlatformLoginScreen> {
   static const String _desktopUa =
       'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36';
   double _progress = 0;
+  int _alive = 0;
 
   @override
   void initState() {
@@ -257,13 +258,19 @@ class _PlatformLoginScreenState extends State<PlatformLoginScreen> {
             : null,
       ),
       body: InAppWebView(
+        // Новый ключ — новая страница: мёртвый движок сам не оживает.
+        key: ValueKey(_alive),
         initialUrlRequest: URLRequest(url: WebUri(acc.login)),
         initialSettings: InAppWebViewSettings(
           // Как у скрытой ленты: иначе площадка выдаст другую сессию.
           userAgent: widget.source.desktop ? _desktopUa : null,
           javaScriptEnabled: true,
           thirdPartyCookiesEnabled: true,
+          useOnRenderProcessGone: true,
         ),
+        onRenderProcessGone: (_, _) {
+          if (mounted) setState(() => _alive++);
+        },
         onProgressChanged: (_, p) => setState(() => _progress = p / 100),
       ),
     );
