@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/locale_service.dart';
 import '../services/update_service.dart';
 import '../theme/theme_scope.dart';
+import '../fork/config/endpoints.dart'; // fork
 
 /// Блокирующий экран принудительного обновления.
 ///
@@ -15,8 +16,7 @@ class ForceUpdateScreen extends StatelessWidget {
   const ForceUpdateScreen({super.key});
 
   /// Публичная страница последнего релиза (sideload-сборки).
-  static const String _releasesLatestUrl =
-      'https://github.com/THET1ME-1/togetherly/releases/latest';
+  static final String _releasesLatestUrl = Endpoints.current.releasesUrl; // fork
 
   /// Страница приложения в Google Play.
   static const String _playUrl =

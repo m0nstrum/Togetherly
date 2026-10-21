@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'centrifugo_service.dart';
 import 'widget_owner.dart';
 import 'pb_data_service.dart';
+import '../fork/config/endpoints.dart'; // fork
 
 /// Ядро клиента PocketBase — единая точка доступа к нашему self-hosted бэкенду
 /// на VPS (миграция Firebase→PocketBase, Этап 6).
@@ -23,10 +24,7 @@ class PocketBaseService {
   /// Базовый URL PocketBase (HTTPS, Let's Encrypt; домен держит DuckDNS).
   /// Переопределяется под свой бэкенд: `--dart-define=PB_URL=https://...`
   /// По умолчанию — прод-инстанс автора.
-  static const String baseUrl = String.fromEnvironment(
-    'PB_URL',
-    defaultValue: 'https://togetherly.day',
-  );
+  static const String baseUrl = Endpoints.pbUrl; // fork: без дефолта на апстрим
 
   /// Ключ хранения сериализованной auth-сессии.
   static const String _authPrefsKey = 'pb_auth';

@@ -116,3 +116,6 @@ scratchpad/
 # Собранные бинари кастомной сборки PocketBase: 34 МБ на каждую, в репозиторий
 # им нельзя. Сборка описана в pocketbase/pb-cgo/README.md.
 pocketbase/pb-cgo/pocketbase-cgo*
+
+# fork: локальные конфиги сборки (env/example.json и env/test.json — в репозитории)
+env/*.local.json

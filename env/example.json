@@ -1,0 +1,14 @@
+{
+  "PB_URL": "https://pb.example.org",
+  "CENTRIFUGO_WS": "",
+  "SITE_URL": "",
+  "LEGACY_HOSTS": "",
+  "GAMES_URL": "",
+  "REELS_PROXY_URL": "",
+  "RELEASES_URL": "",
+  "SUPPORT_EMAIL": "",
+  "OFFICIAL_EMAIL": "",
+  "SENTRY_DSN": "",
+  "MAP_TILEJSON_URL": "https://tiles.openfreemap.org/planet",
+  "MAP_TILES_FALLBACK": "https://tiles.openfreemap.org/planet/latest/{z}/{x}/{y}.pbf"
+}

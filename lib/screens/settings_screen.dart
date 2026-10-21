@@ -88,10 +88,13 @@ class SettingsScreen extends StatelessWidget {
 
   /// Оба адреса стоят подписями к строкам: «Написать нам» не говорит, куда
   /// именно письмо уйдёт, а человеку это надо знать заранее.
-  static const String supportEmail = 'support@togetherly.day';
+  static const String supportEmail = String.fromEnvironment('SUPPORT_EMAIL'); // fork
 
   /// Ящик для писем от организаций, а не от людей.
-  static const String officialEmail = 'official@togetherly.day';
+  static const String officialEmail = String.fromEnvironment( // fork
+    'OFFICIAL_EMAIL',
+    defaultValue: supportEmail,
+  );
 
   /// Канал в Telegram и бот, принимающий жалобы. Обе ссылки жили где угодно,
   /// кроме приложения: «не могу найти ссылку на тгк» — обычный вопрос в

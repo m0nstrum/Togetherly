@@ -8,6 +8,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'pocketbase_service.dart';
 import 'publish_gate.dart';
 import 'reconnect_detector.dart';
+import '../fork/config/endpoints.dart'; // fork
 
 /// Транспорт realtime через Centrifugo (замена встроенного SSE PocketBase).
 ///
@@ -42,10 +43,7 @@ class CentrifugoService {
 
   /// Внешний TLS-порт Centrifugo (тот же домен/сертификат, что у PocketBase).
   /// Переопределяется: `--dart-define=CENTRIFUGO_WS=wss://.../connection/websocket`
-  static const String _wsUrl = String.fromEnvironment(
-    'CENTRIFUGO_WS',
-    defaultValue: 'wss://togetherly.day/connection/websocket',
-  );
+  static final String _wsUrl = Endpoints.current.centrifugoUrl; // fork
 
   centrifuge.Client? _client;
   final Map<String, _ChannelHub> _channels = {};

@@ -62,6 +62,7 @@ import 'widgets/launch_splash/launch_splash_overlay.dart';
 import 'widgets/offline_sync_banner.dart';
 import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
+import 'fork/config/endpoints.dart'; // fork
 
 // ATT/трекинг убран НАМЕРЕННО: приложение НЕ отслеживает пользователей
 // (в App Store Connect: App Privacy → Tracking = None). Без ATT-авторизации
@@ -282,6 +283,8 @@ Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
 }
 
 void main() async {
+  // fork: сборка без адресов своего сервера не стартует (lib/fork/config/endpoints.dart).
+  Endpoints.ensureConfigured();
   WidgetsFlutterBinding.ensureInitialized();
   // Потерянное системным жестом касание запирало все нажатия до перезапуска
   // (обращение 231, Realme): досылаем ему отмену.

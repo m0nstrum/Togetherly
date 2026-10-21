@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'pocketbase_service.dart';
+import '../fork/config/endpoints.dart'; // fork
 
 /// Комната совместного просмотра.
 ///
@@ -21,7 +22,8 @@ class WatchRoomService {
   /// Сайт с играми для пары — «Правда или действие» и прочее на одном
   /// телефоне. Живёт отдельной статикой на первом сервере, кода комнаты не
   /// спрашивает: играют вдвоём с одного экрана, а не по сети.
-  static const String gamesUrl = 'https://games.togetherly.day/';
+  /// fork: из конфига; пусто — плитка игр скрыта.
+  static String get gamesUrl => Endpoints.current.gamesUrl;
 
   /// Адрес комнаты на сайте для кода [room].
   ///
@@ -90,7 +92,7 @@ class WatchRoomService {
   }
 
   /// Домен страницы комнаты — единственный, которому отдаём сессию.
-  static const String siteHost = 'togetherly.day';
+  static String get siteHost => Endpoints.current.siteHost; // fork
 
   /// Код комнаты пары. Пустая строка означает отказ сервера — вызывающий
   /// показывает ошибку и не открывает просмотр.

@@ -1,0 +1,9 @@
+{
+  "PB_URL": "https://togetherly.day",
+  "LEGACY_HOSTS": "togetherly.duckdns.org",
+  "GAMES_URL": "https://games.togetherly.day/",
+  "RELEASES_URL": "https://github.com/THET1ME-1/togetherly/releases/latest",
+  "SUPPORT_EMAIL": "support@togetherly.day",
+  "OFFICIAL_EMAIL": "official@togetherly.day",
+  "SENTRY_DSN": "https://00000000000000000000000000000000@bugsink.togetherly.day/1"
+}

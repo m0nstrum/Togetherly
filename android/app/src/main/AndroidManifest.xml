@@ -115,38 +115,16 @@
                 <data android:scheme="${appScheme}" android:host="invite" />
             </intent-filter>
             
-            <!-- Web link: свой домен. Приглашения выдаются только с ним
-                 (assetlinks.json и /invite лендинг отдаёт
-                 pb_hooks/invite_web.pb.js). -->
+            <!-- fork: Web link приглашений на домене своего инстанса. Хост
+                 подставляет Gradle из SITE_URL/PB_URL (inviteHost). Брошенные
+                 домены апстрима (duckdns, web.app) убраны: их можно занять и
+                 уводить через них приглашения (docs/fork/AUDIT.md §2). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https"
-                      android:host="togetherly.day"
-                      android:pathPrefix="/invite" />
-            </intent-filter>
-
-            <!-- Web link: duckdns — легаси. Ссылки с ним разосланы людьми и
-                 живут в чужих переписках, поэтому фильтр остаётся, пока живёт
-                 сам поддомен. Новые приглашения его не используют. -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https"
-                      android:host="togetherly.duckdns.org"
-                      android:pathPrefix="/invite" />
-            </intent-filter>
-
-            <!-- Web link: Firebase Hosting (легаси-домен, для уже разосланных
-                 ссылок; удалить после полного гашения Firebase) -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https"
-                      android:host="togetherly-d4856.web.app"
+                      android:host="${inviteHost}"
                       android:pathPrefix="/invite" />
             </intent-filter>
 

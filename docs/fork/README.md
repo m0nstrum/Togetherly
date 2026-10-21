@@ -37,6 +37,36 @@ Self-hosted форк с E2E. Что и зачем делаем — [PLAN.md](PLA
 
 Форк ставится рядом с приложением апстрима и не перехватывает его ссылки.
 
+## Конфигурация сервера
+
+Все адреса клиента — в `lib/fork/config/endpoints.dart` и задаются при сборке
+файлом:
+
+```sh
+cp env/example.json env/prod.local.json   # *.local.json в .gitignore
+flutter build apk --release --dart-define-from-file=env/prod.local.json
+```
+
+| Ключ | Обязателен | Пусто означает |
+|---|---|---|
+| `PB_URL` | да | приложение не стартует (`Endpoints.ensureConfigured`) |
+| `CENTRIFUGO_WS` | нет | `wss://<хост PB_URL>/connection/websocket` |
+| `SITE_URL` | нет | = `PB_URL`; отсюда приглашения, политика, условия, хост App Links |
+| `LEGACY_HOSTS` | нет | старых доменов нет (через запятую, если есть) |
+| `GAMES_URL` | нет | плитка игр скрыта |
+| `REELS_PROXY_URL` | нет | TikTok без прокси |
+| `RELEASES_URL` | нет | ссылки на свежий APK нет |
+| `SUPPORT_EMAIL`, `OFFICIAL_EMAIL` | нет | адрес поддержки пустой |
+| `SENTRY_DSN` | нет | крашрепорты выключены |
+| `MAP_TILEJSON_URL`, `MAP_TILES_FALLBACK` | нет | OpenFreeMap |
+
+Хост App Links Gradle берёт из тех же `--dart-define` (`SITE_URL`, иначе
+`PB_URL`). Сборка без них регистрирует `unconfigured.invalid` и чужих ссылок не
+перехватывает.
+
+`env/test.json` — только для `flutter test`: в нём адреса апстрима, потому что
+его тесты сверяют их буквально.
+
 ## Ключ подписи
 
 Ключ хранится вне репозитория. Gradle берёт его из `android/key.properties`
@@ -64,9 +94,13 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 
 `Fork CI` (`.github/workflows/fork-ci.yml`) на каждый push и PR:
 
-- `flutter analyze --no-fatal-infos` — падает на warning и error;
-- `flutter test`;
-- release APK под arm64 (debug-подпись) и проверка `applicationId`/имени в нём.
+- `tool/fork/analyze_check.sh` — падает на любой ошибке и на предупреждении,
+  которого нет в `tool/fork/analyze_baseline.txt` (там предупреждения
+  апстрима; после мёржа обновить: `tool/fork/analyze_check.sh --update`);
+- `flutter test --dart-define-from-file=env/test.json`, включая сторожа
+  `test/fork/no_author_hosts_test.dart` (адреса апстрима в `lib/`, `android/`);
+- release APK под arm64 с `env/example.json` (debug-подпись) и проверка
+  `applicationId`, имени и хоста App Links в нём.
 
 Воркфлоу апстрима остаются в репозитории, чтобы не конфликтовать при мёржах.
 Форку они не нужны, их стоит выключить: **Settings → Actions** или страница
@@ -78,7 +112,9 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 
 ```sh
 flutter pub get
-flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons
+flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons \
+  --dart-define-from-file=env/prod.local.json
+flutter test --dart-define-from-file=env/test.json
 ```
 
 Нужен Flutter той же версии, что в `fork-ci.yml` (`FLUTTER_VERSION`).

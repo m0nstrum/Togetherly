@@ -27,6 +27,7 @@ import '../utils/auth_failure.dart';
 import '../theme/theme_scope.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/common/app_dialog.dart';
+import '../fork/config/endpoints.dart'; // fork
 
 
 class SetupScreen extends StatefulWidget {
@@ -54,9 +55,8 @@ class _SetupScreenState extends State<SetupScreen>
   bool _agreeToTerms = false;
 
   // Ссылки на юридические документы (раздаются с нашего сервера, pb_public).
-  static final Uri _termsUri = Uri.parse('https://togetherly.day/terms');
-  static final Uri _privacyUri =
-      Uri.parse('https://togetherly.day/privacy-policy');
+  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
+  static final Uri _privacyUri = Uri.parse(Endpoints.current.privacyPolicyUrl); // fork
   final _termsRecognizer = TapGestureRecognizer();
   final _privacyRecognizer = TapGestureRecognizer();
 

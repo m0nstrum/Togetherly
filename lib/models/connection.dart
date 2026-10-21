@@ -11,6 +11,7 @@ import 'invite_code_state.dart';
 import 'relationship_status.dart';
 import 'waiting_state.dart';
 import '../fork/identity.dart'; // fork
+import '../fork/config/endpoints.dart'; // fork
 
 /// Пора ли выходить из группы, где кроме меня никого не осталось.
 ///
@@ -250,8 +251,7 @@ class Connection {
   /// отправитель поломки не видел: у него ссылка выглядела как обычно. За
   /// 18–19 августа 2026 на такую ссылку зашли 30 раз с настоящих устройств —
   /// жалоба звучала как «партнёр не может перейти по пригласительной ссылке».
-  String get inviteLink =>
-      inviteCode.trim().isEmpty ? '' : 'https://togetherly.day/invite/$inviteCode';
+  String get inviteLink => Endpoints.current.inviteLink(inviteCode); // fork
 
   /// Прямой deep link без веб-хоста (для QR).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.

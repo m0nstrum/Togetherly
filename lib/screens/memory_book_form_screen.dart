@@ -185,7 +185,7 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
               'Accept': 'application/json',
               // UA обязателен — без него Open Library отбивает некоторые запросы.
               'User-Agent':
-                  'Mozilla/5.0 (compatible; TogetherlyApp/1.0; +https://togetherly.app)',
+                  'Mozilla/5.0 (compatible; TetheredApp/1.0)', // fork
             },
           )
           // Жёсткий таймаут: на мобильной сети ответ может висеть вечно,

@@ -44,13 +44,15 @@ jobs:
           mkdir -p "$HOME/snap/flutter/common"
           ln -sfn "$(dirname "$(dirname "$(command -v flutter)")")" "$HOME/snap/flutter/common/flutter"
 
-      # Базовая линия апстрима: ошибок и предупреждений нет, info — сотни.
-      # Поэтому валимся только на warning и выше.
+      # Ошибки фатальны всегда. Предупреждения апстрима записаны в
+      # tool/fork/analyze_baseline.txt, новые валят проверку.
       - name: flutter analyze
-        run: flutter analyze --no-fatal-infos
+        run: tool/fork/analyze_check.sh
 
+      # env/test.json повторяет адреса апстрима: его тесты проверяют их
+      # буквально. Логику конфига форка проверяют test/fork/*.
       - name: flutter test
-        run: flutter test
+        run: flutter test --dart-define-from-file=env/test.json
 
   apk:
     name: build APK
@@ -76,7 +78,9 @@ jobs:
       # Без key.properties Gradle подписывает её debug-ключом — для проверки
       # этого достаточно, боевой ключ живёт вне репозитория.
       - name: flutter build apk
-        run: flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons
+        run: >-
+          flutter build apk --release --target-platform android-arm64
+          --no-tree-shake-icons --dart-define-from-file=env/example.json
 
       - name: проверка идентичности APK
         run: |
@@ -86,6 +90,14 @@ jobs:
           badging=$("$aapt2" dump badging "$apk")
           echo "$badging" | grep -q "package: name='io.github.m0nstrum.tethered'"
           echo "$badging" | grep -q "application-label:'Tethered'"
+          # Хост App Links пришёл из env/example.json, хостов апстрима нет.
+          manifest=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk")
+          echo "$manifest" | grep -q '"pb.example.org"'
+          # `! cmd` под set -e не валит шаг, поэтому явный exit.
+          if echo "$manifest" | grep -qE 'togetherly\.(day|duckdns)|web\.app'; then
+            echo "в манифесте остались хосты апстрима" >&2
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:

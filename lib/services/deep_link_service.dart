@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'system_route_link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../fork/identity.dart'; // fork
+import '../fork/config/endpoints.dart'; // fork
 
 /// Сервис для обработки deep links
 class DeepLinkService {
@@ -131,16 +132,13 @@ class DeepLinkService {
     }
 
     if (uri.scheme == 'https') {
-      final isFirebaseHost = uri.host == 'togetherly-d4856.web.app';
-      // togetherly.duckdns.org — живой PocketBase-VPS (обслуживает инвайт-лендинг
-      // после гашения Firebase Hosting). togetherly.app — будущий домен.
-      final isMainHost = uri.host == 'togetherly.app' ||
-          uri.host == 'togetherly.duckdns.org' ||
-          uri.host == 'togetherly.day';
+      // fork: свои хосты из конфига; Firebase-домена (и email-ссылок с него)
+      // у форка нет.
+      final isMainHost = Endpoints.current.ownHosts.contains(uri.host);
       final isInvitePath = uri.pathSegments.isNotEmpty &&
           uri.pathSegments.first == 'invite';
 
-      if ((isFirebaseHost || isMainHost) && isInvitePath) {
+      if (isMainHost && isInvitePath) { // fork
         // https://<host>/invite/ABC123
         final code =
             uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
@@ -152,14 +150,11 @@ class DeepLinkService {
         return;
       }
 
-      if (isFirebaseHost) {
-        // Остальные ссылки с Firebase Hosting — email link
-        debugPrint('DeepLinkService: email link from Firebase domain');
-        _handleEmailLink(uri.toString());
-      }
     }
   }
 
+  // fork: вход по email-ссылке Firebase форку не нужен, вызов убран.
+  // ignore: unused_element
   Future<void> _handleEmailLink(String emailLink) async {
     try {
       // Получаем сохраненный email из SharedPreferences

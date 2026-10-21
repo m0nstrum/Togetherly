@@ -15,9 +15,26 @@ plugins {
 // перехватывал его ссылки. namespace (пакет Kotlin-кода) не меняем: это
 // внутреннее имя, и смена потянула бы перенос всех исходников.
 val forkApplicationId = "io.github.m0nstrum.tethered"
+// Хост App Links для приглашений — из тех же --dart-define, что у Dart
+// (lib/fork/config/endpoints.dart): SITE_URL, иначе PB_URL. Flutter передаёт
+// их в Gradle свойством dart-defines (base64 "KEY=VALUE" через запятую).
+val forkDartDefines: Map<String, String> =
+    (project.findProperty("dart-defines") as String?).orEmpty()
+        .split(",").filter { it.isNotBlank() }
+        .map { String(java.util.Base64.getDecoder().decode(it)) }
+        .filter { "=" in it }
+        .associate { it.substringBefore("=") to it.substringAfter("=") }
+// .invalid (RFC 2606) не резолвится никогда: сборка без адреса сервера не
+// перехватывает ничьи ссылки (а стартовать её не даст Endpoints).
+val forkInviteHost: String = listOf("SITE_URL", "PB_URL")
+    .mapNotNull { forkDartDefines[it]?.takeIf { v -> v.isNotBlank() } }
+    .firstOrNull()
+    ?.let { java.net.URI(it).host }
+    ?: "unconfigured.invalid"
 val forkManifestPlaceholders = mapOf(
     "appLabel" to "Tethered",
     "appScheme" to "tethered",
+    "inviteHost" to forkInviteHost,
 )
 // FCM форку не нужен (push идёт через Centrifugo). Без google-services.json
 // плагин валит сборку, а FirebaseMessaging без него тихо отдаёт null, и

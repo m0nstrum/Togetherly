@@ -98,6 +98,7 @@ import '../models/help_items.dart';
 import '../widgets/common/email_change_sheet.dart';
 import '../widgets/unfold/unfold_route.dart';
 import 'help_screen.dart';
+import '../fork/config/endpoints.dart'; // fork
 
 /// Entry for a partner across all connections
 class _PartnerEntry {
@@ -145,10 +146,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   // Политика и условия живут на PocketBase-VPS (Firebase Hosting гасится вместе
   // с проектом). Раздаются из pb_public, исходники — PRIVACY_POLICY.md и
   // TERMS_OF_USE.md в репо (регенерация: tool/gen_legal_html.py).
-  static final Uri _privacyPolicyUri = Uri.parse(
-    'https://togetherly.day/privacy-policy',
-  );
-  static final Uri _termsUri = Uri.parse('https://togetherly.day/terms');
+  static final Uri _privacyPolicyUri = Uri.parse(Endpoints.current.privacyPolicyUrl); // fork
+  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
 
   /// Канал в Telegram и бот для жалоб. Обе ссылки до 16.08.2026 жили только в
   /// переписке с поддержкой: «не могу найти ссылку на тгк» — обычный вопрос,
@@ -156,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   static final Uri _tgChannelUri = Uri.parse('https://t.me/sandtcompany');
   static final Uri _bugBotUri = Uri.parse('https://t.me/TogetherlyBugsBot');
   // Лендинг тоже переехал с Firebase Hosting на VPS (pb_public).
-  static final Uri _aboutAppUri = Uri.parse('https://togetherly.day/#download');
+  static final Uri _aboutAppUri = Uri.parse(Endpoints.current.aboutUrl); // fork
   static final Uri _boostyUri = Uri.parse('https://boosty.to/sntcompany');
 
   /// Разовый донат картой или СБП.

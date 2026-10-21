@@ -11,6 +11,6 @@
 /// ни одной версии свежее 1.17.0, хотя в проде уже 1.18.1. Приём по HTTPS
 /// проксирует Caddy (блок `bugsink.togetherly.day` → 127.0.0.1:8000).
 class SentryConfig {
-  static const String dsn =
-      'https://05953bce75c54cdb9fe149861d159da5@bugsink.togetherly.day/1';
+  // fork: свой Bugsink из конфига; пусто — отправка выключена (PLAN.md, решение 6).
+  static const String dsn = String.fromEnvironment('SENTRY_DSN');
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
+import '../../fork/config/endpoints.dart'; // fork
 
 /// Посредник для TikTok, пока открыты «Ленты вдвоём».
 ///
@@ -15,7 +16,7 @@ import 'package:http/http.dart' as http;
 class ReelsProxy {
   ReelsProxy._();
 
-  static const String _url = 'http://169.58.6.158:8899';
+  static final String _url = Endpoints.current.reelsProxyUrl; // fork: пусто — без прокси
   static const List<String> _hosts = ['tiktok.com', 'www.tiktok.com', 'm.tiktok.com'];
   static bool _on = false;
 
@@ -54,6 +55,7 @@ class ReelsProxy {
   /// Включить посредника, если TikTok с этого адреса закрыт. Где он открыт,
   /// ходим напрямую: лишний круг через Францию только замедлял бы плеер.
   static Future<void> enable() async {
+    if (_url.isEmpty) return; // fork
     if (!await _isBlocked()) return;
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
