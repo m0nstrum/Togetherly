@@ -1,0 +1,9 @@
+# Собрать образ сервера на этой машине вместо готового из GHCR:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+# Сборке Go нужно ~2 ГБ памяти; работающему серверу — в разы меньше.
+services:
+  server:
+    image: tethered-server:local
+    build:
+      context: ..
+      dockerfile: server/Dockerfile

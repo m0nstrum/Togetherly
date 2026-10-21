@@ -1,13 +1,16 @@
 # Сервер Tethered. Контекст сборки — корень репозитория:
 #   docker build -f server/Dockerfile .
-FROM golang:1.25-alpine AS build
+# Компилятор работает на машине сборки, Go сам собирает под целевую
+# архитектуру: образ для arm64 не требует эмуляции на этапе go build.
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
+ARG TARGETOS TARGETARCH
 WORKDIR /src/server
 COPY server/go.mod server/go.sum ./
 RUN go mod download
 COPY server/ ./
 COPY pocketbase/pb_hooks /src/pocketbase/pb_hooks
 COPY pocketbase/pb_public /src/pocketbase/pb_public
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/tethered ./cmd/tethered \
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/tethered ./cmd/tethered \
  && sh scripts/sync-hooks.sh /out/pb_hooks \
  && sh scripts/sync-public.sh /out/pb_public
 

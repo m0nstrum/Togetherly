@@ -6,9 +6,10 @@ Centrifugo (живые обновления и push через WebSocket), Caddy
 
 ## Что нужно
 
-- VPS: 2 vCPU, 2 ГБ памяти (образ сервера собирается на месте, сборке Go
-  меньше не хватает), 20–40 ГБ диска под базу и файлы. Linux с Docker и
-  плагином compose.
+- VPS: 1 vCPU, 1 ГБ памяти (на 512 МБ работает со swap), x86-64 или ARM64,
+  10 ГБ диска плюс место под фото и видео пары. Linux с Docker и плагином
+  compose. Образ сервера собирает GitHub (`fork-server-image.yml`), VPS его
+  только скачивает.
 - Домен с A-записью (и AAAA, если есть IPv6) на адрес VPS — с него Caddy
   получает сертификат Let's Encrypt. Подойдёт и поддомен бесплатного DNS.
 - Открытые порты (ниже).
@@ -22,6 +23,11 @@ $EDITOR .env        # почта (SMTP_*), ключ бэкапов, по жел�
 docker compose up -d
 docker compose exec server /app/tethered superuser upsert admin@example.org 'длинный-пароль'
 ```
+
+Образ в GHCR после первой публикации приватный. Либо один раз сделайте его
+публичным (GitHub → Packages → `tethered-server` → Package settings → Change
+visibility), либо войдите на VPS: `docker login ghcr.io` с токеном, у которого
+есть право `read:packages`. Свой форк — свой образ: `TETHERED_IMAGE` в `.env`.
 
 ## Порты
 
@@ -134,8 +140,11 @@ SMOKE_BASE=https://tethered.example.org server/scripts/smoke.sh
 ## Обновление
 
 ```sh
-git pull
-docker compose build server && docker compose up -d
+git pull                 # если менялись compose, Caddyfile или конфиг Centrifugo
+docker compose pull && docker compose up -d
 ```
+
+Своя сборка образа на машине (нужно ~2 ГБ памяти):
+`docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`.
 
 Миграции применяются при старте сервера.
