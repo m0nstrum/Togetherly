@@ -577,16 +577,21 @@ abstract final class ForkE2E {
           .where((w) => w.isNotEmpty)
           .toList(growable: false);
 
-  /// Словарь утёкших паролей из ассетов (фильтр Блума).
+  /// Словарь утёкших паролей из ассетов (фильтр Блума). Нужен и до входа —
+  /// при регистрации, — поэтому без сервиса ключей.
   static Future<LeakedPasswords?> leakedPasswords() async {
-    final s = service.value;
-    if (s == null) return null;
     if (_leaked != null) return _leaked;
-    final data = await rootBundle.load('assets/fork/leaked_passwords.bloom');
-    return _leaked = LeakedPasswords.parse(
-      s.crypto,
-      data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-    );
+    try {
+      final c = service.value?.crypto ?? await E2ECrypto.init();
+      final data = await rootBundle.load('assets/fork/leaked_passwords.bloom');
+      return _leaked = LeakedPasswords.parse(
+        c,
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+      );
+    } catch (e) {
+      debugPrint('ForkE2E: словарь утечек — $e');
+      return null;
+    }
   }
 
   /// Почта входа — пароль бэкапа не должен её содержать.

@@ -102,6 +102,7 @@
 | `lib/services/watch_channel_service.dart` | E2E-max | Сигнализация звонка (`voice-*`: SDP с отпечатком DTLS, ICE) — только шифром ключа пары; открытые `voice-*` отбрасываются. Импорт. | Повторить: открытый SDP даёт серверу встать посередине звонка. |
 | `lib/services/watch_videos_service.dart` | E2E-max | Ссылки на ролик и обложку — `pb://watch_videos/…`: показ и плеер идут через токен и локальный прокси расшифровки. | Повторить. |
 | `lib/services/watch_history_service.dart` | E2E-max | Дубль истории ищется у себя (адрес шифром), а не фильтром `url = …` на сервере. | Повторить. |
+| `lib/screens/setup_screen.dart` (пароль), `lib/widgets/settings/change_password_sheet.dart` | Пароль | Пароль аккаунта по правилам пароля бэкапа (`ForkAccountPassword`, `ForkPasswordChecks`): 12 символов, все классы, без утечек и почты. Индикаторы апстрима `_buildPasswordChecks` и импорт `password_rules` убраны. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
 
