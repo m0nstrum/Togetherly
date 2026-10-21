@@ -23,8 +23,24 @@ docker compose up -d
 docker compose exec server /app/tethered superuser upsert admin@example.org 'длинный-пароль'
 ```
 
-Нужно открыть порты: 80/443 TCP и 443 UDP (Caddy), 3478 TCP/UDP и
-49160–49200 UDP (coturn).
+## Порты
+
+| Порт | Кто | Зачем |
+|---|---|---|
+| 443/tcp | Caddy | всё HTTP: API, файлы, сайт, WebSocket Centrifugo, сертификат (TLS-ALPN-01) |
+| 3478/tcp+udp | coturn | голос в «Смотрим вместе» |
+| 8443/tcp | сервер | только с прокси роликов (`WATCH_PROXY_LISTEN=0.0.0.0`) |
+
+Порт 80 не нужен: Let's Encrypt проверяет домен на 443. HTTP/3 выключен,
+поэтому и 443/udp не нужен. Голос телефоны пускают только через TURN
+(`lib/fork/ice_policy.dart`): два relay на одной машине говорят друг с другом
+локально, диапазон ретранслятора 49160–49200 наружу не открывается, а
+партнёры не видят IP друг друга. Если у VPS нет публичного адреса на
+интерфейсе (1:1 NAT облака) — допишите coturn `--external-ip` и откройте
+диапазон.
+
+Прокси роликов и TURN на 443 не сажаются: это не HTTP, а Caddy без
+плагина layer4 не умеет делить порт по SNI.
 
 Клиент собирается под этот домен:
 
@@ -42,8 +58,8 @@ docker compose exec server /app/tethered superuser upsert admin@example.org 'д�
 |---|---|---|
 | server | `:8090`, внутренний API хуков `127.0.0.1:8120` | через Caddy |
 | centrifugo | `:8000` (WebSocket и HTTP API `/api`) | только `/connection/websocket` через Caddy |
-| caddy | — | 80, 443 |
-| coturn | сеть хоста | 3478, 49160–49200/udp |
+| caddy | — | 443 |
+| coturn | сеть хоста | 3478 |
 | bugsink | `:8000` | профиль `crash`; маршрут в Caddy добавить вручную |
 
 Данные — в томе `server-data` (`/data`): база SQLite и файлы.
@@ -60,7 +76,7 @@ docker compose exec server /app/tethered superuser upsert admin@example.org 'д�
 
 YouTube в РФ режется по SNI, поэтому Smart DNS не помогает. Приложение умеет
 пускать плеер комнаты «Смотрим вместе» через ваш сервер: `WATCH_PROXY=true`
-в `.env`, порт `8443` открыт наружу. Это TLS-прокси (CONNECT) на сертификате
+и `WATCH_PROXY_LISTEN=0.0.0.0` в `.env`, порт `8443` открыт наружу. Это TLS-прокси (CONNECT) на сертификате
 Caddy: пускает только по входу в приложение и только к площадкам из списка
 (YouTube, Vimeo и их CDN), TLS до площадки сквозной — сервер видит домены, а
 не ролики. Лимит — `WATCH_PROXY_DAILY_MB` на человека в сутки. В метриках —

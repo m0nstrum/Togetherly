@@ -1,6 +1,21 @@
 # Внешний вход: HTTPS (Let's Encrypt сам), WebSocket Centrifugo и сервер.
 # HTTP API Centrifugo (/api на его порту) наружу не выпускается.
+#
+# Наружу только 443/tcp: сертификат по TLS-ALPN-01 на том же порту, без
+# порта 80 и без HTTP/3 (UDP).
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
 {$TETHERED_DOMAIN} {
+	tls {
+		issuer acme {
+			disable_http_challenge
+		}
+	}
+
 	encode zstd gzip
 
 	@ws path /connection/websocket
