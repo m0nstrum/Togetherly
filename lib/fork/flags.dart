@@ -28,6 +28,14 @@ abstract final class ForkFlags {
   /// Яндекс, Apple) нет.
   static bool get emailOnlyAuth => !_upstreamBehavior;
 
+  /// Вход только с введённой почтой (UX_AUDIT A1). Апстрим при неверном
+  /// пароле пробует тот же пароль на «опечаточных» доменах (`gmail.ru`,
+  /// `gmail.con`…) и молча входит в первый подошедший — то есть в чужой
+  /// аккаунт с тем же паролем, и заодно умножает попытки перебора. У своего
+  /// сервера нет наследства из аккаунтов с опечатками, ради которых это
+  /// делалось.
+  static bool get strictLogin => !_upstreamBehavior;
+
   /// Запросы к сторонним сайтам — через свой сервер (lib/fork/http_gateway.dart).
   static bool get metaGateway => !_upstreamBehavior;
 

@@ -23,6 +23,7 @@ void main() {
     expect(ForkFlags.emailOnlyAuth, isTrue);
     expect(ForkFlags.metaGateway, isTrue);
     expect(ForkFlags.noUpstreamKeys, isTrue);
+    expect(ForkFlags.strictLogin, isTrue);
   });
 
   testWidgets('кнопок входа через Google/Яндекс/Apple нет', (tester) async {

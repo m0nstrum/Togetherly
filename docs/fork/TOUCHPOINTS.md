@@ -147,3 +147,4 @@
   `test/fork/flags_runtime_test.dart` (тег `fork-runtime`, без env/test.json).
 - Воркфлоу апстрима в `.github/workflows/`: не правим, лишние выключаем в
   настройках Actions (см. [README.md](README.md)).
+| `lib/screens/login_screen.dart` | UX A1 | В `_signInAllowingTypo` при `ForkFlags.strictLogin` — `rethrow` до перебора «опечаточных» доменов; импорт `fork/flags.dart`. | Повторить строку с `rethrow` и импорт. |
