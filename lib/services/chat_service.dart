@@ -17,6 +17,7 @@ import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/pb_id.dart';
 import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/ui/feedback.dart'; // fork
 import 'centrifugo_service.dart';
 import 'media_service.dart';
 import 'pb_data_service.dart';
@@ -63,6 +64,10 @@ class ChatService {
         .map((recs) => recs.map(ChatMsg.fromPb).toList());
   }
 
+  /// fork (UX C1): почему последний [send] вернул false; null — причина
+  /// не известна (старый путь апстрима).
+  ForkFailure? lastSendFailure;
+
   /// Отправить сообщение. [pinId]/[pinTitle] — опционально прикреплённый пин.
   /// Возвращает true при успехе. false = сообщение НЕ сохранено (экран должен
   /// вернуть ввод и дать повторить, иначе текст теряется молча).
@@ -86,6 +91,13 @@ class ChatService {
   }) async {
     final trimmed = text.trim();
     if (groupId.isEmpty || _uid.isEmpty || trimmed.isEmpty) return false;
+    // fork (UX C1): без ключа пары сообщение в очереди не уйдёт никогда, а
+    // экран ставил ✓. Не кладём — экран вернёт текст и скажет причину.
+    lastSendFailure = null;
+    if (!await ForkE2E.canSeal(groupId)) {
+      lastSendFailure = ForkFailure.noKey;
+      return false;
+    }
     final id = newPbId();
     final ts = DateTime.now().millisecondsSinceEpoch;
     // 1) оптимистично в кэш (snake_case-колонки, как читает ChatMsg.fromPb)

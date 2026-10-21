@@ -17,6 +17,7 @@ import 'package:material3_expressive_loading_indicator/material3_expressive_load
 import 'home_screen.dart';
 import 'setup_screen.dart';
 import 'welcome_screen.dart';
+import '../fork/flags.dart'; // fork
 
 class LoginScreen extends StatefulWidget {
   final UserData userData;
@@ -186,6 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return await auth.signInWithEmail(email: email, password: password);
     } catch (e) {
       if (AuthFailure.of(e) != AuthFailure.badCredentials) rethrow;
+      if (ForkFlags.strictLogin) rethrow; // fork: чужой аккаунт с тем же паролем (UX_AUDIT A1)
       for (final typo in emailTypoVariants(email)) {
         try {
           final user = await auth.signInWithEmail(email: typo, password: password);

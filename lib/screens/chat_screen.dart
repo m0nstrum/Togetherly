@@ -74,6 +74,7 @@ import 'gifts/partner_profile_screen.dart';
 import '../widgets/common/scaled_asset.dart';
 import '../widgets/common/coin_image.dart';
 import '../fork/e2e/ui.dart'; // fork
+import '../fork/ui/feedback.dart'; // fork
 
 /// Цена смены фона чата в монетах (зеркало CONSUMABLE_PRICES на сервере).
 const int _kChatBgPrice = 20;
@@ -1422,9 +1423,14 @@ class _ChatScreenState extends State<ChatScreen> {
             _attachedPin = pin;
             _replyingTo = reply;
           });
+          final why = _chat.lastSendFailure; // fork (UX C1): причина, а не общее «не отправилось»
+          if (why != null) {
+            ForkNotice.failure(context, why);
+          } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(LocaleService.current.chatSendFailed)),
           );
+          }
         }
       }
     } finally {
