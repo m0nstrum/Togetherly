@@ -7,6 +7,7 @@ import 'package:love_app/fork/flags.dart';
 import 'package:love_app/models/help_items.dart';
 import 'package:love_app/services/coin_store.dart';
 import 'package:love_app/services/plus_service.dart';
+import 'package:love_app/widgets/auth_widgets.dart';
 import 'package:love_app/widgets/common/ad_banner.dart';
 
 /// Поведение сборки форка. Запускается без env/test.json
@@ -16,6 +17,16 @@ void main() {
     expect(ForkFlags.analyticsDisabled, isTrue);
     expect(ForkFlags.allFree, isTrue);
     expect(ForkFlags.hideUpstreamChannels, isTrue);
+    expect(ForkFlags.emailOnlyAuth, isTrue);
+  });
+
+  testWidgets('кнопок входа через Google/Яндекс/Apple нет', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Center(
+        child: AuthSocialRow(label: 'x', onGoogle: () {}, onYandex: () {}),
+      ),
+    ));
+    expect(tester.getSize(find.byType(AuthSocialRow)), Size.zero);
   });
 
   test('Плюс открыт у всех, купить и задонатить нельзя', () {

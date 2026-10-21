@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/theme_scope.dart';
 import '../theme/profile_theme.dart';
+import '../fork/flags.dart'; // fork
 
 /// Общие виджеты экранов входа/регистрации (единый стиль «карточка + поля с
 /// плавающей подписью + ряд соц-иконок»). [accent] берётся из вызывающего
@@ -145,6 +146,7 @@ class AuthSocialRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (ForkFlags.emailOnlyAuth) return const SizedBox.shrink(); // fork
     final t = context.appTheme;
     final icons = <Widget>[
       if (onGoogle != null)

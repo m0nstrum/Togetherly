@@ -22,4 +22,8 @@ abstract final class ForkFlags {
   /// Каналы автора апстрима (Telegram-канал, бот жалоб, донаты) не
   /// показываются: форк не ведёт людей к чужой инфраструктуре.
   static bool get hideUpstreamChannels => !_upstreamBehavior;
+
+  /// Вход только по почте и паролю (решение 3): кнопок OAuth (Google,
+  /// Яндекс, Apple) нет.
+  static bool get emailOnlyAuth => !_upstreamBehavior;
 }

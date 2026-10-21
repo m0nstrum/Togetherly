@@ -48,13 +48,14 @@
 | `lib/services/plus_service.dart` | S2 | `_open` и `canPurchase` учитывают `ForkFlags.allFree`, импорт. | Повторить. |
 | `lib/services/coin_store.dart` | S2 | `createCoinStore()` всегда `_DisabledCoinStore`; импорты IAP-сервисов убраны; дефолт `STORE` = `fork`. | Повторить. |
 | `lib/services/iap_service.dart`, `lib/services/rustore_iap_service.dart`, `lib/config/rustore_config.dart` | S2 | Удалены (вместе с зависимостями). | Конфликт modify/delete — оставить удалёнными. |
-| `pubspec.yaml` | S2 | Убраны `google_mobile_ads`, `yandex_mobileads`, `in_app_purchase`, `flutter_rustore_billing` (на их месте комментарии `fork`). | Не возвращать; новые рекламные/платёжные зависимости апстрима — тоже убрать. `pubspec.lock` — перегенерировать `flutter pub get`. |
+| `pubspec.yaml` | S2 | Убраны `google_sign_in`, `google_mobile_ads`, `yandex_mobileads`, `in_app_purchase`, `flutter_rustore_billing` (на их месте комментарии `fork`). | Не возвращать; новые рекламные/платёжные зависимости апстрима — тоже убрать. `pubspec.lock` — перегенерировать `flutter pub get`. |
 | `android/app/build.gradle.kts` (S2) | S2 | Убраны `firebase-bom`, `firebase-messaging`, `play-services-base` и плагин `google-services`. | Не возвращать. |
 | `android/app/src/main/AndroidManifest.xml` (S2) | S2 | `AD_ID` с `tools:node="remove"`; AdMob App ID, сервис `.FcmService` и мета-данные Firebase убраны. | Повторить. |
 | `android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt` | S2 | Канал `love_app/fcm`: `hasServices` → `false`, `getToken` → `null`; импорты GMS/Firebase убраны. | Повторить. |
 | `android/app/src/main/kotlin/com/togetherly/love/FcmService.kt` | S2 | Удалён. | Оставить удалённым. Логику, которую апстрим добавит в него (пуш-события), переносить на путь Centrifugo. |
 | `lib/screens/settings_screen.dart` (S2) | S2 | `ForkCrashReportsRow` в разделе «О приложении»; строки Telegram-канала и бота автора под `!ForkFlags.hideUpstreamChannels`. | Повторить. |
 | `lib/screens/profile_screen.dart` (S2) | S2 | Донат-карточка под `!ForkFlags.hideUpstreamChannels`, импорт. | Повторить. |
+| `lib/widgets/auth_widgets.dart` | S2 | `AuthSocialRow.build` при `ForkFlags.emailOnlyAuth` возвращает пустое место (решение 3), импорт. | Повторить. |
 | `lib/models/help_items.dart` | S2 | Пункты «telegram» и покупки Плюса — под флагами форка, импорт. | Повторить. |
 | `test/chest_open_never_hangs_test.dart`, `test/reels_invite_wiring_test.dart`, `test/android_widget_wake_test.dart` | S2 | Убраны проверки удалённого кода (rewarded-SDK, `FcmService.kt`). | Повторить: проверки удалённого кода не возвращать. |
 | `test/rewarded_ad_never_hangs_test.dart`, `test/services/rewarded_ad_failure_report_test.dart`, `test/widgets/ad_banner_network_test.dart`, `test/ios_no_purchases_test.dart`, `test/ios_plus_only_purchase_test.dart` | S2 | Удалены: проверяли удалённые реализацию рекламы и IAP. | Оставить удалёнными. |
@@ -83,8 +84,9 @@
   за рекламу недоступен (рекламы нет) — его судьбу тоже решаем в S3.
 - `in_app_update`: работает только для установок из Google Play; APK форка
   ставится вручную, путь Play не срабатывает.
-- `google_sign_in`, `sign_in_with_apple`: решение 3 (вход только по почте)
-  ещё не выполнено — отдельная задача.
+- `sign_in_with_apple` и OAuth-методы в `pb_auth_service.dart`: остаются в
+  коде (нативный вход Apple — только iOS, OAuth вызывается лишь из скрытых
+  кнопок). Сервер форка OAuth-провайдеров не настраивает (решение 3).
 - Платное поведение апстрима в тестах: `FORK_UPSTREAM_BEHAVIOR=true` из
   `env/test.json` выключает флаги `allFree`/`hideUpstreamChannels`, чтобы тесты
   апстрима проверяли то, для чего написаны. Поведение сборки форка проверяет
