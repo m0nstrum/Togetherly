@@ -5,7 +5,8 @@
 #     мы гоняем по hooks.allow;
 #   - живые регрессы pocketbase/*.test.py из parity.allow: они бьют в прод
 #     автора, поэтому адреса подменяются во временной копии, их файлы не
-#     трогаем.
+#     трогаем;
+#   - свои сценарии форка из scripts/e2e.
 #
 # Поднимает свой бинарник и Centrifugo в Docker (нужен регрессу инвайтов).
 #   server/scripts/parity.sh
@@ -94,5 +95,11 @@ grep -vE '^[[:space:]]*(#|$)' "$here/parity.allow" | while read -r name; do
     exit 1
   fi
 done || failed=1
+
+# 3. Свои сценарии форка поверх того же стека (scripts/e2e).
+for t in "$here"/scripts/e2e/*.test.py; do
+  run "$(basename "$t")" env BASE="http://127.0.0.1:$port" \
+    WS="ws://127.0.0.1:$cf_port/connection/websocket" timeout 180 python3 -I "$t"
+done
 
 exit "$failed"

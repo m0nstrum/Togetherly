@@ -54,9 +54,11 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		log.Warn("JS-хуки не найдены, роуты апстрима недоступны", "dir", cfg.HooksDir)
 	}
 
-	bindRealtime(app, centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout), cfg.Centrifugo.Timeout, log)
+	pub := centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout)
+	bindRealtime(app, pub, cfg.Centrifugo.Timeout, log)
 	bindCapsules(app, time.Now, log)
 	bindGuards(app)
+	bindAllFree(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
 	// Записи Викиданных тяжёлые: сотни килобайт на фильм.
@@ -64,7 +66,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		&handler.IPLimiter{Max: 60, Window: 10 * time.Minute}, movies.Options{PoiskkinoKey: cfg.PoiskkinoKey}, time.Now)
 	bindSettings(app, cfg, log)
 
-	bindCompat(app, cfg.CompatAddr, log)
+	bindCompat(app, cfg.CompatAddr, pub, log)
 
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
@@ -108,11 +110,11 @@ func bindAccount(app core.App, log *slog.Logger) *account.Service {
 
 // bindCompat поднимает на петле внутренний API для JS-хуков апстрима
 // (handler.Compat). Адрес зашит в хуках — 127.0.0.1:8120.
-func bindCompat(app core.App, addr string, log *slog.Logger) {
+func bindCompat(app core.App, addr string, pub *centrifugo.Publisher, log *slog.Logger) {
 	if addr == "" {
 		return
 	}
-	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), log), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), pub, log), ReadHeaderTimeout: 5 * time.Second}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

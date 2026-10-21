@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../fork/push_relay.dart'; // fork
 import '../models/chat_msg.dart';
 import '../models/avatar_frame.dart';
 import '../models/gift.dart';
@@ -252,6 +253,8 @@ class PbPushService {
         debugPrint('PbPush gift callback error: $err');
       }
     }));
+
+    _subs.add(await ForkPushRelay.subscribe(myUid, (id, t, b) => _notify(id, t, b))); // fork
 
     debugPrint('PbPush: подписки запущены (group=$groupId, partner=$partnerUid)');
   }

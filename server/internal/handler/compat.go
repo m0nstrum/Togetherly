@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -20,9 +23,9 @@ import (
 // Перенесено всё, что зовут хуки из server/hooks.allow. Остальные пути
 // hotpath отвечают 501 с записью в журнал — так видно, если новый хук
 // апстрима потянул ещё один.
-func Compat(svc *pairs.Service, recs *records.Service, log *slog.Logger) http.Handler {
+func Compat(svc *pairs.Service, recs *records.Service, pub Publisher, log *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
-	h := compat{svc: svc, recs: recs, log: log}
+	h := compat{svc: svc, recs: recs, pub: pub, log: log}
 	mux.HandleFunc("POST /internal/pair-accept", h.pairAccept)
 	mux.HandleFunc("GET /internal/group-read", h.groupRead)
 	mux.HandleFunc("POST /internal/group-write", h.groupWrite)
@@ -31,6 +34,9 @@ func Compat(svc *pairs.Service, recs *records.Service, log *slog.Logger) http.Ha
 	mux.HandleFunc("POST /internal/waiting-reset", h.waitingReset)
 	mux.HandleFunc("POST /internal/pair-claim-approve", h.claimApprove)
 	mux.HandleFunc("POST /internal/record", h.record)
+	// Своё, не hotpath: пуши хуков (зов в ленту, порисовать) вместо
+	// APNs/FCM — server/hooks/apns_push.js.
+	mux.HandleFunc("POST /internal/notify", h.notify)
 	// Страна по IP — для правил рекламы сундука. Рекламы нет, страна не нужна.
 	mux.HandleFunc("GET /internal/geo", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{})
@@ -42,7 +48,44 @@ func Compat(svc *pairs.Service, recs *records.Service, log *slog.Logger) http.Ha
 type compat struct {
 	svc  *pairs.Service
 	recs *records.Service
+	pub  Publisher
 	log  *slog.Logger
+}
+
+// Publisher — публикация в канал Centrifugo (infrastructure/centrifugo).
+type Publisher interface {
+	Publish(ctx context.Context, channel string, data any) error
+}
+
+// notify — уведомление человеку в его канал `user:<uid>`. Клиент
+// (lib/fork/push_relay.dart) рисует из него локальное уведомление: и в
+// приложении, и из фонового сервиса, который держит сокет.
+func (h compat) notify(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		UID    string            `json:"uid"`
+		Thread string            `json:"thread"`
+		Title  string            `json:"title"`
+		Body   string            `json:"body"`
+		Data   map[string]string `json:"data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.UID == "" || body.Thread == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false})
+		return
+	}
+	id := make([]byte, 8)
+	_, _ = rand.Read(id)
+	err := h.pub.Publish(r.Context(), "user:"+body.UID, map[string]any{
+		"event": "create", "collection": "fork_notify",
+		"record": map[string]any{
+			"id": hex.EncodeToString(id), "collectionName": "fork_notify",
+			"thread": body.Thread, "title": body.Title, "body": body.Body, "data": body.Data,
+		},
+	})
+	if err != nil {
+		h.fail(w, r, "notify", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func (h compat) waitingCreate(w http.ResponseWriter, r *http.Request) {

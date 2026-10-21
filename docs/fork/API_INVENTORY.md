@@ -41,6 +41,7 @@
 | `GET /internal/group-read`, `POST /internal/group-write`, `GET /internal/groups-of` | перенесены (S4) |
 | `GET /internal/geo` | пустой ответ: страна нужна только правилам рекламы |
 | `POST /internal/{waiting-create,waiting-reset,pair-claim-approve,record}` | перенесены (S5) |
+| `POST /internal/notify` | своё (S5): пуши хуков через Centrifugo `user:<uid>` вместо APNs/FCM (`server/hooks/apns_push.js`) |
 | `GET /internal/{count,couple-agg}` | не переносятся: статистика пары (`couple_stats.pb.js`) при отказе показывает нули по чату и настроениям; после E2E сервер этих данных не прочтёт, статистику считает клиент (E2E.md §10) |
 | `POST /internal/group-sync`, `GET /internal/{online,profiles,product-stats}` | хуками форка не используются; 501 с записью в журнал |
 

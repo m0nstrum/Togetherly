@@ -192,3 +192,15 @@ func TestMovieSearchRoute(t *testing.T) {
 	assert.Equal(t, http.StatusOK, code, body)
 	assert.JSONEq(t, `{"docs":[],"source":"empty"}`, body)
 }
+
+// Решение 1 на сервере: хуки апстрима видят Плюс у каждого.
+func TestAllFree(t *testing.T) {
+	w := newWorld(t)
+	u, err := w.app.FindRecordById("users", alice)
+	require.NoError(t, err)
+	assert.True(t, u.GetBool("plus"))
+	code, body := w.do(t, http.MethodPost, "/api/collections/users/records", "",
+		`{"email":"new@example.org","password":"password123","passwordConfirm":"password123"}`)
+	require.Equal(t, http.StatusOK, code, body)
+	assert.Contains(t, body, `"plus":true`)
+}
