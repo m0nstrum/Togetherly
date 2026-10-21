@@ -109,6 +109,8 @@
       'room.guest': 'Гость',
       'room.send': 'Отправить',
       'room.chatToggle': 'Скрыть или показать чат',
+      'room.cinema': 'На весь экран', // fork
+      'room.cinemaExit': 'Выйти из полноэкранного режима', // fork
       'room.chatOpen': 'Открыть чат',
       'room.partnerJoined': 'Партнёр в комнате',
       'room.partnerLeft': 'Партнёр вышел из комнаты', // fork (UX L8)
@@ -240,6 +242,8 @@
       'room.guest': 'Guest',
       'room.send': 'Send',
       'room.chatToggle': 'Hide or show chat',
+      'room.cinema': 'Full screen', // fork
+      'room.cinemaExit': 'Exit full screen', // fork
       'room.chatOpen': 'Open chat',
       'room.partnerJoined': 'Your partner is here',
       'room.partnerLeft': 'Your partner left the room', // fork (UX L8)

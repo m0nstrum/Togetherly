@@ -9,6 +9,8 @@
 /// человеку нужно знать, какое из трёх полей поправить.
 library;
 
+import '../fork/e2e/password_policy.dart' show PasswordPolicy; // fork
+
 /// Что не так с введённым. `null` — всё в порядке, можно отправлять.
 PasswordChangeProblem? passwordChangeProblem({
   required String current,
@@ -16,7 +18,8 @@ PasswordChangeProblem? passwordChangeProblem({
   required String repeat,
 }) {
   if (current.isEmpty) return PasswordChangeProblem.noCurrent;
-  if (fresh.length < 8) return PasswordChangeProblem.tooShort;
+  // fork (A15): минимум один на весь форк — тот же, что у ForkAccountPassword.
+  if (fresh.runes.length < PasswordPolicy.minLength) return PasswordChangeProblem.tooShort;
   if (fresh != repeat) return PasswordChangeProblem.mismatch;
   // Пароль, равный прежнему, сервер примет молча — и человек решит, что смена
   // не сработала. Отвечаем сразу.

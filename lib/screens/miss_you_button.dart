@@ -10,6 +10,8 @@ import '../services/hint_queue.dart';
 import '../services/pocketbase_service.dart';
 import '../theme/app_theme.dart';
 import 'miss_you_screen.dart';
+import '../dict_strings.dart' show ruEn; // fork
+import '../fork/ui/feedback.dart'; // fork
 
 // ─── Раскладка ─────────────────────────────────────────────────────────────────
 //
@@ -77,6 +79,12 @@ class _MissYouButtonState extends State<MissYouButton>
   /// Пауза перед повтором сорванной отправки. Дольше окна накопления: сеть
   /// только что отказала, и биться в неё сразу же смысла нет.
   static const Duration _kRetryWindow = Duration(seconds: 3);
+
+  /// fork (M8): сколько раз подряд повторяем сорвавшуюся отправку. Потом
+  /// сдаёмся и говорим человеку: бесконечный повтор копил тапы, которых
+  /// сервер так и не принял.
+  static const int _kMaxRetries = 2;
+  int _retries = 0; // fork
 
   final MissYouBatch _batch = MissYouBatch();
   Timer? _flushTimer;
@@ -279,15 +287,34 @@ class _MissYouButtonState extends State<MissYouButton>
       ok = false;
     }
     if (!ok) {
-      // Сорванная отправка снимает надбавку сразу: сервер её не принял.
       _batch.giveBack(count);
-      if (mounted) setState(() => _mine = _mine.failed());
-      // И пробуем ещё раз сами. Пока повтор ждал следующего нажатия, серия,
-      // оборвавшаяся на неудаче, так и не доезжала до сервера.
+      // fork (M8): повторов не больше _kMaxRetries; потом всю невыслатую
+      // пачку (и всё, что накопилось за это время) списываем и откатываем
+      // счётчик разом, а человеку говорим, что не отправилось.
+      if (_retries < _kMaxRetries) {
+        _retries++;
+        // Пробуем ещё раз сами: серия, оборвавшаяся на неудаче, иначе так и
+        // не доезжала до сервера.
+        _flushTimer?.cancel();
+        _flushTimer = Timer(_kRetryWindow, _flushMissYou);
+        return;
+      }
+      _retries = 0;
       _flushTimer?.cancel();
-      _flushTimer = Timer(_kRetryWindow, _flushMissYou);
+      var lost = 0;
+      for (final c in _batch.takeAllChunks()) {
+        lost += c;
+      }
+      if (!mounted) return;
+      setState(() => _mine = _mine.failed(count: lost));
+      ForkNotice.failure(
+        context,
+        ForkFailure.unknown,
+        what: ruEn('«Скучаю» не отправилось', 'Miss-you wasn’t sent'),
+      );
       return;
     }
+    _retries = 0;
     // Пока шла отправка, человек мог нажать ещё — досылаем остаток сразу.
     // Прежде тут стояла та же пауза, что и на первую пачку: серия из сотен
     // нажатий растягивалась на минуты, и счётчик у партнёра всё это время
@@ -380,7 +407,13 @@ class _MissYouButtonState extends State<MissYouButton>
         mainAxisSize: MainAxisSize.min,
         children: [
           // ── Счёт пары: показывает состояние, тап открывает экран ────────────
-          GestureDetector(
+          Semantics(
+            button: true,
+            label: ruEn('Счёт «скучаю»: открыть', 'Miss-you count: open'),
+            value: '$displayMy / $_partnerCount',
+            excludeSemantics: true,
+            onTap: _openScreen,
+            child: GestureDetector(
             onTap: _openScreen,
             child: Container(
               height: widget.height,
@@ -398,6 +431,7 @@ class _MissYouButtonState extends State<MissYouButton>
               ),
             ),
           ),
+          ), // fork
 
           const SizedBox(width: 4),
 
@@ -430,7 +464,14 @@ class _MissYouButtonState extends State<MissYouButton>
                   scale: _scaleAnimation.value,
                   child: child,
                 ),
-                child: GestureDetector(
+                child: Semantics(
+                  button: true,
+                  label: ruEn('Отправить «скучаю»', 'Send “miss you”'),
+                  excludeSemantics: true,
+                  onTap: _sendMissYou,
+                  child: Tooltip(
+                  message: ruEn('Отправить «скучаю»', 'Send “miss you”'),
+                  child: GestureDetector(
                   onTap: _sendMissYou,
                   child: Container(
                     width: widget.height,
@@ -445,6 +486,8 @@ class _MissYouButtonState extends State<MissYouButton>
                       color: onFill,
                     ),
                   ),
+                ),
+                  ), // fork
                 ),
               ),
             ],
