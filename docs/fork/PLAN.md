@@ -300,7 +300,7 @@ IP сервера, а не пользователя.
 | S0 | готово | Идентичность Tethered, иконка, CI, [TOUCHPOINTS.md](TOUCHPOINTS.md), [README.md](README.md). Базовая линия апстрима: 4135 тестов зелёные (4 golden — после симлинка шрифта), 0 ошибок анализатора, 37 предупреждений (записаны в `tool/fork/analyze_baseline.txt`). |
 | S1 | готово | `lib/fork/config/endpoints.dart`, `env/*.json`, хост App Links из `--dart-define`, сторож `test/fork/no_author_hosts_test.dart`. Проверено на release APK: в манифесте только хост из конфига. |
 | S2 | почти | Сделано: аналитика выключена, реклама (AdMob, Yandex) и её SDK убраны, IAP/RuStore/FCM/Firebase убраны, Plus открыт у всех, каналы и донаты автора скрыты, Sentry только с согласия и без PII. Вход только по почте (решение 3): кнопки OAuth скрыты, `google_sign_in` убран. Release APK: 64,4 → 55,7 МБ, в манифесте нет рекламы, AD_ID, FCM. Осталось: снять трафик release-сборки через mitmproxy на эмуляторе (в облачной сессии эмулятора нет) — отдельно проверить ML Kit из `mobile_scanner` (сканер QR тянет компоненты Firebase и может слать статистику Google); судьба заработка монет за рекламу — в S3. Риск для S5: FCM обрабатывал приглашения в ленты и тихое обновление виджетов, проверить, что путь Centrifugo их покрывает. |
-| S3 | — | |
+| S3 | готово | [API_INVENTORY.md](API_INVENTORY.md), генератор `tool/fork/api_inventory.py`. Основа S4 — `pocketbase/pb-cgo/main.go`. Не хватает реализации `/api/account/schedule-delete`. Ждут решения владельца: монеты/сундуки как игровая механика, публичный профиль пары (§9 инвентаря). |
 | S4 | — | |
 | S5 | — | |
 | S6 | — | |
