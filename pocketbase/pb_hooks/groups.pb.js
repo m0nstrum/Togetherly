@@ -27,7 +27,9 @@ routerAdd("POST", "/api/group/patch-map", (e) => {
   const groupId = String(body.groupId || "").trim();
   const field = String(body.field || "").trim();
   const uid = String(body.uid || "").trim();
-  const ALLOWED = ["member_moods", "member_names", "member_avatars", "member_ailments"];
+  // fork (E2E): дни рождения и карточки профиля пишет клиент шифром ключа пары.
+  const ALLOWED = ["member_moods", "member_names", "member_avatars", "member_ailments",
+    "member_birthdays", "member_cards"];
   if (!groupId || !uid || ALLOWED.indexOf(field) === -1) {
     return e.json(400, { ok: false, error: "bad params" });
   }

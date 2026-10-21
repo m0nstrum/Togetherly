@@ -155,6 +155,46 @@ func init() {
 	m.Register(func(app core.App) error {
 		return addEncField(app, "groups")
 	}, nil, "1760000007_e2e_moved_groups.go")
+	// «Шифровать всё» (docs/fork/E2E.md, дополнение 2026-10-23): ссылки и
+	// облик сообщений, авторы воспоминаний, вещи желаний, раскраски, маскоты.
+	m.Register(func(app core.App) error {
+		if err := widenSealed(app, e2eSealedMax); err != nil {
+			return err
+		}
+		if err := addEncField(app, "chat_messages", "wishes", "canvas_meta"); err != nil {
+			return err
+		}
+		return addMemberCards(app)
+	}, nil, "1760000008_e2e_sealed_max.go")
+}
+
+// e2eSealedMax — поля, добавленные к шифруемым в «шифровать всё».
+var e2eSealedMax = map[string][]string{
+	"chat_messages": {"pin_thumb", "voice_url", "voice_peaks", "note_url", "note_thumb",
+		"note_shape", "note_hearts", "face"},
+	"memories":        {"author_name", "author_avatar"},
+	"memory_comments": {"author_name", "author_avatar"},
+	"wishes":          {"kind", "category", "currency"},
+	"canvas_meta":     {"coloring_id", "coloring_mode", "coloring_outline"},
+	"mascots":         {"name", "image_url"},
+	"groups":          {"chat_background", "placeholder_name", "placeholder_avatar"},
+	"gifts":           {"note", "reply", "place", "date", "photo", "sound", "sound_meta"},
+	"users":           {"name", "display_name", "avatar_url", "banner_url", "gender", "birth_date"},
+}
+
+// addMemberCards заводит groups.member_cards: карточка профиля каждого
+// участника для партнёра (баннер, пол, день рождения) шифром ключа пары —
+// сам профиль в users зашифрован личным ключом и партнёру не виден.
+func addMemberCards(app core.App) error {
+	col, err := app.FindCollectionByNameOrId("groups")
+	if err != nil {
+		return nil
+	}
+	if col.Fields.GetByName("member_cards") != nil {
+		return nil
+	}
+	col.Fields.Add(&core.JSONField{Name: "member_cards", MaxSize: jsonMax})
+	return app.Save(col)
 }
 
 // addEncField заводит текстовое поле `enc`: туда клиент переносит поля,

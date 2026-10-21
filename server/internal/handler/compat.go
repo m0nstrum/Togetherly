@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
@@ -72,6 +74,7 @@ func (h compat) notify(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false})
 		return
 	}
+	body.Title, body.Body = dropSealed(body.Title), dropSealed(body.Body)
 	id := make([]byte, 8)
 	_, _ = rand.Read(id)
 	err := h.pub.Publish(r.Context(), "user:"+body.UID, map[string]any{
@@ -86,6 +89,18 @@ func (h compat) notify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// sealedToken — шифртекст поля E2E (`e2e1.<keyId>.<nonce>.<ct>`).
+var sealedToken = regexp.MustCompile(`e2e1\.[A-Za-z0-9_:.+/=\-]+`)
+
+// dropSealed убирает шифртекст из текста уведомления: хуки апстрима берут
+// имя из профиля, а там теперь шифр личного ключа (docs/fork/E2E.md).
+func dropSealed(s string) string {
+	if !strings.Contains(s, "e2e1.") {
+		return s
+	}
+	return strings.Join(strings.Fields(sealedToken.ReplaceAllString(s, "")), " ")
 }
 
 func (h compat) waitingCreate(w http.ResponseWriter, r *http.Request) {

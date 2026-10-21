@@ -25,6 +25,7 @@ import 'key_store.dart';
 import 'media_proxy.dart';
 import 'password_policy.dart';
 import 'pb_backend.dart';
+import 'profile.dart';
 import 'record_codec.dart';
 
 abstract final class ForkE2E {
@@ -81,7 +82,11 @@ abstract final class ForkE2E {
     _group = groupId;
     final s = await ensure(uid);
     if (s == null || _group != groupId) return;
-    unawaited(sync(groupId).then((_) => migrateOwn(groupId, uid)));
+    unawaited(
+      sync(groupId)
+          .then((_) => migrateOwn(groupId, uid))
+          .then((_) => ForkProfile.publish(groupId)),
+    );
     for (final col in const ['e2e_handshake', 'e2e_grants']) {
       try {
         _subs.add(
@@ -164,6 +169,13 @@ abstract final class ForkE2E {
     if (s != null) return RecordCodec(s.crypto, s);
     final uid = _currentUid();
     if (uid.isEmpty) return null;
+    // Сервис как раз поднимается (вход, холодный старт) — ждём его: у нового
+    // аккаунта ключей в Keystore ещё нет, они появятся при старте.
+    final starting = _starting;
+    if (starting != null && _uid == uid) {
+      final st = await starting;
+      if (st != null) return RecordCodec(st.crypto, st);
+    }
     final fresh = DateTime.now().difference(_roAt) < const Duration(minutes: 1);
     if (_ro == null || _roUid != uid || !fresh) {
       _roUid = uid;
@@ -315,6 +327,59 @@ abstract final class ForkE2E {
     return (ok: open != null, data: open);
   }
 
+  /// Даты пары для экрана статистики: сервер видит в колонках заглушку,
+  /// настоящие — в расшифрованной записи пары. Правит ответ сервера на месте.
+  static Future<void> patchCoupleStats(
+    String groupId,
+    Map<String, dynamic> json,
+  ) async {
+    try {
+      final g = await PocketBaseService().pb
+          .collection('groups')
+          .getOne(groupId);
+      final couple = json['couple'];
+      if (couple is! Map) return;
+      couple['start'] = g.data['start_date'];
+      couple['anniversary'] = g.data['anniversary_date'];
+    } catch (e) {
+      debugPrint('ForkE2E: даты пары для статистики — $e');
+    }
+  }
+
+  /// Имя заглушки, которое видит сервер: настоящее уходит следом шифром.
+  static const String waitingNameOnServer = '…';
+
+  /// Заглушка пары с пустым местом — шифром ключа пары: сервер (waiting.pb.js)
+  /// заводит пару с [waitingNameOnServer], а имя, фото и дату возвращения
+  /// пишем правкой записи. Ключ одиночной пары заводится при синхронизации.
+  /// `returnDate == ''` — стереть дату.
+  static Future<bool> sealWaiting(
+    String groupId, {
+    String? name,
+    String? avatar,
+    String? returnDate,
+  }) async {
+    final body = <String, dynamic>{
+      'placeholder_name': ?name,
+      'placeholder_avatar': ?avatar,
+      if (returnDate != null)
+        'return_date': returnDate.isEmpty ? null : returnDate,
+    };
+    if (body.isEmpty) return true;
+    try {
+      final uid = _currentUid();
+      await ensure(uid);
+      await sync(groupId);
+      await PocketBaseService().pb
+          .collection('groups')
+          .update(groupId, body: body);
+      return true;
+    } catch (e) {
+      debugPrint('ForkE2E: заглушка пары — $e');
+      return false;
+    }
+  }
+
   /// Шифруются ли новые записи пары [groupId].
   static bool encrypts(String groupId) {
     final s = service.value;
@@ -339,11 +404,21 @@ abstract final class ForkE2E {
     final local = await LocalStore.instance.getRecord(collection, id);
     if (local != null) return local.toJson();
     final needAuthor = e2eRecordKey(collection, {...body, 'id': id}) == null;
-    if (e2eGroupOf(collection, id, body) != null && !needAuthor) return null;
+    // Переехавшие поля (числа и даты в `enc`) нужны целиком: правка одного
+    // не должна стереть остальные. Наклейке нужен весь `data`.
+    final full =
+        E2EHttpClient.stickerOp(collection, body) ||
+        (e2eFields[collection]?.entries.any(
+              (f) => f.value.kind == SealKind.moved && body.containsKey(f.key),
+            ) ??
+            false);
+    if (e2eGroupOf(collection, id, body) != null && !needAuthor && !full) {
+      return null;
+    }
     try {
       final r = await PocketBaseService().pb
           .collection(collection)
-          .getOne(id, fields: 'id,group_id,user_uid');
+          .getOne(id, fields: full ? null : 'id,group_id,user_uid');
       return r.toJson();
     } catch (_) {
       return null;

@@ -80,7 +80,6 @@ func (s *Service) WaitingCreate(ctx context.Context, in WaitingCreateInput) (Res
 		g.Set("max_members", 2)
 		g.Set("relationship_type", "couple")
 		g.Set("custom_relationship_types", []any{})
-		g.Set("start_date", now())
 		g.Set("created_at", now())
 		g.Set("disbanded", false)
 		g.Set("waiting_mode", true)

@@ -16,7 +16,6 @@ groups_membership.pb.js
 waiting.pb.js
 user_card.pb.js
 couple_stats.pb.js
-birthdays.pb.js
 counters.pb.js
 comments_count.pb.js
 comments_count.js

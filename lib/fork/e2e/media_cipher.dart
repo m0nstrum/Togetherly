@@ -26,18 +26,11 @@ import 'crypto.dart';
 import 'envelope.dart';
 import 'record_codec.dart';
 
-/// Виды файлов `media`, что остаются открытыми: их видят не только пара
-/// (аватар, обложка профиля — `/api/user/card`), их разбирает сервер (кадры
-/// живого фото для виджета, `widget_anim.pb.js`) или их играет веб-страница
-/// «Смотрим вместе» (§10.1: ролики не шифруем).
-const Set<String> plainMediaKinds = {
-  'avatar',
-  'avatars',
-  'banner',
-  'banners',
-  'widget_anim',
-  'video',
-};
+/// Виды файлов `media`, что остаются открытыми: их разбирает сервер (кадры
+/// живого фото для виджета, `widget_anim.pb.js`). Аватар и баннер шифруются
+/// личным ключом, партнёру уходит копия под ключом пары (ForkProfile);
+/// ролики — ключом пары, играют через локальный прокси.
+const Set<String> plainMediaKinds = {'widget_anim'};
 
 /// Тип содержимого по имени файла — прокси отдаёт его плееру.
 String mimeFromName(String? name) {

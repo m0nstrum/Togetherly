@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../fork/meta_direct.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/profile.dart'; // fork
 import '../models/miss_you_event.dart';
 import '../models/invite_code_state.dart';
 import '../models/timer_sync.dart';
@@ -572,7 +574,9 @@ class PbDataService {
       'pairId': rec.id,
       'partnerName': names[partnerUid] ?? '',
       'partnerAvatar': avatars[partnerUid] ?? '',
-      'startDate': _date(data['start_date']),
+      // fork: дата начала — шифром; пока её не задали, считаем от создания
+      // пары (сервер её больше не проставляет).
+      'startDate': _date(data['start_date']) ?? _date(data['created_at']),
       'members': members
           .map((uid) => {
                 'uid': uid,
@@ -624,10 +628,10 @@ class PbDataService {
   }) async {
     lastWaitingError = null;
     try {
+      // fork (E2E): сервер видит только заглушку имени, настоящие имя, фото
+      // и дату возвращения пишет ForkE2E.sealWaiting — шифром.
       final res = await _pb.send('/api/waiting/create', method: 'POST', body: {
-        'name': name,
-        if (avatar != null && avatar.isNotEmpty) 'avatar': avatar,
-        if (returnDate != null) 'returnDate': _iso(returnDate),
+        'name': ForkE2E.waitingNameOnServer,
       });
       final map = res is Map
           ? Map<String, dynamic>.from(res)
@@ -636,8 +640,13 @@ class PbDataService {
         lastWaitingError = (map['message'] ?? '').toString();
         return null;
       }
+      final pairId = (map['pairId'] ?? '').toString();
+      await ForkE2E.sealWaiting(pairId, // fork
+          name: name,
+          avatar: avatar != null && avatar.isNotEmpty ? avatar : null,
+          returnDate: returnDate == null ? null : _iso(returnDate));
       return {
-        'pairId': (map['pairId'] ?? '').toString(),
+        'pairId': pairId,
         'code': (map['code'] ?? '').toString(),
       };
     } on ClientException catch (e) {
@@ -661,15 +670,13 @@ class PbDataService {
     bool clearReturnDate = false,
   }) async {
     try {
-      final res = await _pb.send('/api/waiting/update', method: 'POST', body: {
-        'groupId': groupId,
-        if (name != null) 'name': name,
-        if (avatar != null) 'avatar': avatar,
-        if (clearReturnDate) 'returnDate': '',
-        if (!clearReturnDate && returnDate != null)
-          'returnDate': _iso(returnDate),
-      });
-      return res is Map && res['success'] == true;
+      // fork (E2E): правка записи пары шифром вместо /api/waiting/update.
+      return await ForkE2E.sealWaiting(groupId,
+          name: name,
+          avatar: avatar,
+          returnDate: clearReturnDate
+              ? ''
+              : (returnDate == null ? null : _iso(returnDate)));
     } catch (e) {
       debugPrint('PbData.waitingUpdate failed: $e');
       return false;
@@ -3185,7 +3192,9 @@ class PbDataService {
       if (res is! Map || res['ok'] != true) return null;
       // Рамку аватарки знает весь экран, а не только тот, кто спросил карточку.
       AvatarFrames.instance.put(uid, res['frame']);
-      return {
+      // fork (E2E): профиль партнёра в users — шифр его личного ключа;
+      // открытый лежит карточкой в записи пары.
+      return await ForkProfile.partnerCard(uid, {
         'displayName': res['display_name'],
         'avatarUrl': res['avatar_url'],
         'bannerUrl': res['banner_url'],
@@ -3197,7 +3206,7 @@ class PbDataService {
         'birthDate': res['birth_date'],
         'mascotSleep': res['mascot_sleep'],
         'grantedBadges': res['granted_badges'],
-      };
+      });
     } catch (e) {
       debugPrint('PbData.loadPartnerCard($uid) failed: $e');
       return null;

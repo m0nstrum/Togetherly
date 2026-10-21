@@ -133,6 +133,8 @@ routerAdd("GET", "/invite/{code}", (e) => {
       .bind({ c: code })
       .one(row);
     inviterName = String(row.nm || "").trim();
+    // fork (E2E): имя в профиле — шифр, на публичной странице его нет.
+    if (inviterName.indexOf("e2e1.") === 0) inviterName = "";
   } catch (err) {
     // Кода нет, он погашен или база занята — покажем страницу без имени.
     try { $app.logger().error("invite name lookup: " + String(err)); } catch (_) {}
