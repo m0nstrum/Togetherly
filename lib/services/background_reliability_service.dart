@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dict_strings.dart' show ruEn;
 import '../widgets/common/app_dialog.dart';
+import 'fcm_service.dart'; // fork
 
 /// Надёжность мгновенной фоновой доставки БЕЗ FCM.
 ///
@@ -47,6 +48,10 @@ class BackgroundReliabilityService {
   Future<void> maybePrompt(BuildContext context) async {
     if (!Platform.isAndroid) return;
     if (await isExempt()) return;
+    // fork (UX G15): с рабочими пушами Google фоновая связь не нужна, и просить
+    // «без ограничений батареи» незачем. Токен приезжает не сразу — ждём вердикт.
+    await FcmService.instance.settled.timeout(const Duration(seconds: 8), onTimeout: () {});
+    if (FcmService.instance.ready) return;
 
     final prefs = await SharedPreferences.getInstance();
     final count = prefs.getInt(_kPromptCount) ?? 0;
