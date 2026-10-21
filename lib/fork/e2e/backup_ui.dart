@@ -9,6 +9,8 @@ import 'backup.dart';
 import 'e2e_service.dart';
 import 'fork_e2e.dart';
 import 'password_policy.dart';
+import 'crypto.dart' show E2EVerifyError;
+import '../ui/feedback.dart';
 
 bool get _ru => const {
   'ru',
@@ -54,7 +56,8 @@ String problemText(PasswordProblem p) => switch (p) {
   ),
 };
 
-/// Строка настроек: включён ли бэкап ключей.
+/// Строка настроек: бэкап ключей, а на новом телефоне — восстановление
+/// (UX_AUDIT N1, A3).
 class ForkE2EBackupRow extends StatelessWidget {
   const ForkE2EBackupRow({super.key});
 
@@ -62,29 +65,55 @@ class ForkE2EBackupRow extends StatelessWidget {
   Widget build(BuildContext context) => ValueListenableBuilder<E2EService?>(
     valueListenable: ForkE2E.service,
     builder: (context, svc, _) {
-      if (svc == null) return const SizedBox.shrink();
-      return ValueListenableBuilder<BackupMethod?>(
-        valueListenable: svc.backupMethod,
-        builder: (context, m, _) => SettingsRow(
+      if (svc == null) {
+        return SettingsRow(
           icon: Icons.key_rounded,
-          title: _t('Бэкап ключей шифрования', 'Encryption key backup'),
-          subtitle: switch (m) {
-            BackupMethod.phrase => _t(
-              'Включён: фраза из 24 слов',
-              'On: 24-word phrase',
-            ),
-            BackupMethod.password => _t('Включён: пароль', 'On: password'),
-            null => _t(
-              'Выключен — потеряете телефон, потеряете переписку',
-              'Off — lose your phone, lose your history',
-            ),
-          },
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const ForkE2EBackupScreen(),
-            ),
+          title: _t('Ключи шифрования', 'Encryption keys'),
+          subtitle: _t(
+            'Ещё не готовы: появятся, когда приложение подключится к серверу',
+            'Not ready yet: they appear once the app reaches the server',
           ),
-        ),
+        );
+      }
+      return ValueListenableBuilder<bool>(
+        valueListenable: svc.needsRestore,
+        builder: (context, restore, _) => restore
+            ? SettingsRow(
+                icon: Icons.restore_rounded,
+                title: _t('Восстановить ключи', 'Restore keys'),
+                subtitle: _t(
+                  'На сервере есть бэкап — введите фразу или пароль, чтобы читать историю',
+                  'There is a backup on the server — enter your phrase or password to read your history',
+                ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const ForkE2ERestoreScreen(),
+                  ),
+                ),
+              )
+            : ValueListenableBuilder<BackupMethod?>(
+                valueListenable: svc.backupMethod,
+                builder: (context, m, _) => SettingsRow(
+                  icon: Icons.key_rounded,
+                  title: _t('Бэкап ключей шифрования', 'Encryption key backup'),
+                  subtitle: switch (m) {
+                    BackupMethod.phrase => _t(
+                      'Включён: фраза из 24 слов',
+                      'On: 24-word phrase',
+                    ),
+                    BackupMethod.password => _t('Включён: пароль', 'On: password'),
+                    null => _t(
+                      'Выключен — потеряете телефон, потеряете переписку',
+                      'Off — lose your phone, lose your history',
+                    ),
+                  },
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ForkE2EBackupScreen(),
+                    ),
+                  ),
+                ),
+              ),
       );
     },
   );
@@ -102,6 +131,13 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
   BackupMethod? _method;
   RecoveryPhrase? _phrase;
   bool _written = false;
+
+  /// Бэкап уже есть: сначала статус, а не настройка заново (UX_AUDIT N3).
+  late bool _showStatus = _svc.backupMethod.value != null;
+
+  /// Проверка записанной фразы: номера слов и ввод (UX_AUDIT A8).
+  List<int>? _quiz;
+  final List<TextEditingController> _quizIn = [];
   bool _busy = false;
   final _pw = TextEditingController();
   final _pw2 = TextEditingController();
@@ -113,7 +149,69 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
   void dispose() {
     _pw.dispose();
     _pw2.dispose();
+    for (final c in _quizIn) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _change() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(_t('Сменить фразу или пароль?', 'Change phrase or password?')),
+        content: Text(
+          _t(
+            'Бэкап на сервере перезапишется. Старая фраза или пароль перестанут подходить — '
+                'для восстановления понадобится только новая.',
+            'The backup on the server will be replaced. The old phrase or password will stop working — '
+                'only the new one will restore your keys.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('Отмена', 'Cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(_t('Сменить', 'Change')),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) setState(() => _showStatus = false);
+  }
+
+  /// Три случайных слова, которые человек вводит по памяти.
+  void _startQuiz() {
+    final picks = <int>{};
+    final r = _svc.crypto.random(16);
+    for (var i = 0; picks.length < 3 && i < r.length; i++) {
+      picks.add(r[i] % 24);
+    }
+    for (var n = 0; picks.length < 3; n++) {
+      picks.add(n);
+    }
+    for (final c in _quizIn) {
+      c.dispose();
+    }
+    _quizIn
+      ..clear()
+      ..addAll([for (var i = 0; i < 3; i++) TextEditingController()]);
+    setState(() => _quiz = picks.toList()..sort());
+  }
+
+  bool get _quizOk {
+    final q = _quiz;
+    final p = _phrase;
+    if (q == null || p == null) return false;
+    for (var i = 0; i < q.length; i++) {
+      final typed = _quizIn[i].text.trim().toLowerCase();
+      final want = p.words[q[i]];
+      if (typed.length < 4 || !want.startsWith(typed)) return false;
+    }
+    return true;
   }
 
   Future<void> _pickPhrase() async {
@@ -147,8 +245,11 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
       Navigator.of(context).maybePop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('Не получилось: $e', 'Failed: $e'))),
+        ForkNotice.error(
+          context,
+          e,
+          what: _t('Бэкап не включился', 'Backup wasn’t turned on'),
+          retry: () => _save(secret),
         );
       }
     } finally {
@@ -165,6 +266,70 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: switch (_method) {
+            _ when _showStatus => [
+              Text(
+                switch (_svc.backupMethod.value) {
+                  BackupMethod.password => _t(
+                    'Бэкап ключей включён и защищён паролем.',
+                    'Key backup is on, protected by a password.',
+                  ),
+                  _ => _t(
+                    'Бэкап ключей включён и защищён фразой из 24 слов.',
+                    'Key backup is on, protected by a 24-word phrase.',
+                  ),
+                },
+                style: text.bodyLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _t(
+                  'Новые ключи пары попадают в бэкап сами. Фразу или пароль нигде, кроме вашей памяти и бумаги, '
+                      'не храним — потеряли их, смените, пока этот телефон с вами.',
+                  'New pair keys are added to the backup automatically. We don’t store your phrase or password '
+                      'anywhere — if you lost it, change it while you still have this phone.',
+                ),
+                style: text.bodyMedium,
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton(
+                onPressed: _change,
+                child: Text(_t('Сменить фразу или пароль', 'Change phrase or password')),
+              ),
+            ],
+            _ when _quiz != null => [
+              Text(
+                _t(
+                  'Проверим запись: введите слова под этими номерами (хватит первых четырёх букв).',
+                  'Let’s check: type the words with these numbers (the first four letters are enough).',
+                ),
+                style: text.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              for (var i = 0; i < _quiz!.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TextField(
+                    controller: _quizIn[i],
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: InputDecoration(
+                      labelText: _t('Слово №${_quiz![i] + 1}', 'Word #${_quiz![i] + 1}'),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: _quizOk && !_busy ? () => _save(_phrase.toString()) : null,
+                child: _busy
+                    ? const _Spinner()
+                    : Text(_t('Включить бэкап', 'Turn on backup')),
+              ),
+              TextButton(
+                onPressed: _busy ? null : () => setState(() => _quiz = null),
+                child: Text(_t('Показать фразу ещё раз', 'Show the phrase again')),
+              ),
+            ],
             null => [
               Text(
                 _t(
@@ -205,8 +370,10 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
             BackupMethod.phrase => [
               Text(
                 _t(
-                  'Запишите слова на бумаге по порядку. Мы покажем их один раз; без них ключи не восстановить.',
-                  'Write the words down in order. We show them once; without them keys can’t be restored.',
+                  'Запишите слова на бумаге по порядку. Мы покажем их один раз; без них ключи не восстановить. '
+                      'Не храните фразу в заметках, облаке или скриншоте.',
+                  'Write the words down in order. We show them once; without them keys can’t be restored. '
+                      'Don’t keep the phrase in notes, the cloud or a screenshot.',
                 ),
                 style: text.bodyLarge,
               ),
@@ -234,12 +401,8 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
                 ),
               ),
               FilledButton(
-                onPressed: _written && !_busy
-                    ? () => _save(_phrase.toString())
-                    : null,
-                child: _busy
-                    ? const _Spinner()
-                    : Text(_t('Включить бэкап', 'Turn on backup')),
+                onPressed: _written && !_busy ? _startQuiz : null,
+                child: Text(_t('Дальше: проверить запись', 'Next: check what you wrote')),
               ),
             ],
             BackupMethod.password => [
@@ -318,20 +481,46 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       _error = null;
     });
     try {
-      await _svc.restore(_secret.text);
+      var secret = _secret.text;
+      // Обещанный ввод по первым четырём буквам (UX_AUDIT A6): фразу
+      // раскрываем до полных слов и проверяем контрольную сумму до Argon2.
+      if (_svc.restoreMethod == BackupMethod.phrase) {
+        secret = RecoveryPhrase.parse(secret, await ForkE2E.wordlist()).toString();
+      }
+      await _svc.restore(secret);
       if (mounted) Navigator.of(context).maybePop();
     } on FormatException catch (e) {
-      setState(() => _error = e.message);
-    } catch (_) {
+      setState(() => _error = _formatError(e));
+    } on E2EVerifyError {
       setState(
         () => _error = _t(
           'Не подошло — проверьте фразу или пароль',
           'Didn’t work — check the phrase or password',
         ),
       );
+    } catch (e) {
+      // Сеть, сервер: фраза верная, просто повторить (UX_AUDIT A5).
+      setState(() => _error = ForkFailure.of(e).text);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  String _formatError(FormatException e) {
+    final m = e.message;
+    if (m.startsWith('нет такого слова')) {
+      return _t(
+        'Слово «${m.split(': ').last}» не из списка — проверьте написание',
+        'The word “${m.split(': ').last}” isn’t in the list — check the spelling',
+      );
+    }
+    if (m.contains('24')) {
+      return _t('Во фразе должно быть 24 слова', 'The phrase must have 24 words');
+    }
+    return _t(
+      'Во фразе ошибка: одно из слов не на своём месте или с опечаткой',
+      'The phrase has a mistake: a word is misplaced or misspelled',
+    );
   }
 
   Future<void> _fresh() async {
@@ -341,8 +530,10 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
         title: Text(_t('Начать без истории?', 'Start without history?')),
         content: Text(
           _t(
-            'Старая зашифрованная переписка останется нечитаемой на этом телефоне, а партнёр увидит, что ваш ключ сменился.',
-            'Old encrypted history stays unreadable on this phone, and your partner will see your key changed.',
+            'Старая зашифрованная переписка останется нечитаемой на этом телефоне, а партнёр увидит, что ваш ключ сменился. '
+                'Новые ключи будут без бэкапа — сразу после этого предложим его включить.',
+            'Old encrypted history stays unreadable on this phone, and your partner will see your key changed. '
+                'The new keys will have no backup — we’ll offer to turn it on right after.',
           ),
         ),
         actions: [
@@ -361,7 +552,20 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
     setState(() => _busy = true);
     try {
       await _svc.startFresh();
-      if (mounted) Navigator.of(context).maybePop();
+      if (!mounted) return;
+      // Новые ключи без бэкапа (UX_AUDIT A7) — сразу к нему.
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const ForkE2EBackupScreen()),
+      );
+    } catch (e) {
+      if (mounted) {
+        ForkNotice.error(
+          context,
+          e,
+          what: _t('Не получилось начать заново', 'Couldn’t start over'),
+          retry: _fresh,
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
