@@ -10,6 +10,8 @@ import '../../theme/app_theme.dart';
 import '../../widgets/common/animations.dart';
 import '../miss_you_button.dart';
 import 'widgets/relationship_type_dialog.dart';
+import '../gifts/partner_profile_screen.dart'; // fork
+import '../../dict_strings.dart' show ruEn; // fork
 
 /// Высота всех блоков шапки.
 ///
@@ -49,6 +51,11 @@ class HomeHeader extends StatelessWidget {
   /// Нажали «Скучаю» в шапке.
   final VoidCallback? onMissYou;
 
+  /// fork (N5, N13): перейти на вкладку главной по номеру (3 — профиль,
+  /// 2 — «Связь»). Не задан — тап по своему аватару открывает фото, а пилюля
+  /// «Не в паре» остаётся неактивной.
+  final ValueChanged<int>? onOpenTab;
+
   const HomeHeader({
     super.key,
     required this.theme,
@@ -64,6 +71,7 @@ class HomeHeader extends StatelessWidget {
     required this.pairId,
     this.missKey,
     this.onMissYou,
+    this.onOpenTab, // fork
   });
 
   @override
@@ -167,13 +175,55 @@ class HomeHeader extends StatelessWidget {
     required MoodBadgePosition moodPosition,
   }) {
     const badge = 18.0;
-    // Кружок в шапке — 40 точек: лица там не разглядеть. Нажатие открывает
-    // фотографию целиком; у заглушки с буквой открывать нечего.
-    return GestureDetector(
-      onTap: url.isEmpty
+    // fork (N5): тап — профиль (партнёра или свой), долгое нажатие — фото
+    // целиком; у заглушки с буквой тап тоже работает.
+    final isMe = uid == (PocketBaseService().userId ?? '');
+    final onTap = _avatarTap(context, uid, url, name, isMe);
+    return Semantics(
+      button: true,
+      label: isMe
+          ? ruEn('Мой профиль', 'My profile')
+          : ruEn('Профиль: ${name ?? ''}', 'Profile: ${name ?? ''}'),
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: url.isEmpty
+            ? null
+            : () => openWidgetPhotoView(
+                context,
+                imageUrl: url,
+                authorName: name,
+              ),
+        child: _avatarStack(uid, url, name, mood, moodPosition, badge),
+      ),
+    );
+  }
+
+  /// fork (N5): что делает тап по аватару.
+  VoidCallback? _avatarTap(
+    BuildContext context,
+    String uid,
+    String url,
+    String? name,
+    bool isMe,
+  ) {
+    if (isMe) {
+      if (onOpenTab != null) return () => onOpenTab!(3);
+      return url.isEmpty
           ? null
-          : () => openWidgetPhotoView(context, imageUrl: url, authorName: name),
-      child: _avatarStack(uid, url, name, mood, moodPosition, badge),
+          : () => openWidgetPhotoView(context, imageUrl: url, authorName: name);
+    }
+    if (!isPaired || pairId.isEmpty) return null;
+    return () => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PartnerProfileScreen(
+          theme: theme,
+          groupId: pairId,
+          partnerUid: uid,
+          partnerName: name ?? '',
+          partnerAvatarUrl: url.isEmpty ? null : url,
+        ),
+        settings: const RouteSettings(name: '/partner'),
+      ),
     );
   }
 
@@ -268,8 +318,10 @@ class HomeHeader extends StatelessWidget {
     // `#FCF0F3`), и пилюля выглядела вовсе без фона.
     final bg = active ? theme.cardSurface : theme.surfaceMuted;
     final fg = active ? theme.primary : theme.textMuted;
+    // fork (N13): без пары пилюля ведёт на «Связь», где приглашают.
+    final inviteTap = !active && onOpenTab != null ? () => onOpenTab!(2) : null;
     return GestureDetector(
-      onTap: active ? onRelationshipTap : null,
+      onTap: active ? onRelationshipTap : inviteTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
         height: kHeaderControlHeight,
@@ -305,6 +357,8 @@ class HomeHeader extends StatelessWidget {
               ),
             ),
             if (active) Icon(Icons.expand_more_rounded, size: 16, color: fg),
+            if (inviteTap != null) // fork
+              Icon(Icons.person_add_alt_1_rounded, size: 16, color: theme.primary),
           ],
         ),
       ),
