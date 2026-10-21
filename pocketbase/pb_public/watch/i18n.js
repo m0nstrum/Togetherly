@@ -111,6 +111,7 @@
       'room.chatToggle': 'Скрыть или показать чат',
       'room.chatOpen': 'Открыть чат',
       'room.partnerJoined': 'Партнёр в комнате',
+      'room.partnerLeft': 'Партнёр вышел из комнаты', // fork (UX L8)
 
       'gate.closedTitle': 'Комната пары',
       'gate.closedText': 'Сюда пускают только вас двоих. Войдите тем же аккаунтом, что в приложении Togetherly. Если код набирали вручную, проверьте его.',
@@ -235,6 +236,7 @@
       'room.chatToggle': 'Hide or show chat',
       'room.chatOpen': 'Open chat',
       'room.partnerJoined': 'Your partner is here',
+      'room.partnerLeft': 'Your partner left the room', // fork (UX L8)
 
       'gate.closedTitle': 'A couple\u2019s room',
       'gate.closedText': 'Only the two of you can come in. Sign in with the account you use in the Togetherly app. If you typed the code by hand, check it.',
