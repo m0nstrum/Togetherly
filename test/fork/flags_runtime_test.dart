@@ -21,11 +21,13 @@ void main() {
   });
 
   testWidgets('кнопок входа через Google/Яндекс/Apple нет', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Center(
-        child: AuthSocialRow(label: 'x', onGoogle: () {}, onYandex: () {}),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: AuthSocialRow(label: 'x', onGoogle: () {}, onYandex: () {}),
+        ),
       ),
-    ));
+    );
     expect(tester.getSize(find.byType(AuthSocialRow)), Size.zero);
   });
 
@@ -46,10 +48,12 @@ void main() {
   });
 
   testWidgets('рекламный баннер не занимает места', (tester) async {
-    await tester.pumpWidget(const Directionality(
-      textDirection: TextDirection.ltr,
-      child: Center(child: AdBanner(height: 50)),
-    ));
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(child: AdBanner(height: 50)),
+      ),
+    );
     expect(tester.getSize(find.byType(AdBanner)), Size.zero);
   });
 }

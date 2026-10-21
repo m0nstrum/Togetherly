@@ -30,7 +30,10 @@ abstract final class ForkSecureAuthStore {
     );
   }
 
-  static Future<String?> _migrate(String key, FlutterSecureStorage storage) async {
+  static Future<String?> _migrate(
+    String key,
+    FlutterSecureStorage storage,
+  ) async {
     String? secure;
     try {
       secure = await storage.read(key: key);

@@ -9,7 +9,7 @@ dst="${1:-$here/pb_hooks}"
 
 rm -rf "$dst"
 mkdir -p "$dst"
-grep -vE '^\s*(#|$)' "$here/hooks.allow" | while read -r name; do
+grep -vE '^[[:space:]]*(#|$)' "$here/hooks.allow" | while read -r name; do
   if [ ! -f "$src/$name" ]; then
     echo "нет хука $name в pocketbase/pb_hooks (апстрим переименовал?)" >&2
     exit 1

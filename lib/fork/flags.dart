@@ -7,8 +7,9 @@ abstract final class ForkFlags {
   /// поведение, чтобы его тесты проверяли то, для чего написаны. Поведение
   /// форка проверяют тесты с тегом `fork-runtime`, их CI гоняет без этого
   /// флага. В сборки приложения не попадает.
-  static const bool _upstreamBehavior =
-      bool.fromEnvironment('FORK_UPSTREAM_BEHAVIOR');
+  static const bool _upstreamBehavior = bool.fromEnvironment(
+    'FORK_UPSTREAM_BEHAVIOR',
+  );
 
   /// Собственная аналитика апстрима (`/api/stats/collect`) выключена:
   /// события не копятся и не отправляются. Вызовы в экранах остаются.
@@ -26,4 +27,7 @@ abstract final class ForkFlags {
   /// Вход только по почте и паролю (решение 3): кнопок OAuth (Google,
   /// Яндекс, Apple) нет.
   static bool get emailOnlyAuth => !_upstreamBehavior;
+
+  /// Запросы к сторонним сайтам — через свой сервер (lib/fork/http_gateway.dart).
+  static bool get metaGateway => !_upstreamBehavior;
 }

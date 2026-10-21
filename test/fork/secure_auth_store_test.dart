@@ -9,25 +9,25 @@ Map<String, String> fakeKeystore() {
   final store = <String, String>{};
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
-    const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
-    (call) async {
-      final args = (call.arguments as Map).cast<String, dynamic>();
-      final key = args['key'] as String?;
-      switch (call.method) {
-        case 'read':
-          return store[key];
-        case 'write':
-          store[key!] = args['value'] as String;
+        const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
+        (call) async {
+          final args = (call.arguments as Map).cast<String, dynamic>();
+          final key = args['key'] as String?;
+          switch (call.method) {
+            case 'read':
+              return store[key];
+            case 'write':
+              store[key!] = args['value'] as String;
+              return null;
+            case 'delete':
+              store.remove(key);
+              return null;
+            case 'containsKey':
+              return store.containsKey(key);
+          }
           return null;
-        case 'delete':
-          store.remove(key);
-          return null;
-        case 'containsKey':
-          return store.containsKey(key);
-      }
-      return null;
-    },
-  );
+        },
+      );
   return store;
 }
 
@@ -35,21 +35,30 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const key = 'pb_auth';
 
-  test('токен из SharedPreferences переезжает в Keystore и стирается', () async {
-    SharedPreferences.setMockInitialValues({key: '{"token":"old"}'});
-    final keystore = fakeKeystore();
+  test(
+    'токен из SharedPreferences переезжает в Keystore и стирается',
+    () async {
+      SharedPreferences.setMockInitialValues({key: '{"token":"old"}'});
+      final keystore = fakeKeystore();
 
-    final store = await ForkSecureAuthStore.open(key, storage: const FlutterSecureStorage());
+      final store = await ForkSecureAuthStore.open(
+        key,
+        storage: const FlutterSecureStorage(),
+      );
 
-    expect(keystore[key], contains('"token":"old"'));
-    expect((await SharedPreferences.getInstance()).getString(key), isNull);
-    expect(store, isNotNull);
-  });
+      expect(keystore[key], contains('"token":"old"'));
+      expect((await SharedPreferences.getInstance()).getString(key), isNull);
+      expect(store, isNotNull);
+    },
+  );
 
   test('новый токен пишется только в Keystore', () async {
     SharedPreferences.setMockInitialValues({});
     final keystore = fakeKeystore();
-    final store = await ForkSecureAuthStore.open(key, storage: const FlutterSecureStorage());
+    final store = await ForkSecureAuthStore.open(
+      key,
+      storage: const FlutterSecureStorage(),
+    );
 
     store.save('tkn', null);
     await Future<void>.delayed(Duration.zero);

@@ -168,3 +168,16 @@ func TestScheduleDeleteAndLoginCancels(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, u.GetDateTime("delete_after").IsZero(), "вход паролем снял пометку")
 }
+
+// S5: meta gateway не работает открытым прокси, превью — только вошедшим.
+func TestMetaGatewayGuards(t *testing.T) {
+	w := newWorld(t)
+	code, _ := w.do(t, http.MethodGet, "/api/meta/fetch?url="+"http%3A%2F%2F127.0.0.1%3A8090%2Fapi%2Fhealth", "", "")
+	assert.Equal(t, http.StatusForbidden, code, "внутренний адрес")
+	code, _ = w.do(t, http.MethodGet, "/api/meta/fetch?url="+"https%3A%2F%2Fevil.example.org%2F", "", "")
+	assert.Equal(t, http.StatusForbidden, code, "чужой хост")
+	code, _ = w.do(t, http.MethodGet, "/api/link/preview?url=https%3A%2F%2Fexample.org", "", "")
+	assert.Equal(t, http.StatusUnauthorized, code, "превью без входа")
+	code, body := w.do(t, http.MethodGet, "/api/link/preview?url=javascript%3Aalert(1)", w.aTok, "")
+	assert.Equal(t, http.StatusBadRequest, code, body)
+}

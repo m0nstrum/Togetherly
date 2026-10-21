@@ -21,7 +21,9 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/domain/realtime"
 	"github.com/m0nstrum/togetherly/server/internal/handler"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/centrifugo"
+	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 
@@ -55,6 +57,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindCapsules(app, time.Now, log)
 	bindGuards(app)
 	acc := bindAccount(app, log)
+	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
 	bindSettings(app, cfg, log)
 
 	bindCompat(app, cfg.CompatAddr, log)
@@ -63,6 +66,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		handler.WatchRTC(e.Router, turn, time.Now)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
+		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
 			e.Router.GET("/{path...}", apis.Static(os.DirFS(cfg.PublicDir), false))
 		}

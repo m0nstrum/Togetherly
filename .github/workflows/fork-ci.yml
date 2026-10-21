@@ -89,6 +89,10 @@ jobs:
       - name: go test
         run: go test -race ./...
 
+      # Статика из pb_public апстрима: без адресов и аналитики автора.
+      - name: статика
+        run: sh scripts/sync-public.sh "$RUNNER_TEMP/pb_public"
+
       # Настоящий бинарник с JS-хуками апстрима: вход, пара по коду, чат.
       - name: смоук
         run: scripts/smoke.sh

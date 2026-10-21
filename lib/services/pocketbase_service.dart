@@ -8,6 +8,7 @@ import 'centrifugo_service.dart';
 import 'widget_owner.dart';
 import 'pb_data_service.dart';
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/http_gateway.dart'; // fork
 import '../fork/secure_auth_store.dart'; // fork
 
 /// Ядро клиента PocketBase — единая точка доступа к нашему self-hosted бэкенду
@@ -50,6 +51,7 @@ class PocketBaseService {
 
     _pb = PocketBase(baseUrl, authStore: authStore);
     _initialized = true;
+    ForkHttpGateway.install(); // fork: сторонние сайты — через свой сервер
     debugPrint('PocketBaseService: init, авторизован=$isLoggedIn');
   }
 

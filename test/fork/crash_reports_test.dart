@@ -17,14 +17,24 @@ void main() {
       ForkCrashReports.consent.value = true;
       final e = SentryEvent(
         user: SentryUser(id: 'u123', email: 'a@b.c'),
-        message: SentryMessage('open https://x.org/api/files/m/1/a.jpg?token=SECRET at 55.751244, 37.618423'),
+        message: SentryMessage(
+          'open https://x.org/api/files/m/1/a.jpg?token=SECRET at 55.751244, 37.618423',
+        ),
         exceptions: [
-          SentryException(type: 'ClientException', value: 'Bearer abc.def.ghi failed for me@mail.ru'),
+          SentryException(
+            type: 'ClientException',
+            value: 'Bearer abc.def.ghi failed for me@mail.ru',
+          ),
         ],
         breadcrumbs: [
-          Breadcrumb(message: 'Привет, любимая', category: 'ui', data: {'lat': 55.75}),
+          Breadcrumb(
+            message: 'Привет, любимая',
+            category: 'ui',
+            data: {'lat': 55.75},
+          ),
         ],
-        contexts: Contexts(device: SentryDevice(model: 'Pixel'))..['picker'] = {'error': 'x'},
+        contexts: Contexts(device: SentryDevice(model: 'Pixel'))
+          ..['picker'] = {'error': 'x'},
       );
       final out = ForkCrashReports.beforeSend(e)!;
       expect(out.user, isNull);
@@ -43,7 +53,9 @@ void main() {
 
     test('JWT вырезается', () {
       expect(
-        ForkCrashReports.scrubText('t=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig_part-1'),
+        ForkCrashReports.scrubText(
+          't=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig_part-1',
+        ),
         isNot(contains('eyJ')),
       );
     });

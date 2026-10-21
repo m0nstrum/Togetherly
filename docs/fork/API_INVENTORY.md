@@ -92,10 +92,11 @@
 
 | Роут | Где сейчас | Клиент | Решение |
 |---|---|---|---|
-| `GET /api/link/preview` | `link_preview.pb.js` → `link_fetcher` | `pb_data_service` | перенос в gateway, fetcher — образец |
-| `GET /api/music/yandex` | `music.pb.js` | `music_meta_service` | перенос в gateway |
+| `GET /api/link/preview` | `link_preview.pb.js` → `link_fetcher` | `pb_data_service` | готово (S5): Go, `usecase/meta.LinkPreview` через `safefetch`, только с входом |
+| `GET /api/music/yandex` | `music.pb.js` | `music_meta_service` | готово: хук `music.pb.js` в JSVM, ходит сервер |
 | `GET /api/movies/search` | hotpath (`movies.py`: poiskkino, Wikidata) | `movie_search_service` | переписать в gateway; ключ poiskkino — свой или без него |
-| — | — | клиент сам ходит в Deezer, iTunes, Open Library, Vimeo oEmbed, noembed, YouTube-превью | перевести на gateway (§6) |
+| — | — | клиент сам ходит в Deezer, iTunes, Open Library, Vimeo oEmbed, noembed, YouTube-превью | готово (S5): `GET /api/meta/fetch?url=` — клиент перехватывает весь `dart:io` (`lib/fork/http_gateway.dart`), сервер отдаёт по белому списку (`domain/meta`), с входом — любой текст/JSON/картинку через `safefetch` |
+| `GET /api/meta/fetch` | — | любой GET/HEAD к чужому хосту | новый (S5): `safefetch` (проверка IP на каждом соединении, порты 80/443, без прокси), LRU-кэш, лимит по IP, `CSP: sandbox` на ответ |
 
 ### Монеты, сундуки, подарки
 
@@ -193,7 +194,8 @@ foreground-сервисе), сервер текстов уведомлений �
 | Сервис | Кто зовёт | Что видит | Решение |
 |---|---|---|---|
 | OpenFreeMap (тайлы) | клиент | где пользователь смотрит карту | пока исключение (PLAN), адрес в конфиге (S1) |
-| noembed.com, Vimeo oEmbed, `i.ytimg.com`, Rutube API | клиент | ссылки на видео | gateway (S5) |
+| noembed.com, Vimeo oEmbed, `i.ytimg.com`, Rutube API | клиент | ссылки на видео | gateway (S5, готово); встроенные плееры (WebView) — напрямую, исключение решения 4 |
+| Nominatim (поиск адреса) | клиент | адреса и места | gateway (S5, готово) |
 | Deezer, iTunes, `api.music.yandex.net` | клиент / `music.pb.js` | треки | gateway |
 | Open Library (поиск и обложки) | клиент | книги | gateway |
 | poiskkino, Wikidata | hotpath | фильмы | gateway |
