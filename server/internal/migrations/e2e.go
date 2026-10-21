@@ -98,29 +98,37 @@ const E2ESealedMax = 32000
 
 func init() {
 	m.Register(func(app core.App) error {
-		for name, fields := range e2eSealedFields {
-			col, err := app.FindCollectionByNameOrId(name)
-			if err != nil {
-				continue // коллекции нет — схема ещё не накатана, нечего расширять
-			}
-			changed := false
-			for _, f := range fields {
-				tf, ok := col.Fields.GetByName(f).(*core.TextField)
-				if !ok || (tf.Max >= E2ESealedMax) {
-					continue
-				}
-				tf.Max = E2ESealedMax
-				changed = true
-			}
-			if !changed {
+		return widenSealed(app, e2eSealedFields)
+	}, nil, "1760000003_e2e_sealed_fields.go")
+	m.Register(func(app core.App) error {
+		return widenSealed(app, map[string][]string{"memory_comments": {"text"}})
+	}, nil, "1760000005_e2e_sealed_comments.go")
+}
+
+// widenSealed поднимает предел длины текстовых полей до E2ESealedMax.
+func widenSealed(app core.App, sealed map[string][]string) error {
+	for name, fields := range sealed {
+		col, err := app.FindCollectionByNameOrId(name)
+		if err != nil {
+			continue // коллекции нет — схема ещё не накатана, нечего расширять
+		}
+		changed := false
+		for _, f := range fields {
+			tf, ok := col.Fields.GetByName(f).(*core.TextField)
+			if !ok || (tf.Max >= E2ESealedMax) {
 				continue
 			}
-			if err := app.Save(col); err != nil {
-				return err
-			}
+			tf.Max = E2ESealedMax
+			changed = true
 		}
-		return nil
-	}, nil, "1760000003_e2e_sealed_fields.go")
+		if !changed {
+			continue
+		}
+		if err := app.Save(col); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // e2eMovedCollections — коллекции, где часть полей не зашифровать на месте

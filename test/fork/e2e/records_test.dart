@@ -97,7 +97,7 @@ void main() {
 
     test('чужие коллекции и пара без ключа — как есть', () {
       final b = {'text': 'x'};
-      expect(codec.encode('memories', 'm1', _gid, b), same(b));
+      expect(codec.encode('users', 'm1', _gid, b), same(b));
       expect(codec.encode(_col, 'm1', 'other', b), same(b));
       expect(RecordCodec.locked().encode(_col, 'm1', _gid, b), same(b));
     });
@@ -238,6 +238,74 @@ void main() {
     });
   });
 
+  group('воспоминания', () {
+    final memory = {
+      'id': 'mem1',
+      'type': 'photo',
+      'sealed': true,
+      'openAt': '2027-01-01T00:00:00.000Z',
+      'commentsCount': 2,
+      'caption': 'море',
+      'imageUrl': 'pb://media/x/y.webp',
+      'latitude': 43.1,
+    };
+
+    test('data: служебные ключи открыты, содержимое — шифром в e2e', () {
+      final enc = codec.encode('memories', 'mem1', _gid, {'data': memory});
+      final data = enc['data'] as Map<String, dynamic>;
+      expect(data['sealed'], isTrue);
+      expect(data['openAt'], '2027-01-01T00:00:00.000Z');
+      expect(data['commentsCount'], 2);
+      expect(data[e2ePartialKey], startsWith(e2eFieldPrefix));
+      for (final hidden in ['caption', 'imageUrl', 'latitude']) {
+        expect(data, isNot(contains(hidden)));
+      }
+      final dec = codec.decode('memories', {'id': 'mem1', ...enc});
+      expect(dec['data'], memory);
+    });
+
+    test('сервер поменял счётчик комментариев — шифр цел', () {
+      final enc = codec.encode('memories', 'mem1', _gid, {'data': memory});
+      final data = Map<String, dynamic>.of(enc['data'] as Map<String, dynamic>)
+        ..['commentsCount'] = 3;
+      final dec = codec.decode('memories', {'id': 'mem1', 'data': data});
+      expect((dec['data'] as Map)['commentsCount'], 3);
+      expect((dec['data'] as Map)['caption'], 'море');
+    });
+
+    test('запечатанная капсула приходит без e2e — как есть', () {
+      final r = {
+        'id': 'mem1',
+        'data': {'sealed': true, 'openAt': '2027-01-01T00:00:00.000Z'},
+      };
+      expect(codec.decode('memories', r), same(r));
+    });
+
+    test('без ключа — только служебные ключи, потом retry', () {
+      final later = PairKey(_gid, 2, c.symmetricKey());
+      final enc = RecordCodec(
+        c,
+        _Keys()..add(later),
+      ).encode('memories', 'mem1', _gid, {'data': memory});
+      final locked = codec.decode('memories', {'id': 'mem1', ...enc});
+      expect((locked['data'] as Map)['caption'], isNull);
+      expect((locked['data'] as Map)['type'], 'photo');
+      keys.add(later);
+      expect(codec.retry('memories', locked)!['data'], memory);
+    });
+
+    test('комментарий — текст на месте', () {
+      final enc = codec.encode('memory_comments', 'cm1', _gid, {
+        'text': 'красиво',
+      });
+      expect(enc['text'], startsWith(e2eFieldPrefix));
+      expect(
+        codec.decode('memory_comments', {'id': 'cm1', ...enc})['text'],
+        'красиво',
+      );
+    });
+  });
+
   group('HTTP-клиент', () {
     late List<http.Request> wire;
     late Map<String, Map<String, dynamic>> server;
@@ -309,7 +377,7 @@ void main() {
     test('чужие коллекции идут как есть', () async {
       final pb = PocketBase('http://pb', httpClientFactory: client);
       await pb
-          .collection('memories')
+          .collection('users')
           .create(body: {'id': 'mem000000000001', 'text': 'видно'});
       expect(wire.single.body, contains('видно'));
     });

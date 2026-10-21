@@ -280,6 +280,11 @@ func TestSealedFieldsFitCiphertext(t *testing.T) {
 		require.True(t, ok, f)
 		assert.Equal(t, migrations.E2ESealedMax, tf.Max, f)
 	}
+	comments, err := app.FindCollectionByNameOrId("memory_comments")
+	require.NoError(t, err)
+	tf, ok := comments.Fields.GetByName("text").(*core.TextField)
+	require.True(t, ok)
+	assert.Equal(t, migrations.E2ESealedMax, tf.Max)
 }
 
 // У цикла есть поле `enc`, куда клиент переносит дату отметки.

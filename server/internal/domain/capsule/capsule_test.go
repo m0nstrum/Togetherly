@@ -77,3 +77,13 @@ func TestMergeUpdate(t *testing.T) {
 		assert.NotContains(t, capsule.MergeUpdate(stored, in, true), capsule.OpenedMark)
 	})
 }
+
+// После E2E (S9) содержимое лежит шифром в ключе `e2e` — его капсула прячет
+// так же, как открытое содержимое раньше.
+func TestRedactHidesCiphertext(t *testing.T) {
+	d := map[string]any{"sealed": true, "openAt": "2027-01-01T00:00:00.000Z", "e2e": "e2e1.g:1.n.c"}
+	assert.NotContains(t, capsule.Redact(d), "e2e")
+	in := capsule.Redact(d)
+	in["e2e"] = "e2e1.g:1.n.подмена"
+	assert.Equal(t, "e2e1.g:1.n.c", capsule.MergeUpdate(d, in, true)["e2e"])
+}

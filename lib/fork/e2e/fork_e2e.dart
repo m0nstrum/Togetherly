@@ -312,23 +312,34 @@ abstract final class ForkE2E {
 
   /// Коллекции пары, где своё старое перешифровывает сам автор: править
   /// чужое сервер не даёт (chat_guard.pb.js, правила цикла).
-  static const List<String> migrated = ['chat_messages', 'cycle_entries'];
+  /// Коллекция → поле автора.
+  static const Map<String, String> migrated = {
+    'chat_messages': 'user_uid',
+    'cycle_entries': 'user_uid',
+    'memories': 'author_uid',
+    'memory_comments': 'author_uid',
+  };
 
   /// Свои записи, сохранённые до E2E, перешифровать на сервере.
   static Future<int> migrateOwn(String groupId, String uid) async {
     var done = 0;
-    for (final col in migrated) {
-      done += await _migrate(col, groupId, uid);
+    for (final e in migrated.entries) {
+      done += await _migrate(e.key, e.value, groupId, uid);
     }
     return done;
   }
 
-  static Future<int> _migrate(String col, String groupId, String uid) async {
+  static Future<int> _migrate(
+    String col,
+    String owner,
+    String groupId,
+    String uid,
+  ) async {
     if (!encrypts(groupId) || uid.isEmpty) return 0;
     final fields = e2eFields[col]!;
     final pb = PocketBaseService().pb;
     final filter = pb.filter(
-      'group_id = {:g} && user_uid = {:u} && (${plaintextFilter(col)})',
+      'group_id = {:g} && $owner = {:u} && (${plaintextFilter(col)})',
       {'g': groupId, 'u': uid},
     );
     final seen = <String>{};

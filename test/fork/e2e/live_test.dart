@@ -137,6 +137,33 @@ void main() {
       expect(bobCycle.getStringValue('day'), '2026-10-01 00:00:00.000Z');
       expect(bobCycle.getStringValue('kind'), 'period');
 
+      // Воспоминание (S9.3): служебные ключи открыты, содержимое — шифром.
+      final mem = await chat(env['SMOKE_ATOK']!, a)
+          .collection('memories')
+          .create(
+            body: {
+              'group_id': pair,
+              'type': 'photo',
+              'author_uid': a.uid,
+              'created_at': '2026-10-01 00:00:00.000Z',
+              'data': {
+                'type': 'photo',
+                'commentsCount': 0,
+                'caption': 'море',
+                'latitude': 43.1,
+              },
+            },
+          );
+      final rawMem =
+          await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+              .collection('memories')
+              .getOne(mem.id);
+      expect(rawMem.data['data']['type'], 'photo');
+      expect(rawMem.data['data'], isNot(contains('caption')));
+      expect(rawMem.data['data']['e2e'], startsWith(e2eFieldPrefix));
+      final bobMem = await bobChat.collection('memories').getOne(mem.id);
+      expect(bobMem.data['data']['caption'], 'море');
+
       final ids = [a.uid, b.uid]..sort();
       final channel = 'pair_${ids[0]}_${ids[1]}';
       final loc = await chat(env['SMOKE_ATOK']!, a)

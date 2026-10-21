@@ -27,26 +27,70 @@ abstract interface class E2EKeyring {
 /// Как поле лежит в колонке: строка или JSON. Шифртекст в обоих случаях —
 /// строка `e2e1.…`; JSON-колонка PocketBase строку принимает. Поля других
 /// типов (даты) переезжают в общее поле [e2eMovedField], а колонка пустеет.
-enum SealKind { text, json, moved }
+enum SealKind { text, json, jsonPartial, moved }
 
 /// Поле записи, куда переезжают поля, которые на месте не зашифровать.
 const String e2eMovedField = 'enc';
 
+/// Ключ шифра внутри частично шифрованного JSON.
+const String e2ePartialKey = 'e2e';
+
+/// Ключи `memories.data`, которые читает или пишет сервер: капсула
+/// (server/internal/domain/capsule `visible`, `sealed`/`openAt`), счётчик
+/// комментариев (comments_count.js), наклейки (правка на сервере).
+const Set<String> memoryOpenKeys = {
+  'id',
+  'groupId',
+  'type',
+  'authorUid',
+  'authorName',
+  'authorAvatar',
+  'createdAt',
+  'editedAt',
+  'addedAt',
+  'tz',
+  'sealed',
+  'openAt',
+  'isPinned',
+  'savedBy',
+  'reactions',
+  'commentsCount',
+  'dailyTaskId',
+  'capsuleOpened',
+  'stickers',
+  'deleted',
+};
+
 class SealedField {
   const SealedField.text({this.locked = ''})
     : kind = SealKind.text,
-      cleared = '';
-  const SealedField.json({this.locked}) : kind = SealKind.json, cleared = null;
+      cleared = '',
+      open = const {};
+  const SealedField.json({this.locked})
+    : kind = SealKind.json,
+      cleared = null,
+      open = const {};
+
+  /// JSON-объект, где ключи [open] остаются открытыми (их читает сервер),
+  /// а остальное уходит шифром в ключ [e2ePartialKey].
+  const SealedField.jsonPartial(this.open)
+    : kind = SealKind.jsonPartial,
+      locked = null,
+      cleared = null;
 
   /// Переезжает в [e2eMovedField], в колонке остаётся [cleared]. Правка
   /// записи шлёт все такие поля разом (иначе пропущенные сотрутся из `enc`).
   const SealedField.moved({this.locked = '', this.cleared = ''})
-    : kind = SealKind.moved;
+    : kind = SealKind.moved,
+      open = const {};
 
   final SealKind kind;
 
   /// Что остаётся в колонке переехавшего поля: одно значение на все записи.
   final Object? cleared;
+
+  /// Открытые ключи частично шифрованного JSON.
+  final Set<String> open;
 
   /// Что лежит в поле, пока ключа нет.
   final Object? locked;
@@ -64,6 +108,8 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'reactions': SealedField.json(locked: <String, dynamic>{}),
   },
   'live_location': {'data': SealedField.json()},
+  'memories': {'data': SealedField.jsonPartial(memoryOpenKeys)},
+  'memory_comments': {'text': SealedField.text(locked: e2eLockedText)},
   'cycle_entries': {
     'kind': SealedField.text(),
     'flow': SealedField.text(),
@@ -104,6 +150,8 @@ String plaintextFilter(String collection) => e2eFields[collection]!.entries
       (e) => switch (e.value.kind) {
         SealKind.text => "(${e.key} != '' && ${e.key} !~ '$e2eFieldPrefix')",
         SealKind.json => "${e.key} ~ '\":'",
+        SealKind.jsonPartial =>
+          "(${e.key} ~ '\":' && ${e.key} !~ '$e2eFieldPrefix')",
         SealKind.moved =>
           "(${e.key} != '' && ${e.key} != '${e.value.cleared}')",
       },
@@ -182,6 +230,7 @@ class RecordCodec {
         if ((v is Map && v.isEmpty) || (v is List && v.isEmpty)) return null;
         return jsonEncode(v);
       case SealKind.moved:
+      case SealKind.jsonPartial:
         return null;
     }
   }
@@ -208,6 +257,26 @@ class RecordCodec {
           moved[e.key] = v;
           out[e.key] = e.value.cleared;
         }
+        continue;
+      }
+      if (e.value.kind == SealKind.jsonPartial) {
+        final v = out[e.key];
+        if (v is! Map || v[e2ePartialKey] != null) continue;
+        final rest = <String, dynamic>{};
+        final kept = <String, dynamic>{};
+        for (final kv in v.entries) {
+          final k = kv.key.toString();
+          (e.value.open.contains(k) ? kept : rest)[k] = kv.value;
+        }
+        if (rest.isEmpty) continue;
+        kept[e2ePartialKey] = sealField(
+          collection,
+          recordId,
+          e.key,
+          jsonEncode(rest),
+          key,
+        );
+        out[e.key] = kept;
         continue;
       }
       final plain = _plain(e.value.kind, out[e.key]);
@@ -256,9 +325,37 @@ class RecordCodec {
       if (moved == null) (locked ??= {})[e2eMovedField] = enc;
     }
     for (final e in fields.entries) {
+      if (e.value.kind != SealKind.jsonPartial) continue;
+      final v = rec[e.key];
+      if (v is! Map || !isSealedValue(v[e2ePartialKey])) continue;
+      out ??= Map<String, dynamic>.of(rec);
+      final sealed = v[e2ePartialKey] as String;
+      final kept = <String, dynamic>{
+        for (final kv in v.entries)
+          if (kv.key != e2ePartialKey) kv.key.toString(): kv.value,
+      };
+      final plain = openField(collection, id, e.key, sealed);
+      Map<String, dynamic>? rest;
+      try {
+        if (plain != null) rest = jsonDecode(plain) as Map<String, dynamic>;
+      } on Object {
+        rest = null;
+      }
+      if (rest != null) {
+        out[e.key] = {...rest, ...kept};
+      } else {
+        out[e.key] = kept;
+        (locked ??= {})[e.key] = v;
+      }
+    }
+    for (final e in fields.entries) {
       final f = e.key;
       final v = rec[f];
-      if (e.value.kind == SealKind.moved || !isSealedValue(v)) continue;
+      if (e.value.kind == SealKind.moved ||
+          e.value.kind == SealKind.jsonPartial ||
+          !isSealedValue(v)) {
+        continue;
+      }
       out ??= Map<String, dynamic>.of(rec);
       final plain = openField(collection, id, f, v as String);
       Object? value;
