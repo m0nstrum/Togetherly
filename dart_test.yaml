@@ -1,3 +1,5 @@
 # fork: тег поведения сборки форка (test/fork/flags_runtime_test.dart).
 tags:
   fork-runtime:
+  # fork: живые тесты против сервера (server/scripts/smoke.sh, SMOKE_AFTER).
+  fork-live:

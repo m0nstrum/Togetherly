@@ -92,6 +92,14 @@ ice=$(get /api/watch/rtc "$btok")
 echo "$ice" | json "d['success']" | grep -q True || fail "watch/rtc: $ice"
 echo "ok: watch/rtc"
 
+# Доп. проверка поверх готовой пары (например, обмен ключами E2E клиента:
+# test/fork/e2e/live_test.dart). Команда получает адрес, токены и пару.
+if [ -n "${SMOKE_AFTER:-}" ]; then
+  SMOKE_BASE_URL="$base" SMOKE_PAIR="$pair" SMOKE_AID="$aid" SMOKE_BID="$bid" \
+  SMOKE_ATOK="$atok" SMOKE_BTOK="$btok" sh -c "$SMOKE_AFTER" || fail "SMOKE_AFTER: $SMOKE_AFTER"
+  echo "ok: $SMOKE_AFTER"
+fi
+
 if grep -q '"level":"ERROR"' "$work/server.log"; then
   grep '"level":"ERROR"' "$work/server.log" >&2
   fail "ошибки в журнале сервера"

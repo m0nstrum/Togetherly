@@ -64,6 +64,18 @@ jobs:
       - name: flutter test (сборка форка)
         run: flutter test test/fork --tags fork-runtime
 
+      # Обмен ключами E2E клиента против настоящего сервера: смоук заводит
+      # пару, live_test — две установки с общим ключом пары и сверкой эмодзи.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: E2E клиента против сервера
+        run: >-
+          SMOKE_AFTER='flutter test test/fork/e2e/live_test.dart --tags fork-live'
+          server/scripts/smoke.sh
+
   server:
     name: server (Go)
     runs-on: ubuntu-latest
