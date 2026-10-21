@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../dict_strings.dart' show ruEn; // fork
+import '../fork/geo/geo_status.dart'; // fork
+import '../fork/geo/share_ui.dart'; // fork
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -124,6 +126,8 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     super.initState();
     _partnerSub = LiveLocationService.instance.watchPartner(widget.pairId, widget.partnerUid).listen(_onPartner);
     _startMyStream();
+    LiveLocationService.instance.sharingEnabled.addListener(_onShareChanged); // fork (UX G5)
+    LiveLocationService.instance.issue.addListener(_onShareChanged); // fork
     _loadShapes();
     LandShapes.coarse().then((v) => mounted ? setState(() => _land110 = v) : null);
     LandShapes.detailed().then((v) => mounted ? setState(() => _land50 = v) : null);
@@ -146,6 +150,8 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
   @override
   void dispose() {
     _partnerSub?.cancel();
+    LiveLocationService.instance.sharingEnabled.removeListener(_onShareChanged); // fork
+    LiveLocationService.instance.issue.removeListener(_onShareChanged); // fork
     _meFeed?.dispose();
     _decideTimer?.cancel();
     _toastTimer?.cancel();
@@ -154,6 +160,22 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     _bump.dispose();
     _flyValue.dispose();
     super.dispose();
+  }
+
+  void _onShareChanged() {
+    if (mounted) setState(() {});
+  }
+
+  // fork (UX G5): включить показ прямо с большой карты.
+  Future<void> _enableSharing() async {
+    final svc = LiveLocationService.instance;
+    final ok = await svc.setSharingEnabled(true, pairId: widget.pairId, partnerUid: widget.partnerUid);
+    if (!mounted) return;
+    if (!ok) {
+      showShareDenied(context, svc.issue.value);
+    } else if (svc.backgroundLimited.value) {
+      showBackgroundLimited(context);
+    }
   }
 
   Future<void> _loadShapes() async {
@@ -668,26 +690,40 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
       ),
       padding: EdgeInsets.fromLTRB(22, 22, 20, 16 + bottomInset),
       child: partner == null
-          ? Row(
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        s.liveMapWaitingPartner,
+                        style: AppFonts.onest(size: 15, weight: 500, color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    s.liveMapWaitingPartner,
-                    style: AppFonts.onest(size: 15, weight: 500, color: cs.onSurfaceVariant),
-                  ),
+                // fork (UX G14): что делать, если ждать нечего.
+                const SizedBox(height: 8),
+                Text(
+                  waitingPartnerHint(iShare: LiveLocationService.instance.sharingEnabled.value),
+                  style: AppFonts.onest(size: 13, weight: 400, color: cs.onSurfaceVariant),
                 ),
+                ..._shareNotice(),
               ],
             )
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                ..._shareNotice(), // fork (UX G5)
                 Row(
                   children: [
                     Expanded(
@@ -697,8 +733,16 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
                         child: Text(
                           me == null
                               ? '—'
-                              : LiveLocationService.formatDistance(
-                                  LiveLocationService.distanceMeters(me, partner.latLng)),
+                              // fork (UX G8): «рядом» — только по свежей точке партнёра.
+                              : distanceLabel(
+                                  LiveLocationService.distanceMeters(me, partner.latLng),
+                                  fresh: pointIsFresh(partner.updatedAt,
+                                      nowMs: DateTime.now().millisecondsSinceEpoch),
+                                  lang: LocaleService.instance.language.code,
+                                  nearby: s.liveMapNearby,
+                                  unitM: s.unitM,
+                                  unitKm: s.unitKm,
+                                ),
                           style: AppFonts.unbounded(size: 40, weight: 800, color: cs.onSurface, height: 1),
                         ),
                       ),
@@ -771,6 +815,18 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     );
   }
 
+  /// fork (UX G3/G5): включён ли показ и дойдёт ли точка до партнёра.
+  List<Widget> _shareNotice() {
+    final svc = LiveLocationService.instance;
+    Widget? bar;
+    if (!svc.sharingEnabled.value) {
+      bar = PartnerBlindBar(partnerName: widget.partnerName, onEnable: _enableSharing);
+    } else if (svc.issue.value != ShareIssue.none) {
+      bar = ShareIssueBar(issue: svc.issue.value);
+    }
+    return bar == null ? const [] : [bar, const SizedBox(height: 12)];
+  }
+
   Widget _toastView(ColorScheme cs) {
     final text = _toast;
     return Positioned(
@@ -796,18 +852,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     );
   }
 
-  /// «Обновлено 2 д. назад» — или null, пока точка свежая.
+  /// «на месте с 14:20» — или null, пока точка свежая.
+  /// fork (UX G7): не «обновлено» — точка уходит при движении, а не по таймеру.
   String? _ageCaption(LivePoint? point) {
     if (point == null) return null;
-    final age = LivePointAge.of(point.updatedAt, nowMs: DateTime.now().millisecondsSinceEpoch);
-    if (!age.needsCaption) return null;
-    final s = LocaleService.current;
-    final ago = switch (age.unit) {
-      LivePointAgeUnit.minutes => s.minutesAgo(age.value),
-      LivePointAgeUnit.hours => s.hoursAgo(age.value),
-      _ => s.daysAgo(age.value),
-    };
-    return '${s.liveMapUpdated} $ago';
+    return partnerPointCaption(point.updatedAt, now: DateTime.now());
   }
 
   bool _isStale(int updatedAt) {
