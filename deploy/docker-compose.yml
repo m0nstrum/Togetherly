@@ -25,6 +25,7 @@ services:
       TETHERED_SMTP__TLS: ${SMTP_TLS:-false}
       TETHERED_BACKUP__CRON: ${BACKUP_CRON:-0 3 * * *}
       TETHERED_BACKUP__MAX_KEEP: ${BACKUP_MAX_KEEP:-7}
+      TETHERED_POISKKINO_KEY: ${POISKKINO_KEY:-}
     volumes:
       - server-data:/data
     depends_on:

@@ -24,6 +24,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 
@@ -58,6 +59,9 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindGuards(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
+	// Записи Викиданных тяжёлые: сотни килобайт на фильм.
+	films := movies.New(safefetch.New(safefetch.Options{Timeout: 15 * time.Second, MaxBytes: 8 << 20}),
+		&handler.IPLimiter{Max: 60, Window: 10 * time.Minute}, movies.Options{PoiskkinoKey: cfg.PoiskkinoKey}, time.Now)
 	bindSettings(app, cfg, log)
 
 	bindCompat(app, cfg.CompatAddr, log)
@@ -67,6 +71,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.WatchRTC(e.Router, turn, time.Now)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
 		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
+		handler.Movies(e.Router, films, log)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
 			e.Router.GET("/{path...}", apis.Static(os.DirFS(cfg.PublicDir), false))
 		}

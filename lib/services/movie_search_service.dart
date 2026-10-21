@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../dict_strings.dart';
+import '../fork/flags.dart'; // fork
 import 'locale_service.dart';
 import 'pocketbase_service.dart';
 
@@ -31,7 +32,9 @@ class MovieSearchService {
   /// Бесплатный токен poiskkino.dev (получен через @poiskkinodev_bot).
   static const String _fallbackToken = 'TM3RQXB-DCZMAJ5-GF7RGGM-NSKB7JS';
 
-  static String get _token => _envToken.isNotEmpty ? _envToken : _fallbackToken;
+  static String get _token => _envToken.isNotEmpty
+      ? _envToken
+      : (ForkFlags.noUpstreamKeys ? '' : _fallbackToken); // fork
 
   /// `true`, если токен задан — иначе форма уходит в ручной ввод.
   static bool get isConfigured => _token.trim().isNotEmpty;

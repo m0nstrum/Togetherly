@@ -65,6 +65,7 @@
 | `lib/screens/profile_screen.dart` (S2) | S2 | Донат-карточка под `!ForkFlags.hideUpstreamChannels`, импорт. | Повторить. |
 | `lib/services/pocketbase_service.dart` | S6 | Хранилище сессии: `ForkSecureAuthStore.open(_authPrefsKey)` вместо `AsyncAuthStore` на SharedPreferences; импорт `shared_preferences` убран, добавлен `../fork/secure_auth_store.dart`. | Повторить. Если апстрим сменил хранение сессии — перенести его логику в `lib/fork/secure_auth_store.dart`. |
 | `lib/services/pocketbase_service.dart` | S5 | В `init()` после `_initialized = true` — `ForkHttpGateway.install()` (перехват `dart:io` на meta gateway), импорт. | Повторить. `init()` зовут все изоляты; если апстрим заведёт изолят без неё — звать `install()` и там. |
+| `lib/services/movie_search_service.dart` | S5 | `_token`: без `--dart-define=KINOPOISK_TOKEN` при `ForkFlags.noUpstreamKeys` — пусто, общий ключ автора не используется (запасной путь — ручной ввод), импорт. | Повторить. Если апстрим добавит другие зашитые ключи — под тот же флаг. |
 | `lib/services/pb_data_service.dart` | S4 | Запасной список ICE-серверов: вместо STUN Google — пустой (решение 4). | Повторить; сторож `no_author_hosts_test.dart` ловит `stun.l.google.com`. |
 | `lib/widgets/auth_widgets.dart` | S2 | `AuthSocialRow.build` при `ForkFlags.emailOnlyAuth` возвращает пустое место (решение 3), импорт. | Повторить. |
 | `lib/screens/home_screen.dart` | S5 | `onWallet` ряда действий — `null` при `ForkFlags.hideUpstreamChannels` (Togetherly Wallet — продукт автора), импорт. | Повторить. |

@@ -30,6 +30,9 @@ type Config struct {
 	CompatAddr string `koanf:"compat_addr"`
 	// LogLevel — debug, info, warn, error.
 	LogLevel string `koanf:"log_level"`
+	// PoiskkinoKey — свой ключ api.poiskkino.dev: запасной источник поиска
+	// фильмов, когда Викиданные пусты. Пустой — только Викиданные.
+	PoiskkinoKey string `koanf:"poiskkino_key"`
 
 	Centrifugo Centrifugo `koanf:"centrifugo"`
 	SMTP       SMTP       `koanf:"smtp"`

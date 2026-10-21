@@ -30,4 +30,9 @@ abstract final class ForkFlags {
 
   /// Запросы к сторонним сайтам — через свой сервер (lib/fork/http_gateway.dart).
   static bool get metaGateway => !_upstreamBehavior;
+
+  /// Ключи чужих сервисов, зашитые автором апстрима (общий ключ poiskkino),
+  /// не используются: фильмы ищет свой сервер, свой ключ — через
+  /// `--dart-define`.
+  static bool get noUpstreamKeys => !_upstreamBehavior;
 }

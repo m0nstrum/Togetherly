@@ -181,3 +181,14 @@ func TestMetaGatewayGuards(t *testing.T) {
 	code, body := w.do(t, http.MethodGet, "/api/link/preview?url=javascript%3Aalert(1)", w.aTok, "")
 	assert.Equal(t, http.StatusBadRequest, code, body)
 }
+
+// S5: поиск фильмов — только вошедшим, ответ в форме poiskkino.
+func TestMovieSearchRoute(t *testing.T) {
+	w := newWorld(t)
+	code, _ := w.do(t, http.MethodGet, "/api/movies/search?q=matrix", "", "")
+	assert.Equal(t, http.StatusUnauthorized, code)
+	// Запрос из одной буквы до сети не доходит.
+	code, body := w.do(t, http.MethodGet, "/api/movies/search?q=%C2%AB%D1%8F%C2%BB&lang=ru", w.aTok, "")
+	assert.Equal(t, http.StatusOK, code, body)
+	assert.JSONEq(t, `{"docs":[],"source":"empty"}`, body)
+}
