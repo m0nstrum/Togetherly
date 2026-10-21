@@ -101,6 +101,7 @@ import 'help_screen.dart';
 import '../fork/config/endpoints.dart'; // fork
 import '../fork/flags.dart'; // fork
 import '../fork/system_settings.dart'; // fork: N2
+import '../fork/ui/logout_guard.dart'; // fork (UX A4)
 import '../fork/ui/feedback.dart'; // fork: N2
 
 /// Entry for a partner across all connections
@@ -5529,7 +5530,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final ok = await AppDialog.confirm(
       context,
       title: _s.logoutQuestion,
-      message: _s.logoutConfirm,
+      message: ForkLogoutGuard.message(_s.logoutConfirm), // fork (UX A4)
       confirmLabel: _s.logoutBtn,
       destructive: true,
       icon: Icons.logout_rounded,
