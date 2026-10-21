@@ -25,11 +25,14 @@ services:
       TETHERED_SMTP__TLS: ${SMTP_TLS:-false}
       TETHERED_BACKUP__CRON: ${BACKUP_CRON:-0 3 * * *}
       TETHERED_BACKUP__MAX_KEEP: ${BACKUP_MAX_KEEP:-7}
+      TETHERED_BACKUP__AGE_RECIPIENTS: ${BACKUP_AGE_RECIPIENTS:-}
       TETHERED_POISKKINO_KEY: ${POISKKINO_KEY:-}
       # Адрес клиента для лимитов — от Caddy (снаружи сервер не виден).
       TETHERED_TRUSTED_PROXY_HEADER: X-Forwarded-For
     volumes:
       - server-data:/data
+      # Зашифрованные бэкапы: этот том и уносят с машины (deploy/README.md).
+      - server-backups:/backups
     depends_on:
       - centrifugo
 
@@ -109,6 +112,7 @@ services:
 
 volumes:
   server-data:
+  server-backups:
   caddy-data:
   caddy-config:
   bugsink-data:

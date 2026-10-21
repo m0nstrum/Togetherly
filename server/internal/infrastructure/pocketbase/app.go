@@ -20,6 +20,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/domain/ice"
 	"github.com/m0nstrum/togetherly/server/internal/domain/realtime"
 	"github.com/m0nstrum/togetherly/server/internal/handler"
+	"github.com/m0nstrum/togetherly/server/internal/infrastructure/backup"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/centrifugo"
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
@@ -65,6 +66,14 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	films := movies.New(safefetch.New(safefetch.Options{Timeout: 15 * time.Second, MaxBytes: 8 << 20}),
 		&handler.IPLimiter{Max: 60, Window: 10 * time.Minute}, movies.Options{PoiskkinoKey: cfg.PoiskkinoKey}, time.Now)
 	bindSettings(app, cfg, log)
+	if cfg.Backup.AgeRecipients != "" {
+		// Ключи уже проверены config.Validate.
+		if err := backup.Bind(app, backup.Options{Dir: cfg.Backup.Dir, Recipients: cfg.Backup.AgeRecipients, MaxKeep: cfg.Backup.MaxKeep}, log); err != nil {
+			log.Error("шифрование бэкапов", "err", err)
+		}
+	} else if cfg.Backup.Cron != "" {
+		log.Warn("бэкапы без шифрования: задайте TETHERED_BACKUP__AGE_RECIPIENTS")
+	}
 
 	bindCompat(app, cfg.CompatAddr, pub, log)
 

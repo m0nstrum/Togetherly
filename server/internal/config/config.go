@@ -9,6 +9,8 @@ import (
 
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/v2"
+
+	"github.com/m0nstrum/togetherly/server/internal/infrastructure/backup"
 )
 
 // Config — всё, что сервер берёт из окружения.
@@ -47,10 +49,15 @@ type Config struct {
 }
 
 // Backup — встроенные бэкапы PocketBase (zip в pb_data/backups). Cron пуст —
-// выключены. Шифрование и вынос наружу — S10.
+// выключены. С AgeRecipients каждый бэкап шифруется в Dir, а открытый zip
+// удаляется (infrastructure/backup).
 type Backup struct {
 	Cron    string `koanf:"cron"`
 	MaxKeep int    `koanf:"max_keep"`
+	// AgeRecipients — публичные ключи age (`age1…`) через пробел или запятую.
+	AgeRecipients string `koanf:"age_recipients"`
+	// Dir — каталог зашифрованных бэкапов, вне pb_data.
+	Dir string `koanf:"dir"`
 }
 
 // TURN — свой coturn для голоса в комнатах «Смотрим вместе». Secret — тот же,
@@ -122,6 +129,14 @@ func (c Config) Validate() error {
 	}
 	if (c.Centrifugo.API == "") != (c.Centrifugo.APIKey == "") {
 		errs = append(errs, errors.New("TETHERED_CENTRIFUGO__API и TETHERED_CENTRIFUGO__API_KEY задаются вместе"))
+	}
+	if c.Backup.AgeRecipients != "" {
+		if _, err := backup.ParseRecipients(c.Backup.AgeRecipients); err != nil {
+			errs = append(errs, fmt.Errorf("TETHERED_BACKUP__AGE_RECIPIENTS: %w", err))
+		}
+		if c.Backup.Dir == "" {
+			errs = append(errs, errors.New("TETHERED_BACKUP__DIR обязателен при TETHERED_BACKUP__AGE_RECIPIENTS"))
+		}
 	}
 	if c.SMTP.Enabled() && c.SMTP.Sender == "" {
 		errs = append(errs, errors.New("TETHERED_SMTP__SENDER обязателен при заданном SMTP"))

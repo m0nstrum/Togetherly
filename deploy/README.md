@@ -37,9 +37,37 @@ docker compose exec server /app/tethered superuser upsert admin@example.org 'д�
 | coturn | сеть хоста | 3478, 49160–49200/udp |
 | bugsink | `:8000` | профиль `crash`; маршрут в Caddy добавить вручную |
 
-Данные — в томе `server-data` (`/data`): база SQLite и файлы. Бэкапы
-PocketBase пишет туда же, в `backups/` (`BACKUP_CRON`, `BACKUP_MAX_KEEP`).
-Шифрование бэкапов и вынос на другую машину — S10.
+Данные — в томе `server-data` (`/data`): база SQLite и файлы.
+
+## Бэкапы
+
+PocketBase снимает бэкап по `BACKUP_CRON`. С ключом `BACKUP_AGE_RECIPIENTS`
+каждый сразу шифруется (age) в том `server-backups` (`/backups`), открытая
+копия удаляется, хранятся последние `BACKUP_MAX_KEEP`. Без ключа бэкапы
+лежат открытыми в `server-data` (`backups/`), сервер пишет об этом в журнал.
+
+Ключ — пара: публичная половина в `.env`, секретная — **не на сервере**
+(менеджер паролей, бумага, вторая машина):
+
+```sh
+age-keygen -o tethered-backup-key.txt   # строка «public key: age1…» → BACKUP_AGE_RECIPIENTS
+```
+
+Уносить с машины — содержимое тома, например
+`rclone sync /var/lib/docker/volumes/deploy_server-backups/_data remote:tethered`.
+
+Восстановление (проверено на деле: бэкап по cron → новый том → вход тем же
+паролем):
+
+```sh
+docker compose stop server
+docker volume rm deploy_server-data          # или сохраните его под другим именем
+docker compose run --rm -v ./tethered-backup-key.txt:/key.txt:ro server \
+  restore --identity /key.txt /backups/<имя>.zip.age
+docker compose up -d server
+```
+
+`restore` пишет только в пустой каталог данных — поверх живой базы откажет.
 
 Вход, сброс пароля и регистрация ограничены по IP клиента (10 попыток входа в
 минуту, 10 регистраций в час). Адрес клиента сервер берёт из

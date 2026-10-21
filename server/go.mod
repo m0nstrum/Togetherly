@@ -3,6 +3,7 @@ module github.com/m0nstrum/togetherly/server
 go 1.25.0
 
 require (
+	filippo.io/age v1.2.1
 	github.com/knadh/koanf/providers/env v1.1.0
 	github.com/knadh/koanf/v2 v2.4.1
 	github.com/pocketbase/dbx v1.12.0
