@@ -8,6 +8,7 @@ import 'home_widget_service.dart';
 import 'locale_service.dart';
 import 'map/pair_map_widget_service.dart';
 import 'pocketbase_service.dart';
+import '../fork/push/fcm_wake.dart'; // fork
 
 /// Периодический фоновый ФОЛБЭК обновления виджетов через WorkManager (Android).
 ///
@@ -98,6 +99,8 @@ void widgetRefreshDispatcher() {
       // Фоновый изолят свежий — регистрируем плагины, иначе MethodChannel
       // (home_widget / shared_preferences / path_provider) недоступны.
       WidgetsFlutterBinding.ensureInitialized();
+      // fork: пуш-будильник FCM (PLAN S12) — свой обработчик.
+      if (task == ForkFcmWake.task) return await ForkFcmWake.run(inputData);
       // На Android no-op, но home_widget требует до первого saveWidgetData.
       await HomeWidget.setAppGroupId('group.com.togetherly.love');
 

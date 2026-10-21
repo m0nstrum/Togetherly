@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'pocketbase_service.dart';
+import '../fork/push/fcm_wake.dart'; // fork
 
 /// Нужен ли фоновый сокет-сервис вместо пушей.
 ///
@@ -53,7 +54,10 @@ class FcmService {
   String? get token => _token;
 
   /// Дойдут ли пуши до этого телефона.
-  bool get ready => _hasServices && (_token ?? '').isNotEmpty;
+  bool get ready =>
+      _hasServices &&
+      (_token ?? '').isNotEmpty &&
+      ForkPushToken.accepted; // fork: и сервер умеет слать FCM
 
   /// Вердикт вынесен: токен либо приехал, либо уже не приедет.
   ///
@@ -109,8 +113,10 @@ class FcmService {
     final uid = svc.userId;
     if (uid == null || uid.isEmpty || !svc.isLoggedIn) return;
     try {
-      await svc.pb.collection('users').update(uid, body: {'fcm_token': token});
-      debugPrint('FcmService: токен устройства записан в профиль');
+      // fork: токен — в push_tokens через свой маршрут (PLAN S12).
+      if (await ForkPushToken.save(token)) {
+        debugPrint('FcmService: токен устройства записан на сервер');
+      }
     } catch (e) {
       debugPrint('FcmService: токен не записался — $e');
     }

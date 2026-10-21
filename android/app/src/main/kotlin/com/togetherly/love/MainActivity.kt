@@ -422,10 +422,13 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 // Есть ли на телефоне сервисы Google. Где их нет (кастомные
                 // прошивки), пушей не будет вовсе и остаётся foreground-сервис.
-                // fork: FCM в форке нет — Dart уходит на сокет Centrifugo.
-                "hasServices" -> result.success(false)
+                // fork: свой Firebase оператора (PLAN S12); без
+                // google-services.json при сборке — «нет», и Dart на сокете.
+                "hasServices" -> result.success(ForkFcmService.available(this))
 
-                "getToken" -> result.success(null) // fork
+                "getToken" -> ForkFcmService.token(this) { t -> // fork
+                    runOnUiThread { result.success(t) }
+                }
 
                 else -> result.notImplemented()
             }

@@ -77,6 +77,29 @@ NAT облака) — допишите coturn `--external-ip` и откройт�
 (`tethered_backup_last_success_timestamp_seconds` — для алерта «бэкапа не было
 сутки»), публикации в Centrifugo, Go-рантайм. Ни uid, ни IP, ни id записей.
 
+## Пуши (по желанию)
+
+Без настройки уведомления доставляет фоновый сервис приложения с сокетом
+Centrifugo — Android с энергосбережением его убивает, и уведомления
+опаздывают. Надёжнее — FCM своего Firebase-проекта как будильник: сервер
+шлёт в Google только `{type: "sync", event: <случайный id>}`, телефон
+просыпается, забирает событие у вашего сервера, расшифровывает и рисует
+уведомление сам. Ни текста, ни имён, ни id пары Google не видит; событие
+лежит на сервере в памяти 10 минут.
+
+1. [console.firebase.google.com](https://console.firebase.google.com) →
+   новый проект (Google Analytics — выключить).
+2. Добавить Android-приложение `io.github.m0nstrum.tethered` (SHA-1 не
+   нужен) и скачать `google-services.json` — его содержимое в секрет
+   `GOOGLE_SERVICES_JSON` репозитория (docs/fork/README.md), пересобрать APK.
+3. Project settings → Service accounts → Generate new private key: файл
+   положить в `deploy/secrets/fcm-service-account.json`, в `.env` —
+   `FCM_CREDENTIALS_FILE=/secrets/fcm-service-account.json`,
+   `docker compose up -d`.
+
+Нужны оба шага: телефон гасит фоновый сокет, только когда сервер ответил,
+что умеет слать FCM. Телефоны без сервисов Google остаются на сокете.
+
 ## Прокси роликов (по желанию)
 
 YouTube в РФ режется по SNI, поэтому Smart DNS не помогает. Приложение умеет
