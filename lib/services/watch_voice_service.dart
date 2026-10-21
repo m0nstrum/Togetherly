@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
-import '../fork/ice_policy.dart'; // fork
 import 'pb_data_service.dart';
 import 'watch_channel_service.dart';
 
@@ -205,7 +204,10 @@ class WatchVoiceService extends ChangeNotifier {
   Future<void> _ensurePeer() async {
     if (_pc != null) return;
     final ice = await PbDataService().iceServers();
-    _pc = await createPeerConnection(forkPeerConfig(ice)); // fork: только TURN
+    _pc = await createPeerConnection({
+      'iceServers': ice,
+      'sdpSemantics': 'unified-plan',
+    });
 
     for (final track in _local?.getTracks() ?? const <MediaStreamTrack>[]) {
       await _pc!.addTrack(track, _local!);

@@ -1,13 +1,8 @@
 # Внешний вход: HTTPS (Let's Encrypt сам), WebSocket Centrifugo и сервер.
 # HTTP API Centrifugo (/api на его порту) наружу не выпускается.
 #
-# Наружу только 443/tcp: сертификат по TLS-ALPN-01 на том же порту, без
-# порта 80 и без HTTP/3 (UDP).
-{
-	servers {
-		protocols h1 h2
-	}
-}
+# Наружу только 443 (tcp и udp для HTTP/3): сертификат по TLS-ALPN-01 на том
+# же порту, порт 80 не нужен.
 
 {$TETHERED_DOMAIN} {
 	tls {

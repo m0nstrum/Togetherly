@@ -61,9 +61,10 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
-    # Только 443/tcp: сертификат по TLS-ALPN-01, без HTTP/3 (Caddyfile).
+    # Только 443: сертификат по TLS-ALPN-01, порт 80 не нужен (Caddyfile).
     ports:
       - "443:443"
+      - "443:443/udp"
     environment:
       TETHERED_DOMAIN: ${TETHERED_DOMAIN}
     volumes:
@@ -77,9 +78,8 @@ services:
   # TURN для голоса в «Смотрим вместе» (решение 4). Сеть хоста: ретранслятору
   # нужны UDP-порты, через NAT Docker они ведут себя плохо. Ключи временные
   # (use-auth-secret), их выдаёт сервер на /api/watch/rtc. Наружу — только
-  # 3478: телефоны берут лишь relay-кандидаты (lib/fork/ice_policy.dart), и
-  # два relay на этой машине говорят друг с другом локально, так что диапазон
-  # 49160–49200 открывать не нужно.
+  # 3478: если прямой связи нет, ICE сводит два relay на этой машине, и они
+  # говорят друг с другом локально — диапазон 49160–49200 открывать не нужно.
   coturn:
     image: coturn/coturn:4
     restart: unless-stopped
