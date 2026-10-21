@@ -59,6 +59,36 @@ jobs:
       - name: flutter test (сборка форка)
         run: flutter test test/fork --tags fork-runtime
 
+  server:
+    name: server (Go)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: go vet
+        run: go vet ./...
+
+      # Копия схемы апстрима в модуле должна совпадать с оригиналом.
+      - name: go generate без расхождений
+        run: |
+          go generate ./...
+          git diff --exit-code -- .
+
+      - name: go test
+        run: go test -race ./...
+
   apk:
     name: build APK
     runs-on: ubuntu-latest
