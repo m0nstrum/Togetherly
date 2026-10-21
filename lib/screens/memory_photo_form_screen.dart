@@ -12,6 +12,9 @@ import 'package:video_compress/video_compress.dart';
 
 import '../models/memory.dart';
 import '../services/locale_service.dart';
+import '../dict_strings.dart' show ruEn; // fork: D2
+import '../fork/memories/photo_batch.dart' show MemorySaveAborted; // fork: D2
+import '../fork/ui/feedback.dart'; // fork: D2
 import '../utils/photo_crop.dart';
 import '../utils/safe_pick.dart';
 import '../theme/app_theme.dart';
@@ -343,24 +346,40 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
   Future<void> _save() async {
     if (!_canSave) return;
     setState(() => _isSaving = true);
-    Navigator.pop(context);
     final photos = _media.where((f) => !_isVideo(f)).toList();
     final videos = _media.where((f) => _isVideo(f)).toList();
-    await widget.onSave(
-      type: _effectiveType,
-      title: _titleCtrl.text.trim(),
-      caption: _captionCtrl.text.trim(),
-      mediaPaths: photos.isNotEmpty ? photos.map((f) => f.path).toList() : null,
-      keptUrls: _kept.isEmpty ? null : List<String>.from(_kept),
-      mediaPath: videos.isNotEmpty ? videos.first.path : null,
-      locationName: _locationCtrl.text.trim().isEmpty
-          ? null
-          : _locationCtrl.text.trim(),
-      latitude: _lat,
-      longitude: _lng,
-      isAdult: _isAdult,
-      customDate: _customDate,
-    );
+    // fork: D2 — форма закрывается только после успешного сохранения; при
+    // сбое остаётся открытой с введённым и кадрами.
+    try {
+      await widget.onSave(
+        type: _effectiveType,
+        title: _titleCtrl.text.trim(),
+        caption: _captionCtrl.text.trim(),
+        mediaPaths:
+            photos.isNotEmpty ? photos.map((f) => f.path).toList() : null,
+        keptUrls: _kept.isEmpty ? null : List<String>.from(_kept),
+        mediaPath: videos.isNotEmpty ? videos.first.path : null,
+        locationName: _locationCtrl.text.trim().isEmpty
+            ? null
+            : _locationCtrl.text.trim(),
+        latitude: _lat,
+        longitude: _lng,
+        isAdult: _isAdult,
+        customDate: _customDate,
+      );
+      if (mounted) Navigator.pop(context);
+    } on MemorySaveAborted {
+      // Причина уже названа (или человек отказался): форма остаётся.
+      if (mounted) setState(() => _isSaving = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ForkNotice.error(
+        context,
+        e,
+        what: ruEn('Не удалось сохранить запись', 'Couldn’t save the memory'),
+      );
+    }
   }
 
   void _showError(String msg) {

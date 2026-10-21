@@ -624,9 +624,26 @@ class _InAppVideoPlayerPageState extends State<InAppVideoPlayerPage> {
     _scheduleHide();
   }
 
+  // fork: D7 — «повторить» после ошибки: старый контроллер уходит, init заново
+  void _retry() {
+    _controller?.removeListener(_onUpdate);
+    _controller?.dispose();
+    _controller = null;
+    setState(() {
+      _hasError = false;
+      _isInitialized = false;
+    });
+    _init();
+  }
+
   void _onUpdate() {
     final controller = _controller;
     if (!mounted || controller == null) return;
+    // fork: D7 — сбой посреди просмотра больше не оставляет чёрный экран
+    if (controller.value.hasError && !_hasError) {
+      setState(() => _hasError = true);
+      return;
+    }
     // Пока ролик играет, экран не гаснет: плагин плеера сам его не держит
     // (жалоба 12.10.2026). На паузе и в конце отпускаем.
     ScreenAwake.sync(this, playing: controller.value.isPlaying);
@@ -728,13 +745,30 @@ class _InAppVideoPlayerPageState extends State<InAppVideoPlayerPage> {
                               style: const TextStyle(color: Colors.white70),
                               textAlign: TextAlign.center,
                             ),
+                            // fork: D7 — повторить загрузку ролика
+                            const SizedBox(height: 12),
+                            FilledButton.tonalIcon(
+                              onPressed: _retry,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: Text(ruEn('Повторить', 'Retry')),
+                            ),
                           ],
                         ),
                       )
                     : (_isInitialized && controller != null)
-                        ? AspectRatio(
-                            aspectRatio: controller.value.aspectRatio,
-                            child: VideoPlayer(controller),
+                        ? Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              AspectRatio(
+                                aspectRatio: controller.value.aspectRatio,
+                                child: VideoPlayer(controller),
+                              ),
+                              // fork: D7 — индикатор буферизации на лету
+                              if (controller.value.isBuffering)
+                                const CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                            ],
                           )
                         : const CircularProgressIndicator(
                             color: Colors.white,

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../fork/ui/feedback.dart'; // fork: M10
 import '../widgets/storage_image.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
@@ -155,7 +156,19 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
       try {
         final file = await fetchCachedImageFile(editMascot!.imageUrl!);
         initialBytes = await file.readAsBytes();
-      } catch (_) {}
+      } catch (e) {
+        // fork: M10 — не открываем пустой холст: сохранение затёрло бы рисунок
+        if (mounted) {
+          ForkNotice.error(
+            context,
+            e,
+            what: ruEn('Картинка маскота не загрузилась, правка отменена',
+                'The mascot image didn’t load, editing cancelled'),
+            retry: () => _openDrawScreen(editMascot: editMascot),
+          );
+        }
+        return;
+      }
     }
 
     if (!mounted) return;

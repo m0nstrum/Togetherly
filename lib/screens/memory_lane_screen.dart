@@ -46,6 +46,10 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import '../models/memory_media.dart';
 import '../models/memory_menu.dart';
 import '../models/upload_failure.dart';
+import '../fork/memories/photo_batch.dart'; // fork: D1/D6
+import '../fork/memories/search.dart'; // fork: D10
+import '../fork/ui/feedback.dart'; // fork: D13
+import '../fork/ui/upload_notice.dart'; // fork: D5
 import '../services/media_save_queue.dart';
 import '../services/media_share.dart';
 import '../services/saved_media_ledger.dart';
@@ -389,10 +393,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   bool _matchesQuery(Memory m) {
     final q = _searchQuery.trim().toLowerCase();
     if (q.isEmpty) return true;
-    for (final field in [m.title, m.caption, m.locationName, m.authorName]) {
-      if ((field ?? '').toLowerCase().contains(q)) return true;
-    }
-    return false;
+    // fork: D10 — ищем и по песням, книгам, фильмам
+    return memoryMatchesQuery(m, q);
   }
 
   bool get _hasVisibleMemories =>
@@ -4431,14 +4433,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// Открыть форму создания записи выбранного типа. Раньше это ветвление жило
   /// внутри строки листа; теперь лист — сетка плиток, и переход вызывается
   /// отдельно.
-  /// Залить один кадр в хранилище пары и вернуть ссылку.
-  Future<String?> _uploadMemoryPhoto(String path) async {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final ext = path.split('.').last;
-    final destination = 'memories/$_groupId/memory_$timestamp.$ext';
-    return MediaService().uploadFile(path, destination);
-  }
-
   /// Правка записи тем же экраном, что и создание.
   void _openMemoryEditor(Memory memory) {
     final frames = <String>[
@@ -4477,11 +4471,20 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           }) async {
             // Новые кадры сперва уезжают в хранилище, потом встают в конец
             // списка — обложка при этом не меняется.
-            final added = <String>[];
-            for (final path in mediaPaths ?? const <String>[]) {
-              final url = await _uploadMemoryPhoto(path);
-              if (url != null) added.add(url);
-            }
+            // fork: D6 — не залитые кадры не теряем молча: повтор или отказ
+            final added = await uploadPhotosConfirmed(
+              context,
+              mediaPaths ?? const <String>[],
+              (path, i) {
+                final timestamp = DateTime.now().millisecondsSinceEpoch;
+                final ext = path.split('.').last;
+                return MediaService().uploadFileWithReason(
+                  path,
+                  'memories/$_groupId/memory_${timestamp}_$i.$ext',
+                );
+              },
+            );
+            if (added == null) throw const MemorySaveAborted();
             final next = <String>[...(keptUrls ?? const []), ...added];
             await _memRepo.update(
               groupId: _groupId,
@@ -4538,19 +4541,22 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   longitude,
                   required isAdult,
                   customDate,
-                }) =>
-                    _saveNewMemory(
-                  type: type,
-                  title: title,
-                  caption: caption,
-                  locationName: locationName ?? '',
-                  latitude: latitude,
-                  longitude: longitude,
-                  mediaPaths: mediaPaths,
-                  mediaPath: mediaPath,
-                  isAdult: isAdult,
-                  customDate: customDate,
-                ),
+                }) async {
+                  // fork: D2 — форма закроется только после успеха
+                  final saved = await _saveNewMemory(
+                    type: type,
+                    title: title,
+                    caption: caption,
+                    locationName: locationName ?? '',
+                    latitude: latitude,
+                    longitude: longitude,
+                    mediaPaths: mediaPaths,
+                    mediaPath: mediaPath,
+                    isAdult: isAdult,
+                    customDate: customDate,
+                  );
+                  if (!saved) throw const MemorySaveAborted();
+                },
               ),
               settings: const RouteSettings(name: '/memory_photo_form'),
             ),
@@ -6825,7 +6831,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     }
   }
 
-  Future<void> _saveNewMemory({
+  // fork: возвращает true, только если запись сохранена (форма закрывается по успеху)
+  Future<bool> _saveNewMemory({
     required MemoryType type,
     String title = '',
     String caption = '',
@@ -6866,7 +6873,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     // Если задано — момент «в памяти» будет именно этой даты, а не «сейчас».
     DateTime? customDate,
   }) async {
-    if (_myUid == null || _groupId.isEmpty) return;
+    if (_myUid == null || _groupId.isEmpty) return false;
 
     // Check rate limit before uploading to avoid wasting bandwidth
     try {
@@ -6879,7 +6886,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           duration: const Duration(seconds: 4),
         ));
       }
-      return;
+      return false;
     }
 
     // Show loading indicator
@@ -6909,39 +6916,26 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       if (type == MemoryType.photo &&
           mediaPaths != null &&
           mediaPaths.isNotEmpty) {
-        // Причина первого отказа: её и покажем, если не залилось ни одно.
-        UploadFailure? photoFailure;
-        for (final path in mediaPaths) {
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          final ext = path.split('.').last;
-          final fileName = 'memory_$timestamp.$ext';
-          final destination = 'memories/$_groupId/$fileName';
-          final outcome =
-              await MediaService().uploadFileWithReason(path, destination);
-          final url = outcome.ref;
-          if (url != null) {
-            uploadedImageUrls.add(url);
-          } else {
-            photoFailure ??= outcome.failure;
-          }
-        }
-        if (uploadedImageUrls.isEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(uploadFailureText(
-                  photoFailure ?? UploadFailure.other,
-                  LocaleService.current,
-                  video: false,
-                )),
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 5),
-              ),
+        // fork: D1 — часть фото не залилась: «загружено N из M», повтор или отказ
+        final urls = await uploadPhotosConfirmed(
+          context,
+          mediaPaths,
+          (path, i) {
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final ext = path.split('.').last;
+            return MediaService().uploadFileWithReason(
+              path,
+              'memories/$_groupId/memory_${timestamp}_$i.$ext',
             );
-          }
-          return;
+          },
+          beforeAsk: () =>
+              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        );
+        if (urls == null) {
+          if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          return false;
         }
+        uploadedImageUrls = urls;
         uploadedImageUrl = uploadedImageUrls.first;
       }
 
@@ -7008,7 +7002,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               ),
             );
           }
-          return;
+          return false;
         }
       }
 
@@ -7019,7 +7013,22 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         final fileName = 'music_$timestamp.$ext';
         final destination = 'music/$_groupId/$fileName';
 
-        uploadedMusicUrl = await MediaService().uploadFile(musicPath, destination);
+        // fork: D5 — не залилась музыка: говорим причину, запись без неё не сохраняем
+        final musicOutcome =
+            await MediaService().uploadFileWithReason(musicPath, destination);
+        uploadedMusicUrl = musicOutcome.ref;
+        if (uploadedMusicUrl == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            showUploadFailure(
+              context,
+              musicOutcome.failure,
+              what: ruEn('Музыка не загрузилась, запись не сохранена',
+                  'The music didn’t upload, the memory wasn’t saved'),
+            );
+          }
+          return false;
+        }
       }
 
       // Звук к фото или видео заливается, как кадры: без сети получит
@@ -7044,7 +7053,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               ),
             );
           }
-          return;
+          return false;
         }
         finalSound = sound.withUrl(soundOutcome.ref!);
       }
@@ -7115,17 +7124,20 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         );
         _tryClaimMemoryReward();
       }
+      return true;
     } catch (e) {
       debugPrint('Save memory failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.failedAddMemory(e.toString())),
-            behavior: SnackBarBehavior.floating,
-          ),
+        // fork: D13 — причина по-человечески, а не `Exception: …`
+        ForkNotice.error(
+          context,
+          e,
+          what: ruEn('Не удалось сохранить воспоминание',
+              'Couldn’t save the memory'),
         );
       }
+      return false;
     }
   }
 
