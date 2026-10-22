@@ -156,6 +156,62 @@ void main() {
     expect(b.status.value[gid], PairE2EStatus.verified);
   });
 
+  group('сверка: роли, ожидание, отмена (UX A10)', () {
+    test('оба нажали «Начать» — сверка одна, эмодзи одинаковые', () async {
+      final db = ServerDb();
+      final a = await install(db, alice);
+      final b = await install(db, bob);
+      await syncBoth(a, b);
+      await a.sasStart(gid, bob);
+      await b.sasStart(gid, alice);
+      for (var i = 0; i < 3; i++) {
+        await a.syncGroup(gid);
+        await b.syncGroup(gid);
+      }
+      final ca = a.sas.value, cb = b.sas.value;
+      expect(ca, isA<SasShowCode>());
+      expect(cb, isA<SasShowCode>());
+      expect(ca!.session, cb!.session);
+      expect((ca as SasShowCode).code, (cb as SasShowCode).code);
+    });
+
+    test('отмена партнёра — не «эмодзи не совпали»', () async {
+      final db = ServerDb();
+      final a = await install(db, alice);
+      final b = await install(db, bob);
+      await syncBoth(a, b);
+      await a.sasStart(gid, bob);
+      await b.syncGroup(gid);
+      await b.sasCancel();
+      await a.syncGroup(gid);
+      expect(
+        a.sas.value,
+        isA<SasStopped>().having(
+            (s) => s.why, 'why', SasStopWhy.partnerCancelled),
+      );
+    });
+
+    test('партнёр не ответил — ожидание кончается, партнёру отмена',
+        () async {
+      final prev = E2EService.sasWait;
+      E2EService.sasWait = const Duration(milliseconds: 30);
+      addTearDown(() => E2EService.sasWait = prev);
+      final db = ServerDb();
+      final a = await install(db, alice);
+      final b = await install(db, bob);
+      await syncBoth(a, b);
+      await a.sasStart(gid, bob);
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      expect(
+        a.sas.value,
+        isA<SasStopped>().having((s) => s.why, 'why', SasStopWhy.noAnswer),
+      );
+      await b.syncGroup(gid);
+      expect(b.sas.value, isA<SasStopped>(),
+          reason: 'зов, который уже отменён, не висит у партнёра');
+    });
+  });
+
   test('«не совпадает» у партнёра обрывает сверку и у нас', () async {
     final db = ServerDb();
     final a = await install(db, alice);

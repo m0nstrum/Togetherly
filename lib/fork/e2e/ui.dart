@@ -233,8 +233,10 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
   void dispose() {
     final s = _svc?.sas.value;
     // Ушли с экрана посреди сверки — партнёр не должен ждать вечно.
-    if (s != null && s is! SasFinished && s is! SasIncoming) _svc?.sasCancel();
-    if (s is SasFinished) _svc?.sas.value = null;
+    if (s != null && s is! SasFinished && s is! SasStopped && s is! SasIncoming) {
+      _svc?.sasCancel();
+    }
+    if (s is SasFinished || s is SasStopped) _svc?.sas.value = null;
     super.dispose();
   }
 
@@ -276,10 +278,12 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
           null => [
             _p(
               _t(
-                'Созвонитесь с $name и откройте этот экран оба. Нажмите «Начать» — у обоих появятся 7 эмодзи. '
-                    'Назовите их друг другу вслух: совпали — ключи настоящие, сервер их не подменил.',
-                'Call $name and both open this screen. Tap “Start” — you’ll both see 7 emoji. '
-                    'Read them to each other: if they match, your keys are genuine.',
+                'Созвонитесь с $name. «Начать» нажимает один из вас — второму придёт «Сверить» '
+                    '(в чате или на этом экране). Потом у обоих появятся 7 эмодзи: назовите их вслух. '
+                    'Совпали — ключи настоящие, сервер их не подменил. Нажали оба — не страшно, сверка будет одна.',
+                'Call $name. One of you taps “Start” — the other gets “Verify” (in the chat or on this screen). '
+                    'Then you’ll both see 7 emoji: read them aloud. If they match, your keys are genuine. '
+                    'If you both tap Start, that’s fine — there will be one check.',
               ),
             ),
             const SizedBox(height: 24),
@@ -292,16 +296,23 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
               child: Text(_t('Начать', 'Start')),
             ),
           ],
-          SasWaiting() => [
+          SasWaiting(:final started) => [
             const Center(child: CircularProgressIndicator()),
             const SizedBox(height: 16),
             _p(
-              _t(
-                'Ждём, пока $name откроет экран сверки и нажмёт «Сверить». '
-                    'Если ничего не происходит — пусть откроет чат: там будет плашка с приглашением.',
-                'Waiting for $name to open verification and tap “Verify”. '
-                    'If nothing happens, ask them to open the chat — an invite banner is there.',
-              ),
+              started
+                  ? _t(
+                      'Ждём, пока $name нажмёт «Сверить» — плашка с приглашением у него в чате. '
+                          'Подождём две минуты, потом можно начать заново.',
+                      'Waiting for $name to tap “Verify” — the invite banner is in their chat. '
+                          'We’ll wait two minutes, then you can start again.',
+                    )
+                  : _t(
+                      'Приняли. Ждём, пока телефон $name откроет эмодзи — обычно пара секунд, '
+                          'приложение у него должно быть открыто.',
+                      'Accepted. Waiting for $name’s phone to reveal the emoji — usually a couple of '
+                          'seconds; their app should be open.',
+                    ),
             ),
             const SizedBox(height: 16),
             TextButton(
@@ -342,6 +353,33 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
                   ? null
                   : () => _run(() => svc.sasConfirm(match: false)),
               child: Text(_t('Не совпадают', 'They don’t match')),
+            ),
+          ],
+          SasStopped(:final why) => [
+            Icon(
+              Icons.info_outline_rounded,
+              size: 56,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            _p(switch (why) {
+              SasStopWhy.partnerCancelled => _t(
+                '$name отменил сверку. Эмодзи не сравнивали — ничего плохого не случилось.',
+                '$name cancelled. The emoji weren’t compared — nothing is wrong.',
+              ),
+              SasStopWhy.noAnswer => _t(
+                'Телефон $name не ответил за две минуты. Пусть откроет приложение — и начните заново.',
+                '$name’s phone didn’t answer in two minutes. Ask them to open the app and start again.',
+              ),
+              SasStopWhy.lost => _t(
+                'Сверка потерялась: приложение $name перезапустилось. Начните заново.',
+                'The check got lost: $name’s app restarted. Start again.',
+              ),
+            }),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () => svc.sas.value = null,
+              child: Text(_t('Начать заново', 'Start again')),
             ),
           ],
           SasFinished(:final match) => [
