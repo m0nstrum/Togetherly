@@ -166,6 +166,31 @@ func init() {
 		}
 		return addMemberCards(app)
 	}, nil, "1760000008_e2e_sealed_max.go")
+	// UX V1: «партнёр смотрит ролик» — кто и когда (мс) открыл свой ролик.
+	m.Register(addWatchingFields, nil, "1760000009_watch_videos_watching.go")
+}
+
+// addWatchingFields заводит watch_videos.watching_by/watching_at. Запись
+// обновляется при открытии ролика и рассылается в канал пары, откуда партнёр
+// узнаёт, что можно присоединиться.
+func addWatchingFields(app core.App) error {
+	col, err := app.FindCollectionByNameOrId("watch_videos")
+	if err != nil {
+		return nil
+	}
+	changed := false
+	if col.Fields.GetByName("watching_by") == nil {
+		col.Fields.Add(&core.TextField{Name: "watching_by", Max: 50})
+		changed = true
+	}
+	if col.Fields.GetByName("watching_at") == nil {
+		col.Fields.Add(&core.NumberField{Name: "watching_at"})
+		changed = true
+	}
+	if !changed {
+		return nil
+	}
+	return app.Save(col)
 }
 
 // e2eSealedMax — поля, добавленные к шифруемым в «шифровать всё».
