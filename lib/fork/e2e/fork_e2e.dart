@@ -33,6 +33,10 @@ abstract final class ForkE2E {
   /// загрузилась (тогда приложение работает как без E2E).
   static final ValueNotifier<E2EService?> service = ValueNotifier(null);
 
+  /// Сервис не поднялся (UX_AUDIT A9): записи пары не открываются и не
+  /// уходят — экран говорит об этом и предлагает [retry].
+  static final ValueNotifier<bool> startFailed = ValueNotifier(false);
+
   static Future<E2EService?>? _starting;
   static String _uid = '';
   static String _group = '';
@@ -62,10 +66,12 @@ abstract final class ForkE2E {
         );
         await s.start();
         if (_uid == uid) service.value = s;
+        startFailed.value = false;
         return s;
       } catch (e) {
         debugPrint('ForkE2E: не запустился — $e');
         _starting = null;
+        startFailed.value = true;
         return null;
       }
     }();
@@ -104,6 +110,20 @@ abstract final class ForkE2E {
     }
   }
 
+  /// Поднять сервис заново после сбоя и вернуть пару на место.
+  static Future<bool> retry() async {
+    final uid = _uid.isNotEmpty ? _uid : _currentUid();
+    final group = _group;
+    if (uid.isEmpty) return false;
+    if (group.isNotEmpty) {
+      await detach();
+      await attach(group, uid);
+    } else {
+      await ensure(uid);
+    }
+    return service.value != null;
+  }
+
   static Future<void> detach() async {
     _group = '';
     for (final u in _subs) {
@@ -138,6 +158,7 @@ abstract final class ForkE2E {
     await detach();
     _uid = '';
     _starting = null;
+    startFailed.value = false;
     service.value = null;
     _ro = null;
     _roUid = '';

@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../dict_strings.dart' show ruEn;
 import '../../models/chat_msg.dart';
 import '../../services/offline/outbox_service.dart';
+import '../e2e/fork_e2e.dart';
+import '../e2e/locked_why.dart';
 import '../e2e/record_codec.dart' show e2eLockedText;
 
 /// Где сообщение сейчас с точки зрения отправки.
@@ -116,27 +118,44 @@ class ForkSendMark extends StatelessWidget {
 }
 
 /// Пузырёк вместо крупного 🔒: понятно, что случилось и что делать.
+/// Касание открывает объяснение с действием (UX_AUDIT A9).
 class ForkLockedText extends StatelessWidget {
-  const ForkLockedText({super.key, required this.color});
+  const ForkLockedText({super.key, required this.color, this.groupId = ''});
   final Color color;
+  final String groupId;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(Icons.lock_outline_rounded, size: 16, color: color),
-      const SizedBox(width: 6),
-      Flexible(
-        child: Text(
-          ruEn('Зашифровано — ждём ключ', 'Encrypted — waiting for the key'),
-          style: TextStyle(
-            color: color,
-            fontSize: 14,
-            fontStyle: FontStyle.italic,
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([ForkE2E.service, ForkE2E.startFailed]),
+    builder: (context, _) {
+      final why = forkLockedWhyNow(groupId);
+      return Semantics(
+        button: true,
+        child: InkWell(
+          onTap: () => showForkLockedSheet(context, groupId),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_outline_rounded, size: 16, color: color),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  ruEn('Зашифровано — ', 'Encrypted — ') +
+                      forkLockedShort(why).toLowerCase(),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.info_outline_rounded, size: 14, color: color),
+            ],
           ),
         ),
-      ),
-    ],
+      );
+    },
   );
 }
 

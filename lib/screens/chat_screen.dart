@@ -3269,7 +3269,7 @@ class _ChatScreenState extends State<ChatScreen> {
           else if (msg.pinId != null)
             _buildPinChip(msg, isMine, fg),
           if (forkIsLocked(msg)) // fork (UX C4)
-            ForkLockedText(color: fg)
+            ForkLockedText(color: fg, groupId: _groupId) // fork (UX A9)
           else if (showsChatText(pinId: msg.pinId, text: msg.text))
             MdMessageText(
               msg.text,
