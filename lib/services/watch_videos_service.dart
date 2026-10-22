@@ -34,6 +34,10 @@ class WatchVideo {
   /// fork (UX V12): когда ролик залит; от этого считается срок хранения.
   final DateTime? created;
 
+  /// fork (UX V1): кто сейчас смотрит этот ролик и с какого момента (мс).
+  final String watchingBy;
+  final int watchingAt;
+
   const WatchVideo({
     required this.id,
     required this.title,
@@ -43,6 +47,8 @@ class WatchVideo {
     this.appOnly = false,
     this.uploaded = false,
     this.created, // fork (UX V12)
+    this.watchingBy = '',
+    this.watchingAt = 0,
   });
 }
 
@@ -206,6 +212,8 @@ class WatchVideosService {
     seconds: ((r.data['seconds'] ?? 0) as num).round(),
     uploaded: true,
     created: DateTime.tryParse(r.created)?.toLocal(), // fork (UX V12)
+    watchingBy: (r.data['watching_by'] ?? '').toString(), // fork (UX V1)
+    watchingAt: ((r.data['watching_at'] ?? 0) as num).round(),
   );
 
   /// Все ролики пары: сначала загруженные во вкладке «Смотрим», затем видео из
@@ -411,6 +419,30 @@ class WatchVideosService {
       // коллекции) экран получает из брошенной ошибки.
       debugPrint('WatchVideos.upload failed: $e');
       rethrow;
+    }
+  }
+
+  /// fork (UX V1): отметить, что [me] смотрит ролик [id] (или снять отметку,
+  /// если [watching] false). Запись уходит партнёру живым событием канала пары.
+  /// Ошибку не бросает: отметка вторична, просмотру она не мешает.
+  static Future<bool> markWatching(
+    String id, {
+    required String me,
+    required bool watching,
+  }) async {
+    if (id.isEmpty) return false;
+    try {
+      await _pb.collection(_col).update(
+        id,
+        body: {
+          'watching_by': watching ? me : '',
+          'watching_at': watching ? DateTime.now().millisecondsSinceEpoch : 0,
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint('WatchVideos.markWatching failed: $e');
+      return false;
     }
   }
 

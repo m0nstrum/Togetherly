@@ -78,3 +78,19 @@ String forkUploadingText(int bytes) {
       .toStringAsFixed(bytes < 10 * 1024 * 1024 ? 1 : 0);
   return ruEn('Загружаю $mb МБ…', 'Uploading $mb MB…');
 }
+
+/// Сколько отметка «смотрит» считается живой: просмотр мог оборваться, не
+/// успев её снять (приложение убили).
+const Duration forkWatchingTtl = Duration(hours: 3);
+
+/// Ролик, который сейчас смотрит партнёр (V1); null — никто.
+WatchVideo? partnerWatching(List<WatchVideo> videos, String me, DateTime now) {
+  WatchVideo? best;
+  for (final v in videos) {
+    if (!v.uploaded || v.watchingBy.isEmpty || v.watchingBy == me) continue;
+    final at = DateTime.fromMillisecondsSinceEpoch(v.watchingAt);
+    if (now.difference(at) > forkWatchingTtl) continue;
+    if (best == null || v.watchingAt > best.watchingAt) best = v;
+  }
+  return best;
+}

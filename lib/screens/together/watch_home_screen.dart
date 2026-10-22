@@ -524,6 +524,18 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
             ),
             const SizedBox(height: 8),
           ],
+          // fork (UX V1): партнёр смотрит свой ролик — зовём присоединиться.
+          if (partnerWatching(_uploaded, me, DateTime.now()) case final v?) ...[
+            ForkStatusBar(
+              text: ruEn(
+                '${partner.isEmpty ? 'Партнёр' : partner} смотрит «${v.title}»',
+                '${partner.isEmpty ? 'Your partner' : partner} is watching “${v.title}”',
+              ),
+              actionLabel: ruEn('Открыть', 'Open'),
+              onAction: () => _openVideo(v),
+            ),
+            const SizedBox(height: 8),
+          ],
           WatchSectionHeader(title: s.watchOurVideos, count: _videos.length),
           // M3 multi-browse карусель: контейнер каждого кадра сужается маской,
           // а содержимое остаётся в полном размере (parallax). Первый слот —
@@ -680,11 +692,22 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
       ),
     );
 
-    await TogetherLauncher.open(
-      context,
-      pairId: widget.pairData.pairId,
-      videoUrl: video.url,
-    );
+    // fork (UX V1): сказать партнёру, что смотрим; снять отметку на выходе.
+    final me = PocketBaseService().userId ?? '';
+    if (video.uploaded && !WatchVideosService.playsInRoom(video.url)) {
+      unawaited(WatchVideosService.markWatching(video.id, me: me, watching: true));
+    }
+    try {
+      await TogetherLauncher.open(
+        context,
+        pairId: widget.pairData.pairId,
+        videoUrl: video.url,
+      );
+    } finally {
+      if (video.uploaded && !WatchVideosService.playsInRoom(video.url)) {
+        unawaited(WatchVideosService.markWatching(video.id, me: me, watching: false));
+      }
+    }
     await _loadRecent();
   }
 
