@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../dict_strings.dart' show ruEn;
 import '../../services/watch_voice_service.dart';
 import '../ui/feedback.dart';
+import 'call_screen.dart';
 import 'voice_stage.dart';
 
 class ForkVoiceStatus extends StatefulWidget {
@@ -18,7 +19,11 @@ class ForkVoiceStatus extends StatefulWidget {
     required this.voice,
     required this.onRetry,
     this.partnerName = '',
+    this.navigator,
   });
+
+  /// Где открыть звонок на весь экран; null — навигатор над плашкой.
+  final NavigatorState? navigator;
 
   final WatchVoiceService? voice;
 
@@ -37,6 +42,7 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
   void initState() {
     super.initState();
     widget.voice?.addListener(_changed);
+    ForkCallScreen.visible.addListener(_changed);
     _changed();
   }
 
@@ -53,6 +59,7 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
   @override
   void dispose() {
     widget.voice?.removeListener(_changed);
+    ForkCallScreen.visible.removeListener(_changed);
     _tick?.cancel();
     super.dispose();
   }
@@ -70,6 +77,17 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
     if (mounted) setState(() {});
   }
 
+  void _expand(WatchVoiceService v) {
+    final nav = widget.navigator ?? Navigator.maybeOf(context, rootNavigator: true);
+    if (nav == null) return;
+    unawaited(ForkCallScreen.open(
+      nav,
+      voice: v,
+      partnerName: widget.partnerName,
+      onRetry: widget.onRetry,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final v = widget.voice;
@@ -81,15 +99,19 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
       name: widget.partnerName,
       talked: since == null ? null : DateTime.now().difference(since),
     );
-    final show = v != null && stage != VoiceStage.idle && text.isNotEmpty;
+    final show = v != null &&
+        stage != VoiceStage.idle &&
+        text.isNotEmpty &&
+        !ForkCallScreen.visible.value; // fork: экран звонка открыт — плашка не нужна
     final (tone, label, action) = switch (stage) {
+      // Закрыть — крестиком всегда; «Позвонить ещё» — где повтор поможет.
       VoiceStage.failed => (
         ForkStatusTone.error,
         v?.problem == VoiceProblem.noMic || v?.problem == VoiceProblem.noKey
-            ? ruEn('Закрыть', 'Close')
-            : ruEn('Повторить', 'Retry'),
+            ? null
+            : ruEn('Позвонить ещё', 'Call again'),
         v?.problem == VoiceProblem.noMic || v?.problem == VoiceProblem.noKey
-            ? () => v?.dismissFailure()
+            ? null
             : () {
                 v?.dismissFailure();
                 unawaited(widget.onRetry());
@@ -113,6 +135,13 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
                     tone: tone,
                     actionLabel: label,
                     onAction: action,
+                    // Как в Telegram: касание разворачивает звонок на весь экран.
+                    onTap: () => _expand(v),
+                    // «Не ответил», «отклонил» и прочие сбои убираются крестиком,
+                    // без нового звонка.
+                    onClose: stage == VoiceStage.failed
+                        ? () => v.dismissFailure()
+                        : null,
                   ),
                 ),
         ),

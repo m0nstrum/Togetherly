@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../fork/identity.dart'; // fork: полное имя класса виджета
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import '../dict_strings.dart';
@@ -293,7 +294,7 @@ class WidgetService extends ChangeNotifier {
         'SelfPhotoWidgetProvider',
         'PartnerPhotoWidgetProvider',
       ]) {
-        await HomeWidget.updateWidget(name: name, androidName: name);
+        await HomeWidget.updateWidget(name: name, androidName: name, qualifiedAndroidName: ForkIdentity.widgetClass(name)) /* fork */;
       }
     } catch (e) {
       debugPrint('WidgetService.clearPairWidgetData failed: $e');
@@ -826,7 +827,7 @@ class WidgetService extends ChangeNotifier {
       // ── Обновить виджет на рабочем столе (текстовые данные сразу) ──
       await HomeWidget.updateWidget(
         name: 'LoveWidgetProvider',
-        androidName: 'LoveWidgetProvider',
+        androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
       );
       if (_isDisposed || bindGeneration != _bindGeneration) return;
       debugPrint(
@@ -868,7 +869,7 @@ class WidgetService extends ChangeNotifier {
         try {
           await HomeWidget.updateWidget(
             name: 'LoveWidgetProvider',
-            androidName: 'LoveWidgetProvider',
+            androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
           );
         } catch (e) {
           debugPrint('WidgetService emoji update failed: $e');
@@ -940,7 +941,7 @@ class WidgetService extends ChangeNotifier {
       try {
         await HomeWidget.updateWidget(
           name: 'LoveWidgetProvider',
-          androidName: 'LoveWidgetProvider',
+          androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
         );
       } catch (e) {
         debugPrint('WidgetService._cachePhotosForWidget update failed: $e');
@@ -986,7 +987,7 @@ class WidgetService extends ChangeNotifier {
       try {
         await HomeWidget.updateWidget(
           name: 'LoveWidgetProvider',
-          androidName: 'LoveWidgetProvider',
+          androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
         );
       } catch (e) {
         debugPrint(
@@ -1011,7 +1012,7 @@ class WidgetService extends ChangeNotifier {
       try {
         await HomeWidget.updateWidget(
           name: 'MoodWidgetProvider',
-          androidName: 'MoodWidgetProvider',
+          androidName: 'MoodWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'), // fork
         );
       } catch (e) {
         debugPrint(

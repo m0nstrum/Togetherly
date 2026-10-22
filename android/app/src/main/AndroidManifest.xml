@@ -27,6 +27,11 @@
          не проходить декларацию фоновой геолокации в Google Play (форма+видео).
          Вернуть только если понадобится headless-автозапуск (напр. после ребута
          без открытия приложения) — тогда нужен boot-receiver и декларация. -->
+    <!-- fork: форк раздаётся не через Google Play, декларация не нужна. Без
+         этого разрешения в настройках Android нет пункта «Разрешать всегда»,
+         и прошивки, которые душат фоновые сервисы, гасили показ геопозиции
+         после сворачивания (просьба владельца 22.10). -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <!-- Пуш без FCM (§5): foreground-сервис типа dataSync держит SSE-подписку

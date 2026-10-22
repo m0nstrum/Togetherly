@@ -28,6 +28,7 @@ import '../services/avatar_frames.dart';
 import '../services/home_layout_service.dart';
 import '../fork/push/fcm_wake.dart'; // fork
 import '../fork/watch/pair_call.dart'; // fork (UX C0)
+import '../fork/own_name.dart'; // fork
 
 enum Gender { male, female, unspecified }
 
@@ -894,6 +895,7 @@ class UserData extends ChangeNotifier {
       _hasSeenWelcome = prefs.getBool('hasSeenWelcome') ?? false;
       _isRegistered = prefs.getBool('isRegistered') ?? false;
       _displayName = prefs.getString('displayName') ?? '';
+      ForkOwnName.value = _displayName; // fork: подпись без шифра
       _email = prefs.getString('email') ?? '';
       _avatarUrl = prefs.getString('avatarUrl') ?? '';
       _bannerUrl = prefs.getString('bannerUrl') ?? '';
@@ -988,6 +990,7 @@ class UserData extends ChangeNotifier {
       final data = await PbDataService().loadUserProfileMap(PocketBaseService().userId ?? "");
       if (data != null) {
         _displayName = data['displayName'] ?? _displayName;
+        ForkOwnName.value = _displayName; // fork
         _email = data['email'] ?? _email;
         // Only overwrite local avatar if Firestore has a real non-empty value.
         // An empty string in Firestore means the field was accidentally cleared —
@@ -1170,6 +1173,7 @@ class UserData extends ChangeNotifier {
     }
 
     _displayName = displayName;
+    ForkOwnName.value = _displayName; // fork
     _email = email;
     _gender = gender;
     _customGender = customGender;
@@ -1253,6 +1257,7 @@ class UserData extends ChangeNotifier {
     Gender? gender,
   }) async {
     if (displayName != null) _displayName = displayName;
+    ForkOwnName.value = _displayName; // fork
     if (email != null) _email = email;
     if (avatarUrl != null) _avatarUrl = avatarUrl;
     if (bannerUrl != null) _bannerUrl = bannerUrl;
@@ -1390,6 +1395,7 @@ class UserData extends ChangeNotifier {
     await WidgetBackgroundRefreshService.instance.cancel();
     _isRegistered = false;
     _displayName = '';
+    ForkOwnName.value = ''; // fork
     _email = '';
     _avatarUrl = '';
     _bannerUrl = '';

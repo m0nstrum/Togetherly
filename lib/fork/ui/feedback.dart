@@ -201,12 +201,20 @@ class ForkStatusBar extends StatelessWidget {
     this.tone = ForkStatusTone.info,
     this.actionLabel,
     this.onAction,
+    this.onTap,
+    this.onClose,
   });
 
   final String text;
   final ForkStatusTone tone;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  /// Касание по самой плашке (звонок — развернуть на весь экран).
+  final VoidCallback? onTap;
+
+  /// Крестик: плашку можно убрать, не делая действия.
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +229,10 @@ class ForkStatusBar extends StatelessWidget {
       child: Material(
         color: bg,
         borderRadius: BorderRadius.circular(14),
-        child: Padding(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
           child: Row(
             children: [
@@ -256,7 +267,15 @@ class ForkStatusBar extends StatelessWidget {
                   style: TextButton.styleFrom(foregroundColor: fg),
                   child: Text(actionLabel!),
                 ),
+              if (onClose != null)
+                IconButton(
+                  tooltip: ruEn('Закрыть', 'Close'),
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(Icons.close_rounded, size: 20, color: fg),
+                  onPressed: onClose,
+                ),
             ],
+          ),
           ),
         ),
       ),

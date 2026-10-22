@@ -171,6 +171,7 @@ class ForkPairCall {
               voice: v,
               partnerName: partnerName,
               onRetry: () async => v?.start(),
+              navigator: LoveApp.rootNavigatorKey.currentState,
             ),
           ],
         ),
