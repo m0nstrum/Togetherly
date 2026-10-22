@@ -27,6 +27,7 @@ import 'pair_book.dart' show kPairBookAdultKey;
 import '../services/avatar_frames.dart';
 import '../services/home_layout_service.dart';
 import '../fork/push/fcm_wake.dart'; // fork
+import '../fork/watch/pair_call.dart'; // fork (UX C0)
 
 enum Gender { male, female, unspecified }
 
@@ -1373,6 +1374,7 @@ class UserData extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await ForkPushToken.forget(); // fork: телефон больше не будит этот аккаунт
+    await ForkPairCall.instance.unbind(); // fork (UX C0): разговор и канал пары — не следующему входу
     PocketBaseService().signOut();
     // Виджеты рабочего стола живут в хранилище УСТРОЙСТВА и выход бы пережили:
     // на столе осталась бы прошлая пара, а на iPhone обновить её некому

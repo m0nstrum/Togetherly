@@ -165,6 +165,7 @@ import '../widgets/theme/theme_pattern_layer.dart';
 import '../widgets/unfold/unfold_route.dart';
 import '../fork/flags.dart'; // fork
 import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/watch/pair_call.dart'; // fork (UX C0)
 
 
 class HomeScreen extends StatefulWidget {
@@ -971,6 +972,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // виджету рабочего стола оно нужно, чтобы уложить персонажа вовремя.
     _mascotService.sleepResolver = widget.userData.sleepOf;
     _mascotService.bindToGroup(groupId);
+    // fork (UX C0): звонок пары слушает зов с любого экрана.
+    ForkPairCall.instance.partnerName = _pairData.partnerDisplayName;
+    unawaited(ForkPairCall.instance.bind(groupId));
     if (!_restoreListening) {
       _restoreListening = true;
       _mascotService.addListener(_onMascotForRestore);

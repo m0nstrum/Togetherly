@@ -40,7 +40,7 @@ import '../services/voice_recorder_service.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/chat/bottom_stick.dart';
 import '../widgets/chat/send_mic_button.dart';
-import '../dict_strings.dart' show trKey;
+import '../dict_strings.dart' show trKey, ruEn; // fork: ruEn (UX C0)
 import '../widgets/chat/voice_bubble.dart';
 import '../widgets/chat/chat_drawing_card.dart';
 import '../models/chat_drawing.dart';
@@ -75,6 +75,7 @@ import '../widgets/common/scaled_asset.dart';
 import '../widgets/common/coin_image.dart';
 import '../fork/e2e/ui.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork
+import '../fork/watch/pair_call.dart'; // fork (UX C0)
 
 /// Цена смены фона чата в монетах (зеркало CONSUMABLE_PRICES на сервере).
 const int _kChatBgPrice = 20;
@@ -2278,7 +2279,17 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            // fork (UX C0): голосовой звонок партнёру прямо из чата.
+            IconButton(
+              tooltip: ruEn('Позвонить', 'Call'),
+              icon: const Icon(Icons.call_rounded),
+              color: cs.onSurface,
+              onPressed: () {
+                ForkPairCall.instance.partnerName = widget.pairData.partnerDisplayName;
+                unawaited(ForkPairCall.instance.call(_groupId));
+              },
+            ),
+            const SizedBox(width: 4),
             _headerMenu(s, cs),
           ],
         ),
