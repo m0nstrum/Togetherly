@@ -288,11 +288,12 @@ class PairData extends ChangeNotifier {
   /// Проверить, подтвердили ли нашу заявку («ждём» → «мы в паре»).
   Future<String> checkWaitingClaim() => _manager.checkWaitingClaim();
 
-  /// Разорвать пару
-  Future<void> unpair() async {
-    if (_active == null) return;
-    await _active!.unpair();
+  /// Разорвать пару. fork (UX A12): false — сервер не принял, пара цела.
+  Future<bool> unpair() async {
+    if (_active == null) return false;
+    final ok = await _active!.unpair();
     notifyListeners();
+    return ok;
   }
 
   /// Перегенерация кода
