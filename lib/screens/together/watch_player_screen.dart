@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, SystemUiMode;
 import 'package:video_player/video_player.dart';
 
+import '../../fork/ui/feedback.dart'; // fork (UX V1, V9, V11)
+import '../../dict_strings.dart' show ruEn; // fork (UX)
 import '../../services/locale_service.dart';
 import '../../services/pb_media_service.dart';
 import '../../services/pocketbase_service.dart';
@@ -64,6 +66,8 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
   String _me = '';
   bool _controlsVisible = true;
   String _error = '';
+  bool _failedSend = false; // fork (UX V11): команда не дошла до партнёра
+  DateTime _lastSendWarn = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
@@ -72,13 +76,21 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
   }
 
   Future<void> _open() async {
+    // fork (UX V9): повтор после сбоя начинает с чистого экрана.
+    if (_error.isNotEmpty) setState(() => _error = '');
     final playable = await PbMediaService.instance.resolvePlayable(widget.url);
     final controller = VideoPlayerController.networkUrl(Uri.parse(playable));
     try {
       await controller.initialize();
-    } catch (_) {
+    } catch (e) {
+      // fork (UX V9): причина словами; экран даёт «Повторить» и «Закрыть».
+      await controller.dispose();
       if (!mounted) return;
-      setState(() => _error = LocaleService.current.error);
+      final f = ForkFailure.of(e);
+      setState(() => _error = f == ForkFailure.unknown
+          ? ruEn('Ролик не открылся. Возможно, формат не поддерживается или файл удалён.',
+              'Couldn’t open the video. The format may be unsupported or the file was removed.')
+          : f.text);
       return;
     }
     if (!mounted) {
@@ -190,6 +202,28 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
     }
   }
 
+  /// fork (UX V11): команда партнёру; не дошла — говорим, не чаще раза в 8 с.
+  Future<void> _cmd(String type, {double at = 0}) async {
+    final room = _room;
+    if (room == null) return;
+    final ok = await room.send(type, at: at);
+    if (!mounted) return;
+    if (ok) {
+      if (_failedSend) setState(() => _failedSend = false);
+      return;
+    }
+    if (!_failedSend) setState(() => _failedSend = true);
+    final now = DateTime.now();
+    if (now.difference(_lastSendWarn) > const Duration(seconds: 8)) {
+      _lastSendWarn = now;
+      ForkNotice.failure(
+        context,
+        room.lastFailure ?? ForkFailure.network,
+        what: ruEn('Партнёр не получил команду', 'Your partner didn’t get that'),
+      );
+    }
+  }
+
   Future<void> _apply({required bool play, required double at}) async {
     final v = _video;
     if (v == null) return;
@@ -218,10 +252,10 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
     final at = v.value.position.inMilliseconds / 1000;
     if (v.value.isPlaying) {
       await v.pause();
-      if (!_applying) await _room?.send('pause', at: at);
+      if (!_applying) await _cmd('pause', at: at);
     } else {
       await v.play();
-      if (!_applying) await _room?.send('play', at: at);
+      if (!_applying) await _cmd('play', at: at);
     }
     _scheduleHide();
   }
@@ -231,7 +265,7 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
     if (v == null) return;
     await v.seekTo(position);
     if (_applying) return;
-    await _room?.send(
+    await _cmd(
       v.value.isPlaying ? 'play' : 'pause',
       at: position.inMilliseconds / 1000,
     );
@@ -280,7 +314,6 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final v = _video;
 
     // Плеер чёрный: окно перехода под ним тоже должно быть чёрным.
@@ -290,7 +323,37 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
       body: SafeArea(
         child: _error.isNotEmpty
             ? Center(
-                child: Text(_error, style: TextStyle(color: cs.onSurface)),
+                // fork (UX V9): белый текст на чёрном и кнопки «Повторить / Закрыть».
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: Colors.white70, size: 40),
+                      const SizedBox(height: 12),
+                      Text(
+                        _error,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        spacing: 12,
+                        children: [
+                          FilledButton(
+                            onPressed: _open,
+                            child: Text(ruEn('Повторить', 'Retry')),
+                          ),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+                            onPressed: () => Navigator.of(context).maybePop(),
+                            child: Text(ruEn('Закрыть', 'Close')),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               )
             : !_ready || v == null
                 ? const Center(child: M3Loading(color: Colors.white))
@@ -305,6 +368,22 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
                             child: VideoPlayer(v),
                           ),
                         ),
+                        // fork (UX V1, V11): партнёр ещё не в ролике / связь рвётся.
+                        if (_peer.isEmpty || _failedSend)
+                          Positioned(
+                            left: 12,
+                            right: 12,
+                            top: 56,
+                            child: ForkStatusBar(
+                              tone: ForkStatusTone.warning,
+                              text: _failedSend
+                                  ? ruEn('Нет связи: партнёр может не получать ваши команды.',
+                                      'No connection: your partner may not get your commands.')
+                                  : ruEn(
+                                      'Этот ролик из приложения у партнёра не включается сам. Попросите открыть его в «Смотрим» — тогда вы будете смотреть синхронно.',
+                                      'This video doesn’t start on your partner’s phone by itself. Ask them to open it in “Watch” to sync up.'),
+                            ),
+                          ),
                         _Controls(
                           visible: _controlsVisible,
                           playing: v.value.isPlaying,

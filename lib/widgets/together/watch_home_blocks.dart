@@ -263,7 +263,7 @@ class WatchKinoCard extends StatelessWidget {
         color: fill,
         radius: 32,
         rippleColor: watchRippleColor(fill, on, .3),
-        onTap: enabled ? onTap : null,
+        onTap: onTap, // fork (UX V4): серая карточка отвечает сообщением, а не молчит
         focusId: 'play',
         after: WatchFxAfter.spin,
         semanticLabel: title,

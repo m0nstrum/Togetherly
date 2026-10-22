@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/pair_data.dart';
 import '../../services/locale_service.dart';
+import '../../dict_strings.dart' show ruEn; // fork (UX)
 import '../../widgets/app_sheet.dart';
 import '../../services/watch_history_service.dart';
 import '../../models/watch_room_load.dart';
@@ -18,6 +19,8 @@ import '../../services/plus_access.dart';
 import '../../services/reels/reels_invite.dart';
 import '../../widgets/common/app_dialog.dart';
 import '../../services/pb_data_service.dart';
+import '../../fork/ui/feedback.dart'; // fork (UX V3-V5)
+import '../../fork/watch/video_ux.dart'; // fork (UX V3, V12)
 import '../../models/widget_data.dart';
 import '../plus_screen.dart';
 import '../../services/watch_videos_service.dart';
@@ -63,6 +66,9 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
   /// ссылка внутри json, и фильтра по вложенному полю у PocketBase нет.
   List<WatchVideo> _lane = const [];
   bool _uploading = false;
+  int _uploadBytes = 0; // fork (UX V3)
+  bool _uploadCancelled = false; // fork (UX V3)
+  bool _listStale = false; // fork (UX V5): последнее обновление не вышло
   StreamSubscription<List<WatchVideo>>? _videosSub;
 
   List<WatchVideo> get _videos => [..._uploaded, ..._lane];
@@ -148,22 +154,35 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
   }
 
   Future<void> _refreshAll() async {
+    if (mounted) setState(() => _listStale = false); // fork (UX V5)
     await Future.wait([_loadUploadedOnce(), _loadLane(), _loadRecent()]);
     if (_room.isEmpty) await _loadRoom();
   }
 
   Future<void> _loadUploadedOnce() async {
-    final items = await WatchVideosService.uploaded(widget.pairData.pairId);
-    if (!mounted) return;
-    setState(() => _uploaded = items);
+    // fork (UX V5): сбой не стирает список — оставляем прежний и говорим.
+    try {
+      final items = await WatchVideosService.uploaded(widget.pairData.pairId);
+      if (!mounted) return;
+      setState(() {
+        _uploaded = items;
+        _listStale = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _listStale = true);
+    }
   }
 
   Future<void> _loadLane() async {
-    final items = await WatchVideosService.fromMemoryLane(
-      widget.pairData.pairId,
-    );
-    if (!mounted) return;
-    setState(() => _lane = items);
+    try {
+      final items = await WatchVideosService.fromMemoryLane(
+        widget.pairData.pairId,
+      );
+      if (!mounted) return;
+      setState(() => _lane = items);
+    } catch (_) {
+      if (mounted) setState(() => _listStale = true); // fork (UX V5)
+    }
   }
 
   Future<void> _loadVideos() async {
@@ -204,23 +223,43 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
       return;
     }
 
-    setState(() => _uploading = true);
-    final saved = await WatchVideosService.upload(
-      groupId: widget.pairData.pairId,
-      file: file,
-      title: name,
-      plus: plus,
+    // fork (UX V3): «Загружаю N МБ…» с отменой, причина сбоя словами.
+    setState(() {
+      _uploading = true;
+      _uploadCancelled = false;
+      _uploadBytes = file.lengthSync();
+    });
+    final result = await Outcome.guard(
+      () => WatchVideosService.upload(
+        groupId: widget.pairData.pairId,
+        file: file,
+        title: name,
+        plus: plus,
+      ),
     );
     if (!mounted) return;
     setState(() => _uploading = false);
 
-    if (saved == null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(s.error), behavior: SnackBarBehavior.floating),
+    if (_uploadCancelled) {
+      ForkNotice.info(context, ruEn('Загрузка отменена', 'Upload cancelled'));
+      return;
+    }
+    if (!result.ok) {
+      ForkNotice.failure(
+        context,
+        result.failure!,
+        what: ruEn('Видео не загрузилось', 'Couldn’t upload the video'),
+        retry: _uploadVideo,
       );
       return;
     }
     await _loadVideos();
+  }
+
+  // fork (UX V3)
+  void _cancelUpload() {
+    _uploadCancelled = true;
+    WatchVideosService.cancelUpload();
   }
 
   /// Убрать свой ролик. До этого удаления не было вовсе: тестеру отвечали
@@ -255,6 +294,18 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
                   onPressed: () => Navigator.of(ctx).pop('play'),
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: Text(s.watchTogether),
+                ),
+              ),
+              // fork (UX V1, V12): ролик у каждого играет на своём телефоне.
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(
+                  ruEn(
+                    'Ролик из приложения открывается у каждого на своём телефоне: позовите партнёра открыть его здесь же. ${ForkVideoExpiry.tileLabel(video.created, DateTime.now())}.',
+                    'This video opens on each phone separately: ask your partner to open it here too. ${ForkVideoExpiry.tileLabel(video.created, DateTime.now())}.',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(ctx).textTheme.bodySmall,
                 ),
               ),
               const SizedBox(height: 8),
@@ -313,9 +364,13 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
   }
 
   Future<void> _loadRecent() async {
-    final items = await WatchHistoryService.recent(widget.pairData.pairId);
-    if (!mounted) return;
-    setState(() => _recent = items);
+    try {
+      final items = await WatchHistoryService.recent(widget.pairData.pairId);
+      if (!mounted) return;
+      setState(() => _recent = items);
+    } catch (_) {
+      if (mounted) setState(() => _listStale = true); // fork (UX V5)
+    }
   }
 
   /// Спрашивает код комнаты и, если не вышло, пробует ещё.
@@ -401,7 +456,7 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
                     ? s.reelsInvitedBy(_invite!.name.isEmpty ? s.partner : _invite!.name, _invite!.source.title)
                     : s.watchReelsTileHint,
                 plusLocked: _reelsEntry == ReelsEntry.buy || _reelsEntry == ReelsEntry.askPartner,
-                onTap: _room.isEmpty ? null : _openReels,
+                onTap: _openReels, // fork (UX V4)
                 titleWidth: w,
                 seed: _seed,
               ),
@@ -449,13 +504,26 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
             partnerUid: widget.pairData.partnerUid,
             partnerAvatar: widget.pairData.partnerAvatarUrl,
             partnerName: partner,
-            enabled: !_loading && _room.isNotEmpty,
+            enabled: !_loading && _room.isNotEmpty, // fork (UX V4): тап при серой карточке отвечает сообщением
             onTap: _openInApp,
             seed: _seed,
           ),
           const SizedBox(height: 8),
           _bento(s),
           const SizedBox(height: 10),
+          // fork (UX V5): списки остались прежними, потому что обновление не вышло.
+          if (_listStale) ...[
+            ForkStatusBar(
+              text: ruEn(
+                'Не удалось обновить списки — показано то, что было.',
+                'Couldn’t refresh — showing what was there before.',
+              ),
+              tone: ForkStatusTone.warning,
+              actionLabel: ruEn('Повторить', 'Retry'),
+              onAction: _refreshAll,
+            ),
+            const SizedBox(height: 8),
+          ],
           WatchSectionHeader(title: s.watchOurVideos, count: _videos.length),
           // M3 multi-browse карусель: контейнер каждого кадра сужается маской,
           // а содержимое остаётся в полном размере (parallax). Первый слот —
@@ -473,7 +541,11 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
               ),
               onTap: (i) {
                 if (i == 0) {
-                  if (!_uploading) _uploadVideo();
+                  if (_uploading) {
+                    _cancelUpload(); // fork (UX V3)
+                  } else {
+                    _uploadVideo();
+                  }
                 } else {
                   _tapVideo(_videos[i - 1]);
                 }
@@ -481,6 +553,8 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
               children: [
                 _UploadTile(
                   busy: _uploading,
+                  uploadingBytes: _uploadBytes, // fork (UX V3)
+                  onCancel: _cancelUpload, // fork (UX V3)
                   limitMb:
                       WatchVideosService.limitFor(
                         plus: PlusService.instance.active,
@@ -512,8 +586,25 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
     );
   }
 
+  /// fork (UX V4): нет кода комнаты — говорим об этом и даём повторить.
+  bool _roomMissing() {
+    if (_room.isNotEmpty) return false;
+    if (_loading) {
+      ForkNotice.info(context, ruEn('Ищем вашу комнату…', 'Looking for your room…'));
+    } else {
+      ForkNotice.failure(
+        context,
+        ForkFailure.network,
+        what: ruEn('Комната не открылась', 'Couldn’t open the room'),
+        retry: _loadRoom,
+      );
+      unawaited(_loadRoom());
+    }
+    return true;
+  }
+
   Future<void> _openInApp() async {
-    if (_room.isEmpty) return;
+    if (_roomMissing()) return;
     await TogetherLauncher.open(context, pairId: widget.pairData.pairId);
     await _loadRecent();
   }
@@ -521,7 +612,7 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
   /// Ленты вдвоём: та же комната пары в режиме коротких роликов. Сперва лист
   /// выбора площадки.
   Future<void> _openReels() async {
-    if (_room.isEmpty) return;
+    if (_roomMissing()) return;
     // Зов мог кончиться, пока экран стоял открытым: спрашиваем свежий.
     await _loadInvite();
     if (!mounted) return;
@@ -560,7 +651,7 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
   /// Ролик из ленты воспоминаний туда не отдать: его ссылка живёт полторы
   /// минуты и только с нашей сессией. Такой играем нативно, у себя.
   Future<void> _openVideo(WatchVideo video) async {
-    if (_room.isEmpty) return;
+    if (_roomMissing()) return;
 
     if (video.appOnly) {
       await Navigator.of(context).push(
@@ -599,7 +690,7 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
 
   /// Повторный просмотр: включаем ролик сразу, без поиска ссылки.
   Future<void> _openAgain(WatchEntry entry) async {
-    if (_room.isEmpty) return;
+    if (_roomMissing()) return;
     if (entry.url.startsWith('file://')) {
       // Свой файл лежит на устройстве, ссылкой его не открыть.
       ScaffoldMessenger.of(context).showSnackBar(
@@ -753,6 +844,23 @@ class _VideoTile extends StatelessWidget {
             ),
           ),
         ),
+        // fork (UX V12): когда ролик удалится.
+        if (video.uploaded && video.created != null)
+          Positioned(
+            top: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0x6B000000),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                ForkVideoExpiry.tileLabel(video.created, DateTime.now()),
+                style: text.labelSmall?.copyWith(color: Colors.white),
+              ),
+            ),
+          ),
         if (dur.isNotEmpty)
           Positioned(
             top: 10,
@@ -782,10 +890,14 @@ class _VideoTile extends StatelessWidget {
 class _UploadTile extends StatelessWidget {
   final bool busy;
 
+  /// fork (UX V3): размер файла в пути и отмена.
+  final int uploadingBytes;
+  final VoidCallback? onCancel;
+
   /// Потолок размера — свой у бесплатной версии и у Togetherly+.
   final int limitMb;
 
-  const _UploadTile({required this.busy, required this.limitMb});
+  const _UploadTile({required this.busy, required this.limitMb, this.uploadingBytes = 0, this.onCancel});
 
   @override
   Widget build(BuildContext context) {
@@ -828,9 +940,11 @@ class _UploadTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Text(
-                busy ? s.watchVideoUploading : s.watchVideoAdd(limitMb),
+                busy
+                    ? '${forkUploadingText(uploadingBytes)}\n${ruEn('Нажмите, чтобы отменить', 'Tap to cancel')}'
+                    : '${s.watchVideoAdd(limitMb)}\n${ForkVideoExpiry.uploadHint()}', // fork (UX V3, V12)
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 4,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: 'Onest',

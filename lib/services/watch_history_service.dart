@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint; // fork (UX V5)
 import 'package:pocketbase/pocketbase.dart';
 
 import 'pocketbase_service.dart';
@@ -60,8 +61,10 @@ class WatchHistoryService {
             sort: '-updated',
           );
       return res.items.map(WatchEntry.fromRecord).toList();
-    } catch (_) {
-      return const [];
+    } catch (e) {
+      // fork (UX V5): ошибка — не пустой список; экран оставит прежний.
+      debugPrint('WatchHistory.recent failed: $e');
+      rethrow;
     }
   }
 
