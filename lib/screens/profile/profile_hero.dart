@@ -144,7 +144,8 @@ class ProfileHero extends StatelessWidget {
 
   Widget _avatar() {
     return GestureDetector(
-      onTap: onTapFrame ?? onTapAvatar,
+      // fork: N4 — тап по фото правит фото и имя; рамки — отдельной кнопкой
+      onTap: onTapAvatar ?? onTapFrame,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -189,6 +190,33 @@ class ProfileHero extends StatelessWidget {
                     Icons.photo_camera_rounded,
                     size: 14,
                     color: cs.onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          // fork: N4 — рамки теперь здесь, а не под тапом по самому фото
+          if (onTapFrame != null && onTapAvatar != null)
+            Positioned(
+              left: -2,
+              bottom: -2,
+              child: Semantics(
+                button: true,
+                label: ruEn('Рамки', 'Frames'),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTapFrame,
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: cs.primary,
+                      border: Border.all(color: cs.surface, width: 2),
+                    ),
+                    child: Icon(
+                      Icons.filter_frames_rounded,
+                      size: 14,
+                      color: cs.onPrimary,
+                    ),
                   ),
                 ),
               ),

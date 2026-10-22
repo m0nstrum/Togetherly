@@ -101,6 +101,7 @@
       'room.playing': 'Играет: {name}',
       'room.leave': 'Выйти',
       'room.voiceCall': 'Позвонить',
+      'room.voiceCallShort': 'Звонок',
       'room.voiceHang': 'Положить трубку',
       'room.voiceMic': 'Микрофон',
       'room.voiceRinging': 'Ждём ответа',
@@ -109,8 +110,17 @@
       'room.guest': 'Гость',
       'room.send': 'Отправить',
       'room.chatToggle': 'Скрыть или показать чат',
+      'room.cinema': 'На весь экран', // fork
+      'room.cinemaExit': 'Выйти из полноэкранного режима', // fork
       'room.chatOpen': 'Открыть чат',
       'room.partnerJoined': 'Партнёр в комнате',
+      'room.partnerLeft': 'Партнёр вышел из комнаты', // fork (UX L8)
+      'room.opening': 'Открываем: {name}…', // fork (UX V2)
+      'room.ytNoApi': 'YouTube отвечает медленно — ролик идёт без синхронизации, включайте по отсчёту', // fork
+      'room.ytNoEmbed': 'Автор запретил показывать этот ролик вне YouTube — выберите другой', // fork
+      'room.ytGone': 'Ролик удалён или закрыт', // fork
+      'room.ytFailed': 'YouTube не смог показать ролик', // fork
+      'room.badFile': 'Телефон не может проиграть этот файл — нужен MP4 или WebM', // fork (UX V8)
 
       'gate.closedTitle': 'Комната пары',
       'gate.closedText': 'Сюда пускают только вас двоих. Войдите тем же аккаунтом, что в приложении Togetherly. Если код набирали вручную, проверьте его.',
@@ -225,6 +235,7 @@
       'room.playing': 'Playing: {name}',
       'room.leave': 'Leave',
       'room.voiceCall': 'Call',
+      'room.voiceCallShort': 'Call',
       'room.voiceHang': 'Hang up',
       'room.voiceMic': 'Microphone',
       'room.voiceRinging': 'Ringing',
@@ -233,8 +244,17 @@
       'room.guest': 'Guest',
       'room.send': 'Send',
       'room.chatToggle': 'Hide or show chat',
+      'room.cinema': 'Full screen', // fork
+      'room.cinemaExit': 'Exit full screen', // fork
       'room.chatOpen': 'Open chat',
       'room.partnerJoined': 'Your partner is here',
+      'room.partnerLeft': 'Your partner left the room', // fork (UX L8)
+      'room.opening': 'Opening {name}…', // fork (UX V2)
+      'room.ytNoApi': 'YouTube is slow — the video plays without sync, start it on the countdown', // fork
+      'room.ytNoEmbed': 'The author doesn’t allow this video outside YouTube — pick another', // fork
+      'room.ytGone': 'The video was removed or made private', // fork
+      'room.ytFailed': 'YouTube couldn’t play the video', // fork
+      'room.badFile': 'This phone can’t play the file — use MP4 or WebM', // fork (UX V8)
 
       'gate.closedTitle': 'A couple\u2019s room',
       'gate.closedText': 'Only the two of you can come in. Sign in with the account you use in the Togetherly app. If you typed the code by hand, check it.',

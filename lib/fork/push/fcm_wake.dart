@@ -16,6 +16,7 @@ import '../../services/locale_service.dart';
 import '../../services/pb_push_service.dart';
 import '../../services/pocketbase_service.dart';
 import '../e2e/fork_e2e.dart';
+import '../identity.dart';
 
 abstract final class ForkFcmWake {
   /// Задача диспетчера workmanager (`ForkFcmService.TASK`).
@@ -49,8 +50,11 @@ abstract final class ForkFcmWake {
         // Событие ушло (сервер перезапускался) или пары нет — нейтрально.
         await push.showLocal(
           id: 'fork_wake$event'.hashCode,
-          title: 'Tethered',
-          body: ruEn('Новое событие', 'Something new'),
+          title: ForkIdentity.appName,
+          // UX G16: не «Новое событие» без адресата — человек видит, что это
+          // от партнёра и что делать.
+          body: ruEn('Партнёр что-то прислал — откройте приложение',
+              'Your partner sent something — open the app'),
         );
         return true;
       }

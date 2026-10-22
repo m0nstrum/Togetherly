@@ -5,6 +5,24 @@ void main() {
   final t0 = DateTime(2026, 8, 13, 12, 0, 0);
 
   group('OptimisticCount', () {
+    // fork (M8): сорвалась пачка из нескольких тапов — снимаем всю пачку, а не
+    // один тап.
+    test('отказ пачки снимает все её тапы разом', () {
+      var c = OptimisticCount(confirmed: 10);
+      for (var i = 0; i < 5; i++) {
+        c = c.tap(t0);
+      }
+      expect(c.display, 15);
+      final failed = c.failed(count: 5);
+      expect(failed.display, 10);
+      expect(failed.pending, 0);
+    });
+
+    test('отказ пачки больше ожиданий не уходит в минус', () {
+      final c = OptimisticCount(confirmed: 10).tap(t0).failed(count: 20);
+      expect(c.display, 10);
+    });
+
     test('тап показывает +1 сразу, до ответа сервера', () {
       final c = OptimisticCount(confirmed: 10).tap(t0);
       expect(c.display, 11);

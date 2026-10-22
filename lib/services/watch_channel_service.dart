@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/ui/feedback.dart'; // fork
 import 'centrifugo_service.dart';
 
 /// Канал комнаты совместного просмотра.
@@ -38,21 +39,33 @@ class WatchChannel {
     });
   }
 
-  Future<void> send(String type, {double at = 0, Map<String, dynamic>? extra}) async {
+  /// fork (UX L5): почему последняя [send] не ушла; null — ушла.
+  ForkFailure? lastFailure;
+
+  /// fork (UX L5): true — сообщение ушло в канал. Раньше отказ был немым, и
+  /// звонящий ждал ответа на зов, который никуда не ушёл.
+  Future<bool> send(String type, {double at = 0, Map<String, dynamic>? extra}) async {
     var payload = <String, dynamic>{'t': type, 'at': at, 'from': me, ...?extra};
+    lastFailure = null;
     if (type.startsWith('voice-')) {
       // fork (E2E): SDP несёт отпечаток DTLS, ICE — адреса: открытыми сервер
       // встал бы посередине звонка. Нет ключа пары — звонка нет.
       final sealed =
           ForkE2E.sealSignal(ForkE2E.activeGroup, channel, payload);
-      if (sealed == null) return;
+      if (sealed == null) {
+        lastFailure = ForkFailure.noKey;
+        return false;
+      }
       payload = sealed;
     }
     try {
       await CentrifugoService.instance.publish(channel, payload);
-    } catch (_) {
+      return true;
+    } catch (e) {
       // Обрыв связи лечит переподключение centrifuge: команда просто пропадёт,
       // а расхождение подтянет ближайший sync.
+      lastFailure = ForkFailure.of(e);
+      return false;
     }
   }
 

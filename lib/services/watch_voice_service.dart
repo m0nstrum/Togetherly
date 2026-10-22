@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
+import '../fork/ui/feedback.dart' show ForkFailure; // fork
+import '../fork/watch/voice_stage.dart'; // fork
 import 'pb_data_service.dart';
 import 'watch_channel_service.dart';
 
@@ -71,8 +73,82 @@ class WatchVoiceService extends ChangeNotifier {
   /// Кто зовёт поговорить (uid), пока мы не ответили; пусто — никто.
   String get ringingFrom => _ringing;
 
+  // fork (UX L2–L7): стадия и причина сбоя — экран показывает их словами.
+  VoiceStage _stage = VoiceStage.idle;
+  VoiceProblem? _problem;
+  VoiceStage get stage => _stage;
+  VoiceProblem? get problem => _problem;
+  DateTime? get liveSince => _liveSince;
+  Timer? _connectTimer;
+  bool _restarted = false;
+
+  /// Сколько ждать соединения после ответа партнёра.
+  static const Duration connectFor = Duration(seconds: 30);
+
+  void _setStage(VoiceStage s, [VoiceProblem? p]) {
+    _stage = s;
+    _problem = p;
+    if (s != VoiceStage.connecting && s != VoiceStage.reconnecting) {
+      _connectTimer?.cancel();
+      _connectTimer = null;
+    }
+    notifyListeners();
+  }
+
+  /// Партнёр откликнулся: ждём соединения, но не вечно.
+  void _awaitConnection() {
+    if (_stage == VoiceStage.live) return;
+    _setStage(VoiceStage.connecting);
+    _connectTimer?.cancel();
+    _connectTimer = Timer(connectFor, _connectionTimedOut);
+  }
+
+  Future<void> _connectionTimedOut() async {
+    if (_stage == VoiceStage.live || _state == VoiceCallState.off) return;
+    if (await _tryIceRestart()) return;
+    await _fail(VoiceProblem.noRoute);
+  }
+
+  /// Один раз пробуем заново найти путь (ICE restart) — его делает тот, кто
+  /// делает предложения.
+  Future<bool> _tryIceRestart() async {
+    if (_restarted || _polite || _pc == null || _peer.isEmpty) return false;
+    _restarted = true;
+    _setStage(VoiceStage.reconnecting);
+    _connectTimer = Timer(connectFor, _connectionTimedOut);
+    try {
+      final offer = await _pc!.createOffer({'iceRestart': true});
+      await _pc!.setLocalDescription(offer);
+      await channel.send('voice-offer', extra: {'uid': me, 'sdp': offer.sdp});
+      return true;
+    } catch (e) {
+      debugPrint('WatchVoice: ICE restart не вышел: $e');
+      return false;
+    }
+  }
+
+  /// Разорвать и показать причину.
+  Future<void> _fail(VoiceProblem p) async {
+    await stop();
+    _set(VoiceCallState.failed);
+    _setStage(VoiceStage.failed, p);
+  }
+
+  @visibleForTesting
+  void debugStage(VoiceStage s, [VoiceProblem? p]) => _setStage(s, p);
+
+  /// Убрать плашку «не вышло».
+  void dismissFailure() {
+    if (_state == VoiceCallState.failed) _set(VoiceCallState.off);
+    _setStage(VoiceStage.idle);
+  }
+
   /// Звонок ушёл без ответа или партнёр отказался — экран говорит об этом.
   void Function(bool declined)? onUnanswered;
+
+  /// fork (UX L6): зов ушёл в канал — пора будить партнёра, если его
+  /// приложение закрыто.
+  void Function()? onCalling;
 
   /// Сколько звать партнёра, прежде чем сдаться.
   static const Duration ringFor = Duration(seconds: 45);
@@ -127,7 +203,11 @@ class WatchVoiceService extends ChangeNotifier {
 
   /// Включить микрофон и позвать собеседника.
   Future<void> start() async {
+    // fork (UX L2): после «не вышло» звонок можно начать заново — раньше
+    // кнопка в этом состоянии молчала, а «положить трубку» была скрыта.
+    if (_state == VoiceCallState.failed) await stop();
     if (_state != VoiceCallState.off) return;
+    _restarted = false;
     _set(VoiceCallState.connecting);
     try {
       _local = await navigator.mediaDevices.getUserMedia({
@@ -143,11 +223,20 @@ class WatchVoiceService extends ChangeNotifier {
       // Зовём собеседника: он поднимет свою сторону и ответит.
       final answering = _ringing.isNotEmpty; // fork
       _setRinging(''); // fork
-      await channel.send('voice-hello', extra: {'uid': me});
+      _setStage(answering ? VoiceStage.connecting : VoiceStage.calling); // fork
+      // fork (UX L5): зов не ушёл — сразу говорим почему, а не ждём 45 с.
+      if (!await channel.send('voice-hello', extra: {'uid': me})) {
+        await _fail(channel.lastFailure == ForkFailure.noKey
+            ? VoiceProblem.noKey
+            : VoiceProblem.network);
+        return;
+      }
+      if (answering) _awaitConnection(); // fork
       // fork: зов повторяется, пока партнёр не ответит (он мог зайти в
       // комнату позже), и снимается через [ringFor].
       _stopCalling();
       if (!answering) {
+        onCalling?.call(); // fork (UX L6)
         _helloTimer = Timer.periodic(const Duration(seconds: 4), (_) {
           if (_peer.isNotEmpty || _state != VoiceCallState.connecting) {
             _stopCalling();
@@ -157,15 +246,14 @@ class WatchVoiceService extends ChangeNotifier {
         });
         _noAnswerTimer = Timer(ringFor, () async {
           if (_peer.isNotEmpty || _state != VoiceCallState.connecting) return;
-          await stop();
+          await _fail(VoiceProblem.noAnswer); // fork
           onUnanswered?.call(false);
         });
       }
       notifyListeners();
     } catch (e) {
       debugPrint('WatchVoice.start failed: $e');
-      await stop();
-      _set(VoiceCallState.failed);
+      await _fail(VoiceProblem.noMic); // fork: отказ в микрофоне
     }
   }
 
@@ -186,6 +274,7 @@ class WatchVoiceService extends ChangeNotifier {
     _peer = '';
     _micOn = false;
     _set(VoiceCallState.off);
+    _setStage(VoiceStage.idle); // fork
   }
 
   /// Заглушить или вернуть свой микрофон, не разрывая связь.
@@ -225,6 +314,7 @@ class WatchVoiceService extends ChangeNotifier {
         final fresh = _peer != from; // fork
         _peer = from;
         _polite = me.compareTo(from) < 0;
+        _awaitConnection(); // fork (UX L4)
         if (!_polite) {
           await _offer();
         } else if (fresh) {
@@ -237,6 +327,9 @@ class WatchVoiceService extends ChangeNotifier {
         if (_state == VoiceCallState.off) return true;
         _peer = from;
         _polite = me.compareTo(from) < 0;
+        if (_stage != VoiceStage.live && _stage != VoiceStage.reconnecting) {
+          _awaitConnection(); // fork (UX L4)
+        }
         await _ensurePeer();
         await _pc!.setRemoteDescription(
             RTCSessionDescription(msg['sdp']?.toString(), 'offer'));
@@ -272,7 +365,7 @@ class WatchVoiceService extends ChangeNotifier {
         break;
       case 'voice-decline': // fork
         if (_state == VoiceCallState.connecting && _peer.isEmpty) {
-          await stop();
+          await _fail(VoiceProblem.declined);
           onUnanswered?.call(true);
         }
         break;
@@ -308,17 +401,27 @@ class WatchVoiceService extends ChangeNotifier {
         t.enabled = _speakerOn;
       }
       _set(VoiceCallState.live);
+      _setStage(VoiceStage.live); // fork
     };
     _pc!.onConnectionState = (s) {
       switch (s) {
         case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
           _set(VoiceCallState.live);
+          _restarted = false; // fork
+          _setStage(VoiceStage.live); // fork
           break;
         case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
-          _set(VoiceCallState.failed);
+          // fork (UX L2): сначала один ICE restart, потом — причина.
+          unawaited(() async {
+            if (!await _tryIceRestart()) await _fail(VoiceProblem.noRoute);
+          }());
           break;
         case RTCPeerConnectionState.RTCPeerConnectionStateDisconnected:
           _set(VoiceCallState.connecting);
+          // fork (UX L12): посреди разговора — «восстанавливаем», а не «звоним».
+          _setStage(VoiceStage.reconnecting);
+          _connectTimer?.cancel();
+          _connectTimer = Timer(connectFor, _connectionTimedOut);
           break;
         default:
           break;
@@ -357,6 +460,7 @@ class WatchVoiceService extends ChangeNotifier {
   @override
   void dispose() {
     _ringTimer?.cancel(); // fork
+    _connectTimer?.cancel(); // fork
     unawaited(stop());
     super.dispose();
   }

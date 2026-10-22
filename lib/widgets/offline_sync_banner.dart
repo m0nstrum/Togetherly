@@ -7,6 +7,9 @@ import '../services/offline/connectivity_service.dart';
 import '../services/media_service.dart';
 import '../services/offline/outbox_service.dart';
 import 'common/m3_wave_progress.dart';
+import '../fork/e2e/fork_e2e.dart'; // fork (UX A9)
+import '../fork/e2e/locked_why.dart'; // fork (UX A9)
+import '../main.dart' show LoveApp; // fork (UX A9)
 
 /// Глобальная тонкая плашка состояния поверх любого экрана (через
 /// `MaterialApp.builder`). Показывается, только когда человеку есть что решать:
@@ -69,6 +72,8 @@ class _SyncChipsState extends State<_SyncChips> {
     super.initState();
     OutboxService.instance.poisonCount.addListener(_onChange);
     MediaService.instance.compressProgress.addListener(_onChange);
+    ForkE2E.startFailed.addListener(_onChange); // fork (UX A9)
+    ForkE2E.service.addListener(_onChange); // fork (UX A9)
     _connSub =
         ConnectivityService.instance.onOnlineChanged.listen((_) => _onChange());
   }
@@ -82,6 +87,8 @@ class _SyncChipsState extends State<_SyncChips> {
   void dispose() {
     OutboxService.instance.poisonCount.removeListener(_onChange);
     MediaService.instance.compressProgress.removeListener(_onChange);
+    ForkE2E.startFailed.removeListener(_onChange); // fork (UX A9)
+    ForkE2E.service.removeListener(_onChange); // fork (UX A9)
     _connSub?.cancel();
     super.dispose();
   }
@@ -122,8 +129,32 @@ class _SyncChipsState extends State<_SyncChips> {
       ));
     }
 
+    // fork (UX A9): шифрование не поднялось или нет ключа пары — повтор
+    // очереди ничего не даст. Говорим причину и ведём к тому, что поможет.
+    final group = ForkE2E.activeGroup;
+    final blocked = (poison > 0 || ForkE2E.startFailed.value) &&
+        forkSealBlocked(group);
+    if (blocked) {
+      final why = forkLockedWhyNow(group);
+      chips.add(GestureDetector(
+        onTap: () {
+          final nav = LoveApp.rootNavigatorKey.currentState;
+          if (nav != null) showForkLockedSheet(context, group, navigator: nav);
+        },
+        child: _chip(
+          context,
+          icon: Icons.lock_outline_rounded,
+          text: poison > 0
+              ? ruEn('Не ушло: ', 'Not sent: ') + forkLockedShort(why).toLowerCase()
+              : forkLockedShort(why),
+          bg: scheme.errorContainer,
+          fg: scheme.onErrorContainer,
+        ),
+      ));
+    }
+
     // «Ядовитые» операции — кликабельно: повторить отправку. Показываем сразу.
-    if (poison > 0) {
+    if (poison > 0 && !blocked) {
       chips.add(GestureDetector(
         onTap: () => OutboxService.instance.retryPoison(),
         child: _chip(

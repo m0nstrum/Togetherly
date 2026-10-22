@@ -16,6 +16,7 @@ import '../utils/auth_failure.dart';
 import 'home_widget_service.dart';
 import 'pocketbase_service.dart';
 import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/ui/session_note.dart'; // fork (UX A13)
 
 /// Аутентификация через PocketBase (миграция Firebase→PB, Этап 6, слой Auth).
 ///
@@ -474,6 +475,7 @@ class PbAuthService {
           s.setExtra('reason', 'authRefresh 401/403 → sign-out');
           s.level = SentryLevel.warning;
         }));
+        unawaited(ForkSessionEnd.revoked()); // fork (UX A13): экран входа объяснит
         _svc.signOut();
         return null;
       }

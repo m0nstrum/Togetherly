@@ -626,13 +626,18 @@ class Connection {
     return code.toUpperCase() == inviteCode.toUpperCase();
   }
 
-  Future<void> unpair() async {
+  /// fork (UX A12): false — сервер пару не распустил, и локально она
+  /// остаётся: иначе у партнёра пара жива, а у нас «свободен», и связь
+  /// расходится молча.
+  Future<bool> unpair() async {
     try {
-      if (pairId.isNotEmpty) {
-        await PbDataService().unpairGroup(pairId, _uid);
+      if (pairId.isNotEmpty &&
+          !await PbDataService().unpairGroup(pairId, _uid)) {
+        return false;
       }
     } catch (e) {
       debugPrint('Unpair failed: $e');
+      return false;
     }
 
     _pairSub?.cancel();
@@ -654,6 +659,7 @@ class Connection {
     inviteCode = code;
 
     onChanged?.call();
+    return true;
   }
 
   /// Marks this connection as unpaired locally (remote event: partner left).

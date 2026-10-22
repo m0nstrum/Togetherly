@@ -164,7 +164,8 @@ class CanvasRepository {
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       });
 
-  Future<void> deleteCatalogue(String groupId, String canvasId) =>
+  // fork: D9 — результат, а не void: удаление холста идёт по ответу сервера
+  Future<bool> deleteCatalogue(String groupId, String canvasId) =>
       _data.deleteCanvasCatalogue(groupId, canvasId);
 
   Future<void> incrementDrawings(String groupId, int by) =>
@@ -204,7 +205,8 @@ class CanvasRepository {
   /// при следующей загрузке («отменённые штрихи восстанавливаются»).
   Future<bool> deleteStroke(String strokeId) => _data.deleteStroke(strokeId);
 
-  Future<void> clear(
+  // fork: D3 — результат, а не void: экран откатывает очистку при отказе
+  Future<bool> clear(
     String groupId,
     String canvasId, {
     required int clearVersion,

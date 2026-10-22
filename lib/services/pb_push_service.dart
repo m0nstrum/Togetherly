@@ -5,6 +5,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../fork/push_relay.dart'; // fork
+import '../fork/push/notif_prefs.dart'; // fork
+import '../fork/push/notif_tap.dart'; // fork (UX D8)
+import '../utils/notification_permission.dart'; // fork
 import '../models/chat_msg.dart';
 import '../models/avatar_frame.dart';
 import '../models/gift.dart';
@@ -57,7 +60,9 @@ class PbPushService {
     const ios = DarwinInitializationSettings();
     await _ln.initialize(
       settings: const InitializationSettings(android: android, iOS: ios),
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse, // fork (UX D8)
     );
+    unawaited(ForkNotifTap.checkLaunch(_ln)); // fork (UX D8)
     final androidImpl = _ln.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.createNotificationChannel(
@@ -68,14 +73,16 @@ class PbPushService {
         importance: Importance.high,
       ),
     );
-    await androidImpl?.requestNotificationsPermission();
+    // fork (UX G10): запрос разрешения общий на всё приложение — второй
+    // параллельный ронял init(), и подписки партнёра не поднимались вовсе.
+    await requestNotificationPermissionSafely(androidImpl);
     _inited = true;
   }
 
   /// Настройки уведомлений текущего юзера (его профиль решает, что показывать).
   bool _pref(String col) {
-    final v = PocketBaseService().currentUser?.data[col];
-    return v is bool ? v : true; // по умолчанию включено
+    // fork (UX G11): тумблер на телефоне — сразу, без ожидания authRefresh.
+    return ForkNotifPrefs.enabled(col, PocketBaseService().currentUser?.data[col]);
   }
 
   /// Тихая ночь: подарок «Сладких снов» гасит уведомления до восьми утра.
@@ -131,6 +138,7 @@ class PbPushService {
   }) async {
     if (groupId.isEmpty) return;
     await init();
+    await ForkNotifPrefs.refresh(); // fork (UX G11)
     await _stopLocked();
 
     // Имя партнёра могли не передать (пара только собралась, профиль ещё не
@@ -142,8 +150,9 @@ class PbPushService {
 
     // 1) Чат
     _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'chat_messages', (e) {
+        .subscribeDelta('pair:$groupId', 'chat_messages', (e) async {
       try {
+        await ForkNotifPrefs.refresh(); // fork (UX G11)
         if (e.action != 'create') return;
         final r = e.record;
         if (r == null || r.data['user_uid'] != partnerUid) return;
@@ -169,8 +178,9 @@ class PbPushService {
     //    его и слушаем (источник истины календаря настроений; ловит и смену
     //    реакции прошлого дня, а не только текущей на виджете).
     _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'mood_entries', (e) {
+        .subscribeDelta('pair:$groupId', 'mood_entries', (e) async {
       try {
+        await ForkNotifPrefs.refresh(); // fork (UX G11)
         if (e.action != 'create' && e.action != 'update') return;
         final r = e.record;
         if (r == null || r.data['user_uid'] != partnerUid) return;
@@ -192,8 +202,9 @@ class PbPushService {
 
     // 3) «Скучаю» (miss_you партнёра)
     _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'miss_you', (e) {
+        .subscribeDelta('pair:$groupId', 'miss_you', (e) async {
       try {
+        await ForkNotifPrefs.refresh(); // fork (UX G11)
         final r = e.record;
         if (r == null || r.data['user_uid'] != partnerUid) return;
         final cnt = (r.data['count'] as num?)?.toInt() ?? 0;
@@ -211,8 +222,9 @@ class PbPushService {
 
     // 4) Новое воспоминание (memories партнёра)
     _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'memories', (e) {
+        .subscribeDelta('pair:$groupId', 'memories', (e) async {
       try {
+        await ForkNotifPrefs.refresh(); // fork (UX G11)
         if (e.action != 'create') return;
         final r = e.record;
         if (r == null || r.data['author_uid'] != partnerUid) return;
@@ -227,8 +239,9 @@ class PbPushService {
     // 5) Подарок от партнёра (gifts). Слушаем только доставку: отклик меняет ту
     //    же запись на state=reacted, и повторное уведомление там не нужно.
     _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'gifts', (e) {
+        .subscribeDelta('pair:$groupId', 'gifts', (e) async {
       try {
+        await ForkNotifPrefs.refresh(); // fork (UX G11)
         if (e.action != 'create') return;
         final r = e.record;
         if (r == null || r.data['recipient_uid'] != myUid) return;
@@ -254,7 +267,7 @@ class PbPushService {
       }
     }));
 
-    _subs.add(await ForkPushRelay.subscribe(myUid, (id, t, b) => _notify(id, t, b))); // fork
+    _subs.add(await ForkPushRelay.subscribe(myUid, (id, t, b, {payload}) => _notify(id, t, b, payload: payload))); // fork
 
     debugPrint('PbPush: подписки запущены (group=$groupId, partner=$partnerUid)');
   }
@@ -287,7 +300,7 @@ class PbPushService {
   }
 
   Future<void> _notify(int id, String title, String body,
-      {bool pierceQuiet = false}) async {
+      {bool pierceQuiet = false, String? payload}) async { // fork (UX D8): payload
     if (_muted && !pierceQuiet) {
       debugPrint('PbPush: тихая ночь — уведомление не показываем');
       return;
@@ -311,6 +324,7 @@ class PbPushService {
           presentSound: true,
         ),
       ),
+      payload: payload, // fork (UX D8)
     );
   }
 

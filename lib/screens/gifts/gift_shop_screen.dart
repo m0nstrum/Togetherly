@@ -1039,7 +1039,8 @@ class _PaySheet extends StatelessWidget {
           );
 
     final notes = [
-      if (!canPay) s.giftNotEnoughCoins,
+      // fork: M4 — при «Бесплатно» упрёк в нехватке монет рядом не нужен
+      if (!canPay && !(plus && adAllowed)) s.giftNotEnoughCoins,
       if (adAllowed && !plus) s.giftAdHint,
     ];
 

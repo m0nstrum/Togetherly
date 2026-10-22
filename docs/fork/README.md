@@ -1,7 +1,7 @@
 # Tethered — форк Togetherly
 
 Self-hosted форк с E2E. Что и зачем делаем — [PLAN.md](PLAN.md), исходные
-находки — [AUDIT.md](AUDIT.md), правки чужих файлов — [TOUCHPOINTS.md](TOUCHPOINTS.md), мёрж апстрима — [MERGE.md](MERGE.md), проверка на телефонах — [TESTING.md](TESTING.md).
+находки — [AUDIT.md](AUDIT.md), UX-аудит — [UX_AUDIT.md](UX_AUDIT.md), правки чужих файлов — [TOUCHPOINTS.md](TOUCHPOINTS.md), мёрж апстрима — [MERGE.md](MERGE.md), проверка на телефонах — [TESTING.md](TESTING.md).
 
 ## Ветки и апстрим
 

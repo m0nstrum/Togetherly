@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:love_app/fork/push/notif_tap.dart';
 import 'package:love_app/fork/push_relay.dart';
+import 'package:love_app/services/deep_link_service.dart';
 import 'package:love_app/services/reels/reels_invite.dart';
 
 void main() {
@@ -15,7 +17,7 @@ void main() {
       'title': 'Аня зовёт смотреть',
       'body': 'Shorts',
       'data': {'feed': 'shorts', 'group': 'g1', 'by': 'u1', 'name': 'Аня'},
-    }, (id, t, b) async => shown.add((t, b)));
+    }, (id, t, b, {payload}) async => shown.add((t, b)));
     await Future<void>.delayed(Duration.zero);
     await sub.cancel();
 
@@ -34,10 +36,67 @@ void main() {
       'thread': 'draw',
       'title': 'Аня зовёт порисовать',
       'body': '',
-    }, (id, t, b) async => shown.add(t));
+    }, (id, t, b, {payload}) async => shown.add(t));
     await Future<void>.delayed(Duration.zero);
     await sub.cancel();
     expect(shown, ['Аня зовёт порисовать']);
     expect(invites, isEmpty);
+  });
+
+  group('звонок (UX L6)', () {
+    final t0 = DateTime.fromMillisecondsSinceEpoch(1760000000000);
+    List<String> ring({required int at, bool front = false}) {
+      ForkPushRelay.now = () => t0;
+      ForkPushRelay.appInFront = () => front;
+      final shown = <String>[];
+      ForkPushRelay.handle('c1', {
+        'thread': 'call',
+        'title': '',
+        'body': '',
+        'data': {'group_id': 'g1', 'from': 'u1', 'at': '$at'},
+      }, (id, t, b, {payload}) async => shown.add(b));
+      return shown;
+    }
+
+    tearDown(() {
+      ForkPushRelay.now = DateTime.now;
+    });
+
+    test('свежий зов в фоне — уведомление со своей подписью', () {
+      final shown = ring(at: t0.millisecondsSinceEpoch - 5000);
+      expect(shown, hasLength(1));
+      expect(shown.single, isNotEmpty);
+    });
+
+    test('опоздавший пуш и открытое приложение — молча', () {
+      expect(ring(at: t0.millisecondsSinceEpoch - 60000), isEmpty);
+      expect(ring(at: 0), isEmpty);
+      expect(ring(at: t0.millisecondsSinceEpoch, front: true), isEmpty);
+    });
+  });
+
+  group('тап по уведомлению (UX D8)', () {
+    test('«порисовать» несёт ссылку на холст', () async {
+      final got = <String?>[];
+      ForkPushRelay.handle('d1', {
+        'thread': 'draw',
+        'title': 'Аня зовёт порисовать',
+        'body': '',
+      }, (id, t, b, {payload}) async => got.add(payload));
+      expect(got, ['loveapp://draw']);
+    });
+
+    test('ссылка уходит на главную тем же путём, что тап по виджету', () async {
+      final seen = <Uri>[];
+      final sub = DeepLinkService().widgetActionStream.listen(seen.add);
+      ForkNotifTap.open('loveapp://draw');
+      ForkNotifTap.open('https://evil.example/x');
+      ForkNotifTap.open('');
+      ForkNotifTap.open(null);
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+      expect(seen.map((u) => '$u'), ['loveapp://draw']);
+      expect(DeepLinkService().consumePendingWidgetAction()?.host, 'draw');
+    });
   });
 }

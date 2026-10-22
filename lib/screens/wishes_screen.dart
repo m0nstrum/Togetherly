@@ -446,6 +446,9 @@ class _WishesScreenState extends State<WishesScreen> {
                                               ),
                                   onLongPress:
                                       mine ? () => _remove(wish) : null,
+                                  // fork (D11): то же удаление — видимой кнопкой.
+                                  onDelete:
+                                      mine ? () => _remove(wish) : null,
                                   onEditDate: wish.done
                                       ? () => _editDoneDate(wish)
                                       : null,
@@ -625,6 +628,7 @@ class _WishTile extends StatelessWidget {
     this.authorAvatarUrl,
     this.onTap,
     this.onLongPress,
+    this.onDelete, // fork
     this.onEditDate,
     this.onReserve,
     this.reserved = false,
@@ -638,6 +642,9 @@ class _WishTile extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+
+  /// fork (D11): удалить своё желание без долгого нажатия.
+  final VoidCallback? onDelete;
 
   /// Поправить дату исполнения: галочку ставят не в тот день, когда всё
   /// случилось, и «неправильная дата смысла не имеет».
@@ -882,6 +889,14 @@ class _WishTile extends StatelessWidget {
                   },
                   icon: Icon(Icons.open_in_new_rounded,
                       size: 18, color: scheme.onSurfaceVariant),
+                ),
+              // fork (D11): удалить — не только долгим нажатием.
+              if (onDelete != null)
+                IconButton(
+                  tooltip: ru ? 'Удалить' : 'Delete',
+                  onPressed: onDelete,
+                  icon: Icon(Icons.delete_outline_rounded,
+                      size: 20, color: scheme.onSurfaceVariant),
                 ),
             ],
           ),

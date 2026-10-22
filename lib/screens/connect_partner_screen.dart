@@ -42,6 +42,7 @@ import '../widgets/unfold/unfold_route.dart';
 import '../utils/invite_code.dart';
 import '../widgets/common/badge_image.dart';
 import '../fork/e2e/fork_e2e.dart'; // fork
+import '../dict_strings.dart' show ruEn; // fork (UX A12)
 
 class ConnectPartnerScreen extends StatefulWidget {
   final PairData pairData;
@@ -3149,8 +3150,13 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     // нет — двойной тап и лишний pop нижнего экрана невозможны.
                     onPressed: () async {
                       Navigator.of(sheetCtx).pop();
-                      await pair.manager.removeConnection(connectionId);
+                      final ok = await pair.manager.removeConnection(connectionId);
                       if (!mounted) return;
+                      // fork (UX A12): сервер не распустил пару — связь цела.
+                      if (!ok) {
+                        _showSnack(_unpairFailed);
+                        return;
+                      }
                       _resetCodeInput();
                       setState(() {});
                       _showSnack(LocaleService.current.connectionRemoved);
@@ -3187,14 +3193,27 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     final ok = await AppDialog.confirm(
       context,
       title: LocaleService.current.disconnectQuestion,
-      message: LocaleService.current.disconnectDesc,
+      // fork (UX A12): говорим и про историю пары — она в новую пару не
+      // переедет, а вернуть распавшуюся пару нельзя.
+      message: '${LocaleService.current.disconnectDesc}\n\n${ruEn(
+        'Переписка, воспоминания и рисунки этой пары перестанут открываться в приложении — у вас и у партнёра. С новой парой всё начнётся заново.',
+        'Chat, memories and drawings of this pair will no longer open in the app — for you and your partner. A new pair starts from scratch.',
+      )}',
       confirmLabel: LocaleService.current.disconnect,
       destructive: true,
     );
     if (!ok || !mounted) return;
-    pair.unpair();
+    final done = await pair.unpair(); // fork (UX A12)
+    if (!mounted) return;
+    if (!done) _showSnack(_unpairFailed);
     setState(() {});
   }
+
+  /// fork (UX A12): пара не распалась — и это видно, а не «свободен» молча.
+  String get _unpairFailed => ruEn(
+        'Не получилось отключиться: сервер не ответил. Пара осталась как была — попробуйте ещё раз.',
+        'Couldn’t disconnect: the server didn’t respond. The pair is unchanged — try again.',
+      );
 }
 
 // ═══════════════════════════════════════════════════

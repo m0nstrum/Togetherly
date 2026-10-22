@@ -165,6 +165,7 @@ import '../widgets/theme/theme_pattern_layer.dart';
 import '../widgets/unfold/unfold_route.dart';
 import '../fork/flags.dart'; // fork
 import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/watch/pair_call.dart'; // fork (UX C0)
 
 
 class HomeScreen extends StatefulWidget {
@@ -683,6 +684,10 @@ class _HomeScreenState extends State<HomeScreen> {
     else if (uri.host == 'draw') {
       if (mounted && _pairData.isPaired) {
         unawaited(_openCanvasFromWidget(uri.queryParameters['canvas'] ?? ''));
+      } else {
+        // fork (UX D8): тап по «порисовать» с закрытого приложения — пара ещё
+        // грузится; холст откроем, как только она появится.
+        _pendingDrawOpen = uri.queryParameters['canvas'] ?? '';
       }
     }
     // loveapp://note → правка общего листика (печатать в виджете iOS не даёт).
@@ -714,6 +719,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Нажали на виджет «Где мы», а пара ещё не загрузилась.
   bool _pendingMapOpen = false;
 
+  /// fork (UX D8): холст, который ждёт загрузки пары ('' — галерея).
+  String? _pendingDrawOpen;
+
   void _openLiveMapFromWidget() {
     _pendingMapOpen = false;
     Navigator.push(
@@ -735,6 +743,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onPairChanged() {
     if (!mounted) return;
     if (_pendingMapOpen && _pairData.isPaired) _openLiveMapFromWidget();
+    final draw = _pendingDrawOpen; // fork (UX D8)
+    if (draw != null && _pairData.isPaired) {
+      _pendingDrawOpen = null;
+      unawaited(_openCanvasFromWidget(draw));
+    }
     // Пара появилась или сменилась — присутствию нужен её канал. Вызов
     // идемпотентный: тот же groupId ничего не перезапускает.
     PresenceService().start(groupId: _pairData.pairId);
@@ -971,6 +984,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // виджету рабочего стола оно нужно, чтобы уложить персонажа вовремя.
     _mascotService.sleepResolver = widget.userData.sleepOf;
     _mascotService.bindToGroup(groupId);
+    // fork (UX C0): звонок пары слушает зов с любого экрана.
+    ForkPairCall.instance.partnerName = _pairData.partnerDisplayName;
+    unawaited(ForkPairCall.instance.bind(groupId));
     if (!_restoreListening) {
       _restoreListening = true;
       _mascotService.addListener(_onMascotForRestore);
@@ -1542,6 +1558,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
               children: [
                 HomeHeader(
+                  onOpenTab: (i) => setState(() => _selectedNavIndex = i), // fork (UX N5, N13)
                   missKey: _missKey,
                   // Сезонный призрак за стеклом приходит по «Скучаю».
                   onMissYou: () => _backdropKey.currentState?.summon(),

@@ -16,7 +16,7 @@ import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
 import '../../models/geo_arc.dart';
 import '../../models/globe_math.dart';
 import '../../models/live_point_age.dart';
-import '../../models/map_distance.dart';
+import '../../fork/geo/geo_status.dart'; // fork
 import '../../models/pair_map_widget_view.dart';
 import '../../theme/app_palettes.dart';
 import '../../theme/app_theme.dart';
@@ -114,8 +114,13 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
   final me = input.me == null ? null : LatLng(input.me!.lat, input.me!.lng);
   final her = input.partner == null ? null : LatLng(input.partner!.lat, input.partner!.lng);
   final meters = (me != null && her != null) ? metersBetween(me, her) : 0.0;
-  final distance = formatMapDistance(meters,
-      lang: lang, nearby: s.liveMapNearby, unitM: s.unitM, unitKm: s.unitKm);
+  // fork (UX G8): «рядом» и точные метры — только по свежим точкам обоих.
+  final freshPair = input.partner != null &&
+      input.me != null &&
+      pointIsFresh(input.partner!.updatedAt, nowMs: input.nowMs) &&
+      pointIsFresh(input.me!.updatedAt, nowMs: input.nowMs);
+  final distance = distanceLabel(meters,
+      fresh: freshPair, lang: lang, nearby: s.liveMapNearby, unitM: s.unitM, unitKm: s.unitKm);
 
   String ageText(LivePoint p) {
     final age = LivePointAge.of(p.updatedAt, nowMs: input.nowMs);
@@ -228,7 +233,7 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
       meInitial: initial(input.myName),
       partnerInitial: initial(input.partnerName),
       partnerStale: partnerStale,
-      distance: mode == PairMapMode.near ? s.liveMapNearby : distance,
+      distance: mode == PairMapMode.near && freshPair ? s.liveMapNearby : distance, // fork (G8)
       caption: caption,
       rows: [
         MapWidgetRow(

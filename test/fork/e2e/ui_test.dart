@@ -1,6 +1,7 @@
 // fork: плашка ключей и экран сверки (docs/fork/E2E.md §6.3, §12.4).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
 import 'package:love_app/fork/e2e/fork_e2e.dart';
@@ -52,13 +53,18 @@ void main() {
       });
       ForkE2E.service.value = a;
       await t.pump();
-      expect(find.text('Keys not verified — compare emoji'), findsOneWidget);
+      expect(find.textContaining('Compare 7 emoji with Bob'), findsOneWidget);
 
       a.status.value = {gid: PairE2EStatus.tampered};
       await t.pump();
       expect(find.textContaining('swapped them'), findsOneWidget);
 
       a.status.value = {gid: PairE2EStatus.verified};
+      await t.pump();
+      // Проверено, но ключи без бэкапа — плашка зовёт его включить (UX A2).
+      expect(find.textContaining('Keys have no backup'), findsOneWidget);
+
+      a.backupMethod.value = BackupMethod.phrase;
       await t.pump();
       expect(find.byType(InkWell), findsNothing);
     },

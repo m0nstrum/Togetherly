@@ -193,7 +193,9 @@ class DrawToolsSheet extends StatelessWidget {
 
   static const Map<DrawQuickTool, IconData> icons = {
     DrawQuickTool.brush: Icons.brush_rounded,
-    DrawQuickTool.eraser: Icons.auto_fix_normal_rounded,
+    // fork (D12): «волшебная палочка» не читалась ластиком; в наборе Material
+    // ластика нет, backspace — ближайший по форме.
+    DrawQuickTool.eraser: Icons.backspace_rounded,
     DrawQuickTool.fill: Icons.format_color_fill_rounded,
     DrawQuickTool.shapes: Icons.category_rounded,
     DrawQuickTool.layers: Icons.layers_rounded,

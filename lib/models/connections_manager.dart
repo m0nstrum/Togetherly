@@ -885,22 +885,21 @@ class ConnectionsManager extends ChangeNotifier {
     return connection;
   }
 
-  Future<void> removeConnection(String connectionId) async {
+  /// fork (UX A12): false — связь не удалена (сервер не распустил пару).
+  Future<bool> removeConnection(String connectionId) async {
     final index = _connections.indexWhere((c) => c.id == connectionId);
-    if (index == -1) return;
+    if (index == -1) return false;
 
     // Can't remove solo connection
-    if (_connections[index].isSolo) return;
+    if (_connections[index].isSolo) return false;
 
     // Can't remove the last connection
-    if (_connections.length == 1) return;
+    if (_connections.length == 1) return false;
 
     final connection = _connections[index];
 
     // Unpair if paired
-    if (connection.isPaired) {
-      await connection.unpair();
-    }
+    if (connection.isPaired && !await connection.unpair()) return false;
 
     connection.dispose();
     // Удаляем по объекту, а не по индексу: за время `await unpair()` listener
@@ -915,6 +914,7 @@ class ConnectionsManager extends ChangeNotifier {
 
     await _saveLocal();
     notifyListeners();
+    return true;
   }
 
   /// Единый обработчик изменений любой связи. Помимо сохранения/нотификации

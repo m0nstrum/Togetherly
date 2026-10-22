@@ -14,6 +14,7 @@
 /// 5. разбирает подтверждения приглашений и шаги сверки эмодзи.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -25,6 +26,7 @@ import 'envelope.dart';
 import 'key_store.dart';
 import 'record_codec.dart';
 import 'sas.dart';
+import '../ui/feedback.dart';
 
 /// Состояние пары для UI.
 enum PairE2EStatus {
@@ -105,9 +107,39 @@ sealed class SasState {
   final String session;
 }
 
-/// Мы начали и ждём, пока партнёр откроет экран сверки.
+/// Ждём телефон партнёра: [started] — мы позвали и ждём «Сверить»;
+/// иначе мы приняли и ждём, пока его телефон откроет эмодзи.
 class SasWaiting extends SasState {
-  const SasWaiting(super.groupId, super.partnerUid, super.session);
+  const SasWaiting(
+    super.groupId,
+    super.partnerUid,
+    super.session, {
+    this.started = true,
+  });
+  final bool started;
+}
+
+/// Почему сверка встала не из-за эмодзи (UX_AUDIT A10).
+enum SasStopWhy {
+  /// Партнёр нажал «Отменить» или «Не сейчас».
+  partnerCancelled,
+
+  /// Телефон партнёра не ответил за [E2EService.sasWait].
+  noAnswer,
+
+  /// Шаг пришёл к телефону, который уже забыл сверку (перезапуск).
+  lost,
+}
+
+/// Сверка прервалась, эмодзи не сравнивали: начать заново.
+class SasStopped extends SasState {
+  const SasStopped(
+    super.groupId,
+    super.partnerUid,
+    super.session, {
+    required this.why,
+  });
+  final SasStopWhy why;
 }
 
 /// Партнёр зовёт сверить ключи.
@@ -176,6 +208,11 @@ class E2EService implements E2EKeyring {
   /// Шаг сверки старше этого — брошенный: после перезапуска не всплывает.
   static const Duration sasTtl = Duration(minutes: 10);
 
+  /// Сколько ждать телефон партнёра на шаге сверки (UX_AUDIT A10): раньше
+  /// «Ждём…» висело вечно.
+  static Duration sasWait = const Duration(minutes: 2);
+  Timer? _sasTimer;
+
   final Map<String, List<String>> _members = {};
   final Map<String, SasInitiator> _initiators = {};
   final Map<String, SasResponder> _responders = {};
@@ -206,6 +243,9 @@ class E2EService implements E2EKeyring {
 
   /// Включить бэкап (или сменить фразу/пароль): шифруется и уходит на сервер.
   Future<void> enableBackup(BackupMethod method, String secret) async {
+    // Новый телефон до восстановления: ключей ещё нет — сначала восстановить
+    // (UX_AUDIT A3), а не падать «start() не вызван».
+    if (_keys == null) throw const ForkFailureError(ForkFailure.noKey);
     final bk = await BackupKey.deriveAsync(
       crypto,
       method,
@@ -247,15 +287,24 @@ class E2EService implements E2EKeyring {
       publicKey: Uint8List.fromList(contents.accountSecret.sublist(32)),
       secretKey: crypto.keyFromBytes(contents.accountSecret),
     );
+    final prev = _keys;
     _keys = E2EKeys(
       account: account,
       device: DeviceKeys.generate(crypto, b64(crypto.random(9))),
       pairKeys: {for (final k in contents.pairKeys) k.keyId: k},
       backup: bk,
     )..deriveSelf(crypto, uid);
+    // Сбой сети на публикации не должен оставить полусостояние, после
+    // которого повтор отвечает «нечего восстанавливать» (UX_AUDIT A5):
+    // бэкап с сервера забываем только после успеха.
+    try {
+      await _publish();
+      await store.save(keys);
+    } catch (_) {
+      _keys = prev;
+      rethrow;
+    }
     _serverBackup = null;
-    await _publish();
-    await store.save(keys);
     backupMethod.value = bk.method;
     needsRestore.value = false;
   }
@@ -263,11 +312,17 @@ class E2EService implements E2EKeyring {
   /// Без фразы и пароля: новые ключи, старая история не читается, партнёр
   /// увидит смену ключа. Бэкап нужно включить заново.
   Future<void> startFresh() async {
+    final prev = _keys;
     _keys = E2EKeys.generate(crypto, b64(crypto.random(9)))
       ..deriveSelf(crypto, uid);
+    try {
+      await _publish();
+      await store.save(keys);
+    } catch (_) {
+      _keys = prev; // повтор начнёт с того же места (UX_AUDIT A7)
+      rethrow;
+    }
     _serverBackup = null;
-    await _publish();
-    await store.save(keys);
     backupMethod.value = null;
     needsRestore.value = false;
   }
@@ -614,6 +669,15 @@ class E2EService implements E2EKeyring {
             per.add(PairE2EStatus.tampered);
           }
         case 'sas_start' when m.data['to'] == uid:
+          // Оба нажали «Начать» (UX_AUDIT A10): сверка должна быть одна.
+          // Ведёт тот, чей id меньше; второй сам принимает его зов.
+          final mine = sas.value;
+          final crossed = mine is SasWaiting &&
+              mine.started &&
+              mine.partnerUid == m.fromUid &&
+              _initiators.containsKey(mine.session);
+          if (crossed && uid.compareTo(m.fromUid) < 0) break;
+          if (crossed) _dropSas(mine.session);
           _responders[m.session] = SasResponder(
             crypto,
             myAccount: keys.account.publicKey,
@@ -621,9 +685,15 @@ class E2EService implements E2EKeyring {
             commitment: unb64(m.data['commitment'] as String),
           );
           sas.value = SasIncoming(groupId, m.fromUid, m.session);
+          if (crossed) await sasAccept();
         case 'sas_accept':
           final ini = _initiators.remove(m.session);
-          if (ini == null) break;
+          if (ini == null) {
+            // Мы эту сверку уже забыли (перезапуск) — скажем партнёру, а не
+            // оставим его ждать.
+            await _tellLost(groupId, m.session);
+            break;
+          }
           try {
             final (reveal, code) = ini.onAccept(
               unb64(m.data['ephemeral'] as String),
@@ -631,6 +701,7 @@ class E2EService implements E2EKeyring {
             await backend.postHandshake(groupId, uid, m.session, 'sas_reveal', {
               'ephemeral': b64(reveal),
             });
+            _sasTimer?.cancel(); // эмодзи пришли — больше не ждём
             sas.value = SasShowCode(groupId, m.fromUid, m.session, code);
           } on E2EVerifyError {
             sas.value = SasFinished(
@@ -644,9 +715,13 @@ class E2EService implements E2EKeyring {
           }
         case 'sas_reveal':
           final res = _responders.remove(m.session);
-          if (res == null) break;
+          if (res == null) {
+            await _tellLost(groupId, m.session);
+            break;
+          }
           try {
             final code = res.onReveal(unb64(m.data['ephemeral'] as String));
+            _sasTimer?.cancel(); // эмодзи пришли — больше не ждём
             sas.value = SasShowCode(groupId, m.fromUid, m.session, code);
           } on E2EVerifyError {
             sas.value = SasFinished(
@@ -662,7 +737,7 @@ class E2EService implements E2EKeyring {
           if ((m.data['epoch'] as int?) == keys.currentKey(groupId)?.epoch) {
             keys.rotateNeeded.add(groupId);
           }
-        case 'sas_done' || 'sas_cancel':
+        case 'sas_done':
           final cur = sas.value;
           if (cur != null &&
               cur.session == m.session &&
@@ -673,6 +748,23 @@ class E2EService implements E2EKeyring {
               m.fromUid,
               m.session,
               match: false,
+            );
+          }
+        case 'sas_cancel':
+          // Отмена — не «эмодзи не совпали» (UX_AUDIT A10): говорим как есть.
+          final cur = sas.value;
+          if (cur != null &&
+              cur.session == m.session &&
+              cur is! SasFinished &&
+              cur is! SasStopped) {
+            _dropSas(m.session);
+            sas.value = SasStopped(
+              groupId,
+              m.fromUid,
+              m.session,
+              why: m.data['lost'] == true
+                  ? SasStopWhy.lost
+                  : SasStopWhy.partnerCancelled,
             );
           }
       }
@@ -695,6 +787,39 @@ class E2EService implements E2EKeyring {
       'commitment': b64(ini.commitment),
     });
     sas.value = SasWaiting(groupId, partnerUid, session);
+    _armWait(session);
+  }
+
+  /// Ждём телефон партнёра не дольше [sasWait].
+  void _armWait(String session) {
+    _sasTimer?.cancel();
+    _sasTimer = Timer(sasWait, () async {
+      final cur = sas.value;
+      if (cur is! SasWaiting || cur.session != session) return;
+      _dropSas(session);
+      sas.value = SasStopped(
+        cur.groupId,
+        cur.partnerUid,
+        session,
+        why: SasStopWhy.noAnswer,
+      );
+      try {
+        await backend.postHandshake(
+            cur.groupId, uid, session, 'sas_cancel', const {});
+      } catch (e) {
+        debugPrint('E2E: отмена просроченной сверки — $e');
+      }
+    });
+  }
+
+  /// Шаг сверки, которую мы не помним: партнёру — «потерялась».
+  Future<void> _tellLost(String groupId, String session) async {
+    try {
+      await backend.postHandshake(
+          groupId, uid, session, 'sas_cancel', const {'lost': true});
+    } catch (e) {
+      debugPrint('E2E: сверка $session потерялась, партнёру не сказали — $e');
+    }
   }
 
   /// Принять входящую сверку.
@@ -706,7 +831,13 @@ class E2EService implements E2EKeyring {
     await backend.postHandshake(cur.groupId, uid, cur.session, 'sas_accept', {
       'ephemeral': b64(res.ephemeral),
     });
-    sas.value = SasWaiting(cur.groupId, cur.partnerUid, cur.session);
+    sas.value = SasWaiting(
+      cur.groupId,
+      cur.partnerUid,
+      cur.session,
+      started: false,
+    );
+    _armWait(cur.session);
   }
 
   /// Человек сравнил эмодзи голосом: [match] — совпали ли.
@@ -742,7 +873,7 @@ class E2EService implements E2EKeyring {
     if (cur == null) return;
     _dropSas(cur.session);
     sas.value = null;
-    if (cur is! SasFinished) {
+    if (cur is! SasFinished && cur is! SasStopped) {
       await backend.postHandshake(
         cur.groupId,
         uid,
@@ -754,6 +885,8 @@ class E2EService implements E2EKeyring {
   }
 
   void _dropSas(String session) {
+    _sasTimer?.cancel();
+    _sasTimer = null;
     _initiators.remove(session)?.dispose();
     _responders.remove(session)?.dispose();
   }

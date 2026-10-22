@@ -5,7 +5,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../dict_strings.dart' show trKey;
+import '../dict_strings.dart' show trKey, ruEn;
+import '../fork/flags.dart'; // fork: M11
+import '../fork/ui/feedback.dart'; // fork: M7
 import '../models/chest.dart';
 import '../models/chest_pending.dart';
 import '../models/gift.dart';
@@ -351,8 +353,20 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   /// Сундук, где сейчас идёт открытие или лежит свежий приз, не трогаем.
   Future<void> _restoreStash() async {
     if (widget.debugChoice != null) return;
-    final items = await ChestService.instance.stash();
-    if (!mounted || items.isEmpty || _busy) return;
+    // fork: M7 — сбой запаса — не «пусто», а сообщение с повтором
+    final out = await ChestService.instance.stashOutcome();
+    if (!mounted) return;
+    if (out is Failed<List<ChestStashItem>>) {
+      ForkNotice.failure(
+        context,
+        out.failure,
+        what: ruEn('Не удалось загрузить выпавшие подарки', 'Couldn’t load your won gifts'),
+        retry: _restoreStash,
+      );
+      return;
+    }
+    final items = out.value ?? const <ChestStashItem>[];
+    if (items.isEmpty || _busy) return;
     setState(() {
       final chests = [for (final s in _slots) s.chest];
       for (final item in items) {
@@ -457,9 +471,16 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
 
   List<ChestPrize> get _odds {
     final st = _s.state;
-    if (st != null) return st.odds;
+    // fork: M11 — Плюс в форке и так открыт, в таблице шансов его не показываем
+    List<ChestPrize> noPlus(List<ChestPrize> all) => !ForkFlags.allFree
+        ? all
+        : [
+            for (final p in all)
+              if (p.kind != ChestPrizeKind.plus && p.kind != ChestPrizeKind.plusTrial) p,
+          ];
+    if (st != null) return noPlus(st.odds);
     if (!_s.isMain) return const [];
-    return fallbackChestOdds(withPlus: PlusService.instance.visible && !PlusService.instance.active);
+    return noPlus(fallbackChestOdds(withPlus: PlusService.instance.visible && !PlusService.instance.active));
   }
 
   void _snack(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));

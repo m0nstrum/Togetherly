@@ -11,6 +11,8 @@ import '../services/canvas/canvas_widget_service.dart';
 import '../services/canvas_repository.dart';
 import '../services/canvas_storage_service.dart';
 import '../services/locale_service.dart';
+import '../dict_strings.dart' show ruEn; // fork: D9
+import '../fork/ui/feedback.dart'; // fork: D9
 import '../theme/app_theme.dart';
 import '../theme/fonts.dart';
 import '../widgets/common/app_dialog.dart';
@@ -206,14 +208,31 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
       destructive: true,
     );
     if (!confirmed || !mounted) return;
+    // fork: D9 — удалено ли на самом деле, говорим человеку
+    final failedIds = <String>[];
     for (final id in ids) {
-      await _storage.deleteCanvas(_uid, id, groupId: _groupId);
+      if (!await _storage.deleteCanvas(_uid, id, groupId: _groupId)) {
+        failedIds.add(id);
+      }
     }
     if (!mounted) return;
-    setState(_selected.clear);
+    // Не удалённые остаются выбранными: можно повторить одной кнопкой.
+    setState(() => _selected
+      ..clear()
+      ..addAll(failedIds));
     _load();
+    if (failedIds.isNotEmpty) {
+      ForkNotice.failure(
+        context,
+        ForkFailure.network,
+        what: ruEn(
+          'Не удалось удалить холстов: ${failedIds.length} из ${ids.length}',
+          'Couldn’t delete ${failedIds.length} of ${ids.length} canvases',
+        ),
+        retry: _deleteSelected,
+      );
+    }
   }
-
 
   /// Имя холста спрашиваем нижним листом: диалог по центру не дотянуться
   /// большим пальцем, а на кнопочной навигации он ещё и лип к панели.

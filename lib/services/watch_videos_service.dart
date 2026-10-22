@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 
@@ -5,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:pocketbase/pocketbase.dart';
 import 'package:video_compress/video_compress.dart';
 
+import '../fork/ui/feedback.dart'; // fork (UX V3)
 import '../utils/video_link_thumb.dart';
 import 'pocketbase_service.dart';
 import 'pb_realtime_service.dart';
@@ -28,6 +31,13 @@ class WatchVideo {
   /// воспоминаний удаляется в самой ленте, вместе с записью.
   final bool uploaded;
 
+  /// fork (UX V12): когда ролик залит; от этого считается срок хранения.
+  final DateTime? created;
+
+  /// fork (UX V1): кто сейчас смотрит этот ролик и с какого момента (мс).
+  final String watchingBy;
+  final int watchingAt;
+
   const WatchVideo({
     required this.id,
     required this.title,
@@ -36,6 +46,9 @@ class WatchVideo {
     this.thumbUrl = '',
     this.appOnly = false,
     this.uploaded = false,
+    this.created, // fork (UX V12)
+    this.watchingBy = '',
+    this.watchingAt = 0,
   });
 }
 
@@ -198,6 +211,9 @@ class WatchVideosService {
     thumbUrl: _thumbUrl(r),
     seconds: ((r.data['seconds'] ?? 0) as num).round(),
     uploaded: true,
+    created: DateTime.tryParse(r.created)?.toLocal(), // fork (UX V12)
+    watchingBy: (r.data['watching_by'] ?? '').toString(), // fork (UX V1)
+    watchingAt: ((r.data['watching_at'] ?? 0) as num).round(),
   );
 
   /// Все ролики пары: сначала загруженные во вкладке «Смотрим», затем видео из
@@ -205,7 +221,8 @@ class WatchVideosService {
   static Future<List<WatchVideo>> list(String groupId) async {
     if (groupId.isEmpty) return const [];
     final own = await uploaded(groupId);
-    final lane = await fromMemoryLane(groupId);
+    // fork (UX V5): список целиком — лента воспоминаний не обязательна.
+    final lane = await fromMemoryLane(groupId).catchError((_) => <WatchVideo>[]);
     return [...own, ...lane];
   }
 
@@ -235,8 +252,11 @@ class WatchVideosService {
             sort: '-updated',
           );
       return res.items.map(_fromRecord).toList();
-    } catch (_) {
-      return const [];
+    } catch (e) {
+      // fork (UX V5): сбой сети — это не «роликов нет». Экран оставляет прежний
+      // список и говорит об этом словами.
+      debugPrint('WatchVideos.uploaded failed: $e');
+      rethrow;
     }
   }
 
@@ -263,8 +283,9 @@ class WatchVideosService {
         if (v != null) out.add(v);
       }
       return out;
-    } catch (_) {
-      return const [];
+    } catch (e) {
+      debugPrint('WatchVideos.fromMemoryLane failed: $e'); // fork (UX V5)
+      rethrow;
     }
   }
 
@@ -297,24 +318,39 @@ class WatchVideosService {
     );
   }
 
-  /// Загружает ролик. Возвращает запись или null, если файл слишком большой
-  /// либо сервер отказал. [plus] поднимает потолок до [maxBytesPlus] — тот же,
-  /// что стоит в коллекции.
-  static Future<WatchVideo?> upload({
+  static Completer<void>? _cancel;
+
+  /// fork (UX V3): отменить идущую заливку. Версия SDK не умеет обрывать запрос,
+  /// поэтому [upload] перестаёт ждать, а запись, которая всё же создастся,
+  /// удаляет сама.
+  static void cancelUpload() {
+    final c = _cancel;
+    if (c != null && !c.isCompleted) c.complete();
+  }
+
+  /// Загружает ролик. Возвращает запись; при отказе бросает ошибку, из которой
+  /// [ForkFailure.of] достаёт причину (потолок размера, сеть, сессия).
+  /// [plus] поднимает потолок до [maxBytesPlus] — тот же, что стоит в коллекции.
+  ///
+  /// fork (UX V3): файл идёт потоком с диска (`MultipartFile.fromPath`), а не
+  /// целиком в памяти — 300 МБ в `readAsBytes` валили телефон.
+  static Future<WatchVideo> upload({
     required String groupId,
     required File file,
     required String title,
     bool plus = false,
   }) async {
-    if (groupId.isEmpty) return null;
+    if (groupId.isEmpty) {
+      throw const ForkFailureError(ForkFailure.denied, 'нет пары');
+    }
     final size = await file.length();
-    if (size > limitFor(plus: plus)) return null;
+    if (size > limitFor(plus: plus)) {
+      throw const ForkFailureError(ForkFailure.tooLarge);
+    }
 
     try {
-      final bytes = await file.readAsBytes();
-
       final files = <http.MultipartFile>[
-        http.MultipartFile.fromBytes('file', bytes, filename: title),
+        await http.MultipartFile.fromPath('file', file.path, filename: title),
       ];
 
       // Длительность для подписи на плитке. Не вышло — плитка обойдётся без
@@ -351,7 +387,8 @@ class WatchVideosService {
         // Превью не обязательно — продолжаем без него.
       }
 
-      final rec = await _pb
+      final cancel = _cancel = Completer<void>();
+      final request = _pb
           .collection(_col)
           .create(
             body: {
@@ -365,12 +402,47 @@ class WatchVideosService {
           // Сто мегабайт по мобильной сети идут долго: минутного таймаута,
           // как у фотографий, тут не хватает.
           .timeout(const Duration(minutes: 10));
-      return _fromRecord(rec);
+      final done = await Future.any<RecordModel?>([
+        request,
+        cancel.future.then((_) => null),
+      ]);
+      if (done == null) {
+        // Запрос ещё летит: когда запись появится, убираем её.
+        unawaited(
+          request.then((r) => _pb.collection(_col).delete(r.id)).catchError((_) {}), // тихо: отменили, а чистка не вышла — ролик сам уйдёт за 30 дней
+        );
+        throw const ForkFailureError(ForkFailure.unknown, 'cancelled');
+      }
+      return _fromRecord(done);
     } catch (e) {
-      // Отказ сервера виден только здесь: экран покажет общую ошибку, а причину
-      // (потолок размера, правила коллекции) без этой строки не найти.
+      // Отказ сервера виден здесь: причину (потолок размера, правила
+      // коллекции) экран получает из брошенной ошибки.
       debugPrint('WatchVideos.upload failed: $e');
-      return null;
+      rethrow;
+    }
+  }
+
+  /// fork (UX V1): отметить, что [me] смотрит ролик [id] (или снять отметку,
+  /// если [watching] false). Запись уходит партнёру живым событием канала пары.
+  /// Ошибку не бросает: отметка вторична, просмотру она не мешает.
+  static Future<bool> markWatching(
+    String id, {
+    required String me,
+    required bool watching,
+  }) async {
+    if (id.isEmpty) return false;
+    try {
+      await _pb.collection(_col).update(
+        id,
+        body: {
+          'watching_by': watching ? me : '',
+          'watching_at': watching ? DateTime.now().millisecondsSinceEpoch : 0,
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint('WatchVideos.markWatching failed: $e');
+      return false;
     }
   }
 

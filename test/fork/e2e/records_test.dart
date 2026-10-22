@@ -1066,5 +1066,38 @@ void main() {
         ['нашлось 307', 'нашлось 407'],
       );
     });
+
+    test('обрыв посреди истории помечает результат неполным', () async {
+      var n = 0;
+      final pb = PocketBase(
+        'http://pb',
+        httpClientFactory: () => MockClient((req) async {
+          if (n++ == 0) {
+            final items = [
+              for (var i = 0; i < 200; i++)
+                {
+                  'id': 'm${'$i'.padLeft(14, '0')}',
+                  'group_id': _gid,
+                  'ts': 1000 - i,
+                  'text': 'шум $i',
+                },
+            ];
+            return _json(jsonEncode({'page': 1, 'items': items}));
+          }
+          return http.Response('{}', 500);
+        }),
+      );
+      final scan = ForkSearchScan();
+      final got = await ForkChatSearch.search(
+        groupId: _gid,
+        kind: ChatSearchKind.all,
+        query: 'нашлось',
+        pb: pb,
+        scan: scan,
+      );
+      expect(got, isNull);
+      expect(scan.interrupted, isTrue);
+      expect(scan.incomplete, isTrue);
+    });
   });
 }

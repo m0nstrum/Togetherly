@@ -49,7 +49,7 @@
   const T = RU ? {
     mine: 'Твоя лента', theirs: (n) => 'Лента · ' + n, partner: 'партнёр',
     refresh: 'Обновить рекомендации', refreshing: 'Подбираем свежие ролики…',
-    call: 'Позвонить', react: 'Реакция', chat: 'Чат', share: 'Отправить ролик', prev: 'Прошлый ролик', back: 'Назад',
+    call: 'Позвонить', callShort: 'Звонок', react: 'Реакция', chat: 'Чат', share: 'Отправить ролик', prev: 'Прошлый ролик', back: 'Назад',
     mic: 'Микрофон', hang: 'Положить трубку', ringing: 'Звоним…', failed: 'Не вышло',
     write: () => 'Твоя реплика…', send: 'Отправить',
     loading: 'Собираем ленту…', loadingSub: 'Первые ролики приходят за несколько секунд',
@@ -59,7 +59,7 @@
     save: 'Сохранить в воспоминания', saved: 'Ролик в воспоминаниях', savedSub: 'Он ждёт вас в ленте воспоминаний',
     savedBy: (n) => n + ' сохраняет ролик', saveFailed: 'Не сохранилось, попробуйте ещё раз', needApp: 'Сохранять можно из приложения Togetherly',
     leads: (n) => 'Листает ' + n, take: 'Листать мне', tookLead: (n) => 'Теперь листает ' + n, youLead: 'Теперь листаете вы',
-    you: 'Вы', guest: 'Гость', joined: 'Партнёр в ленте', lost: 'Связь потеряна, переподключаемся…',
+    you: 'Вы', guest: 'Гость', joined: 'Партнёр в ленте', left: 'Партнёр вышел из ленты', stuck: 'Площадка не отдаёт ролики', stuckSub: 'Бывает капча или сбой площадки. Попробуйте ещё раз или выберите другую площадку.', retry: 'Попробовать ещё раз', takeHint: 'Нажмите «Листать мне», чтобы листать самим', nothingNew: 'Новых роликов пока нет', offline: 'Нет связи — переподключаемся…', lost: 'Связь потеряна, переподключаемся…',
     authTitle: 'Нужно войти', authSub: 'Ленту пары открывают её участники. Войдите на странице комнаты.',
     strangerTitle: 'Это лента другой пары', strangerSub: 'Откройте совместную ленту из своего приложения.',
     missingTitle: 'Такой комнаты нет', missingSub: 'Откройте совместную ленту из приложения Togetherly.',
@@ -68,7 +68,7 @@
   } : {
     mine: 'Your feed', theirs: (n) => 'Feed · ' + n, partner: 'partner',
     refresh: 'Refresh recommendations', refreshing: 'Picking fresh clips…',
-    call: 'Call', react: 'React', chat: 'Chat', share: 'Send clip', prev: 'Previous clip', back: 'Back',
+    call: 'Call', callShort: 'Call', react: 'React', chat: 'Chat', share: 'Send clip', prev: 'Previous clip', back: 'Back',
     mic: 'Microphone', hang: 'Hang up', ringing: 'Calling…', failed: 'Failed',
     write: () => 'Your line…', send: 'Send',
     loading: 'Gathering your feed…', loadingSub: 'The first clips arrive in a few seconds',
@@ -78,7 +78,7 @@
     save: 'Save to memories', saved: 'Saved to memories', savedSub: 'Find it in your memory lane',
     savedBy: (n) => n + ' saved this clip', saveFailed: 'Didn’t save, try again', needApp: 'Saving works in the Togetherly app',
     leads: (n) => n + ' is scrolling', take: 'Let me scroll', tookLead: (n) => n + ' is scrolling now', youLead: 'You’re scrolling now',
-    you: 'You', guest: 'Guest', joined: 'Your partner is here', lost: 'Connection lost, reconnecting…',
+    you: 'You', guest: 'Guest', joined: 'Your partner is here', left: 'Your partner left', stuck: 'The platform isn’t sending videos', stuckSub: 'It may be a captcha or an outage. Try again or pick another platform.', retry: 'Try again', takeHint: 'Tap “Let me scroll” to take over', nothingNew: 'No new videos yet', offline: 'No connection — reconnecting…', lost: 'Connection lost, reconnecting…',
     authTitle: 'Sign in first', authSub: 'Only the couple can open their feed. Sign in on the room page.',
     strangerTitle: 'This is another couple’s feed', strangerSub: 'Open the shared feed from your own app.',
     missingTitle: 'No such room', missingSub: 'Open the shared feed from the Togetherly app.',
@@ -178,6 +178,7 @@
         <div class="rl-lead" hidden><span></span><button type="button">${T.take}</button></div>
         <div class="rl-voice" hidden>
           <button class="rl-ib accent rl-call" aria-label="${T.call}">${ic(IC.call)}</button>
+          <span class="rl-vcap" aria-hidden="true">${T.callShort}</span>
           <span class="rl-av lg is-partner rl-vwho" hidden></span>
           <button class="rl-ib accent rl-mic" aria-label="${T.mic}" hidden>${ic(IC.mic)}</button>
           <button class="rl-ib end rl-hang" aria-label="${T.hang}" hidden>${ic(IC.end)}</button>
@@ -590,7 +591,10 @@
     if (together && (!S.cur || S.cur.owner === S.me)) { fromTheirs(); fromMine(); } else { fromMine(); if (together) fromTheirs(); }
     if (S.mine.length < 4) pull(8);
     if (!id) {
-      if (!S.cur) showWait(bridge() ? T.loading : T.noFeed, bridge() ? T.loadingSub : T.noFeedSub, !!bridge());
+      if (!S.cur) {
+        showWait(bridge() ? T.loading : T.noFeed, bridge() ? T.loadingSub : T.noFeedSub, !!bridge());
+        if (bridge()) armStall(); // fork (UX L9)
+      }
       return false;
     }
     if (owner === S.me) announce();
@@ -599,6 +603,27 @@
     show(cur);
     send('reels-reel', { id, owner, by: S.me, name: S.name, lead: S.lead });
     return true;
+  }
+
+  // fork (UX L9): «Собираем ленту…» висело вечно, если площадка ничего не
+  // отдала. Через 20 с — честно и с кнопкой повтора.
+  let stallTimer = 0;
+  function armStall() {
+    clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      if (S.cur) return;
+      showWait(T.stuck, T.stuckSub, false, { href: '#retry', label: T.retry });
+      const a = $('.rl-go', el.wait);
+      if (a) {
+        a.onclick = (e) => {
+          e.preventDefault();
+          a.onclick = null;
+          showWait(T.loading, T.loadingSub, true);
+          armStall();
+          pull(8).then(() => { if (!S.cur) next(); });
+        };
+      }
+    }, 20000);
   }
 
   /** Человек листает сам (палец, колесо, кнопка): лента у него. Сам запуск
@@ -982,7 +1007,21 @@
     let m = e.data;
     if (typeof m === 'string') { try { m = JSON.parse(m); } catch (_) { return; } }
     card.last = playerSaid(m) || card.last;
-    if (card.spec.playing && card.spec.playing(m)) { card.playing = true; live(card); }
+    if (card.spec.playing && card.spec.playing(m)) {
+      card.playing = true;
+      live(card);
+      // fork (UX L11): «▶» рисовался по нажатию, а не по плееру — и висел
+      // поверх идущего ролика. Плеер сказал «играю» при паузе: сначала ещё
+      // раз просим паузу (команда могла потеряться), потом верим плееру.
+      if (card === cards.cur && S.paused) {
+        if (performance.now() - (S.pausedAt || 0) < 3000) {
+          try { card.api.pause(); } catch (_) { /* плеер ещё не готов */ }
+        } else {
+          S.paused = false;
+          el.root.classList.remove('is-paused');
+        }
+      }
+    }
     if (card.active && card.spec.ended && card.spec.ended(m)) card.api.play();
   });
 
@@ -1122,6 +1161,8 @@
     if (S.viewers > 1 && S.partnerId) { S.lead = S.me; paintLead(); }
     refreshing = true;
     el.refresh.classList.add('is-busy');
+    say(T.refreshing); // fork (UX L13)
+    const keep = S.mine; // fork (UX L13): старый запас — пока не придут новые
     S.mine = [];
     if (cards.next) { drop(cards.next); cards.next = null; }
     // Сборка без этого обработчика может не ответить вовсе — ждём недолго.
@@ -1134,7 +1175,12 @@
     refreshing = false;
     el.refresh.classList.remove('is-busy');
     const id = S.mine.find((x) => !S.seen.has(x));
-    if (!id) return;
+    if (!id) {
+      // fork (UX L13): новых нет — возвращаем запас и говорим об этом.
+      S.mine = keep.concat(S.mine);
+      say(T.nothingNew);
+      return;
+    }
     S.mine = S.mine.filter((x) => x !== id);
     announce();
     if (S.cur) { S.back.push(S.cur); if (S.back.length > 30) S.back.shift(); }
@@ -1186,6 +1232,7 @@
 
   function setPaused(p) {
     S.paused = p;
+    S.pausedAt = performance.now(); // fork (UX L11)
     el.root.classList.toggle('is-paused', p);
     const c = cards.cur;
     try { if (p) c.api.pause(); else c.api.play(); } catch (_) {}
@@ -1223,11 +1270,18 @@
   }
 
   /** Ведомый тянет ленту — подсвечиваем, кто листает и как забрать. */
+  let nudgeTold = 0; // fork (UX L10)
   function nudgeLead() {
     paintLead();
     el.lead.classList.remove('is-nudge');
     void el.lead.offsetWidth;
     el.lead.classList.add('is-nudge');
+    // fork (UX L10): свайп ведомого молча не работал — объясняем, но не
+    // на каждый свайп.
+    if (performance.now() - nudgeTold > 15000) {
+      nudgeTold = performance.now();
+      toast(T.leads(S.partnerName || T.partner), T.takeHint, '');
+    }
   }
 
   function takeLead() {
@@ -1451,17 +1505,51 @@
   /** Сколько людей в канале. Приход партнёра отмечаем строкой в чате, но не
    *  чаще раза в полминуты: переподключения дают дребезг 1↔2. */
   let joinedAt = -Infinity;
+  // fork (UX L8): уход партнёра тоже видно; короткий дребезг переподключения
+  // (2→1→2 за пару секунд) не считается.
+  let leftTimer = 0;
+  let partnerHere = false;
   function onViewers(n) {
     const was = S.viewers;
     S.viewers = n;
     // Остался один — лента снова у него.
     if (S.viewers < 2) S.lead = '';
-    if (n > 1 && was <= 1 && performance.now() - joinedAt > 30000) {
-      joinedAt = performance.now();
-      addMsg({ text: T.joined, sys: true });
+    if (n > 1) {
+      clearTimeout(leftTimer);
+      if (!partnerHere && performance.now() - joinedAt > 30000) {
+        joinedAt = performance.now();
+        addMsg({ text: T.joined, sys: true });
+        say(T.joined);
+      }
+      partnerHere = true;
+    } else if (was > 1 && partnerHere) {
+      clearTimeout(leftTimer);
+      leftTimer = setTimeout(() => {
+        if (S.viewers > 1) return;
+        partnerHere = false;
+        addMsg({ text: T.left, sys: true });
+        say(T.left);
+      }, 4000);
     }
     paintTurn();
     paintLead();
+  }
+
+  // fork (UX L15): нет связи — плашка висит, пока связь не вернётся, а не
+  // мелькает на 2,8 с.
+  function netBanner(show) {
+    let b = $('.rl-net', el.root);
+    if (!show) { if (b) b.remove(); return; }
+    if (b) return;
+    b = document.createElement('div');
+    b.className = 'rl-net';
+    b.setAttribute('role', 'status');
+    b.textContent = T.offline;
+    b.style.cssText = 'position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 56px);' +
+      'transform:translateX(-50%);z-index:50;padding:8px 14px;border-radius:14px;' +
+      'background:rgba(20,20,20,.82);color:#fff;font:500 14px/1.3 system-ui,sans-serif;' +
+      'max-width:calc(100% - 32px);text-align:center;pointer-events:none';
+    el.root.appendChild(b);
   }
 
   function onMessage(data) {
@@ -1625,7 +1713,7 @@
       message: onMessage,
       viewers: onViewers,
       subscribed: onSubscribed,
-      status: (kind) => { if (kind === 'lost') say(T.lost); },
+      status: (kind) => { netBanner(kind === 'lost' || kind === 'offline'); }, // fork (UX L15)
     }).then((opened) => {
       ch = opened;
       S.me = opened.me;

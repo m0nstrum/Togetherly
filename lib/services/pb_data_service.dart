@@ -2398,7 +2398,12 @@ class PbDataService {
                 {'g': groupId, 'c': canvasId}),
           );
       for (final s in strokes) {
-        await _pb.collection('canvas_strokes').delete(s.id);
+        // fork: D3 — штрих, которого уже нет (404), очистку не валит
+        try {
+          await _pb.collection('canvas_strokes').delete(s.id);
+        } on ClientException catch (e) {
+          if (e.statusCode != 404) rethrow;
+        }
       }
       // Чистим и live-курсоры (паритет с Firebase clearDrawingCanvas).
       final live = await _pb.collection('canvas_live').getFullList(

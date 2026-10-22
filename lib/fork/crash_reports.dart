@@ -47,7 +47,7 @@ abstract final class ForkCrashReports {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(prefsKey, value);
-    } catch (_) {}
+    } catch (_) {} // тихо: согласие в памяти уже сменено
     if (!value && _enabledAtStart) {
       _enabledAtStart = false;
       await Sentry.close();

@@ -100,6 +100,11 @@ import '../widgets/unfold/unfold_route.dart';
 import 'help_screen.dart';
 import '../fork/config/endpoints.dart'; // fork
 import '../fork/flags.dart'; // fork
+import '../fork/system_settings.dart'; // fork: N2
+import '../fork/ui/logout_guard.dart'; // fork (UX A4)
+import '../fork/push/push_health.dart'; // fork (UX G9)
+import '../fork/push/gifts_toggle.dart'; // fork (UX G11)
+import '../fork/ui/feedback.dart'; // fork: N2
 
 /// Entry for a partner across all connections
 class _PartnerEntry {
@@ -4064,7 +4069,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             shrinkWrap: true,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             children: [
+              const PushHealthTile(), // fork (UX G9): включены ли уведомления и как доходят
               SettingsGroup([
+                const ForkGiftsNotifRow(), // fork (UX G11)
                 SettingsRow(
                   icon: Icons.favorite_rounded,
                   title: s.notifMissYou,
@@ -4229,36 +4236,18 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// На части прошивок нет Activity ни для одного из интентов — раньше это
   /// падало в отчёты о сбоях, поэтому оба вызова обёрнуты.
   Future<void> _openSystemNotificationSettings() async {
-    if (Platform.isAndroid) {
-      try {
-        await safeLaunchUrl(
-          Uri.parse(
-            'intent:#Intent;'
-            'action=android.settings.APP_NOTIFICATION_SETTINGS;'
-            'S.android.provider.extra.APP_PACKAGE=com.togetherly.love;'
-            'end',
-          ),
-        );
-        return;
-      } catch (_) {
-        try {
-          await safeLaunchUrl(
-            Uri.parse(
-              'intent:#Intent;'
-              'action=android.settings.APPLICATION_DETAILS_SETTINGS;'
-              'S.android.provider.extra.APP_PACKAGE=com.togetherly.love;'
-              'end',
-            ),
-          );
-        } catch (e) {
-          debugPrint('Open app settings failed: $e');
-        }
-      }
-      return;
+    // fork: N2 — пакет из PackageInfo (lib/fork/system_settings.dart), при
+    // неудаче говорим, куда зайти руками.
+    final opened = await openSystemNotificationSettings();
+    if (!opened && mounted) {
+      ForkNotice.info(
+        context,
+        ruEn(
+          'Не получилось открыть настройки. Откройте их вручную: Настройки → Приложения → Уведомления.',
+          'Couldn’t open settings. Open them manually: Settings → Apps → Notifications.',
+        ),
+      );
     }
-
-    final iosUri = Uri.parse('app-settings:');
-    if (await canLaunchUrl(iosUri)) await safeLaunchUrl(iosUri);
   }
 
   /// Счётчик дней в шторке: включение просит дату старта пары.
@@ -4530,7 +4519,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
     // Паков нет на iOS: продукты там не заведены, а вести на оплату мимо
     // биллинга запрещает 3.1.1. Без паков не нужен и переключатель вкладок.
-    final packsVisible = !Platform.isIOS && kCoinsPurchasable;
+    final packsVisible = !Platform.isIOS && kCoinsPurchasable && !ForkFlags.allFree; // fork: N14 — паков за деньги нет, заголовок «Заработать монеты»
     var showPacks = false;
 
     showAppSheet<void>(
@@ -4751,6 +4740,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                 },
         ),
       ],
+      // fork: N7 — рекламы в форке нет, строки «Смотреть видео» тоже
+      if (!ForkFlags.allFree) ...[
       const SizedBox(height: 10),
       // Реклама: счётчик показов за сегодня + сумма награды
       _coinEarnRow(
@@ -4766,6 +4757,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             // начисления баланс и счётчик обновятся прямо здесь.
             : () async => _watchRewardedAd(),
       ),
+      ],
       const SizedBox(height: 10),
       // Недоступное вручную — цели, а не мусор: показываем приглушённо.
       _coinEarnRow(
@@ -5027,7 +5019,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       //
       // Одного `kDonationsEnabled` мало: IPA собирается с `STORE=github`, и по
       // флагу строка осталась бы видимой на iPhone. Поэтому iOS исключён явно.
-      if (kDonationsEnabled && !Platform.isIOS) ...[
+      if (kDonationsEnabled && !Platform.isIOS && !ForkFlags.hideUpstreamChannels) ...[ // fork: M12
         const SizedBox(height: 14),
         _coinEarnRow(
           icon: Icons.confirmation_number_rounded,
@@ -5047,7 +5039,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       // «Восстановить покупки» имеет смысл только там, где покупки есть. На
       // iPhone их нет вовсе (продуктов в App Store Connect не заведено), в
       // sideload — тоже, и строка обещала бы несуществующее.
-      if (kCoinsPurchasable && !Platform.isIOS) ...[
+      if (kCoinsPurchasable && !Platform.isIOS && !ForkFlags.allFree) ...[ // fork: M12
         const SizedBox(height: 10),
         _coinEarnRow(
           icon: Icons.restore_rounded,
@@ -5542,7 +5534,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final ok = await AppDialog.confirm(
       context,
       title: _s.logoutQuestion,
-      message: _s.logoutConfirm,
+      message: ForkLogoutGuard.message(_s.logoutConfirm), // fork (UX A4)
       confirmLabel: _s.logoutBtn,
       destructive: true,
       icon: Icons.logout_rounded,
@@ -5609,7 +5601,12 @@ class _ProfileScreenState extends State<ProfileScreen>
       Navigator.of(context, rootNavigator: true).pop(); // закрыть индикатор
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_s.deleteAccountError)));
+      ).showSnackBar(SnackBar(
+        // fork: A14 — при 401 просим войти заново, а не общая ошибка
+        content: Text(ForkFailure.of(e) == ForkFailure.session
+            ? _s.deleteAccountReauth
+            : _s.deleteAccountError),
+      ));
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/locale_service.dart';
+import '../../dict_strings.dart' show ruEn; // fork
 import '../../theme/app_theme.dart';
 import '../../widgets/common/animations.dart';
 import '../../widgets/unfold/unfold_route.dart';
@@ -181,6 +182,11 @@ class HomeBottomNav extends StatelessWidget {
                     buttonKey: sideButtonKey,
                     color: theme.fillColor,
                     isArrow: sideIsArrow,
+                    // fork (N11): подпись кнопки и подсказка про долгое нажатие.
+                    label: sideIsArrow ? s.sideActionOpenFeed : s.sideActionCreatePin,
+                    longPressHint: onSideLongPress == null
+                        ? null
+                        : ruEn('Переключить стрелку и плюс', 'Switch arrow and plus'),
                     onTap: onCreatePin!,
                     onLongPress: onSideLongPress,
                   ),
@@ -251,10 +257,14 @@ class _CreatePinButton extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final Key? buttonKey;
+  final String label; // fork
+  final String? longPressHint; // fork
 
   const _CreatePinButton({
     required this.color,
     required this.isArrow,
+    required this.label, // fork
+    this.longPressHint, // fork
     required this.onTap,
     this.onLongPress,
     this.buttonKey,
@@ -262,6 +272,24 @@ class _CreatePinButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // fork (N11): без подписи экранный диктор читал «кнопка», а смысл (в Ленту
+    // или создать пин) знал только тот, кто пробовал.
+    return Semantics(
+      button: true,
+      label: label,
+      onLongPressHint: longPressHint,
+      excludeSemantics: true,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Tooltip(
+        message: label,
+        triggerMode: TooltipTriggerMode.manual,
+        child: _button(),
+      ),
+    );
+  }
+
+  Widget _button() {
     return Material(
       key: buttonKey,
       color: color,

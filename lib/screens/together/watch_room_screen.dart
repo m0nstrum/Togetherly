@@ -11,12 +11,10 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../fork/e2e/room_chat_ui.dart'; // fork
 import '../../fork/watch_proxy.dart'; // fork
-import '../../fork/watch/incoming_call.dart'; // fork
+import '../../fork/watch/voice_stage.dart'; // fork
+import '../../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../../fork/e2e/reels_chat_bridge.dart'; // fork
-import '../../dict_strings.dart' show ruEn; // fork
-import '../../models/call_record.dart';
 import '../../models/exit_guard.dart';
-import '../../services/chat_service.dart';
 import '../../widgets/memory_save/floating_note.dart';
 import '../../services/locale_service.dart';
 import '../../services/pocketbase_service.dart';
@@ -27,7 +25,6 @@ import '../../services/reels/reel_save.dart';
 import '../../services/reels/reels_invite.dart';
 import '../../services/reels/reels_proxy.dart';
 import '../../services/reels/reels_telemetry.dart';
-import '../../services/watch_channel_service.dart';
 import '../../services/watch_history_service.dart';
 import '../../services/watch_room_service.dart';
 import '../../services/screen_awake.dart';
@@ -91,7 +88,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// Своё подключение к каналу комнаты — рядом с тем, что держит страница
   /// внутри WebView. Второе соединение нужно потому, что голос идёт мимо
   /// браузера: WebRTC поднимает приложение, а сигналинг живёт в том же канале.
-  WatchChannel? _room;
+  // fork (UX C0): своего канала у экрана больше нет — его держит ForkPairCall.
   WatchVoiceService? _voice;
 
   /// Лента площадки этого телефона — только в режиме лент.
@@ -219,55 +216,23 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// партнёра с первой секунды, иначе его «voice-hello» никто не поймает и
   /// звонок будет уходить в пустоту.
   Future<void> _openVoice() async {
-    final me = PocketBaseService().userId ?? 'app';
-    final room = WatchChannel(widget.room, me);
-    try {
-      await room.connect(_onRoomMessage);
-    } catch (e) {
-      debugPrint('WatchRoom: канал не поднялся: $e');
+    // fork (UX C0): звонок пары один на всё приложение (ForkPairCall): из
+    // комнаты, ленты и чата звонят одним и тем же, разговор переживает уход
+    // с экрана, входящий и плашка висят поверх любого экрана.
+    final voice = await ForkPairCall.instance.bind(widget.pairId, room: widget.room);
+    if (voice == null) {
+      // fork (UX L3): не сдаёмся молча — пробуем снова, звонок скажет причину.
+      if (mounted) {
+        Future<void>.delayed(const Duration(seconds: 5), () {
+          if (mounted && _voice == null) unawaited(_openVoice());
+        });
+      }
       return;
     }
-    if (!mounted) {
-      unawaited(room.dispose());
-      return;
-    }
-    final voice = WatchVoiceService(channel: room, me: me);
+    if (!mounted) return;
     voice.addListener(_onVoiceChanged);
-    voice.onCallEnded = (talked, peer) => _recordCall(me, talked, peer);
-    voice.onUnanswered = (declined) => _say(declined // fork
-        ? ruEn('Партнёр сейчас не может говорить', 'Your partner can’t talk right now')
-        : ruEn('Партнёр не ответил', 'Your partner didn’t answer'));
-    setState(() {
-      _room = room;
-      _voice = voice;
-    });
+    setState(() => _voice = voice);
     _pushVoice();
-  }
-
-  /// Разговор кончился — запись «Звонок · 4:12» в чат пары. Пишет один из
-  /// двоих (`writesCallRecord`), иначе в истории было бы по две записи.
-  /// Работает и после ухода с экрана: отбой при закрытии тоже разговор.
-  void _recordCall(String me, Duration talked, String peer) {
-    if (talked < kMinCallRecord || widget.pairId.isEmpty) return;
-    if (!writesCallRecord(me: me, peer: peer)) return;
-    final ms = talked.inMilliseconds;
-    unawaited(
-      ChatService.instance.send(
-        groupId: widget.pairId,
-        senderName: PocketBaseService().userName,
-        text: callRecordText(LocaleService.current.chatCallTitle, ms),
-        callMs: ms,
-      ),
-    );
-  }
-
-  void _onRoomMessage(Map<String, dynamic> data) {
-    // Команды плеера разбирает страница в WebView — приложение в них не лезет.
-    // Себе забираем только сигналинг разговора.
-    final voice = _voice;
-    if (voice != null && (data['t'] ?? '').toString().startsWith('voice-')) {
-      unawaited(voice.handleMessage(data));
-    }
   }
 
   void _onVoiceChanged() {
@@ -300,10 +265,22 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     final voice = _voice;
     // Канал ещё не поднялся — звонить некуда, страница просто останется
     // в покое: своего состояния она не выдумывает.
-    if (voice == null) return;
+    if (voice == null) {
+      // fork (UX L3): раньше кнопка молчала.
+      if (action == 'call') {
+        _say(voiceStageText(VoiceStage.failed, VoiceProblem.noChannel));
+        unawaited(_openVoice());
+      }
+      return;
+    }
     switch (action) {
       case 'call':
-        if (!voice.active) await _toggleVoice();
+        // fork (UX L2): после «не вышло» — звоним заново.
+        if (voice.state == VoiceCallState.failed) {
+          await voice.start();
+        } else if (!voice.active) {
+          await _toggleVoice();
+        }
       case 'hangup':
         if (voice.active) await voice.stop();
       case 'mic':
@@ -320,10 +297,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     if (voice.active) {
       await voice.stop();
     } else {
-      await voice.start();
-      if (mounted && voice.state == VoiceCallState.failed) {
-        _say(LocaleService.current.voiceNoPermission);
-      }
+      await voice.start(); // fork: отказ в микрофоне показывает плашка звонка
     }
   }
 
@@ -498,9 +472,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     unawaited(_closeWindow());
     ScreenAwake.release(this);
     WidgetsBinding.instance.removeObserver(this);
-    _voice?.removeListener(_onVoiceChanged);
-    _voice?.dispose();
-    unawaited(_room?.dispose() ?? Future<void>.value());
+    _voice?.removeListener(_onVoiceChanged); // fork (UX C0): звонок живёт дальше, его держит ForkPairCall
     _reelsStall?.cancel();
     unawaited(_feed?.dispose() ?? Future<void>.value());
     if (widget.reels) unawaited(ReelsProxy.disable());
@@ -543,6 +515,23 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// 20.09.2026). Первое нажатие предупреждает, второе выпускает.
   DateTime? _backAt;
 
+  // fork (UX V7): «назад» в полном экране выводит из полного экрана, а не
+  // из комнаты — иначе кино останавливалось у обоих.
+  Future<void> _onBack() async {
+    final web = _web;
+    if (web != null && !widget.reels) {
+      try {
+        final r = await web.evaluateJavascript(
+          source: 'window.forkExitCinema ? window.forkExitCinema() : false',
+        );
+        if (r == true) return;
+      } catch (e) {
+        debugPrint('WatchRoom: полный экран не ответил: $e');
+      }
+    }
+    if (_allowLeave() && mounted) await _leave();
+  }
+
   /// Отпускать ли из комнаты. Первое нажатие показывает подсказку.
   bool _allowLeave() {
     final now = DateTime.now();
@@ -570,7 +559,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (_allowLeave() && mounted) unawaited(_leave());
+        unawaited(_onBack()); // fork (UX V7)
       },
       // В лентах строка состояния светлыми значками по чёрному.
       child: widget.reels
@@ -618,7 +607,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
             ),
             if (_loading) Center(child: M3Loading(color: Theme.of(context).colorScheme.primary)),
             if (!widget.reels) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId), // fork
-            ForkIncomingCall(voice: _voice, onAnswer: () => _onVoiceAction('call')), // fork
+            // fork (UX C0): входящий и плашка звонка — поверх всего приложения (ForkPairCall).
           ],
         ),
       ),

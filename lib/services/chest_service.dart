@@ -7,6 +7,7 @@ import 'package:pocketbase/pocketbase.dart';
 import '../models/chest.dart';
 import '../models/gift.dart';
 import '../models/pair_jar.dart';
+import '../fork/ui/feedback.dart'; // fork: M7
 import 'catalog_service.dart';
 import 'chest_telemetry.dart';
 import 'pair_jar_service.dart';
@@ -239,28 +240,42 @@ class ChestService {
   /// (TOG-10, 21.10.2026: «первый подарок из сундука не отобразился»).
   Future<List<ChestStashItem>> stash() async {
     try {
-      final res = await PocketBaseService().pb.collection('chest_opens').getList(
-            perPage: 100,
-            filter: 'state = "stash"',
-            sort: 'created',
-          );
-      final rows = [
-        for (final r in res.items)
-          (id: r.id, prize: r.getStringValue('prize'), day: r.getStringValue('day')),
-      ];
-      if (rows.any((r) => GiftCatalog.byKey(r.prize) == null)) {
-        try {
-          await catalogRefresh().timeout(const Duration(seconds: 8));
-        } catch (_) {}
-      }
-      return [
-        for (final r in rows)
-          if (GiftCatalog.byKey(r.prize) != null)
-            ChestStashItem(openId: r.id, giftKey: r.prize, chest: chestKeyOfDay(r.day)),
-      ];
+      return await _loadStash(strict: false);
     } catch (_) {
       return const [];
     }
+  }
+
+  /// fork: M7 — то же, но сбой запроса или каталога — это [Failed] с причиной,
+  /// а не «запас пуст»: экран скажет об этом человеку.
+  Future<Outcome<List<ChestStashItem>>> stashOutcome() =>
+      Outcome.guard(() => _loadStash(strict: true));
+
+  Future<List<ChestStashItem>> _loadStash({required bool strict}) async {
+    final res = await PocketBaseService().pb.collection('chest_opens').getList(
+          perPage: 100,
+          filter: 'state = "stash"',
+          sort: 'created',
+        );
+    final rows = [
+      for (final r in res.items)
+        (id: r.id, prize: r.getStringValue('prize'), day: r.getStringValue('day')),
+    ];
+    if (rows.any((r) => GiftCatalog.byKey(r.prize) == null)) {
+      try {
+        await catalogRefresh().timeout(const Duration(seconds: 8));
+      } catch (_) {
+        // Подарок не пропадает молча: без каталога его не показать.
+        if (strict && rows.any((r) => GiftCatalog.byKey(r.prize) == null)) {
+          throw const ForkFailureError(ForkFailure.network, 'gift catalog');
+        }
+      }
+    }
+    return [
+      for (final r in rows)
+        if (GiftCatalog.byKey(r.prize) != null)
+          ChestStashItem(openId: r.id, giftKey: r.prize, chest: chestKeyOfDay(r.day)),
+    ];
   }
 }
 
