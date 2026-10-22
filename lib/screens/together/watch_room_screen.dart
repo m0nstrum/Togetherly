@@ -22,6 +22,7 @@ import '../../fork/watch_proxy.dart'; // fork
 import '../../fork/watch/voice_stage.dart'; // fork
 import '../../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../../fork/e2e/reels_chat_bridge.dart'; // fork
+import '../../fork/reels/tiktok_comments.dart'; // fork: комментарии TikTok
 import '../../fork/flags.dart'; // fork
 import '../../models/exit_guard.dart';
 import '../../widgets/memory_save/floating_note.dart';
@@ -164,6 +165,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   }
 
   bool _invited = false;
+
+  /// fork: комментарии TikTok для ленты — браузер на tiktok.com по первому вопросу.
+  ForkTikTokComments? _tiktok;
 
   // fork (E2E §10.1): переписку ленты шифрует приложение, страница рисует.
   late final ForkReelsChatBridge _reelsChat = ForkReelsChatBridge(
@@ -527,6 +531,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     if (widget.reels) unawaited(ReelsProxy.disable());
     if (_invited) unawaited(ReelsInvite.stop(widget.pairId));
     if (widget.reels) _reelsChat.dispose(); // fork
+    unawaited(_tiktok?.dispose() ?? Future<void>.value()); // fork
     super.dispose();
   }
 
@@ -966,6 +971,22 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
             : const <String, dynamic>{};
         unawaited(_feed?.watching((info['id'] ?? '').toString()) ?? Future<void>.value());
         return null;
+      },
+    );
+    // fork: комментарии TikTok к ролику (лист в ленте, fork-comments.js).
+    c.addJavaScriptHandler(
+      handlerName: 'reelsComments',
+      callback: (args) async {
+        if (!widget.reels) return const {'ok': false, 'why': 'failed'};
+        final info = (args.isNotEmpty && args.first is Map)
+            ? Map<String, dynamic>.from(args.first as Map)
+            : const <String, dynamic>{};
+        final tiktok = _tiktok ??= ForkTikTokComments();
+        return tiktok.page(
+          id: '${info['id'] ?? ''}',
+          cid: '${info['cid'] ?? ''}',
+          cursor: int.tryParse('${info['cursor'] ?? 0}') ?? 0,
+        );
       },
     );
     // «Обновить рекомендации»: скрытая лента начинается заново.

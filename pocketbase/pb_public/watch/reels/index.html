@@ -10,6 +10,8 @@
      комнатой совместного просмотра, они в ../pair.js; ролики, очередь, чат и
      реакции — в reels.js. Разметку ленты строит сам reels.js. -->
 <link rel="stylesheet" href="reels.css?v=20261022a">
+<!-- fork: комментарии TikTok — свой лист (fork-comments.*). -->
+<link rel="stylesheet" href="fork-comments.css?v=20261022a">
 <script>
 /* Приложение сообщает состояние звонка вызовом window.watchVoiceState. Оно
    может прийти раньше, чем выполнится pair.js, поэтому первое значение просто
@@ -46,6 +48,7 @@ window.watchVoiceState = (s) => { window.__voicePending = s; };
 <script src="../vendor/centrifuge.js"></script>
 <script src="../pair.js?v=20261005a"></script>
 <!-- fork: версия поднята — reels.js с кнопкой «назад» и чатом через приложение -->
-<script src="reels.js?v=20261022e"></script>
+<script src="reels.js?v=20261022f"></script>
+<script src="fork-comments.js?v=20261022a"></script>
 </body>
 </html>

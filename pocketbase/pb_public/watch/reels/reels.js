@@ -186,6 +186,7 @@
         </div>
         <div class="rl-rail">
           <button class="rl-rx rl-react" aria-label="${T.react}">${artImg('❤️', true)}</button>
+          <button class="rl-rx rl-cmt" hidden></button>
           <button class="rl-rx rl-save" aria-label="${T.save}">${ic(IC.save)}</button>
           <button class="rl-rx rl-chatbtn" aria-label="${T.chat}">${ic(IC.chat)}</button>
           <button class="rl-rx rl-share" aria-label="${T.share}">${ic(IC.share)}</button>
@@ -408,6 +409,26 @@
     syncTyping();
   }
 
+  // fork (комментарии TikTok): ручки для fork-comments.js — лист комментариев
+  // живёт в своём файле, сюда смотрит только через них.
+  window.__forkReels = {
+    root: () => el.root,
+    cur: () => (S.cur ? S.cur.id : ''),
+    src: (key) => keySrc(key),
+    id: (key) => keyId(key),
+    bridge: () => bridge(),
+    ru: RU,
+    closeChat: () => setChat(false),
+    toast: (title, sub) => toast(title, sub),
+    /** Реплика в наш чат — тем же путём, что из поля ввода. */
+    say: (text) => {
+      const keep = el.input.value;
+      el.input.value = String(text || '').slice(0, 500);
+      sendText();
+      if (keep) { el.input.value = keep; syncTyping(); }
+    },
+  };
+
   /** Чужая реплика: из канала или из истории, которую прислал партнёр. */
   function theirText(data) {
     const name = String(data.name || '') || T.guest;
@@ -456,7 +477,7 @@
       samples.push([now, dy]);
       while (samples.length > 2 && now - samples[0][0] > 90) samples.shift();
       if (!moved && Math.abs(dy) > 10) { moved = true; closePick(); }
-      if (!moved || el.root.classList.contains('chat-open')) return;
+      if (!moved || el.root.classList.contains('chat-open') || el.root.classList.contains('cmts-open')) return; // fork
       // Ролик едет за пальцем, следующий выезжает снизу — как в лентах.
       // Сдвиг ставим раз в кадр: событий касания бывает больше, чем кадров.
       lastDy = dy;
@@ -472,6 +493,7 @@
       const v = (dy - ya) / Math.max(16, performance.now() - ta);   // точек в мс, минус — вверх
       if (!moved) { onTap(e); return; }
       if (el.root.classList.contains('chat-open')) { if (dy > h * 0.18 || v > 0.5) setChat(false); return; }
+      if (el.root.classList.contains('cmts-open')) { if ((dy > h * 0.18 || v > 0.5) && window.forkCommentsClose) window.forkCommentsClose(); return; } // fork
       const flick = Math.abs(v) > 0.45 && Math.sign(v) === Math.sign(dy);
       // Дотянул далеко, но в конце резко повёл обратно — передумал.
       const undo = Math.abs(v) > 0.3 && Math.sign(v) === -Math.sign(dy);
@@ -488,6 +510,8 @@
     el.tap.addEventListener('pointercancel', () => { if (down) { down = false; cancelAnimationFrame(raf); raf = 0; settleCards(); } });
     const onTap = (e) => {
       if (!el.pick.hidden) { closePick(); return; }
+      // fork: касание по ролику над листом комментариев закрывает лист.
+      if (el.root.classList.contains('cmts-open') && window.forkCommentsClose) { window.forkCommentsClose(); return; }
       if (document.activeElement === el.input) { el.input.blur(); return; }
       const now = Date.now();
       if (now - lastTap < 300) {
@@ -667,6 +691,7 @@
     paintReact();
     paintSave();
     swapTo(cur.id, !!isBack);
+    if (window.forkReelShown) window.forkReelShown(cur.id); // fork: комментарии TikTok
     // Ролик из своей ленты: скрытая страница приложения «смотрит» его тоже,
     // без звука. Так платформа засчитывает просмотр, а рекомендации учатся.
     const b = bridge();
@@ -1354,6 +1379,7 @@
 
   function setChat(on) {
     closePick();
+    if (on && window.forkCommentsClose) window.forkCommentsClose(); // fork: один лист за раз
     el.root.classList.toggle('chat-open', on);
     $('.rl-chatbtn', el.root).classList.toggle('is-on', on);
     const sheet = $('.rl-sheet', el.root);
