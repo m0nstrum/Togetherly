@@ -36,6 +36,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/pair_time.dart';
 import '../../widgets/common/stable_stream_builder.dart';
 import '../../widgets/mood_image.dart';
+import '../battery/battery_ui.dart';
 import '../watch/pair_call.dart';
 
 /// Что известно о партнёре. Каждое поле может быть пустым — тогда его строки
@@ -458,6 +459,16 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
       if (f.status.isNotEmpty) _Row(icon: Icons.chat_bubble_outline_rounded, title: f.status, sub: ruEn('статус', 'status')),
       if (f.note.isNotEmpty) _Row(icon: Icons.sticky_note_2_outlined, title: f.note, sub: ruEn('записка на виджете', 'widget note')),
       if (f.music.isNotEmpty) _Row(icon: Icons.music_note_rounded, title: f.music, sub: ruEn('слушает', 'listening to')),
+      if (widget.live)
+        ForkBatteryWatch(
+          groupId: widget.groupId,
+          uid: widget.partnerUid,
+          builder: (context, b) => _Row(
+            lead: Icon(forkBatteryIcon(b), color: b.low ? cs.error : cs.primary),
+            title: '${b.level}%',
+            sub: forkBatteryNote(b, DateTime.now()),
+          ),
+        ),
       if (widget.live) _distance(cs),
     ];
     return _Section(title: ruEn('Сейчас', 'Now'), children: rows);

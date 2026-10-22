@@ -98,6 +98,7 @@ import 'chat_screen.dart';
 import 'love_test_screen.dart';
 import 'live_map_screen.dart';
 import 'memory_lane_screen.dart';
+import '../fork/battery/battery_share.dart'; // fork: заряд партнёру
 import 'together/together_launcher.dart';
 import '../services/reels/reels_invite.dart';
 import '../widgets/common/app_dialog.dart';
@@ -766,6 +767,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Пара появилась или сменилась — присутствию нужен её канал. Вызов
     // идемпотентный: тот же groupId ничего не перезапускает.
     PresenceService().start(groupId: _pairData.pairId);
+    // fork: свой заряд — партнёру (шифром, редко).
+    if (_pairData.isPaired) unawaited(ForkBattery.instance.start(_pairData.pairId, PocketBaseService().userId ?? ''));
     unawaited(_handlePairChanged());
     // Появилась пара → можно показать одноразовую подсказку про боковую кнопку.
     unawaited(_queueHints());

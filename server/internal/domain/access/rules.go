@@ -83,6 +83,8 @@ var Collections = map[string]Rules{
 	"wish_categories": memberAuthored("group_id", "author_uid"),
 	"custom_moods":    memberAuthored("group_id", "author_uid"),
 	"love_tests":      memberAuthored("group_id", "user_uid"),
+	// Форк: заряд телефона — пишет только сам участник, читает пара.
+	"fork_battery": memberAuthored("group_id", "user_uid"),
 
 	"canvas_strokes":   member("group_id"),
 	"canvas_meta":      member("group_id"),

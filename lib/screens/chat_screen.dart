@@ -68,6 +68,7 @@ import '../models/widget_data.dart';
 import '../widgets/common/plus_badge.dart';
 import '../widgets/plus/plus_promo_sheet.dart';
 import '../widgets/common/stable_stream_builder.dart';
+import '../fork/battery/battery_ui.dart'; // fork: заряд партнёра
 import '../widgets/unfold/unfold_route.dart';
 import '../utils/couple_days.dart';
 import 'gifts/partner_profile_screen.dart';
@@ -2444,6 +2445,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   _pillTrailing(s, cs, online: online, uid: uid),
+                  // fork: заряд телефона партнёра.
+                  ForkBatteryBadge(groupId: _groupId, uid: uid, color: cs.onPrimaryContainer.withValues(alpha: 0.7)),
                 ],
               );
             },
