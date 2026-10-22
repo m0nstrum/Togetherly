@@ -27,6 +27,7 @@ import '../home_widget_service.dart';
 import '../live_location_service.dart' show LivePoint;
 import '../locale_service.dart';
 import '../pocketbase_service.dart';
+import '../../fork/battery/battery_share.dart'; // fork: заряд партнёра
 import 'map_palette.dart';
 import 'map_tiles.dart';
 
@@ -49,6 +50,9 @@ class PairMapWidgetInput {
   final String? myPlace;
   final String? partnerPlace;
 
+  /// fork: заряд телефона партнёра; null — нет или выключен.
+  final ForkBatteryState? partnerBattery;
+
   /// Точек на точку экрана, куда встанет виджет.
   final double pixelRatio;
 
@@ -69,6 +73,7 @@ class PairMapWidgetInput {
     this.partnerAvatar,
     this.myPlace,
     this.partnerPlace,
+    this.partnerBattery,
     this.pixelRatio = 3,
     this.maxPixels = kMapWidgetMaxPixelsAndroid,
   });
@@ -138,6 +143,9 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
   final partnerStale = partnerAge != null &&
       (partnerAge.unit == LivePointAgeUnit.hours || partnerAge.unit == LivePointAgeUnit.days);
   String initial(String name) => name.trim().isEmpty ? '?' : name.trim().characters.first.toUpperCase();
+
+  final b0 = input.partnerBattery;
+  final battery = b0 != null && b0.fresh(DateTime.fromMillisecondsSinceEpoch(input.nowMs)) ? b0 : null; // fork
 
   final out = <MapWidgetSize, Uint8List>{};
   for (final kind in MapWidgetSize.values) {
@@ -233,6 +241,10 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
       meInitial: initial(input.myName),
       partnerInitial: initial(input.partnerName),
       partnerStale: partnerStale,
+      // fork: заряд — только свежий (старше шести часов ничего не говорит).
+      partnerBattery: battery?.level,
+      partnerCharging: battery?.charging ?? false,
+      lowColor: cs.error,
       distance: mode == PairMapMode.near && freshPair ? s.liveMapNearby : distance, // fork (G8)
       caption: caption,
       rows: [
@@ -426,6 +438,9 @@ class PairMapWidgetService {
 
     final myPlace = me == null ? null : await _placeOf(prefs, me);
     final partnerPlace = partner == null ? null : await _placeOf(prefs, partner);
+    // fork: заряд партнёра — значком у его шарика.
+    final battery = paired ? await ForkBattery.instance.latest(groupId, partnerUid) : null;
+    final batteryShown = battery != null && battery.fresh(DateTime.now()) ? battery : null;
 
     final sig = jsonEncode([
       _renderVersion, dpr, groupId, paired, _pointSig(me), _pointSig(partner), myName, partnerName,
@@ -435,6 +450,7 @@ class PairMapWidgetService {
       // Подпись давности меняется со временем — её часть подписи.
       partner == null ? '' : LivePointAge.of(partner.updatedAt, nowMs: now).unit.name,
       partner == null ? 0 : LivePointAge.of(partner.updatedAt, nowMs: now).value,
+      batteryShown?.level, batteryShown?.charging, // fork
     ]);
     // Подписи мало: на iPhone путь в контейнер мог не записаться (мост App
     // Group вернул пусто) или файл оттуда пропал, а подпись уже стояла — и
@@ -460,6 +476,7 @@ class PairMapWidgetService {
         nowMs: now,
         myPlace: myPlace,
         partnerPlace: partnerPlace,
+        partnerBattery: batteryShown, // fork
         pixelRatio: dpr,
         maxPixels: Platform.isIOS ? kMapWidgetMaxPixelsIos : kMapWidgetMaxPixelsAndroid,
       ),

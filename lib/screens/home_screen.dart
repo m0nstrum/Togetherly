@@ -99,6 +99,7 @@ import 'love_test_screen.dart';
 import 'live_map_screen.dart';
 import 'memory_lane_screen.dart';
 import '../fork/battery/battery_share.dart'; // fork: заряд партнёру
+import '../services/map/pair_map_widget_service.dart'; // fork: виджет карты по заряду
 import 'together/together_launcher.dart';
 import '../services/reels/reels_invite.dart';
 import '../widgets/common/app_dialog.dart';
@@ -768,7 +769,20 @@ class _HomeScreenState extends State<HomeScreen> {
     // идемпотентный: тот же groupId ничего не перезапускает.
     PresenceService().start(groupId: _pairData.pairId);
     // fork: свой заряд — партнёру (шифром, редко).
-    if (_pairData.isPaired) unawaited(ForkBattery.instance.start(_pairData.pairId, PocketBaseService().userId ?? ''));
+    if (_pairData.isPaired) {
+      final myUid = PocketBaseService().userId ?? '';
+      unawaited(ForkBattery.instance.start(
+        _pairData.pairId,
+        myUid,
+        partnerUid: _pairData.partnerUid,
+        // Заряд партнёра сменился — виджет карты перерисовывается сразу.
+        onPartner: () => unawaited(PairMapWidgetService.instance.refreshInBackground(
+          groupId: _pairData.pairId,
+          myUid: myUid,
+          partnerUid: _pairData.partnerUid,
+        )),
+      ));
+    }
     unawaited(_handlePairChanged());
     // Появилась пара → можно показать одноразовую подсказку про боковую кнопку.
     unawaited(_queueHints());

@@ -120,12 +120,27 @@ class ForkBattery {
   }
 
   /// Пара появилась (или сменилась): следим за зарядом, пока приложение живо.
-  Future<void> start(String groupId, String uid) async {
+  ///
+  /// [partnerUid] и [onPartner] — заряд партнёра сменился (виджет карты на
+  /// рабочем столе перерисовывается сразу, а не через 15 минут фона).
+  Future<void> start(String groupId, String uid, {String partnerUid = '', VoidCallback? onPartner}) async {
     if (groupId.isEmpty || uid.isEmpty) return;
     if (groupId == _groupId && uid == _uid && _timer != null) return;
     stop();
     _groupId = groupId;
     _uid = uid;
+    if (partnerUid.isNotEmpty && onPartner != null) {
+      Timer? soon;
+      var first = true;
+      _partnerSub = watch(groupId, partnerUid).listen((_) {
+        if (first) {
+          first = false; // первое — то, что уже было записано
+          return;
+        }
+        soon?.cancel();
+        soon = Timer(const Duration(seconds: 2), onPartner);
+      });
+    }
     await _load();
     _timer = Timer.periodic(const Duration(minutes: 5), (_) => unawaited(report()));
     try {
@@ -141,7 +156,11 @@ class ForkBattery {
     _timer = null;
     unawaited(_stateSub?.cancel());
     _stateSub = null;
+    unawaited(_partnerSub?.cancel());
+    _partnerSub = null;
   }
+
+  StreamSubscription<ForkBatteryState?>? _partnerSub;
 
   /// Прочитать заряд и, если пора, записать.
   Future<void> report({String? groupId, String? uid, bool force = false}) async {
@@ -224,6 +243,13 @@ class ForkBattery {
     } catch (e) {
       debugPrint('ForkBattery: запись не удалена: $e');
     }
+  }
+
+  /// Последний записанный заряд [uid] — один раз (виджет карты, фон).
+  Future<ForkBatteryState?> latest(String groupId, String uid) async {
+    if (groupId.isEmpty || uid.isEmpty) return null;
+    final rec = await _find(groupId, uid);
+    return rec == null ? null : ForkBatteryState.fromJson(rec.data['state']);
   }
 
   /// Заряд [uid] в паре [groupId]: сначала последнее записанное, потом живые

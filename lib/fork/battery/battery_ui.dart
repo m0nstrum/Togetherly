@@ -8,9 +8,11 @@ import '../../widgets/common/stable_stream_builder.dart';
 import 'battery_share.dart';
 
 /// Значок по уровню: батарейка наполняется, при зарядке — молния.
-IconData forkBatteryIcon(ForkBatteryState s) {
-  if (s.charging) return Icons.battery_charging_full_rounded;
-  final l = s.level;
+IconData forkBatteryIcon(ForkBatteryState s) => forkBatteryIconFor(s.level, charging: s.charging);
+
+/// То же по числам — для виджета карты, который рисуется на холсте.
+IconData forkBatteryIconFor(int l, {bool charging = false}) {
+  if (charging) return Icons.battery_charging_full_rounded;
   if (l >= 95) return Icons.battery_full_rounded;
   if (l >= 80) return Icons.battery_6_bar_rounded;
   if (l >= 65) return Icons.battery_5_bar_rounded;
