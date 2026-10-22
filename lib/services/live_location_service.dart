@@ -136,10 +136,11 @@ class LiveLocationService with WidgetsBindingObserver {
         issue.value = ShareIssue.denied;
         return false;
       }
-      // fork (UX G13): на Android второй requestPermission «Всегда» мёртв —
-      // ACCESS_BACKGROUND_LOCATION не объявлен намеренно (см. манифест), фон
-      // держит foreground-сервис. Остался только iPhone.
-      backgroundLimited.value = false;
+      // fork: ACCESS_BACKGROUND_LOCATION объявлен (см. манифест). Без «Всегда»
+      // показ живёт на foreground-сервисе, и часть прошивок его душит —
+      // карточка предложит «Разрешать всегда» ([requestAlways]).
+      backgroundLimited.value =
+          Platform.isAndroid && perm == LocationPermission.whileInUse;
       // На iPhone geolocator «Всегда» не спрашивает вовсе — только свой канал.
       if (Platform.isIOS && perm == LocationPermission.whileInUse) {
         final always = await requestAlwaysIOS();
@@ -152,6 +153,26 @@ class LiveLocationService with WidgetsBindingObserver {
     } catch (e) {
       debugPrint('LiveLocationService.ensurePermission failed: $e');
       issue.value = ShareIssue.denied; // fork
+      return false;
+    }
+  }
+
+  /// fork: попросить «Разрешать всегда». На Android 11+ система открывает
+  /// страницу разрешения геопозиции приложения, где этот пункт теперь есть;
+  /// на iPhone — свой канал. true — выдано.
+  Future<bool> requestAlways() async {
+    try {
+      if (Platform.isIOS) {
+        final r = await requestAlwaysIOS();
+        backgroundLimited.value = r != 'always';
+        return r == 'always';
+      }
+      final perm = await Geolocator.requestPermission();
+      final ok = perm == LocationPermission.always;
+      backgroundLimited.value = !ok && perm == LocationPermission.whileInUse;
+      return ok;
+    } catch (e) {
+      debugPrint('LiveLocationService.requestAlways failed: $e');
       return false;
     }
   }

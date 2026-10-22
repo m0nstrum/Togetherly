@@ -14,6 +14,7 @@ import '../../fork/watch_proxy.dart'; // fork
 import '../../fork/watch/voice_stage.dart'; // fork
 import '../../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../../fork/e2e/reels_chat_bridge.dart'; // fork
+import '../../fork/flags.dart'; // fork
 import '../../models/exit_guard.dart';
 import '../../widgets/memory_save/floating_note.dart';
 import '../../services/locale_service.dart';
@@ -534,6 +535,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
 
   /// Отпускать ли из комнаты. Первое нажатие показывает подсказку.
   bool _allowLeave() {
+    if (ForkFlags.singleBackExit) return true; // fork: выход с первого «назад»
     final now = DateTime.now();
     if (exitOnBack(lastPress: _backAt, now: now)) return true;
     _backAt = now;

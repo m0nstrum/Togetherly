@@ -43,4 +43,9 @@ abstract final class ForkFlags {
   /// не используются: фильмы ищет свой сервер, свой ключ — через
   /// `--dart-define`.
   static bool get noUpstreamKeys => !_upstreamBehavior;
+
+  /// Из комнаты и ленты выходят с первого «назад» — кнопкой или жестом, как
+  /// с любого другого экрана (просьба владельца 22.10). Апстрим просил второе
+  /// нажатие с системной подсказкой «нажмите ещё раз».
+  static bool get singleBackExit => !_upstreamBehavior;
 }

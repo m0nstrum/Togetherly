@@ -1,9 +1,12 @@
 /// Плашки и сообщения о передаче геопозиции (UX_AUDIT G3, G4, G5, G13, G14).
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../dict_strings.dart' show ruEn;
+import '../../services/live_location_service.dart';
 import '../system_settings.dart';
 import '../ui/feedback.dart';
 import 'geo_status.dart';
@@ -61,16 +64,17 @@ void showBackgroundLimited(BuildContext context) {
     ..showSnackBar(
       SnackBar(
         content: Text(ruEn(
-          'Показ включён, но пока приложение закрыто, партнёр вас не увидит. '
-              'Выберите «Всегда» в настройках геопозиции.',
-          'Sharing is on, but while the app is closed your partner won’t see '
-              'you. Choose “Always” in location settings.',
+          'Показ включён, но в фоне телефон может его остановить. Чтобы партнёр '
+              'видел вас и при закрытом приложении, выберите «Разрешать всегда».',
+          'Sharing is on, but the phone may stop it in the background. To stay '
+              'visible while the app is closed, choose “Allow all the time”.',
         )),
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 8),
+        duration: const Duration(seconds: 10),
         action: SnackBarAction(
-          label: ruEn('Открыть настройки', 'Open settings'),
-          onPressed: () => openSettingsFor(context, ShareIssue.denied),
+          label: ruEn('Разрешить', 'Allow'),
+          // fork: прямо на страницу разрешения, где есть «Разрешать всегда».
+          onPressed: () => unawaited(LiveLocationService.instance.requestAlways()),
         ),
       ),
     );
