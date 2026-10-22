@@ -208,3 +208,4 @@
 | `lib/screens/together/watch_home_screen.dart` (UX V) | UX V1, V3, V4, V5, V12 | «Загружаю N МБ…» с отменой, причина сбоя; нет кода комнаты — сообщение и повтор; `ForkStatusBar` при неудачном обновлении списков; срок хранения на плитках; подсказка в листе ролика. | Повторить строки с `fork (UX V…)`. |
 | `lib/screens/together/watch_player_screen.dart` (UX V) | UX V1, V9, V11 | Экран ошибки: белый текст, «Повторить»/«Закрыть»; `_cmd` сообщает, что команда не дошла; плашка «партнёр не в ролике». | Повторить. |
 | `lib/widgets/together/watch_home_blocks.dart` (UX V) | UX V4 | `WatchKinoCard` ловит тап и при `enabled: false`. | Повторить. |
+| `lib/services/watch_voice_service.dart` (UX L6) | UX L6 | Колбэк `onCalling` — зов ушёл (не ответ), `ForkPairCall` просит сервер (`POST /api/fork/ring`) разбудить партнёра; `ForkPushRelay` рисует «Партнёр звонит» по `thread: call`, если зову меньше 45 с и приложение не на экране. | Повторить строки с `fork (UX L6)`. |

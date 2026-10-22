@@ -146,6 +146,10 @@ class WatchVoiceService extends ChangeNotifier {
   /// Звонок ушёл без ответа или партнёр отказался — экран говорит об этом.
   void Function(bool declined)? onUnanswered;
 
+  /// fork (UX L6): зов ушёл в канал — пора будить партнёра, если его
+  /// приложение закрыто.
+  void Function()? onCalling;
+
   /// Сколько звать партнёра, прежде чем сдаться.
   static const Duration ringFor = Duration(seconds: 45);
 
@@ -232,6 +236,7 @@ class WatchVoiceService extends ChangeNotifier {
       // комнату позже), и снимается через [ringFor].
       _stopCalling();
       if (!answering) {
+        onCalling?.call(); // fork (UX L6)
         _helloTimer = Timer.periodic(const Duration(seconds: 4), (_) {
           if (_peer.isNotEmpty || _state != VoiceCallState.connecting) {
             _stopCalling();

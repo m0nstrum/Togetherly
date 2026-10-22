@@ -67,6 +67,7 @@ class ForkPairCall {
         }
       });
       v.onCallEnded = (talked, peer) => _record(groupId, me, talked, peer);
+      v.onCalling = () => unawaited(_ring(groupId));
       _group = groupId;
       _room = code;
       _channel = ch;
@@ -112,6 +113,24 @@ class ForkPairCall {
     _group = '';
     _room = '';
     if (ch != null) await ch.dispose();
+  }
+
+  /// Зов ушёл в канал комнаты — его слышит только открытое приложение.
+  /// Сервер будит телефон партнёра (сокет фонового сервиса и пуш FCM без
+  /// содержимого): тот видит «Партнёр звонит», открывает приложение и
+  /// получает зов, который звонящий повторяет 45 с (UX_AUDIT L6).
+  Future<void> _ring(String groupId) async {
+    if (groupId.isEmpty) return;
+    try {
+      await PocketBaseService().pb.send(
+        '/api/fork/ring',
+        method: 'POST',
+        body: {'group_id': groupId},
+      );
+    } catch (e) {
+      // Партнёр в приложении всё равно услышит зов; закрытое — нет.
+      debugPrint('ForkPairCall: партнёра не разбудили: $e');
+    }
   }
 
   /// Разговор кончился — запись «Звонок · 4:12» в чат пары. Пишет один из

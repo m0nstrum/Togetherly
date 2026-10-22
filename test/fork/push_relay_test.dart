@@ -40,4 +40,36 @@ void main() {
     expect(shown, ['Аня зовёт порисовать']);
     expect(invites, isEmpty);
   });
+
+  group('звонок (UX L6)', () {
+    final t0 = DateTime.fromMillisecondsSinceEpoch(1760000000000);
+    List<String> ring({required int at, bool front = false}) {
+      ForkPushRelay.now = () => t0;
+      ForkPushRelay.appInFront = () => front;
+      final shown = <String>[];
+      ForkPushRelay.handle('c1', {
+        'thread': 'call',
+        'title': '',
+        'body': '',
+        'data': {'group_id': 'g1', 'from': 'u1', 'at': '$at'},
+      }, (id, t, b) async => shown.add(b));
+      return shown;
+    }
+
+    tearDown(() {
+      ForkPushRelay.now = DateTime.now;
+    });
+
+    test('свежий зов в фоне — уведомление со своей подписью', () {
+      final shown = ring(at: t0.millisecondsSinceEpoch - 5000);
+      expect(shown, hasLength(1));
+      expect(shown.single, isNotEmpty);
+    });
+
+    test('опоздавший пуш и открытое приложение — молча', () {
+      expect(ring(at: t0.millisecondsSinceEpoch - 60000), isEmpty);
+      expect(ring(at: 0), isEmpty);
+      expect(ring(at: t0.millisecondsSinceEpoch, front: true), isEmpty);
+    });
+  });
 }

@@ -33,6 +33,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/ring"
 
 	// Миграции регистрируются в init().
 	_ "github.com/m0nstrum/togetherly/server/internal/migrations"
@@ -93,8 +94,10 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	proxyInfo := bindWatchProxy(app, cfg, mx, log)
 
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
+	ringer := ring.New(ringPairs{app}, ringPublisher{notify}, ring.Options{}, time.Now)
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		handler.WatchRTC(e.Router, turn, time.Now)
+		handler.Ring(e.Router, ringer, log)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
 		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
 		handler.Movies(e.Router, films, log)

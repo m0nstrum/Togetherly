@@ -8,8 +8,10 @@
 /// сервисе, который держит сокет.
 library;
 
+import 'package:flutter/widgets.dart';
 import 'package:pocketbase/pocketbase.dart';
 
+import '../dict_strings.dart' show ruEn;
 import '../services/centrifugo_service.dart';
 import '../services/reels/reels_invite.dart';
 
@@ -38,6 +40,10 @@ abstract final class ForkPushRelay {
     final data = rec['data'] is Map
         ? Map<String, dynamic>.from(rec['data'] as Map)
         : <String, dynamic>{};
+    if (thread == 'call') {
+      _call(id, data, notify);
+      return;
+    }
     if (title.isNotEmpty || body.isNotEmpty) {
       notify('fork_notify$id'.hashCode, title, body);
     }
@@ -47,5 +53,44 @@ abstract final class ForkPushRelay {
       final invite = ReelsInvite.parse({...data, 'kind': 'reels'});
       if (invite != null) ReelsInviteBus.instance.deliver(invite);
     }
+  }
+
+  /// Сколько живёт зов: звонящий сдаётся через 45 с (`WatchVoiceService.ringFor`).
+  static const callFresh = Duration(seconds: 45);
+
+  /// Открытое приложение покажет карточку входящего само.
+  @visibleForTesting
+  static bool Function() appInFront = () {
+    try {
+      return WidgetsBinding.instance.lifecycleState ==
+          AppLifecycleState.resumed;
+    } catch (_) {
+      // тихо: фоновый изолят без привязки виджетов — приложение не на экране.
+      return false;
+    }
+  };
+
+  @visibleForTesting
+  static DateTime Function() now = DateTime.now;
+
+  /// Партнёр звонит (UX_AUDIT L6). Сервер текста не кладёт: подпись своя.
+  /// Пуш мог опоздать — старый зов не показываем.
+  static void _call(
+    String id,
+    Map<String, dynamic> data,
+    Future<void> Function(int id, String title, String body) notify,
+  ) {
+    final at = int.tryParse('${data['at'] ?? ''}') ?? 0;
+    final age = now().difference(DateTime.fromMillisecondsSinceEpoch(at));
+    if (at <= 0 || age.abs() > callFresh) {
+      return;
+    }
+    if (appInFront()) return;
+    notify(
+      'fork_call${data['group_id'] ?? ''}'.hashCode,
+      ruEn('Входящий звонок', 'Incoming call'),
+      ruEn('Партнёр звонит — откройте приложение, чтобы ответить',
+          'Your partner is calling — open the app to answer'),
+    );
   }
 }
