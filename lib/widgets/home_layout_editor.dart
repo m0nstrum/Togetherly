@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../dict_strings.dart' show trKey;
+import '../fork/home_defaults.dart'; // fork
 import '../models/home_layout.dart';
 import '../screens/plus_screen.dart';
 import '../services/home_layout_service.dart';
@@ -210,10 +211,10 @@ class _HomeLayoutEditor extends StatelessWidget {
           onReorder: (from, to) =>
               svc.update(layout.moved(from, to > from ? to - 1 : to)),
         ),
-        if (plus && !layout.isDefault) ...[
+        if (plus && !ForkHome.isDefault(layout)) ...[ // fork
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            onPressed: () => svc.update(const HomeLayout()),
+            onPressed: () => svc.update(ForkHome.layout), // fork
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
             ),

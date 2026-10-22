@@ -2299,7 +2299,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 radius: 24,
                 builder: (_, who) => Row(
                   children: [
-                    _headerAvatarPill(cs),
+                    // fork: аватар, как и имя, открывает профиль (там фото целиком).
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _openPartnerProfile(who),
+                      child: _headerAvatarPill(cs, profile: true),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: _namePill(s, cs,
@@ -2328,7 +2333,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// Аватар отдельным кружком слева от пилюли — как связь в карусели.
-  Widget _headerAvatarPill(ColorScheme cs) {
+  Widget _headerAvatarPill(ColorScheme cs, {bool profile = false}) { // fork: profile — касание решает родитель
     final url = widget.pairData.partnerAvatarUrl;
     final name = widget.pairData.partnerDisplayName.trim();
     return PlusAvatarDot(
@@ -2340,7 +2345,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: GestureDetector(
         // Фото партнёра открывается целиком: в шапке от него остаётся кружок
         // в 44 точки. У заглушки с буквой открывать нечего.
-        onTap: url.isEmpty
+        onTap: url.isEmpty || profile // fork
             ? null
             : () =>
                   openWidgetPhotoView(context, imageUrl: url, authorName: name),
