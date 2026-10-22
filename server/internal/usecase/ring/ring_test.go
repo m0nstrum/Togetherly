@@ -46,7 +46,7 @@ func TestRing(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("зов уходит партнёру без текста", func(t *testing.T) {
-		require.NoError(t, svc.Ring(ctx, "a", "g1"))
+		require.NoError(t, svc.Ring(ctx, "a", "g1", ring.KindCall))
 		assert.Equal(t, "user:b", p.channel)
 		rec := p.data.(map[string]any)["record"].(map[string]any)
 		assert.Equal(t, "call", rec["thread"])
@@ -56,21 +56,33 @@ func TestRing(t *testing.T) {
 	})
 
 	t.Run("чаще срока — отказ", func(t *testing.T) {
-		assert.ErrorIs(t, svc.Ring(ctx, "a", "g1"), ring.ErrTooOften)
+		assert.ErrorIs(t, svc.Ring(ctx, "a", "g1", ring.KindCall), ring.ErrTooOften)
 		now = now.Add(10 * time.Second)
-		assert.NoError(t, svc.Ring(ctx, "a", "g1"))
+		assert.NoError(t, svc.Ring(ctx, "a", "g1", ring.KindCall))
 	})
 
 	t.Run("чужая пара", func(t *testing.T) {
 		p.channel = ""
-		assert.ErrorIs(t, svc.Ring(ctx, "x", "g1"), ring.ErrNotMember)
-		assert.ErrorIs(t, svc.Ring(ctx, "a", "g2"), ring.ErrNotMember)
-		assert.ErrorIs(t, svc.Ring(ctx, "a", ""), ring.ErrNotMember)
+		assert.ErrorIs(t, svc.Ring(ctx, "x", "g1", ring.KindCall), ring.ErrNotMember)
+		assert.ErrorIs(t, svc.Ring(ctx, "a", "g2", ring.KindCall), ring.ErrNotMember)
+		assert.ErrorIs(t, svc.Ring(ctx, "a", "", ring.KindCall), ring.ErrNotMember)
 		assert.Empty(t, p.channel)
+	})
+
+	t.Run("зов в комнату — свой thread и свой срок", func(t *testing.T) {
+		now = now.Add(time.Second) // звонок был только что — комнате это не мешает
+		require.NoError(t, svc.Ring(ctx, "a", "g1", ring.KindWatch))
+		rec := p.data.(map[string]any)["record"].(map[string]any)
+		assert.Equal(t, "watch", rec["thread"])
+		assert.ErrorIs(t, svc.Ring(ctx, "a", "g1", ring.KindWatch), ring.ErrTooOften)
+	})
+
+	t.Run("неизвестный зов", func(t *testing.T) {
+		assert.ErrorIs(t, svc.Ring(ctx, "a", "g1", ring.Kind("spam")), ring.ErrBadKind)
 	})
 
 	t.Run("сбой публикации виден", func(t *testing.T) {
 		p.err = errors.New("centrifugo")
-		assert.Error(t, svc.Ring(ctx, "b", "g1"))
+		assert.Error(t, svc.Ring(ctx, "b", "g1", ring.KindCall))
 	})
 }

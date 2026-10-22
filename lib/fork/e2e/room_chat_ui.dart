@@ -52,18 +52,68 @@ class CentrifugoRoomTransport implements RoomTransport {
 /// Скрипт для страницы комнаты: чат держит приложение.
 const String forkNativeChatScript = 'window.__forkNativeChat=true;';
 
+/// Чат комнаты на ключе сессии: null — шифрования ещё нет (нет ключей или
+/// входа). Запущен; освобождает тот, кто создал.
+Future<RoomChat?> forkStartRoomChat(String room, String groupId) async {
+  final codec = await ForkE2E.codec();
+  final c = codec?.crypto;
+  final me = PocketBaseService().userId ?? '';
+  if (codec == null || c == null || me.isEmpty) return null;
+  final chat = RoomChat(
+    room: room,
+    groupId: groupId,
+    me: me,
+    name: PocketBaseService().userName,
+    crypto: c,
+    pairKeys: codec.keys,
+    transport: CentrifugoRoomTransport('watch:$room'),
+  );
+  unawaited(chat.start());
+  return chat;
+}
+
+/// Строка о шифровании над перепиской.
+String forkRoomChatStatus(RoomChat chat) {
+  if (chat.noPairKey) {
+    return _t(
+      'Ключи пары ещё не обменялись — чат недоступен',
+      'Pair keys are not exchanged yet — chat is unavailable',
+    );
+  }
+  if (chat.openMode) {
+    return _t(
+      'Открытый чат с браузером: переписку видит сервер',
+      'Open chat with a browser: the server can read it',
+    );
+  }
+  if (chat.browser) {
+    return _t(
+      'В комнате браузер: его реплики не видны, пока вы не разрешите открытый чат',
+      'A browser is in the room: its messages stay hidden until you allow open chat',
+    );
+  }
+  if (!chat.secure) {
+    return _t('Договариваемся о ключе…', 'Agreeing on a key…');
+  }
+  return _t(
+    'Переписка зашифрована ключом этого сеанса',
+    'Chat is encrypted with this session’s key',
+  );
+}
+
 class ForkRoomChatOverlay extends StatefulWidget {
   const ForkRoomChatOverlay({
     super.key,
     required this.room,
     required this.groupId,
-    @visibleForTesting this.chat,
+    this.chat,
   });
 
   final String room;
   final String groupId;
 
-  /// Готовый чат вместо своего (тесты).
+  /// Готовый чат вместо своего: его держит экран комнаты (одна переписка на
+  /// вертикальную раскладку и на полный экран) или тест.
   final RoomChat? chat;
 
   @override
@@ -89,21 +139,14 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
       setState(() => _chat = given..addListener(_changed));
       return;
     }
-    final codec = await ForkE2E.codec();
-    final c = codec?.crypto;
-    final me = PocketBaseService().userId ?? '';
-    if (!mounted || codec == null || c == null || me.isEmpty) return;
-    final chat = RoomChat(
-      room: widget.room,
-      groupId: widget.groupId,
-      me: me,
-      name: PocketBaseService().userName,
-      crypto: c,
-      pairKeys: codec.keys,
-      transport: CentrifugoRoomTransport('watch:${widget.room}'),
-    )..addListener(_changed);
+    final chat = await forkStartRoomChat(widget.room, widget.groupId);
+    if (chat == null) return;
+    if (!mounted) {
+      chat.dispose();
+      return;
+    }
+    chat.addListener(_changed);
     setState(() => _chat = chat);
-    await chat.start();
   }
 
   void _changed() {
@@ -132,34 +175,6 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
     final chat = _chat;
     if (chat == null) return;
     if (await chat.send(_input.text)) _input.clear();
-  }
-
-  String _status(RoomChat chat) {
-    if (chat.noPairKey) {
-      return _t(
-        'Ключи пары ещё не обменялись — чат недоступен',
-        'Pair keys are not exchanged yet — chat is unavailable',
-      );
-    }
-    if (chat.openMode) {
-      return _t(
-        'Открытый чат с браузером: переписку видит сервер',
-        'Open chat with a browser: the server can read it',
-      );
-    }
-    if (chat.browser) {
-      return _t(
-        'В комнате браузер: его реплики не видны, пока вы не разрешите открытый чат',
-        'A browser is in the room: its messages stay hidden until you allow open chat',
-      );
-    }
-    if (!chat.secure) {
-      return _t('Договариваемся о ключе…', 'Agreeing on a key…');
-    }
-    return _t(
-      'Переписка зашифрована ключом этого сеанса',
-      'Chat is encrypted with this session’s key',
-    );
   }
 
   @override
@@ -212,7 +227,7 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      _status(chat),
+                      forkRoomChatStatus(chat),
                       style: TextStyle(
                         fontSize: 12,
                         color: warn ? cs.error : cs.onSurfaceVariant,

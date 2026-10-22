@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
 
+import '../../fork/battery/battery_ui.dart' show forkBatteryIconFor; // fork
 import '../../models/globe_math.dart';
 import '../../models/pair_map_widget_view.dart';
 import '../../services/map/map_palette.dart';
@@ -56,6 +57,13 @@ class PairMapWidgetArt {
   /// Точка партнёра старая — его шарик приглушён.
   final bool partnerStale;
 
+  /// fork: заряд телефона партнёра — значок у его шарика; null — не рисуем.
+  final int? partnerBattery;
+  final bool partnerCharging;
+
+  /// Цвет «скоро сядет».
+  final Color lowColor;
+
   /// Подпись на дуге: «2,9 км» или «Рядом».
   final String distance;
 
@@ -95,6 +103,9 @@ class PairMapWidgetArt {
     this.meInitial = '',
     this.partnerInitial = '',
     this.partnerStale = false,
+    this.partnerBattery,
+    this.partnerCharging = false,
+    this.lowColor = const Color(0xFFD63D50),
     this.distance = '',
     this.caption,
     this.rows = const [],
@@ -180,7 +191,7 @@ class PairMapWidgetArt {
       final d = _avatar;
       _balloon(canvas, mid.translate(-d * .42, 0), meAvatar, meInitial, meBg, meFg, stale: false);
       _balloon(canvas, mid.translate(d * .42, 0), partnerAvatar, partnerInitial, partnerBg, partnerFg,
-          stale: partnerStale);
+          stale: partnerStale, battery: true);
       _pill(canvas, mid.translate(0, -(d + 22 + _pillFont)), distance, heart: true);
       return;
     }
@@ -240,18 +251,18 @@ class PairMapWidgetArt {
   }
 
   void _paintBalloons(Canvas canvas) {
-    final people = <(Offset, ui.Image?, String, Color, Color, bool)>[
-      if (partner != null) (partner!, partnerAvatar, partnerInitial, partnerBg, partnerFg, partnerStale),
-      if (me != null) (me!, meAvatar, meInitial, meBg, meFg, false),
+    final people = <(Offset, ui.Image?, String, Color, Color, bool, bool)>[
+      if (partner != null) (partner!, partnerAvatar, partnerInitial, partnerBg, partnerFg, partnerStale, true),
+      if (me != null) (me!, meAvatar, meInitial, meBg, meFg, false, false),
     ]..sort((x, y) => x.$1.dy.compareTo(y.$1.dy));
     for (final p in people) {
-      _balloon(canvas, p.$1, p.$2, p.$3, p.$4, p.$5, stale: p.$6);
+      _balloon(canvas, p.$1, p.$2, p.$3, p.$4, p.$5, stale: p.$6, battery: p.$7);
     }
   }
 
   /// Шарик: точка на месте, ножка вверх и аватарка в кольце цвета поверхности.
   void _balloon(Canvas canvas, Offset dot, ui.Image? img, String initial, Color bg, Color fg,
-      {required bool stale}) {
+      {required bool stale, bool battery = false}) {
     final d = _avatar;
     const stem = 9.0, ring = 3.0;
     final c = dot.translate(0, -(stem + d / 2 + ring));
@@ -286,6 +297,39 @@ class PairMapWidgetArt {
     }
     canvas.restore();
     if (stale) canvas.restore();
+    // fork: заряд — поверх обесцвечивания: он свежий, даже если точка старая.
+    if (battery) _batteryBadge(canvas, c, d);
+  }
+
+  /// fork: значок заряда у нижнего правого края аватара партнёра — как
+  /// значки в мессенджерах: кольцо цвета поверхности, батарейка и процент.
+  void _batteryBadge(Canvas canvas, Offset c, double d) {
+    final level = partnerBattery;
+    if (level == null) return;
+    final low = level <= 20 && !partnerCharging;
+    final fg = low ? lowColor : onSurface;
+    final fs = kind == MapWidgetSize.s ? 9.5 : 10.5;
+    final tp = _painter('$level%', fontSize: fs, color: fg, weight: 700);
+    final icon = _iconPainter(forkBatteryIconFor(level, charging: partnerCharging), fs * 1.35, fg);
+    final h = fs * 1.85;
+    final w = fs * .6 + icon.height + fs * .15 + tp.width + fs * .6;
+    final center = c.translate(d * .38, d * .44);
+    var r = Rect.fromCenter(center: center, width: w, height: h);
+    final dx = r.right > size.width - 4 ? size.width - 4 - r.right : 0.0;
+    r = r.shift(Offset(dx, 0));
+    final rr = RRect.fromRectAndRadius(r, Radius.circular(h / 2));
+    canvas.drawRRect(rr.inflate(2), Paint()..color = fill);
+    canvas.drawRRect(rr, Paint()..color = surface);
+    // Батарейки Material стоят вертикально — кладём на бок.
+    final ic = Offset(r.left + fs * .6 + icon.height / 2, r.center.dy);
+    canvas.save();
+    canvas.translate(ic.dx, ic.dy);
+    canvas.rotate(math.pi / 2);
+    icon.paint(canvas, Offset(-icon.width / 2, -icon.height / 2));
+    canvas.restore();
+    tp.paint(canvas, Offset(r.left + fs * .6 + icon.height + fs * .15, r.center.dy - tp.height / 2));
+    tp.dispose();
+    icon.dispose();
   }
 
   Rect _coverSrc(ui.Image img, Size box) {

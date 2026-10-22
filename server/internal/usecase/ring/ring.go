@@ -1,4 +1,5 @@
-// Package ring будит партнёра, которому звонят (UX_AUDIT L6).
+// Package ring будит партнёра, которому звонят (UX_AUDIT L6) или которого
+// зовут в комнату просмотра (комната как в Rave, 22.10).
 //
 // Зов звонка живёт в канале комнаты пары и слышен только открытому
 // приложению. Чтобы закрытое тоже узнало о звонке, звонящий просит сервер
@@ -24,7 +25,21 @@ var (
 	ErrNotMember = errors.New("ring: не участник пары")
 	// ErrTooOften — звонят чаще [Options.Every].
 	ErrTooOften = errors.New("ring: слишком часто")
+	// ErrBadKind — неизвестный зов.
+	ErrBadKind = errors.New("ring: неизвестный зов")
 )
+
+// Kind — о чём зов; он же `thread` уведомления.
+type Kind string
+
+const (
+	// KindCall — звонок.
+	KindCall Kind = "call"
+	// KindWatch — зовут в комнату совместного просмотра.
+	KindWatch Kind = "watch"
+)
+
+func (k Kind) valid() bool { return k == KindCall || k == KindWatch }
 
 // Pairs — пары.
 type Pairs interface {
@@ -63,8 +78,12 @@ func New(pairs Pairs, pub Publisher, opt Options, now func() time.Time) *Service
 	return &Service{pairs: pairs, pub: pub, opt: opt, now: now, last: map[string]time.Time{}}
 }
 
-// Ring — [uid] звонит в паре [groupID]: партнёр получает уведомление.
-func (s *Service) Ring(ctx context.Context, uid, groupID string) error {
+// Ring — [uid] зовёт партнёра в паре [groupID]: тот получает уведомление.
+// Срок между зовами считается отдельно для звонка и для комнаты.
+func (s *Service) Ring(ctx context.Context, uid, groupID string, kind Kind) error {
+	if !kind.valid() {
+		return ErrBadKind
+	}
 	if uid == "" || groupID == "" {
 		return ErrNotMember
 	}
@@ -73,7 +92,7 @@ func (s *Service) Ring(ctx context.Context, uid, groupID string) error {
 		return err
 	}
 	now := s.now()
-	if !s.allow(uid, now) {
+	if !s.allow(uid+"/"+string(kind), now) {
 		return ErrTooOften
 	}
 	id := make([]byte, 8)
@@ -84,7 +103,7 @@ func (s *Service) Ring(ctx context.Context, uid, groupID string) error {
 		"event": "create", "collection": "fork_notify",
 		"record": map[string]any{
 			"id": hex.EncodeToString(id), "collectionName": "fork_notify",
-			"thread": "call", "title": "", "body": "",
+			"thread": string(kind), "title": "", "body": "",
 			"data": map[string]string{
 				"group_id": groupID,
 				"from":     uid,

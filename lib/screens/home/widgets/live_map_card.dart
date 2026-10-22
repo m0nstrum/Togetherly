@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../fork/battery/battery_ui.dart'; // fork: заряд партнёра
 import '../../../theme/fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -474,6 +475,8 @@ class _LiveMapCardState extends State<LiveMapCard> {
             ),
             style: AppFonts.onest(size: 13, weight: 800, color: t.textPrimary),
           ),
+          // fork: заряд телефона партнёра — рядом с расстоянием.
+          ForkBatteryBadge(groupId: widget.pairId, uid: widget.partnerUid, color: t.textSecondary),
         ],
       ),
     );

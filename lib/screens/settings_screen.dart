@@ -10,6 +10,8 @@ import '../widgets/home_layout_editor.dart';
 import '../widgets/settings_scaffold.dart';
 import '../fork/crash_reports.dart'; // fork
 import '../fork/flags.dart'; // fork
+import '../fork/battery/battery_share.dart'; // fork
+import '../fork/battery/battery_ui.dart'; // fork
 import '../fork/meta_direct.dart'; // fork
 import '../fork/ui/settings_parts.dart'; // fork
 
@@ -350,6 +352,14 @@ class SettingsScreen extends StatelessWidget {
                       onChanged: onLockScreenMoodChanged,
                     ),
                     onTap: () => onLockScreenMoodChanged(!lockScreenMood),
+                  ),
+                  // fork: заряд телефона — партнёру.
+                  SettingsRow(
+                    icon: Icons.battery_5_bar_rounded,
+                    title: ruEn('Показывать партнёру заряд', 'Show my battery to my partner'),
+                    subtitle: ruEn('Видно в чате и в профиле; шифром пары', 'Shown in chat and profile; end-to-end encrypted'),
+                    trailing: const ForkBatteryShareSwitch(),
+                    onTap: () => ForkBattery.instance.setSharing(!ForkBattery.instance.sharing.value),
                   ),
                 ],
               ),

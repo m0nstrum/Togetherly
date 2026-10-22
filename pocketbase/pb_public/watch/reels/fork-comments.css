@@ -1,0 +1,71 @@
+/* fork (комментарии TikTok, 22.10): кнопка в столбике и лист комментариев.
+ * Токены и движение — как у листа чата (reels.css, `.rl-sheet`): ролик
+ * уезжает вверх целиком, лист выезжает снизу. Логика — fork-comments.js. */
+
+/* Кнопка: значок и число под ним, как у площадки. */
+.rl-rx.rl-cmt { height: auto; min-height: 44px; padding: 6px 0 4px; grid-auto-flow: row; gap: 1px; }
+.rl-cmt svg { display: block; }
+.rl-cmt .cm-n { font: 700 10.5px/1 'Onest', sans-serif; font-variant-numeric: tabular-nums; min-height: 10px; }
+.rl-cmt .cm-n:empty { display: none; }
+
+.cm-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; top: var(--rl-sheet, 43%); z-index: 9;
+  display: flex; flex-direction: column;
+  background: var(--rl-sc-low); color: var(--rl-ink);
+  border-radius: 28px 28px 0 0;
+  padding: 10px 0 var(--rl-bottom);
+  transform: translateY(102%);
+  transition: transform .32s cubic-bezier(.2, 0, 0, 1);
+  user-select: text; -webkit-user-select: text;
+}
+.rl.cmts-open .cm-sheet { transform: none; }
+.rl.cmts-open .rl-cards { transform: translate3d(0, -28%, 0); }
+/* Пока читают комментарии, поверх ролика ничего лишнего. */
+.rl.cmts-open .rl-rail, .rl.cmts-open .rl-compose, .rl.cmts-open .rl-send,
+.rl.cmts-open .rl-feed, .rl.cmts-open .rl-match, .rl.cmts-open .rl-pop,
+.rl.cmts-open .rl-pick, .rl.cmts-open .rl-sound, .rl.cmts-open .rl-lead { display: none; }
+.rl.cmts-open .rl-toast { bottom: auto; top: calc(var(--rl-top) + 56px); }
+
+.cm-grab { flex: none; display: grid; gap: 6px; padding: 0 14px 4px; touch-action: none; cursor: grab; }
+.cm-handle { width: 32px; height: 4px; border-radius: 2px; background: var(--rl-outline); margin: 0 auto; }
+.cm-head { display: flex; align-items: center; justify-content: space-between; min-height: 40px; }
+.cm-head b { font: 800 16px/1.2 'Unbounded', sans-serif; color: var(--rl-ink); }
+.cm-x { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--rl-sc-high); color: var(--rl-ink); }
+
+.cm-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px 12px; -webkit-overflow-scrolling: touch; }
+
+.cm-item { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; padding: 10px 0; align-items: start; }
+.cm-item.is-reply { grid-template-columns: 26px 1fr auto; padding: 8px 0; }
+.cm-av { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--rl-sc-highest); display: block; }
+.is-reply > .cm-av { width: 26px; height: 26px; }
+.cm-body { min-width: 0; }
+.cm-name { display: block; font: 600 12.5px/1.3 'Onest', sans-serif; color: var(--rl-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-name em { font-style: normal; font-weight: 700; color: var(--rl-on-pc); background: var(--rl-pc); border-radius: 6px; padding: 1px 6px; margin-left: 6px; font-size: 10.5px; }
+.cm-text { margin: 2px 0 0; font: 500 14.5px/1.4 'Onest', sans-serif; color: var(--rl-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.cm-meta { display: flex; align-items: center; gap: 14px; margin-top: 4px; font-size: 12px; color: var(--rl-ink-soft); }
+.cm-quote { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--rl-ink-soft); min-height: 28px; }
+.cm-quote.is-done { color: var(--rl-on-pc); }
+.cm-like { display: grid; justify-items: center; gap: 2px; padding-top: 6px; min-width: 32px; color: var(--rl-ink-soft); font: 600 11px/1 'Onest', sans-serif; font-variant-numeric: tabular-nums; }
+
+.cm-more { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; min-height: 30px; font: 700 12.5px/1 'Onest', sans-serif; color: var(--rl-ink-soft); }
+.cm-more::before { content: ''; width: 24px; height: 1px; background: var(--rl-outline); }
+.cm-more.is-busy { opacity: .5; }
+.cm-replies:empty { display: none; }
+
+.cm-note { display: grid; justify-items: center; gap: 12px; padding: 48px 24px; text-align: center; color: var(--rl-ink-soft); font-size: 14px; }
+.cm-retry { height: 40px; padding: 0 20px; border-radius: 999px; background: var(--rl-accent); color: var(--rl-on-accent); font-weight: 700; }
+
+.cm-foot { display: grid; place-items: center; min-height: 32px; }
+.cm-spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--rl-sc-highest); border-top-color: var(--rl-accent); animation: rl-spin .9s linear infinite; }
+
+/* Заглушки, пока первая страница едет. */
+.cm-skel .cm-av { background: var(--rl-sc-highest); }
+.cm-skel .cm-body { display: grid; gap: 8px; padding-top: 4px; }
+.cm-skel .cm-body i { display: block; height: 10px; border-radius: 5px; background: var(--rl-sc-highest); width: 38%; animation: cm-pulse 1.2s ease-in-out infinite; }
+.cm-skel .cm-body i + i { width: 82%; height: 12px; }
+@keyframes cm-pulse { 50% { opacity: .45; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-sheet { transition: none; }
+  .cm-skel .cm-body i { animation: none; }
+}

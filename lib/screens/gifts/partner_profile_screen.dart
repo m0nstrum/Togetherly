@@ -5,7 +5,8 @@ import '../../services/pb_data_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/profile_theme.dart';
 import '../profile/profile_hero.dart';
-import 'gift_profile_body.dart';
+import '../../fork/profile/partner_page.dart'; // fork: страница партнёра
+import '../../widgets/widget_content_view.dart' show openWidgetPhotoView; // fork
 
 /// Профиль партнёра в том же виде, что и наш: общая шапка [ProfileHero]
 /// (серверный баннер + аватар + имя/дни), только показ. Ниже — «Открытка»
@@ -35,8 +36,11 @@ class PartnerProfileScreen extends StatefulWidget {
 class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
   // Ключ живёт в поле, а не в build(): иначе pull-to-refresh пересоздавал бы
   // состояние тела на каждой перестройке и сбрасывал загруженные данные.
-  final _bodyKey = GlobalKey<GiftProfileBodyState>();
+  final _bodyKey = GlobalKey<ForkPartnerPageState>(); // fork
   String _bannerUrl = '';
+
+  /// fork: карточка партнёра — дата рождения и пол для страницы ниже.
+  Map<String, dynamic>? _card;
 
   /// Шевелится ли GIF партнёра: у него открыт Togetherly+. Чужой флаг `plus`
   /// клиенту не виден, его считает сервер в карточке (`banner_live`).
@@ -51,6 +55,7 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
   Future<void> _loadBanner() async {
     final m = await PbDataService().loadPartnerCard(widget.partnerUid);
     if (!mounted || m == null) return;
+    setState(() => _card = m); // fork
     final b = (m['bannerUrl'] as String?) ?? '';
     final live = m['bannerLive'] == true;
     if (b != _bannerUrl || live != _bannerLive) {
@@ -92,19 +97,25 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
               bannerUrl: _bannerUrl,
               bannerAnimated: _bannerLive,
               subtitle: subtitle,
+              // fork: фото партнёра целиком — касанием по аватару.
+              onTapAvatar: (widget.partnerAvatarUrl ?? '').isEmpty
+                  ? null
+                  : () => openWidgetPhotoView(context,
+                      imageUrl: widget.partnerAvatarUrl!, authorName: widget.partnerName),
             ),
             const SizedBox(height: 52),
+            // fork: вместо одной полки подарков — что известно о партнёре.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GiftProfileBody(
+              child: ForkPartnerPage(
                 key: _bodyKey,
                 theme: t,
                 groupId: widget.groupId,
-                uid: widget.partnerUid,
-                name: widget.partnerName,
-                avatarUrl: widget.partnerAvatarUrl,
+                partnerUid: widget.partnerUid,
+                partnerName: widget.partnerName,
+                partnerAvatarUrl: widget.partnerAvatarUrl,
                 daysTogether: widget.daysTogether,
-                showHeader: false, // шапку даёт ProfileHero выше
+                card: _card,
               ),
             ),
           ],

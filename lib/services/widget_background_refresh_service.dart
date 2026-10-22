@@ -8,6 +8,8 @@ import 'home_widget_service.dart';
 import 'locale_service.dart';
 import 'map/pair_map_widget_service.dart';
 import 'pocketbase_service.dart';
+import '../fork/battery/battery_share.dart'; // fork
+import '../fork/e2e/fork_e2e.dart'; // fork
 import '../fork/push/fcm_wake.dart'; // fork
 
 /// Периодический фоновый ФОЛБЭК обновления виджетов через WorkManager (Android).
@@ -114,6 +116,16 @@ void widgetRefreshDispatcher() {
       final partnerUid =
           await HomeWidget.getWidgetData<String>('love_widget_partner_uid') ??
               '';
+      // fork: свой заряд — партнёру и при закрытом приложении (раз в 15 мин
+      // максимум; пишет только при заметной смене).
+      if (groupId.isNotEmpty) {
+        try {
+          await ForkE2E.codec();
+          await ForkBattery.instance.report(groupId: groupId, uid: myUid);
+        } catch (e) {
+          debugPrint('WidgetBackgroundRefresh: заряд не ушёл: $e');
+        }
+      }
       // Карта «Где мы» рисуется и без пары (заглушка «подключите партнёра»),
       // поэтому её задача идёт раньше проверки группы.
       if (task == WidgetBackgroundRefreshService.mapTaskName) {

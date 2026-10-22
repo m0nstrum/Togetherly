@@ -5,15 +5,24 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show Factory;
 import 'package:flutter/gestures.dart' show EagerGestureRecognizer, OneSequenceGestureRecognizer;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOverlayStyle;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOverlayStyle, SystemChrome, SystemUiMode, DeviceOrientation; // fork: ориентация
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../fork/e2e/room_chat_ui.dart'; // fork
+import '../../fork/e2e/room_chat.dart'; // fork (Rave)
+import '../../fork/watch/call_screen.dart'; // fork (Rave)
+import '../../fork/watch/room_live.dart'; // fork (Rave)
+import '../../fork/watch/room_picker.dart'; // fork (Rave)
+import '../../fork/watch/room_shell.dart'; // fork (Rave)
+import '../../fork/watch/voice_status.dart'; // fork (Rave)
+import '../../dict_strings.dart' show ruEn; // fork (Rave)
+import 'package:pocketbase/pocketbase.dart' show ClientException; // fork (Rave)
 import '../../fork/watch_proxy.dart'; // fork
 import '../../fork/watch/voice_stage.dart'; // fork
 import '../../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../../fork/e2e/reels_chat_bridge.dart'; // fork
+import '../../fork/reels/tiktok_comments.dart'; // fork: комментарии TikTok
 import '../../fork/flags.dart'; // fork
 import '../../models/exit_guard.dart';
 import '../../widgets/memory_save/floating_note.dart';
@@ -103,6 +112,20 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   _RoomWindow? _window;
   bool _leaving = false;
 
+  // fork (комната как в Rave, 22.10): в встроенном окне своя раскладка —
+  // шапка, окно видео, «что играет» и чат с событиями (lib/fork/watch/room_shell.dart).
+  bool get _shell => !_native && !widget.reels;
+  late final ForkRoomLive _live = ForkRoomLive(partnerName: () => ForkPairCall.instance.partnerName);
+  RoomChat? _chat;
+  bool _chatStarting = false;
+  int _seenNotice = 0;
+  int _seenPick = 0;
+  int _seenFull = 0;
+  bool _picking = false;
+  bool? _wasLandscape;
+  bool _orientationLocked = false;
+  DateTime? _invitedAt;
+
   @override
   void initState() {
     super.initState();
@@ -119,6 +142,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     unawaited(ForkWatchProxy.enable()); // fork (S11): ролики через свой сервер
     unawaited(_openVoice());
     WidgetsBinding.instance.addObserver(this);
+    if (_shell) unawaited(_startChat()); // fork (Rave)
+    if (_shell) ForkVoiceStatus.roomOpen.value = true; // fork (Rave): звонок — в шапке комнаты
+    _live.addListener(_onLive); // fork (Rave)
     if (widget.reels) unawaited(_startFeed());
     if (widget.reels) unawaited(_reelsChat.start()); // fork: чат ленты на ключе сессии
     // Ленту запускает купивший — он и зовёт партнёра: тому придёт пуш
@@ -139,6 +165,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   }
 
   bool _invited = false;
+
+  /// fork: комментарии TikTok для ленты — браузер на tiktok.com по первому вопросу.
+  ForkTikTokComments? _tiktok;
 
   // fork (E2E §10.1): переписку ленты шифрует приложение, страница рисует.
   late final ForkReelsChatBridge _reelsChat = ForkReelsChatBridge(
@@ -356,6 +385,12 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     // fork (E2E §10.1): чат комнаты — в приложении, страница только плеер.
     if (!_native) // и в ленте: её чат тоже держит приложение
       UserScript(source: forkNativeChatScript, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START),
+    // fork (Rave): страница — только окно видео, остальное рисует приложение.
+    if (_shell)
+      UserScript(
+        source: 'window.__forkShell=true;window.__forkPartner=${jsonEncode(ForkPairCall.instance.partnerName)};',
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
     // Лента идёт под строку состояния, нативное окно — во весь экран: обеим
     // страницам отступы сообщаем сами.
     if (widget.reels || _native)
@@ -396,6 +431,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       _window = null;
       _web = null;
       if (mounted) setState(() => _native = false);
+      if (mounted) unawaited(_startChat()); // fork (Rave): встали встроенным — чат наш
     }
   }
 
@@ -477,6 +513,13 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
 
   @override
   void dispose() {
+    // fork (Rave): чат сеанса, события и ориентация — вернуть как было.
+    _live.removeListener(_onLive);
+    _live.dispose();
+    ForkVoiceStatus.roomOpen.value = false;
+    _chat?.dispose();
+    if (_orientationLocked) unawaited(SystemChrome.setPreferredOrientations(const []));
+    if (_wasLandscape == true) unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
     unawaited(ForkWatchProxy.disable()); // fork
     _covered?.removeStatusListener(_onCovered);
     unawaited(_closeWindow());
@@ -488,6 +531,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     if (widget.reels) unawaited(ReelsProxy.disable());
     if (_invited) unawaited(ReelsInvite.stop(widget.pairId));
     if (widget.reels) _reelsChat.dispose(); // fork
+    unawaited(_tiktok?.dispose() ?? Future<void>.value()); // fork
     super.dispose();
   }
 
@@ -528,6 +572,11 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   // fork (UX V7): «назад» в полном экране выводит из полного экрана, а не
   // из комнаты — иначе кино останавливалось у обоих.
   Future<void> _onBack() async {
+    // fork (Rave): «назад» во весь экран возвращает к комнате.
+    if (_shell && _wasLandscape == true) {
+      _fullscreen(false);
+      return;
+    }
     final web = _web;
     if (web != null && !widget.reels) {
       try {
@@ -586,7 +635,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     return Scaffold(
       // Ленты идут по чёрному полю во весь экран: светлая полоса над роликом
       // выглядела бы чужой рамкой.
-      backgroundColor: widget.reels ? Colors.black : cs.surface,
+      backgroundColor: widget.reels || (_shell && MediaQuery.orientationOf(context) == Orientation.landscape) ? Colors.black : cs.surface, // fork (Rave)
       // Своей шапки нет: её рисует страница комнаты — «назад», код,
       // «скопировать», «поделиться», звонок и сворачивание. Две шапки подряд
       // съедали высоту и повторяли одно и то же (28.09.2026).
@@ -598,9 +647,21 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
         bottom: false,
         // Нативное окно комнаты система показывает поверх этого экрана: под
         // ним остаётся только ожидание, пока окно открывается и закрывается.
-        child: _native ? Center(child: M3Loading(color: cs.primary)) : Stack(
+        child: _native ? Center(child: M3Loading(color: cs.primary)) : _shell ? _shellBody(context) : Stack( // fork (Rave)
           children: [
-            InAppWebView(
+            _webView(context), // fork (Rave): один и тот же браузер в обеих раскладках
+            if (_loading) Center(child: M3Loading(color: Theme.of(context).colorScheme.primary)),
+            if (!widget.reels) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId), // fork
+            // fork (UX C0): входящий и плашка звонка — поверх всего приложения (ForkPairCall).
+          ],
+        ),
+      ),
+    );
+  }
+
+  // fork (Rave): браузер комнаты вынесен из Stack, чтобы стоять и в новой раскладке.
+  Widget _webView(BuildContext context) {
+    return InAppWebView(
               key: ValueKey<int>(_webLife),
               initialUrlRequest: URLRequest(url: WebUri(_url)),
               // Касание в зоне комнаты сразу уходит браузеру, не дожидаясь арены
@@ -615,13 +676,219 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
               onLoadStop: (c, _) => _onPageLoaded(c),
               onRenderProcessGone: (_, _) => _onRendererGone(),
               onReceivedHttpAuthRequest: (_, ch) async => ForkWatchProxy.answer(ch), // fork
+            );
+  }
+
+  // ── fork: комната как в Rave ─────────────────────────────────────────────
+
+  /// Шифрованный чат сеанса — один на вертикальную раскладку и полный экран.
+  Future<void> _startChat() async {
+    if (!_shell || _chat != null || _chatStarting) return;
+    setState(() => _chatStarting = true);
+    final chat = await forkStartRoomChat(widget.room, widget.pairId);
+    if (!mounted) {
+      chat?.dispose();
+      return;
+    }
+    setState(() {
+      _chat = chat;
+      _chatStarting = false;
+    });
+  }
+
+  void _onLive() {
+    if (!mounted) return;
+    if (_live.noticeSeq != _seenNotice) {
+      _seenNotice = _live.noticeSeq;
+      _say(_live.notice);
+    }
+    if (_live.pickSeq != _seenPick) {
+      _seenPick = _live.pickSeq;
+      unawaited(_pick());
+    }
+    if (_live.fullscreenSeq != _seenFull) {
+      _seenFull = _live.fullscreenSeq;
+      _fullscreen(true);
+    }
+    if (_live.partnerHere && _invitedAt != null) setState(() => _invitedAt = null);
+  }
+
+  Future<Object?> _js(String source) async {
+    final web = _web;
+    if (web == null || _loading) {
+      _say(ruEn('Комната ещё открывается — секунду', 'The room is still opening — one moment'));
+      return null;
+    }
+    try {
+      return await web.evaluateJavascript(source: source);
+    } catch (e) {
+      debugPrint('WatchRoom: страница не ответила: $e');
+      return null;
+    }
+  }
+
+  /// Лист «Что смотрим?»: ссылка, недавнее, свои ролики, файл.
+  Future<void> _pick() async {
+    if (_picking) return;
+    _picking = true;
+    final pick = await showForkRoomPicker(context, groupId: widget.pairId);
+    _picking = false;
+    if (pick == null || !mounted) return;
+    if (pick.file) {
+      await _js('window.forkRoom && window.forkRoom.file()');
+      return;
+    }
+    // Отказ страница объясняет сама (статус → [_say]).
+    await _js('window.forkRoom ? window.forkRoom.play(${jsonEncode(pick.url)}) : false');
+  }
+
+  /// Во весь экран — поворотом, как в Rave и YouTube; выход — обратно
+  /// вертикально. Повернул телефон сам — раскладка следует за ним.
+  void _fullscreen(bool on) {
+    _orientationLocked = true;
+    unawaited(SystemChrome.setPreferredOrientations(on
+        ? const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]
+        : const [DeviceOrientation.portraitUp]));
+  }
+
+  void _syncImmersive(bool land) {
+    if (_wasLandscape == land) return;
+    final first = _wasLandscape == null;
+    _wasLandscape = land;
+    if (first && !land) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(SystemChrome.setEnabledSystemUIMode(land ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge));
+    });
+  }
+
+  /// Позвать партнёра в комнату: ему придёт уведомление «зовёт смотреть».
+  Future<void> _invite() async {
+    setState(() => _invitedAt = DateTime.now());
+    try {
+      await PocketBaseService().pb.send(
+        '/api/fork/ring',
+        method: 'POST',
+        body: {'group_id': widget.pairId, 'kind': 'watch'},
+      );
+      _say(ruEn('Позвали — партнёру придёт уведомление', 'Invited — your partner gets a notification'));
+    } on ClientException catch (e) {
+      if (e.statusCode == 429) {
+        _say(ruEn('Уже позвали — подождите немного', 'Already invited — give it a moment'));
+      } else {
+        if (mounted) setState(() => _invitedAt = null);
+        _say(ruEn('Не получилось позвать — проверьте связь', 'Couldn’t invite — check your connection'));
+      }
+    }
+    Future<void>.delayed(const Duration(minutes: 1), () {
+      if (mounted && _invitedAt != null) setState(() => _invitedAt = null);
+    });
+  }
+
+  /// Трубка в шапке: позвонить, а во время разговора — открыть звонок.
+  void _callTap() {
+    final v = _voice;
+    if (v != null && v.stage != VoiceStage.idle) {
+      unawaited(ForkCallScreen.open(
+        Navigator.of(context, rootNavigator: true),
+        voice: v,
+        partnerName: ForkPairCall.instance.partnerName,
+        onRetry: () async => v.start(),
+      ));
+      return;
+    }
+    unawaited(_onVoiceAction('call'));
+  }
+
+  Widget _shellBody(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, box) {
+        final land = box.maxWidth > box.maxHeight;
+        _syncImmersive(land);
+        final video = land
+            ? Rect.fromLTWH(0, 0, box.maxWidth, box.maxHeight)
+            : Rect.fromLTWH(0, ForkRoomTopBar.height, box.maxWidth, box.maxWidth * 9 / 16);
+        final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
+        final cs = Theme.of(context).colorScheme;
+        return Stack(
+          children: [
+            // Браузер всегда первым ребёнком: при повороте он не пересоздаётся.
+            Positioned.fromRect(
+              rect: video,
+              child: ColoredBox(
+                color: Colors.black,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _webView(context),
+                    if (_loading) Center(child: M3Loading(color: cs.primary)),
+                  ],
+                ),
+              ),
             ),
-            if (_loading) Center(child: M3Loading(color: Theme.of(context).colorScheme.primary)),
-            if (!widget.reels) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId), // fork
-            // fork (UX C0): входящий и плашка звонка — поверх всего приложения (ForkPairCall).
+            if (!land) ...[
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                height: ForkRoomTopBar.height,
+                child: ListenableBuilder(
+                  listenable: _live,
+                  builder: (_, _) => ForkRoomTopBar(
+                    partnerName: ForkPairCall.instance.partnerName,
+                    partnerHere: _live.partnerHere,
+                    invited: _invitedAt != null,
+                    onBack: () => unawaited(_onBack()),
+                    onInvite: () => unawaited(_invite()),
+                    voice: _voice,
+                    onCall: _callTap,
+                    onShare: () => unawaited(_share()),
+                    onCopy: () => unawaited(_copy()),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: video.bottom,
+                bottom: 0,
+                child: Column(
+                  children: [
+                    // Пока печатают, полоса уступает место переписке.
+                    if (!typing)
+                      ListenableBuilder(
+                        listenable: _live,
+                        builder: (_, _) => ForkNowPlaying(
+                          live: _live,
+                          onPick: () => unawaited(_pick()),
+                          onToggle: () => unawaited(_js('window.forkRoom && window.forkRoom.toggle()')),
+                          onTogether: () => unawaited(_js('window.forkRoom && window.forkRoom.together()')),
+                          onPauseBoth: () => unawaited(_js('window.forkRoom && window.forkRoom.pauseBoth()')),
+                          onFullscreen: () => _fullscreen(true),
+                        ),
+                      ),
+                    Divider(height: 1, color: cs.outlineVariant),
+                    Expanded(
+                      child: ForkRoomChatPanel(chat: _chat, live: _live, starting: _chatStarting),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Positioned(
+                left: 8,
+                top: 8,
+                child: IconButton.filledTonal(
+                  tooltip: ruEn('Свернуть', 'Exit full screen'),
+                  style: IconButton.styleFrom(backgroundColor: Colors.black54, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.fullscreen_exit_rounded),
+                  onPressed: () => _fullscreen(false),
+                ),
+              ),
+              if (_chat != null) ForkRoomChatOverlay(room: widget.room, groupId: widget.pairId, chat: _chat),
+            ],
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -629,6 +896,16 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// окно.
   void _wire(InAppWebViewController c) {
     _web = c;
+    // fork (Rave): что происходит в окне видео — полосе и чату.
+    c.addJavaScriptHandler(
+      handlerName: 'forkRoom',
+      callback: (args) {
+        if (args.isNotEmpty && args.first is Map) {
+          _live.handle(Map<String, dynamic>.from(args.first as Map));
+        }
+        return null;
+      },
+    );
     // fork: реплика ленты — шифрует приложение (ForkReelsChatBridge).
     c.addJavaScriptHandler(
       handlerName: 'forkChat',
@@ -694,6 +971,22 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
             : const <String, dynamic>{};
         unawaited(_feed?.watching((info['id'] ?? '').toString()) ?? Future<void>.value());
         return null;
+      },
+    );
+    // fork: комментарии TikTok к ролику (лист в ленте, fork-comments.js).
+    c.addJavaScriptHandler(
+      handlerName: 'reelsComments',
+      callback: (args) async {
+        if (!widget.reels) return const {'ok': false, 'why': 'failed'};
+        final info = (args.isNotEmpty && args.first is Map)
+            ? Map<String, dynamic>.from(args.first as Map)
+            : const <String, dynamic>{};
+        final tiktok = _tiktok ??= ForkTikTokComments();
+        return tiktok.page(
+          id: '${info['id'] ?? ''}',
+          cid: '${info['cid'] ?? ''}',
+          cursor: int.tryParse('${info['cursor'] ?? 0}') ?? 0,
+        );
       },
     );
     // «Обновить рекомендации»: скрытая лента начинается заново.

@@ -16,6 +16,7 @@ abstract final class ForkNotifTap {
   /// null — на главную, как раньше.
   static String? forThread(String thread) => switch (thread) {
         'draw' => 'loveapp://draw',
+        'watch' => 'loveapp://watch', // зов в комнату просмотра
         _ => null,
       };
 
