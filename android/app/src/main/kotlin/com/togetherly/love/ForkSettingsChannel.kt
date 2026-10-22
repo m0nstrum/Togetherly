@@ -19,8 +19,21 @@ class ForkSettingsChannel(private val context: Context) : MethodChannel.MethodCa
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "openNotificationSettings" -> result.success(openNotifications())
+            // fork (UX G4): после отказа в геолокации диалог системы больше не
+            // покажется — человеку остаётся только экран настроек.
+            "openAppSettings" -> result.success(
+                start(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+            )
+            "openLocationSettings" -> result.success(start(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)))
             else -> result.notImplemented()
         }
+    }
+
+    private fun start(intent: Intent): Boolean = try {
+        context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        true
+    } catch (_: Exception) {
+        false
     }
 
     private fun openNotifications(): Boolean {

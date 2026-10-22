@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../services/pb_auth_service.dart';
 import '../../../services/pocketbase_service.dart';
-import '../../../models/live_point_age.dart';
 import '../../../services/live_location_service.dart';
 import '../../../services/locale_service.dart';
 import '../../../theme/app_theme.dart';
@@ -18,6 +17,8 @@ import '../../../services/map/map_tiles.dart';
 import '../../../widgets/map/map_arc_layer.dart';
 import '../../../utils/safe_text.dart';
 import '../../../widgets/unfold/unfold_route.dart';
+import '../../../fork/geo/geo_status.dart'; // fork
+import '../../../fork/geo/share_ui.dart'; // fork
 
 const String _kCollapsedKey = 'live_map_card_collapsed';
 const Color _kPartnerColor = Color(0xFFFF5C8A);
@@ -68,6 +69,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
     _loadPrefs();
     _subscribe();
     LiveLocationService.instance.sharingEnabled.addListener(_onSharingChanged);
+    LiveLocationService.instance.issue.addListener(_onSharingChanged); // fork (UX G3)
   }
 
   @override
@@ -84,6 +86,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
     _meSub?.cancel();
     LiveLocationService.instance.sharingEnabled
         .removeListener(_onSharingChanged);
+    LiveLocationService.instance.issue.removeListener(_onSharingChanged); // fork
     super.dispose();
   }
 
@@ -161,10 +164,11 @@ class _LiveMapCardState extends State<LiveMapCard> {
       pairId: widget.pairId,
       partnerUid: widget.partnerUid,
     );
+    // fork (UX G4/G13): причина отказа и кнопка в системные настройки.
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(LocaleService.current.liveMapPermissionDenied)),
-      );
+      showShareDenied(context, LiveLocationService.instance.issue.value);
+    } else if (ok && mounted && LiveLocationService.instance.backgroundLimited.value) {
+      showBackgroundLimited(context);
     }
   }
 
@@ -379,7 +383,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
               ),
             ),
 
-              // Дистанция.
+              // Дистанция. fork (UX G8): по устаревшей точке «рядом» не пишем.
               if (me != null && partner != null)
                 Positioned(
                   left: 10,
@@ -402,21 +406,29 @@ class _LiveMapCardState extends State<LiveMapCard> {
               // закрыл приложение, поэтому без подписи метка двухдневной
               // свежести выглядит живой — жалоба «партнёр не заходил два дня,
               // метка не сдвинулась» (18.08.2026).
-              if (sharing && partner != null && _partnerAge() != null)
+              // fork (UX G3): включено, но не передаётся — говорим почему.
+              if (sharing && LiveLocationService.instance.issue.value != ShareIssue.none)
+                Positioned(
+                  left: 10,
+                  right: 10,
+                  bottom: 10,
+                  child: ShareIssueBar(issue: LiveLocationService.instance.issue.value),
+                )
+              else if (sharing && partner != null && _partnerAge() != null)
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 10,
                   child: Center(child: _hintChip(t, _partnerAge()!)),
-                ),
-
-              // Ждём партнёра (шеринг включён, но точки партнёра нет).
-              if (sharing && partner == null)
+                )
+              // Ждём партнёра (шеринг включён, но точки партнёра нет). fork
+              // (UX G14): с подсказкой, что делать.
+              else if (sharing && partner == null)
                 Positioned(
-                  left: 0,
-                  right: 0,
+                  left: 10,
+                  right: 10,
                   bottom: 10,
-                  child: Center(child: _hintChip(t, LocaleService.current.liveMapWaitingPartner)),
+                  child: Center(child: _hintChip(t, waitingPartnerHint(iShare: true))),
                 ),
             ],
           ),
@@ -425,26 +437,21 @@ class _LiveMapCardState extends State<LiveMapCard> {
     );
   }
 
-  /// «обновлено 2 д. назад» — или null, пока точка свежая и подписывать нечего.
+  /// «на месте с 14:20» — или null, пока точка свежая и подписывать нечего.
+  /// fork (UX G7): не «обновлено» — точка уходит при движении, а не по таймеру.
   String? _partnerAge() {
     final point = _partner;
     if (point == null) return null;
-    final age = LivePointAge.of(
-      point.updatedAt,
-      nowMs: DateTime.now().millisecondsSinceEpoch,
-    );
-    if (!age.needsCaption) return null;
-    final s = LocaleService.current;
-    final ago = switch (age.unit) {
-      LivePointAgeUnit.minutes => s.minutesAgo(age.value),
-      LivePointAgeUnit.hours => s.hoursAgo(age.value),
-      _ => s.daysAgo(age.value),
-    };
-    return '${s.liveMapUpdated} $ago';
+    return partnerPointCaption(point.updatedAt, now: DateTime.now());
   }
 
   Widget _distancePill(AppTheme t, LatLng me, LatLng partner) {
     final meters = LiveLocationService.distanceMeters(me, partner);
+    // fork (UX G8): «рядом» и точные метры — только пока обе точки свежие.
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final fresh = pointIsFresh(_partner?.updatedAt ?? 0, nowMs: nowMs) &&
+        pointIsFresh(_me?.updatedAt ?? 0, nowMs: nowMs);
+    final s = LocaleService.current;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
@@ -457,7 +464,14 @@ class _LiveMapCardState extends State<LiveMapCard> {
           const Icon(Icons.favorite_rounded, size: 14, color: _kPartnerColor),
           const SizedBox(width: 6),
           Text(
-            LiveLocationService.formatDistance(meters),
+            distanceLabel(
+              meters,
+              fresh: fresh,
+              lang: LocaleService.instance.language.code,
+              nearby: s.liveMapNearby,
+              unitM: s.unitM,
+              unitKm: s.unitKm,
+            ),
             style: AppFonts.onest(size: 13, weight: 800, color: t.textPrimary),
           ),
         ],
@@ -474,6 +488,9 @@ class _LiveMapCardState extends State<LiveMapCard> {
       ),
       child: Text(
         text,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         style: AppFonts.onest(size: 12, color: t.textSecondary),
       ),
     );
@@ -506,6 +523,12 @@ class _LiveMapCardState extends State<LiveMapCard> {
                 fontWeight: FontWeight.w500,
               ),
             ),
+            // fork (UX G4): после отказа — причина и «Открыть настройки».
+            if (LiveLocationService.instance.issue.value.needsAppSettings ||
+                LiveLocationService.instance.issue.value.needsLocationSettings) ...[
+              const SizedBox(height: 10),
+              ShareIssueBar(issue: LiveLocationService.instance.issue.value),
+            ],
             const SizedBox(height: 14),
             FilledButton(
               onPressed: _enableSharing,
