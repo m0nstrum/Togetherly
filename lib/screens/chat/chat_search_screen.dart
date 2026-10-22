@@ -46,6 +46,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
   bool _loading = false;
   bool _failed = false;
   bool _hasMore = false;
+  bool _incomplete = false; // fork (UX C5): просмотрена не вся история
 
   /// Номер запроса: ответ устаревшего запроса (человек уже печатает дальше)
   /// не должен затереть свежий.
@@ -99,6 +100,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
       if (reset) _items = const [];
     });
     final List<ChatMsg>? got;
+    final scan = ForkSearchScan(); // fork (UX C5)
     if (widget.searcher != null) {
       got = await widget.searcher!(filter);
     } else {
@@ -109,6 +111,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
               query: _query.text,
               beforeTs: before,
               limit: _page,
+              scan: scan, // fork (UX C5)
             )
           : await PbDataService().searchChat(filter, limit: _page);
       got = recs == null ? null : [for (final r in recs) ChatMsg.fromPb(r)];
@@ -116,6 +119,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
     if (!mounted || seq != _seq) return;
     setState(() {
       _loading = false;
+      _incomplete = scan.incomplete; // fork (UX C5)
       if (got == null) {
         _failed = true;
         return;
@@ -231,6 +235,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
       final short = _kind == ChatSearchKind.all &&
           _query.text.trim().length < kChatSearchMinChars;
       note = short ? trKey('chatSearchTypeMore') : trKey('chatSearchEmpty');
+      if (!short && _incomplete) note = '$note\n$forkSearchGapText'; // fork (UX C5)
     }
     if (note != null) {
       return Center(
@@ -245,6 +250,25 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
       );
     }
     if (_kind == ChatSearchKind.notes) return _notesGrid(cs);
+    if (_incomplete) {
+      // fork (UX C5): результат неполный — говорим об этом над списком.
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Text(
+              forkSearchGapText,
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            ),
+          ),
+          Expanded(child: _resultList(cs)),
+        ],
+      );
+    }
+    return _resultList(cs);
+  }
+
+  Widget _resultList(ColorScheme cs) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: _items.length + (_hasMore ? 1 : 0),

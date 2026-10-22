@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, HapticFeedback;
 import 'package:image_picker/image_picker.dart';
 import '../utils/safe_pick.dart';
 import '../utils/safe_text.dart';
@@ -76,6 +76,7 @@ import '../widgets/common/coin_image.dart';
 import '../fork/e2e/ui.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork
 import '../fork/watch/pair_call.dart'; // fork (UX C0)
+import '../fork/ui/chat_hints.dart'; // fork (UX C2-C4, C12)
 
 /// Цена смены фона чата в монетах (зеркало CONSUMABLE_PRICES на сервере).
 const int _kChatBgPrice = 20;
@@ -1414,6 +1415,7 @@ class _ChatScreenState extends State<ChatScreen> {
           faceY: _selectedFace == null ? null : _selectedFaceY,
           deliverAt: deliverAt,
         );
+        if (ok) unawaited(_hintGestures()); // fork (UX C12)
         if (!ok && mounted) {
           // Сообщение не сохранилось (у мигрированной группы Supabase —
           // единственное хранилище, офлайн-очереди как у RTDB нет). Возвращаем
@@ -1493,6 +1495,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startEdit(ChatMsg msg) {
+    if (!forkCanEdit(msg)) return; // fork (UX C3)
     setState(() {
       _editing = msg;
       _attachedPin = null;
@@ -1906,22 +1909,33 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (picked == null) return;
 
-    // Списываем монеты на сервере (каждый раз).
-    final ok = await ud.spendCoins(_kChatBgAction);
-    if (!ok) {
-      _toast(s.notEnoughCoins);
-      return;
-    }
-
-    // Копируем во внутреннюю папку приложения, чтобы фон пережил очистку кэша.
+    // fork (UX C9): сперва копируем файл, и только потом списываем монеты —
+    // раньше сбой копирования оставлял человека без монет и без фона.
+    String dest;
     try {
       final dir = await getApplicationDocumentsDirectory();
       final ext = picked.path.contains('.')
           ? picked.path.substring(picked.path.lastIndexOf('.'))
           : '.jpg';
-      final dest =
+      dest =
           '${dir.path}/chat_bg_${_groupId}_${DateTime.now().millisecondsSinceEpoch}$ext';
       await File(picked.path).copy(dest);
+    } catch (e) {
+      _toast(s.chatBgSaveFailed);
+      return;
+    }
+
+    // Списываем монеты на сервере (каждый раз).
+    final ok = await ud.spendCoins(_kChatBgAction);
+    if (!ok) {
+      try {
+        await File(dest).delete();
+      } catch (_) {}
+      _toast(s.notEnoughCoins);
+      return;
+    }
+
+    try {
       // Удаляем прежний фон-файл, чтобы не копить мусор.
       final old = _bgPath;
       await _chat.setBackgroundPath(_groupId, dest);
@@ -1938,6 +1952,12 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       _toast(s.chatBgSaveFailed);
     }
+  }
+
+  // fork (UX C12): жесты чата не видны — один раз подсказываем после первой отправки.
+  Future<void> _hintGestures() async {
+    if (!await ForkHints.take(ForkHints.gestures) || !mounted) return;
+    showFloatingNote(context, ForkHints.gesturesText, icon: Icons.touch_app_rounded);
   }
 
   void _toast(String msg) {
@@ -2007,15 +2027,25 @@ class _ChatScreenState extends State<ChatScreen> {
                   _chat.sendNow(msg.id);
                 },
               ),
-            if (msg.uid == _myUid) ...[
+            if (forkCanCopy(msg)) // fork (UX C12)
               ListTile(
-                leading: Icon(Icons.edit_rounded, color: _t.primary),
-                title: Text(s.chatEditMessage),
+                leading: Icon(Icons.copy_rounded, color: _t.primary),
+                title: Text(s.copy),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _startEdit(msg);
+                  Clipboard.setData(ClipboardData(text: msg.text));
                 },
               ),
+            if (msg.uid == _myUid) ...[
+              if (forkCanEdit(msg)) // fork (UX C3): правится только текст
+                ListTile(
+                  leading: Icon(Icons.edit_rounded, color: _t.primary),
+                  title: Text(s.chatEditMessage),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _startEdit(msg);
+                  },
+                ),
               ListTile(
                 leading: Icon(
                   Icons.delete_outline_rounded,
@@ -3080,6 +3110,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // мессенджерах). Не трогаем удалённые, с пином, ответом или своей мордочкой.
     final double? bigEmoji =
         (msg.deleted ||
+            forkIsLocked(msg) || // fork (UX C4)
             msg.pinId != null ||
             msg.replyToId != null ||
             expr != null)
@@ -3121,14 +3152,15 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               if (isMine) ...[
                 const SizedBox(width: 4),
-                Icon(
-                  msg.ts <= _partnerReadTs
-                      ? Icons.done_all_rounded
-                      : Icons.done_rounded,
-                  size: 14,
-                  color: msg.ts <= _partnerReadTs
-                      ? const Color(0xFF8FD3FF)
-                      : metaColor,
+                ForkSendMark( // fork (UX C2)
+                  messageId: msg.id,
+                  mine: true,
+                  color: metaColor,
+                  sent: Icon(
+                    msg.ts <= _partnerReadTs ? Icons.done_all_rounded : Icons.done_rounded,
+                    size: 14,
+                    color: msg.ts <= _partnerReadTs ? const Color(0xFF8FD3FF) : metaColor,
+                  ),
                 ),
               ],
             ],
@@ -3200,12 +3232,15 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               if (isMine) ...[
                 const SizedBox(width: 4),
-                Icon(
-                  msg.ts <= _partnerReadTs
-                      ? Icons.done_all_rounded
-                      : Icons.done_rounded,
-                  size: 14,
-                  color: msg.ts <= _partnerReadTs ? _t.primary : meta,
+                ForkSendMark( // fork (UX C2)
+                  messageId: msg.id,
+                  mine: true,
+                  color: meta,
+                  sent: Icon(
+                    msg.ts <= _partnerReadTs ? Icons.done_all_rounded : Icons.done_rounded,
+                    size: 14,
+                    color: msg.ts <= _partnerReadTs ? _t.primary : meta,
+                  ),
                 ),
               ],
             ],
@@ -3233,7 +3268,9 @@ class _ChatScreenState extends State<ChatScreen> {
             )
           else if (msg.pinId != null)
             _buildPinChip(msg, isMine, fg),
-          if (showsChatText(pinId: msg.pinId, text: msg.text))
+          if (forkIsLocked(msg)) // fork (UX C4)
+            ForkLockedText(color: fg)
+          else if (showsChatText(pinId: msg.pinId, text: msg.text))
             MdMessageText(
               msg.text,
               style: TextStyle(color: fg, fontSize: 15, height: 1.25),
@@ -3270,14 +3307,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 if (isMine && !msg.deleted) ...[
                   const SizedBox(width: 4),
-                  Icon(
-                    msg.ts <= _partnerReadTs
-                        ? Icons.done_all_rounded
-                        : Icons.done_rounded,
-                    size: 14,
-                    color: msg.ts <= _partnerReadTs
-                        ? const Color(0xFF8FD3FF)
-                        : metaColor,
+                  ForkSendMark( // fork (UX C2)
+                    messageId: msg.id,
+                    mine: true,
+                    color: metaColor,
+                    sent: Icon(
+                      msg.ts <= _partnerReadTs ? Icons.done_all_rounded : Icons.done_rounded,
+                      size: 14,
+                      color: msg.ts <= _partnerReadTs ? const Color(0xFF8FD3FF) : metaColor,
+                    ),
                   ),
                 ],
               ],
