@@ -102,6 +102,8 @@ import '../fork/config/endpoints.dart'; // fork
 import '../fork/flags.dart'; // fork
 import '../fork/system_settings.dart'; // fork: N2
 import '../fork/ui/logout_guard.dart'; // fork (UX A4)
+import '../fork/push/push_health.dart'; // fork (UX G9)
+import '../fork/push/gifts_toggle.dart'; // fork (UX G11)
 import '../fork/ui/feedback.dart'; // fork: N2
 
 /// Entry for a partner across all connections
@@ -4067,7 +4069,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             shrinkWrap: true,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             children: [
+              const PushHealthTile(), // fork (UX G9): включены ли уведомления и как доходят
               SettingsGroup([
+                const ForkGiftsNotifRow(), // fork (UX G11)
                 SettingsRow(
                   icon: Icons.favorite_rounded,
                   title: s.notifMissYou,
