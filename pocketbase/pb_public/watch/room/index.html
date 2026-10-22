@@ -28,7 +28,7 @@ if (/[?&]reels=1\b/.test(location.search)) {
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#150D0F">
 <link rel="stylesheet" href="../landing.css?v=20260812">
-<link rel="stylesheet" href="room.css?v=20261012a">
+<link rel="stylesheet" href="room.css?v=20261022d">
 <script>
 /* В комнате смотрят кино, поэтому тёмная тема здесь по умолчанию: светлую
    получает только тот, кто выбрал её сам. */
@@ -80,6 +80,8 @@ window.watchVoiceState = (s) => { window.__voicePending = s; };
   <span class="voice" id="voice" hidden>
     <button class="btn btn--ghost btn--compact btn--icon voice__btn" id="voiceCall" data-i18n-aria="room.voiceCall">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"/></svg>
+      <!-- fork (UX L14): трубка без слова не читалась как «позвонить». -->
+      <span class="voice__label" data-i18n="room.voiceCallShort" aria-hidden="true">Звонок</span>
     </button>
     <span class="voice__state" id="voiceState" hidden><i class="voice__dot" aria-hidden="true"></i><b id="voiceTime"></b></span>
     <button class="btn btn--ghost btn--compact btn--icon voice__btn" id="voiceMic" data-i18n-aria="room.voiceMic" aria-pressed="true" hidden>
@@ -212,7 +214,7 @@ window.watchVoiceState = (s) => { window.__voicePending = s; };
 </section>
 
 <!-- fork (UX): версии i18n.js и room.js подняты -->
-<script src="../i18n.js?v=20261022c"></script>
+<script src="../i18n.js?v=20261022d"></script>
 <script src="../theme.js?v=20260812"></script>
 <script src="../vendor/centrifuge.js"></script>
 <!-- Скрипт ютуба (iframe_api) НЕ подключаем тегом: обычный <script src> держит

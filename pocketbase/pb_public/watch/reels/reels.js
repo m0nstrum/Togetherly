@@ -49,7 +49,7 @@
   const T = RU ? {
     mine: 'Твоя лента', theirs: (n) => 'Лента · ' + n, partner: 'партнёр',
     refresh: 'Обновить рекомендации', refreshing: 'Подбираем свежие ролики…',
-    call: 'Позвонить', react: 'Реакция', chat: 'Чат', share: 'Отправить ролик', prev: 'Прошлый ролик', back: 'Назад',
+    call: 'Позвонить', callShort: 'Звонок', react: 'Реакция', chat: 'Чат', share: 'Отправить ролик', prev: 'Прошлый ролик', back: 'Назад',
     mic: 'Микрофон', hang: 'Положить трубку', ringing: 'Звоним…', failed: 'Не вышло',
     write: () => 'Твоя реплика…', send: 'Отправить',
     loading: 'Собираем ленту…', loadingSub: 'Первые ролики приходят за несколько секунд',
@@ -68,7 +68,7 @@
   } : {
     mine: 'Your feed', theirs: (n) => 'Feed · ' + n, partner: 'partner',
     refresh: 'Refresh recommendations', refreshing: 'Picking fresh clips…',
-    call: 'Call', react: 'React', chat: 'Chat', share: 'Send clip', prev: 'Previous clip', back: 'Back',
+    call: 'Call', callShort: 'Call', react: 'React', chat: 'Chat', share: 'Send clip', prev: 'Previous clip', back: 'Back',
     mic: 'Microphone', hang: 'Hang up', ringing: 'Calling…', failed: 'Failed',
     write: () => 'Your line…', send: 'Send',
     loading: 'Gathering your feed…', loadingSub: 'The first clips arrive in a few seconds',
@@ -178,6 +178,7 @@
         <div class="rl-lead" hidden><span></span><button type="button">${T.take}</button></div>
         <div class="rl-voice" hidden>
           <button class="rl-ib accent rl-call" aria-label="${T.call}">${ic(IC.call)}</button>
+          <span class="rl-vcap" aria-hidden="true">${T.callShort}</span>
           <span class="rl-av lg is-partner rl-vwho" hidden></span>
           <button class="rl-ib accent rl-mic" aria-label="${T.mic}" hidden>${ic(IC.mic)}</button>
           <button class="rl-ib end rl-hang" aria-label="${T.hang}" hidden>${ic(IC.end)}</button>

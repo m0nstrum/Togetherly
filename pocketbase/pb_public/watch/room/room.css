@@ -188,6 +188,15 @@
 #voiceMic .i-mic-off, #voiceMic[aria-pressed="false"] .i-mic-on { display: none; }
 #voiceMic[aria-pressed="false"] .i-mic-off { display: block; }
 #voiceMic[aria-pressed="false"] { color: var(--ink-soft); }
+/* fork (UX L14): «позвонить» — со словом, а не одной трубкой. */
+.top--room #voiceCall { width: auto; padding: 0 14px 0 12px; gap: 6px; }
+.voice__label { font: 600 13.5px/1 'Onest', sans-serif; white-space: nowrap; }
+/* Уже 410 точек слову места нет: «назад», код, «поделиться», тема и
+   «свернуть» занимают ряд. Остаётся трубка с подписью для читалки. */
+@media (max-width: 409px) {
+  .voice__label { display: none; }
+  .top--room #voiceCall { width: 40px; padding: 0; }
+}
 
 /* ── строка источника и поле сообщения ───────────────────────────────────── */
 
@@ -320,6 +329,11 @@
   .app-chrome .top--room .btn--icon,
   .app-chrome .top--room .theme-btn { width: 40px; min-height: 40px; height: 40px; }
   .app-chrome.calling .room-code { display: none; }
+  /* fork (UX L14): кнопки разговора — 44 точки, по пальцу. Место отдаёт
+     тема: во время звонка её не переключают. */
+  .room-body.calling #theme { display: none; }
+  .room-body.calling .top--room .voice__btn { width: 44px; min-height: 44px; height: 44px; }
+  .room-body.calling .voice__state { height: 44px; }
 
   .stage-wrap {
     grid-template-columns: minmax(0, 1fr);

@@ -51,10 +51,10 @@ function serve() {
   const shots = process.env.SHOTS;
   const b = await chromium.launch();
   let bad = 0;
-  for (const w of [320, 360, 393, 412]) {
+  for (const w of [320, 360, 393, 409, 412, 430]) {
     for (const calling of [false, true]) {
       for (const theme of ['light', 'dark']) {
-        const ctx = await b.newContext({ viewport: { width: w, height: 800 }, deviceScaleFactor: 2 });
+        const ctx = await b.newContext({ viewport: { width: w, height: 800 }, deviceScaleFactor: 2, locale: 'ru-RU' });
         // Наружу не ходим: шапке сокет не нужен, а чужие скрипты тянут время.
         await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => (base.includes('127.0.0.1') ? r.abort() : r.continue()));
         const p = await ctx.newPage();
@@ -82,7 +82,14 @@ function serve() {
           const rects = kids.map((e) => e.getBoundingClientRect());
           const small = kids.filter((e) => e.tagName === 'BUTTON' && e.getBoundingClientRect().height < 40).map((e) => e.id);
           const code = document.querySelector('#code');
+          // fork (UX L14): у звонка видна подпись, кнопки разговора — по пальцу (44).
+          const label = document.querySelector('#voiceCall .voice__label');
+          const thin = calling
+            ? ['voiceMic', 'voiceHang'].filter((id) => document.getElementById(id).getBoundingClientRect().height < 44)
+            : [];
           return {
+            noLabel: !calling && innerWidth >= 410 && !(label && label.getBoundingClientRect().width > 20),
+            thin,
             left: Math.round(Math.min(...rects.map((x) => x.left))),
             right: Math.round(Math.max(...rects.map((x) => x.right))),
             vw: innerWidth,
@@ -96,6 +103,8 @@ function serve() {
         if (r.small.length) problems.push(`кнопки ниже 40 точек: ${r.small.join(', ')}`);
         if (r.codeCut) problems.push('код комнаты обрезан');
         if (!r.fold) problems.push('нет кнопки «свернуть»');
+        if (r.noLabel) problems.push('у «позвонить» нет подписи');
+        if (r.thin.length) problems.push(`кнопки звонка ниже 44: ${r.thin.join(', ')}`);
         const label = `${w} ${calling ? 'звонок' : 'без звонка'} ${theme}`;
         if (problems.length) {
           bad++;

@@ -131,6 +131,10 @@ body.reels {
    спорила с роликом. */
 .rl-voice.is-idle { background: none; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .rl-voice.is-idle .rl-call { width: 44px; height: 44px; }
+/* fork (UX L14): у трубки подпись, кнопки разговора — по пальцу (44). */
+.rl-voice .rl-ib { width: 44px; height: 44px; }
+.rl-vcap { font: 600 10.5px/1 'Onest', sans-serif; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .6); margin-top: -4px; }
+.rl-voice:not(.is-idle) .rl-vcap { display: none; }
 .rl-voice[hidden] { display: none; }
 .rl-voice [hidden] { display: none; }
 .rl-vtime { font: 700 10px/1 'Onest', sans-serif; font-variant-numeric: tabular-nums; padding-bottom: 2px; }
