@@ -45,6 +45,10 @@ abstract final class ForkPushRelay {
       _call(id, data, notify);
       return;
     }
+    if (thread == 'watch') {
+      _watch(data, notify);
+      return;
+    }
     if (title.isNotEmpty || body.isNotEmpty) {
       // UX D8: тап ведёт туда, о чём уведомление («порисовать» — к холсту).
       notify('fork_notify$id'.hashCode, title, body,
@@ -75,6 +79,27 @@ abstract final class ForkPushRelay {
 
   @visibleForTesting
   static DateTime Function() now = DateTime.now;
+
+  /// Сколько живёт зов в комнату: дольше — уже не «сейчас».
+  static const watchFresh = Duration(minutes: 15);
+
+  /// Партнёр зовёт в комнату просмотра (комната как в Rave). Подпись своя:
+  /// сервер текста не кладёт. Тап ведёт прямо в комнату.
+  static void _watch(
+    Map<String, dynamic> data,
+    Future<void> Function(int id, String title, String body, {String? payload}) notify,
+  ) {
+    final at = int.tryParse('${data['at'] ?? ''}') ?? 0;
+    final age = now().difference(DateTime.fromMillisecondsSinceEpoch(at));
+    if (at <= 0 || age.abs() > watchFresh) return;
+    notify(
+      'fork_watch${data['group_id'] ?? ''}'.hashCode,
+      ruEn('Зовут смотреть вместе', 'Come watch together'),
+      ruEn('Партнёр в комнате просмотра и ждёт вас — нажмите, чтобы войти',
+          'Your partner is in the watch room — tap to join'),
+      payload: ForkNotifTap.forThread('watch'),
+    );
+  }
 
   /// Партнёр звонит (UX_AUDIT L6). Сервер текста не кладёт: подпись своя.
   /// Пуш мог опоздать — старый зов не показываем.

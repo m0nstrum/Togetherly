@@ -31,6 +31,10 @@ class ForkVoiceStatus extends StatefulWidget {
   final Future<void> Function() onRetry;
   final String partnerName;
 
+  /// Открыта комната просмотра: звонок показывает её шапка, а плашка поверх
+  /// окна видео закрывала бы кадр — остаётся только для сбоев.
+  static final ValueNotifier<bool> roomOpen = ValueNotifier(false);
+
   @override
   State<ForkVoiceStatus> createState() => _ForkVoiceStatusState();
 }
@@ -43,6 +47,7 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
     super.initState();
     widget.voice?.addListener(_changed);
     ForkCallScreen.visible.addListener(_changed);
+    ForkVoiceStatus.roomOpen.addListener(_changed);
     _changed();
   }
 
@@ -60,6 +65,7 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
   void dispose() {
     widget.voice?.removeListener(_changed);
     ForkCallScreen.visible.removeListener(_changed);
+    ForkVoiceStatus.roomOpen.removeListener(_changed);
     _tick?.cancel();
     super.dispose();
   }
@@ -102,7 +108,8 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
     final show = v != null &&
         stage != VoiceStage.idle &&
         text.isNotEmpty &&
-        !ForkCallScreen.visible.value; // fork: экран звонка открыт — плашка не нужна
+        !ForkCallScreen.visible.value && // fork: экран звонка открыт — плашка не нужна
+        !(ForkVoiceStatus.roomOpen.value && stage != VoiceStage.failed);
     final (tone, label, action) = switch (stage) {
       // Закрыть — крестиком всегда; «Позвонить ещё» — где повтор поможет.
       VoiceStage.failed => (

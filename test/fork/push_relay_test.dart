@@ -75,6 +75,35 @@ void main() {
     });
   });
 
+  group('зов в комнату просмотра (Rave)', () {
+    final t0 = DateTime.fromMillisecondsSinceEpoch(1760000000000);
+    tearDown(() => ForkPushRelay.now = DateTime.now);
+
+    List<(String, String?)> invite(int at) {
+      ForkPushRelay.now = () => t0;
+      final shown = <(String, String?)>[];
+      ForkPushRelay.handle('w1', {
+        'thread': 'watch',
+        'title': '',
+        'body': '',
+        'data': {'group_id': 'g1', 'from': 'u1', 'at': '$at'},
+      }, (id, t, b, {payload}) async => shown.add((t, payload)));
+      return shown;
+    }
+
+    test('свежий зов — уведомление, тап ведёт в комнату', () {
+      final shown = invite(t0.millisecondsSinceEpoch - 60000);
+      expect(shown, hasLength(1));
+      expect(shown.single.$1, isNotEmpty);
+      expect(shown.single.$2, 'loveapp://watch');
+    });
+
+    test('старый зов — молча', () {
+      expect(invite(t0.millisecondsSinceEpoch - 20 * 60000), isEmpty);
+      expect(invite(0), isEmpty);
+    });
+  });
+
   group('тап по уведомлению (UX D8)', () {
     test('«порисовать» несёт ссылку на холст', () async {
       final got = <String?>[];

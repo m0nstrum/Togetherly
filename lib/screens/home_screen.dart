@@ -690,6 +690,14 @@ class _HomeScreenState extends State<HomeScreen> {
         _pendingDrawOpen = uri.queryParameters['canvas'] ?? '';
       }
     }
+    // fork (Rave): loveapp://watch — партнёр зовёт в комнату просмотра.
+    else if (uri.host == 'watch') {
+      if (mounted && _pairData.isPaired) {
+        unawaited(TogetherLauncher.open(context, pairId: _pairData.pairId));
+      } else {
+        _pendingWatchOpen = true;
+      }
+    }
     // loveapp://note → правка общего листика (печатать в виджете iOS не даёт).
     else if (uri.host == 'note') {
       if (mounted && _pairData.isPaired) {
@@ -722,6 +730,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// fork (UX D8): холст, который ждёт загрузки пары ('' — галерея).
   String? _pendingDrawOpen;
 
+  /// fork (Rave): зов в комнату пришёл раньше пары.
+  bool _pendingWatchOpen = false;
+
   void _openLiveMapFromWidget() {
     _pendingMapOpen = false;
     Navigator.push(
@@ -747,6 +758,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (draw != null && _pairData.isPaired) {
       _pendingDrawOpen = null;
       unawaited(_openCanvasFromWidget(draw));
+    }
+    if (_pendingWatchOpen && _pairData.isPaired) { // fork (Rave)
+      _pendingWatchOpen = false;
+      unawaited(TogetherLauncher.open(context, pairId: _pairData.pairId));
     }
     // Пара появилась или сменилась — присутствию нужен её канал. Вызов
     // идемпотентный: тот же groupId ничего не перезапускает.

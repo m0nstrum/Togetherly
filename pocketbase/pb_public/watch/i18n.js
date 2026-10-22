@@ -116,6 +116,12 @@
       'room.partnerJoined': 'Партнёр в комнате',
       'room.partnerLeft': 'Партнёр вышел из комнаты', // fork (UX L8)
       'room.opening': 'Открываем: {name}…', // fork (UX V2)
+      // fork (Rave): окно видео в приложении.
+      'room.partner': 'Партнёр',
+      'room.shellEmpty': 'Пока ничего не играет',
+      'room.shellPick': 'Выбрать видео',
+      'room.fileShellTitle': 'Файл с телефона',
+      'room.fileShellNote': 'Файл играет у вас; партнёр откроет такой же у себя — мы подскажем ему',
       'room.ytNoApi': 'YouTube отвечает медленно — ролик идёт без синхронизации, включайте по отсчёту', // fork
       'room.ytNoEmbed': 'Автор запретил показывать этот ролик вне YouTube — выберите другой', // fork
       'room.ytGone': 'Ролик удалён или закрыт', // fork
@@ -250,6 +256,12 @@
       'room.partnerJoined': 'Your partner is here',
       'room.partnerLeft': 'Your partner left the room', // fork (UX L8)
       'room.opening': 'Opening {name}…', // fork (UX V2)
+      // fork (Rave): the video window in the app.
+      'room.partner': 'Partner',
+      'room.shellEmpty': 'Nothing is playing yet',
+      'room.shellPick': 'Choose a video',
+      'room.fileShellTitle': 'A file from your phone',
+      'room.fileShellNote': 'It plays on your phone; your partner opens the same file — we’ll tell them',
       'room.ytNoApi': 'YouTube is slow — the video plays without sync, start it on the countdown', // fork
       'room.ytNoEmbed': 'The author doesn’t allow this video outside YouTube — pick another', // fork
       'room.ytGone': 'The video was removed or made private', // fork

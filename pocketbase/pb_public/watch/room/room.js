@@ -31,6 +31,13 @@
   // fork (E2E §10.1): в приложении чат и ключи нативные, страница — только
   // плеер. Переписку она не показывает и никому не пересказывает.
   const NATIVE_CHAT = !!window.__forkNativeChat;
+  // fork (комната как в Rave): во встроенном окне приложения страница —
+  // только окно видео. Шапку, выбор ролика, «что играет» и чат рисует
+  // приложение; страница рассказывает ему, что происходит (`forkReport`), и
+  // выполняет его команды (`window.forkRoom`). Браузер и нативное окно
+  // iPhone живут по-старому.
+  const SHELL = !!window.__forkShell;
+  if (SHELL) document.documentElement.classList.add('fork-shell');
   const state = {
     room: '', me: '',
     player: null, kind: '', applying: false, aimAt: null, touchedAt: 0, lead: false, actedAt: 0, lastSent: 0, viewers: 1,
@@ -325,6 +332,8 @@
     const announce = () => {
       send('file', 0, info);
       reportSource({ kind: 'file', id: file.name }, 'file://' + file.name);
+      actSync(0, false); // fork (Rave)
+      forkReport('source', { by: 'me', kind: 'file', label: file.name, url: '' }); // fork (Rave)
     };
     if (v) v.addEventListener('loadedmetadata', announce, { once: true });
     else announce();
@@ -397,6 +406,8 @@
           events: {
             onReady: () => {
               setStatus(I18N.t('room.playing', { name: labelOf('youtube') })); // fork (UX V2)
+              // fork (Rave): название ролика — в полосу «что играет».
+              try { forkReport('title', { title: state.player.getVideoData().title || '' }); } catch (_) { /* ещё грузится */ }
               // Позиция, доставшаяся от того, кто уже смотрит: применяем её,
               // как только плеер готов принимать команды.
               if (!state.pending) return;
@@ -686,6 +697,7 @@
   function setManual(on) {
     const bar = $('#manual');
     if (bar) bar.hidden = !on;
+    forkReport('manual', { on: !!on }); // fork (Rave): кнопки отсчёта — в приложении
   }
 
   // ── обмен ────────────────────────────────────────────────────────────────
@@ -694,6 +706,149 @@
    *  плеера отбрасываются (`TgPair`). */
   function send(type, at, extra) {
     if (ch) ch.send(type, at, extra);
+    // fork (Rave): свои действия — приложению, строкой в чат.
+    if (type === 'play' || type === 'pause') {
+      noteAct(type, extra && extra.stay ? ytTime() : at, 'me');
+    } else if (type === 'sync') {
+      actSync(at, true);
+    }
+  }
+
+  // ── fork: мост к приложению (комната как в Rave) ─────────────────────────
+  //
+  // Раньше в приложении было не понять, что происходит: партнёр ставил паузу —
+  // кадр просто замирал, включал другой ролик — он просто менялся. Теперь
+  // каждое действие уходит приложению (оно пишет строку в чат и обновляет
+  // полосу «что играет»), а действие партнёра ещё и вспыхивает на кадре.
+
+  function forkReport(t, data) {
+    if (!SHELL) return;
+    try {
+      const bridge = window.flutter_inappwebview;
+      if (bridge && bridge.callHandler) bridge.callHandler('forkRoom', Object.assign({ t: t }, data || {}));
+    } catch (_) { /* приложения рядом нет */ }
+  }
+
+  /** Последнее известное положение плеера комнаты: от него видно перемотку. */
+  const act = { at: 0, wall: 0, playing: false };
+  const JUMP = 4;             // разница больше этого — перемотка, секунды
+
+  function actSync(at, playing) {
+    act.at = Number(at) || 0;
+    act.wall = Date.now();
+    act.playing = !!playing;
+  }
+
+  /** Кто-то нажал «играть» или «пауза» (или перемотал): сообщить один раз. */
+  function noteAct(t, at, by) {
+    at = Number(at) || 0;
+    const expected = act.at + (act.playing ? (Date.now() - act.wall) / 1000 : 0);
+    const jump = act.wall > 0 && Math.abs(at - expected) > JUMP;
+    const same = !jump && act.wall > 0 && act.playing === (t === 'play');
+    actSync(at, t === 'play');
+    if (same) return;
+    const kind = jump ? 'seek' : t;
+    forkReport('act', { act: kind, playing: t === 'play', at: at, by: by });
+    if (by === 'partner') flashAct(kind, at);
+  }
+
+  function clock(sec) {
+    const s = Math.max(0, Math.floor(Number(sec) || 0));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = String(s % 60).padStart(2, '0');
+    return h ? h + ':' + String(m).padStart(2, '0') + ':' + ss : m + ':' + ss;
+  }
+
+  let flashTimer = 0;
+
+  /** Действие партнёра вспыхивает плашкой поверх кадра на пару секунд. */
+  function flashAct(kind, at) {
+    if (!SHELL) return;
+    const holder = $('#player');
+    if (!holder) return;
+    let el = holder.querySelector('.fork-act');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'fork-act';
+      el.setAttribute('aria-hidden', 'true');
+      holder.appendChild(el);
+    }
+    const who = String(window.__forkPartner || '').trim() || I18N.t('room.partner');
+    const icon = { play: '▶', pause: '❚❚', seek: '⇥', source: '🎬', countdown: '3·2·1' }[kind] || '•';
+    el.textContent = icon + '  ' + who + (kind === 'source' || kind === 'countdown' ? '' : ' · ' + clock(at));
+    el.classList.remove('is-on');
+    void el.offsetWidth; // перезапуск анимации
+    el.classList.add('is-on');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => el.classList.remove('is-on'), 2400);
+  }
+
+  /** Пустое окно в приложении: что делать дальше, одной кнопкой. */
+  function shellEmpty() {
+    const holder = $('#player');
+    if (!holder) return;
+    holder.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'player__empty fork-empty';
+    const title = document.createElement('b');
+    title.textContent = I18N.t('room.shellEmpty');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--filled btn--compact';
+    btn.textContent = I18N.t('room.shellPick');
+    btn.addEventListener('click', () => forkReport('pick'));
+    box.appendChild(title);
+    box.appendChild(btn);
+    holder.appendChild(box);
+  }
+
+  /** Файл с телефона: окно выбора открывается только из касания по самой
+   *  странице, поэтому приложение просит показать кнопку здесь. */
+  function shellFilePrompt() {
+    const holder = $('#player');
+    if (!holder) return;
+    holder.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'player__empty fork-empty';
+    const title = document.createElement('b');
+    title.textContent = I18N.t('room.fileShellTitle');
+    const text = document.createElement('span');
+    text.textContent = I18N.t('room.fileShellNote');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--filled btn--compact';
+    btn.textContent = I18N.t('room.fileChoose');
+    btn.addEventListener('click', () => $('#file').click());
+    box.appendChild(title);
+    box.appendChild(text);
+    box.appendChild(btn);
+    holder.appendChild(box);
+    state.kind = '';
+    setManual(false);
+  }
+
+  /** «Играть»/«пауза» кнопкой приложения: у обоих сразу. */
+  function shellToggle() {
+    if (!state.kind) return false;
+    const cmd = isPlaying() ? 'pause' : 'play';
+    const at = ytTime();
+    apply(cmd, at);
+    leadHere();
+    send(cmd, at);
+    return true;
+  }
+
+  // Команды приложения. Ответ `play` — годится ли ссылка: отказ страница
+  // заодно объясняет статусом.
+  if (SHELL) {
+    window.forkRoom = {
+      play: (url) => applySource(String(url || '')),
+      file: () => { shellFilePrompt(); return true; },
+      toggle: () => shellToggle(),
+      together: () => { send('countdown', 0); showCountdown(3); return true; },
+      pauseBoth: () => { send('pauseNow', 0); flashPause(); return true; },
+    };
   }
 
   // ── кто кого догоняет ────────────────────────────────────────────────────
@@ -745,7 +900,15 @@
     leadHere();
     mountPlayer(src, url);
     send('source', 0, { url: url });
+    forkSource(src, url, 'me'); // fork (Rave)
     return true;
+  }
+
+  /** fork (Rave): что включили и кто — приложению; новый ролик с нуля. */
+  function forkSource(src, url, by) {
+    actSync(0, false);
+    forkReport('source', { by: by, kind: src.kind, label: src.kind === 'video' ? I18N.t('room.fileSource') : labelOf(src.kind), url: url || '' });
+    if (by === 'partner') flashAct('source', 0);
   }
 
   /** Чужое сообщение канала (свои отсекает `TgPair`). Сообщения ленты
@@ -757,11 +920,15 @@
       case 'play':
       case 'pause':
         yieldTo(data.from);
+        noteAct(data.t, data.stay === true ? ytTime() : data.at, 'partner'); // fork (Rave)
         apply(data.t, data.at, data.stay === true);
         break;
       case 'source': {
         const src = parseSource(data.url);
-        if (src) { yieldTo(data.from); $('#link').value = data.url; mountPlayer(src, data.url); }
+        if (src) {
+          yieldTo(data.from); $('#link').value = data.url; mountPlayer(src, data.url);
+          forkSource(src, data.url, 'partner'); // fork (Rave)
+        }
         break;
       }
       case 'chat':
@@ -788,6 +955,7 @@
         adoptState(data);
         break;
       case 'sync':
+        actSync(data.at, data.playing); // fork (Rave): такт — не действие
         // Ведущий чужое время не догоняет: иначе двое подтягивают друг друга
         // по очереди и ролик дёргается у обоих.
         if (state.lead) break;
@@ -802,12 +970,15 @@
         break;
       case 'countdown':
         showCountdown(3);
+        forkReport('act', { act: 'countdown', by: 'partner' }); // fork (Rave)
         break;
       case 'pauseNow':
         flashPause();
+        forkReport('act', { act: 'pauseNow', by: 'partner' }); // fork (Rave)
         break;
       case 'file':
         // Файл по сети не передать: партнёр открывает свою копию сам.
+        forkReport('source', { by: 'partner', kind: 'file', label: String(data.name || ''), url: '' }); // fork (Rave)
         if (state.kind === 'video' && state.file && state.file.name === data.name) break;
         if (!state.kind) askForFile({ name: data.name, size: data.size });
         break;
@@ -852,6 +1023,9 @@
     $('#link').value = data.url;
     state.pending = { cmd: data.playing ? 'play' : 'pause', at: data.at || 0 };
     mountPlayer(src, data.url);
+    // fork (Rave): вошли в уже идущий просмотр.
+    forkReport('source', { by: 'room', kind: src.kind, label: src.kind === 'video' ? I18N.t('room.fileSource') : labelOf(src.kind), url: data.url });
+    actSync(data.at || 0, data.playing);
     // Площадки, кроме YouTube, о готовности не сообщают.
     if (src.kind !== 'youtube') {
       setTimeout(() => {
@@ -880,6 +1054,7 @@
     const el = $('#status');
     if (el) el.textContent = text;
     if (loud) note(text);
+    forkReport('status', { text: String(text || ''), loud: !!loud }); // fork (Rave)
   }
 
   // На узком экране строки статуса в шапке нет — не помещается, — и всё, что
@@ -912,6 +1087,7 @@
     state.viewers = n;
     const el = $('#viewers');
     if (el) el.textContent = n === 1 ? I18N.t('room.alone') : I18N.t('room.viewers', { n });
+    forkReport('viewers', { n: n }); // fork (Rave)
     cinemaViewers(); // fork (UX V6)
     // Комната открыта сразу, поэтому приход партнёра отмечаем строкой в чате.
     // Переподключения дают дребезг 1↔2, поэтому строка не чаще раза в полминуты.
@@ -919,6 +1095,7 @@
       clearTimeout(state.leftTimer);
       if (!state.partnerHere && performance.now() - state.joinedAt > 30000) {
         state.joinedAt = performance.now();
+        forkReport('presence', { here: true }); // fork (Rave)
         addSystem(I18N.t('room.partnerJoined'));
         note(I18N.t('room.partnerJoined'));
       }
@@ -930,6 +1107,7 @@
       state.leftTimer = setTimeout(() => {
         if (state.viewers > 1) return;
         state.partnerHere = false;
+        forkReport('presence', { here: false }); // fork (Rave)
         addSystem(I18N.t('room.partnerLeft'));
         note(I18N.t('room.partnerLeft'));
       }, 4000);
@@ -970,6 +1148,7 @@
     message: onMessage,
     viewers: setViewers,
     status: (kind) => {
+      forkReport('net', { kind: String(kind || '') }); // fork (Rave)
       netBanner(kind === 'offline' || kind === 'lost' ? I18N.t(kind === 'lost' ? 'room.lost' : 'room.offline') : ''); // fork (UX L15)
       if (kind === 'ready') setStatus(I18N.t('room.ready'));
       else if (kind === 'offline') setStatus(I18N.t('room.offline'));
@@ -1263,7 +1442,8 @@
       } catch (_) {}
       // Свой режим включаем в любом случае: даже если системный не отпустил,
       // человек выйдет из него сам и попадёт в комнату с чатом.
-      Promise.resolve(exit).catch(() => {}).then(() => setCinema(true));
+      // fork (Rave): в приложении полный экран — его, с чатом поверх.
+      Promise.resolve(exit).catch(() => {}).then(() => (SHELL ? forkReport('fullscreen') : setCinema(true)));
     };
     document.addEventListener('fullscreenchange', swap);
     document.addEventListener('webkitfullscreenchange', swap);
@@ -1495,6 +1675,7 @@
     cinChat.mount();
     voiceBridge();
     $('#chat').dataset.empty = I18N.t('room.chatEmpty');
+    if (SHELL) shellEmpty(); // fork (Rave)
 
     const room = roomFromHash();
     if (!room) {

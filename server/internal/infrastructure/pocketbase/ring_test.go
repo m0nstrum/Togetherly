@@ -55,4 +55,14 @@ func TestRingWakesPartner(t *testing.T) {
 	require.Equal(t, http.StatusOK, code, body)
 	assert.Contains(t, body, `"thread":"call"`)
 	assert.Contains(t, body, `"from":"`+alice+`"`)
+	// Зов в комнату просмотра — свой срок, свой thread; чужой kind — отказ.
+	code, _ = testutil.Do(t, app, http.MethodPost, "/api/fork/ring", aTok, `{"group_id":"`+pairA+`","kind":"spam"}`)
+	assert.Equal(t, http.StatusBadRequest, code)
+	code, body = testutil.Do(t, app, http.MethodPost, "/api/fork/ring", aTok, `{"group_id":"`+pairA+`","kind":"watch"}`)
+	require.Equal(t, http.StatusOK, code, body)
+	require.Eventually(t, func() bool { return len(g.Messages()) == 2 }, 5*time.Second, 20*time.Millisecond)
+	event = g.Messages()[1]["data"].(map[string]any)["event"].(string)
+	code, body = testutil.Do(t, app, http.MethodPost, "/api/fork/wake", bTok, `{"event":"`+event+`"}`)
+	require.Equal(t, http.StatusOK, code, body)
+	assert.Contains(t, body, `"thread":"watch"`)
 }

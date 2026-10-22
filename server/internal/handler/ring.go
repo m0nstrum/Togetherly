@@ -15,21 +15,29 @@ import (
 
 // Ringer — зов звонка партнёру.
 type Ringer interface {
-	Ring(ctx context.Context, uid, groupID string) error
+	Ring(ctx context.Context, uid, groupID string, kind ring.Kind) error
 }
 
-// Ring — POST /api/fork/ring {group_id}: разбудить партнёра, которому
-// звонят (UX_AUDIT L6, lib/fork/watch/pair_call.dart).
+// Ring — POST /api/fork/ring {group_id, kind}: разбудить партнёра, которому
+// звонят (kind=call, по умолчанию; UX_AUDIT L6, lib/fork/watch/pair_call.dart)
+// или которого зовут в комнату просмотра (kind=watch; lib/fork/watch/room_shell.dart).
 func Ring(r *router.Router[*core.RequestEvent], svc Ringer, log *slog.Logger) {
 	r.POST("/api/fork/ring", func(e *core.RequestEvent) error {
 		var body struct {
 			GroupID string `json:"group_id"`
+			Kind    string `json:"kind"`
 		}
 		if err := e.BindBody(&body); err != nil || body.GroupID == "" {
 			return e.BadRequestError("Нужен group_id.", nil)
 		}
-		err := svc.Ring(e.Request.Context(), e.Auth.Id, body.GroupID)
+		kind := ring.Kind(body.Kind)
+		if kind == "" {
+			kind = ring.KindCall
+		}
+		err := svc.Ring(e.Request.Context(), e.Auth.Id, body.GroupID, kind)
 		switch {
+		case errors.Is(err, ring.ErrBadKind):
+			return e.BadRequestError("Неизвестный kind.", nil)
 		case errors.Is(err, ring.ErrNotMember):
 			return e.ForbiddenError("Не ваша пара.", nil)
 		case errors.Is(err, ring.ErrTooOften):
