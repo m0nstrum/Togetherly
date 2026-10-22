@@ -6,6 +6,7 @@ import 'package:pocketbase/pocketbase.dart';
 
 import '../fork/push_relay.dart'; // fork
 import '../fork/push/notif_prefs.dart'; // fork
+import '../fork/push/notif_tap.dart'; // fork (UX D8)
 import '../utils/notification_permission.dart'; // fork
 import '../models/chat_msg.dart';
 import '../models/avatar_frame.dart';
@@ -59,7 +60,9 @@ class PbPushService {
     const ios = DarwinInitializationSettings();
     await _ln.initialize(
       settings: const InitializationSettings(android: android, iOS: ios),
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse, // fork (UX D8)
     );
+    unawaited(ForkNotifTap.checkLaunch(_ln)); // fork (UX D8)
     final androidImpl = _ln.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.createNotificationChannel(
@@ -264,7 +267,7 @@ class PbPushService {
       }
     }));
 
-    _subs.add(await ForkPushRelay.subscribe(myUid, (id, t, b) => _notify(id, t, b))); // fork
+    _subs.add(await ForkPushRelay.subscribe(myUid, (id, t, b, {payload}) => _notify(id, t, b, payload: payload))); // fork
 
     debugPrint('PbPush: подписки запущены (group=$groupId, partner=$partnerUid)');
   }
@@ -297,7 +300,7 @@ class PbPushService {
   }
 
   Future<void> _notify(int id, String title, String body,
-      {bool pierceQuiet = false}) async {
+      {bool pierceQuiet = false, String? payload}) async { // fork (UX D8): payload
     if (_muted && !pierceQuiet) {
       debugPrint('PbPush: тихая ночь — уведомление не показываем');
       return;
@@ -321,6 +324,7 @@ class PbPushService {
           presentSound: true,
         ),
       ),
+      payload: payload, // fork (UX D8)
     );
   }
 

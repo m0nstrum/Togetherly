@@ -63,6 +63,14 @@ class DeepLinkService {
   // broadcast-поток прошлых событий не отдаёт: без буфера тап по виджету на
   // закрытом приложении терялся целиком.
   Uri? _pendingWidgetAction;
+
+  /// fork (UX D8): тап по уведомлению — та же ссылка `loveapp://…`, что у
+  /// виджета, и тот же разбор на главной (`lib/fork/push/notif_tap.dart`).
+  void openAction(Uri uri) {
+    _pendingWidgetAction = uri;
+    _widgetActionController.add(uri);
+  }
+
   Uri? consumePendingWidgetAction() {
     final u = _pendingWidgetAction;
     _pendingWidgetAction = null;

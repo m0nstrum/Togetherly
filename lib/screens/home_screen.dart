@@ -684,6 +684,10 @@ class _HomeScreenState extends State<HomeScreen> {
     else if (uri.host == 'draw') {
       if (mounted && _pairData.isPaired) {
         unawaited(_openCanvasFromWidget(uri.queryParameters['canvas'] ?? ''));
+      } else {
+        // fork (UX D8): тап по «порисовать» с закрытого приложения — пара ещё
+        // грузится; холст откроем, как только она появится.
+        _pendingDrawOpen = uri.queryParameters['canvas'] ?? '';
       }
     }
     // loveapp://note → правка общего листика (печатать в виджете iOS не даёт).
@@ -715,6 +719,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Нажали на виджет «Где мы», а пара ещё не загрузилась.
   bool _pendingMapOpen = false;
 
+  /// fork (UX D8): холст, который ждёт загрузки пары ('' — галерея).
+  String? _pendingDrawOpen;
+
   void _openLiveMapFromWidget() {
     _pendingMapOpen = false;
     Navigator.push(
@@ -736,6 +743,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onPairChanged() {
     if (!mounted) return;
     if (_pendingMapOpen && _pairData.isPaired) _openLiveMapFromWidget();
+    final draw = _pendingDrawOpen; // fork (UX D8)
+    if (draw != null && _pairData.isPaired) {
+      _pendingDrawOpen = null;
+      unawaited(_openCanvasFromWidget(draw));
+    }
     // Пара появилась или сменилась — присутствию нужен её канал. Вызов
     // идемпотентный: тот же groupId ничего не перезапускает.
     PresenceService().start(groupId: _pairData.pairId);

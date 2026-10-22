@@ -14,12 +14,13 @@ import 'package:pocketbase/pocketbase.dart';
 import '../dict_strings.dart' show ruEn;
 import '../services/centrifugo_service.dart';
 import '../services/reels/reels_invite.dart';
+import 'push/notif_tap.dart';
 
 abstract final class ForkPushRelay {
   /// Подписка для [myUid]; [notify] — показ локального уведомления.
   static Future<UnsubscribeFunc> subscribe(
     String myUid,
-    Future<void> Function(int id, String title, String body) notify,
+    Future<void> Function(int id, String title, String body, {String? payload}) notify,
   ) => CentrifugoService.instance.subscribeDelta('user:$myUid', 'fork_notify', (
     e,
   ) {
@@ -32,7 +33,7 @@ abstract final class ForkPushRelay {
   static void handle(
     String id,
     Map<String, dynamic> rec,
-    Future<void> Function(int id, String title, String body) notify,
+    Future<void> Function(int id, String title, String body, {String? payload}) notify,
   ) {
     final thread = '${rec['thread'] ?? ''}';
     final title = '${rec['title'] ?? ''}';
@@ -45,7 +46,9 @@ abstract final class ForkPushRelay {
       return;
     }
     if (title.isNotEmpty || body.isNotEmpty) {
-      notify('fork_notify$id'.hashCode, title, body);
+      // UX D8: тап ведёт туда, о чём уведомление («порисовать» — к холсту).
+      notify('fork_notify$id'.hashCode, title, body,
+          payload: ForkNotifTap.forThread(thread));
     }
     // Зов в ленту, пока приложение открыто, — лист «присоединиться», как от
     // моста FCM (`ReelsInviteBridge.arrived`).
@@ -78,7 +81,7 @@ abstract final class ForkPushRelay {
   static void _call(
     String id,
     Map<String, dynamic> data,
-    Future<void> Function(int id, String title, String body) notify,
+    Future<void> Function(int id, String title, String body, {String? payload}) notify,
   ) {
     final at = int.tryParse('${data['at'] ?? ''}') ?? 0;
     final age = now().difference(DateTime.fromMillisecondsSinceEpoch(at));
@@ -91,6 +94,7 @@ abstract final class ForkPushRelay {
       ruEn('Входящий звонок', 'Incoming call'),
       ruEn('Партнёр звонит — откройте приложение, чтобы ответить',
           'Your partner is calling — open the app to answer'),
+      payload: 'loveapp://home',
     );
   }
 }
