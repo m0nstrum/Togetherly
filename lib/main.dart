@@ -63,6 +63,7 @@ import 'widgets/chest/jar_toast.dart';
 import 'fork/config/endpoints.dart'; // fork
 import 'fork/crash_reports.dart'; // fork
 import 'fork/e2e/fork_e2e.dart'; // fork
+import 'fork/ui/session_note.dart'; // fork (UX A13)
 
 // ATT/трекинг убран НАМЕРЕННО: приложение НЕ отслеживает пользователей
 // (в App Store Connect: App Privacy → Tracking = None). Без ATT-авторизации
@@ -979,7 +980,8 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
       // живом (непротухшем) токене без сети остаёмся на Home; на перелогин ведём
       // только когда токен реально мёртв и Home всё равно работать не будет.
       if (!PocketBaseService().isLoggedIn) {
-        return LoginScreen(userData: _userData);
+        // fork (UX A13): вернувшемуся — почему он снова на входе.
+        return ForkSessionNote(child: LoginScreen(userData: _userData));
       }
       return HomeScreen(userData: _userData);
     }
