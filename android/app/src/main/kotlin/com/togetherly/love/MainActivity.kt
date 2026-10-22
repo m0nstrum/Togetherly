@@ -18,6 +18,11 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    // fork: applicationId форка свой, а алиасы иконок (`.IconDefault` …)
+    // в манифесте раскрываются от пакета Kotlin-кода. "$packageName.Icon…"
+    // не находил компонент, и смена иконки падала.
+    private val aliasPackage: String = MainActivity::class.java.name.substringBeforeLast('.')
+
 
     // «Поделиться → Togetherly»: текст со ссылкой на товар.
     //
@@ -320,7 +325,7 @@ class MainActivity : FlutterActivity() {
                     try {
                         val pm = packageManager
                         for ((aliasId, suffix) in ICON_ALIASES) {
-                            val component = ComponentName(packageName, "$packageName$suffix")
+                            val component = ComponentName(packageName, "$aliasPackage$suffix") // fork
                             val state = if (aliasId == id)
                                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                             else
@@ -348,7 +353,7 @@ class MainActivity : FlutterActivity() {
                         val pm = packageManager
                         val on = mutableListOf<String>()
                         for ((aliasId, suffix) in ICON_ALIASES) {
-                            val component = ComponentName(packageName, "$packageName$suffix")
+                            val component = ComponentName(packageName, "$aliasPackage$suffix") // fork
                             val state = pm.getComponentEnabledSetting(component)
                             val enabled = when (state) {
                                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true

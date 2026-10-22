@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../fork/own_name.dart'; // fork
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -115,9 +116,10 @@ class PocketBaseService {
     if (rec == null) return '';
     for (final key in const ['display_name', 'name']) {
       final v = rec.data[key];
-      if (v is String && v.trim().isNotEmpty) return v.trim();
+      // fork: шифр (ключ ещё не открылся) — не имя.
+      if (v is String && ForkOwnName.usable(v)) return v.trim();
     }
-    return '';
+    return ForkOwnName.value; // fork: имя из локального профиля
   }
 
   /// Запись текущего юзера (профиль из коллекции users) или null.

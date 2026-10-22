@@ -1,4 +1,5 @@
 import '../fork/flags.dart'; // fork: M3
+import '../fork/identity.dart'; // fork: полное имя класса виджета
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -1154,7 +1155,7 @@ class _WidgetScreenState extends State<WidgetScreen>
 
       await HomeWidget.requestPinWidget(
         name: className,
-        androidName: className,
+        androidName: className, qualifiedAndroidName: ForkIdentity.widgetClass(className), // fork
       );
       debugPrint('_pinWidget: requestPinWidget completed successfully');
       unawaited(LevelService.instance.award(XpAction.setWidget));

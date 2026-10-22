@@ -124,9 +124,18 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     // Ленту запускает купивший — он и зовёт партнёра: тому придёт пуш
     // «Аня зовёт смотреть TikTok», по которому он войдёт без своего Плюса.
     if (widget.reels && PlusService.instance.active) {
-      _invited = true;
-      unawaited(ReelsInvite.send(widget.pairId, widget.reelsSource));
+      unawaited(_inviteUnlessJoining()); // fork
     }
+  }
+
+  /// fork: в форке Плюс у всех, и вошедший по зову звал бы в ответ —
+  /// пригласивший получал «Партнёр зовёт смотреть». Партнёр уже зовёт —
+  /// значит, мы входим к нему, звать некого.
+  Future<void> _inviteUnlessJoining() async {
+    if (await ReelsInvite.active(widget.pairId) != null) return;
+    if (!mounted) return;
+    _invited = true;
+    await ReelsInvite.send(widget.pairId, widget.reelsSource);
   }
 
   bool _invited = false;

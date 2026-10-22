@@ -6,6 +6,13 @@
 abstract final class ForkIdentity {
   static const String appName = 'Tethered';
 
+  /// Полное имя класса виджета рабочего стола. `applicationId` форка свой
+  /// (`io.github.m0nstrum.tethered`), а Kotlin-классы живут в пакете апстрима:
+  /// без полного имени `home_widget` ищет `<applicationId>.<класс>` и падает
+  /// «No Widget found» — «добавить на главный экран» и обновления виджетов
+  /// не работали.
+  static String widgetClass(String name) => 'com.togetherly.love.$name';
+
   /// Схема приглашений: `tethered://invite/CODE`.
   ///
   /// Схема апстрима `loveapp://` остаётся внутренней схемой виджетов (их
