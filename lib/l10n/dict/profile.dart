@@ -583,21 +583,23 @@ const Map<String, Map<String, String>> profileStrings = {
   // Текст говорит про СЕМЬ ДНЕЙ на возврат: с 13.09.2026 запись не стирается
   // сразу, а помечается и возвращается обычным входом. Обещать «необратимо»
   // там, где всё обратимо неделю, — врать человеку в самый тяжёлый момент.
+  // fork (UX A14): текст по настоящей отсрочке сервера (usecase/account):
+  // неделю пара жива, вход отменяет удаление, потом — роспуск и стирание.
   'deleteAccountConfirm': {
     'ru':
-        'Аккаунт и все ваши данные уйдут: пара разорвётся, воспоминания и чат пропадут. Передумаете — просто войдите снова в течение 7 дней, и всё вернётся. После этого срока аккаунт стирается навсегда.',
+        'Вы выйдете, а аккаунт 7 дней будет ждать удаления. Пока срок не вышел, пара у партнёра остаётся как есть, а вход снова отменяет удаление — всё вернётся. Через 7 дней пара распустится, аккаунт и ваши личные данные сотрутся навсегда, а переписка и воспоминания пары перестанут открываться и у партнёра.',
     'en':
-        'Your account and all your data will go: the pair breaks, memories and chat disappear. Change your mind and simply sign in again within 7 days and everything comes back. After that the account is erased for good.',
+        'You’ll be signed out, and your account will wait 7 days before deletion. Until then the pair stays as it is for your partner, and signing in again cancels the deletion — everything comes back. After 7 days the pair is dissolved, your account and personal data are erased for good, and the pair’s chat and memories stop opening for your partner too.',
     'pt':
-        'Sua conta e todos os seus dados vão embora: o casal se separa, memórias e conversas somem. Se mudar de ideia, é só entrar de novo em 7 dias e tudo volta. Depois disso, a conta é apagada para sempre.',
+        'Você sairá, e a conta esperará 7 dias antes de ser apagada. Até lá, o casal continua como está para seu par, e entrar de novo cancela a exclusão — tudo volta. Depois de 7 dias, o casal é desfeito, sua conta e seus dados pessoais são apagados para sempre, e as conversas e memórias do casal deixam de abrir também para seu par.',
     'it':
-        'Il tuo account e tutti i tuoi dati se ne vanno: la coppia si separa, ricordi e chat spariscono. Se cambi idea, basta rientrare entro 7 giorni e torna tutto. Dopo, l’account viene cancellato per sempre.',
+        'Uscirai e l’account aspetterà 7 giorni prima di essere cancellato. Fino ad allora la coppia resta com’è per il partner, e rientrare annulla la cancellazione: torna tutto. Dopo 7 giorni la coppia viene sciolta, l’account e i tuoi dati personali vengono cancellati per sempre, e chat e ricordi della coppia non si aprono più neanche al partner.',
     'es':
-        'Tu cuenta y todos tus datos se van: la pareja se separa, los recuerdos y el chat desaparecen. Si cambias de idea, solo entra de nuevo antes de 7 días y todo vuelve. Pasado ese plazo, la cuenta se borra para siempre.',
+        'Se cerrará tu sesión y la cuenta esperará 7 días antes de borrarse. Hasta entonces, la pareja sigue igual para tu pareja, y volver a entrar cancela el borrado: todo vuelve. Pasados 7 días, la pareja se disuelve, tu cuenta y tus datos personales se borran para siempre, y el chat y los recuerdos de la pareja dejan de abrirse también para tu pareja.',
     'fr':
-        'Ton compte et toutes tes données s’en vont : le couple se sépare, souvenirs et messages disparaissent. Si tu changes d’avis, reconnecte-toi dans les 7 jours et tout revient. Passé ce délai, le compte est effacé définitivement.',
+        'Tu seras déconnecté·e et ton compte attendra 7 jours avant d’être supprimé. D’ici là, le couple reste tel quel pour ton partenaire, et te reconnecter annule la suppression : tout revient. Après 7 jours, le couple est dissous, ton compte et tes données personnelles sont effacés définitivement, et les messages et souvenirs du couple ne s’ouvrent plus non plus pour ton partenaire.',
     'de':
-        'Dein Konto und alle deine Daten gehen weg: das Paar wird getrennt, Erinnerungen und Chat verschwinden. Wenn du es dir anders überlegst, melde dich einfach innerhalb von 7 Tagen wieder an, dann kommt alles zurück. Danach wird das Konto endgültig gelöscht.',
+        'Du wirst abgemeldet, und dein Konto wartet 7 Tage auf die Löschung. Bis dahin bleibt das Paar für deinen Partner, wie es ist, und eine erneute Anmeldung bricht die Löschung ab – alles kommt zurück. Nach 7 Tagen wird das Paar aufgelöst, dein Konto und deine persönlichen Daten werden endgültig gelöscht, und Chat und Erinnerungen des Paares öffnen sich auch für deinen Partner nicht mehr.',
   },
   'deleteAccountBtn': {
     'ru': 'Удалить навсегда',
