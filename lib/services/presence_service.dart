@@ -31,6 +31,7 @@ class PresenceService with WidgetsBindingObserver {
 
   Timer? _heartbeat;
   bool _started = false;
+  int _generation = 0; // fork: M7 cancel pending subscriptions
   String _groupId = '';
   int? _lastStoredMs;
 
@@ -63,6 +64,7 @@ class PresenceService with WidgetsBindingObserver {
 
   void stop() {
     _started = false;
+    _generation++;
     _heartbeat?.cancel();
     _heartbeat = null;
     _unsub?.call();
@@ -75,7 +77,9 @@ class PresenceService with WidgetsBindingObserver {
 
   Future<void> _listenChannel(String groupId) async {
     _unsub?.call();
-    _unsub = await CentrifugoService().subscribeRaw(_channel(groupId), (raw) {
+    final generation = _generation;
+    final unsub = await CentrifugoService().subscribeRaw(_channel(groupId), (raw) {
+      if (!_started || generation != _generation) return;
       final data = ForkE2E.openSignal(_channel(groupId), raw); // fork
       if (data == null || data['t'] != 'alive') return;
       final uid = (data['uid'] ?? '').toString();
@@ -86,9 +90,15 @@ class PresenceService with WidgetsBindingObserver {
           : DateTime.now().millisecondsSinceEpoch;
       if (!_pulse.isClosed) _pulse.add(uid);
     });
+    if (!_started || generation != _generation) {
+      unsub();
+    } else {
+      _unsub = unsub;
+    }
   }
 
   void _beat() {
+    if (!_started) return;
     final uid = _uid;
     if (uid.isEmpty) return;
     final now = DateTime.now().millisecondsSinceEpoch;

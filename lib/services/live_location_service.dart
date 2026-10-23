@@ -79,6 +79,7 @@ class LiveLocationService with WidgetsBindingObserver {
 
   StreamSubscription<Position>? _posSub;
   String? _activePairId;
+  int _sessionGeneration = 0; // fork: M7 stale async work
 
   /// С каким профилем сейчас крутится поток. По нему видно, что пора
   /// перезапуститься: экономный профиль в фоне и точный на экране.
@@ -256,6 +257,7 @@ class LiveLocationService with WidgetsBindingObserver {
   /// Запускает стрим позиции и пишет её в RTDB. Идемпотентно для того же
   /// pairId. Не делает ничего, если шеринг выключен флагом.
   Future<void> startSharing(String pairId, {String partnerUid = ''}) async {
+    final generation = _sessionGeneration;
     if (pairId.isEmpty || _uid.isEmpty) return;
     if (!sharingEnabled.value) return;
     // Без партнёра геопозицию не берём вовсе. Читать её всё равно некому:
@@ -271,7 +273,9 @@ class LiveLocationService with WidgetsBindingObserver {
       return;
     }
     // fork: согласие давалось другому партнёру или под другим входом (UX G1).
-    if (!await LocationConsent.allows(_uid, partnerUid)) {
+    final consent = await LocationConsent.allows(_uid, partnerUid);
+    if (generation != _sessionGeneration || _uid.isEmpty) return;
+    if (!consent) {
       await _persist(false);
       await stopSharing(removePoint: true);
       issue.value = ShareIssue.noConsent; // fork (UX G3)
@@ -283,6 +287,7 @@ class LiveLocationService with WidgetsBindingObserver {
     // ForegroundServiceStartNotAllowedException (летит мимо try/catch и onError).
     // Поднимаем стрим только на переднем плане; из фона выходим — подхватит
     // resumeIfEnabled при следующем открытии приложения.
+    if (generation != _sessionGeneration || _uid.isEmpty) return;
     if (!_canStartFgs()) {
       issue.value = ShareIssue.needsForeground; // fork (UX G3)
       debugPrint('LiveLocationService: старт из фона пропущен (FGS запрещён)');
@@ -293,6 +298,7 @@ class LiveLocationService with WidgetsBindingObserver {
 
     // Сменился канал — гасим прежний стрим, точку прежнего канала оставляем.
     await _cancelStream();
+    if (generation != _sessionGeneration || _uid.isEmpty) return;
     _activePairId = channel;
 
     // Немедленный первый фикс, чтобы партнёр сразу увидел точку.
@@ -374,7 +380,9 @@ class LiveLocationService with WidgetsBindingObserver {
   }
 
   Future<void> _restartStream(String channel, bool foreground) async {
+    final generation = _sessionGeneration;
     await _cancelStream();
+    if (generation != _sessionGeneration || _uid.isEmpty) return;
     _activePairId = channel;
     _streamForeground = foreground;
     try {
@@ -410,6 +418,7 @@ class LiveLocationService with WidgetsBindingObserver {
       );
 
   Future<void> _pushCurrent(String pairId) async {
+    final generation = _sessionGeneration;
     try {
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -417,6 +426,7 @@ class LiveLocationService with WidgetsBindingObserver {
           timeLimit: Duration(seconds: 15),
         ),
       );
+      if (generation != _sessionGeneration) return;
       await _push(pairId, pos);
     } catch (e) {
       debugPrint('LiveLocationService initial fix failed: $e');
@@ -433,8 +443,9 @@ class LiveLocationService with WidgetsBindingObserver {
   int? _storedAtMs;
 
   Future<void> _push(String channel, Position pos) async {
+    final generation = _sessionGeneration;
+    if (_uid.isEmpty || _activePairId != channel) return;
     myFix.value = pos;
-    if (_uid.isEmpty) return;
     // Пишем только конечные числа (heading/accuracy бывают NaN/Infinity, когда
     // значение недоступно).
     final acc = pos.accuracy.isFinite ? pos.accuracy : 0.0;
@@ -457,6 +468,7 @@ class LiveLocationService with WidgetsBindingObserver {
     // fork (UX G6): запись в базу — раз в две минуты, но последняя точка не
     // теряется: если она не попала в окно, её дописывает таймер, уход в фон
     // или остановка показа.
+    if (generation != _sessionGeneration || _activePairId != channel || _uid.isEmpty) return;
     final stored = _storedAtMs;
     if (stored == null || now - stored >= _storeEvery.inMilliseconds) {
       _storeTimer?.cancel();
@@ -495,19 +507,39 @@ class LiveLocationService with WidgetsBindingObserver {
   }
 
   Future<void> _cancelStream() async {
+    final sub = _posSub;
+    _posSub = null;
     try {
-      await _posSub?.cancel();
+      await sub?.cancel();
     } catch (e) {
       // geolocator бросает «No active stream to cancel», если нативный стрим
       // уже снят системой — это не повод падать.
       debugPrint('LiveLocationService: отмена стрима: $e');
     }
-    _posSub = null;
   }
 
   /// Останавливает стрим. [removePoint] — удалить ли свою последнюю точку из
   /// RTDB (true при явном выключении шеринга; false при простом анбинде, чтобы
   /// партнёр видел последнее местоположение).
+  // fork: logout must invalidate work synchronously, without flushing a final point.
+  void stopForLogout() {
+    _sessionGeneration++;
+    _activePairId = null;
+    _storeTimer?.cancel();
+    _storeTimer = null;
+    _unstored = null;
+    _unstoredChannel = null;
+    _storedAtMs = null;
+    myFix.value = null;
+    final sub = _posSub;
+    _posSub = null;
+    if (sub != null) unawaited(sub.cancel().catchError((Object _) {}));
+    if (_observing) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observing = false;
+    }
+  }
+
   Future<void> stopSharing({bool removePoint = false}) async {
     // fork (UX G6): простая остановка оставляет точку партнёру — пусть она
     // будет последней, а не двухминутной давности. При удалении — выбрасываем.

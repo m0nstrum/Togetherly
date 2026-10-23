@@ -306,3 +306,5 @@
 | `lib/screens/together/watch_home_screen.dart` | План 3.7 | Вход в «Что посмотрим?» — общая колода и независимые шифрованные оценки из lib/fork/movies; без пары переход отключён с объяснением. | Сохранить передачу текущих group/my/partner UID; поиск использует MovieSearchService и серверный API, не ключ автора. |
 
 | `lib/main.dart`, `lib/services/widget_background_refresh_service.dart`, `lib/services/push_background_service.dart` | M6 | Отключение debugPrint в release до инициализации плагинов в основном и фоновых изолятах. | Сохранить configureForkLogging в каждой точке входа. |
+
+| `lib/services/pocketbase_service.dart`, `lib/services/live_location_service.dart`, `lib/services/presence_service.dart` | M7 | Выход синхронно гасит гео, заряд, presence; поколения отсекают завершение старых async-задач. | Сначала остановка производителей, затем очистка auth. Гео при выходе не дописывает последнюю точку. |

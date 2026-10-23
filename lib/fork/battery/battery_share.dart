@@ -81,6 +81,8 @@ class ForkBattery {
   String _groupId = '';
   String _uid = '';
   Timer? _timer;
+  Timer? _partnerSoon;
+  int _generation = 0;
   StreamSubscription<BatteryState>? _stateSub;
   bool _loaded = false;
 
@@ -127,21 +129,22 @@ class ForkBattery {
     if (groupId.isEmpty || uid.isEmpty) return;
     if (groupId == _groupId && uid == _uid && _timer != null) return;
     stop();
+    final generation = _generation;
     _groupId = groupId;
     _uid = uid;
     if (partnerUid.isNotEmpty && onPartner != null) {
-      Timer? soon;
       var first = true;
       _partnerSub = watch(groupId, partnerUid).listen((_) {
         if (first) {
           first = false; // первое — то, что уже было записано
           return;
         }
-        soon?.cancel();
-        soon = Timer(const Duration(seconds: 2), onPartner);
+        _partnerSoon?.cancel();
+        _partnerSoon = Timer(const Duration(seconds: 2), onPartner);
       });
     }
     await _load();
+    if (generation != _generation) return;
     _timer = Timer.periodic(const Duration(minutes: 5), (_) => unawaited(report()));
     try {
       _stateSub = Battery().onBatteryStateChanged.listen((_) => unawaited(report()));
@@ -152,6 +155,11 @@ class ForkBattery {
   }
 
   void stop() {
+    _generation++;
+    _groupId = '';
+    _uid = '';
+    _partnerSoon?.cancel();
+    _partnerSoon = null;
     _timer?.cancel();
     _timer = null;
     unawaited(_stateSub?.cancel());
@@ -164,11 +172,12 @@ class ForkBattery {
 
   /// Прочитать заряд и, если пора, записать.
   Future<void> report({String? groupId, String? uid, bool force = false}) async {
+    final generation = _generation;
     final g = groupId ?? _groupId, u = uid ?? _uid;
     await _load();
-    if (g.isEmpty || u.isEmpty || !sharing.value) return;
+    if (generation != _generation || g.isEmpty || u.isEmpty || !sharing.value) return;
     final r = await read();
-    if (r == null) return;
+    if (r == null || generation != _generation) return;
     final next = ForkBatteryState(level: r.$1, charging: r.$2, at: DateTime.now());
     SharedPreferences? p;
     ForkBatteryState? last;
@@ -179,8 +188,9 @@ class ForkBattery {
     } catch (_) {
       // тихо: не знаем прошлого — запишем
     }
+    if (generation != _generation || !sharing.value) return;
     if (!force && !shouldSend(last, next)) return;
-    if (await _write(g, u, next)) {
+    if (await _write(g, u, next, generation)) {
       try {
         await p?.setString('$_lastKey:$g', jsonEncode(next.toJson()));
       } catch (_) {
@@ -202,10 +212,11 @@ class ForkBattery {
     }
   }
 
-  Future<bool> _write(String groupId, String uid, ForkBatteryState s) async {
+  Future<bool> _write(String groupId, String uid, ForkBatteryState s, int generation) async {
     try {
       final body = {'group_id': groupId, 'user_uid': uid, 'state': s.toJson()};
       final old = await _find(groupId, uid);
+      if (generation != _generation || PocketBaseService().userId != uid) return false;
       if (old == null) {
         await _col.create(body: body);
       } else {
