@@ -139,6 +139,20 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         ReelsInviteBridge.attach(flutterEngine.dartExecutor.binaryMessenger)
+        // fork (PLAN 1.10): acknowledge only after screenshot protection is set.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/screen_security")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "setSecure" && call.arguments is Boolean) {
+                    if (call.arguments == true) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                    result.success(null)
+                } else {
+                    result.notImplemented()
+                }
+            }
 
         sharedTextChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

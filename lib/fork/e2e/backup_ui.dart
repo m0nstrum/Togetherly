@@ -1,6 +1,7 @@
 /// Бэкап ключей и восстановление (docs/fork/E2E.md §7, решение §12.1).
 library;
 
+import '../secure_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/locale_service.dart';
@@ -258,7 +259,9 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ForkSecureScreen(builder: _protectedBody);
+
+  Widget _protectedBody(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: Text(_t('Бэкап ключей', 'Key backup'))),
@@ -572,7 +575,9 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ForkSecureScreen(builder: _protectedBody);
+
+  Widget _protectedBody(BuildContext context) {
     final phrase = _svc.restoreMethod == BackupMethod.phrase;
     return Scaffold(
       appBar: AppBar(title: Text(_t('Восстановить ключи', 'Restore keys'))),
