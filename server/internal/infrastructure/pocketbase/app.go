@@ -327,6 +327,10 @@ func applySettings(s *core.Settings, cfg config.Config) {
 // нужна защита от перебора). Общих лимитов на запись нет: рисование и чат
 // создают записи пачками.
 var rateLimitRules = []core.RateLimitRule{
+	// PLAN 1.8: short invitation codes and expensive external previews.
+	{Label: "POST /api/invite/accept", MaxRequests: 10, Duration: 300},
+	{Label: "POST /api/waiting/claim", MaxRequests: 10, Duration: 300},
+	{Label: "/api/link/preview", MaxRequests: 30, Duration: 60},
 	{Label: "*:authWithPassword", MaxRequests: 10, Duration: 60},
 	{Label: "*:requestPasswordReset", MaxRequests: 3, Duration: 300},
 	{Label: "*:confirmPasswordReset", MaxRequests: 10, Duration: 300},

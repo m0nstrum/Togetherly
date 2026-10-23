@@ -35,14 +35,14 @@
 
 | ID | Что | Где |
 |---|---|---|
-| M1 | Нет лимита на `/api/invite/accept` и `/api/waiting/claim`: перебор 6-значных кодов | `pocketbase/app.go` `rateLimitRules` |
+| M1 ✅ | Нет лимита на `/api/invite/accept` и `/api/waiting/claim`: перебор 6-значных кодов | `pocketbase/app.go` `rateLimitRules` |
 | M2 | Правка в «парных» коллекциях разрешена любому участнику (`memberAuthored`), включая смену `user_uid`. Партнёр правит твой заряд, настроение, виджет. Страж автора есть только у чата | `access/rules.go:46` |
 | M3 | `/api/group/leave` и `record-activity` берут `uid` из тела: участник может выкинуть другого или засчитать день за двоих | `pb_hooks/groups.pb.js` |
 | M4 | `e2e_handshake` и `e2e_grants` не чистятся, а `handshakes()` на каждой синхронизации забирает всю историю пары | `lib/fork/e2e/pb_backend.dart:136` |
 | M5 | Параметры Argon2 при восстановлении берутся с сервера без границ: огромное `mem` роняет приложение | `lib/fork/e2e/backup.dart:204` |
 | M6 | `debugPrint` в release не отключён. Диплинк с секретом приглашения (`#s=…`) уходит в logcat | `deep_link_service.dart:118` |
 | M7 | Выход из аккаунта явно не останавливает показ геопозиции, заряд и присутствие (проверить, что их гасит смена сессии) | `user_data.dart:1379` |
-| M8 | `/api/meta/fetch` для любого вошедшего работает как открытый прокси текста и картинок (регистрация открыта), а у `/api/link/preview` нет лимита | `handler/meta.go` |
+| M8 ◐ | `/api/meta/fetch` для любого вошедшего работает как открытый прокси текста и картинок (регистрация открыта), а у `/api/link/preview` нет лимита | `handler/meta.go` |
 | M9 | Перехват токена FCM: регистрация чужого токена переписывает владельца | `infrastructure/pocketbase/wake.go:45` |
 | M10 | Тайлы карты берутся напрямую с openfreemap: сторонний сайт видит район и IP | `fork/config/endpoints.dart:66` |
 | M11 | Хвосты монетизации: разрешение `com.android.vending.BILLING`; переходы на `PlusScreen` из 15 мест (замки снимает `allFree`, но экран и справка «Плюс» остаются) | `AndroidManifest.xml`, `grep PlusScreen(` |
