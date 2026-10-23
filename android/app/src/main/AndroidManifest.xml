@@ -68,8 +68,8 @@
     <!-- Точные будильники для живого виджета-лепестка -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     
-    <!-- In-app billing for consumable products (coins) -->
-    <uses-permission android:name="com.android.vending.BILLING" />
+    <!-- fork: M11 strip billing even if a transitive library declares it. -->
+    <uses-permission android:name="com.android.vending.BILLING" tools:node="remove" />
 
     <!-- fork: рекламы нет, рекламный идентификатор не запрашиваем. Remove
          на случай, если разрешение протащит транзитивная зависимость. -->
