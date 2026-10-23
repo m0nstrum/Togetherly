@@ -807,7 +807,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
         _syncImmersive(land);
         final video = land
             ? Rect.fromLTWH(0, 0, box.maxWidth, box.maxHeight)
-            : Rect.fromLTWH(0, ForkRoomTopBar.height, box.maxWidth, box.maxWidth * 9 / 16);
+            : Rect.fromLTWH(0, ForkRoomTopBar.heightFor(context), box.maxWidth, box.maxWidth * 9 / 16);
         final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
         final cs = Theme.of(context).colorScheme;
         return Stack(
@@ -831,7 +831,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
                 left: 0,
                 right: 0,
                 top: 0,
-                height: ForkRoomTopBar.height,
+                height: ForkRoomTopBar.heightFor(context),
                 child: ListenableBuilder(
                   listenable: _live,
                   builder: (_, _) => ForkRoomTopBar(

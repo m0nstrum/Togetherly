@@ -79,7 +79,7 @@ class HomeHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 2, 14, 2),
       child: SizedBox(
-        height: kHeaderRowHeight,
+        height: (MediaQuery.textScalerOf(context).scale(13) + 30).clamp(kHeaderRowHeight, double.infinity),
         child: Row(
           children: [
             _avatars(context),
@@ -87,7 +87,7 @@ class HomeHeader extends StatelessWidget {
             // Expanded, а не Flexible: строка обязана доходить до правого
             // края. При Flexible пилюля жалась к содержимому, и справа
             // оставалась дыра шириной с ладонь.
-            Expanded(child: _statusPill()),
+            Expanded(child: _statusPill(context)),
             if (isPaired) ...[
               const SizedBox(width: 6),
               MissYouButton(
@@ -102,7 +102,7 @@ class HomeHeader extends StatelessWidget {
                 partnerAvatarUrl: partners.isEmpty
                     ? null
                     : partners.first.avatar,
-                height: kHeaderControlHeight,
+                height: (MediaQuery.textScalerOf(context).scale(13) + 16).clamp(kHeaderControlHeight, double.infinity),
                 onSent: onMissYou,
               ),
             ],
@@ -311,7 +311,7 @@ class HomeHeader extends StatelessWidget {
 
   // ── Тип связи ──────────────────────────────────────────────────────────────
 
-  Widget _statusPill() {
+  Widget _statusPill(BuildContext context) {
     final active = isPaired;
     // Подложка — поверхность карточки, а не `primaryLight`. У светлых ручных
     // палитр тот почти совпадает с фоном страницы (у вишнёвой `#FBEAEF` на
@@ -324,7 +324,7 @@ class HomeHeader extends StatelessWidget {
       onTap: active ? onRelationshipTap : inviteTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        height: kHeaderControlHeight,
+        height: (MediaQuery.textScalerOf(context).scale(13) + 16).clamp(kHeaderControlHeight, double.infinity),
         padding: const EdgeInsets.symmetric(horizontal: 11),
         decoration: BoxDecoration(
           color: bg,

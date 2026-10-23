@@ -1203,13 +1203,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       debugPrint('Pin widget failed: $e');
       debugPrint('Pin widget stack: $stack');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(ForkFailure.of(e).text),
-            backgroundColor: Colors.red.shade400,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        AppSnack.error(context, ForkFailure.of(e).text);
       }
     }
   }
@@ -7696,27 +7690,9 @@ class _WidgetScreenState extends State<WidgetScreen>
     if (mounted && url == null) {
       // Загрузка не удалась (сеть/сессия). Раньше лоадер просто исчезал без
       // объяснений — теперь честно сообщаем, как на главном экране.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocaleService.current.failedUploadPhoto),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnack.error(context, LocaleService.current.failedUploadPhoto);
     } else if (mounted && memoryFailed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocaleService.current.memoryNotSaved),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnack.error(context, LocaleService.current.memoryNotSaved);
     }
   }
 

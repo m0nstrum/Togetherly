@@ -3228,17 +3228,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       onError: (_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.cameraPermissionDenied),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppSnack.error(context, LocaleService.current.cameraPermissionDenied);
         }
       },
     );
@@ -3283,23 +3273,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     // Лимит проверяем только если фото идёт в ленту воспоминаний.
-    final messenger = ScaffoldMessenger.of(context);
     if (result.toMemories) {
       try {
         await RateLimiterService().checkMemory();
       } on RateLimitException catch (e) {
         if (mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(e.message),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppSnack.error(context, e.message);
         }
         return;
       }
@@ -3431,16 +3410,7 @@ class _HomeScreenState extends State<HomeScreen> {
         } else {
           msg = LocaleService.current.photoSent;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: memoryFailed ? Colors.orange : primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        (memoryFailed ? AppSnack.error : AppSnack.success)(context, msg);
       }
       // Награда (1 🪙 в день) — только если фото РЕАЛЬНО добавлено в ленту.
       if (result.toMemories && !memoryFailed) _tryClaimMemoryReward();

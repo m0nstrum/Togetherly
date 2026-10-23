@@ -1,3 +1,4 @@
+import '../fork/ui/chat_identity_layout.dart'; // fork
 import 'dart:async';
 import 'dart:io';
 
@@ -2407,27 +2408,17 @@ class _ChatScreenState extends State<ChatScreen> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: StableStreamBuilder<bool>(
             create: () => PresenceService().watchOnline(uid),
             keys: [uid],
             builder: (context, presSnap) {
               final online = presSnap.data == true;
-              return Row(
-                children: [
-                  Container(
-                    width: 11,
-                    height: 11,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: online
-                          ? const Color(0xFF2E9E5B)
-                          : cs.onPrimaryContainer.withValues(alpha: 0.35),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: UnfoldShared(
+              return ForkChatIdentityLayout(
+                dot: Container(width: 8, height: 8, decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: online ? cs.primary : cs.onPrimaryContainer.withValues(alpha: .35))),
+                name: UnfoldShared(
                       tag: 'name',
                       fit: UnfoldFit.scale,
                       child: Text(
@@ -2443,12 +2434,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  _pillTrailing(s, cs, online: online, uid: uid),
-                  // fork: заряд телефона партнёра.
-                  ForkBatteryBadge(groupId: _groupId, uid: uid, color: cs.onPrimaryContainer.withValues(alpha: 0.7)),
-                ],
+                status: _pillTrailing(s, cs, online: online, uid: uid),
+                battery: ForkBatteryBadge(groupId: _groupId, uid: uid,
+                  color: cs.onPrimaryContainer.withValues(alpha: .7)),
               );
             },
           ),
@@ -2478,7 +2466,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
         if (online) {
           return Text(
-            s.chatOnline,
+            s.chatOnline, maxLines: 1, overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: ProfileTheme.bodyFont,
               fontSize: 11.5,
@@ -2494,7 +2482,7 @@ class _ChatScreenState extends State<ChatScreen> {
             final label = _lastSeenLabel(s, seenSnap.data);
             if (label.isEmpty) return const SizedBox.shrink();
             return Text(
-              label,
+              label, maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: ProfileTheme.bodyFont,
                 fontSize: 11.5,
@@ -2672,7 +2660,8 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Scaffold(
       backgroundColor: _t.bgGradient.last,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
+        preferredSize: Size.fromHeight((MediaQuery.textScalerOf(context).scale(16) +
+            MediaQuery.textScalerOf(context).scale(12.5) + 34).clamp(70, double.infinity)),
         // Шапка, лента и поле ввода проявляются по очереди, когда чат вырос
         // из своей плитки (UnfoldRoute). При обычном открытии обёртки
         // ничего не делают.

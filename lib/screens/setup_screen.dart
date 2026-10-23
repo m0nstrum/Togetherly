@@ -389,15 +389,7 @@ class _SetupScreenState extends State<SetupScreen>
     if (!mounted) return;
     // maybeOf + mounted: зовётся из catch после async-гэпа, когда экран мог быть
     // снят с дерева → ScaffoldMessenger.of даёт `!` по null. См. Bugsink TypeError.
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.red.shade400,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      ),
-    );
+    AppSnack.error(context, msg);
   }
 
   Future<void> _pickAvatar() async {

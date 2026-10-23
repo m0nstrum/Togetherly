@@ -1,3 +1,4 @@
+import '../widgets/common/app_dialog.dart'; // fork
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:exif/exif.dart';
@@ -384,9 +385,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red.shade400),
-    );
+    AppSnack.error(context, msg);
   }
 
   // ── Build ───────────────────────────────────────────────────────────────────

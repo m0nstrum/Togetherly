@@ -45,6 +45,8 @@ class ForkRoomTopBar extends StatelessWidget {
   final VoidCallback onCopy;
 
   static const double height = 56;
+  static double heightFor(BuildContext context) =>
+      (MediaQuery.textScalerOf(context).scale(12.5) * 2.7 + 16).clamp(height, double.infinity);
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +56,7 @@ class ForkRoomTopBar extends StatelessWidget {
     final inCall = stage != VoiceStage.idle;
     final live = stage == VoiceStage.live;
     return SizedBox(
-      height: height,
+      height: heightFor(context),
       child: Row(
         children: [
           IconButton(
@@ -63,17 +65,7 @@ class ForkRoomTopBar extends StatelessWidget {
             onPressed: onBack,
           ),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  ruEn('Смотрим вместе', 'Watching together'),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Row(
+            child: Row(
                   children: [
                     Container(
                       key: const ValueKey('fork-room-presence-dot'),
@@ -94,24 +86,19 @@ class ForkRoomTopBar extends StatelessWidget {
                             : invited
                                 ? ruEn('Позвали — ждём $name', 'Invited — waiting for $name')
                                 : ruEn('$name не в комнате', '$name isn’t here'),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
           ),
           if (!partnerHere)
-            Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: TextButton.icon(
-                onPressed: invited ? null : onInvite,
-                icon: const Icon(Icons.notifications_active_outlined, size: 18),
-                label: Text(ruEn('Позвать', 'Invite')),
-              ),
+            IconButton(
+              tooltip: invited ? ruEn('Позвали — ждём', 'Invited — waiting') : ruEn('Позвать', 'Invite'),
+              onPressed: invited ? null : onInvite,
+              icon: const Icon(Icons.notifications_active_outlined),
             ),
           IconButton(
             tooltip: inCall ? ruEn('Открыть звонок', 'Open the call') : ruEn('Позвонить', 'Call'),
@@ -241,13 +228,13 @@ class ForkNowPlaying extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(head,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                 if (sub.isNotEmpty)
                   Text(sub,
                       key: const ValueKey('fork-room-now-sub'),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: tt.bodySmall?.copyWith(color: live.offline ? cs.error : cs.onSurfaceVariant)),
               ],
@@ -271,16 +258,13 @@ class ForkNowPlaying extends StatelessWidget {
               icon: Icon(live.playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
               onPressed: onToggle,
             ),
-          IconButton(
-            tooltip: ruEn('Во весь экран', 'Full screen'),
-            icon: const Icon(Icons.fullscreen_rounded),
-            onPressed: onFullscreen,
-          ),
-          IconButton(
-            key: const ValueKey('fork-room-change'),
-            tooltip: ruEn('Другое видео', 'Another video'),
-            icon: const Icon(Icons.playlist_add_rounded),
-            onPressed: onPick,
+          PopupMenuButton<String>(
+            tooltip: ruEn('Действия с видео', 'Video actions'),
+            onSelected: (value) { if (value == 'fullscreen') onFullscreen(); else onPick(); },
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'fullscreen', child: Text(ruEn('Во весь экран', 'Full screen'))),
+              PopupMenuItem(value: 'pick', key: const ValueKey('fork-room-change'), child: Text(ruEn('Другое видео', 'Another video'))),
+            ],
           ),
         ],
       ),

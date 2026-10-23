@@ -1,3 +1,4 @@
+import '../widgets/common/app_dialog.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:io' show Platform;
@@ -315,18 +316,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // и показывались один за другим по 5с каждый → баннер «залипал» и уходил
       // только после перезапуска. Теперь всегда виден только последний, ~4с.
       messenger?.clearSnackBars();
-      messenger?.showSnackBar(
-        SnackBar(
-          content: Text(LocaleService.current.passwordResetSent(email)),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF4CAF50),
-          duration: const Duration(seconds: 4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        ),
-      );
+      AppSnack.success(context, LocaleService.current.passwordResetSent(email));
     } catch (e) {
       if (!mounted) return;
       // PB (не Firebase): различаем лишь «слишком часто» (429), остальное —
@@ -344,28 +334,8 @@ class _LoginScreenState extends State<LoginScreen> {
     // maybeOf + mounted: _showError зовётся из catch-блоков после async-гэпа,
     // когда экран мог быть снят с дерева → ScaffoldMessenger.of делает `!` по
     // null ("Null check operator used on a null value"). См. Bugsink TypeError.
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.red.shade400,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        duration: retry == null
-            ? const Duration(seconds: 4)
-            : const Duration(seconds: 8),
-        // Оборванная связь — не приговор входу: вход через провайдера держит
-        // долгое соединение, и в мобильной сети оно рвётся на ровном месте.
-        // Одноразовый отказ заставлял человека искать кнопку заново.
-        action: retry == null
-            ? null
-            : SnackBarAction(
-                label: LocaleService.current.retry,
-                textColor: Colors.white,
-                onPressed: retry,
-              ),
-      ),
-    );
+    AppSnack.error(context, msg,
+      actionLabel: retry == null ? null : LocaleService.current.retry, onAction: retry);
   }
 
   void _goToWelcome() {

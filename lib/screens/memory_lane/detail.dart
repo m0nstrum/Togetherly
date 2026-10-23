@@ -3292,13 +3292,7 @@ class _CommentsSectionState extends State<_CommentsSection> {
       _ctrl.clear();
     } on RateLimitException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        AppSnack.error(context, e.message);
       }
     } finally {
       if (mounted) setState(() => _sending = false);

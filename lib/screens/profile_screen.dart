@@ -3283,14 +3283,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.red.shade400,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    AppSnack.error(context, msg);
   }
 
   // ═══════════════════════════════════════════════════
@@ -4497,12 +4490,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (cancelled) return;
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(ForkFailure.of(e).text),
-            backgroundColor: Colors.red.shade400,
-          ),
-        );
+        AppSnack.error(context, ForkFailure.of(e).text);
       }
     }
   }
