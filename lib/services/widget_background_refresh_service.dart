@@ -1,3 +1,4 @@
+import '../fork/privacy/logging.dart'; // fork: M6 release logging
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -95,6 +96,7 @@ class WidgetBackgroundRefreshService {
 /// vm:entry-point (её адрес передаётся нативной части при initialize).
 @pragma('vm:entry-point')
 void widgetRefreshDispatcher() {
+  configureForkLogging();
   Workmanager().executeTask((task, inputData) async {
     if (!Platform.isAndroid) return true;
     try {

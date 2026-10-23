@@ -1,3 +1,4 @@
+import 'fork/privacy/logging.dart'; // fork: M6 release logging
 import 'fork/watch/picture_in_picture.dart'; // fork: orphan PiP privacy
 import 'fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
 import 'fork/ui/feedback.dart'; // fork (PLAN 2.2)
@@ -102,6 +103,7 @@ Future<void> _initConsentAndAds() =>
 /// `vm:entry-point` не даёт выбросить её при сборке.
 @pragma('vm:entry-point')
 Future<void> widgetPushRefresh() async {
+  configureForkLogging();
   WidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('love_app/widget_bg_refresh');
   var changed = false;
@@ -142,6 +144,7 @@ Future<void> widgetPushRefresh() async {
 /// чтобы парный виджет показывал актуальный статус/настроение без открытия приложения.
 @pragma('vm:entry-point')
 Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
+  configureForkLogging();
   if (!Platform.isAndroid || uri == null) return;
 
   final host = uri.host.trim().toLowerCase();
@@ -254,6 +257,7 @@ Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
 }
 
 void main() async {
+  configureForkLogging();
   // fork: сборка без адресов своего сервера не стартует (lib/fork/config/endpoints.dart).
   Endpoints.ensureConfigured();
   WidgetsFlutterBinding.ensureInitialized();
