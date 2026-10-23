@@ -60,6 +60,7 @@ import 'widgets/launch_splash/launch_splash_overlay.dart';
 import 'widgets/offline_sync_banner.dart';
 import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
+import 'fork/flags.dart'; // fork (PLAN 1.9)
 import 'fork/config/endpoints.dart'; // fork
 import 'fork/crash_reports.dart'; // fork
 import 'fork/e2e/fork_e2e.dart'; // fork
@@ -800,6 +801,8 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
   }
 
   Future<void> _checkMinBuild() async {
+    // fork: do not lock people out without an available fork release.
+    if (!ForkFlags.upstreamUpdates && Endpoints.current.releasesUrl.isEmpty) return;
     try {
       // fail-open: нет ответа или ошибка — не блокируем.
       final minBuild = await PbDataService()

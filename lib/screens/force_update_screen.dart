@@ -6,6 +6,7 @@ import '../services/locale_service.dart';
 import '../services/update_service.dart';
 import '../theme/theme_scope.dart';
 import '../fork/config/endpoints.dart'; // fork
+import '../fork/flags.dart'; // fork (PLAN 1.9)
 
 /// Блокирующий экран принудительного обновления.
 ///
@@ -25,6 +26,11 @@ class ForceUpdateScreen extends StatelessWidget {
       'market://details?id=com.togetherly.love';
 
   Future<void> _openUpdate() async {
+    // fork: installer source does not change the identity of this app.
+    if (!ForkFlags.upstreamUpdates) {
+      if (_releasesLatestUrl.isNotEmpty) await _launch(_releasesLatestUrl);
+      return;
+    }
     // Sideload — на страницу релизов GitHub (там APK); Play — в магазин.
     final sideloaded = await UpdateService.isSideloaded();
     if (sideloaded) {

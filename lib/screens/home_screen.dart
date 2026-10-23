@@ -4115,7 +4115,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── In-app update ──────────────────────────────────────────────────────────
 
   Future<void> _checkForUpdate() async {
-    if (!mounted) return;
+    if (!mounted || !ForkFlags.upstreamUpdates) return; // fork (PLAN 1.9)
     // Три разные установки — три разных разговора об обновлении. Развилка
     // живёт в UpdateService, чтобы её можно было проверить тестом.
     final path = decideUpdatePath(

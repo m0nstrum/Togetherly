@@ -44,6 +44,10 @@ abstract final class ForkFlags {
   /// `--dart-define`.
   static bool get noUpstreamKeys => !_upstreamBehavior;
 
+  /// Until the fork publishes its own version manifest, no upstream
+  /// GitHub/Play update checks are allowed (PLAN 1.9).
+  static bool get upstreamUpdates => _upstreamBehavior;
+
   /// Из комнаты и ленты выходят с первого «назад» — кнопкой или жестом, как
   /// с любого другого экрана (просьба владельца 22.10). Апстрим просил второе
   /// нажатие с системной подсказкой «нажмите ещё раз».
