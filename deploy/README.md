@@ -225,5 +225,6 @@ Centrifugo согласованно: старые клиенты не разби
 watch-билеты ограничены только своим watch-каналом и не дают права на дельты.
 
 Проверки: `server/scripts/realtime-security.test.py` через SMOKE_AFTER;
-`server/scripts/realtime-broker.test.cjs` на отдельном брокере с этим конфигом,
+`server/scripts/realtime-broker-check.sh` поднимает и удаляет отдельный брокер
+с этим конфигом и запускает `realtime-broker.test.cjs`; для готового брокера
 BROKER_URL/BROKER_TEST_SECRET/BROKER_TEST_API_KEY — тестовые параметры.

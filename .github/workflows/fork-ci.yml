@@ -54,6 +54,13 @@ jobs:
       - name: проверки мёржа
         run: python3 tool/fork/merge_check.py
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: browser room security and queue
+        run: node --test test/fork/watch/*.test.cjs
+
       # Ошибки фатальны всегда. Предупреждения апстрима записаны в
       # tool/fork/analyze_baseline.txt, новые валят проверку.
       - name: flutter analyze
@@ -119,6 +126,22 @@ jobs:
       # Статика из pb_public апстрима: без адресов и аналитики автора.
       - name: статика
         run: sh scripts/sync-public.sh "$RUNNER_TEMP/pb_public"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: realtime broker security
+        run: scripts/realtime-broker-check.sh
+
+      - name: group identity guards (real JS hooks)
+        run: SMOKE_AFTER='python3 "$PWD/scripts/group-authorship.test.py"' scripts/smoke.sh
+
+      - name: realtime token expiry and membership (real JS hooks)
+        env:
+          TETHERED_CENTRIFUGO__API: http://127.0.0.1:9/api
+          TETHERED_CENTRIFUGO__API_KEY: ci-test-key
+        run: SMOKE_AFTER='python3 "$PWD/scripts/realtime-security.test.py"' scripts/smoke.sh
 
       # Настоящий бинарник с JS-хуками апстрима: вход, пара по коду, чат.
       - name: смоук
