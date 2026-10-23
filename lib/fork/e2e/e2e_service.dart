@@ -446,6 +446,22 @@ class E2EService implements E2EKeyring {
           seenVersion: rec.devices.version,
         );
       } else if (!sameKey) {
+        // A changed account must not receive any historical pair key.
+        for (final g in keys.groupMembers.entries) {
+          if (g.value.contains(p)) _quarantineGrant(g.key, p);
+        }
+        _quarantineGrant(groupId, p);
+        // A code already on screen verifies the previous account key.
+        final check = sas.value;
+        if (check != null && check.partnerUid == p) {
+          _dropSas(check.session);
+          sas.value = SasStopped(
+            check.groupId,
+            p,
+            check.session,
+            why: SasStopWhy.lost,
+          );
+        }
         peer
           ..accountKey = rec.accountKey
           ..seenVersion = rec.devices.version
@@ -457,10 +473,20 @@ class E2EService implements E2EKeyring {
       lists[p] = rec.devices;
     }
 
+    final before = keys.groupMembers[groupId];
+    for (final p in members.where((m) => m != uid)) {
+      final added = before != null && !before.contains(p);
+      final unknownArchive = before == null && keys.currentKey(groupId) != null;
+      // Initial code-only pairing stays TOFU. Adding/replacing a member in
+      // an established pair, or presenting a third member, requires a check.
+      if ((added || unknownArchive || (members.length > 2 && before == null)) &&
+          !keys.pendingGrantPeers.contains('$groupId|$p')) {
+        _quarantineGrant(groupId, p);
+      }
+    }
     if (await _checkAcceptedInvite(groupId, lists)) {
       per.add(PairE2EStatus.tampered);
     }
-    final before = keys.groupMembers[groupId];
     if (before != null && before.any((m) => !members.contains(m))) {
       keys.rotateNeeded.add(groupId); // ушедший не читает новое (§6.5)
     }
@@ -501,10 +527,7 @@ class E2EService implements E2EKeyring {
       keys.inviteSecrets.remove('accepted:$groupId');
       return true;
     }
-    peer
-      ..verified = true
-      ..keyChanged = false
-      ..tampered = false;
+    _markVerified(groupId, peer);
     final secret = crypto.keyFromBytes(unb64(a['s'] as String));
     final tag = InviteProof.make(crypto, secret, keys.account.publicKey);
     secret.dispose();
@@ -586,11 +609,21 @@ class E2EService implements E2EKeyring {
         .toList();
     if (mine.isEmpty) return;
     for (final e in lists.entries) {
-      // Помеченному как подмена ключи не выдаём, пока сверка не подтвердит.
-      if (e.key != uid && (keys.peers[e.key]?.tampered ?? false)) continue;
+      final policy = '$groupId|${e.key}';
+      final peer = keys.peers[e.key];
+      if (e.key != uid &&
+          (peer == null ||
+              peer.tampered ||
+              peer.keyChanged ||
+              keys.pendingGrantPeers.contains(policy))) {
+        continue;
+      }
       for (final d in e.value.devices) {
         if (d.kind != DeviceKind.full || d.id == keys.device.id) continue;
         for (final k in mine) {
+          if (e.key != uid && k.epoch < (keys.grantFromEpoch[policy] ?? 1)) {
+            continue;
+          }
           final tag = '${k.keyId}|${d.id}';
           if (keys.granted.contains(tag)) continue;
           await backend.putGrant(
@@ -618,7 +651,8 @@ class E2EService implements E2EKeyring {
     ];
     if (peers.any((p) => p?.tampered ?? false)) return PairE2EStatus.tampered;
     if (keys.currentKey(groupId) == null) return PairE2EStatus.waitingKey;
-    if (peers.any((p) => p?.keyChanged ?? false)) {
+    if (members.any((m) => keys.pendingGrantPeers.contains('$groupId|$m')) ||
+        peers.any((p) => p?.keyChanged ?? false)) {
       return PairE2EStatus.keyChanged;
     }
     if (peers.any((p) => !(p?.verified ?? false))) {
@@ -635,13 +669,26 @@ class E2EService implements E2EKeyring {
     List<PairE2EStatus> per,
   ) async {
     for (final m in await backend.handshakes(groupId)) {
-      if (m.fromUid == uid || _seenHandshakes.contains(m.id)) continue;
+      if (m.fromUid == uid ||
+          !lists.containsKey(m.fromUid) ||
+          _seenHandshakes.contains(m.id)) {
+        continue;
+      }
       final peer = keys.peers[m.fromUid];
       // Ключей автора ещё не видели — разберём при следующей синхронизации.
       if (peer == null) continue;
       _seenHandshakes.add(m.id);
       if (m.kind.startsWith('sas_') &&
           DateTime.now().difference(m.created) > sasTtl) {
+        continue;
+      }
+      final active = sas.value;
+      if (m.kind.startsWith('sas_') &&
+          m.kind != 'sas_start' &&
+          active != null &&
+          (active.groupId != groupId ||
+              active.partnerUid != m.fromUid ||
+              active.session != m.session)) {
         continue;
       }
       switch (m.kind) {
@@ -658,10 +705,7 @@ class E2EService implements E2EKeyring {
           key.dispose();
           keys.inviteSecrets.remove(m.data['code']);
           if (ok) {
-            peer
-              ..verified = true
-              ..keyChanged = false
-              ..tampered = false;
+            _markVerified(groupId, peer);
           } else {
             peer
               ..verified = false
@@ -672,7 +716,8 @@ class E2EService implements E2EKeyring {
           // Оба нажали «Начать» (UX_AUDIT A10): сверка должна быть одна.
           // Ведёт тот, чей id меньше; второй сам принимает его зов.
           final mine = sas.value;
-          final crossed = mine is SasWaiting &&
+          final crossed =
+              mine is SasWaiting &&
               mine.started &&
               mine.partnerUid == m.fromUid &&
               _initiators.containsKey(mine.session);
@@ -805,7 +850,12 @@ class E2EService implements E2EKeyring {
       );
       try {
         await backend.postHandshake(
-            cur.groupId, uid, session, 'sas_cancel', const {});
+          cur.groupId,
+          uid,
+          session,
+          'sas_cancel',
+          const {},
+        );
       } catch (e) {
         debugPrint('E2E: отмена просроченной сверки — $e');
       }
@@ -815,8 +865,9 @@ class E2EService implements E2EKeyring {
   /// Шаг сверки, которую мы не помним: партнёру — «потерялась».
   Future<void> _tellLost(String groupId, String session) async {
     try {
-      await backend.postHandshake(
-          groupId, uid, session, 'sas_cancel', const {'lost': true});
+      await backend.postHandshake(groupId, uid, session, 'sas_cancel', const {
+        'lost': true,
+      });
     } catch (e) {
       debugPrint('E2E: сверка $session потерялась, партнёру не сказали — $e');
     }
@@ -893,8 +944,28 @@ class E2EService implements E2EKeyring {
 
   /// Партнёр подтверждён сверкой. Если до этого ключ сменился или была
   /// подмена, старый ключ пары мог уйти чужому устройству — новая эпоха.
+  void _quarantineGrant(String groupId, String peerUid) {
+    final tag = '$groupId|$peerUid';
+    if (!keys.pendingGrantPeers.add(tag)) return;
+    final floor = (keys.currentKey(groupId)?.epoch ?? 0) + 1;
+    if (floor > (keys.grantFromEpoch[tag] ?? 0)) {
+      keys.grantFromEpoch[tag] = floor;
+    }
+  }
+
   void _markVerified(String groupId, PeerState peer) {
-    if (peer.keyChanged || peer.tampered) keys.rotateNeeded.add(groupId);
+    final peerUid = keys.peers.entries
+        .firstWhere((e) => identical(e.value, peer))
+        .key;
+    final pending = keys.pendingGrantPeers.remove('$groupId|$peerUid');
+    if (peer.keyChanged || peer.tampered || pending) {
+      final tag = '$groupId|$peerUid';
+      final floor = (keys.currentKey(groupId)?.epoch ?? 0) + 1;
+      if (floor > (keys.grantFromEpoch[tag] ?? 0)) {
+        keys.grantFromEpoch[tag] = floor;
+      }
+      keys.rotateNeeded.add(groupId);
+    }
     peer
       ..verified = true
       ..keyChanged = false

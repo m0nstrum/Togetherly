@@ -15,6 +15,8 @@ void main() {
     expect(await store.load(), isNull);
 
     final k = E2EKeys.generate(c, 'dev1')
+      ..grantFromEpoch['g1|bob'] = 3
+      ..pendingGrantPeers.add('g1|bob')
       ..pairKeys['g1:1'] = PairKey('g1', 1, c.symmetricKey())
       ..pairKeys['g1:2'] = PairKey('g1', 2, c.symmetricKey())
       ..peers['bob'] = PeerState(
@@ -25,6 +27,8 @@ void main() {
 
     final back = (await E2EKeyStore(c, vault).load())!;
     expect(back.device.id, 'dev1');
+    expect(back.grantFromEpoch, {'g1|bob': 3});
+    expect(back.pendingGrantPeers, {'g1|bob'});
     expect(back.currentKey('g1')!.epoch, 2);
     expect(back.peers['bob']!.seenVersion, 3);
     expect(back.peers['bob']!.verified, isFalse);
