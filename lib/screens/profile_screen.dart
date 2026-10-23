@@ -2157,7 +2157,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  await ud.removeCustomThemeAt(slot);
+                  final ok = await AppDialog.confirm(context,
+                    title: _s.customThemeDelete,
+                    message: ruEn('Удалить эту тему вместе с её цветами и фоном?', 'Delete this theme with its colors and background?'),
+                    confirmLabel: _s.delete, destructive: true,
+                  );
+                  if (!ok || !context.mounted) return;
+                  try { await ud.removeCustomThemeAt(slot); }
+                  catch (e) { if (context.mounted) ForkNotice.error(context, e); return; }
                   if (mounted) setState(() {});
                 },
               ),

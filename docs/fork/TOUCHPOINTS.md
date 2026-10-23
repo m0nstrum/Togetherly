@@ -261,3 +261,5 @@
 | `lib/screens/widget_screen.dart` | План 2.5 / U49 | ForkWidgetPinConfirmation сверяет новый системный ID с исходным снимком; награды только после подтверждения. | Не начислять XP/первые шаги сразу после requestPinWidget. |
 | `lib/services/couple_stats_service.dart`, `lib/screens/couple_stats_screen.dart` | План 2.5 / U57 | Ошибка пробрасывается, экран даёт понятную причину и повтор вместо пустого состояния. | Не превращать сеть/HTTP в null; сохранить повтор. |
 | `lib/services/centrifugo_service.dart` | План 2.5 / U30 | requireDelivery для публикаций чата: отсутствие подписки/ошибка ACK пробрасываются. Остальные эфемерные кадры сохраняют прежнее поведение. | Сохранить строгий режим публикации для транспорта комнаты. |
+
+| `lib/screens/mood_calendar_screen.dart`, `lib/screens/profile_screen.dart`, `lib/screens/home/widgets/relationship_type_dialog.dart`, `lib/screens/miss_you_screen.dart` | План 2.6 / U58–U60, U62 | Подтверждения удаления; выбранный тип защищён, настроение с целью 48dp; фраза удаляется через отдельное меню вне отправки. | Не возвращать удаление по короткому/долгому тапу без вопроса; сохранить запрет выбранного типа и отдельную цель меню. |

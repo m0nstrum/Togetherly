@@ -1,3 +1,5 @@
+import '../widgets/common/app_dialog.dart'; // fork
+import '../fork/ui/feedback.dart'; // fork
 
 import 'dart:async';
 
@@ -1901,16 +1903,26 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                                   ),
                                   if (!isPartner) ...[
                                     const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        _mood.deleteMoodEntry(m.id);
-                                        Navigator.pop(context);
+                                    IconButton(
+                                      tooltip: ruEn('Удалить настроение', 'Delete mood'),
+                                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                      onPressed: () async {
+                                        final ok = await AppDialog.confirm(context,
+                                          title: ruEn('Удалить настроение?', 'Delete mood?'),
+                                          message: ruEn('Эта отметка исчезнет из календаря.', 'This entry will be removed from the calendar.'),
+                                          confirmLabel: LocaleService.current.delete,
+                                          destructive: true,
+                                        );
+                                        if (!ok || !mounted) return;
+                                        try {
+                                          await _mood.deleteMoodEntry(m.id);
+                                          if (mounted) Navigator.pop(context);
+                                        } catch (e) {
+                                          if (mounted) ForkNotice.error(context, e);
+                                        }
                                       },
-                                      child: Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 18,
-                                        color: widget.theme.textMuted,
-                                      ),
+                                      icon: Icon(Icons.delete_outline_rounded, size: 22,
+                                        color: widget.theme.textMuted),
                                     ),
                                   ],
                                 ],

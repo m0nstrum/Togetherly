@@ -1,3 +1,4 @@
+import '../widgets/common/app_dialog.dart'; // fork
 import 'dart:async';
 import 'dart:math';
 
@@ -280,6 +281,11 @@ class _MissYouScreenState extends State<MissYouScreen>
   }
 
   Future<void> _removeWish(String text) async {
+    final ok = await AppDialog.confirm(context,
+      title: ruEn('Удалить фразу?', 'Delete phrase?'), message: text,
+      confirmLabel: _s.delete, destructive: true,
+    );
+    if (!ok || !mounted) return;
     final next = await CustomWishesStore.remove(_wishes, text);
     if (!mounted) return;
     setState(() => _wishes = next);
@@ -1188,66 +1194,41 @@ class _VibeChip extends StatelessWidget {
     final ink =
         accent ? (accentInk ?? scheme.onPrimary) : scheme.onSurface;
 
-    return Material(
-      color: bg,
-      shape: const StadiumBorder(),
-      clipBehavior: Clip.antiAlias,
+    final chip = Material(
+      color: bg, shape: const StadiumBorder(), clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        onLongPress: onRemove,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(13, 0, onRemove == null ? 14 : 8, 0),
-          child: SizedBox(
-            height: 40,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 18, color: accent ? ink : scheme.primary),
-                const SizedBox(width: 7),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 190),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: ProfileTheme.bodyFont,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: ink,
-                    ),
-                  ),
-                ),
-                if (mine > 0 || partner > 0) ...[
-                  const SizedBox(width: 8),
-                  _VibeTally(
-                    mine: mine,
-                    partner: partner,
-                    ink: ink,
-                    muted: accent
-                        ? ink.withValues(alpha: 0.62)
-                        : scheme.onSurfaceVariant,
-                  ),
-                ],
-                if (onRemove != null) ...[
-                  const SizedBox(width: 2),
-                  IconButton(
-                    tooltip: ruEn('Удалить фразу', 'Delete phrase'),
-                    onPressed: onRemove,
-                    icon: const Icon(Icons.close_rounded, size: 16),
-                    color: scheme.onSurfaceVariant,
-                    visualDensity: VisualDensity.compact,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 30, height: 30),
-                    padding: EdgeInsets.zero,
-                  ),
-                ],
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: accent ? ink : scheme.primary),
+              const SizedBox(width: 7),
+              Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: ProfileTheme.bodyFont, fontSize: 13.5,
+                  fontWeight: FontWeight.w600, color: ink))),
+              if (mine > 0 || partner > 0) ...[
+                const SizedBox(width: 8),
+                _VibeTally(mine: mine, partner: partner, ink: ink,
+                  muted: accent ? ink.withValues(alpha: .62) : scheme.onSurfaceVariant),
               ],
-            ),
+            ],
           ),
         ),
       ),
     );
+    if (onRemove == null) return chip;
+    // The menu is a separate 48dp target outside the sending surface.
+    return Row(children: [
+      Expanded(child: chip),
+      PopupMenuButton<String>(
+        tooltip: ruEn('Действия с фразой', 'Phrase actions'),
+        icon: const Icon(Icons.more_vert_rounded),
+        onSelected: (_) => onRemove!(),
+        itemBuilder: (_) => [PopupMenuItem(value: 'delete',
+          child: Text(ruEn('Удалить фразу', 'Delete phrase')))],
+      ),
+    ]);
   }
 }
 
