@@ -79,6 +79,7 @@ func User(t testing.TB, app core.App, id string, groups ...string) (*core.Record
 	u.SetEmail(id + "@example.org")
 	u.SetPassword("password123")
 	u.Set("group_ids", groups)
+	u.Set("live_group_ids", groups)
 	require.NoError(t, app.Save(u))
 	tok, err := u.NewAuthToken()
 	require.NoError(t, err)

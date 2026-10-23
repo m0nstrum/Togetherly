@@ -173,6 +173,7 @@ func extendUsers(app core.App) error {
 	}
 	// Пары пользователя. Ведёт хук groups_membership, на нём держатся правила
 	// доступа всех парных коллекций. Клиенту не отдаётся.
+	add(&core.RelationField{Name: "live_group_ids", CollectionId: groups.Id, MaxSelect: 1000, Hidden: true})
 	add(&core.RelationField{Name: "group_ids", CollectionId: groups.Id, MaxSelect: 1000, Hidden: true})
 	return app.Save(users)
 }

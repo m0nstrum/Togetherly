@@ -33,11 +33,19 @@ func readOnly(expr string) Rules {
 // member — запись принадлежит паре из поля groupField: читать и писать
 // могут только её участники.
 func member(groupField string) Rules {
-	return same(memberExpr(groupField))
+	r := readOnly(memberExpr(groupField))
+	r.Create = s(liveMemberExpr(groupField))
+	r.Update = s(liveMemberExpr(groupField))
+	r.Delete = s(liveMemberExpr(groupField))
+	return r
 }
 
 func memberExpr(groupField string) string {
 	return authed + ` && @request.auth.group_ids.id ?= ` + groupField
+}
+
+func liveMemberExpr(groupField string) string {
+	return authed + ` && @request.auth.live_group_ids.id ?= ` + groupField
 }
 
 // memberAuthored — как member, но создать запись можно только от своего
@@ -45,7 +53,7 @@ func memberExpr(groupField string) string {
 // партнёра пишет в его запись).
 func memberAuthored(groupField, authorField string) Rules {
 	r := member(groupField)
-	r.Create = s(memberExpr(groupField) + ` && ` + authorField + ` = @request.auth.id`)
+	r.Create = s(liveMemberExpr(groupField) + ` && ` + authorField + ` = @request.auth.id`)
 	return r
 }
 
@@ -60,7 +68,13 @@ var Collections = map[string]Rules{
 	// Пара. Список и чтение — по своему members (до появления group_ids у
 	// создателя группа уже должна быть ему видна). Состав при правке
 	// защищает хук groups_guard, при создании — страж на Go (только ты).
-	"groups": same(authed + ` && members ?~ @request.auth.id`),
+	"groups": {
+		List:   s(authed + ` && members ?~ @request.auth.id`),
+		View:   s(authed + ` && members ?~ @request.auth.id`),
+		Create: s(authed + ` && members ?~ @request.auth.id && disbanded = false`),
+		Update: s(liveMemberExpr("id")),
+		Delete: s(liveMemberExpr("id")),
+	},
 
 	// Своя запись пользователя: остальных видно только через /api/user/card.
 	"users": {
@@ -107,31 +121,31 @@ var Collections = map[string]Rules{
 	"cycle_entries": {
 		List:   s(memberExpr("group_id") + ` && (user_uid = @request.auth.id || shared = true)`),
 		View:   s(memberExpr("group_id") + ` && (user_uid = @request.auth.id || shared = true)`),
-		Create: s(memberExpr("group_id") + ` && user_uid = @request.auth.id`),
-		Update: s(authed + ` && user_uid = @request.auth.id`),
-		Delete: s(authed + ` && user_uid = @request.auth.id`),
+		Create: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
+		Update: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
+		Delete: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
 	},
 
 	"wishes": {
 		List:   s(memberExpr("group_id")),
 		View:   s(memberExpr("group_id")),
-		Create: s(memberExpr("group_id") + ` && author_uid = @request.auth.id`),
-		Update: s(memberExpr("group_id")),
-		Delete: s(authed + ` && author_uid = @request.auth.id`),
+		Create: s(liveMemberExpr("group_id") + ` && author_uid = @request.auth.id`),
+		Update: s(liveMemberExpr("group_id")),
+		Delete: s(liveMemberExpr("group_id") + ` && author_uid = @request.auth.id`),
 	},
 	"wish_reservations": {
 		List:   s(authed + ` && uid = @request.auth.id`),
 		View:   s(authed + ` && uid = @request.auth.id`),
-		Create: s(authed + ` && uid = @request.auth.id && @request.auth.group_ids.id ?= group_id`),
-		Update: s(authed + ` && uid = @request.auth.id`),
-		Delete: s(authed + ` && uid = @request.auth.id`),
+		Create: s(liveMemberExpr("group_id") + ` && uid = @request.auth.id`),
+		Update: s(liveMemberExpr("group_id") + ` && uid = @request.auth.id`),
+		Delete: s(liveMemberExpr("group_id") + ` && uid = @request.auth.id`),
 	},
 
 	// Присутствие видят только участники твоих пар (у апстрима — любой
 	// вошедший, AUDIT §2).
 	"user_presence": {
-		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
-		View:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
+		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.live_group_ids.members ?~ user_uid)`),
+		View:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.live_group_ids.members ?~ user_uid)`),
 		Create: s(authed + ` && user_uid = @request.auth.id`),
 		Update: s(authed + ` && user_uid = @request.auth.id`),
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
@@ -140,15 +154,15 @@ var Collections = map[string]Rules{
 	// Аватары и баннеры видят только участники твоих пар (у апстрима —
 	// любой вошедший, AUDIT §2).
 	"media": {
-		List: s(authed + ` && (uid = @request.auth.id || @request.auth.group_ids.id ?= group_id || @request.auth.group_ids.members ?~ uid)`),
-		View: s(authed + ` && (uid = @request.auth.id || @request.auth.group_ids.id ?= group_id || @request.auth.group_ids.members ?~ uid)`),
+		List: s(authed + ` && (uid = @request.auth.id || @request.auth.live_group_ids.id ?= group_id || @request.auth.live_group_ids.members ?~ uid)`),
+		View: s(authed + ` && (uid = @request.auth.id || @request.auth.live_group_ids.id ?= group_id || @request.auth.live_group_ids.members ?~ uid)`),
 		// Апстрим пускал создать запись с чужим group_id, если uid — свой
 		// (условие через «или»): посторонний подкладывал файл в чужую пару.
 		// Теперь автор — всегда ты, а пара — только твоя. group_id = свой id —
 		// путь аватара `avatars/<uid>/…` (lib/services/media_service.dart).
-		Create: s(authed + ` && uid = @request.auth.id && (group_id = "" || group_id = @request.auth.id || @request.auth.group_ids.id ?= group_id)`),
-		Update: s(authed + ` && (uid = @request.auth.id || @request.auth.group_ids.id ?= group_id)`),
-		Delete: s(authed + ` && (uid = @request.auth.id || @request.auth.group_ids.id ?= group_id)`),
+		Create: s(authed + ` && uid = @request.auth.id && (group_id = "" || group_id = @request.auth.id || @request.auth.live_group_ids.id ?= group_id)`),
+		Update: s(authed + ` && ((uid = @request.auth.id && (group_id = "" || group_id = @request.auth.id)) || @request.auth.live_group_ids.id ?= group_id)`),
+		Delete: s(authed + ` && ((uid = @request.auth.id && (group_id = "" || group_id = @request.auth.id)) || @request.auth.live_group_ids.id ?= group_id)`),
 	},
 
 	// Геопозиция. Канал — `pair_<uidA>_<uidB>` или id группы (если партнёр
@@ -167,8 +181,8 @@ var Collections = map[string]Rules{
 	// E2E (docs/fork/E2E.md). Ключ аккаунта и список устройств видят свои и
 	// партнёры по парам; правка — только своя, версию списка держит страж.
 	"e2e_identities": {
-		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
-		View:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.group_ids.members ?~ user_uid)`),
+		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.live_group_ids.members ?~ user_uid)`),
+		View:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.live_group_ids.members ?~ user_uid)`),
 		Create: s(authed + ` && user_uid = @request.auth.id`),
 		Update: s(authed + ` && user_uid = @request.auth.id`),
 	},
@@ -178,13 +192,13 @@ var Collections = map[string]Rules{
 	"e2e_grants": {
 		List:   s(authed + ` && (to_uid = @request.auth.id || user_uid = @request.auth.id)`),
 		View:   s(authed + ` && (to_uid = @request.auth.id || user_uid = @request.auth.id)`),
-		Create: s(memberExpr("group_id") + ` && user_uid = @request.auth.id`),
+		Create: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
 	},
 	"e2e_handshake": {
 		List:   s(memberExpr("group_id")),
 		View:   s(memberExpr("group_id")),
-		Create: s(memberExpr("group_id") + ` && user_uid = @request.auth.id`),
-		Delete: s(authed + ` && user_uid = @request.auth.id`),
+		Create: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
+		Delete: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
 	},
 	"e2e_backups": own("user_uid"),
 
