@@ -57,6 +57,13 @@ func memberAuthored(groupField, authorField string) Rules {
 	return r
 }
 
+// Matches are append-only: no rewriting a clip, author or deduplication tag.
+func immutableAuthored(groupField, authorField string) Rules {
+	r := memberAuthored(groupField, authorField)
+	r.Update = nil
+	return r
+}
+
 // own — запись принадлежит человеку из поля ownerField.
 func own(ownerField string) Rules {
 	return same(authed + ` && ` + ownerField + ` = @request.auth.id`)
@@ -98,7 +105,8 @@ var Collections = map[string]Rules{
 	"custom_moods":    memberAuthored("group_id", "author_uid"),
 	"love_tests":      memberAuthored("group_id", "user_uid"),
 	// Форк: заряд телефона — пишет только сам участник, читает пара.
-	"fork_battery": memberAuthored("group_id", "user_uid"),
+	"fork_battery":       memberAuthored("group_id", "user_uid"),
+	"fork_reels_matches": immutableAuthored("group_id", "author_uid"),
 
 	"canvas_strokes":   member("group_id"),
 	"canvas_meta":      member("group_id"),

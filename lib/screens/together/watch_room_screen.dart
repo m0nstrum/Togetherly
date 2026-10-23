@@ -1,3 +1,5 @@
+import '../../fork/ui/feedback.dart'; // fork: match persistence failures
+import '../../fork/reels/matches.dart'; // fork: PLAN 3.4
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -1016,6 +1018,29 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       callback: (_) async {
         await _feed?.refresh();
         return null;
+      },
+    );
+    // fork: fixed screen pair; no group, author, URL or account token from JS.
+    c.addJavaScriptHandler(
+      handlerName: 'forkReelsMatch',
+      callback: (args) async {
+        final url = await c.getUrl();
+        if (!widget.reels || url == null || url.scheme != 'https' ||
+            url.host != WatchRoomService.siteHost || !url.path.startsWith('/watch/reels/')) {
+          return {'ok': false};
+        }
+        final value = args.isNotEmpty && args.first is Map ? args.first as Map : const {};
+        final clip = value['key'], reaction = value['reaction'];
+        if (clip is! String || reaction is! String) return {'ok': false};
+        Future<void> save() => ForkReelsMatches.instance.save(widget.pairId, clip, reaction);
+        try { await save(); return {'ok': true}; }
+        catch (e) {
+          if (mounted) ForkNotice.failure(context, ForkFailure.of(e), retry: () async {
+            try { await save(); }
+            catch (error) { if (mounted) ForkNotice.failure(context, ForkFailure.of(error)); }
+          });
+          return {'ok': false};
+        }
       },
     );
     // Закладка: ролик ложится в ленту воспоминаний пары.

@@ -1,3 +1,4 @@
+import '../../fork/reels/matches_ui.dart'; // fork: PLAN 3.4
 import 'dart:async';
 import '../../utils/safe_launch.dart';
 import 'package:flutter/material.dart';
@@ -510,6 +511,14 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
           ),
           const SizedBox(height: 8),
           _bento(s),
+          // fork: saved mutual reactions are separate from watch history.
+          ListTile(
+            leading: const Icon(Icons.favorite_rounded),
+            title: Text(ruEn('Совпадения в ленте', 'Reel matches')),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => ForkReelsMatchesScreen(groupId: widget.pairData.pairId))),
+          ),
           const SizedBox(height: 10),
           // fork (UX V5): списки остались прежними, потому что обновление не вышло.
           if (_listStale) ...[
