@@ -34,7 +34,7 @@ class ForkBatteryState {
   bool get low => level <= 20 && !charging;
 
   /// Старше шести часов заряд уже ничего не говорит — не показываем.
-  bool fresh(DateTime now) => now.difference(at) < const Duration(hours: 6);
+  bool fresh(DateTime now, {Duration maxAge = const Duration(hours: 6)}) => now.difference(at) < maxAge;
 
   Map<String, dynamic> toJson() => {'l': level, 'c': charging, 'at': at.millisecondsSinceEpoch};
 
