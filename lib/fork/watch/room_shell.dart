@@ -151,9 +151,10 @@ class ForkNowPlaying extends StatelessWidget {
     required this.onPauseBoth,
     required this.onFullscreen,
     this.onQueue,
+    this.onPip,
   });
 
-  final VoidCallback? onQueue;
+  final VoidCallback? onQueue, onPip;
   final ForkRoomLive live;
   final VoidCallback onPick;
   final VoidCallback onToggle;
@@ -286,8 +287,9 @@ class ForkNowPlaying extends StatelessWidget {
             ),
           PopupMenuButton<String>(
             tooltip: ruEn('Действия с видео', 'Video actions'),
-            onSelected: (value) { if (value == 'fullscreen') { onFullscreen(); } else if (value == 'queue') { onQueue?.call(); } else { onPick(); } },
+            onSelected: (value) { if (value == 'fullscreen') { onFullscreen(); } else if (value == 'queue') { onQueue?.call(); } else if (value == 'pip') { onPip?.call(); } else { onPick(); } },
             itemBuilder: (_) => [
+              if (onPip != null) PopupMenuItem(value: 'pip', child: Text(ruEn('Поверх приложений (PiP)', 'Picture-in-picture'))),
               if (onQueue != null) PopupMenuItem(value: 'queue', child: Text(ruEn('Очередь видео · ${live.queue.length}', 'Video queue · ${live.queue.length}'))),
               PopupMenuItem(value: 'fullscreen', child: Text(ruEn('Во весь экран', 'Full screen'))),
               PopupMenuItem(value: 'pick', key: const ValueKey('fork-room-change'), child: Text(ruEn('Другое видео', 'Another video'))),

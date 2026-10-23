@@ -20,6 +20,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     // fork: device authentication for opt-in app lock (PLAN 3.1).
     private var forkAppLock: ForkAppLock? = null
+    private var forkPictureInPicture: ForkPictureInPicture? = null
     private var forkCallProximity: ForkCallProximity? = null
     // fork: applicationId форка свой, а алиасы иконок (`.IconDefault` …)
     // в манифесте раскрываются от пакета Kotlin-кода. "$packageName.Icon…"
@@ -135,7 +136,24 @@ class MainActivity : FlutterActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
+    override fun onPictureInPictureModeChanged(inPip: Boolean, config: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(inPip, config)
+        forkPictureInPicture?.changed(inPip)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        forkPictureInPicture?.resumed()
+    }
+
+    override fun onStop() {
+        forkPictureInPicture?.stopped()
+        super.onStop()
+    }
+
     override fun onDestroy() {
+        forkPictureInPicture?.close()
+        forkPictureInPicture = null
         forkAppLock?.close()
         forkAppLock = null
         forkCallProximity?.close()
@@ -150,6 +168,10 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        forkPictureInPicture?.close()
+        val pipChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/picture_in_picture")
+        forkPictureInPicture = ForkPictureInPicture(this, pipChannel)
+        pipChannel.setMethodCallHandler(forkPictureInPicture)
         forkAppLock?.close()
         // fork: quick settings components remain disabled until opted in.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/quick_tiles")

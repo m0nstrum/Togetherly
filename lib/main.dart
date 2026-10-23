@@ -1,3 +1,4 @@
+import 'fork/watch/picture_in_picture.dart'; // fork: orphan PiP privacy
 import 'fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
 import 'fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
@@ -956,10 +957,12 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
         // Глобальная плашка «офлайн / ожидает синхронизации» поверх любого экрана.
         // fork: app lock covers Navigator routes and dialog overlays (PLAN 3.1).
         builder: (context, child) => ForkAppLockGate(
-          child: LaunchSplashOverlay(
-            child: ThemeScope(
-              theme: _userData.theme,
-              child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
+          child: ForkPipOrphanGuard(
+            child: LaunchSplashOverlay(
+              child: ThemeScope(
+                theme: _userData.theme,
+                child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
+              ),
             ),
           ),
         ),
