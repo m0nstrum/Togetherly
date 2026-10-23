@@ -132,6 +132,57 @@ void main() {
       expect(text.contains(b64(what.pairKeys[0].key.extractBytes())), isFalse);
     });
 
+    test(
+      'invalid KDF rejected by sync and async restoration before hashing',
+      () async {
+        final data = KeyBackup.seal(
+          c,
+          user: 'u1',
+          method: BackupMethod.password,
+          secret: 'x',
+          contents: contents(),
+          params: fast,
+        );
+        for (final patch in <Map<String, dynamic>>[
+          {'ops': 0},
+          {'ops': -1},
+          {'ops': 5},
+          {'ops': 1 << 40},
+          {'ops': 1.5},
+          {'ops': '3'},
+          {'mem': 0},
+          {'mem': -1},
+          {'mem': (8 << 20) - 1},
+          {'mem': (256 << 20) + 1},
+          {'mem': 4 << 30},
+          {'mem': 8.5},
+          {'salt': ''},
+          {'salt': 'a' * 100000},
+          {'salt': 'not-base64!'},
+          {'salt': null},
+          {'alg': 'unknown'},
+        ]) {
+          final bad = {
+            ...data,
+            'kdf': {...(data['kdf'] as Map), ...patch},
+          };
+          expect(
+            () => BackupKey.forData(c, bad, 'x'),
+            throwsFormatException,
+            reason: '$patch',
+          );
+          await expectLater(
+            BackupKey.forDataAsync(c, bad, 'x'),
+            throwsFormatException,
+            reason: '$patch',
+          );
+        }
+        final restored = await BackupKey.forDataAsync(c, data, 'x');
+        expect(restored.params.ops, 1);
+        restored.key.dispose();
+      },
+    );
+
     test('сервер не заставит Argon2id взять гигабайты', () {
       final data = KeyBackup.seal(
         c,

@@ -190,20 +190,34 @@ class BackupKey {
     Map<String, dynamic> data,
   ) {
     if (data['v'] != 1) throw FormatException('бэкап: версия ${data['v']}');
-    final kdf = (data['kdf'] as Map).cast<String, dynamic>();
-    if (kdf['alg'] != 'argon2id13') {
-      throw FormatException('бэкап: ${kdf['alg']}');
+    final kdf = data['kdf'];
+    if (kdf is! Map || kdf['alg'] != 'argon2id13') {
+      throw const FormatException('бэкап: неизвестный KDF');
     }
-    // Параметры пришли с сервера: не даём ему заставить телефон съесть
-    // гигабайты памяти.
-    if ((kdf['mem'] as int) > 1 << 30) {
-      throw const FormatException('бэкап: слишком много памяти для Argon2id');
+    final ops = kdf['ops'];
+    final mem = kdf['mem'];
+    // Validate before native code or isolate allocation. Supports the shipped
+    // MODERATE profile (3 passes, 256 MiB) and the smaller test profile.
+    if (ops is! int ||
+        ops < 1 ||
+        ops > 4 ||
+        mem is! int ||
+        mem < 8 << 20 ||
+        mem > 256 << 20) {
+      throw const FormatException('бэкап: недопустимые параметры Argon2id');
     }
-    return (
-      method: BackupMethod.values.byName(data['method'] as String),
-      params: KdfParams(ops: kdf['ops'] as int, mem: kdf['mem'] as int),
-      salt: unb64(kdf['salt'] as String),
-    );
+    final encodedSalt = kdf['salt'];
+    if (encodedSalt is! String || encodedSalt.length > 24) {
+      throw const FormatException('бэкап: неверная соль');
+    }
+    final salt = unb64(encodedSalt);
+    if (salt.length != 16) throw const FormatException('бэкап: неверная соль');
+    final method = switch (data['method']) {
+      'phrase' => BackupMethod.phrase,
+      'password' => BackupMethod.password,
+      _ => throw const FormatException('бэкап: неизвестный способ'),
+    };
+    return (method: method, params: KdfParams(ops: ops, mem: mem), salt: salt);
   }
 
   /// Ключ существующего бэкапа [data] из фразы или пароля.
