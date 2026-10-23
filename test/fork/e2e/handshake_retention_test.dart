@@ -34,6 +34,11 @@ void main() {
       r"created >= '([^']+)'",
     ).allMatches(filter).map((m) => DateTime.parse(m[1]!)).toList();
     expect(dates, hasLength(2));
+    expect(
+      RegExp(r'\d{4}-\d{2}-\d{2}T').hasMatch(filter),
+      isFalse,
+      reason: 'PocketBase compares stored UTC dates with a space separator',
+    );
     expect(before.difference(dates[0]).inDays, 29);
     expect(before.difference(dates[1]).inMinutes, 9);
   });

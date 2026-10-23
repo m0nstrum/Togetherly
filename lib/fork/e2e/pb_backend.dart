@@ -132,10 +132,14 @@ class PbE2EBackend implements E2EBackend {
   @override
   Future<List<HandshakeMsg>> handshakes(String groupId) async {
     final now = DateTime.now().toUtc();
-    final sasSince = now.subtract(E2EService.sasTtl).toIso8601String();
+    final sasSince = now
+        .subtract(E2EService.sasTtl)
+        .toIso8601String()
+        .replaceFirst('T', ' ');
     final inviteSince = now
         .subtract(const Duration(days: 30))
-        .toIso8601String();
+        .toIso8601String()
+        .replaceFirst('T', ' ');
     final items = await _pb
         .collection('e2e_handshake')
         .getFullList(

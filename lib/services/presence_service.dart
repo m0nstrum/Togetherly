@@ -63,6 +63,7 @@ class PresenceService with WidgetsBindingObserver {
   }
 
   void stop() {
+    final wasStarted = _started;
     _started = false;
     _generation++;
     _heartbeat?.cancel();
@@ -72,7 +73,7 @@ class PresenceService with WidgetsBindingObserver {
     _beats.clear();
     _lastStoredMs = null;
     _groupId = '';
-    WidgetsBinding.instance.removeObserver(this);
+    if (wasStarted) WidgetsBinding.instance.removeObserver(this);
   }
 
   Future<void> _listenChannel(String groupId) async {
