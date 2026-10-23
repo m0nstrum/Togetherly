@@ -274,3 +274,5 @@
 
 | `lib/screens/settings_screen.dart`, `lib/screens/profile_screen.dart`, `lib/screens/miss_you_screen.dart` | План 2.9 / U17–U20 | Единая группа About/Help, монеты в Account, локальная версия/лицензии с брендом; reset удалён из API настроек и живёт у счётчика с подтверждением и проверкой результата. | Не возвращать reset к экспорту; не заявлять успех при false; сохранить версию и лицензии офлайн. |
 | `test/widgets/settings_app_icon_row_test.dart`, `test/widgets/settings_change_password_row_test.dart`, `test/widgets/settings_community_rows_test.dart`, `test/goldens/unfold_all_preview.dart` | План 2.9 | Убраны аргументы удалённого callback onResetMissYou. | Учитывать актуальный конструктор SettingsScreen. |
+
+| `lib/screens/chat_screen.dart`, `lib/screens/home/home_header.dart` | План 2.13 / U40–U41, U43 | Подписанное абсолютное время визита с известным полом, локальный счёт новых чужих сообщений при чтении выше и именованная кнопка вниз; семантика типа связи. | Сохранить границу увиденного/счётчик вне текущего live-окна, исключения своих/пагинации и доступное название с числом. |

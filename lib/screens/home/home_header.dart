@@ -320,8 +320,12 @@ class HomeHeader extends StatelessWidget {
     final fg = active ? theme.primary : theme.textMuted;
     // fork (N13): без пары пилюля ведёт на «Связь», где приглашают.
     final inviteTap = !active && onOpenTab != null ? () => onOpenTab!(2) : null;
-    return GestureDetector(
-      onTap: active ? onRelationshipTap : inviteTap,
+    final tap = active ? onRelationshipTap : inviteTap;
+    return Semantics(
+      label: ruEn('Тип связи: $statusBadgeText', 'Relationship type: $statusBadgeText'),
+      button: tap != null, onTap: tap, excludeSemantics: true,
+      child: GestureDetector(
+      onTap: tap,
       behavior: HitTestBehavior.opaque,
       child: Container(
         height: (MediaQuery.textScalerOf(context).scale(13) + 16).clamp(kHeaderControlHeight, double.infinity),
@@ -361,6 +365,7 @@ class HomeHeader extends StatelessWidget {
               Icon(Icons.person_add_alt_1_rounded, size: 16, color: theme.primary),
           ],
         ),
+      ),
       ),
     );
   }
