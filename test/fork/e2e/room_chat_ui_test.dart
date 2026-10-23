@@ -1,5 +1,6 @@
 // fork: панель чата комнаты (docs/fork/E2E.md §10.1).
-import 'dart:async';
+import 'package:love_app/fork/watch/room_shell.dart';
+import 'package:love_app/fork/watch/room_live.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,6 +115,52 @@ void main() {
       loop.failChat = true;
       await t.enterText(find.byType(TextField), 'keep this');
       await t.tap(find.byIcon(Icons.send));
+      await t.pumpAndSettle();
+      expect(find.text('keep this'), findsOneWidget);
+      final retry = find.textContaining(RegExp('Не отправлено|Not sent'));
+      expect(retry, findsOneWidget);
+      loop.failChat = false;
+      await t.tap(retry);
+      await t.pumpAndSettle();
+      expect(retry, findsNothing);
+      expect(chat.messages, hasLength(1));
+      await t.pumpWidget(const SizedBox.shrink());
+      chat.dispose();
+    },
+  );
+
+  testWidgets(
+    'main room panel also shows failed messages and retries',
+    (t) async {
+      final loop = _Loop();
+      final chat = RoomChat(
+        room: 'R',
+        groupId: 'g',
+        me: 'a',
+        name: 'A',
+        crypto: c,
+        pairKeys: _Keys(PairKey('g', 1, c.symmetricKey())),
+        transport: loop,
+        keyWait: Duration.zero,
+      );
+      await t.runAsync(() async {
+        await chat.start();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                ForkRoomChatPanel(chat: chat, live: ForkRoomLive(partnerName: () => 'P')),
+              ],
+            ),
+          ),
+        ),
+      );
+      loop.failChat = true;
+      await t.enterText(find.byType(TextField), 'keep this');
+      await t.tap(find.byIcon(Icons.send_rounded));
       await t.pumpAndSettle();
       expect(find.text('keep this'), findsOneWidget);
       final retry = find.textContaining(RegExp('Не отправлено|Not sent'));

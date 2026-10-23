@@ -321,12 +321,12 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
   Future<void> _send() async {
     final chat = widget.chat;
     final text = _input.text.trim();
-    if (chat == null || text.isEmpty || _sending) return;
+    if (chat == null || !chat.canSend || text.isEmpty || _sending) return;
     setState(() => _sending = true);
-    final ok = await chat.send(text);
+    _input.clear();
+    await chat.send(text);
     if (!mounted) return;
     setState(() => _sending = false);
-    if (ok) _input.clear();
   }
 
   @override
@@ -345,7 +345,7 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
       for (final m in chat?.messages ?? const <RoomMessage>[]) (at: m.at, m: m, l: null),
       for (final l in widget.live.lines) (at: l.at, m: null, l: l),
     ]..sort((a, b) => a.at.compareTo(b.at));
-    final usable = chat != null && !chat.noPairKey;
+    final usable = chat?.canSend == true;
     final warn = chat != null && !chat.secure;
     final ask = chat != null && chat.browser && !chat.openAllowed && !chat.noPairKey;
     final status = chat == null
@@ -460,6 +460,15 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
               if (!m.mine && m.open && m.name.isNotEmpty)
                 Text(m.name, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
               Text(m.text, style: TextStyle(color: m.mine ? cs.onPrimaryContainer : cs.onSurface)),
+              if (m.pending)
+                Text(ruEn('Отправляем…', 'Sending…'), style: TextStyle(color: cs.onSurfaceVariant)),
+              if (m.failed)
+                TextButton.icon(
+                  onPressed: widget.chat?.canSend == true && !m.pending
+                      ? () => widget.chat!.retry(m) : null,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: Text(ruEn('Не отправлено · Повторить', 'Not sent · Retry')),
+                ),
             ],
           ),
         ),
