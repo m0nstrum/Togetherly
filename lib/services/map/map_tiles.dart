@@ -44,7 +44,8 @@ class MapTiles {
     if (_template != null) return _template!;
     try {
       final prefs = await SharedPreferences.getInstance();
-      _template = prefs.getString(_prefKey);
+      final cached = prefs.getString(_prefKey);
+      _template = cached != null && Endpoints.current.isOwnMapUrl(cached) ? cached : null; // fork: M10
       final at = prefs.getInt(_prefAt) ?? 0;
       final stale = DateTime.now().millisecondsSinceEpoch - at > const Duration(days: 1).inMilliseconds;
       if (_template == null) {
@@ -64,7 +65,12 @@ class MapTiles {
           if (res.statusCode != 200) return;
           final tiles = (jsonDecode(res.body) as Map<String, dynamic>)['tiles'];
           if (tiles is List && tiles.isNotEmpty && tiles.first is String) {
-            _template = tiles.first as String;
+            final raw = tiles.first as String;
+            final candidate = raw.startsWith('/')
+                ? '${Uri.parse(_tileJson).origin}$raw' : raw;
+            // fork: M10 never trust an external source from old or new TileJSON.
+            if (!Endpoints.current.isOwnMapUrl(candidate)) return;
+            _template = candidate;
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(_prefKey, _template!);
             await prefs.setInt(_prefAt, DateTime.now().millisecondsSinceEpoch);

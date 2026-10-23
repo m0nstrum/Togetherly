@@ -107,6 +107,10 @@ func (s *Service) fetch1(ctx context.Context, raw string, authed, manual bool) (
 	}
 	ct, _, _ := mime.ParseMediaType(resp.ContentType)
 	switch kind {
+	case dmeta.KindTile:
+		if len(resp.Body) > 8<<20 || (ct != "application/x-protobuf" && ct != "application/vnd.mapbox-vector-tile" && ct != "application/octet-stream") {
+			return Response{}, fmt.Errorf("%w: invalid vector tile", ErrUpstream)
+		}
 	case dmeta.KindImage:
 		if !strings.HasPrefix(ct, "image/") || len(resp.Body) >= maxImage {
 			return Response{}, fmt.Errorf("%w: не картинка или слишком большая", ErrUpstream)

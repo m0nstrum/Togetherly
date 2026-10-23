@@ -79,6 +79,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindAllFree(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
+	maps := meta.New(safefetch.New(safefetch.Options{MaxBytes: 8 << 20}), 64<<20, time.Now)
 	// Записи Викиданных тяжёлые: сотни килобайт на фильм.
 	films := movies.New(safefetch.New(safefetch.Options{Timeout: 15 * time.Second, MaxBytes: 8 << 20}),
 		&handler.IPLimiter{Max: 60, Window: 10 * time.Minute}, movies.Options{PoiskkinoKey: cfg.PoiskkinoKey}, time.Now)
@@ -105,6 +106,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.WatchRTC(e.Router, turn, time.Now)
 		handler.Ring(e.Router, ringer, log)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
+		handler.MapTiles(e.Router, maps, &handler.IPLimiter{Max: 600, Window: time.Minute})
 		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
 		handler.Movies(e.Router, films, log)
 		handler.WatchProxy(e.Router, proxyInfo)

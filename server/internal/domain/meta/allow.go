@@ -17,6 +17,7 @@ const (
 	KindJSON Kind = iota + 1
 	// KindImage — превью и обложки.
 	KindImage
+	KindTile
 )
 
 type rule struct {
@@ -57,6 +58,9 @@ func Allowed(raw string) (Kind, bool) {
 		return 0, false
 	}
 	host := strings.ToLower(u.Hostname())
+	if host == "tiles.openfreemap.org" {
+		return mapKind(u)
+	}
 	// Rutube отдаёт превью по /api/video/<id>/thumbnail/ — это картинка.
 	if host == "rutube.ru" && strings.HasPrefix(u.Path, "/api/video/") && strings.Contains(u.Path, "/thumbnail") {
 		return KindImage, true

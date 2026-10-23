@@ -17,7 +17,7 @@ import 'meta_direct.dart';
 /// правок в его файлах. Сторонний сервис видит IP сервера, а не человека.
 ///
 /// Прямыми остаются: свой сервер и его старые домены, Centrifugo, Bugsink
-/// (DSN), тайлы карты (исключение плана) и локальные адреса. WebView и
+/// (DSN), локальные адреса. WebView и
 /// нативные плееры сюда не попадают — это осознанное исключение решения 4.
 ///
 /// Настройка «Ссылки напрямую с устройства» ([ForkMetaDirect]) выключает
@@ -63,8 +63,6 @@ abstract final class ForkHttpGateway {
     ...cfg.ownHosts,
     _host(cfg.centrifugoUrl),
     _host(cfg.sentryDsn),
-    _host(cfg.mapTileJsonUrl),
-    _host(cfg.mapTilesFallback.replaceAll(RegExp(r'[{}]'), '')),
     'localhost',
     '127.0.0.1',
     '10.0.2.2',

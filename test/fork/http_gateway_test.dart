@@ -18,12 +18,11 @@ void main() {
   group('route', () {
     final direct = ForkHttpGateway.directHosts(cfg);
 
-    test('свои хосты, Sentry и тайлы — напрямую', () {
+    test('свои хосты и Sentry — напрямую', () {
       for (final u in [
         'https://pb.example.org/api/collections/x',
         'https://old.example.org/api/files/a',
         'https://crash.example.org/api/1/envelope/',
-        'https://tiles.openfreemap.org/planet',
         'http://10.0.2.2:8090/api/health',
       ]) {
         expect(
@@ -32,6 +31,18 @@ void main() {
           reason: u,
         );
       }
+    });
+
+    test('old external map URLs are not exempt from gateway', () {
+      expect(
+        ForkHttpGateway.directHosts(
+          const EndpointsConfig(
+            pbUrl: 'https://pb.example.org',
+            mapTileJsonUrl: 'https://tiles.openfreemap.org/planet',
+          ),
+        ),
+        isNot(contains('tiles.openfreemap.org')),
+      );
     });
 
     test('чужие сайты — через gateway с исходным адресом в url', () {

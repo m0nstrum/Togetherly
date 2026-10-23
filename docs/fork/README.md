@@ -52,7 +52,7 @@ flutter build apk --release --dart-define-from-file=env/prod.local.json
 | `RELEASES_URL` | нет | ссылки на свежий APK нет |
 | `SUPPORT_EMAIL`, `OFFICIAL_EMAIL` | нет | адрес поддержки пустой |
 | `SENTRY_DSN` | нет | крашрепорты выключены |
-| `MAP_TILEJSON_URL`, `MAP_TILES_FALLBACK` | нет | OpenFreeMap |
+| `MAP_TILEJSON_URL`, `MAP_TILES_FALLBACK` | нет | `/api/fork/map/tilejson` и `/api/fork/map/tiles/latest/…` на PB_URL; переопределения только на свои хосты |
 
 Хост App Links Gradle берёт из тех же `--dart-define` (`SITE_URL`, иначе
 `PB_URL`). Сборка без них регистрирует `unconfigured.invalid` и чужих ссылок не
@@ -172,3 +172,10 @@ ln -sfn "$(dirname "$(dirname "$(command -v flutter)")")" ~/snap/flutter/common/
 рисуются квадратами.
 `google-services.json` форку не нужен: без него Gradle не применяет плагин
 Firebase, а клиент получает push через Centrifugo.
+
+Карта (M10): телефон обращается к своему `/api/fork/map/*`. Сервер получает
+TileJSON и PBF OpenFreeMap, переписывает источник на свой маршрут, кэширует
+ответы в ограниченном LRU (64 МиБ, 6 часов), ограничивает координаты z≤14
+и частоту запросов (600/мин/IP). Заголовки входа и IP телефона провайдеру
+не передаются. Это прокси, собственная генерация планеты не требуется.
+Старые внешние MAP_* в env нужно убрать; пустые значения включают прокси.

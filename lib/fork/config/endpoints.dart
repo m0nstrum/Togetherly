@@ -26,14 +26,8 @@ abstract final class Endpoints {
     releasesUrl: String.fromEnvironment('RELEASES_URL'),
     supportEmail: String.fromEnvironment('SUPPORT_EMAIL'),
     sentryDsn: String.fromEnvironment('SENTRY_DSN'),
-    mapTileJsonUrl: String.fromEnvironment(
-      'MAP_TILEJSON_URL',
-      defaultValue: EndpointsConfig.openFreeMapTileJson,
-    ),
-    mapTilesFallback: String.fromEnvironment(
-      'MAP_TILES_FALLBACK',
-      defaultValue: EndpointsConfig.openFreeMapFallback,
-    ),
+    mapTileJsonUrl: String.fromEnvironment('MAP_TILEJSON_URL'),
+    mapTilesFallback: String.fromEnvironment('MAP_TILES_FALLBACK'),
   );
 
   /// Адрес PocketBase. Константа: на неё ссылаются `static const` апстрима.
@@ -56,16 +50,10 @@ class EndpointsConfig {
     this.releasesUrl = '',
     this.supportEmail = '',
     this.sentryDsn = '',
-    this.mapTileJsonUrl = openFreeMapTileJson,
-    this.mapTilesFallback = openFreeMapFallback,
-  });
-
-  /// OpenFreeMap: не сервер апстрима, а публичный сервис без ключа. Свои
-  /// тайлы — вне плана (PLAN.md, «Пока не делаем»), поэтому дефолт оставлен.
-  static const String openFreeMapTileJson =
-      'https://tiles.openfreemap.org/planet';
-  static const String openFreeMapFallback =
-      'https://tiles.openfreemap.org/planet/latest/{z}/{x}/{y}.pbf';
+    String mapTileJsonUrl = '',
+    String mapTilesFallback = '',
+  }) : _mapTileJsonUrl = mapTileJsonUrl,
+       _mapTilesFallback = mapTilesFallback;
 
   /// `PB_URL`, обязательный. `https://pb.example.org` без `/` в конце.
   final String pbUrl;
@@ -98,8 +86,22 @@ class EndpointsConfig {
   final String sentryDsn;
 
   /// `MAP_TILEJSON_URL`, `MAP_TILES_FALLBACK`.
-  final String mapTileJsonUrl;
-  final String mapTilesFallback;
+  final String _mapTileJsonUrl;
+  final String _mapTilesFallback;
+  String get mapTileJsonUrl =>
+      _mapTileJsonUrl.isEmpty ? '$_pb/api/fork/map/tilejson' : _mapTileJsonUrl;
+  String get mapTilesFallback => _mapTilesFallback.isEmpty
+      ? '$_pb/api/fork/map/tiles/latest/{z}/{x}/{y}.pbf'
+      : _mapTilesFallback;
+
+  /// Map sources (including cached TileJSON) must remain on our server.
+  bool isOwnMapUrl(String raw) {
+    final u = Uri.tryParse(raw);
+    return u != null &&
+        (u.scheme == 'https' || u.scheme == 'http') &&
+        u.userInfo.isEmpty &&
+        ownHosts.contains(u.host.toLowerCase());
+  }
 
   String get _pb => _trimSlash(pbUrl);
 
@@ -174,6 +176,13 @@ class EndpointsConfig {
       if (v.isNotEmpty && !_isHttpUrl(v)) {
         out.add('$name должен быть http(s)-адресом: "$v"');
       }
+    }
+    for (final (name, value) in [
+      ('MAP_TILEJSON_URL', _mapTileJsonUrl),
+      ('MAP_TILES_FALLBACK', _mapTilesFallback),
+    ]) {
+      if (value.isNotEmpty && !isOwnMapUrl(value))
+        out.add('$name должен указывать на свой сервер');
     }
     return out;
   }
