@@ -64,6 +64,13 @@ var Personal = []struct{ Collection, Field string }{
 	{"live_location", "user_uid"},
 	{"wish_reservations", "uid"},
 	{"chest_opens", "user_uid"},
+	{"e2e_backups", "user_uid"},
+	{"e2e_identities", "user_uid"},
+	{"e2e_grants", "user_uid"},
+	{"e2e_grants", "to_uid"},
+	{"e2e_handshake", "user_uid"},
+	{"push_tokens", "user_uid"},
+	{"fork_battery", "user_uid"},
 }
 
 // PurgeDue стирает аккаунты, чей срок наступил: пары распускаются, личные
