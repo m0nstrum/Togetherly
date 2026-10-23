@@ -151,6 +151,9 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         forkAppLock?.close()
+        // fork: quick settings components remain disabled until opted in.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/quick_tiles")
+            .setMethodCallHandler(ForkQuickTiles(this))
         val appLock = ForkAppLock(this)
         forkAppLock = appLock
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/app_lock")

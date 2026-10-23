@@ -1,3 +1,4 @@
+import 'miss_you_screen.dart'; // fork: quick tile opens without sending
 import '../fork/touch/touch_screen.dart'; // fork: PLAN 3.2
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
@@ -676,6 +677,11 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
+    // fork: quick tile opens the counter; no message is sent behind app lock.
+    else if (uri.host == 'fork-miss') {
+      if (mounted && _pairData.isPaired) { _openMissYouFromTile(); }
+      else { _pendingMissYouOpen = true; }
+    }
     // loveapp://miss → сказать «скучаю» с виджета.
     else if (uri.host == 'miss') {
       if (_pairData.isPaired) {
@@ -744,6 +750,17 @@ class _HomeScreenState extends State<HomeScreen> {
   /// fork (Rave): зов в комнату пришёл раньше пары.
   bool _pendingWatchOpen = false;
   bool _pendingTouchOpen = false; // fork
+  bool _pendingMissYouOpen = false; // fork
+  void _openMissYouFromTile() {
+    _pendingMissYouOpen = false;
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      settings: const RouteSettings(name: '/miss_you'),
+      builder: (_) => MissYouScreen(theme: _t, groupId: _pairData.pairId,
+        myUid: PocketBaseService().userId ?? '', partnerUid: _pairData.partnerUid,
+        partnerName: _pairData.partnerDisplayName, partnerAvatarUrl: _pairData.partnerAvatarUrl,
+        myAvatarUrl: widget.userData.avatarUrl),
+    ));
+  }
 
   void _openLiveMapFromWidget() {
     _pendingMapOpen = false;
@@ -771,6 +788,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _pendingDrawOpen = null;
       unawaited(_openCanvasFromWidget(draw));
     }
+    if (_pendingMissYouOpen && _pairData.isPaired) _openMissYouFromTile(); // fork
     if (_pendingTouchOpen && _pairData.isPaired) { // fork
       _pendingTouchOpen = false;
       unawaited(ForkTouchScreen.open(context, groupId: _pairData.pairId,

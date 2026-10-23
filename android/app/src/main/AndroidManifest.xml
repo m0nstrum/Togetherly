@@ -908,6 +908,19 @@
         <service
             android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
             tools:node="remove" />
+        <!-- fork: optional tiles, visible to Android only after the settings toggle. -->
+        <service android:name="com.togetherly.love.ForkMissYouTileService"
+            android:enabled="false" android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:label="@string/fork_tile_miss" android:icon="@drawable/fork_tile_miss">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name="com.togetherly.love.ForkTouchTileService"
+            android:enabled="false" android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:label="@string/fork_tile_touch" android:icon="@drawable/fork_tile_touch">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
