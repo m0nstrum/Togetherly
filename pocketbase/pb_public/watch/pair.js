@@ -113,19 +113,8 @@
     return Math.max(1, people.size);
   }
 
-  /** Сессия Togetherly, с которой страница просит пропуск.
-   *
-   *  Новые сборки приложения кладут её сами (`window.__togetherlyAuth`, скрипт
-   *  в начале документа). В браузере она лежит там же, куда её кладёт SDK
-   *  PocketBase после входа — на странице комнаты или на /club. Без сессии в
-   *  комнату пары не пустят: код мог уйти в чужие руки. */
+  /** Browser login only. Native WebViews obtain scoped tickets via Dart. */
   function storedAuth() {
-    try {
-      const given = window.__togetherlyAuth;
-      if (given && typeof given.token === 'string' && given.token) {
-        return { token: given.token, who: String(given.name || ''), fromApp: true };
-      }
-    } catch (_) { /* нет — ищем в хранилище */ }
     try {
       const saved = JSON.parse(localStorage.getItem('pocketbase_auth') || 'null');
       if (saved && typeof saved.token === 'string' && saved.token) {
@@ -141,6 +130,18 @@
   /** Пропуск в канал: токены подключения и подписки. Отказ сервера помечается
    *  `denied` — это не обрыв связи, а повод сказать человеку, что делать. */
   async function ticket(room) {
+    // fork (C3): native code authenticates; the page receives room tickets only.
+    if (window.__togetherlyChrome && inApp()) {
+      const native = bridge();
+      if (!native) throw new Error('native bridge not ready');
+      const data = await native.callHandler('forkWatchTicket', guestId());
+      if (!data || !data.ok || data.channel !== 'watch:' + room) {
+        const err = new Error('native ticket');
+        if (data && ['auth_required', 'not_member', 'not_found'].includes(data.error)) err.denied = data.error;
+        throw err;
+      }
+      return data;
+    }
     const headers = { 'Content-Type': 'application/json' };
     const auth = storedAuth();
     if (auth) headers.Authorization = auth.token;

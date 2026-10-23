@@ -119,7 +119,11 @@
     pre.onload = () => { if (img.dataset.e === e) img.src = moving; };
     pre.src = moving;
   }
-  const artImg = (e, still) => '<img class="rl-art" alt="" data-e="' + e + '"' + (still ? ' data-still="1"' : '') + ' src="' + stillOf(e) + '">';
+  // fork (C3): every markup caller gets a canonical reaction.
+  const artImg = (value, still) => {
+    const e = window.ForkReelsPolicy.reaction(value) && value ? value : '❤️';
+    return '<img class="rl-art" alt="" data-e="' + e + '"' + (still ? ' data-still="1"' : '') + ' src="' + stillOf(e) + '">';
+  };
   /** Ожить рисункам, вставленным разметкой ([artImg]). */
   const liven = (node) => node.querySelectorAll('img.rl-art').forEach((i) => setArt(i, i.dataset.e, i.dataset.still === '1'));
   /** Открыли выбор — анимации всех шести тянем заранее, чтобы выбранная
@@ -1579,6 +1583,8 @@
   }
 
   function onMessage(data) {
+    data = window.ForkReelsPolicy.message(data); // fork (C3)
+    if (!data) return false;
     switch (data.t) {
       case 'hello':
         // Новичку — наш ролик, наша очередь и переписка. Переписку ждёт и

@@ -70,29 +70,32 @@ class WatchRoomService {
     return '$base?$encoded#$room';
   }
 
-  /// Скрипт, который отдаёт странице комнаты нашу сессию.
-  ///
-  /// С 16.09.2026 в комнату пары пускают только её участников: к паре зашли
-  /// посторонние, узнавшие код. Браузер доказывает участие входом, а
-  /// встроенному браузеру приложения входить незачем — сессия у нас уже есть.
-  /// Страница читает `window.__togetherlyAuth` и шлёт токен при запросе
-  /// пропуска (`storedAuth` в `room.js`).
-  ///
-  /// Скрипт срабатывает только на нашем домене: если WebView уведут на чужую
-  /// страницу, токен туда не попадёт.
-  static String authScript({required String token, String? name}) {
-    final data = jsonEncode({'token': token, 'name': (name ?? '').trim()});
+  /// fork (C3): page identity only. The PocketBase token stays in Dart.
+  static String authScript({String? name}) {
+    final data = jsonEncode({'name': (name ?? '').trim()});
     return '(function(){'
-        "if(location.hostname!=='$siteHost')return;"
-        // Шапку рисует страница комнаты: «назад», код, «скопировать»,
-        // «поделиться» и звонок — своей шапки у экрана приложения больше нет.
+        "if(location.protocol!=='https:'||location.hostname!=='$siteHost'||window.top!==window)return;"
         'window.__togetherlyChrome=1;'
-        'window.__togetherlyAuth=$data;'
+        'window.__forkWatchIdentity=$data;'
         '})();';
   }
 
-  /// Домен страницы комнаты — единственный, которому отдаём сессию.
-  static String get siteHost => Endpoints.current.siteHost; // fork
+  static String get siteHost => Endpoints.current.siteHost;
+
+  /// Room-scoped connection/subscription tickets, never the account token.
+  /// The native screen supplies its fixed room, not one chosen by JavaScript.
+  static Future<Map<String, dynamic>> ticket(String room, String guest) async {
+    final result = await PocketBaseService.instance.pb
+        .send<Map<String, dynamic>>(
+          '/api/watch/token',
+          method: 'POST',
+          body: {
+            'room': room,
+            'guest': RegExp(r'^g[a-z0-9]{14}$').hasMatch(guest) ? guest : '',
+          },
+        );
+    return result;
+  }
 
   /// Код комнаты пары. Пустая строка означает отказ сервера — вызывающий
   /// показывает ошибку и не открывает просмотр.

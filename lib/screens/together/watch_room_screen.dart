@@ -348,6 +348,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     mediaPlaybackRequiresUserGesture: false,
     allowsInlineMediaPlayback: true,
     javaScriptEnabled: true,
+    // fork (C3): external pages and video iframes cannot call native bridges.
+    javaScriptHandlersForMainFrameOnly: true,
+    javaScriptHandlersOriginAllowList: {'^https://${RegExp.escape(WatchRoomService.siteHost)}\$'},
     // Под нативным окном лежит экран приложения, просвечивать ему незачем.
     transparentBackground: !_native,
     supportZoom: false,
@@ -373,11 +376,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
 
   /// Скрипты, которые страница получает до своей загрузки.
   UnmodifiableListView<UserScript> _scripts(EdgeInsets pad) => UnmodifiableListView([
-    // Сессия для пропуска: в комнату пары пускают только участников, и без
-    // неё страница попросила бы войти ещё раз.
+    // fork (C3): имя и признак приложения; пропуск выдаёт нативный мост.
     UserScript(
       source: WatchRoomService.authScript(
-        token: PocketBaseService.instance.pb.authStore.token,
         name: PocketBaseService().userName,
       ),
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
@@ -896,6 +897,26 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// окно.
   void _wire(InAppWebViewController c) {
     _web = c;
+    // fork (C3): only a ticket for this screen's room crosses the bridge.
+    c.addJavaScriptHandler(
+      handlerName: 'forkWatchTicket',
+      callback: (args) async {
+        final url = await c.getUrl();
+        if (url == null || url.scheme != 'https' || url.host != WatchRoomService.siteHost ||
+            !url.path.startsWith('/watch/')) {
+          return null;
+        }
+        final guest = args.isNotEmpty && args.first is String ? args.first as String : '';
+        try {
+          return await WatchRoomService.ticket(widget.room, guest);
+        } on ClientException catch (e) {
+          final reason = e.response['error'];
+          return {'ok': false, 'error': const ['auth_required', 'not_member', 'not_found'].contains(reason) ? reason : 'ticket_failed'};
+        } catch (_) {
+          return {'ok': false, 'error': 'ticket_failed'};
+        }
+      },
+    );
     // fork (Rave): что происходит в окне видео — полосе и чату.
     c.addJavaScriptHandler(
       handlerName: 'forkRoom',
