@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../../dict_strings.dart' show ruEn;
 import '../../services/watch_voice_service.dart';
 import '../e2e/room_chat.dart';
+import '../e2e/room_message_time.dart';
 import '../e2e/room_chat_ui.dart';
 import 'room_live.dart';
 import 'voice_stage.dart';
@@ -260,7 +261,7 @@ class ForkNowPlaying extends StatelessWidget {
             ),
           PopupMenuButton<String>(
             tooltip: ruEn('Действия с видео', 'Video actions'),
-            onSelected: (value) { if (value == 'fullscreen') onFullscreen(); else onPick(); },
+            onSelected: (value) { if (value == 'fullscreen') { onFullscreen(); } else { onPick(); } },
             itemBuilder: (_) => [
               PopupMenuItem(value: 'fullscreen', child: Text(ruEn('Во весь экран', 'Full screen'))),
               PopupMenuItem(value: 'pick', key: const ValueKey('fork-room-change'), child: Text(ruEn('Другое видео', 'Another video'))),
@@ -444,6 +445,8 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
               if (!m.mine && m.open && m.name.isNotEmpty)
                 Text(m.name, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
               Text(m.text, style: TextStyle(color: m.mine ? cs.onPrimaryContainer : cs.onSurface)),
+              if (forkRoomMessageTime(m.at).isNotEmpty)
+                Text(forkRoomMessageTime(m.at), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
               if (m.pending)
                 Text(ruEn('Отправляем…', 'Sending…'), style: TextStyle(color: cs.onSurfaceVariant)),
               if (m.failed)
