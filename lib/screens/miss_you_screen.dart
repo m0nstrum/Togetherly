@@ -1,3 +1,4 @@
+import '../services/pb_data_service.dart'; // fork
 import '../widgets/common/app_dialog.dart'; // fork
 import 'dart:async';
 import 'dart:math';
@@ -50,11 +51,13 @@ class MissYouScreen extends StatefulWidget {
     this.partnerAvatarUrl,
     this.debugEvents,
     this.onSent,
+    this.resetCount,
   });
 
   /// Отправлен импульс (сердце, вайб, ответ). Главная по нему зовёт
   /// сезонного призрака за стеклом, когда человек вернётся.
   final VoidCallback? onSent;
+  final Future<bool> Function()? resetCount;
 
   /// История для тестов и превью: без сервера экран её не получит.
   @visibleForTesting
@@ -88,6 +91,8 @@ class _MissYouScreenState extends State<MissYouScreen>
   /// сразу, иначе кнопка кажется мёртвой на плохой сети. Правило снятия
   /// надбавки держит [OptimisticCount] — то же, что у кнопки в шапке.
   OptimisticCount _mine = const OptimisticCount();
+  bool _resetting = false;
+  int _sending = 0;
   Timer? _staleTimer;
 
   List<String> _wishes = const [];
@@ -218,7 +223,7 @@ class _MissYouScreenState extends State<MissYouScreen>
   // ── Отправка ────────────────────────────────────────────────────────────────
 
   Future<void> _sendMissYou({String? replyTo}) async {
-    if (widget.groupId.isEmpty) return;
+    if (widget.groupId.isEmpty || _resetting) return;
     widget.onSent?.call();
     HapticFeedback.mediumImpact();
     _pulse.forward(from: 0);
@@ -227,11 +232,12 @@ class _MissYouScreenState extends State<MissYouScreen>
     setState(() => _mine = _mine.tap(DateTime.now()));
     _scheduleStaleSweep();
     var ok = false;
+    _sending++;
     try {
       ok = await _repo.sendMissYou(widget.groupId, replyTo: replyTo);
     } catch (_) {
       ok = false;
-    }
+    } finally { _sending--; }
     if (!ok && mounted) {
       setState(() => _mine = _mine.failed());
       // fork (M5): отказ не молчит, у сообщения есть «Повторить».
@@ -245,8 +251,9 @@ class _MissYouScreenState extends State<MissYouScreen>
   }
 
   Future<void> _sendVibe(String type, {String? text, String? replyTo}) async {
-    if (widget.groupId.isEmpty) return;
+    if (widget.groupId.isEmpty || _resetting) return;
     // fork (M5): сердечки и «отправлено» — после ответа сервера, а не до него.
+    _sending++;
     final sent = await Outcome.guard(
       () => _repo.sendVibe(
         groupId: widget.groupId,
@@ -255,6 +262,7 @@ class _MissYouScreenState extends State<MissYouScreen>
         replyTo: replyTo,
       ),
     );
+    _sending--;
     if (!mounted) return;
     if (sent.failure != null || sent.value != true) {
       ForkNotice.failure(
@@ -352,6 +360,31 @@ class _MissYouScreenState extends State<MissYouScreen>
     }
   }
 
+  Future<void> _resetCount() async {
+    final ok = await AppDialog.confirm(context,
+      title: _s.resetMissYouConfirmTitle, message: _s.resetMissYouConfirmBody,
+      confirmLabel: _s.reset, destructive: true,
+    );
+    if (!ok || !mounted || _resetting) return;
+    if (_sending > 0 || _mine.pending > 0) {
+      ForkNotice.info(context, ruEn('Дождитесь отправки импульсов и повторите', 'Wait for pending signals to send, then try again'));
+      return;
+    }
+    setState(() => _resetting = true);
+    try {
+      final saved = await (widget.resetCount?.call() ??
+          PbDataService().setMissYouCount(widget.groupId, widget.myUid, 0));
+      if (!mounted) return;
+      if (!saved) { ForkNotice.failure(context, ForkFailure.network); return; }
+      setState(() => _mine = const OptimisticCount());
+      ForkNotice.info(context, ruEn('Ваш счётчик сброшен', 'Your counter was reset'));
+    } catch (e) {
+      if (mounted) ForkNotice.error(context, e);
+    } finally {
+      if (mounted) setState(() => _resetting = false);
+    }
+  }
+
   // ── Сборка ──────────────────────────────────────────────────────────────────
 
   @override
@@ -368,6 +401,15 @@ class _MissYouScreenState extends State<MissYouScreen>
           foregroundColor: cs.onSurface,
           titleSpacing: 0,
           title: _title(cs),
+          actions: [
+            if (widget.resetCount != null || (widget.groupId.isNotEmpty && widget.myUid.isNotEmpty))
+              PopupMenuButton<String>(
+                tooltip: ruEn('Действия со счётчиком', 'Counter actions'),
+                enabled: !_resetting,
+                onSelected: (_) => _resetCount(),
+                itemBuilder: (_) => [PopupMenuItem(value: 'reset', child: Text(_s.resetMissYouCount))],
+              ),
+          ],
         ),
         body: SafeArea(
           child: ListView(

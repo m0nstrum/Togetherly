@@ -19,7 +19,6 @@ Widget _app({VoidCallback? onChangePassword}) => MaterialApp(
         onCoinShop: () {},
         onPrivacyPolicy: () {},
         onExport: () {},
-        onResetMissYou: () {},
         onTerms: () {},
         onSupport: () {},
         onOfficial: () {},

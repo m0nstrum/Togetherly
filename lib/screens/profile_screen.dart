@@ -1,3 +1,4 @@
+import '../fork/identity.dart'; // fork
 import 'dart:async';
 import '../utils/safe_launch.dart';
 import 'package:flutter/material.dart';
@@ -160,8 +161,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// а бот знали лишь те, кому его присылали в ответ на жалобу.
   static final Uri _tgChannelUri = Uri.parse('https://t.me/sandtcompany');
   static final Uri _bugBotUri = Uri.parse('https://t.me/TogetherlyBugsBot');
-  // Лендинг тоже переехал с Firebase Hosting на VPS (pb_public).
-  static final Uri _aboutAppUri = Uri.parse(Endpoints.current.aboutUrl); // fork
   static final Uri _boostyUri = Uri.parse('https://boosty.to/sntcompany');
 
   /// Разовый донат картой или СБП.
@@ -608,10 +607,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(_s.supportCopied(email))));
-  }
-
-  Future<void> _openAboutApp() async {
-    await _openExternalUri(_aboutAppUri);
   }
 
   Future<void> _openBoosty() async {
@@ -2213,14 +2208,13 @@ class _ProfileScreenState extends State<ProfileScreen>
           builder: (ctx, setSheetState) => SettingsScreen(
             accountEmail: widget.userData.email,
             scheme: _cs,
-            appVersion: 'Togetherly $version',
+            appVersion: '${ForkIdentity.appName} $version',
             onAppearance: () => _openAppearance(ctx),
             onNotifications: () => _showNotificationSettings(ctx),
             onLanguage: () => _showLanguagePicker(ctx),
             onCoinShop: () => _showCoinShop(ctx),
             onPrivacyPolicy: _openPrivacyPolicy,
             onExport: () => _handleExportConfig(ctx),
-            onResetMissYou: () => _handleResetMissYouCount(ctx),
             onTerms: _openTerms,
             onSupport: _openSupportMail,
             onOfficial: _openOfficialMail,
@@ -2241,7 +2235,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                 behavior: SnackBarBehavior.floating,
               ));
             },
-            onAbout: _openAboutApp,
+            onAbout: () => showAboutDialog(context: ctx,
+              applicationName: ForkIdentity.appName, applicationVersion: version),
             onChangePassword: () => _openChangePassword(ctx),
             onLogout: () => _showLogoutDialog(ctx),
             onDeleteAccount: () => _showDeleteAccountDialog(ctx),
@@ -4355,27 +4350,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ),
     );
-  }
-
-  // ═══════════════════════════════════════════════════
-  //  RESET MISS YOU COUNT
-  // ═══════════════════════════════════════════════════
-  Future<void> _handleResetMissYouCount(BuildContext context) async {
-    final confirmed = await AppDialog.confirm(
-      context,
-      title: _s.resetMissYouConfirmTitle,
-      message: _s.resetMissYouConfirmBody,
-      confirmLabel: _s.reset,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    final groupId = widget.pairData.pairId;
-    if (groupId.isEmpty) return;
-    final myUid = PocketBaseService().userId ?? '';
-    if (myUid.isEmpty) return;
-    await PbDataService().setMissYouCount(groupId, myUid, 0);
-    if (!mounted) return;
-    AppSnack.success(this.context, _s.resetMissYouConfirmTitle);
   }
 
   // ═══════════════════════════════════════════════════

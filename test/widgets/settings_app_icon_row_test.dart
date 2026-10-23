@@ -22,7 +22,6 @@ Widget _app({String? appIconId}) => MaterialApp(
         onCoinShop: () {},
         onPrivacyPolicy: () {},
         onExport: () {},
-        onResetMissYou: () {},
         onTerms: () {},
         onSupport: () {},
         onOfficial: () {},

@@ -92,7 +92,6 @@ class _Home extends StatelessWidget {
                           onCoinShop: _nothing,
                           onPrivacyPolicy: _nothing,
                           onExport: _nothing,
-                          onResetMissYou: _nothing,
                           onTerms: _nothing,
                           onSupport: _nothing,
                           onOfficial: _nothing,
