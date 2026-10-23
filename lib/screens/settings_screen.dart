@@ -8,6 +8,7 @@ import '../utils/email_typo.dart';
 import '../widgets/app_icon_sheet.dart';
 import '../widgets/home_layout_editor.dart';
 import '../widgets/settings_scaffold.dart';
+import '../fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
 import '../fork/crash_reports.dart'; // fork
 import '../fork/flags.dart'; // fork
 import '../fork/battery/battery_share.dart'; // fork
@@ -339,6 +340,7 @@ class SettingsScreen extends StatelessWidget {
                 title: ruEn('Телефон и экран блокировки', 'Phone & lock screen'), // fork
                 icon: Icons.campaign_rounded,
                 children: [
+                  const ForkAppLockSettings(), // fork
                   SettingsRow(
                     icon: Icons.notifications_rounded,
                     title: s.notifications,

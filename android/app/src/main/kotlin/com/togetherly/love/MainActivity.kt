@@ -18,6 +18,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    // fork: device authentication for opt-in app lock (PLAN 3.1).
+    private var forkAppLock: ForkAppLock? = null
     private var forkCallProximity: ForkCallProximity? = null
     // fork: applicationId форка свой, а алиасы иконок (`.IconDefault` …)
     // в манифесте раскрываются от пакета Kotlin-кода. "$packageName.Icon…"
@@ -128,7 +130,14 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (forkAppLock?.activityResult(requestCode, resultCode) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     override fun onDestroy() {
+        forkAppLock?.close()
+        forkAppLock = null
         forkCallProximity?.close()
         forkCallProximity = null
         ReelsInviteBridge.detach()
@@ -141,6 +150,20 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        forkAppLock?.close()
+        val appLock = ForkAppLock(this)
+        forkAppLock = appLock
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/app_lock")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "available" -> result.success(appLock.available())
+                    "authenticate" -> appLock.authenticate(call.argument<String>("reason") ?: "Tethered", result)
+                    "setRecentsProtected" -> result.success(appLock.protectRecents(call.arguments == true))
+                    "securitySettings" -> try { appLock.settings(); result.success(null) }
+                        catch (_: Exception) { result.error("unavailable", "Security settings unavailable", null) }
+                    else -> result.notImplemented()
+                }
+            }
         forkCallProximity?.close()
         forkCallProximity = ForkCallProximity(this)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/call_audio")

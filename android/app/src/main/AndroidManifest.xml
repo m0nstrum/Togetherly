@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <!-- fork: device authentication for optional app lock; no runtime prompt. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Permissions для QR-сканера -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Голосовые сообщения в чате. -->

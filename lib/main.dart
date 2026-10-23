@@ -1,3 +1,4 @@
+import 'fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
 import 'fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:io' show Platform;
@@ -953,10 +954,13 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
         ],
         navigatorObservers: [AnalyticsService.instance.observer],
         // Глобальная плашка «офлайн / ожидает синхронизации» поверх любого экрана.
-        builder: (context, child) => LaunchSplashOverlay(
-          child: ThemeScope(
-            theme: _userData.theme,
-            child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
+        // fork: app lock covers Navigator routes and dialog overlays (PLAN 3.1).
+        builder: (context, child) => ForkAppLockGate(
+          child: LaunchSplashOverlay(
+            child: ThemeScope(
+              theme: _userData.theme,
+              child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
+            ),
           ),
         ),
         home: _loading
