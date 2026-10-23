@@ -18,6 +18,7 @@ import (
 // bindGuards — проверки записи, которые не выразить правилом PocketBase (S6).
 func bindGuards(app core.App) {
 	bindDuplicateID(app)
+	bindAuthorship(app)
 
 	// Новую группу создаёшь только с собой: правило `members ?~ auth.id`
 	// пускало вписать в неё кого угодно. Второй участник появляется только

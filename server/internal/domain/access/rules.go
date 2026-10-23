@@ -49,15 +49,23 @@ func liveMemberExpr(groupField string) string {
 }
 
 // memberAuthored — как member, но создать запись можно только от своего
-// имени: authorField = автор. Правка — по членству (реакция на сообщение
-// партнёра пишет в его запись).
+// имени. Автор и пара неизменны; совместные поля ограничивает страж.
 func memberAuthored(groupField, authorField string) Rules {
 	r := member(groupField)
 	r.Create = s(liveMemberExpr(groupField) + ` && ` + authorField + ` = @request.auth.id`)
+	r.Update = s(liveMemberExpr(groupField) + ` && @request.body.` + groupField + `:changed = false && @request.body.` + authorField + `:changed = false`)
 	return r
 }
 
-// A shared choice is readable by the pair, writable only by its voter.
+// Personal state is readable by the pair, writable only by its author.
+func personalAuthored(groupField, authorField string) Rules {
+	r := memberAuthored(groupField, authorField)
+	r.Update = s(*r.Update + ` && ` + authorField + ` = @request.auth.id`)
+	r.Delete = s(liveMemberExpr(groupField) + ` && ` + authorField + ` = @request.auth.id`)
+	return r
+}
+
+// A shared choice additionally has an immutable deduplication tag.
 func privateLiveAuthored(groupField, authorField, tagField string) Rules {
 	r := memberAuthored(groupField, authorField)
 	ownLive := liveMemberExpr(groupField) + ` && ` + authorField + ` = @request.auth.id`
@@ -105,18 +113,18 @@ var Collections = map[string]Rules{
 	"invite_codes": own("owner_uid"),
 
 	"memories":        memberAuthored("group_id", "author_uid"),
-	"memory_comments": memberAuthored("group_id", "author_uid"),
-	"mood_entries":    memberAuthored("group_id", "user_uid"),
+	"memory_comments": personalAuthored("group_id", "author_uid"),
+	"mood_entries":    personalAuthored("group_id", "user_uid"),
 	"chat_messages":   memberAuthored("group_id", "user_uid"),
-	"chat_reads":      memberAuthored("group_id", "user_uid"),
-	"chat_typing":     memberAuthored("group_id", "user_uid"),
-	"widget_data":     memberAuthored("group_id", "user_uid"),
-	"miss_you":        memberAuthored("group_id", "user_uid"),
+	"chat_reads":      personalAuthored("group_id", "user_uid"),
+	"chat_typing":     personalAuthored("group_id", "user_uid"),
+	"widget_data":     personalAuthored("group_id", "user_uid"),
+	"miss_you":        personalAuthored("group_id", "user_uid"),
 	"wish_categories": memberAuthored("group_id", "author_uid"),
 	"custom_moods":    memberAuthored("group_id", "author_uid"),
-	"love_tests":      memberAuthored("group_id", "user_uid"),
+	"love_tests":      personalAuthored("group_id", "user_uid"),
 	// Форк: заряд телефона — пишет только сам участник, читает пара.
-	"fork_battery":       memberAuthored("group_id", "user_uid"),
+	"fork_battery":       personalAuthored("group_id", "user_uid"),
 	"fork_reels_matches": immutableAuthored("group_id", "author_uid"),
 	"fork_movie_choices": privateLiveAuthored("group_id", "author_uid", "movie_tag"),
 
@@ -134,7 +142,7 @@ var Collections = map[string]Rules{
 
 	// Совместный просмотр: сессия — по своему id (он же id группы).
 	"live_sessions":         member("id"),
-	"live_session_presence": memberAuthored("pair_id", "user_uid"),
+	"live_session_presence": personalAuthored("pair_id", "user_uid"),
 	"live_session_chat":     memberAuthored("pair_id", "uid"),
 
 	// Цикл: партнёр видит только то, чем поделились.
@@ -150,7 +158,7 @@ var Collections = map[string]Rules{
 		List:   s(memberExpr("group_id")),
 		View:   s(memberExpr("group_id")),
 		Create: s(liveMemberExpr("group_id") + ` && author_uid = @request.auth.id`),
-		Update: s(liveMemberExpr("group_id")),
+		Update: s(*memberAuthored("group_id", "author_uid").Update),
 		Delete: s(liveMemberExpr("group_id") + ` && author_uid = @request.auth.id`),
 	},
 	"wish_reservations": {
