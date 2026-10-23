@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import '../services/watch_voice_service.dart';
 
 /// Что показывает полоса голоса в комнате совместного просмотра.

@@ -2,13 +2,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/system_settings.dart';
 
 void main() {
-  test('интенты настроек несут пакет форка, а не апстрима', () {
-    final intents = androidNotificationSettingsIntents('app.example.fork');
-    expect(intents, hasLength(2));
-    for (final u in intents) {
-      expect(u.toString(), contains('APP_PACKAGE=app.example.fork'));
-      expect(u.toString(), isNot(contains('com.togetherly.love')));
-    }
-    expect(intents.first.toString(), contains('APP_NOTIFICATION_SETTINGS'));
+  test('резервный путь открывает настройки приложения', () async {
+    var calls = 0;
+    expect(
+      await openSystemNotificationSettings(
+        fallback: () async {
+          calls++;
+          return true;
+        },
+      ),
+      isTrue,
+    );
+    expect(calls, 1);
+  });
+
+  test('отказ и исключение резервного пути возвращают false', () async {
+    expect(
+      await openSystemNotificationSettings(fallback: () async => false),
+      isFalse,
+    );
+    expect(
+      await openSystemNotificationSettings(
+        fallback: () async {
+          throw StateError('no settings activity');
+        },
+      ),
+      isFalse,
+    );
   });
 }

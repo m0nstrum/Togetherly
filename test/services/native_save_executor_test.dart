@@ -70,7 +70,7 @@ void main() {
     expect(a['takenAt'], DateTime(2026, 9, 5, 13, 5, 7).millisecondsSinceEpoch);
     expect(a['latitude'], 46.9);
     expect(a['name'], 'Togetherly_20260905_130507_01.webp');
-    expect(a['album'], 'Togetherly');
+    expect(a['album'], 'Tethered'); // fork: branded gallery album
     expect(a['title'], 'Лето');
     expect((a['labels'] as Map).keys, containsAll(['saving', 'done', 'failed', 'stop']));
 

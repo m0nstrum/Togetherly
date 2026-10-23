@@ -69,7 +69,6 @@ import 'l10n/zh/zh.dart';
 /// Это разделы `l10n/dict/` плюс китайская колонка из `l10n/zh/`, влитая в
 /// каждую запись (почему она лежит отдельно — см. `l10n/zh/zh.dart`).
 final Map<String, Map<String, String>> kStrings = {
-  ...tipActionStrings,
   for (final e in _kSectionStrings.entries)
     e.key: {
       ...e.value,
@@ -147,7 +146,7 @@ const Map<String, Map<String, String>> _kSectionStrings = {
 /// Откат тут главное: пока пять языков не наполнены, немец видит английскую
 /// надпись, а не пустое место и не имя ключа.
 String trDict(String key, String code) {
-  final entry = kStrings[key];
+  final entry = tipActionStrings[key] ?? kStrings[key];
   if (entry == null) return key;
   return entry[code] ?? entry['en'] ?? entry['ru'] ?? key;
 }

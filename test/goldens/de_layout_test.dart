@@ -1,3 +1,4 @@
+// fork: bottom_nav golden includes the active navigation caption.
 // Немецкая раскладка на узком экране.
 //
 // Немецкий длиннее русского примерно на четверть, и первым это ломает не

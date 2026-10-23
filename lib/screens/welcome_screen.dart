@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
