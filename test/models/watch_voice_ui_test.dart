@@ -17,9 +17,9 @@ void main() {
       expect(bar.callEndsTalk, isFalse);
     });
 
-    test('пока соединяемся — кнопка отменяет вызов, глушилок нет', () {
+    test('пока соединяемся — отмена и настройка микрофона доступны', () {
       const bar = WatchVoiceBarModel(VoiceCallState.connecting);
-      expect(bar.showsMicAndSpeaker, isFalse);
+      expect(bar.showsMicAndSpeaker, isTrue);
       expect(bar.callEndsTalk, isTrue);
       expect(bar.busy, isTrue);
     });

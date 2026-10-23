@@ -263,3 +263,7 @@
 | `lib/services/centrifugo_service.dart` | План 2.5 / U30 | requireDelivery для публикаций чата: отсутствие подписки/ошибка ACK пробрасываются. Остальные эфемерные кадры сохраняют прежнее поведение. | Сохранить строгий режим публикации для транспорта комнаты. |
 
 | `lib/screens/mood_calendar_screen.dart`, `lib/screens/profile_screen.dart`, `lib/screens/home/widgets/relationship_type_dialog.dart`, `lib/screens/miss_you_screen.dart` | План 2.6 / U58–U60, U62 | Подтверждения удаления; выбранный тип защищён, настроение с целью 48dp; фраза удаляется через отдельное меню вне отправки. | Не возвращать удаление по короткому/долгому тапу без вопроса; сохранить запрет выбранного типа и отдельную цель меню. |
+
+| `lib/services/watch_voice_service.dart`, `lib/models/watch_voice_ui.dart`, `lib/widgets/watch/watch_voice_bar.dart` | План 2.7 / U28–U29 | Настоящий маршрут динамика через WebRTC, mute до ответа с применением к треку, controls в connecting, lifecycle proximity. | Не менять enabled входящего трека при смене аудиовыхода; не сбрасывать mute после getUserMedia. |
+| `android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt` | План 2.7 / U28 | Канал tethered/call_audio и жизненный цикл ForkCallProximity. | Освобождать wake lock на destroy; не включать его для гарнитуры/громкого динамика. |
+| `test/models/watch_voice_ui_test.dart` | План 2.7 | Настройка микрофона и аудиовыхода доступна при connecting. | Сохранить новое ожидание. |

@@ -18,6 +18,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var forkCallProximity: ForkCallProximity? = null
     // fork: applicationId форка свой, а алиасы иконок (`.IconDefault` …)
     // в манифесте раскрываются от пакета Kotlin-кода. "$packageName.Icon…"
     // не находил компонент, и смена иконки падала.
@@ -128,6 +129,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        forkCallProximity?.close()
+        forkCallProximity = null
         ReelsInviteBridge.detach()
         userPresentReceiver?.let {
             try { unregisterReceiver(it) } catch (_: Exception) {}
@@ -138,6 +141,15 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        forkCallProximity?.close()
+        forkCallProximity = ForkCallProximity(this)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/call_audio")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "setCallActive" && call.arguments is Boolean) {
+                    forkCallProximity?.setActive(call.arguments == true)
+                    result.success(null)
+                } else result.notImplemented()
+            }
         ReelsInviteBridge.attach(flutterEngine.dartExecutor.binaryMessenger)
         // fork (PLAN 1.10): acknowledge only after screenshot protection is set.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/screen_security")
