@@ -1248,18 +1248,12 @@ class _WidgetScreenState extends State<WidgetScreen>
         final days = timer != null
             ? timer.daysElapsed.abs()
             : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-        const months = [
-          'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-          'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-        ];
-        final startLabel = start == null
-            ? ''
-            : 'С ${start.day} ${months[start.month - 1]} ${start.year}';
+        final startLabel = start == null ? '' : _s.tgYearSince('${_s.dayLogDate(start)} ${start.year}');
         final myName = widget.userData.displayName.trim();
         final partnerName = _pair.partnerDisplayName.trim();
         final anniversary = start == null
             ? ''
-            : '${start.day} ${months[start.month - 1]}';
+            : _s.dayLogDate(start);
         await hws.syncTogether(
           groupId: _pair.pairId,
           days: days,
@@ -2769,8 +2763,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                 onPressed: () =>
                     _pinWidget(qualifiedName, widgetType: widgetType),
                 icon: const Icon(Icons.add_to_home_screen_rounded, size: 17),
-                label: const Text(
-                  'Добавить',
+                label: Text(
+                  _s.addBtn,
                   style: TextStyle(
                     fontFamily: 'Onest',
                     fontSize: 13,
@@ -2858,13 +2852,13 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   Widget _timerCompact() => _halfTileBg(
         const [Color(0xFF7A5AD0), Color(0xFF9D6FF0)],
-        const Column(
+        Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.favorite_rounded, color: Colors.white, size: 34),
+            const Icon(Icons.favorite_rounded, color: Colors.white, size: 34),
             SizedBox(height: 6),
             Text(
-              'вместе',
+              _s.together,
               style: TextStyle(
                 fontFamily: 'Onest',
                 fontSize: 12,
@@ -3219,7 +3213,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       if (mine != null && theirs != null && mine.score == theirs.score) matched++;
     }
 
-    const labels = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+    final labels = _s.shortWeekdays.map((d) => d.toLowerCase()).toList();
 
     Widget bar(double value, Color color) => Expanded(
           child: FractionallySizedBox(

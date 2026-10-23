@@ -44,8 +44,10 @@ abstract final class ForkFlags {
   /// `--dart-define`.
   static bool get noUpstreamKeys => !_upstreamBehavior;
 
-  /// Until the fork publishes its own version manifest, no upstream
-  /// GitHub/Play update checks are allowed (PLAN 1.9).
+  /// The fork offers only complete Russian and English interfaces (PLAN 2.3).
+  static bool get fullLanguageCatalog => _upstreamBehavior;
+
+  /// No upstream GitHub/Play update checks in the fork (PLAN 1.9).
   static bool get upstreamUpdates => _upstreamBehavior;
 
   /// Из комнаты и ленты выходят с первого «назад» — кнопкой или жестом, как

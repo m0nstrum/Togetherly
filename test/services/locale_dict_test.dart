@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/dict_strings.dart';
+import 'package:love_app/fork/l10n/tip_actions.dart'; // fork: only ru/en
 import 'package:love_app/services/locale_service.dart';
 
 /// Каркас семи языков.
@@ -50,6 +51,7 @@ void main() {
       // строку завели без перевода: экран покажет английскую надпись посреди
       // немецкого интерфейса.
       final missing = kStrings.entries
+          .where((e) => !tipActionStrings.containsKey(e.key))
           .where((e) => (e.value['de'] ?? '').isEmpty)
           .map((e) => e.key)
           .toList();

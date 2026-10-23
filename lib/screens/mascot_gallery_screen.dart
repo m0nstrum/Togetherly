@@ -803,7 +803,7 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
     folders.add(_ArtistCredit(
       scheme: cs,
       text: ruEn('Художница маскотов «От нас» — Meller1',
-          'Mascots marked «От нас» drawn by Meller1'),
+          'Mascots marked «${LocaleService.current.fromUs}» drawn by Meller1'),
     ));
 
     return ListView(

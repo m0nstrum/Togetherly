@@ -1,3 +1,4 @@
+import 'fork/l10n/tip_actions.dart'; // fork (PLAN 2.3)
 import 'services/locale_service.dart';
 
 import 'l10n/dict/achievements.dart';
@@ -68,6 +69,7 @@ import 'l10n/zh/zh.dart';
 /// Это разделы `l10n/dict/` плюс китайская колонка из `l10n/zh/`, влитая в
 /// каждую запись (почему она лежит отдельно — см. `l10n/zh/zh.dart`).
 final Map<String, Map<String, String>> kStrings = {
+  ...tipActionStrings,
   for (final e in _kSectionStrings.entries)
     e.key: {
       ...e.value,
