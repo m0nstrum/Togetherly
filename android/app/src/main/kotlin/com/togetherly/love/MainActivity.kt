@@ -511,6 +511,10 @@ class MainActivity : FlutterActivity() {
                 // google-services.json при сборке — «нет», и Dart на сокете.
                 "hasServices" -> result.success(ForkFcmService.available(this))
 
+                "renewToken" -> ForkFcmService.renewToken(this) { t -> // fork: M9
+                    runOnUiThread { result.success(t) }
+                }
+
                 "getToken" -> ForkFcmService.token(this) { t -> // fork
                     runOnUiThread { result.success(t) }
                 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import '../fork/battery/battery_share.dart'; // fork: M7
 import 'live_location_service.dart';
 import 'presence_service.dart';
+import '../fork/push/fcm_wake.dart'; // fork: M9
 import '../fork/own_name.dart'; // fork
 import 'dart:convert';
 
@@ -147,6 +148,7 @@ class PocketBaseService {
   /// рефреше токена с 401 после очистки сессии).
   void signOut() {
     // fork: invalidate producers before clearing credentials or switching account.
+    ForkPushToken.resetRegistration();
     ForkBattery.instance.stop();
     LiveLocationService.instance.stopForLogout();
     PresenceService.instance.stop();

@@ -88,6 +88,16 @@ class ForkFcmService : FirebaseMessagingService() {
             }
         }
 
+        // fork: M9 only the device can rotate its native FCM registration.
+        fun renewToken(context: Context, done: (String?) -> Unit) {
+            if (!available(context)) return done(null)
+            try {
+                FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener { task ->
+                    if (task.isSuccessful) token(context, done) else done(null)
+                }
+            } catch (_: Exception) { done(null) }
+        }
+
         /** Токен устройства или null. */
         fun token(context: Context, done: (String?) -> Unit) {
             if (!available(context)) return done(null)

@@ -91,21 +91,24 @@ func TestWakeOnChatMessage(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	assert.Len(t, g.Messages(), 1)
 
-	// Тот же телефон вошёл под Алисой — токен переехал.
+	// Knowing another device token does not transfer ownership.
 	code, body = testutil.Do(t, app, http.MethodPost, "/api/fork/push-token", aTok, `{"token":"bob-phone"}`)
-	require.Equal(t, http.StatusOK, code, body)
-	code, _ = testutil.Do(t, app, http.MethodDelete, "/api/fork/push-token", bTok, `{"token":"bob-phone"}`)
+	require.Equal(t, http.StatusConflict, code, body)
+	code, _ = testutil.Do(t, app, http.MethodDelete, "/api/fork/push-token", aTok, `{"token":"bob-phone"}`)
 	require.Equal(t, http.StatusOK, code)
 	tok, err := app.FindFirstRecordByData("push_tokens", "token", "bob-phone")
-	require.NoError(t, err, "чужой выход токен не удаляет")
-	assert.Equal(t, alice, tok.GetString("user_uid"))
+	require.NoError(t, err)
+	assert.Equal(t, bob, tok.GetString("user_uid"), "foreign registration and logout preserve owner")
+	// The actual phone rotates its FCM token when changing account.
+	code, body = testutil.Do(t, app, http.MethodPost, "/api/fork/push-token", aTok, `{"token":"alice-phone"}`)
+	require.Equal(t, http.StatusOK, code, body)
 
 	// Мёртвый токен забывается.
-	g.Dead["bob-phone"] = true
-	again := newMsg(bob) // будит Алису, у которой теперь этот токен
+	g.Dead["alice-phone"] = true
+	again := newMsg(bob) // wakes Alice at the freshly rotated token
 	require.NoError(t, app.Save(again))
 	require.Eventually(t, func() bool {
-		_, err := app.FindFirstRecordByData("push_tokens", "token", "bob-phone")
+		_, err := app.FindFirstRecordByData("push_tokens", "token", "alice-phone")
 		return err != nil
 	}, 5*time.Second, 20*time.Millisecond)
 }

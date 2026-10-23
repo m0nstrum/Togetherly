@@ -308,3 +308,5 @@
 | `lib/main.dart`, `lib/services/widget_background_refresh_service.dart`, `lib/services/push_background_service.dart` | M6 | Отключение debugPrint в release до инициализации плагинов в основном и фоновых изолятах. | Сохранить configureForkLogging в каждой точке входа. |
 
 | `lib/services/pocketbase_service.dart`, `lib/services/live_location_service.dart`, `lib/services/presence_service.dart` | M7 | Выход синхронно гасит гео, заряд, presence; поколения отсекают завершение старых async-задач. | Сначала остановка производителей, затем очистка auth. Гео при выходе не дописывает последнюю точку. |
+
+| `lib/services/fcm_service.dart`, `lib/services/pocketbase_service.dart`, `android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt`, `android/app/src/main/kotlin/com/togetherly/love/ForkFcmService.kt` | M9 | Токен не переносится между аккаунтами; 409 требует native FCM deleteToken/getToken. Состояние принятой регистрации привязано к uid. | Не выключать фоновый сокет при неуспешной регистрации. |

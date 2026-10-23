@@ -16,6 +16,8 @@ import (
 
 // ErrUnregistered — токен больше не действует (приложение удалено,
 // переустановлено): его надо забыть.
+var ErrTokenOwned = errors.New("wake: token belongs to another account")
+
 var ErrUnregistered = errors.New("wake: токен устройства не действует")
 
 // Sender доставляет данные на устройство (FCM HTTP v1).
