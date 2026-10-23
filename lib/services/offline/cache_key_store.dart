@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../fork/secret_storage.dart'; // fork (PLAN 1.6)
 
 import 'cache_cipher.dart';
 
@@ -21,19 +21,14 @@ class CacheKeyStore {
 
   static const String _entry = 'offline_cache_key_v1';
 
-  static const FlutterSecureStorage _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(resetOnError: true),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
+  static const _storage = ForkSecretStorage.cache;
 
   /// Ключ базы: читает сохранённый, а при первом запуске заводит новый.
   /// null — секретное хранилище недоступно (кэш тогда живёт только в памяти,
   /// см. [LocalStore.init]).
   static Future<Uint8List?> readOrCreate() async {
     try {
-      final existing = await _storage.read(key: _entry);
+      final existing = await ForkSecretStorage.read(_storage, _entry);
       if (existing != null && existing.isNotEmpty) {
         final bytes = base64.decode(existing);
         if (bytes.length == CacheCipher.keyLength) return bytes;

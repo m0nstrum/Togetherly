@@ -12,5 +12,19 @@
 -->
 <full-backup-content>
     <exclude domain="sharedpref" path="FlutterSharedPreferences.xml"/>
+        <!-- fork (PLAN 1.6): secrets, wrapped keys and cipher configuration -->
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration:FlutterSecureStorage.xml"/>
+        <exclude domain="sharedpref" path="TetheredAuth.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage:TetheredAuth.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration:TetheredAuth.xml"/>
+        <exclude domain="sharedpref" path="TetheredCache.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage:TetheredCache.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration:TetheredCache.xml"/>
+        <exclude domain="sharedpref" path="TetheredE2E.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage:TetheredE2E.xml"/>
+        <exclude domain="sharedpref" path="FlutterSecureStorageConfiguration:TetheredE2E.xml"/>
     <exclude domain="file" path="offline"/>
 </full-backup-content>

@@ -11,7 +11,7 @@ library;
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../secret_storage.dart';
 
 import 'backup.dart';
 import 'crypto.dart';
@@ -29,20 +29,15 @@ abstract interface class KeyVault {
 class SecureStorageVault implements KeyVault {
   const SecureStorageVault();
 
-  static const FlutterSecureStorage _s = FlutterSecureStorage(
-    aOptions: AndroidOptions(resetOnError: false),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
+  static const _s = ForkSecretStorage.e2e;
 
   @override
-  Future<String?> read(String key) => _s.read(key: key);
+  Future<String?> read(String key) => ForkSecretStorage.read(_s, key);
   @override
   Future<void> write(String key, String value) =>
       _s.write(key: key, value: value);
   @override
-  Future<void> delete(String key) => _s.delete(key: key);
+  Future<void> delete(String key) => ForkSecretStorage.delete(_s, key);
 }
 
 class MemoryVault implements KeyVault {

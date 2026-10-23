@@ -3,18 +3,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'secret_storage.dart';
+
 /// Сессия PocketBase в Keystore/Keychain, а не в SharedPreferences
 /// (docs/fork/PLAN.md, S6; AUDIT §1: токен лежал открытым текстом).
 ///
 /// Токен, сохранённый прежней версией в SharedPreferences, переносится при
 /// первом запуске и оттуда стирается.
 abstract final class ForkSecureAuthStore {
-  static const FlutterSecureStorage _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(resetOnError: true),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
+  static const _storage = ForkSecretStorage.auth;
 
   /// Хранилище для [PocketBase]. [prefsKey] — ключ, под которым токен лежал в
   /// SharedPreferences у апстрима; под ним же он живёт и в Keystore.
@@ -26,7 +23,7 @@ abstract final class ForkSecureAuthStore {
     return AsyncAuthStore(
       initial: initial,
       save: (data) => storage.write(key: prefsKey, value: data),
-      clear: () => storage.delete(key: prefsKey),
+      clear: () => ForkSecretStorage.delete(storage, prefsKey),
     );
   }
 
@@ -36,7 +33,7 @@ abstract final class ForkSecureAuthStore {
   ) async {
     String? secure;
     try {
-      secure = await storage.read(key: key);
+      secure = await ForkSecretStorage.read(storage, key);
     } catch (e) {
       debugPrint('ForkSecureAuthStore: Keystore не прочитан — $e');
     }
