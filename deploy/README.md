@@ -29,6 +29,30 @@ docker compose exec server /app/tethered superuser upsert admin@example.org 'д�
 visibility), либо войдите на VPS: `docker login ghcr.io` с токеном, у которого
 есть право `read:packages`. Свой форк — свой образ: `TETHERED_IMAGE` в `.env`.
 
+## Администрирование PocketBase
+
+Caddy отвечает 404 на `/_/` и API суперпользователя (по имени коллекции
+и её id). Команда `superuser upsert` выше работает внутри контейнера.
+
+Для панели временно включите только локальный порт на VPS:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.admin.yml up -d server
+```
+
+На своём компьютере откройте SSH-туннель:
+
+```sh
+ssh -N -L 18090:127.0.0.1:8090 user@your-vps
+```
+
+Панель: `http://127.0.0.1:18090/_/`. После работы остановите туннель и
+верните сервер без локального порта:
+
+```sh
+docker compose up -d --force-recreate server
+```
+
 ## Порты
 
 | Порт | Кто | Зачем |
