@@ -1,5 +1,6 @@
 // fork: плашка ключей и экран сверки (docs/fork/E2E.md §6.3, §12.4).
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
@@ -13,6 +14,7 @@ import 'fake_backend.dart';
 void main() {
   late E2ECrypto c;
   setUpAll(() async => c = await E2ECrypto.init());
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   tearDown(() => ForkE2E.service.value = null);
 
   Future<E2EService> install(ServerDb db, String uid) async {
@@ -69,6 +71,40 @@ void main() {
       expect(find.byType(InkWell), findsNothing);
     },
   );
+
+  testWidgets('ordinary reminder can wait; danger cannot; waiting has no dead verify action', (t) async {
+    final db = ServerDb();
+    late E2EService a;
+    await t.runAsync(() async {
+      a = await install(db, alice);
+      final b = await install(db, bob);
+      await a.syncGroup(gid); await b.syncGroup(gid); await a.syncGroup(gid);
+    });
+    ForkE2E.service.value = a;
+    await t.pumpWidget(host(banner));
+    await t.pumpAndSettle();
+    await t.tap(find.byTooltip('Later — remind me in a week'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Compare 7 emoji'), findsNothing);
+    a.status.value = {gid: PairE2EStatus.keyChanged};
+    await t.pumpAndSettle();
+    expect(find.textContaining('key changed'), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsNothing);
+    a.status.value = {gid: PairE2EStatus.tampered};
+    await t.pump();
+    expect(find.textContaining('swapped them'), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsNothing);
+    for (final status in [PairE2EStatus.waitingPartner, PairE2EStatus.waitingKey]) {
+      a.status.value = {gid: status};
+      await t.pump();
+      expect(find.text('Verify'), findsNothing);
+      expect(t.widget<InkWell>(find.byType(InkWell)).onTap, isNull);
+    }
+    a.status.value = {gid: PairE2EStatus.verified};
+    await t.pumpAndSettle();
+    expect(find.textContaining('Keys have no backup'), findsOneWidget);
+    expect(find.text('Turn on'), findsOneWidget);
+  });
 
   testWidgets('экран сверки: эмодзи и «Совпадают» → проверено', (t) async {
     final db = ServerDb();

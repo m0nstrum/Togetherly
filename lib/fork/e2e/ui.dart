@@ -2,7 +2,10 @@
 /// решение §12.4: непроверенная пара работает, но плашка кричит).
 library;
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'banner_defer.dart';
+import 'themed_route.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -55,7 +58,8 @@ class ForkE2EBanner extends StatelessWidget {
                   !svc.needsRestore.value &&
                   all[groupId] != PairE2EStatus.needsRestore;
               final (text, danger) = switch (all[groupId]) {
-                _ when incoming => (
+                _ when incoming && all[groupId] != PairE2EStatus.keyChanged &&
+                    all[groupId] != PairE2EStatus.tampered => (
                   _t(
                     '$partnerName зовёт сверить ключи',
                     '$partnerName wants to verify keys',
@@ -106,8 +110,8 @@ class ForkE2EBanner extends StatelessWidget {
                 ),
                 _ when backupOff => (
                   _t(
-                    'Ключи без бэкапа: потеряете телефон — потеряете переписку. Включить бэкап',
-                    'Keys have no backup: lose your phone, lose your history. Turn on backup',
+                    'Ключи без бэкапа: потеряете телефон — потеряете переписку.',
+                    'Keys have no backup: lose your phone, lose your history.',
                   ),
                   false,
                 ),
@@ -124,22 +128,21 @@ class ForkE2EBanner extends StatelessWidget {
               final fg = danger
                   ? scheme.onErrorContainer
                   : scheme.onTertiaryContainer;
-              return Material(
+              final waiting = all[groupId] == PairE2EStatus.waitingPartner ||
+                  all[groupId] == PairE2EStatus.waitingKey;
+              final canAct = incoming || toBackup || (!waiting &&
+                  (all[groupId] == PairE2EStatus.needsRestore || svc.keys.peers.containsKey(partnerUid)));
+              Widget banner(VoidCallback? later) => Material(
                 color: bg,
                 child: InkWell(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => toBackup
-                          ? const ForkE2EBackupScreen()
-                          : all[groupId] == PairE2EStatus.needsRestore
-                          ? const ForkE2ERestoreScreen()
-                          : ForkE2EVerifyScreen(
-                              groupId: groupId,
-                              partnerUid: partnerUid,
-                              partnerName: partnerName,
-                            ),
-                    ),
-                  ),
+                  onTap: canAct ? () => Navigator.of(context).push(
+                    forkE2ERoute<void>(context, toBackup
+                        ? const ForkE2EBackupScreen()
+                        : all[groupId] == PairE2EStatus.needsRestore
+                            ? const ForkE2ERestoreScreen()
+                            : ForkE2EVerifyScreen(groupId: groupId,
+                                partnerUid: partnerUid, partnerName: partnerName)),
+                  ) : null,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -163,7 +166,7 @@ class ForkE2EBanner extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Text(
+                        if (canAct) Text(
                           toBackup
                               ? _t('Включить', 'Turn on')
                               : all[groupId] == PairE2EStatus.needsRestore
@@ -174,11 +177,22 @@ class ForkE2EBanner extends StatelessWidget {
                             decoration: TextDecoration.underline,
                           ),
                         ),
+                        if (later != null)
+                          IconButton(tooltip: _t('Позже — напомнить через неделю', 'Later — remind me in a week'),
+                            onPressed: later, icon: Icon(Icons.close, color: fg)),
                       ],
                     ),
                   ),
                 ),
               );
+              final ordinary = !incoming && !danger &&
+                  (all[groupId] == PairE2EStatus.unverified || toBackup);
+              if (!ordinary) return banner(null);
+              final peer = svc.keys.peers[partnerUid];
+              final scope = '${svc.uid}|$groupId|$partnerUid|${toBackup ? 'backup' : 'verify'}|'
+                  '${base64Encode(svc.keys.account.publicKey)}|'
+                  '${peer == null ? '' : base64Encode(peer.accountKey)}';
+              return ForkE2EBannerDefer(scope: scope, builder: banner);
             },
           ),
           ),
@@ -474,7 +488,7 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
               ? null
               : () async {
                   final scanned = await Navigator.of(context).push<String>(
-                    MaterialPageRoute(builder: (_) => const _QrScan()),
+                    forkE2ERoute<String>(context, const _QrScan()),
                   );
                   if (scanned == null || !mounted) return;
                   final ok = await svc.verifyByQr(

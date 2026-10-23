@@ -6,6 +6,8 @@
 /// объяснением и действием, которое правда помогает.
 library;
 
+import 'themed_route.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../dict_strings.dart' show ruEn;
@@ -190,7 +192,9 @@ Future<void> showForkLockedSheet(
                 onPressed: () async {
                   Navigator.pop(ctx);
                   final ok = await ForkE2E.retry();
-                  final m = ScaffoldMessenger.maybeOf(nav.context);
+                  final destinationContext = nav.context;
+                  if (!destinationContext.mounted) return;
+                  final m = ScaffoldMessenger.maybeOf(destinationContext);
                   m?.showSnackBar(SnackBar(
                     behavior: SnackBarBehavior.floating,
                     content: Text(ok
@@ -207,9 +211,7 @@ Future<void> showForkLockedSheet(
                 label: Text(ruEn('Восстановить ключи', 'Restore keys')),
                 onPressed: () {
                   Navigator.pop(ctx);
-                  nav.push(MaterialPageRoute<void>(
-                    builder: (_) => const ForkE2ERestoreScreen(),
-                  ));
+                  nav.push(forkE2ERoute<void>(context, const ForkE2ERestoreScreen()));
                 },
               )
             else
