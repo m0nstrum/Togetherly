@@ -30,7 +30,10 @@ routerAdd("POST", "/api/group/patch-map", (e) => {
     if (active.getBool("disbanded")) return e.json(403, {ok: false, error: "pair disbanded"});
   } catch (_) { return e.json(404, {ok: false, error: "not found"}); }
   const field = String(body.field || "").trim();
-  const uid = String(body.uid || "").trim();
+  const uid = e.auth.id;
+  if (body.uid != null && String(body.uid).trim() !== uid) {
+    return e.json(403, { ok: false, error: "cannot act as another member" });
+  }
   // fork (E2E): дни рождения и карточки профиля пишет клиент шифром ключа пары.
   const ALLOWED = ["member_moods", "member_names", "member_avatars", "member_ailments",
     "member_birthdays", "member_cards"];
@@ -109,7 +112,10 @@ routerAdd("POST", "/api/group/leave", (e) => {
     const active = $app.findRecordById("groups", groupId);
     if (active.getBool("disbanded")) return e.json(403, {ok: false, error: "pair disbanded"});
   } catch (_) { return e.json(404, {ok: false, error: "not found"}); }
-  const uid = String(body.uid || "").trim();
+  const uid = e.auth.id;
+  if (body.uid != null && String(body.uid).trim() !== uid) {
+    return e.json(403, { ok: false, error: "cannot act as another member" });
+  }
   if (!groupId || !uid) return e.json(400, { ok: false, error: "bad params" });
   let out;
   try {
@@ -152,7 +158,10 @@ routerAdd("POST", "/api/group/record-activity", (e) => {
     const active = $app.findRecordById("groups", groupId);
     if (active.getBool("disbanded")) return e.json(403, {ok: false, error: "pair disbanded"});
   } catch (_) { return e.json(404, {ok: false, error: "not found"}); }
-  const uid = String(body.uid || "").trim();
+  const uid = e.auth.id;
+  if (body.uid != null && String(body.uid).trim() !== uid) {
+    return e.json(403, { ok: false, error: "cannot act as another member" });
+  }
   const today = String(body.today || "").trim();
   if (!groupId || !uid || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
     return e.json(400, { ok: false, error: "bad params" });
@@ -247,7 +256,10 @@ routerAdd("POST", "/api/group/miss-you", (e) => {
     const active = $app.findRecordById("groups", groupId);
     if (active.getBool("disbanded")) return e.json(403, {ok: false, error: "pair disbanded"});
   } catch (_) { return e.json(404, {ok: false, error: "not found"}); }
-  const uid = String(body.uid || "").trim();
+  const uid = e.auth.id;
+  if (body.uid != null && String(body.uid).trim() !== uid) {
+    return e.json(403, { ok: false, error: "cannot act as another member" });
+  }
   const vibe = String(body.vibe || "miss_you");
   const text = String(body.text || "");
   // Сколько нажатий приехало разом. Клиент копит частые тапы и шлёт их одним
