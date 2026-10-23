@@ -46,6 +46,11 @@ jobs:
 
       # Правки форка на месте, роуты клиента есть на сервере, состав
       # апстрима разобран (docs/fork/MERGE.md).
+      - name: подписи кнопок
+        run: |
+          python3 tool/fork/icon_tooltips_test.py
+          python3 tool/fork/icon_tooltips.py
+
       - name: проверки мёржа
         run: python3 tool/fork/merge_check.py
 

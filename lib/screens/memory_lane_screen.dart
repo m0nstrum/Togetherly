@@ -3920,6 +3920,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         child: Row(
           children: [
             IconButton(
+              tooltip: ruEn('Отменить выбор', 'Cancel selection'),
               onPressed: _exitSelecting,
               icon: Icon(Icons.close_rounded, color: cs.onSecondaryContainer),
             ),

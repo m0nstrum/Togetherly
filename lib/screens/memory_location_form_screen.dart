@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geocoding/geocoding.dart';
@@ -194,6 +195,7 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        tooltip: ruEn('Закрыть', 'Close'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded, size: 22),
         style: IconButton.styleFrom(foregroundColor: widget.theme.textSecondary),

@@ -122,6 +122,7 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
                 fontFamily: 'Unbounded', fontSize: 18, fontWeight: FontWeight.w700),
           ),
           leading: IconButton(
+            tooltip: ruEn('Назад', 'Back'),
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_rounded),
           ),

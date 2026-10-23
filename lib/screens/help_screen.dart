@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'package:flutter/material.dart';
 
 import '../dict_strings.dart';
@@ -141,6 +142,7 @@ class _HelpScreenState extends State<HelpScreen> {
         suffixIcon: _query.text.isEmpty
             ? null
             : IconButton(
+                tooltip: ruEn('Очистить поиск', 'Clear search'),
                 icon: const Icon(Icons.close_rounded),
                 color: cs.onSurfaceVariant,
                 onPressed: () => setState(_query.clear),

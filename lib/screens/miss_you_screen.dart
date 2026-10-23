@@ -1232,6 +1232,7 @@ class _VibeChip extends StatelessWidget {
                 if (onRemove != null) ...[
                   const SizedBox(width: 2),
                   IconButton(
+                    tooltip: ruEn('Удалить фразу', 'Delete phrase'),
                     onPressed: onRemove,
                     icon: const Icon(Icons.close_rounded, size: 16),
                     color: scheme.onSurfaceVariant,

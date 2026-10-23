@@ -1470,6 +1470,7 @@ class _SearchField extends StatelessWidget {
             suffixIcon: value.text.isEmpty
                 ? null
                 : IconButton(
+                    tooltip: ruEn('Очистить поиск', 'Clear search'),
                     icon: Icon(Icons.close_rounded, color: cs.onSurfaceVariant),
                     onPressed: onClear,
                   ),

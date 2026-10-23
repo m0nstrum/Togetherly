@@ -6710,6 +6710,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                 if (onClear != null) ...[
                   const SizedBox(width: 4),
                   IconButton(
+                    tooltip: ruEn('Очистить', 'Clear'),
                     onPressed: onClear,
                     visualDensity: VisualDensity.compact,
                     icon: Icon(Icons.close_rounded,

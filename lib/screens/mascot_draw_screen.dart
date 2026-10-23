@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:math' as math;
@@ -929,6 +930,7 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: ruEn('Закрыть', 'Close'),
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),

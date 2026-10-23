@@ -2985,6 +2985,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
                   IconButton(
+                    tooltip: ruEn('Закрыть', 'Close'),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -3918,6 +3919,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
                   IconButton(
+                    tooltip: ruEn('Закрыть', 'Close'),
                     onPressed: () => Navigator.pop(ctx),
                     icon: const Icon(Icons.close_rounded),
                   ),

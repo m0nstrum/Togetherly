@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'package:flutter/material.dart';
 
 import '../services/locale_service.dart';
@@ -259,6 +260,7 @@ class _PhotoViewState extends State<_PhotoView> {
                           ),
                         ),
                         IconButton(
+                          tooltip: ruEn('Закрыть', 'Close'),
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.close_rounded,
                               color: Colors.white),

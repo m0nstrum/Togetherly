@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:async';
 import 'dart:convert';
 
@@ -369,6 +370,7 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        tooltip: ruEn('Закрыть', 'Close'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded, size: 22),
         style: IconButton.styleFrom(foregroundColor: widget.theme.textSecondary),
@@ -607,6 +609,7 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                     )
                   : (_searchCtrl.text.isNotEmpty
                       ? IconButton(
+                          tooltip: ruEn('Очистить поиск', 'Clear search'),
                           icon: Icon(Icons.clear_rounded,
                               color: widget.theme.textMuted, size: 18),
                           onPressed: () {

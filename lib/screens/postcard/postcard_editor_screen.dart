@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -335,6 +336,7 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
       child: Row(
         children: [
           IconButton(
+            tooltip: ruEn('Назад', 'Back'),
             onPressed: () => Navigator.of(context).pop(),
             icon: Icon(Icons.arrow_back_ios_new_rounded, color: _t.primary, size: 20),
           ),

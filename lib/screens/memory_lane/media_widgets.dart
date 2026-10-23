@@ -801,6 +801,7 @@ class _InAppVideoPlayerPageState extends State<InAppVideoPlayerPage> {
                         child: Row(
                           children: [
                             IconButton(
+                              tooltip: ruEn('Назад', 'Back'),
                               icon: const Icon(
                                 Icons.arrow_back_rounded,
                                 color: Colors.white,

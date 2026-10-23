@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -147,6 +148,7 @@ class VoiceRecordingBar extends StatelessWidget {
                   child: Text(s.cancel),
                 ),
                 IconButton.filled(
+                  tooltip: ruEn('Отправить запись', 'Send recording'),
                   onPressed: onSend,
                   icon: const Icon(Icons.send_rounded, size: 19),
                   style: IconButton.styleFrom(

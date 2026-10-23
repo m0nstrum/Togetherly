@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'package:flutter/material.dart';
 import '../models/pair_data.dart';
@@ -56,6 +57,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: ruEn('Назад', 'Back'),
           icon: Icon(Icons.arrow_back, color: t.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
@@ -201,11 +203,13 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
                     const Icon(Icons.check_circle, color: Colors.pink),
                   if (isSelected) const SizedBox(width: 8),
                   IconButton(
+                    tooltip: ruEn('Изменить', 'Edit'),
                     icon: const Icon(Icons.edit, size: 20),
                     onPressed: onEdit,
                     color: Colors.blue,
                   ),
                   IconButton(
+                    tooltip: ruEn('Удалить', 'Delete'),
                     icon: const Icon(Icons.delete, size: 20),
                     onPressed: onDelete,
                     color: Colors.red,

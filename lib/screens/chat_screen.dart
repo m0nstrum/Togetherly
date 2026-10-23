@@ -2108,6 +2108,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           IconButton(
+            tooltip: ruEn('Отменить ответ', 'Cancel reply'),
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.close_rounded, color: _t.textMuted, size: 20),
             onPressed: () => setState(() => _replyingTo = null),
@@ -3931,6 +3932,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           IconButton(
+            tooltip: ruEn('Закрыть', 'Close'),
             icon: const Icon(Icons.close_rounded, size: 18),
             color: _t.textMuted,
             onPressed: onClose,

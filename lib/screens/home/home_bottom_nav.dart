@@ -121,7 +121,8 @@ class HomeBottomNav extends StatelessWidget {
                 // спрятанные вкладки пропускаются.
                 for (final i in order)
                   if ((i != 1 || showWidgets) && (i != 4 || showWatch))
-                    NavBarItem(
+                    Expanded(
+                      child: NavBarItem(
                       svgIcon: switch (i) {
                         0 => _homeIcon,
                         1 => _widgetsIcon,
@@ -144,6 +145,7 @@ class HomeBottomNav extends StatelessWidget {
                       badgeColor: primary,
                       showBadge: i == 2 && !isPaired,
                       onTap: () => onTap(i),
+                      ),
                     ),
               ],
             ),
