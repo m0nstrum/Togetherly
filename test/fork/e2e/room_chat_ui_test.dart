@@ -22,10 +22,15 @@ class _Keys implements E2EKeyring {
 
 class _Loop implements RoomTransport {
   final sent = <Map<String, dynamic>>[];
+  bool failChat = false;
   void Function(Map<String, dynamic>)? _on;
   void deliver(Map<String, dynamic> m) => _on?.call(m);
   @override
-  Future<void> send(Map<String, dynamic> msg) async => sent.add(msg);
+  Future<void> send(Map<String, dynamic> msg) async {
+    if (failChat && msg['t'] == 'chat') throw StateError('offline');
+    sent.add(msg);
+  }
+
   @override
   Future<Future<void> Function()> listen(
     void Function(Map<String, dynamic>) onMessage,
@@ -38,6 +43,90 @@ class _Loop implements RoomTransport {
 void main() {
   late E2ECrypto c;
   setUpAll(() async => c = await E2ECrypto.init());
+
+  testWidgets('no pair key disables composing and sending', (t) async {
+    final chat = RoomChat(
+      room: 'R',
+      groupId: 'g',
+      me: 'a',
+      name: 'A',
+      crypto: c,
+      pairKeys: _Keys(null),
+      transport: _Loop(),
+    );
+    await chat.start();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            children: [
+              ForkRoomChatOverlay(room: 'R', groupId: 'g', chat: chat),
+            ],
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.byIcon(Icons.chat_bubble_outline));
+    await t.pump();
+    expect(t.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    expect(
+      t
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.send))
+          .onPressed,
+      isNull,
+    );
+    expect(find.textContaining(RegExp('Ключи пары|Pair keys')), findsWidgets);
+    await t.pumpWidget(const SizedBox.shrink());
+    chat.dispose();
+  });
+
+  testWidgets(
+    'publication failure shows retry and preserves the draft in a bubble',
+    (t) async {
+      final loop = _Loop();
+      final chat = RoomChat(
+        room: 'R',
+        groupId: 'g',
+        me: 'a',
+        name: 'A',
+        crypto: c,
+        pairKeys: _Keys(PairKey('g', 1, c.symmetricKey())),
+        transport: loop,
+        keyWait: Duration.zero,
+      );
+      await t.runAsync(() async {
+        await chat.start();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                ForkRoomChatOverlay(room: 'R', groupId: 'g', chat: chat),
+              ],
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.byIcon(Icons.chat_bubble_outline));
+      await t.pump();
+      loop.failChat = true;
+      await t.enterText(find.byType(TextField), 'keep this');
+      await t.tap(find.byIcon(Icons.send));
+      await t.pumpAndSettle();
+      expect(find.text('keep this'), findsOneWidget);
+      final retry = find.textContaining(RegExp('Не отправлено|Not sent'));
+      expect(retry, findsOneWidget);
+      loop.failChat = false;
+      await t.tap(retry);
+      await t.pumpAndSettle();
+      expect(retry, findsNothing);
+      expect(chat.messages, hasLength(1));
+      await t.pumpWidget(const SizedBox.shrink());
+      chat.dispose();
+    },
+  );
 
   testWidgets('кнопка, непрочитанное, панель и честная строка', (t) async {
     final loop = _Loop();

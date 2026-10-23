@@ -1,3 +1,4 @@
+import '../fork/widget_pin_confirmation.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import '../fork/flags.dart'; // fork: M3
 import '../fork/identity.dart'; // fork: полное имя класса виджета
@@ -226,6 +227,20 @@ class _WidgetScreenState extends State<WidgetScreen>
   final GlobalKey _pairWidgetKey = GlobalKey();
 
   bool _canPinWidgets = false;
+  Timer? _pinConfirmationTimer;
+  late final _pinConfirmation = ForkWidgetPinConfirmation(
+    installed: HomeWidget.getInstalledWidgets,
+    confirmed: () async {
+      await LevelService.instance.award(XpAction.setWidget);
+      await UiPrefs.markWidgetPinned();
+      if (mounted) ForkNotice.info(context, LocaleService.current.widgetAddedToHome);
+    },
+  );
+
+  Future<void> _checkPinnedWidgets() async {
+    try { await _pinConfirmation.check(); } catch (_) { /* Retry on resume. */ }
+    if (!_pinConfirmation.pending) _pinConfirmationTimer?.cancel();
+  }
   // Счётчик дней: персонализация «наши фото» (фича за коины)
   // Цена — зеркало FEATURE_PRICES['days_widget_photos'] на сервере.
   static const int _daysPhotosPrice = 20;
@@ -563,6 +578,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     // стол) — обновляем список виджетов, чтобы новый виджет появился сразу.
     if (state == AppLifecycleState.resumed) {
       _loadPhotoDayWidgets();
+      unawaited(_checkPinnedWidgets());
     }
   }
 
@@ -1154,16 +1170,19 @@ class _WidgetScreenState extends State<WidgetScreen>
         }
       }
 
-      await HomeWidget.requestPinWidget(
-        name: className,
-        androidName: className, qualifiedAndroidName: ForkIdentity.widgetClass(className), // fork
-      );
-      debugPrint('_pinWidget: requestPinWidget completed successfully');
-      unawaited(LevelService.instance.award(XpAction.setWidget));
-      // Шаг «поставить виджет» в списке первых действий закрывается отсюда:
-      // записи widget_data заводятся при любой синхронизации и о рабочем столе
-      // ничего не говорят.
-      unawaited(UiPrefs.markWidgetPinned());
+      await _pinConfirmation.request(ForkIdentity.widgetClass(className), () async {
+        await HomeWidget.requestPinWidget(
+          name: className, androidName: className,
+          qualifiedAndroidName: ForkIdentity.widgetClass(className),
+        );
+      });
+      if (mounted) ForkNotice.info(context,
+        ruEn('Подтвердите добавление в окне системы', 'Confirm adding the widget in the system dialog'));
+      _pinConfirmationTimer?.cancel();
+      _pinConfirmationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted || timer.tick >= 30) { timer.cancel(); return; }
+        unawaited(_checkPinnedWidgets());
+      });
       // Привязываем виджет к текущей группе и СРАЗУ синхронизируем данные
       // For solo mode, we still sync with empty groupId
       if (widgetType != null) {
@@ -1179,15 +1198,6 @@ class _WidgetScreenState extends State<WidgetScreen>
         if (widgetType.startsWith('photo_day')) {
           await _loadPhotoDayWidgets();
         }
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.widgetAddedToHome),
-            backgroundColor: Colors.green.shade400,
-            duration: const Duration(seconds: 2),
-          ),
-        );
       }
     } catch (e, stack) {
       debugPrint('Pin widget failed: $e');
@@ -1448,6 +1458,7 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   @override
   void dispose() {
+    _pinConfirmationTimer?.cancel();
     _rewardedAd.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _missYouSub?.cancel();

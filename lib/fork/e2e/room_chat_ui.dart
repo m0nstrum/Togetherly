@@ -30,11 +30,11 @@ class CentrifugoRoomTransport implements RoomTransport {
 
   @override
   Future<void> send(Map<String, dynamic> msg) async {
-    try {
-      await CentrifugoService.instance.publish(channel, msg);
-    } catch (_) {
-      // Обрыв лечит переподключение: реплика пропадёт, как и у страницы.
-    }
+    await CentrifugoService.instance.publish(
+      channel,
+      msg,
+      requireDelivery: msg['t'] == 'chat',
+    );
   }
 
   @override
@@ -173,8 +173,10 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
 
   Future<void> _send() async {
     final chat = _chat;
-    if (chat == null) return;
-    if (await chat.send(_input.text)) _input.clear();
+    if (chat == null || !chat.canSend || _input.text.trim().isEmpty) return;
+    final text = _input.text;
+    _input.clear();
+    await chat.send(text);
   }
 
   @override
@@ -269,18 +271,21 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
                   Expanded(
                     child: TextField(
                       controller: _input,
+                      enabled: chat.canSend,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => unawaited(_send()),
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: _t('Сообщение', 'Message'),
+                        hintText: chat.canSend
+                            ? _t('Сообщение', 'Message')
+                            : forkRoomChatStatus(chat),
                       ),
                     ),
                   ),
                   IconButton(
                     tooltip: _t('Отправить', 'Send'),
                     icon: const Icon(Icons.send),
-                    onPressed: () => unawaited(_send()),
+                    onPressed: chat.canSend ? () => unawaited(_send()) : null,
                   ),
                 ],
               ),
@@ -290,6 +295,8 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
       ),
     );
   }
+
+  bool chatCanRetry(RoomMessage m) => _chat?.canSend == true && !m.pending;
 
   Widget _bubble(RoomMessage m, ColorScheme cs) => Align(
     alignment: m.mine ? Alignment.centerRight : Alignment.centerLeft,
@@ -310,6 +317,19 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
             ),
           Text(m.text),
+          if (m.pending)
+            Text(
+              _t('Отправляем…', 'Sending…'),
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+          if (m.failed)
+            TextButton.icon(
+              onPressed: chatCanRetry(m)
+                  ? () => unawaited(_chat!.retry(m))
+                  : null,
+              icon: const Icon(Icons.refresh, size: 16),
+              label: Text(_t('Не отправлено · Повторить', 'Not sent · Retry')),
+            ),
         ],
       ),
     ),

@@ -181,8 +181,9 @@ class CentrifugoService {
   /// allow_publish_for_subscriber). Клиент должен быть подписан на канал —
   /// поднимаем подписку при необходимости. Ошибки глотаем: эфемерная публикация
   /// (потерянный кадр live-штриха некритичен).
-  Future<void> publish(String channel, Map<String, dynamic> data) =>
-      _hub(channel).publish(data);
+  Future<void> publish(String channel, Map<String, dynamic> data,
+      {bool requireDelivery = false}) =>
+      _hub(channel).publish(data, requireDelivery: requireDelivery);
 
   /// fork: публикация, пришедшая не по сокету (будильник FCM,
   /// lib/fork/push/fcm_wake.dart), — слушателям канала, как с сокета.
@@ -313,7 +314,7 @@ class _ChannelHub {
   /// пропадающие штрихи после каждого обрыва связи (19 августа 2026).
   ///
   /// Ошибки глотаем — данные эфемерные, потеря кадра некритична.
-  Future<void> publish(Map<String, dynamic> data) async {
+  Future<void> publish(Map<String, dynamic> data, {bool requireDelivery = false}) async {
     _ensureSubscribed();
     final ready = await awaitSubscribed(
       isSubscribed: () =>
@@ -321,12 +322,14 @@ class _ChannelHub {
       onSubscribed: () => _sub.subscribed.first,
     );
     if (!ready) {
+      if (requireDelivery) throw TimeoutException('Channel subscription unavailable');
       debugPrint('Centrifugo publish($channel): подписки нет, пропускаем');
       return;
     }
     try {
       await _sub.publish(utf8.encode(jsonEncode(data)));
     } catch (e) {
+      if (requireDelivery) rethrow;
       debugPrint('Centrifugo publish($channel) failed: $e');
     }
   }

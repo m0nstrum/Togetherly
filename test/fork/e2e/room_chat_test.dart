@@ -28,10 +28,12 @@ class _Bus {
 
   /// Сеть теряет всё, пока true.
   bool drop = false;
+  bool failChat = false;
 
   RoomTransport transport() => _Transport(this);
 
   void publish(Map<String, dynamic> m) {
+    if (failChat && m['t'] == 'chat') throw StateError('offline');
     if (drop) return;
     wire.add(m);
     for (final s in List.of(_subs)) {
@@ -74,6 +76,30 @@ void main() {
         transport: bus.transport(),
         keyWait: const Duration(milliseconds: 30),
       );
+
+  test('failed publication keeps one failed bubble and retry delivers it', () async {
+    final bus = _Bus();
+    final a = app(bus, 'alice');
+    await a.start();
+    await _settle();
+    bus.failChat = true;
+    expect(await a.send('keep me'), isFalse);
+    final message = a.messages.single;
+    expect(message.failed, isTrue);
+    expect(message.pending, isFalse);
+    final b = app(bus, 'bob');
+    await b.start();
+    await _settle();
+    expect(b.messages, isEmpty, reason: 'unsent text is excluded from session history');
+    bus.failChat = false;
+    expect(await a.retry(message), isTrue);
+    await _settle();
+    expect(a.messages.single, same(message));
+    expect(message.failed, isFalse);
+    expect(b.messages.single.text, 'keep me');
+    expect(await a.retry(message), isFalse, reason: 'already sent');
+    a.dispose(); b.dispose();
+  });
 
   test(
     'ключ сессии договорён, реплики шифром, сервер текста не видит',

@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
@@ -36,8 +37,10 @@ class CoupleStatsScreen extends StatefulWidget {
     required this.myUid,
     this.startDate,
     this.anniversaryDate,
+    this.loadStats,
   });
 
+  final Future<CoupleStats?> Function(bool force)? loadStats;
   final AppTheme theme;
   final String groupId;
   final String myUid;
@@ -51,6 +54,7 @@ class CoupleStatsScreen extends StatefulWidget {
 class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
   CoupleStats? _stats;
   bool _loading = true;
+  ForkFailure? _failure;
 
   AppTheme get _t => widget.theme;
   ColorScheme get _cs => ProfileTheme.themeFor(_t).colorScheme;
@@ -65,12 +69,16 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    final data = await CoupleStatsService.load(widget.groupId, force: force);
-    if (!mounted) return;
-    setState(() {
-      _stats = data;
-      _loading = false;
-    });
+    setState(() { _loading = true; _failure = null; });
+    try {
+      final data = await (widget.loadStats?.call(force) ??
+          CoupleStatsService.load(widget.groupId, force: force));
+      if (mounted) setState(() { _stats = data; });
+    } catch (e) {
+      if (mounted) setState(() => _failure = ForkFailure.of(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   // ── Данные ────────────────────────────────────────────────────────────────
@@ -142,6 +150,11 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
       ),
       body: _loading
           ? M3PageLoading(color: _t.primaryLight)
+          : _failure != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_failure!.text, textAlign: TextAlign.center)),
+                  FilledButton(onPressed: () => _load(force: true), child: Text(_tr('Повторить', 'Retry'))),
+                ]))
           : s == null
               ? _empty()
               : RefreshIndicator(

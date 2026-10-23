@@ -22,9 +22,7 @@ import '../../widgets/app_sheet.dart';
 @immutable
 class ForkRoomPick {
   const ForkRoomPick.url(this.url) : file = false;
-  const ForkRoomPick.file()
-      : url = '',
-        file = true;
+  const ForkRoomPick.file() : url = '', file = true;
 
   final String url;
   final bool file;
@@ -36,8 +34,10 @@ class ForkRoomPick {
 bool forkRoomPlayable(String raw) {
   final s = raw.trim();
   if (s.isEmpty) return false;
-  final m = RegExp(r'(https?://\S+)|((?:[a-z0-9-]+\.)+[a-z]{2,}/\S*)', caseSensitive: false)
-      .firstMatch(s);
+  final m = RegExp(
+    r'(https?://\S+)|((?:[a-z0-9-]+\.)+[a-z]{2,}/\S*)',
+    caseSensitive: false,
+  ).firstMatch(s);
   if (m == null) return false;
   final link = m.group(1) ?? 'https://${m.group(2)}';
   final uri = Uri.tryParse(link);
@@ -46,15 +46,23 @@ bool forkRoomPlayable(String raw) {
   bool ends(String d) => host == d || host.endsWith('.$d');
   if (ends('youtu.be') || ends('youtube.com') || ends('vimeo.com')) return true;
   if (ends('vk.com') || ends('vkvideo.ru') || ends('rutube.ru')) return true;
-  if (ends('disk.yandex.ru') || ends('disk.yandex.com') || host == 'yadi.sk') return true;
-  if (ends('dropbox.com') || host == 'mega.nz' || host == 'mega.io') return true;
+  if (ends('disk.yandex.ru') || ends('disk.yandex.com') || host == 'yadi.sk')
+    return true;
+  if (ends('dropbox.com') || host == 'mega.nz' || host == 'mega.io')
+    return true;
   if (host == 'drive.google.com') return true;
-  return RegExp(r'\.(mp4|m4v|webm|ogv|ogg|mov)$', caseSensitive: false).hasMatch(uri.path);
+  return RegExp(
+    r'\.(mp4|m4v|webm|ogv|ogg|mov)$',
+    caseSensitive: false,
+  ).hasMatch(uri.path);
 }
 
 /// Первая ссылка из текста — то, что уйдёт странице.
 String forkRoomLinkOf(String raw) {
-  final m = RegExp(r'https?://\S+', caseSensitive: false).firstMatch(raw.trim());
+  final m = RegExp(
+    r'https?://\S+',
+    caseSensitive: false,
+  ).firstMatch(raw.trim());
   return m?.group(0) ?? raw.trim();
 }
 
@@ -65,12 +73,11 @@ Future<ForkRoomPick?> showForkRoomPicker(
   BuildContext context, {
   required String groupId,
   String initial = '',
-}) =>
-    showAppSheet<ForkRoomPick>(
-      context,
-      expand: true,
-      builder: (_) => ForkRoomPicker(groupId: groupId, initial: initial),
-    );
+}) => showAppSheet<ForkRoomPick>(
+  context,
+  expand: true,
+  builder: (_) => ForkRoomPicker(groupId: groupId, initial: initial),
+);
 
 class ForkRoomPicker extends StatefulWidget {
   const ForkRoomPicker({
@@ -95,12 +102,16 @@ class ForkRoomPicker extends StatefulWidget {
 }
 
 class _ForkRoomPickerState extends State<ForkRoomPicker> {
-  late final TextEditingController _link = TextEditingController(text: widget.initial);
+  late final TextEditingController _link = TextEditingController(
+    text: widget.initial,
+  );
   String _clip = '';
   bool _bad = false;
   List<WatchEntry> _recent = const [];
   List<WatchVideo> _mine = const [];
   bool _loading = true;
+  bool _recentFailed = false;
+  bool _mineFailed = false;
 
   @override
   void initState() {
@@ -115,9 +126,20 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _recentFailed = false;
+      _mineFailed = false;
+    });
     final clip = _readClip();
-    final recent = _guard(widget.recent ?? () => WatchHistoryService.recent(widget.groupId));
-    final mine = _guard(widget.uploaded ?? () => WatchVideosService.uploaded(widget.groupId));
+    final recent = _guard(
+      widget.recent ?? () => WatchHistoryService.recent(widget.groupId),
+      () => _recentFailed = true,
+    );
+    final mine = _guard(
+      widget.uploaded ?? () => WatchVideosService.uploaded(widget.groupId),
+      () => _mineFailed = true,
+    );
     final c = await clip;
     final r = await recent;
     final m = await mine;
@@ -126,8 +148,12 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
       _clip = forkRoomPlayable(c) ? forkRoomLinkOf(c) : '';
       // Свой файл ссылкой не открыть, а защищённые ролики играют только
       // отдельным плеером — в комнату их не включить.
-      _recent = r.where((e) => !e.url.startsWith('file://') && forkRoomPlayable(e.url)).toList();
-      _mine = m.where((v) => !v.appOnly && WatchVideosService.playsInRoom(v.url)).toList();
+      _recent = r
+          .where((e) => !e.url.startsWith('file://') && forkRoomPlayable(e.url))
+          .toList();
+      _mine = m
+          .where((v) => !v.appOnly && WatchVideosService.playsInRoom(v.url))
+          .toList();
       _loading = false;
     });
   }
@@ -142,13 +168,29 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
     }
   }
 
-  Future<List<T>> _guard<T>(Future<List<T>> Function() f) async {
+  Future<List<T>> _guard<T>(
+    Future<List<T>> Function() f,
+    VoidCallback failed,
+  ) async {
     try {
       return await f();
     } catch (_) {
-      return const []; // тихо: без списков лист всё равно работает ссылкой
+      failed();
+      return const [];
     }
   }
+
+  Widget _listError(String title) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    title: Text(title),
+    subtitle: Text(
+      ruEn('Не удалось загрузить список', 'Could not load the list'),
+    ),
+    trailing: TextButton(
+      onPressed: _load,
+      child: Text(ruEn('Повторить', 'Retry')),
+    ),
+  );
 
   void _submit() {
     final text = _link.text.trim();
@@ -175,13 +217,25 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
               margin: EdgeInsets.zero,
               color: cs.primaryContainer,
               child: ListTile(
-                leading: Icon(Icons.content_paste_rounded, color: cs.onPrimaryContainer),
-                title: Text(ruEn('Включить ссылку из буфера', 'Play the copied link'),
-                    style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
-                subtitle: Text(_clip,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: cs.onPrimaryContainer.withValues(alpha: .8))),
+                leading: Icon(
+                  Icons.content_paste_rounded,
+                  color: cs.onPrimaryContainer,
+                ),
+                title: Text(
+                  ruEn('Включить ссылку из буфера', 'Play the copied link'),
+                  style: TextStyle(
+                    color: cs.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  _clip,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: cs.onPrimaryContainer.withValues(alpha: .8),
+                  ),
+                ),
                 onTap: () => _pick(_clip),
               ),
             ),
@@ -202,8 +256,10 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
               helperText: _bad ? null : forkRoomSources,
               helperMaxLines: 2,
               errorText: _bad
-                  ? ruEn('Такую ссылку комната не откроет. Подходят: $forkRoomSources и прямые ссылки на файл',
-                      'The room can’t open this link. Works with: $forkRoomSources and direct file links')
+                  ? ruEn(
+                      'Такую ссылку комната не откроет. Подходят: $forkRoomSources и прямые ссылки на файл',
+                      'The room can’t open this link. Works with: $forkRoomSources and direct file links',
+                    )
                   : null,
               errorMaxLines: 3,
               border: const OutlineInputBorder(),
@@ -219,11 +275,18 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
               backgroundColor: cs.secondaryContainer,
-              child: Icon(Icons.folder_open_rounded, color: cs.onSecondaryContainer),
+              child: Icon(
+                Icons.folder_open_rounded,
+                color: cs.onSecondaryContainer,
+              ),
             ),
             title: Text(ruEn('Файл с телефона', 'A file from your phone')),
-            subtitle: Text(ruEn('Играет у вас; партнёр откроет такой же файл у себя',
-                'Plays on your phone; your partner opens the same file')),
+            subtitle: Text(
+              ruEn(
+                'Играет у вас; партнёр откроет такой же файл у себя',
+                'Plays on your phone; your partner opens the same file',
+              ),
+            ),
             onTap: () => Navigator.of(context).pop(const ForkRoomPick.file()),
           ),
           if (_loading)
@@ -231,11 +294,17 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(child: CircularProgressIndicator()),
             ),
+          if (!_loading && _mineFailed)
+            _listError(ruEn('Ваши ролики', 'Your videos')),
+          if (!_loading && _recentFailed)
+            _listError(ruEn('Недавнее', 'Recent')),
           if (_mine.isNotEmpty) ...[
             _Head(ruEn('Ваши ролики', 'Your videos'), tt),
             for (final v in _mine)
               _Row(
-                title: v.title.isEmpty ? ruEn('Без названия', 'Untitled') : v.title,
+                title: v.title.isEmpty
+                    ? ruEn('Без названия', 'Untitled')
+                    : v.title,
                 thumb: v.thumbUrl,
                 icon: Icons.video_library_rounded,
                 onTap: () => _pick(v.url),
@@ -246,7 +315,9 @@ class _ForkRoomPickerState extends State<ForkRoomPicker> {
             for (final e in _recent)
               _Row(
                 title: e.title.isEmpty ? e.url : e.title,
-                subtitle: e.title.isEmpty ? '' : (Uri.tryParse(e.url)?.host ?? ''),
+                subtitle: e.title.isEmpty
+                    ? ''
+                    : (Uri.tryParse(e.url)?.host ?? ''),
                 thumb: e.thumb,
                 icon: Icons.history_rounded,
                 onTap: () => _pick(e.url),
@@ -265,9 +336,9 @@ class _Head extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 20, bottom: 6),
-        child: Text(text, style: tt.titleSmall),
-      );
+    padding: const EdgeInsets.only(top: 20, bottom: 6),
+    child: Text(text, style: tt.titleSmall),
+  );
 }
 
 class _Row extends StatelessWidget {
@@ -302,12 +373,18 @@ class _Row extends StatelessWidget {
           width: 72,
           height: 44,
           child: thumb.startsWith('http')
-              ? Image.network(thumb, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback)
+              ? Image.network(
+                  thumb,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => fallback,
+                )
               : fallback,
         ),
       ),
       title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
-      subtitle: subtitle.isEmpty ? null : Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: subtitle.isEmpty
+          ? null
+          : Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing: const Icon(Icons.play_circle_outline_rounded),
     );
   }

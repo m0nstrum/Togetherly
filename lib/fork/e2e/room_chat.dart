@@ -35,7 +35,7 @@ abstract interface class RoomTransport {
 }
 
 class RoomMessage {
-  const RoomMessage({
+  RoomMessage({
     required this.from,
     required this.name,
     required this.text,
@@ -50,8 +50,11 @@ class RoomMessage {
   final int at;
   final bool mine;
 
+  bool pending = false;
+  bool failed = false;
+
   /// Шло открытым текстом (браузер в комнате).
-  final bool open;
+  bool open;
 
   Map<String, dynamic> toJson() => {
     'from': from,
@@ -122,6 +125,8 @@ class RoomChat extends ChangeNotifier {
   bool _closed = false;
 
   /// Переписка шифруется ключом сессии.
+  bool get canSend => !_closed && !noPairKey && (openMode || _rk != null);
+
   bool get secure => _rk != null && !openMode;
 
   /// Ключа пары нет — партнёры ещё не обменялись ключами, сеансовому ключу
@@ -206,7 +211,14 @@ class RoomChat extends ChangeNotifier {
         'ts': at,
         'e2e': _codec.sealChannel(_place('log', me, at), {
           'log': [
-            for (final m in messages.reversed.take(logLimit).toList().reversed)
+            for (final m
+                in messages
+                    .where((m) => !m.failed && !m.pending)
+                    .toList()
+                    .reversed
+                    .take(logLimit)
+                    .toList()
+                    .reversed)
               m.toJson(),
           ],
         }, rk),
@@ -317,39 +329,65 @@ class RoomChat extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Отправить реплику. false — ключ сессии ещё не договорён (первые
-  /// полторы секунды в комнате).
+  /// false means unavailable or not acknowledged; failed bubbles keep their text.
   Future<bool> send(String text) async {
     final t = text.trim();
-    if (t.isEmpty) return false;
-    final at = DateTime.now().millisecondsSinceEpoch;
-    final rk = _rk;
-    if (noPairKey) return false;
-    if (openMode) {
-      await _t.send({'t': 'chat', 'from': me, 'text': t, 'name': name});
-    } else if (rk != null) {
-      await _t.send({
-        't': 'chat',
-        'from': me,
-        'ts': at,
-        'e2e': _codec.sealChannel(_place('chat', me, at), {
-          'text': t,
-          'name': name,
-        }, rk),
-      });
-    } else {
+    if (t.isEmpty || !canSend) return false;
+    final message = RoomMessage(
+      from: me,
+      name: name,
+      text: t,
+      at: DateTime.now().millisecondsSinceEpoch,
+      mine: true,
+      open: openMode,
+    )..pending = true;
+    _add(message);
+    return _deliver(message);
+  }
+
+  Future<bool> retry(RoomMessage message) async {
+    if (!messages.contains(message) ||
+        !message.mine ||
+        !message.failed ||
+        message.pending ||
+        !canSend)
       return false;
+    message.failed = false;
+    message.pending = true;
+    notifyListeners();
+    return _deliver(message);
+  }
+
+  Future<bool> _deliver(RoomMessage message) async {
+    try {
+      message.open = openMode;
+      if (openMode) {
+        await _t.send({
+          't': 'chat',
+          'from': me,
+          'text': message.text,
+          'name': name,
+        });
+      } else {
+        final rk = _rk;
+        if (rk == null || noPairKey) throw StateError('Room key unavailable');
+        await _t.send({
+          't': 'chat',
+          'from': me,
+          'ts': message.at,
+          'e2e': _codec.sealChannel(_place('chat', me, message.at), {
+            'text': message.text,
+            'name': name,
+          }, rk),
+        });
+      }
+      message.failed = false;
+    } catch (_) {
+      message.failed = true;
+    } finally {
+      message.pending = false;
+      if (!_closed) notifyListeners();
     }
-    _add(
-      RoomMessage(
-        from: me,
-        name: name,
-        text: t,
-        at: at,
-        mine: true,
-        open: openMode,
-      ),
-    );
-    return true;
+    return !message.failed;
   }
 }
