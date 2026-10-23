@@ -150,7 +150,7 @@ jobs:
       # Тесты автора (хуки и живые регрессы инвайтов) против нашего сервера.
       - name: паритет с апстримом
         run: |
-          python -m pip install --quiet websockets
+          python -m pip install --quiet websockets cryptography
           scripts/parity.sh
 
   apk:

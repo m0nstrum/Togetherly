@@ -11,7 +11,7 @@
 # Поднимает свой бинарник и Centrifugo в Docker (нужен регрессу инвайтов).
 #   server/scripts/parity.sh
 #   CENTRIFUGO_IMAGE=mirror.gcr.io/centrifugo/centrifugo:v6 server/scripts/parity.sh
-# Нужны go, node, python3 с пакетом websockets, docker.
+# Нужны go, node, python3 с пакетами websockets и cryptography, docker.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -82,12 +82,14 @@ grep -vE '^[[:space:]]*(#|$)' "$here/parity.allow" | while read -r name; do
       -e "s#^WS = .*#WS = \"ws://127.0.0.1:$cf_port/connection/websocket\"#" \
       -e 's#ssl=ssl.create_default_context(), ##' \
       "$src" >"$work/$name"
+  # Verify/unwrap H3 transport only in the disposable test copy.
+  python3 "$here/scripts/adapt-realtime-test.py" "$work/$name" "$work/$name"
   # Сторож: в копии не осталось адресов автора.
   if grep -nE 'togetherly\.(day|app)' "$work/$name" | grep -vE ':[0-9]+:[[:space:]]*#' >&2; then
     echo "FAIL: $name — адрес автора не подменён" >&2
     exit 1
   fi
-  (cd "$work" && timeout 180 python3 -I "$name") >"$work/out.txt" 2>&1 && status=0 || status=$?
+  (cd "$work" && PARITY_API_KEY="$secret" timeout 180 python3 -I "$name") >"$work/out.txt" 2>&1 && status=0 || status=$?
   if [ "$status" = 0 ]; then
     echo "ok: $name ($(tail -1 "$work/out.txt"))"
   else
@@ -99,8 +101,10 @@ done || failed=1
 
 # 3. Свои сценарии форка поверх того же стека (scripts/e2e).
 for t in "$here"/scripts/e2e/*.test.py; do
-  run "$(basename "$t")" env BASE="http://127.0.0.1:$port" \
-    WS="ws://127.0.0.1:$cf_port/connection/websocket" timeout 180 python3 -I "$t"
+  adapted="$work/$(basename "$t")"
+  python3 "$here/scripts/adapt-realtime-test.py" "$t" "$adapted"
+  run "$(basename "$t")" env PARITY_API_KEY="$secret" BASE="http://127.0.0.1:$port" \
+    WS="ws://127.0.0.1:$cf_port/connection/websocket" timeout 180 python3 -I "$adapted"
 done
 
 exit "$failed"
