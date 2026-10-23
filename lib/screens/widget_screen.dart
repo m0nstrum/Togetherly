@@ -1,3 +1,4 @@
+import '../fork/ui/manual_widget_hint.dart'; // fork
 import '../fork/widget_pin_confirmation.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import '../fork/flags.dart'; // fork: M3
@@ -450,11 +451,9 @@ class _WidgetScreenState extends State<WidgetScreen>
     if (!Platform.isAndroid) return false;
     try {
       final supported = await HomeWidget.isRequestPinWidgetSupported();
-      // Часть лончеров Android отвечает false, хотя закрепление умеет, поэтому
-      // здесь ответ системы не считаем окончательным.
-      return (supported ?? false) || true;
+      return supported ?? false;
     } catch (_) {
-      return true;
+      return false;
     }
   }
 
@@ -2783,6 +2782,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                 style: FilledButton.styleFrom(padding: EdgeInsets.zero),
               ),
             ),
+          ] else if (Platform.isAndroid || Platform.isIOS) ...[
+            const SizedBox(height: 9),
+            const ForkManualWidgetHint(),
           ],
         ],
       ),
@@ -4577,29 +4579,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                 style: FilledButton.styleFrom(padding: EdgeInsets.zero),
               ),
             ),
-          ] else if (Platform.isIOS) ...[
-            // На iPhone виджеты ставит система, программного «закрепить» нет.
-            // Без этой строки карточка выглядит витриной без кнопки, и человек
-            // не понимает, что делать дальше.
+          ] else if (!locked && (Platform.isAndroid || Platform.isIOS)) ...[
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    size: 16, color: _cs.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    LocaleService.current.addWidgetFromHomeHint,
-                    style: TextStyle(
-                      fontFamily: 'Onest',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _cs.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            const ForkManualWidgetHint(),
           ],
           // ── Раскрываемое содержимое ──
           AnimatedSize(
