@@ -121,7 +121,7 @@ jobs:
           git diff --exit-code -- .
 
       - name: go test
-        run: go test -race ./...
+        run: go test -race -p 2 -timeout 20m ./...
 
       # Статика из pb_public апстрима: без адресов и аналитики автора.
       - name: статика

@@ -10,16 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/m0nstrum/togetherly/server/internal/migrations"
+	"github.com/m0nstrum/togetherly/server/internal/testutil"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 )
 
 func newApp(t *testing.T) *tests.TestApp {
 	t.Helper()
-	app, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: t.TempDir(), EncryptionEnv: "pb_test_env"})
-	require.NoError(t, err)
-	require.NoError(t, app.RunAllMigrations())
-	t.Cleanup(app.Cleanup)
-	return app
+	return testutil.NewApp(t)
 }
 
 func group(t *testing.T, app core.App, members []string, disbanded bool) *core.Record {

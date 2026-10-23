@@ -66,7 +66,7 @@ func groupField(col *core.Collection) string {
 
 func newFixture(t testing.TB) *fixture {
 	t.Helper()
-	app := newApp(t)
+	app := testutil.NewApp(t)
 	f := &fixture{app: app, recordOfA: map[string]string{}}
 
 	groups, err := app.FindCollectionByNameOrId("groups")
