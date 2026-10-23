@@ -29,6 +29,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
 	wproxy "github.com/m0nstrum/togetherly/server/internal/infrastructure/watchproxy"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/e2eretention"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
@@ -70,6 +71,11 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindCapsules(app, time.Now, log)
 	bindGuards(app)
 	bindE2EGuards(app)
+	app.Cron().MustAdd("e2e_retention", "17 * * * *", func() {
+		if err := e2eretention.Sweep(app, time.Now()); err != nil {
+			log.Error("E2E retention", "err", err)
+		}
+	})
 	bindAllFree(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
