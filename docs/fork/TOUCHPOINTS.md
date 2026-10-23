@@ -235,3 +235,5 @@
 | `test/services/watch_room_auth_script_test.dart` | План 1.3 / C3 | Ожидания: имя без токена, вызов моста пропуска. | Сохранить новый контракт. |
 
 | `lib/services/offline/cache_key_store.dart`, `android/app/src/main/res/xml/backup_rules.xml`, `android/app/src/main/res/xml/data_extraction_rules.xml` | План 1.6 / H5 | Кэш использует `ForkSecretStorage.cache` и перенос старой записи; backup rules исключают legacy-файлы и три полных storageNamespace, включая config и wrapped keys. | Сохранить импорт `fork/secret_storage.dart`, вызов `ForkSecretStorage.read` и все исключения; проверить `flutter test test/fork/secret_storage_test.dart`. Не возвращать `resetOnError` в общее хранилище. |
+
+| `lib/services/offline/outbox_service.dart` | План 1.7 / H4 | Отдельный `ForkOutboxAttempt` вокруг применения; poison только при постоянном HTTP 4xx, остальные сбои без лимита. Сеть/reconnect → `retryPoison`, перенос poison транзакционный; отмена retry timer при clear/dispose. | Сохранить вызовы helper и обработку reconnect; observer HTTP находится в `ForkE2E.httpClient`, а не внутри service-методов. Проверить `test/fork/outbox_retry_test.dart`. |

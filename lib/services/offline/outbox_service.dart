@@ -11,6 +11,8 @@ import '../pb_media_service.dart';
 import 'backoff.dart';
 import 'connectivity_service.dart';
 import 'local_store.dart';
+import '../../fork/outbox_attempt.dart'; // fork (PLAN 1.7)
+import '../centrifugo_service.dart'; // fork (PLAN 1.7)
 import '../../models/memory_reaction.dart';
 import '../note_send_status.dart';
 
@@ -49,11 +51,7 @@ class OutboxService {
       intMapStoreFactory.store('outbox');
   final StoreRef<int, Map<String, Object?>> _poison =
       intMapStoreFactory.store('outbox_poison');
-  // Раньше 8: обречённая запись жила 1,2,4,…,32 c ≈ 2-3 мин до «отравления»,
-  // всё это время держала счётчик → плашка «Синхронизация…» не уходила.
-  // 5 попыток (1+2+4+8+16 ≈ 31 c) — обречённая операция быстро уезжает в poison
-  // (кликабельная плашка «повторить»), а не висит в лимбо. Записи идемпотентны,
-  // так что при реальном транзиенте до 5 попыток обычно хватает.
+  // fork: лимит только для постоянных HTTP 4xx; сеть и 5xx ждут без лимита.
   static const int _maxAttempts = 5;
 
   bool _flushing = false;
@@ -74,6 +72,7 @@ class OutboxService {
   DateTime? _busySince;
   bool _stuckReported = false;
   StreamSubscription<bool>? _connSub;
+  StreamSubscription<void>? _reconnectSub;
 
   /// Число операций в очереди (для индикатора «ожидает синхронизации»).
   final ValueNotifier<int> pendingCount = ValueNotifier<int>(0);
@@ -111,7 +110,7 @@ class OutboxService {
     return w;
   }
 
-  /// Ключи записей, чья отправка сдалась после [_maxAttempts] попыток. Без них
+  /// Ключи записей, чья отправка сдалась после [_maxAttempts] постоянных HTTP-отказов. Без них
   /// такая запись выглядела отправленной: из очереди она пропадает, а на
   /// сервер так и не доехала.
   final Set<String> _poisonKeys = <String>{};
@@ -151,12 +150,23 @@ class OutboxService {
   /// маленькое, чтобы не штормить сервер (писатель SQLite всё равно один).
   static const int _maxParallelLanes = 4;
 
-  Future<void> init() async {
-    _connSub ??= ConnectivityService.instance.onOnlineChanged.listen((online) {
-      if (online) unawaited(flush());
+  Future<void> init({Stream<bool>? onlineChanges, Stream<void>? reconnected}) async {
+    _connSub ??= (onlineChanges ?? ConnectivityService.instance.onOnlineChanged).listen((online) {
+      if (online) unawaited(retryPoison());
+    });
+    _reconnectSub ??= (reconnected ?? CentrifugoService.instance.reconnected).listen((_) {
+      unawaited(retryPoison());
     });
     await _updatePending();
     unawaited(flush()); // дослать то, что осталось с прошлой офлайн-сессии
+  }
+
+  Future<void> dispose() async {
+    await _connSub?.cancel();
+    await _reconnectSub?.cancel();
+    _connSub = null;
+    _reconnectSub = null;
+    _retryTimer?.cancel();
   }
 
   /// Поставить операцию в очередь. Онлайн → сразу пробуем слить.
@@ -288,15 +298,20 @@ class OutboxService {
       }
       _inflightKeys.add(key); // коалесинг не должен мёржить в обрабатываемую
       bool ok;
+      final attempt = ForkOutboxAttempt();
       try {
         // Жёсткий потолок на операцию: ни один зависший сетевой вызов не должен
         // заморозить полосу (был баг «Синхронизация…(N)» не уходила, пока flush
         // вечно ждал повисший без таймаута запрос). По таймауту/исключению →
         // как провал → ретрай; операции идемпотентны по id.
         final apply = applyOverride ?? _apply;
-        ok = await apply(parsed.type, parsed.payload)
-            .timeout(outboxOpTimeout(parsed.type), onTimeout: () => false);
-      } catch (_) {
+        ok = await attempt.run(() => apply(parsed.type, parsed.payload))
+            .timeout(outboxOpTimeout(parsed.type), onTimeout: () {
+              attempt.transient();
+              return false;
+            });
+      } catch (error) {
+        attempt.error(error);
         ok = false;
       } finally {
         _inflightKeys.remove(key);
@@ -305,11 +320,9 @@ class OutboxService {
         await _store.record(key).delete(db);
         continue;
       }
-      // Провал: считаем попытки. Сервис-методы PB глотают ошибку и возвращают
-      // false (не отличить транзиент от перманента) → отправляем в «отравленные»
-      // по лимиту попыток, чтобы одна битая операция не висела вечно.
+      // fork: false без HTTP-кода не доказывает постоянный отказ.
       final next = parsed.attempts + 1;
-      if (next >= _maxAttempts) {
+      if (attempt.permanent && next >= _maxAttempts) {
         await _poison.add(db, {
           ...value,
           'attempts': next,
@@ -510,6 +523,9 @@ class OutboxService {
 
   /// Полная очистка очереди (logout/смена пользователя).
   Future<void> clear() async {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _retryAttempt = 0;
     final db = await LocalStore.instance.database();
     if (db != null) {
       await _store.delete(db);
@@ -523,17 +539,19 @@ class OutboxService {
   /// Повторить «ядовитые» операции (тап в индикаторе): вернуть в очередь со
   /// сбросом попыток и слить.
   Future<void> retryPoison() async {
+    _retryTimer?.cancel();
+    _retryAttempt = 0;
     final db = await LocalStore.instance.database();
     if (db == null) return;
-    final items = await _poison.find(db);
-    for (final s in items) {
-      await _store.add(db, {
-        'type': s.value['type'],
-        'payload': s.value['payload'],
-        'attempts': 0,
-      });
-      await _poison.record(s.key).delete(db);
-    }
+    await db.transaction((txn) async {
+      final items = await _poison.find(txn);
+      for (final s in items) {
+        await _store.add(txn, {
+          'type': s.value['type'], 'payload': s.value['payload'], 'attempts': 0,
+        });
+        await _poison.record(s.key).delete(txn);
+      }
+    });
     await _updatePending();
     unawaited(flush());
   }
