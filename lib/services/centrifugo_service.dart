@@ -115,6 +115,7 @@ class CentrifugoService {
     // холст), по этому сигналу дотягивают пропущенное. Первое соединение сюда
     // не попадает — там список только что загрузили (см. ReconnectDetector).
     c.connected.listen((e) {
+      ForkVerifiedDelta.forBackend(_pb).refreshKey(); // fork: H3 fresh HTTPS clock/key after sleep
       if (kDebugMode) debugPrint('Centrifugo connected: ${e.client}');
       if (_reconnects.onConnected() && !_reconnected.isClosed) {
         _reconnected.add(null);

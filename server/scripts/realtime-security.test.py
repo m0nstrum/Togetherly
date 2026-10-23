@@ -32,6 +32,7 @@ for channel in channels:
 for channel in ['signal:not-your-pair','locsignal:pair_'+a+'_outsider']:
     request('POST','/api/centrifugo/subscription-token',{'channel':channel},403)
 key=request('GET','/api/fork/realtime-key')
+assert isinstance(key['time'],int) and abs(key['time']/1000-time.time())<30
 assert key['alg']=='Ed25519' and len(base64.urlsafe_b64decode(key['key']+'==='))==32
 request('GET','/api/fork/realtime-key',expected=401,auth='')
 request('PATCH','/api/collections/groups/records/'+pair,{'disbanded':True})

@@ -107,7 +107,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 			if !pub.Enabled() {
 				return event.JSON(http.StatusServiceUnavailable, map[string]any{"error": "realtime_unavailable"})
 			}
-			return event.JSON(http.StatusOK, map[string]any{"v": 1, "alg": "Ed25519", "key": pub.PublicKey()})
+			return event.JSON(http.StatusOK, map[string]any{"v": 1, "alg": "Ed25519", "key": pub.PublicKey(), "time": time.Now().UnixMilli()})
 		}).Bind(apis.RequireAuth("users"))
 		handler.WatchRTC(e.Router, turn, time.Now)
 		handler.Ring(e.Router, ringer, log)

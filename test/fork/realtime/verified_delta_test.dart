@@ -17,35 +17,42 @@ void main() {
           as Map<String, dynamic>;
   final packet = Map<String, dynamic>.from(fixture['envelope'] as Map);
   const channel = 'pair:pairaaaaaaaaaaa';
-  PocketBase backend({bool unavailable = false}) => PocketBase(
+  PocketBase backend({bool unavailable = false, int offset = 0}) => PocketBase(
     'https://example.test',
     httpClientFactory: () => MockClient((request) async {
       expect(request.url.path, '/api/fork/realtime-key');
       return unavailable
           ? http.Response('{}', 503)
           : http.Response(
-              jsonEncode({'v': 1, 'alg': 'Ed25519', 'key': fixture['key']}),
+              jsonEncode({
+                'v': 1,
+                'alg': 'Ed25519',
+                'key': fixture['key'],
+                'time': (packet['at'] as int) + offset,
+              }),
               200,
             );
     }),
   );
   ForkVerifiedDelta verifier({int offset = 0, bool unavailable = false}) =>
-      ForkVerifiedDelta(
-        backend(unavailable: unavailable),
-        now: () =>
-            DateTime.fromMillisecondsSinceEpoch((packet['at'] as int) + offset),
-      );
+      ForkVerifiedDelta(backend(unavailable: unavailable, offset: offset));
 
-  test('valid cross-language signature permits a delta exactly once', () async {
-    final v = verifier();
-    final results = await Future.wait([
-      v.open(channel, packet),
-      v.open(channel, packet),
-    ]);
-    expect(results.whereType<Map<String, dynamic>>(), hasLength(1));
-    expect(results.whereType<Map<String, dynamic>>().single['event'], 'delete');
-    expect(await v.open(channel, packet), isNull);
-  });
+  test(
+    'valid signature uses HTTPS server time and permits a delta exactly once',
+    () async {
+      final v = verifier();
+      final results = await Future.wait([
+        v.open(channel, packet),
+        v.open(channel, packet),
+      ]);
+      expect(results.whereType<Map<String, dynamic>>(), hasLength(1));
+      expect(
+        results.whereType<Map<String, dynamic>>().single['event'],
+        'delete',
+      );
+      expect(await v.open(channel, packet), isNull);
+    },
+  );
   test(
     'unsigned, modified, cross-channel, old and future packets are rejected',
     () async {
@@ -93,6 +100,33 @@ void main() {
       expect(ForkVerifiedDelta.signalChannel('draw:g'), 'draw:g');
       expect(ForkVerifiedDelta.signalChannel('watch:g'), 'watch:g');
       expect(ForkVerifiedDelta.signalChannel('user:a'), 'user:a');
+    },
+  );
+  test(
+    'reconnect retries an unavailable key without an unsigned fallback',
+    () async {
+      var available = false;
+      final pb = PocketBase(
+        'https://example.test',
+        httpClientFactory: () => MockClient(
+          (_) async => available
+              ? http.Response(
+                  jsonEncode({
+                    'v': 1,
+                    'alg': 'Ed25519',
+                    'key': fixture['key'],
+                    'time': packet['at'],
+                  }),
+                  200,
+                )
+              : http.Response('{}', 503),
+        ),
+      );
+      final v = ForkVerifiedDelta(pb);
+      expect(await v.open(channel, packet), isNull);
+      available = true;
+      v.refreshKey();
+      expect((await v.open(channel, packet))?['event'], 'delete');
     },
   );
 }
