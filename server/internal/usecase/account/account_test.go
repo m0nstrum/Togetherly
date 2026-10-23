@@ -78,7 +78,7 @@ func TestPurgeSecretsAndTokens(t *testing.T) {
 		removed        bool
 	}
 	var records []saved
-	for _, name := range []string{"e2e_backups", "e2e_identities", "e2e_grants", "e2e_handshake", "push_tokens", "fork_battery", "fork_reels_matches"} {
+	for _, name := range []string{"e2e_backups", "e2e_identities", "e2e_grants", "e2e_handshake", "push_tokens", "fork_battery", "fork_reels_matches", "fork_movie_choices"} {
 		col, err := app.FindCollectionByNameOrId(name)
 		require.NoError(t, err)
 		for _, u := range []*core.Record{alice, bob} {

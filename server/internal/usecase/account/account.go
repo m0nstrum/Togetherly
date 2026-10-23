@@ -72,6 +72,7 @@ var Personal = []struct{ Collection, Field string }{
 	{"push_tokens", "user_uid"},
 	{"fork_battery", "user_uid"},
 	{"fork_reels_matches", "author_uid"},
+	{"fork_movie_choices", "author_uid"},
 }
 
 // PurgeDue стирает аккаунты, чей срок наступил: пары распускаются, личные

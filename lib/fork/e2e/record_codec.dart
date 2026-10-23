@@ -225,6 +225,7 @@ const Map<String, Map<String, SealedField>> e2eFields = {
   // Заряд телефона партнёру (lib/fork/battery/battery_share.dart).
   'fork_battery': {'state': SealedField.json()},
   'fork_reels_matches': {'state': SealedField.json()},
+  'fork_movie_choices': {'state': SealedField.json()},
   // Текст «скучаю» пишет сервер (/api/group/miss-you) в запись, id которой
   // клиент не знает, — шифр привязан к паре и автору (`e2eRecordKey`).
   'miss_you': {'last_vibe_text': SealedField.text()},

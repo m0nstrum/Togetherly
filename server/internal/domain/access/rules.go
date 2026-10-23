@@ -57,6 +57,17 @@ func memberAuthored(groupField, authorField string) Rules {
 	return r
 }
 
+// A shared choice is readable by the pair, writable only by its voter.
+func privateLiveAuthored(groupField, authorField, tagField string) Rules {
+	r := memberAuthored(groupField, authorField)
+	ownLive := liveMemberExpr(groupField) + ` && ` + authorField + ` = @request.auth.id`
+	r.Update = s(ownLive + ` && @request.body.` + groupField + `:changed = false` +
+		` && @request.body.` + authorField + `:changed = false` +
+		` && @request.body.` + tagField + `:changed = false`)
+	r.Delete = s(ownLive)
+	return r
+}
+
 // Matches are append-only: no rewriting a clip, author or deduplication tag.
 func immutableAuthored(groupField, authorField string) Rules {
 	r := memberAuthored(groupField, authorField)
@@ -107,6 +118,7 @@ var Collections = map[string]Rules{
 	// Форк: заряд телефона — пишет только сам участник, читает пара.
 	"fork_battery":       memberAuthored("group_id", "user_uid"),
 	"fork_reels_matches": immutableAuthored("group_id", "author_uid"),
+	"fork_movie_choices": privateLiveAuthored("group_id", "author_uid", "movie_tag"),
 
 	"canvas_strokes":   member("group_id"),
 	"canvas_meta":      member("group_id"),

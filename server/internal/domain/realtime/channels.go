@@ -38,6 +38,7 @@ var published = map[string]bool{
 	// Форк: заряд телефона партнёра (шифром) — сразу в канал пары.
 	"fork_battery":       true,
 	"fork_reels_matches": true,
+	"fork_movie_choices": true,
 }
 
 // IsPublished — рассылаются ли изменения коллекции.
