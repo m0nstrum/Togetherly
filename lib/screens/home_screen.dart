@@ -2152,6 +2152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // таймер и настроения, ради которых приложение открывают.
                 // Раскладку меняют только с Плюсом, а с ним рекламы нет,
                 // так что у тех, кто её видит, место прежнее.
+                if (!ForkFlags.allFree) // fork (PLAN 2.1): no empty ad gap
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: AdBanner(

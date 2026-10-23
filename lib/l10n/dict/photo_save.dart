@@ -1,3 +1,5 @@
+import '../../fork/identity.dart'; // fork (PLAN 2.1)
+
 // «Сохранить в галерею» в полноэкранном просмотре снимка (17.10.2026,
 // обращение 21): фото из парного виджета забирают в галерею, не заводя ради
 // него воспоминание.
@@ -13,13 +15,13 @@ const Map<String, Map<String, String>> photoSaveStrings = {
     'pt': 'Salvar na galeria',
   },
   'photoSaveHint': {
-    'ru': 'В альбом «Togetherly», с датой снимка',
-    'en': 'To the “Togetherly” album, with the photo date',
-    'de': 'Ins Album „Togetherly“, mit Aufnahmedatum',
-    'fr': 'Dans l’album « Togetherly », avec la date de la photo',
-    'es': 'En el álbum «Togetherly», con la fecha de la foto',
-    'it': 'Nell’album «Togetherly», con la data della foto',
-    'pt': 'No álbum “Togetherly”, com a data da foto',
+    'ru': 'В альбом «${ForkIdentity.appName}», с датой снимка',
+    'en': 'To the “${ForkIdentity.appName}” album, with the photo date',
+    'de': 'Ins Album „${ForkIdentity.appName}“, mit Aufnahmedatum',
+    'fr': 'Dans l’album « ${ForkIdentity.appName} », avec la date de la photo',
+    'es': 'En el álbum «${ForkIdentity.appName}», con la fecha de la foto',
+    'it': 'Nell’album «${ForkIdentity.appName}», con la data della foto',
+    'pt': 'No álbum “${ForkIdentity.appName}”, com a data da foto',
   },
   'photoSaving': {
     'ru': 'Сохраняем…',

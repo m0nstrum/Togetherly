@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dict_strings.dart';
+import '../fork/identity.dart'; // fork (PLAN 2.1)
 
 import 'package:love_app/config/update_notes.dart';
 import '../screens/postcard/models/postcard_template.dart';
@@ -2698,7 +2699,7 @@ class _RuStrings extends DictStrings {
   String membersCount(int count) => 'УЧАСТНИКИ · $count';
   @override
   String shareInviteText(String code, String link) =>
-      'Присоединяйся ко мне в Togetherly! Используй код: $code\n\nИли нажми: $link';
+      'Присоединяйся ко мне в ${ForkIdentity.appName}! Используй код: $code\n\nИли нажми: $link';
 
   @override
   String onboardingLeft(int left) => left == 1
@@ -2733,7 +2734,7 @@ class _RuStrings extends DictStrings {
   String membersOfMax(int current, int max) => '$current/$max участников';
   @override
   String shareGroupInviteText(String code, String link) =>
-      'Присоединяйся к нашей группе в Togetherly! Используй код: $code\n\nИли нажми: $link';
+      'Присоединяйся к нашей группе в ${ForkIdentity.appName}! Используй код: $code\n\nИли нажми: $link';
   @override
   String connectedWithCouple(String name) => 'Вы с $name теперь вместе!';
   @override
@@ -2747,7 +2748,7 @@ class _RuStrings extends DictStrings {
       'Вы с $name теперь $label!';
   @override
   String joinMeLinkText(String link) =>
-      'Присоединяйся ко мне в Togetherly! $link';
+      'Присоединяйся ко мне в ${ForkIdentity.appName}! $link';
   @override
   String membersCountBracket(int count) => 'УЧАСТНИКИ ($count)';
 
@@ -3595,7 +3596,7 @@ class _EnStrings extends DictStrings {
   String membersCount(int count) => 'MEMBERS · $count';
   @override
   String shareInviteText(String code, String link) =>
-      'Join me on Togetherly! Use code: $code\n\nOr click: $link';
+      'Join me on ${ForkIdentity.appName}! Use code: $code\n\nOr click: $link';
 
   @override
   String onboardingLeft(int left) =>
@@ -3628,7 +3629,7 @@ class _EnStrings extends DictStrings {
   String membersOfMax(int current, int max) => '$current/$max members';
   @override
   String shareGroupInviteText(String code, String link) =>
-      'Join our group on Togetherly! Use code: $code\n\nOr click: $link';
+      'Join our group on ${ForkIdentity.appName}! Use code: $code\n\nOr click: $link';
   @override
   String connectedWithCouple(String name) => "You're connected with $name!";
   @override
@@ -3641,7 +3642,7 @@ class _EnStrings extends DictStrings {
   String customRelWith(String label, String name) =>
       "You're now $label with $name!";
   @override
-  String joinMeLinkText(String link) => 'Join me on Togetherly! $link';
+  String joinMeLinkText(String link) => 'Join me on ${ForkIdentity.appName}! $link';
   @override
   String membersCountBracket(int count) => 'MEMBERS ($count)';
 

@@ -1,3 +1,4 @@
+import '../fork/flags.dart'; // fork (PLAN 2.1)
 import '../utils/safe_pick.dart';
 import '../services/plus_service.dart';
 import '../services/plus_access.dart';
@@ -708,7 +709,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       var chunkStart = 0;
       for (var i = 0; i < mems.length; i++) {
         position++;
-        final adHere = adAfterMemory(position);
+        final adHere = !ForkFlags.allFree && adAfterMemory(position); // fork
         if (adHere || i == mems.length - 1) {
           // Сбрасываем накопленный чанк тайлов (он остаётся внутри своей даты).
           slivers.add(_memoryTilesSliver(mems.sublist(chunkStart, i + 1)));

@@ -1840,7 +1840,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     }
 
     void banner(String slot) {
-      if (!isPaired || out.isEmpty) return;
+      if (ForkFlags.allFree || !isPaired || out.isEmpty) return; // fork (PLAN 2.1)
       gap();
       out.add(_buildAdBanner(slot));
     }

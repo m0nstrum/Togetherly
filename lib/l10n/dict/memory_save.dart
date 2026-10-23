@@ -1,3 +1,5 @@
+import '../../fork/identity.dart'; // fork (PLAN 2.1)
+
 // Сохранение медиа воспоминаний в галерею телефона: разделённая кнопка, лист
 // «Что сохранить», выбор кадров, островок над лентой, меню «три точки»,
 // полный экран, выбор нескольких записей, все кадры пары.
@@ -236,13 +238,13 @@ const Map<String, Map<String, String>> memorySaveStrings = {
     'de': 'Schon in der Galerie: {n}',
   },
   'saveDateNote': {
-    'ru': 'В галерее встанут на {date}, папка «Togetherly»',
-    'en': 'They’ll appear on {date} in the “Togetherly” folder',
-    'pt': 'Vão aparecer em {date}, na pasta “Togetherly”',
-    'it': 'Compariranno il {date}, nella cartella «Togetherly»',
-    'es': 'Aparecerán el {date}, en la carpeta «Togetherly»',
-    'fr': 'Ils apparaîtront au {date}, dossier « Togetherly »',
-    'de': 'Sie erscheinen am {date} im Ordner „Togetherly“',
+    'ru': 'В галерее встанут на {date}, папка «${ForkIdentity.appName}»',
+    'en': 'They’ll appear on {date} in the “${ForkIdentity.appName}” folder',
+    'pt': 'Vão aparecer em {date}, na pasta “${ForkIdentity.appName}”',
+    'it': 'Compariranno il {date}, nella cartella «${ForkIdentity.appName}»',
+    'es': 'Aparecerán el {date}, en la carpeta «${ForkIdentity.appName}»',
+    'fr': 'Ils apparaîtront au {date}, dossier « ${ForkIdentity.appName} »',
+    'de': 'Sie erscheinen am {date} im Ordner „${ForkIdentity.appName}“',
   },
 
   // ── выбор кадров ──

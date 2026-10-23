@@ -1,3 +1,5 @@
+import '../../fork/identity.dart'; // fork (PLAN 2.1)
+
 // Справка «Как сделать» (lib/models/help_items.dart, lib/screens/help_screen.dart).
 //
 // В фигурных скобках — ключ подписи с экрана: `{connect}` превращается в
@@ -428,13 +430,13 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': '{widgets}',
   },
   'help.widgetStale.s1': {
-    'ru': 'Обновите Togetherly до последней версии.',
-    'en': 'Update Togetherly to the latest version.',
-    'pt': 'Atualize o Togetherly para a versão mais recente.',
-    'it': 'Aggiorna Togetherly all’ultima versione.',
-    'es': 'Actualiza Togetherly a la última versión.',
-    'fr': 'Mettez Togetherly à jour vers la dernière version.',
-    'de': 'Aktualisiere Togetherly auf die neueste Version.',
+    'ru': 'Обновите ${ForkIdentity.appName} до последней версии.',
+    'en': 'Update ${ForkIdentity.appName} to the latest version.',
+    'pt': 'Atualize o ${ForkIdentity.appName} para a versão mais recente.',
+    'it': 'Aggiorna ${ForkIdentity.appName} all’ultima versione.',
+    'es': 'Actualiza ${ForkIdentity.appName} a la última versión.',
+    'fr': 'Mettez ${ForkIdentity.appName} à jour vers la dernière version.',
+    'de': 'Aktualisiere ${ForkIdentity.appName} auf die neueste Version.',
   },
   'help.widgetStale.s2': {
     'ru': 'Откройте приложение и подержите его открытым минуту: виджеты наполнятся сами.',
@@ -446,13 +448,13 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Öffne die App und lass sie eine Minute offen. Die Widgets füllen sich von selbst.',
   },
   'help.widgetStale.s3': {
-    'ru': 'На Android разрешите работу в фоне: настройки телефона → Приложения → Togetherly → Батарея → Без ограничений.',
-    'en': 'On Android, allow background activity: phone settings → Apps → Togetherly → Battery → Unrestricted.',
-    'pt': 'No Android, permita a atividade em segundo plano: ajustes do telefone → Apps → Togetherly → Bateria → Sem restrições.',
-    'it': 'Su Android consenti l’attività in background: impostazioni del telefono → App → Togetherly → Batteria → Senza restrizioni.',
-    'es': 'En Android, permite la actividad en segundo plano: ajustes del teléfono → Aplicaciones → Togetherly → Batería → Sin restricciones.',
-    'fr': 'Sur Android, autorisez l’activité en arrière-plan : réglages du téléphone → Applications → Togetherly → Batterie → Non restreinte.',
-    'de': 'Erlaube unter Android die Hintergrundaktivität: Telefoneinstellungen → Apps → Togetherly → Akku → Nicht eingeschränkt.',
+    'ru': 'На Android разрешите работу в фоне: настройки телефона → Приложения → ${ForkIdentity.appName} → Батарея → Без ограничений.',
+    'en': 'On Android, allow background activity: phone settings → Apps → ${ForkIdentity.appName} → Battery → Unrestricted.',
+    'pt': 'No Android, permita a atividade em segundo plano: ajustes do telefone → Apps → ${ForkIdentity.appName} → Bateria → Sem restrições.',
+    'it': 'Su Android consenti l’attività in background: impostazioni del telefono → App → ${ForkIdentity.appName} → Batteria → Senza restrizioni.',
+    'es': 'En Android, permite la actividad en segundo plano: ajustes del teléfono → Aplicaciones → ${ForkIdentity.appName} → Batería → Sin restricciones.',
+    'fr': 'Sur Android, autorisez l’activité en arrière-plan : réglages du téléphone → Applications → ${ForkIdentity.appName} → Batterie → Non restreinte.',
+    'de': 'Erlaube unter Android die Hintergrundaktivität: Telefoneinstellungen → Apps → ${ForkIdentity.appName} → Akku → Nicht eingeschränkt.',
   },
 
   // ── Сменить пароль ───────────────────────────────────────────────────────
@@ -766,13 +768,13 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Tippe auf den Button unten, um die Bezahlseite auf lava.top zu öffnen.',
   },
   'help.plusSite.s2': {
-    'ru': 'Укажите ту же почту, с которой входите в Togetherly.',
-    'en': 'Enter the same email you use to sign in to Togetherly.',
-    'pt': 'Informe o mesmo e-mail com que entra no Togetherly.',
-    'it': 'Inserisci la stessa email con cui accedi a Togetherly.',
-    'es': 'Pon el mismo correo con el que entras en Togetherly.',
-    'fr': 'Indiquez le même e-mail que pour vous connecter à Togetherly.',
-    'de': 'Gib dieselbe E-Mail an, mit der du dich bei Togetherly anmeldest.',
+    'ru': 'Укажите ту же почту, с которой входите в ${ForkIdentity.appName}.',
+    'en': 'Enter the same email you use to sign in to ${ForkIdentity.appName}.',
+    'pt': 'Informe o mesmo e-mail com que entra no ${ForkIdentity.appName}.',
+    'it': 'Inserisci la stessa email con cui accedi a ${ForkIdentity.appName}.',
+    'es': 'Pon el mismo correo con el que entras en ${ForkIdentity.appName}.',
+    'fr': 'Indiquez le même e-mail que pour vous connecter à ${ForkIdentity.appName}.',
+    'de': 'Gib dieselbe E-Mail an, mit der du dich bei ${ForkIdentity.appName} anmeldest.',
   },
   'help.plusSite.s3': {
     'ru': 'Плюс включится сам за несколько минут. Потом перезапустите приложение.',

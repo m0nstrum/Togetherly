@@ -1,3 +1,4 @@
+import '../fork/identity.dart'; // fork (PLAN 2.1)
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -83,7 +84,7 @@ class _ChestShareScreenState extends State<ChestShareScreen> {
     setState(() => _busy = true);
     try {
       final file = await _render();
-      await Gal.putImage(file.path, album: 'Togetherly');
+      await Gal.putImage(file.path, album: ForkIdentity.appName);
       if (mounted) AppSnack.success(context, _s.savedToGallery);
     } catch (e) {
       debugPrint('сундук: сохранить не вышло: $e');

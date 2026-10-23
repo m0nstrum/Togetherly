@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../dict_strings.dart' show trKey;
 import '../fork/home_defaults.dart'; // fork
+import '../fork/flags.dart'; // fork (PLAN 2.1)
 import '../models/home_layout.dart';
 import '../screens/plus_screen.dart';
 import '../services/home_layout_service.dart';
@@ -130,6 +131,7 @@ class _HomeLayoutEditor extends StatelessWidget {
     final plus = PlusService.instance.active;
     final svc = HomeLayoutService.instance;
     final layout = svc.saved;
+    final actions = HomeAction.values.where((a) => !ForkFlags.hideUpstreamChannels || a != HomeAction.wallet).toList();
     const outer = Radius.circular(SettingsGroup.outerRadius);
     const inner = Radius.circular(SettingsGroup.innerRadius);
     BorderRadius shape(int i, int n) => BorderRadius.vertical(
@@ -171,14 +173,14 @@ class _HomeLayoutEditor extends StatelessWidget {
         ),
         // Кнопки ряда под таймером: только спрятать, порядок задан дугой.
         const SizedBox(height: 16),
-        for (var i = 0; i < HomeAction.values.length; i++) ...[
+        for (var i = 0; i < actions.length; i++) ...[
           if (i > 0) const SizedBox(height: SettingsGroup.gap),
           Material(
             color: cs.surfaceContainerHigh,
-            borderRadius: shape(i, HomeAction.values.length),
+            borderRadius: shape(i, actions.length),
             clipBehavior: Clip.antiAlias,
             child: Builder(builder: (context) {
-              final a = HomeAction.values[i];
+              final a = actions[i];
               return SettingsRow(
                 icon: homeActionIcon(a),
                 title: homeActionName(a),

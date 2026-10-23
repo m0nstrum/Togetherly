@@ -154,7 +154,7 @@ void main() {
     final r = g.saved.first;
     expect(r.takenAt, DateTime(2026, 9, 5, 13, 5));
     expect(r.latitude, 46.9);
-    expect(r.album, 'Togetherly');
+    expect(r.album, 'Tethered');
     expect(r.name, startsWith('Togetherly_20260905_130500_'));
     expect(ledger.contains('pb://media/m1/f3.webp'), isTrue);
     expect(q.lastFinished, same(job));
