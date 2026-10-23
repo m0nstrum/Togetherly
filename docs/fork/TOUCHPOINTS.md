@@ -276,3 +276,6 @@
 | `test/widgets/settings_app_icon_row_test.dart`, `test/widgets/settings_change_password_row_test.dart`, `test/widgets/settings_community_rows_test.dart`, `test/goldens/unfold_all_preview.dart` | План 2.9 | Убраны аргументы удалённого callback onResetMissYou. | Учитывать актуальный конструктор SettingsScreen. |
 
 | `lib/screens/chat_screen.dart`, `lib/screens/home/home_header.dart` | План 2.13 / U40–U41, U43 | Подписанное абсолютное время визита с известным полом, локальный счёт новых чужих сообщений при чтении выше и именованная кнопка вниз; семантика типа связи. | Сохранить границу увиденного/счётчик вне текущего live-окна, исключения своих/пагинации и доступное название с числом. |
+
+| `lib/screens/welcome_screen.dart`, `lib/screens/login_screen.dart`, `lib/screens/setup_screen.dart` | План 2.14 / U44, U46–U48 | Вход доступен всегда; reset через ввод/подтверждение адреса и блокировку повтора; условный gap соцвхода; генерация пароля и понятное пояснение. | Не отправлять письмо до подтверждения, не прятать вход и не оставлять gap скрытых провайдеров; не копировать пароль автоматически. |
+| `test/widgets/welcome_screen_test.dart` | План 2.14 | Проверяются видимость и обработчик входа на первых двух слайдах. | Сохранить эти ожидания при переработке онбординга. |

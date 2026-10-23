@@ -1,3 +1,4 @@
+import '../fork/ui/password_reset_email.dart'; // fork
 import '../widgets/common/app_dialog.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
@@ -42,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _rememberMe = true;
+  bool _resettingPassword = false;
 
   // OAuth: PB authWithOAuth2 зависает навсегда, если юзер закрыл окно провайдера
   // крестиком (нет сигнала отмены). Ловим возврат в приложение и снимаем спиннер.
@@ -303,12 +305,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _sendPasswordReset() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
-      _showError(LocaleService.current.invalidEmail);
-      return;
-    }
+    if (_isLoading || _resettingPassword) return;
+    setState(() => _resettingPassword = true);
     try {
+      final email = await forkPasswordResetEmail(context, initial: _emailController.text.trim());
+      if (email == null || !mounted) return;
       await PbAuthService().sendPasswordReset(email);
       if (!mounted) return;
       final messenger = ScaffoldMessenger.maybeOf(context);
@@ -326,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         _showError(LocaleService.current.passwordResetError);
       }
-    }
+    } finally { if (mounted) setState(() => _resettingPassword = false); }
   }
 
   void _showError(String msg, {VoidCallback? retry}) {
@@ -443,9 +444,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             _rememberMeToggle(s),
                             const Spacer(),
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: _isLoading ? null : _sendPasswordReset,
+                            Flexible(child: TextButton(
+                              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                              onPressed: _isLoading || _resettingPassword ? null : _sendPasswordReset,
                               child: Text(
                                 s.forgotPassword,
                                 style: TextStyle(
@@ -454,7 +455,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: _accent,
                                 ),
                               ),
-                            ),
+                            )),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -462,7 +463,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           label: s.login,
                           onTap: _isLoading ? null : _signInWithEmail,
                         ),
-                        const SizedBox(height: 26),
+                        if (!ForkFlags.emailOnlyAuth) const SizedBox(height: 26),
                         AuthSocialRow(
                           label: s.signInWith,
                           onGoogle:

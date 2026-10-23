@@ -168,11 +168,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 48),
                   child: AnimatedOpacity(
-                    opacity: _last ? 1 : 0,
+                    opacity: 1,
                     duration: const Duration(milliseconds: 250),
                     child: TextButton(
-                      onPressed:
-                          _last ? () => _navigate(setup: false) : null,
+                      onPressed: () => _navigate(setup: false),
                       child: Text(
                         s.alreadyHaveAccount,
                         style: AppFonts.onest(

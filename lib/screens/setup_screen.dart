@@ -1,3 +1,4 @@
+import '../fork/flags.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:io';
 import '../widgets/storage_image.dart';
@@ -390,6 +391,21 @@ class _SetupScreenState extends State<SetupScreen>
     // maybeOf + mounted: зовётся из catch после async-гэпа, когда экран мог быть
     // снят с дерева → ScaffoldMessenger.of даёт `!` по null. См. Bugsink TypeError.
     AppSnack.error(context, msg);
+  }
+
+  bool _generatingPassword = false;
+  Future<void> _generatePassword() async {
+    if (_generatingPassword || _isLoading) return;
+    setState(() => _generatingPassword = true);
+    try {
+      final password = await ForkAccountPassword.generate(
+        email: _emailController.text.trim(), name: _nameController.text.trim());
+      if (!mounted) return;
+      setState(() => _passwordController.text = password);
+      ForkNotice.info(context, ruEn('Пароль создан — сохраните его в менеджере паролей',
+        'Password created — save it in your password manager'));
+    } catch (e) { if (mounted) ForkNotice.error(context, e); }
+    finally { if (mounted) setState(() => _generatingPassword = false); }
   }
 
   Future<void> _pickAvatar() async {
@@ -819,6 +835,14 @@ class _SetupScreenState extends State<SetupScreen>
                     textInputAction: TextInputAction.done,
                     onChanged: (_) => setState(() {}),
                   ),
+                  TextButton.icon(
+                    onPressed: _generatingPassword || _isLoading ? null : _generatePassword,
+                    icon: const Icon(Icons.password_rounded),
+                    label: Text(ruEn('Придумать пароль', 'Generate a password')),
+                  ),
+                  Text(ruEn('Длинный уникальный пароль сложнее подобрать. Сохраните его в менеджере паролей.',
+                    'A long, unique password is harder to guess. Save it in your password manager.'),
+                    style: TextStyle(fontSize: 12, color: t.textSecondary)),
                   const SizedBox(height: 14),
                   ForkPasswordChecks( // fork
                     password: _passwordController.text,
@@ -830,7 +854,7 @@ class _SetupScreenState extends State<SetupScreen>
                   _termsCheckbox(s),
                   const SizedBox(height: 24),
                   _signUpButton(s),
-                  const SizedBox(height: 26),
+                  if (!ForkFlags.emailOnlyAuth) const SizedBox(height: 26),
                   AuthSocialRow(
                     label: s.signUpWith,
                     onGoogle:
@@ -1015,7 +1039,7 @@ class _SetupScreenState extends State<SetupScreen>
       width: double.infinity,
       height: 58,
       child: FilledButton(
-        onPressed: (_isLoading || !_agreeToTerms) ? null : _completeSetup,
+        onPressed: (_isLoading || _generatingPassword || !_agreeToTerms) ? null : _completeSetup,
         style: FilledButton.styleFrom(
           backgroundColor: cs.primary,
           foregroundColor: cs.onPrimary,
