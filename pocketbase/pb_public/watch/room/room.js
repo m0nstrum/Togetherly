@@ -61,6 +61,84 @@
   /** Канал пары (`TgPair.enter`): есть, когда сервер пустил. */
   let ch = null;
   const subscribed = () => !!(ch && ch.subscribed());
+  // fork: queue operations use an acknowledged publication, never a silent drop.
+  const queueText = (ru, en) => I18N.lang === 'ru' ? ru : en;
+  const forkQueue = window.ForkWatchQueue.create({
+    me: () => state.me,
+    publish: async packet => {
+      if (!subscribed()) throw new Error('offline');
+      await ch.sub.publish(packet);
+    },
+    validate: raw => parseSource(raw) ? cleanLink(raw) : null,
+    play: (url, from) => {
+      const src = parseSource(url);
+      if (!src) return;
+      state.lead = from === state.me;
+      state.actedAt = Date.now();
+      $('#link').value = url;
+      state.pending = {cmd: 'play', at: 0};
+      mountPlayer(src, url);
+      if (MANUAL[src.kind]) state.pending = null;
+      forkSource(src, url, from === state.me ? 'me' : 'partner');
+    },
+    changed: items => { forkReport('queue', {items}); renderForkQueue(); },
+  });
+  async function queueAction(action, value) {
+    let ok = false;
+    try { ok = await forkQueue[action](value); } catch (_) { /* report below */ }
+    if (!ok) setStatus(queueText('Очередь не изменилась: проверьте связь, ссылку и лимит 20 видео.',
+      'Queue unchanged: check your connection, link and the 20-video limit.'), true);
+    return ok;
+  }
+  let queueAdvancing = false;
+  function queueEnded() {
+    if (['vk', 'vimeo', 'rutube'].includes(state.kind)) state.remote.playing = false;
+    actSync(ytTime(), false);
+    if (!forkQueue.list().length) setStatus(queueText('Видео закончилось', 'Video ended'));
+    if (!state.lead || queueAdvancing || !forkQueue.list().length) return;
+    queueAdvancing = true;
+    queueAction('next').finally(() => { queueAdvancing = false; });
+  }
+  function renderForkQueue() {
+    const panel = document.getElementById('fork-watch-queue');
+    if (!panel) return;
+    const list = panel.querySelector('ol');
+    const toggle = document.getElementById('fork-queue-toggle');
+    if (toggle) toggle.textContent = queueText('Очередь', 'Queue') + ' · ' + forkQueue.list().length;
+    list.replaceChildren();
+    forkQueue.list().forEach(item => {
+      const row = document.createElement('li'); row.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0';
+      const name = document.createElement('span'); name.textContent = item.url; name.style.cssText = 'flex:1 1 180px;overflow-wrap:anywhere';
+      const start = document.createElement('button'); start.type = 'button';
+      start.className = 'btn btn--ghost'; start.style.minHeight = '48px'; start.textContent = queueText('Включить', 'Play'); start.onclick = () => queueAction('start', item.id);
+      const remove = document.createElement('button'); remove.type = 'button';
+      remove.className = 'btn btn--ghost'; remove.style.minHeight = '48px'; remove.textContent = queueText('Убрать', 'Remove'); remove.onclick = () => queueAction('remove', item.id);
+      row.append(name, start, remove); list.append(row);
+    });
+    if (!list.children.length) { const row = document.createElement('li'); row.textContent = queueText('Очередь пуста', 'Queue is empty'); list.append(row); }
+  }
+  function mountForkQueue() {
+    if (SHELL) return;
+    const panel = document.createElement('dialog'); panel.id = 'fork-watch-queue';
+    panel.style.cssText = 'position:fixed;top:calc(16px + env(safe-area-inset-top,0px));bottom:auto;width:min(700px,calc(100% - 32px));max-height:calc(100dvh - 48px);box-sizing:border-box;padding:16px;overflow:auto;overflow-wrap:anywhere;border:1px solid var(--line,#888);border-radius:20px;background:var(--card,#fff);color:var(--ink,#111)';
+    panel.setAttribute('aria-label', queueText('Очередь видео', 'Video queue'));
+    const toggle = document.createElement('button'); toggle.id = 'fork-queue-toggle'; toggle.type = 'button';
+    toggle.className = 'btn btn--ghost btn--compact'; toggle.style.minHeight = '48px';
+    toggle.onclick = () => { if (panel.showModal) panel.showModal(); else panel.setAttribute('open', ''); };
+    const close = document.createElement('button'); close.type = 'button'; close.className = 'btn btn--ghost';
+    close.style.minHeight = '48px'; close.textContent = queueText('Закрыть', 'Close');
+    close.onclick = () => { if (panel.close) panel.close(); else panel.removeAttribute('open'); toggle.focus(); };
+    const title = document.createElement('h2'); title.textContent = queueText('Очередь видео', 'Video queue');
+    const input = document.createElement('input'); input.type = 'url'; input.placeholder = queueText('Ссылка на следующее видео', 'Link to the next video');
+    input.className = 'source__input'; input.style.cssText = 'width:100%;box-sizing:border-box;min-height:48px';
+    const add = document.createElement('button'); add.type = 'button'; add.className = 'btn btn--filled'; add.style.minHeight = '48px'; add.textContent = queueText('Добавить в очередь', 'Add to queue');
+    add.onclick = async () => { add.disabled = true; if (await queueAction('add', input.value)) input.value = ''; add.disabled = false; };
+    panel.append(close, title, input, add, document.createElement('ol'));
+    document.body.appendChild(panel);
+    document.getElementById('apply').insertAdjacentElement('beforebegin', toggle);
+    renderForkQueue();
+  }
+
   const LOG_LIMIT = 60;
 
   const PLATFORMS = [
@@ -247,6 +325,14 @@
     state.kind = 'video';
     state.player = { video: v };
     setManual(false);
+    // fork: queue/state autoplay waits for the actual media, including Yandex downloads.
+    if (state.pending) {
+      const pending = state.pending; state.pending = null;
+      v.addEventListener('loadedmetadata', () => {
+        if (state.player && state.player.video === v) apply(pending.cmd, pending.at);
+      }, {once: true});
+    }
+    v.addEventListener('playing', () => { if (state.player && state.player.video === v) actSync(v.currentTime, true); });
 
     // Руками ли тронули плеер: касание, клик или клавиша по нему самому.
     const byHand = () => Date.now() - state.touchedAt < HAND_MS;
@@ -279,6 +365,7 @@
     // Конец файла браузер тоже объявляет паузой. Своей волей её никто не
     // нажимал, а партнёр, получив её, улетал в конец фильма.
     v.addEventListener('pause', () => { if (!v.ended) tell('pause'); });
+    v.addEventListener('ended', () => { if (state.player && state.player.video === v) queueEnded(); }); // fork
     // Из перемотки уходит только «играем». Браузер держит `paused`, пока
     // догружает кусок после прыжка, и прежнее `tell(v.paused ? …)` рассылало
     // партнёру ложную паузу — у обоих ролик замирал. Настоящую паузу шлёт
@@ -424,6 +511,9 @@
               setStatus(I18N.t(key), true);
             },
             onStateChange: (e) => {
+              if (e.target !== state.player) return; // fork: ignore an old destroyed player.
+              if (e.data === YT.PlayerState.ENDED) { queueEnded(); return; } // fork
+              if (e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.PAUSED) actSync(ytTime(), e.data === YT.PlayerState.PLAYING);
               if (state.applying) return;
               if (e.data === YT.PlayerState.PLAYING) { leadHere(); send('play', ytTime()); }
               if (e.data === YT.PlayerState.PAUSED) { leadHere(); send('pause', ytTime()); }
@@ -624,6 +714,8 @@
 
     let playing = null;
     let time = null;
+    if ((state.kind === 'vk' || state.kind === 'vimeo') && msg.event === 'ended') { queueEnded(); return; }
+    if (state.kind === 'rutube' && msg.type === 'player:changeState' && msg.data && msg.data.state === 'completed') { queueEnded(); return; }
 
     if (state.kind === 'vk') {
       if (typeof msg.time === 'number') time = msg.time;
@@ -844,6 +936,10 @@
   if (SHELL) {
     window.forkRoom = {
       play: (url) => applySource(String(url || '')),
+      queueAdd: url => queueAction('add', String(url || '')),
+      queueRemove: id => queueAction('remove', String(id || '')),
+      queuePlay: id => queueAction('start', String(id || '')),
+      queueNext: () => queueAction('next'),
       file: () => { shellFilePrompt(); return true; },
       toggle: () => shellToggle(),
       together: () => { send('countdown', 0); showCountdown(3); return true; },
@@ -916,6 +1012,7 @@
    *  здесь, — его реплики при этом доходят обычным `chat`. */
   function onMessage(data) {
     if (!data) return;
+    if (data.t === 'fork-queue') { forkQueue.receive(data); return; }
     switch (data.t) {
       case 'play':
       case 'pause':
@@ -943,7 +1040,7 @@
         // Кто-то вошёл в уже живую комнату. Сервер ничего не хранит, поэтому
         // ссылку на видео и переписку ему передаёт вкладка того, кто внутри.
         if (!state.url && !state.file && !state.log.length) break;
-        send('state', ytTime(), {
+        send('state', ytTime(), { queue: forkQueue.snapshot(),
           to: data.from,
           url: state.url,
           file: state.file,
@@ -1003,17 +1100,24 @@
 
   /** Принимает состояние комнаты: видео с той же секунды и прошлые сообщения. */
   function adoptState(data) {
-    if (state.synced || data.to !== state.me) return;
+    if (data.to !== state.me) return;
+    const before = forkQueue.snapshot().latestPlay;
+    forkQueue.merge(data.queue);
+    const after = forkQueue.snapshot().latestPlay;
+    const queueAdvanced = state.synced && after && data.url === after.url &&
+      (!before || after.clock > before.clock || (after.clock === before.clock && after.id > before.id));
+    if (state.synced && !queueAdvanced) return;
+    const firstSync = !state.synced;
     state.synced = true;
     // Пришёл в комнату, где уже смотрят: веду не я.
     followHere();
 
-    (NATIVE_CHAT ? [] : data.log || []).forEach((m) => { // fork
+    (NATIVE_CHAT || !firstSync ? [] : data.log || []).forEach((m) => { // fork
       remember(m.from, m.name, m.text);
       addMessage(m.name || I18N.t('room.guest'), m.text, m.from === state.me);
     });
 
-    if (state.kind) return;
+    if (state.kind && !queueAdvanced) return;
     if (!data.url) {
       if (data.file) askForFile(data.file);
       return;
@@ -1144,6 +1248,11 @@
   // ── подключение ──────────────────────────────────────────────────────────
 
   /** Что комната делает с событиями канала (`TgPair.enter`). */
+  mountForkQueue(); // fork: modal stays reachable even though room-body clips overflow.
+  document.addEventListener('langchange', () => {
+    const panel = document.getElementById('fork-watch-queue'), toggle = document.getElementById('fork-queue-toggle');
+    if (panel) panel.remove(); if (toggle) toggle.remove(); mountForkQueue();
+  });
   const channelEvents = {
     message: onMessage,
     viewers: setViewers,

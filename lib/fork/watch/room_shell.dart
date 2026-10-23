@@ -150,8 +150,10 @@ class ForkNowPlaying extends StatelessWidget {
     required this.onTogether,
     required this.onPauseBoth,
     required this.onFullscreen,
+    this.onQueue,
   });
 
+  final VoidCallback? onQueue;
   final ForkRoomLive live;
   final VoidCallback onPick;
   final VoidCallback onToggle;
@@ -173,29 +175,52 @@ class ForkNowPlaying extends StatelessWidget {
     if (!live.hasVideo) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(ruEn('Что смотрим?', 'What are we watching?'),
-                      style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(
-                    live.offline
-                        ? ruEn('Нет связи — переподключаемся…', 'Offline — reconnecting…')
-                        : ruEn('Видео включится у обоих сразу', 'It starts for both of you at once'),
-                    style: tt.bodySmall?.copyWith(color: live.offline ? cs.error : cs.onSurfaceVariant),
-                  ),
-                ],
+            Text(
+              ruEn('Что смотрим?', 'What are we watching?'),
+              style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              live.offline
+                  ? ruEn(
+                      'Нет связи — переподключаемся…',
+                      'Offline — reconnecting…',
+                    )
+                  : ruEn(
+                      'Видео включится у обоих сразу',
+                      'It starts for both of you at once',
+                    ),
+              style: tt.bodySmall?.copyWith(
+                color: live.offline ? cs.error : cs.onSurfaceVariant,
               ),
             ),
-            FilledButton.icon(
-              key: const ValueKey('fork-room-pick'),
-              onPressed: onPick,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(ruEn('Выбрать видео', 'Choose a video')),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  key: const ValueKey('fork-room-pick'),
+                  onPressed: onPick,
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(ruEn('Выбрать видео', 'Choose a video')),
+                ),
+                if (onQueue != null)
+                  TextButton.icon(
+                    onPressed: onQueue,
+                    icon: const Icon(Icons.queue_play_next_rounded),
+                    label: Text(
+                      ruEn(
+                        'Очередь видео · ${live.queue.length}',
+                        'Video queue · ${live.queue.length}',
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
@@ -261,8 +286,9 @@ class ForkNowPlaying extends StatelessWidget {
             ),
           PopupMenuButton<String>(
             tooltip: ruEn('Действия с видео', 'Video actions'),
-            onSelected: (value) { if (value == 'fullscreen') { onFullscreen(); } else { onPick(); } },
+            onSelected: (value) { if (value == 'fullscreen') { onFullscreen(); } else if (value == 'queue') { onQueue?.call(); } else { onPick(); } },
             itemBuilder: (_) => [
+              if (onQueue != null) PopupMenuItem(value: 'queue', child: Text(ruEn('Очередь видео · ${live.queue.length}', 'Video queue · ${live.queue.length}'))),
               PopupMenuItem(value: 'fullscreen', child: Text(ruEn('Во весь экран', 'Full screen'))),
               PopupMenuItem(value: 'pick', key: const ValueKey('fork-room-change'), child: Text(ruEn('Другое видео', 'Another video'))),
             ],

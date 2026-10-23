@@ -1,3 +1,4 @@
+import '../../fork/watch/room_queue.dart'; // fork: PLAN 3.5
 import '../../fork/ui/feedback.dart'; // fork: match persistence failures
 import '../../fork/reels/matches.dart'; // fork: PLAN 3.4
 import 'dart:async';
@@ -731,12 +732,28 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   }
 
   /// Лист «Что смотрим?»: ссылка, недавнее, свои ролики, файл.
-  Future<void> _pick() async {
+  Future<void> _queue() => Navigator.of(context).push(MaterialPageRoute<void>(
+    builder: (_) => ForkRoomQueueScreen(live: _live,
+      onAdd: () => unawaited(_pick(enqueue: true)),
+      onPlay: (id) => unawaited(_js('window.forkRoom && window.forkRoom.queuePlay(${jsonEncode(id)})')),
+      onRemove: (id) => unawaited(_js('window.forkRoom && window.forkRoom.queueRemove(${jsonEncode(id)})')),
+      onNext: () => unawaited(_js('window.forkRoom && window.forkRoom.queueNext()')))));
+
+  Future<void> _pick({bool enqueue = false}) async {
     if (_picking) return;
     _picking = true;
     final pick = await showForkRoomPicker(context, groupId: widget.pairId);
     _picking = false;
     if (pick == null || !mounted) return;
+    if (enqueue) {
+      if (pick.file) {
+        _say(ruEn('Локальный файл нельзя добавить в общую очередь — выберите ссылку.',
+          'A local file cannot join the shared queue — choose a link.'));
+      } else {
+        await _js('window.forkRoom && window.forkRoom.queueAdd(${jsonEncode(pick.url)})');
+      }
+      return;
+    }
     if (pick.file) {
       await _js('window.forkRoom && window.forkRoom.file()');
       return;
@@ -863,6 +880,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
                         builder: (_, _) => ForkNowPlaying(
                           live: _live,
                           onPick: () => unawaited(_pick()),
+                          onQueue: () => unawaited(_queue()),
                           onToggle: () => unawaited(_js('window.forkRoom && window.forkRoom.toggle()')),
                           onTogether: () => unawaited(_js('window.forkRoom && window.forkRoom.together()')),
                           onPauseBoth: () => unawaited(_js('window.forkRoom && window.forkRoom.pauseBoth()')),
