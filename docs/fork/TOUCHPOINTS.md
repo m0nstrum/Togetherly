@@ -281,3 +281,8 @@
 | `test/widgets/welcome_screen_test.dart` | План 2.14 | Проверяются видимость и обработчик входа на первых двух слайдах. | Сохранить эти ожидания при переработке онбординга. |
 
 | `lib/screens/widget_screen.dart` | План 2.15 / U51 | Убрано принудительное true проверки pin API; ручная инструкция ForkManualWidgetHint в компактных/полных карточках Android без поддержки и iOS. | Не скрывать единственный путь установки, уважать false ответа лаунчера, использовать бренд ForkIdentity. |
+
+| `lib/screens/memory_lane/detail.dart` | План 2.16 / U52 | Общий anchor секции комментариев и Scrollable.ensureVisible у чипа. | Не возвращать пустой onTap, обе раскладки должны иметь anchor. |
+| `lib/screens/home/widgets/live_map_card.dart`, `lib/screens/live_map_screen.dart` | План 2.16 / U53–U55 | Независимые именованные действия раскрытия/сворачивания, stop от 48dp, ForkMapAttribution последним слоем. | Постоянно показывать OSM и сохранять отдельные цели нажатия. |
+| `lib/screens/gifts/gift_shop_screen.dart` | План 2.16 / U56 | GiftPaySheet при allFree/plus/доступной бесплатной выдаче показывает единственный бесплатный выбор; запасная цена при исчерпании лимита остаётся. | Бесплатный выбор возвращает true, не переходить к списанию монет. |
+| `lib/screens/wishes_screen.dart`, `lib/screens/draw_gallery_screen.dart` | План 2.16 / U63, U70 | Меню ссылки/удаления экономит место названию, склонение холстов. | Сохранить подтверждение удаления из обработчика и отдельное «Дарю». |

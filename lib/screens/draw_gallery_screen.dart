@@ -1,3 +1,4 @@
+import '../fork/l10n/count_words.dart'; // fork
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -226,8 +227,8 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
         context,
         ForkFailure.network,
         what: ruEn(
-          'Не удалось удалить холстов: ${failedIds.length} из ${ids.length}',
-          'Couldn’t delete ${failedIds.length} of ${ids.length} canvases',
+          'Не удалось удалить ${failedIds.length} ${forkCanvasesWord(failedIds.length)} из ${ids.length}',
+          'Couldn’t delete ${failedIds.length} ${forkCanvasesWord(failedIds.length)} (of ${ids.length})',
         ),
         retry: _deleteSelected,
       );
