@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../fork/realtime/verified_delta.dart'; // fork: H3
 import 'dart:convert';
 
 import 'package:centrifuge/centrifuge.dart' as centrifuge;
@@ -57,7 +58,7 @@ class CentrifugoService {
 
   /// Берёт токен у PocketBase, а на 401 сперва освежает сессию приложения.
   ///
-  /// Токен Centrifugo живёт сутки, но выдаёт его PocketBase — и когда сессия
+  /// Токен Centrifugo живёт две минуты, но выдаёт его PocketBase — и когда сессия
   /// приложения протухла, запрос отвечает 401. Раньше на этом всё кончалось:
   /// getToken бросал, клиент уходил на новый круг с тем же ответом, канал пары
   /// не подписывался, и сообщения появлялись только при перечитывании экрана —
@@ -169,7 +170,7 @@ class CentrifugoService {
   /// [onData] получает декодированный JSON публикации.
   Future<RtUnsub> subscribeRaw(
       String channel, void Function(Map<String, dynamic>) onData) async {
-    final hub = _hub(channel);
+    final hub = _hub(ForkVerifiedDelta.signalChannel(channel));
     hub.addRaw(onData);
     return () async {
       hub.removeRaw(onData);
@@ -183,7 +184,7 @@ class CentrifugoService {
   /// (потерянный кадр live-штриха некритичен).
   Future<void> publish(String channel, Map<String, dynamic> data,
       {bool requireDelivery = false}) =>
-      _hub(channel).publish(data, requireDelivery: requireDelivery);
+      _hub(ForkVerifiedDelta.signalChannel(channel)).publish(data, requireDelivery: requireDelivery);
 
   /// fork: публикация, пришедшая не по сокету (будильник FCM,
   /// lib/fork/push/fcm_wake.dart), — слушателям канала, как с сокета.
@@ -242,9 +243,16 @@ class _ChannelHub {
     _sub.subscribe();
   }
 
-  void _onPublication(centrifuge.PublicationEvent ev) {
+  Future<void> _onPublication(centrifuge.PublicationEvent ev) async {
     try {
-      _dispatch(jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>); // fork
+      final envelope = jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>;
+      if (_listeners.isNotEmpty) {
+        final delta = await ForkVerifiedDelta.forBackend(_pb).open(channel, envelope);
+        if (delta != null) _dispatch(delta);
+      } else {
+        // Raw hubs are separate client-publishable namespaces.
+        _dispatch(envelope);
+      } // fork: H3 fail closed for unsigned server deltas
     } catch (e) {
       debugPrint('Centrifugo publication parse error ($channel): $e');
     }

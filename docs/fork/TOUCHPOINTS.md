@@ -312,3 +312,5 @@
 | `lib/services/fcm_service.dart`, `lib/services/pocketbase_service.dart`, `android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt`, `android/app/src/main/kotlin/com/togetherly/love/ForkFcmService.kt` | M9 | Токен не переносится между аккаунтами; 409 требует native FCM deleteToken/getToken. Состояние принятой регистрации привязано к uid. | Не выключать фоновый сокет при неуспешной регистрации. |
 
 | `lib/services/map/map_tiles.dart` | M10 | Кэш и TileJSON принимаются только со своего сервера; относительный серверный шаблон разрешается локально. | Не возвращать внешние адреса из старого кэша карты. |
+
+| `lib/services/centrifugo_service.dart` | H3 | Серверные дельты допускаются только после Ed25519-проверки; raw pair/loc физически разделены в signal/locsignal, AAD логических каналов сохранён. | Не добавлять unsigned fallback; deliver используется только доверенным HTTPS wake-ответом. |

@@ -1,0 +1,11 @@
+{
+  "key": "0HdinsYgibhEaR-pXEDL1MbORR8jYfjX7u2JRSyvpSI",
+  "envelope": {
+    "v": 1,
+    "channel": "pair:pairaaaaaaaaaaa",
+    "at": 1792785600000,
+    "nonce": "0123456789abcdef0123456789abcdef",
+    "payload": "eyJldmVudCI6ImRlbGV0ZSIsImNvbGxlY3Rpb24iOiJjaGF0X21lc3NhZ2VzIiwicmVjb3JkIjp7ImlkIjoibWVzc2FnZWFhYWFhYWEifX0",
+    "sig": "4ILGi-GM1xo4IvSytnsV_GNC8vRAKutIiBGPGY7GYVaXJPVm4laaO3wSBUxXAW9mj-a07oOzowZ5H6c8j_T5Bw"
+  }
+}

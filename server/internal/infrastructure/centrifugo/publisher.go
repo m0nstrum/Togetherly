@@ -36,7 +36,11 @@ func (p *Publisher) Publish(ctx context.Context, channel string, data any) error
 	if !p.Enabled() {
 		return ErrDisabled
 	}
-	body, err := json.Marshal(map[string]any{"channel": channel, "data": data})
+	signed, err := p.signed(channel, data)
+	if err != nil {
+		return err
+	}
+	body, err := json.Marshal(map[string]any{"channel": channel, "data": signed})
 	if err != nil {
 		return fmt.Errorf("centrifugo: тело: %w", err)
 	}

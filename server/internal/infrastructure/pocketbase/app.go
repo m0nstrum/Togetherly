@@ -103,6 +103,12 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
 	ringer := ring.New(ringPairs{app}, ringPublisher{notify}, ring.Options{}, time.Now)
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.GET("/api/fork/realtime-key", func(event *core.RequestEvent) error {
+			if !pub.Enabled() {
+				return event.JSON(http.StatusServiceUnavailable, map[string]any{"error": "realtime_unavailable"})
+			}
+			return event.JSON(http.StatusOK, map[string]any{"v": 1, "alg": "Ed25519", "key": pub.PublicKey()})
+		}).Bind(apis.RequireAuth("users"))
 		handler.WatchRTC(e.Router, turn, time.Now)
 		handler.Ring(e.Router, ringer, log)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
