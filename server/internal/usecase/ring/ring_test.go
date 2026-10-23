@@ -77,6 +77,16 @@ func TestRing(t *testing.T) {
 		assert.ErrorIs(t, svc.Ring(ctx, "a", "g1", ring.KindWatch), ring.ErrTooOften)
 	})
 
+	t.Run("прикосновение — отдельный ограниченный зов только партнёру", func(t *testing.T) {
+		require.NoError(t, svc.Ring(ctx, "a", "g1", ring.KindTouch))
+		assert.Equal(t, "user:b", p.channel)
+		rec := p.data.(map[string]any)["record"].(map[string]any)
+		assert.Equal(t, "touch", rec["thread"])
+		assert.Empty(t, rec["title"])
+		assert.ErrorIs(t, svc.Ring(ctx, "a", "g1", ring.KindTouch), ring.ErrTooOften)
+		assert.ErrorIs(t, svc.Ring(ctx, "x", "g1", ring.KindTouch), ring.ErrNotMember)
+	})
+
 	t.Run("неизвестный зов", func(t *testing.T) {
 		assert.ErrorIs(t, svc.Ring(ctx, "a", "g1", ring.Kind("spam")), ring.ErrBadKind)
 	})

@@ -1,3 +1,4 @@
+import '../fork/touch/touch_screen.dart'; // fork: PLAN 3.2
 import '../services/pb_data_service.dart'; // fork
 import '../widgets/common/app_dialog.dart'; // fork
 import 'dart:async';
@@ -402,6 +403,13 @@ class _MissYouScreenState extends State<MissYouScreen>
           titleSpacing: 0,
           title: _title(cs),
           actions: [
+            if (widget.groupId.isNotEmpty && widget.partnerUid.isNotEmpty)
+              IconButton(
+                tooltip: ruEn('Прикосновение', 'Touch'),
+                icon: const Icon(Icons.touch_app_rounded),
+                onPressed: () => ForkTouchScreen.open(context, groupId: widget.groupId,
+                  myUid: widget.myUid, partnerUid: widget.partnerUid),
+              ), // fork
             if (widget.resetCount != null || (widget.groupId.isNotEmpty && widget.myUid.isNotEmpty))
               PopupMenuButton<String>(
                 tooltip: ruEn('Действия со счётчиком', 'Counter actions'),

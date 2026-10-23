@@ -37,9 +37,11 @@ const (
 	KindCall Kind = "call"
 	// KindWatch — зовут в комнату совместного просмотра.
 	KindWatch Kind = "watch"
+	// KindTouch — зов в зашифрованное прикосновение пары.
+	KindTouch Kind = "touch"
 )
 
-func (k Kind) valid() bool { return k == KindCall || k == KindWatch }
+func (k Kind) valid() bool { return k == KindCall || k == KindWatch || k == KindTouch }
 
 // Pairs — пары.
 type Pairs interface {

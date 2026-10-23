@@ -1,3 +1,4 @@
+import '../fork/touch/touch_screen.dart'; // fork: PLAN 3.2
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import '../utils/safe_launch.dart';
@@ -693,6 +694,13 @@ class _HomeScreenState extends State<HomeScreen> {
         _pendingDrawOpen = uri.queryParameters['canvas'] ?? '';
       }
     }
+    // fork: invitation to the encrypted touch screen, including cold start.
+    else if (uri.host == 'touch') {
+      if (mounted && _pairData.isPaired) {
+        unawaited(ForkTouchScreen.open(context, groupId: _pairData.pairId,
+          myUid: PocketBaseService().userId ?? '', partnerUid: _pairData.partnerUid));
+      } else { _pendingTouchOpen = true; }
+    }
     // fork (Rave): loveapp://watch — партнёр зовёт в комнату просмотра.
     else if (uri.host == 'watch') {
       if (mounted && _pairData.isPaired) {
@@ -735,6 +743,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// fork (Rave): зов в комнату пришёл раньше пары.
   bool _pendingWatchOpen = false;
+  bool _pendingTouchOpen = false; // fork
 
   void _openLiveMapFromWidget() {
     _pendingMapOpen = false;
@@ -761,6 +770,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (draw != null && _pairData.isPaired) {
       _pendingDrawOpen = null;
       unawaited(_openCanvasFromWidget(draw));
+    }
+    if (_pendingTouchOpen && _pairData.isPaired) { // fork
+      _pendingTouchOpen = false;
+      unawaited(ForkTouchScreen.open(context, groupId: _pairData.pairId,
+        myUid: PocketBaseService().userId ?? '', partnerUid: _pairData.partnerUid));
     }
     if (_pendingWatchOpen && _pairData.isPaired) { // fork (Rave)
       _pendingWatchOpen = false;

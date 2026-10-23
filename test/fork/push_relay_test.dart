@@ -104,6 +104,29 @@ void main() {
     });
   });
 
+  test('touch invitation is fresh, localised and opens the touch route', () {
+    final t0 = DateTime.utc(2026, 10, 23);
+    ForkPushRelay.now = () => t0;
+    final shown = <String?>[];
+    void deliver(int at) => ForkPushRelay.handle(
+      'touch',
+      {
+        'thread': 'touch',
+        'data': {'group_id': 'g1', 'from': 'bob', 'at': '$at'},
+      },
+      (id, title, body, {payload}) async {
+        shown.add(payload);
+      },
+    );
+    try {
+      deliver(t0.millisecondsSinceEpoch);
+      deliver(t0.subtract(const Duration(minutes: 3)).millisecondsSinceEpoch);
+      expect(shown, ['loveapp://touch']);
+    } finally {
+      ForkPushRelay.now = DateTime.now;
+    }
+  });
+
   group('тап по уведомлению (UX D8)', () {
     test('«порисовать» несёт ссылку на холст', () async {
       final got = <String?>[];

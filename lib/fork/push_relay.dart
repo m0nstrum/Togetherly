@@ -20,7 +20,8 @@ abstract final class ForkPushRelay {
   /// Подписка для [myUid]; [notify] — показ локального уведомления.
   static Future<UnsubscribeFunc> subscribe(
     String myUid,
-    Future<void> Function(int id, String title, String body, {String? payload}) notify,
+    Future<void> Function(int id, String title, String body, {String? payload})
+    notify,
   ) => CentrifugoService.instance.subscribeDelta('user:$myUid', 'fork_notify', (
     e,
   ) {
@@ -33,7 +34,8 @@ abstract final class ForkPushRelay {
   static void handle(
     String id,
     Map<String, dynamic> rec,
-    Future<void> Function(int id, String title, String body, {String? payload}) notify,
+    Future<void> Function(int id, String title, String body, {String? payload})
+    notify,
   ) {
     final thread = '${rec['thread'] ?? ''}';
     final title = '${rec['title'] ?? ''}';
@@ -45,14 +47,18 @@ abstract final class ForkPushRelay {
       _call(id, data, notify);
       return;
     }
-    if (thread == 'watch') {
-      _watch(data, notify);
+    if (thread == 'watch' || thread == 'touch') {
+      _watch(data, notify, touch: thread == 'touch');
       return;
     }
     if (title.isNotEmpty || body.isNotEmpty) {
       // UX D8: тап ведёт туда, о чём уведомление («порисовать» — к холсту).
-      notify('fork_notify$id'.hashCode, title, body,
-          payload: ForkNotifTap.forThread(thread));
+      notify(
+        'fork_notify$id'.hashCode,
+        title,
+        body,
+        payload: ForkNotifTap.forThread(thread),
+      );
     }
     // Зов в ленту, пока приложение открыто, — лист «присоединиться», как от
     // моста FCM (`ReelsInviteBridge.arrived`).
@@ -87,17 +93,31 @@ abstract final class ForkPushRelay {
   /// сервер текста не кладёт. Тап ведёт прямо в комнату.
   static void _watch(
     Map<String, dynamic> data,
-    Future<void> Function(int id, String title, String body, {String? payload}) notify,
-  ) {
+    Future<void> Function(int id, String title, String body, {String? payload})
+    notify, {
+    bool touch = false,
+  }) {
     final at = int.tryParse('${data['at'] ?? ''}') ?? 0;
     final age = now().difference(DateTime.fromMillisecondsSinceEpoch(at));
-    if (at <= 0 || age.abs() > watchFresh) return;
+    if (at <= 0 || age.abs() > (touch ? const Duration(minutes: 2) : watchFresh)) return;
     notify(
-      'fork_watch${data['group_id'] ?? ''}'.hashCode,
-      ruEn('Зовут смотреть вместе', 'Come watch together'),
-      ruEn('Партнёр в комнате просмотра и ждёт вас — нажмите, чтобы войти',
-          'Your partner is in the watch room — tap to join'),
-      payload: ForkNotifTap.forThread('watch'),
+      'fork_${touch ? 'touch' : 'watch'}${data['group_id'] ?? ''}'.hashCode,
+      touch
+          ? ruEn(
+              'Партнёр зовёт прикоснуться',
+              'Your partner invites you to touch',
+            )
+          : ruEn('Зовут смотреть вместе', 'Come watch together'),
+      touch
+          ? ruEn(
+              'Коснитесь экрана вместе — нажмите, чтобы войти',
+              'Touch the screen together — tap to join',
+            )
+          : ruEn(
+              'Партнёр в комнате просмотра и ждёт вас — нажмите, чтобы войти',
+              'Your partner is in the watch room — tap to join',
+            ),
+      payload: ForkNotifTap.forThread(touch ? 'touch' : 'watch'),
     );
   }
 
@@ -106,7 +126,8 @@ abstract final class ForkPushRelay {
   static void _call(
     String id,
     Map<String, dynamic> data,
-    Future<void> Function(int id, String title, String body, {String? payload}) notify,
+    Future<void> Function(int id, String title, String body, {String? payload})
+    notify,
   ) {
     final at = int.tryParse('${data['at'] ?? ''}') ?? 0;
     final age = now().difference(DateTime.fromMillisecondsSinceEpoch(at));
@@ -117,8 +138,10 @@ abstract final class ForkPushRelay {
     notify(
       'fork_call${data['group_id'] ?? ''}'.hashCode,
       ruEn('Входящий звонок', 'Incoming call'),
-      ruEn('Партнёр звонит — откройте приложение, чтобы ответить',
-          'Your partner is calling — open the app to answer'),
+      ruEn(
+        'Партнёр звонит — откройте приложение, чтобы ответить',
+        'Your partner is calling — open the app to answer',
+      ),
       payload: 'loveapp://home',
     );
   }

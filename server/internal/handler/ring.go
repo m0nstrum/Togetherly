@@ -20,7 +20,7 @@ type Ringer interface {
 
 // Ring — POST /api/fork/ring {group_id, kind}: разбудить партнёра, которому
 // звонят (kind=call, по умолчанию; UX_AUDIT L6, lib/fork/watch/pair_call.dart)
-// или которого зовут в комнату просмотра (kind=watch; lib/fork/watch/room_shell.dart).
+// или которого зовут прикоснуться (kind=touch) либо в комнату просмотра (kind=watch; lib/fork/watch/room_shell.dart).
 func Ring(r *router.Router[*core.RequestEvent], svc Ringer, log *slog.Logger) {
 	r.POST("/api/fork/ring", func(e *core.RequestEvent) error {
 		var body struct {

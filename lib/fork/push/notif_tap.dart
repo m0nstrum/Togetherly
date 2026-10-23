@@ -15,10 +15,11 @@ abstract final class ForkNotifTap {
   /// Куда ведёт уведомление хука сервера с [thread] (`fork_notify`).
   /// null — на главную, как раньше.
   static String? forThread(String thread) => switch (thread) {
-        'draw' => 'loveapp://draw',
-        'watch' => 'loveapp://watch', // зов в комнату просмотра
-        _ => null,
-      };
+    'draw' => 'loveapp://draw',
+    'touch' => 'loveapp://touch',
+    'watch' => 'loveapp://watch', // зов в комнату просмотра
+    _ => null,
+  };
 
   /// Разобрать полезную нагрузку уведомления. Чужое — мимо.
   static Uri? parse(String? payload) {

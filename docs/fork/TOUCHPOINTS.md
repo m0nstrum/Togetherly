@@ -292,3 +292,5 @@
 | `test/goldens/de_layout_test.dart` | План 2.4, общая проверка | Эталон bottom_nav обновлён для активной подписи; снимок проверен визуально. | Сохранять подпись и пропорции узкой панели. |
 
 | `lib/main.dart`, `lib/screens/settings_screen.dart`, `android/app/build.gradle.kts`, `android/app/src/main/AndroidManifest.xml`, `android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt` | План 3.1 | ForkAppLockGate снаружи Navigator/LaunchSplashOverlay; отдельная opt-in строка настроек. Native sourceSet src/fork/kotlin, USE_BIOMETRIC, канал tethered/app_lock с системной проверкой и обработкой credential activity. | Не размещать gate внутри маршрута: диалоги и deep links тоже должны оставаться закрыты. Не снимать FLAG_SECURE чужих lease-ов. |
+
+| `lib/screens/home_screen.dart`, `lib/screens/miss_you_screen.dart` | План 3.2 | Кнопка прикосновения у «Скучаю», обработка loveapp://touch с буфером до загрузки пары. Реализация в lib/fork/touch. | Сохранить переход на текущую пару и отложенный вход из уведомления; координаты только шифром, без БД. |
