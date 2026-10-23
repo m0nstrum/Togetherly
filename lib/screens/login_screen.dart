@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
@@ -224,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthFailure.providerPageFailed => s.providerPageFailed,
       AuthFailure.providerUnreachable => s.providerUnreachable,
       AuthFailure.badCredentials || AuthFailure.emailTaken => s.wrongPassword,
-      AuthFailure.unknown => s.loginError(e.toString()),
+      AuthFailure.unknown => ForkFailure.of(e).text,
     };
   }
 

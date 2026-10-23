@@ -5340,7 +5340,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                           if (context.mounted) {
                             showFloatingNote(
                               context,
-                              LocaleService.current.failedSelectPhotos(e.toString()),
+                              ForkFailure.of(e).text,
                               icon: Icons.error_outline_rounded,
                             );
                           }
@@ -5692,7 +5692,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                           if (context.mounted) {
                             showFloatingNote(
                               context,
-                              LocaleService.current.failedSelectVideo(e.toString()),
+                              ForkFailure.of(e).text,
                               icon: Icons.error_outline_rounded,
                             );
                           }

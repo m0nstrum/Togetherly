@@ -52,16 +52,16 @@
 
 | ID | Что видит пользователь | Где | Серьёзность | Как исправить |
 |---|---|---|---|---|
-| U1 | После отправки фото с главной при сбое — английское `Error: ClientException: …` | `lib/screens/home_screen.dart:3450` | сильно | `ForkFailure.of(e).text`; для фото — `ForkNotice.error` с «Повторить» |
-| U2 | Статус отношений: «Ошибка установки статуса: ClientException(url: …, statusCode: 0…)» — пять одинаковых мест; плюс снекбары залиты `Colors.red`/`Colors.green` | `lib/screens/relationship_status_screen.dart:268,294,329,370,409` | средне | Причину — через `ForkFailure`, цвет — `colorScheme.error`/`AppSnack` |
-| U3 | Смена статуса из шапки главной — тот же сырой текст | `lib/screens/home_screen.dart:4887,4903` | средне | Как U2 |
-| U4 | Профиль: сбой загрузки аватара/баннера и экспорта показывает текст исключения | `lib/screens/profile_screen.dart:3212,3236,4493` | средне | `ForkFailure.of(e).text`, «Повторить» у загрузки |
-| U5 | Регистрация и вход: на неизвестной ошибке «Ошибка регистрации: FormatException…» / «Ошибка входа: …» | `lib/screens/setup_screen.dart:361`, `setup_screen.dart:222`, `lib/screens/login_screen.dart:227` | сильно | Ветка `unknown` — общий текст + «Повторить»; исключение — в лог |
-| U6 | Ввод кода партнёра: «Ошибка: SocketException: Failed host lookup…». Текст захардкожен по-русски для всех языков | `lib/services/pb_data_service.dart:1288` → `lib/screens/connect_partner_screen.dart:2688` | сильно | Сервис возвращает `ForkFailure`, экран показывает `.text` |
-| U7 | Формы воспоминаний: «Не удалось выбрать фото: PlatformException(…)»; у музыки — голый `e.toString()` без всякого пояснения | `lib/screens/memory_photo_form_screen.dart:186,230`; `memory_lane_screen.dart:5342,5694`; `memory_music_form_screen.dart:192` | средне | Отказ в доступе к галерее — свой текст с «Открыть настройки»; остальное — `ForkFailure` |
-| U8 | Маскот, виджет: «Ошибка при экспорте: …», «Ошибка: …», «Не удалось добавить виджет: …» | `lib/screens/mascot_gallery_screen.dart:576`; `mascot_draw_screen.dart:894`; `widget_screen.dart:1197` | средне | Как U4 |
-| U9 | Капсула времени: английское `Error: $e` при сохранении в русском интерфейсе | `lib/screens/time_capsule_screen.dart:708` | средне | Локализованная строка + `ForkFailure` |
-| U10 | Раскраски: в плитке неудачной загрузки — «Не получилось: ClientException…» вместо названия | `lib/services/coloring_upload_queue.dart:219` → `lib/screens/coloring_catalogue_screen.dart:328` | средне | Хранить `ForkFailure`, в плитке — короткая причина и «Повторить» |
+| U1 ✅ | После отправки фото с главной при сбое — английское `Error: ClientException: …` | `lib/screens/home_screen.dart:3450` | сильно | `ForkFailure.of(e).text`; для фото — `ForkNotice.error` с «Повторить» |
+| U2 ✅ | Статус отношений: «Ошибка установки статуса: ClientException(url: …, statusCode: 0…)» — пять одинаковых мест; плюс снекбары залиты `Colors.red`/`Colors.green` | `lib/screens/relationship_status_screen.dart:268,294,329,370,409` | средне | Причину — через `ForkFailure`, цвет — `colorScheme.error`/`AppSnack` |
+| U3 ✅ | Смена статуса из шапки главной — тот же сырой текст | `lib/screens/home_screen.dart:4887,4903` | средне | Как U2 |
+| U4 ✅ | Профиль: сбой загрузки аватара/баннера и экспорта показывает текст исключения | `lib/screens/profile_screen.dart:3212,3236,4493` | средне | `ForkFailure.of(e).text`, «Повторить» у загрузки |
+| U5 ✅ | Регистрация и вход: на неизвестной ошибке «Ошибка регистрации: FormatException…» / «Ошибка входа: …» | `lib/screens/setup_screen.dart:361`, `setup_screen.dart:222`, `lib/screens/login_screen.dart:227` | сильно | Ветка `unknown` — общий текст + «Повторить»; исключение — в лог |
+| U6 ✅ | Ввод кода партнёра: «Ошибка: SocketException: Failed host lookup…». Текст захардкожен по-русски для всех языков | `lib/services/pb_data_service.dart:1288` → `lib/screens/connect_partner_screen.dart:2688` | сильно | Сервис возвращает `ForkFailure`, экран показывает `.text` |
+| U7 ✅ | Формы воспоминаний: «Не удалось выбрать фото: PlatformException(…)»; у музыки — голый `e.toString()` без всякого пояснения | `lib/screens/memory_photo_form_screen.dart:186,230`; `memory_lane_screen.dart:5342,5694`; `memory_music_form_screen.dart:192` | средне | Отказ в доступе к галерее — свой текст с «Открыть настройки»; остальное — `ForkFailure` |
+| U8 ✅ | Маскот, виджет: «Ошибка при экспорте: …», «Ошибка: …», «Не удалось добавить виджет: …» | `lib/screens/mascot_gallery_screen.dart:576`; `mascot_draw_screen.dart:894`; `widget_screen.dart:1197` | средне | Как U4 |
+| U9 ✅ | Капсула времени: английское `Error: $e` при сохранении в русском интерфейсе | `lib/screens/time_capsule_screen.dart:708` | средне | Локализованная строка + `ForkFailure` |
+| U10 ✅ | Раскраски: в плитке неудачной загрузки — «Не получилось: ClientException…» вместо названия | `lib/services/coloring_upload_queue.dart:219` → `lib/screens/coloring_catalogue_screen.dart:328` | средне | Хранить `ForkFailure`, в плитке — короткая причина и «Повторить» |
 
 ### 2.2. Проверка обновлений
 

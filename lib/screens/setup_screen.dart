@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:io';
 import '../widgets/storage_image.dart';
 import 'package:flutter/gestures.dart';
@@ -219,7 +220,7 @@ class _SetupScreenState extends State<SetupScreen>
             s.serverNotResponding,
           AuthFailure.tooManyAttempts => s.tooManyAttempts,
           AuthFailure.providerPageFailed => s.providerPageFailed,
-          _ => s.googleLoginError(e.toString()),
+          _ => ForkFailure.of(e).text,
         });
       }
     }
@@ -358,7 +359,7 @@ class _SetupScreenState extends State<SetupScreen>
           case AuthFailure.providerUnreachable:
             _showError(s.providerUnreachable);
           case AuthFailure.unknown:
-            _showError(s.registrationError(e.toString()));
+            _showError(ForkFailure.of(e).text);
         }
       }
     }

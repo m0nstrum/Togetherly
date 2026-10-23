@@ -183,7 +183,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
       if (picked == null || picked.isEmpty || !mounted) return;
       await _acceptPicked(picked);
     } catch (e) {
-      _showError(LocaleService.current.failedSelectPhotos(e.toString()));
+      _showError(ForkFailure.of(e).text);
     }
   }
 
@@ -227,7 +227,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
         }
       }
     } catch (e) {
-      _showError(LocaleService.current.failedSelectPhotos(e.toString()));
+      _showError(ForkFailure.of(e).text);
     }
   }
 

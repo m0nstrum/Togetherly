@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'package:flutter/material.dart';
 import '../models/pair_data.dart';
 import '../models/relationship_status.dart';
@@ -257,7 +258,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(LocaleService.current.statusSetTo(status.label)),
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -265,8 +266,8 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(LocaleService.current.failedSetStatus('$e')),
-            backgroundColor: Colors.red,
+            content: Text(ForkFailure.of(e).text),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -283,7 +284,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(LocaleService.current.statusCleared),
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -291,8 +292,8 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(LocaleService.current.failedClearStatus('$e')),
-            backgroundColor: Colors.red,
+            content: Text(ForkFailure.of(e).text),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -318,7 +319,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(LocaleService.current.customStatusAdded),
-              backgroundColor: Colors.green,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }
@@ -326,8 +327,8 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(LocaleService.current.failedAddStatus('$e')),
-              backgroundColor: Colors.red,
+              content: Text(ForkFailure.of(e).text),
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -359,7 +360,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(LocaleService.current.statusUpdated),
-              backgroundColor: Colors.green,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }
@@ -367,8 +368,8 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(LocaleService.current.failedUpdateStatus('$e')),
-              backgroundColor: Colors.red,
+              content: Text(ForkFailure.of(e).text),
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -398,7 +399,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(LocaleService.current.statusDeleted),
-              backgroundColor: Colors.green,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }
@@ -406,8 +407,8 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(LocaleService.current.failedDeleteStatus('$e')),
-              backgroundColor: Colors.red,
+              content: Text(ForkFailure.of(e).text),
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }

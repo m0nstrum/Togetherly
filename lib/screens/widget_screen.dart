@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import '../fork/flags.dart'; // fork: M3
 import '../fork/identity.dart'; // fork: полное имя класса виджета
 import 'dart:async';
@@ -1194,7 +1195,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(LocaleService.current.failedAddWidget('$e')),
+            content: Text(ForkFailure.of(e).text),
             backgroundColor: Colors.red.shade400,
             duration: const Duration(seconds: 4),
           ),

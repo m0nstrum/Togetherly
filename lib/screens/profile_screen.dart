@@ -3209,7 +3209,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
-      if (mounted) _showError(_s.uploadError(e.toString()));
+      if (mounted) ForkNotice.error(context, e, retry: () => _uploadAvatarFile(path));
     }
   }
 
@@ -3233,7 +3233,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         );
       }
     } catch (e) {
-      if (mounted) _showError(_s.uploadError(e.toString()));
+      if (mounted) _showError(ForkFailure.of(e).text);
     }
   }
 
@@ -4490,7 +4490,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_s.exportError(e.toString())),
+            content: Text(ForkFailure.of(e).text),
             backgroundColor: Colors.red.shade400,
           ),
         );

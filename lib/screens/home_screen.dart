@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import '../utils/safe_launch.dart';
 import 'dart:io';
@@ -3446,9 +3447,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (mounted) Navigator.of(context).pop(); // dismiss loading
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ForkNotice.error(context, e);
       }
     }
   }
@@ -4885,7 +4884,7 @@ class _UpdateBottomSheetState extends State<_UpdateBottomSheet> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(LocaleService.current.failedUpdateStatus(e.toString())),
+          content: Text(ForkFailure.of(e).text),
         ),
       );
     }
@@ -4901,7 +4900,7 @@ class _UpdateBottomSheetState extends State<_UpdateBottomSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(LocaleService.current.failedUpdateStatus(e.toString())),
+          content: Text(ForkFailure.of(e).text),
         ),
       );
     }

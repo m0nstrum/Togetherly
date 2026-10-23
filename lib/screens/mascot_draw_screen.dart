@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -891,7 +892,7 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(
-          SnackBar(content: Text(LocaleService.current.genericError('$e'))),
+          SnackBar(content: Text(ForkFailure.of(e).text)),
         );
     } finally {
       if (mounted) setState(() => _saving = false);

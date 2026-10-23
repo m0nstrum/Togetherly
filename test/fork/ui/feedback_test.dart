@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:love_app/fork/e2e/record_codec.dart';
@@ -13,6 +14,11 @@ void main() {
       expect(ForkFailure.of(const SocketException('x')), ForkFailure.network);
       expect(ForkFailure.of(TimeoutException('x')), ForkFailure.network);
       expect(ForkFailure.of(ClientException(statusCode: 0)), ForkFailure.network);
+    });
+    test('permission errors have a safe explanation', () {
+      final error = PlatformException(code: 'photo_access_denied', message: 'internal native details');
+      expect(ForkFailure.of(error), ForkFailure.mediaPermission);
+      expect(ForkFailure.of(error).text, isNot(contains('internal')));
     });
     test('ответы сервера', () {
       expect(ForkFailure.of(ClientException(statusCode: 401)), ForkFailure.session);

@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:math';
@@ -1280,12 +1281,15 @@ class PbDataService {
           'authExpired': true,
         };
       }
-      final msg = (e.response['message'] ?? 'Ошибка приёма кода').toString();
+      if (e.statusCode == 0 || e.statusCode >= 500 || e.statusCode == 429) {
+        return {'success': false, 'message': ForkFailure.of(e).text, 'failure': ForkFailure.of(e)};
+      }
+      final msg = (e.response['message'] ?? ForkFailure.of(e).text).toString();
       debugPrint('PbData.acceptInviteCode hook ${e.statusCode}: $msg');
       return {'success': false, 'message': msg};
     } catch (e) {
       debugPrint('PbData.acceptInviteCode failed: $e');
-      return {'success': false, 'message': 'Ошибка: $e'};
+      return {'success': false, 'message': ForkFailure.of(e).text, 'failure': ForkFailure.of(e)};
     }
   }
 

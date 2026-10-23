@@ -573,7 +573,7 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(
-          SnackBar(content: Text(LocaleService.current.exportError('$e'))),
+          SnackBar(content: Text(ForkFailure.of(e).text)),
         );
       }
     }

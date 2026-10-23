@@ -1,3 +1,4 @@
+import 'fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
@@ -359,6 +360,13 @@ void main() async {
   // ни одной записи. Уходит предупреждением с кодом отказа — по нему видно и
   // модель телефона, и версию системы.
   onPickFailure((code, error) {
+    // fork (PLAN 2.2): safePick treats denial as cancel; show a settings action.
+    if (ForkFailure.of(error) == ForkFailure.mediaPermission) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = LoveApp.rootNavigatorKey.currentState?.overlay?.context;
+        if (ctx != null && ctx.mounted) ForkNotice.error(ctx, error);
+      });
+    }
     unawaited(
       Sentry.captureMessage(
         'picker failed: $code',

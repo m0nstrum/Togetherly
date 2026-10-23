@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -27,9 +28,10 @@ class ColoringUpload {
     required this.title,
     required this.status,
     this.ratio = 1.0,
-    this.error = '',
+    String error = '',
+    this.failure,
     this.sourcePath = '',
-  });
+  }) : _error = error;
 
   final String id;
   final String title;
@@ -40,7 +42,9 @@ class ColoringUpload {
   final double ratio;
 
   /// Понятная человеку причина отказа.
-  final String error;
+  final String _error;
+  final ForkFailure? failure;
+  String get error => failure?.text ?? _error;
 
   /// Исходник на диске. Держим до конца обработки: если приложение закрыли на
   /// середине, работа продолжится с него при следующем запуске.
@@ -53,7 +57,8 @@ class ColoringUpload {
         'title': title,
         'status': status.name,
         'ratio': ratio,
-        'error': error,
+        'error': failure == null ? _error : '',
+        'failure': failure?.name,
         'source': sourcePath,
       };
 
@@ -66,6 +71,8 @@ class ColoringUpload {
         ),
         ratio: (j['ratio'] as num?)?.toDouble() ?? 1.0,
         error: (j['error'] ?? '').toString(),
+        failure: ForkFailure.values.where((f) => f.name == j['failure']).firstOrNull ??
+            (RegExp(r'Exception|Error:|https?://').hasMatch((j['error'] ?? '').toString()) ? ForkFailure.unknown : null),
         sourcePath: (j['source'] ?? '').toString(),
       );
 
@@ -73,13 +80,15 @@ class ColoringUpload {
     ColoringUploadStatus? status,
     double? ratio,
     String? error,
+    ForkFailure? failure,
   }) =>
       ColoringUpload(
         id: id,
         title: title,
         status: status ?? this.status,
         ratio: ratio ?? this.ratio,
-        error: error ?? this.error,
+        error: error ?? _error,
+        failure: (status ?? this.status) == ColoringUploadStatus.failed ? failure ?? this.failure : null,
         sourcePath: sourcePath,
       );
 }
@@ -158,6 +167,13 @@ class ColoringUploadQueue extends ChangeNotifier {
     return item;
   }
 
+  Future<void> retry(String id) async {
+    final item = _items.where((i) => i.id == id && i.status == ColoringUploadStatus.failed).firstOrNull;
+    if (item == null) return;
+    await _update(id, status: ColoringUploadStatus.processing, error: '');
+    unawaited(_process(item));
+  }
+
   Future<void> remove(String id) async {
     final item = _items.firstWhere((i) => i.id == id,
         orElse: () => const ColoringUpload(
@@ -216,7 +232,7 @@ class ColoringUploadQueue extends ChangeNotifier {
           status: ColoringUploadStatus.ready, ratio: result.ratio);
     } catch (e) {
       await _update(item.id,
-          status: ColoringUploadStatus.failed, error: 'Не получилось: $e');
+          status: ColoringUploadStatus.failed, failure: ForkFailure.of(e));
     } finally {
       _busy = false;
       // Следующая в очереди, если она есть.
@@ -232,10 +248,10 @@ class ColoringUploadQueue extends ChangeNotifier {
   Future<void> _update(String id,
       {required ColoringUploadStatus status,
       double? ratio,
-      String error = ''}) async {
+      String error = '', ForkFailure? failure}) async {
     final idx = _items.indexWhere((i) => i.id == id);
     if (idx < 0) return;
-    _items[idx] = _items[idx].copyWith(status: status, ratio: ratio, error: error);
+    _items[idx] = _items[idx].copyWith(status: status, ratio: ratio, error: error, failure: failure);
     await _save();
     notifyListeners();
   }

@@ -46,7 +46,7 @@
 | M9 | Перехват токена FCM: регистрация чужого токена переписывает владельца | `infrastructure/pocketbase/wake.go:45` |
 | M10 | Тайлы карты берутся напрямую с openfreemap: сторонний сайт видит район и IP | `fork/config/endpoints.dart:66` |
 | M11 | Хвосты монетизации: разрешение `com.android.vending.BILLING`; переходы на `PlusScreen` из 15 мест (замки снимает `allFree`, но экран и справка «Плюс» остаются) | `AndroidManifest.xml`, `grep PlusScreen(` |
-| M12 | Около 20 мест показывают пользователю сырой `$e`/`e.toString()` | `relationship_status_screen.dart`, `home_screen.dart:3450` и другие |
+| M12 ✅ | Около 20 мест показывают пользователю сырой `$e`/`e.toString()` | `relationship_status_screen.dart`, `home_screen.dart:3450` и другие |
 
 ## Проверено, проблем нет
 

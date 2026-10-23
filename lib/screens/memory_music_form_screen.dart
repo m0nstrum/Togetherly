@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -189,7 +190,7 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
         }
       });
     } catch (e) {
-      _snack(e.toString());
+      ForkNotice.error(context, e);
     }
   }
 
