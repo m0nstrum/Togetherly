@@ -27,6 +27,10 @@ class ForkTouchSession extends ChangeNotifier {
   final bool Function() allowed;
   final DateTime Function() now;
   static const freshness = Duration(seconds: 2);
+
+  /// Phone clocks are not synced: [freshness] is measured by receipt time,
+  /// the sender's stamp only has to be roughly current and increasing.
+  static const clockSkew = Duration(minutes: 2);
   Offset? mine, peer;
   bool ready = false, failed = false, matched = false;
   bool _closed = false, _sending = false, _dirty = false;
@@ -100,7 +104,7 @@ class ForkTouchSession extends ChangeNotifier {
         at <= _peerAt ||
         sealed is! String ||
         sealed.length > 4096 ||
-        (now().millisecondsSinceEpoch - at).abs() > freshness.inMilliseconds) {
+        (now().millisecondsSinceEpoch - at).abs() > clockSkew.inMilliseconds) {
       return;
     }
     final data = codec.openChannel(_place(partner, at), sealed);

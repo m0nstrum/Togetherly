@@ -124,6 +124,24 @@ void main() {
     expect(alice.matched, isFalse);
   });
 
+  test('phones whose clocks differ by seconds still meet', () async {
+    final skewed = ForkTouchSession(
+      group: 'group',
+      me: 'bob',
+      partner: 'alice',
+      codec: codec,
+      transport: Transport(bus),
+      allowed: () => allowed,
+      now: () => time.add(const Duration(seconds: 40)),
+      vibrate: () async {},
+    );
+    addTearDown(skewed.dispose);
+    await skewed.start();
+    alice.point(const Offset(.5, .5));
+    await settle();
+    expect(skewed.peer, isNotNull);
+  });
+
   test('distant points do not vibrate, lost release expires', () async {
     alice.point(const Offset(.1, .1));
     bob.point(const Offset(.9, .9));

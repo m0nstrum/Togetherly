@@ -137,6 +137,9 @@ jobs:
       - name: group identity guards (real JS hooks)
         run: SMOKE_AFTER='python3 "$PWD/scripts/group-authorship.test.py"' scripts/smoke.sh
 
+      - name: groups guard — partner cannot act for you (real JS hooks)
+        run: SMOKE_AFTER='python3 "$PWD/scripts/group-guard.test.py"' scripts/smoke.sh
+
       - name: realtime token expiry and membership (real JS hooks)
         env:
           TETHERED_CENTRIFUGO__API: http://127.0.0.1:9/api

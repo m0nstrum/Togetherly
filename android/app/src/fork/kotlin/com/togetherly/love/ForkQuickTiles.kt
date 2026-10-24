@@ -34,7 +34,11 @@ class ForkQuickTiles(private val context: Context) : MethodChannel.MethodCallHan
                             if (call.arguments == true) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                             else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                             PackageManager.DONT_KILL_APP)
-                        TileService.requestListeningState(context, component)
+                    }
+                    // Only an enabled tile can be asked to refresh; a failure here
+                    // must not roll back a successful switch.
+                    if (call.arguments == true) components.forEach {
+                        try { TileService.requestListeningState(context, it) } catch (_: Exception) {}
                     }
                     result.success(null)
                 } catch (_: Exception) {

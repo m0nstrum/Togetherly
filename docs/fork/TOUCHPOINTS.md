@@ -314,3 +314,4 @@
 | `lib/services/map/map_tiles.dart` | M10 | Кэш и TileJSON принимаются только со своего сервера; относительный серверный шаблон разрешается локально. | Не возвращать внешние адреса из старого кэша карты. |
 
 | `lib/services/centrifugo_service.dart` | H3 | Серверные дельты допускаются только после Ed25519-проверки; raw pair/loc физически разделены в signal/locsignal, AAD логических каналов сохранён. | Не добавлять unsigned fallback; deliver используется только доверенным HTTPS wake-ответом. |
+| `server/hooks/groups_guard.pb.js` (своя версия стража апстрима) | M3, ревью 24.10 | Поверх стража апстрима: из `members` убрать можно только себя, в `member_names/avatars/cards/moods/ailments/birthdays` чужие ключи обязаны совпасть с сохранёнными. | При изменении стража апстрима перенести его правки в свою версию. Стережёт `server/scripts/group-guard.test.py`. |
