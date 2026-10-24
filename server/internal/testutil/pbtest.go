@@ -4,8 +4,12 @@ package testutil
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -18,12 +22,61 @@ import (
 	_ "github.com/m0nstrum/togetherly/server/internal/migrations"
 )
 
-// NewApp — пустая база с применёнными миграциями. Чистится в t.Cleanup.
+// Each test gets an independent database and app. Building an empty migrated
+// schema repeatedly dominates -race runtime, so cache only closed DB bytes.
+// Migration-specific tests still construct a blank app and run from scratch.
+var schemaOnce sync.Once
+var schemaFiles map[string][]byte
+var schemaErr error
+
+func emptySchema() (map[string][]byte, error) {
+	dir, err := os.MkdirTemp("", "tethered-schema-")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(dir)
+	app, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: dir, EncryptionEnv: "pb_test_env"})
+	if err != nil {
+		return nil, err
+	}
+	defer app.Cleanup()
+	// Closing SQLite checkpoints WAL before taking the immutable snapshot.
+	if err := app.ResetBootstrapState(); err != nil {
+		return nil, err
+	}
+	entries, err := os.ReadDir(app.DataDir())
+	if err != nil {
+		return nil, err
+	}
+	files := map[string][]byte{}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".db") {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(app.DataDir(), entry.Name()))
+		if err != nil {
+			return nil, err
+		}
+		files[entry.Name()] = data
+	}
+	if len(files["data.db"]) == 0 {
+		return nil, fmt.Errorf("empty schema snapshot")
+	}
+	return files, nil
+}
+
+// NewApp clones the empty migrated schema; no records, connections or hooks
+// are shared. PocketBase still checks for any missing migrations on each clone.
 func NewApp(t testing.TB) *tests.TestApp {
 	t.Helper()
-	app, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: t.TempDir(), EncryptionEnv: "pb_test_env"})
+	schemaOnce.Do(func() { schemaFiles, schemaErr = emptySchema() })
+	require.NoError(t, schemaErr)
+	dir := t.TempDir()
+	for name, data := range schemaFiles {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), data, 0600))
+	}
+	app, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: dir, EncryptionEnv: "pb_test_env"})
 	require.NoError(t, err)
-	require.NoError(t, app.RunAllMigrations())
 	t.Cleanup(app.Cleanup)
 	return app
 }
@@ -79,6 +132,7 @@ func User(t testing.TB, app core.App, id string, groups ...string) (*core.Record
 	u.SetEmail(id + "@example.org")
 	u.SetPassword("password123")
 	u.Set("group_ids", groups)
+	u.Set("live_group_ids", groups)
 	require.NoError(t, app.Save(u))
 	tok, err := u.NewAuthToken()
 	require.NoError(t, err)

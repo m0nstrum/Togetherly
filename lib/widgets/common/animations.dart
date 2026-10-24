@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/physics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -509,7 +510,17 @@ class _NavBarItemState extends State<NavBarItem>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    // fork (UI_AUDIT): имя пункта для TalkBack и подсказка по долгому нажатию.
+    return Semantics(
+      label: widget.label,
+      selected: widget.isActive,
+      button: true,
+      onTap: _handleTap,
+      excludeSemantics: true,
+      child: Tooltip(
+      message: widget.label,
+      excludeFromSemantics: true,
+      child: GestureDetector(
       onTap: _handleTap,
       behavior: HitTestBehavior.opaque,
       child: ScaleTransition(
@@ -517,14 +528,9 @@ class _NavBarItemState extends State<NavBarItem>
         child: AnimatedContainer(
           duration: Motion.medium1,
           curve: Curves.easeOutCubic,
-          // Пунктов пять, а панель узкая: на экране 360 dp прежние отступы
-          // (18/12) не помещались, на 320 не помещаются и эти.
-          padding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width <= 340
-                ? (widget.isActive ? 9 : 5)
-                : (widget.isActive ? 14 : 9),
-            vertical: 8,
-          ),
+          // fork (UI_AUDIT): палец не промахивается, подпись активного влезает.
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
           decoration: BoxDecoration(
             color: widget.isActive ? widget.activeBg : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
@@ -574,7 +580,13 @@ class _NavBarItemState extends State<NavBarItem>
                           ? widget.activeColor
                           : widget.inactiveColor,
                     ),
-                    child: const SizedBox.shrink(),
+                    child: widget.isActive // fork: подпись активного пункта
+                        ? Text(
+                            widget.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ],
               ),
@@ -596,6 +608,8 @@ class _NavBarItemState extends State<NavBarItem>
           ),
         ),
       ),
+      ), // fork: GestureDetector
+      ), // fork: Tooltip
     );
   }
 }

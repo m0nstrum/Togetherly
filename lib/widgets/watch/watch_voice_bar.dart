@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork
 import 'package:flutter/material.dart';
 
 import '../../models/watch_voice_ui.dart';
@@ -71,8 +72,7 @@ class WatchVoiceBar extends StatelessWidget {
                   ),
                 ),
               ),
-              // Глушилки появляются, только когда друг друга уже слышно: до
-              // этого глушить нечего, а две мёртвые кнопки читаются поломкой.
+              // Звук и микрофон настраиваются уже во время вызова.
               if (bar.showsMicAndSpeaker) ...[
                 _Round(
                   icon: micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
@@ -84,8 +84,8 @@ class WatchVoiceBar extends StatelessWidget {
                 _Round(
                   icon: speakerOn
                       ? Icons.volume_up_rounded
-                      : Icons.volume_off_rounded,
-                  tooltip: s.watchVoiceSpeaker,
+                      : Icons.hearing_rounded,
+                  tooltip: ruEn('Динамик', 'Speaker'),
                   active: speakerOn,
                   onTap: onSpeakerToggle,
                 ),

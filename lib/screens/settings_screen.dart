@@ -8,6 +8,8 @@ import '../utils/email_typo.dart';
 import '../widgets/app_icon_sheet.dart';
 import '../widgets/home_layout_editor.dart';
 import '../widgets/settings_scaffold.dart';
+import '../fork/quick_tiles.dart'; // fork: PLAN 3.3
+import '../fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
 import '../fork/crash_reports.dart'; // fork
 import '../fork/flags.dart'; // fork
 import '../fork/battery/battery_share.dart'; // fork
@@ -35,7 +37,6 @@ class SettingsScreen extends StatelessWidget {
     required this.onCoinShop,
     required this.onPrivacyPolicy,
     required this.onExport,
-    required this.onResetMissYou,
     required this.onTerms,
     required this.onSupport,
     required this.onOfficial,
@@ -84,7 +85,6 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback onCoinShop;
   final VoidCallback onPrivacyPolicy;
   final VoidCallback onExport;
-  final VoidCallback onResetMissYou;
   final VoidCallback onTerms;
   final VoidCallback onSupport;
   final VoidCallback onOfficial;
@@ -253,6 +253,11 @@ class SettingsScreen extends StatelessWidget {
                     onTap: onChangePassword,
                   ),
                   SettingsRow(
+                    icon: Icons.monetization_on_rounded,
+                    title: forkCoinsRowTitle(), subtitle: s.settingsCoinsHint,
+                    trailing: const SettingsChevron(), onTap: onCoinShop,
+                  ),
+                  SettingsRow(
                     icon: Icons.logout_rounded,
                     title: s.logout,
                     iconBg: scheme.surfaceContainerHighest,
@@ -336,6 +341,8 @@ class SettingsScreen extends StatelessWidget {
                 title: ruEn('Телефон и экран блокировки', 'Phone & lock screen'), // fork
                 icon: Icons.campaign_rounded,
                 children: [
+                  const ForkAppLockSettings(), // fork
+                  const ForkQuickTilesSettings(), // fork
                   SettingsRow(
                     icon: Icons.notifications_rounded,
                     title: s.notifications,
@@ -429,21 +436,6 @@ class SettingsScreen extends StatelessWidget {
               ],
 
               SettingsCollapsible(
-                prefsKey: 'coins',
-                title: ruEn('Монеты', 'Coins'), // fork
-                icon: Icons.shopping_bag_rounded,
-                children: [
-                  SettingsRow(
-                    icon: Icons.monetization_on_rounded,
-                    title: forkCoinsRowTitle(), // fork
-                    subtitle: s.settingsCoinsHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onCoinShop,
-                  ),
-                ],
-              ),
-
-              SettingsCollapsible(
                 prefsKey: 'data',
                 title: s.settingsDataSection,
                 icon: Icons.storage_rounded,
@@ -463,13 +455,6 @@ class SettingsScreen extends StatelessWidget {
                     onTap: onExport,
                   ),
                   SettingsRow(
-                    icon: Icons.replay_rounded,
-                    title: s.resetMissYouCount,
-                    subtitle: s.settingsResetMissHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onResetMissYou,
-                  ),
-                  SettingsRow(
                     icon: Icons.shield_rounded,
                     title: s.privacy,
                     subtitle: s.settingsPrivacyHint,
@@ -479,32 +464,20 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
 
-              // Справка отдельной группой, а не внутри «О приложении»: тот
-              // сворачивается, а ответ должен быть виден сразу.
-              if (onHelp != null) ...[
-                const SizedBox(height: 20),
-                SettingsGroup([
-                  SettingsRow(
-                    icon: Icons.help_rounded,
-                    title: trKey('help.title'),
-                    subtitle: trKey('help.subtitle'),
-                    iconBg: scheme.primaryContainer,
-                    iconFg: scheme.onPrimaryContainer,
-                    trailing: const SettingsChevron(),
-                    onTap: onHelp,
-                  ),
-                ]),
-              ],
               SettingsCollapsible(
                 prefsKey: 'about',
                 title: s.aboutApp,
-                icon: Icons.help_rounded,
+                icon: Icons.info_rounded,
                 children: [
+                  if (onHelp != null)
+                    SettingsRow(icon: Icons.help_rounded,
+                      title: trKey('help.title'), subtitle: trKey('help.subtitle'),
+                      trailing: const SettingsChevron(), onTap: onHelp),
                   const ForkCrashReportsRow(), // fork
                   const ForkMetaDirectRow(), // fork
                   SettingsRow(
                     icon: Icons.info_rounded,
-                    title: s.aboutApp,
+                    title: ruEn('Версия и лицензии', 'Version & licenses'),
                     subtitle: appVersion.isEmpty ? null : appVersion,
                     trailing: const SettingsChevron(),
                     onTap: onAbout,

@@ -1233,6 +1233,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     ),
                   ),
                   IconButton(
+                    tooltip: ruEn('Переименовать', 'Rename'),
                     onPressed: () => _showRenameDialog(m),
                     visualDensity: VisualDensity.compact,
                     icon: Icon(Icons.edit_rounded,
@@ -3262,6 +3263,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: ruEn('Закрыть', 'Close'),
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),

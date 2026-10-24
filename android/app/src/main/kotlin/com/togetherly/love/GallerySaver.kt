@@ -314,7 +314,7 @@ class GallerySaver(private val context: Context) : MethodChannel.MethodCallHandl
     companion object {
         const val CHANNEL = "love_app/gallery"
         const val ACCESS_DENIED = "ACCESS_DENIED"
-        const val DEFAULT_ALBUM = "Togetherly"
+        const val DEFAULT_ALBUM = "Tethered" // fork (PLAN 2.1)
         const val KIND_PHOTO = "photo"
         const val KIND_VIDEO = "video"
         const val KIND_AUDIO = "audio"

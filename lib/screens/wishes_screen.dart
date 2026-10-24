@@ -877,26 +877,18 @@ class _WishTile extends StatelessWidget {
                     color: reserved ? scheme.primary : scheme.onSurfaceVariant,
                   ),
                 ),
-              // Ссылка на магазин: без неё карточка товара — просто картинка,
-              // а желание обычно и приходит ссылкой.
-              if (wish.url.isNotEmpty)
-                IconButton(
-                  tooltip: ru ? 'Открыть' : 'Open',
-                  onPressed: () async {
+              if (wish.url.isNotEmpty || onDelete != null)
+                PopupMenuButton<String>(
+                  tooltip: ru ? 'Действия с желанием' : 'Wish actions',
+                  onSelected: (action) async {
+                    if (action == 'delete') { onDelete?.call(); return; }
                     final uri = Uri.tryParse(wish.url);
-                    if (uri == null) return;
-                    await safeLaunchUrl(uri, mode: LaunchMode.externalApplication);
+                    if (uri != null) await safeLaunchUrl(uri, mode: LaunchMode.externalApplication);
                   },
-                  icon: Icon(Icons.open_in_new_rounded,
-                      size: 18, color: scheme.onSurfaceVariant),
-                ),
-              // fork (D11): удалить — не только долгим нажатием.
-              if (onDelete != null)
-                IconButton(
-                  tooltip: ru ? 'Удалить' : 'Delete',
-                  onPressed: onDelete,
-                  icon: Icon(Icons.delete_outline_rounded,
-                      size: 20, color: scheme.onSurfaceVariant),
+                  itemBuilder: (_) => [
+                    if (wish.url.isNotEmpty) PopupMenuItem(value: 'open', child: Text(ru ? 'Открыть ссылку' : 'Open link')),
+                    if (onDelete != null) PopupMenuItem(value: 'delete', child: Text(ru ? 'Удалить' : 'Delete')),
+                  ],
                 ),
             ],
           ),

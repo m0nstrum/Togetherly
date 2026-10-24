@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
@@ -154,6 +155,7 @@ class NoteRecorderOverlay extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
+            tooltip: ruEn('Закрыть', 'Close'),
             onPressed: onClose,
             icon: const Icon(Icons.close_rounded),
             style: IconButton.styleFrom(foregroundColor: cs.onSurfaceVariant),
@@ -242,6 +244,7 @@ class NoteRecorderOverlay extends StatelessWidget {
         children: [
           if (canFlip)
             _RoundTool(
+              tooltip: ruEn('Переключить камеру', 'Switch camera'),
               icon: Icons.cameraswitch_rounded,
               onTap: recording && !paused ? null : onFlip,
               cs: cs,
@@ -249,6 +252,7 @@ class NoteRecorderOverlay extends StatelessWidget {
           if (canTorch) ...[
             const SizedBox(height: 10),
             _RoundTool(
+              tooltip: torchOn ? ruEn('Выключить вспышку', 'Turn flash off') : ruEn('Включить вспышку', 'Turn flash on'),
               icon: torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
               active: torchOn,
               onTap: onTorch,
@@ -257,6 +261,7 @@ class NoteRecorderOverlay extends StatelessWidget {
           ],
           const SizedBox(height: 10),
           _RoundTool(
+            tooltip: ruEn('Отразить изображение', 'Mirror image'),
             icon: Icons.flip_rounded,
             active: mirrored,
             onTap: onMirror,
@@ -271,6 +276,7 @@ class NoteRecorderOverlay extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: _RoundTool(
+        tooltip: paused ? ruEn('Продолжить запись', 'Resume recording') : ruEn('Приостановить запись', 'Pause recording'),
         icon: paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
         onTap: recording ? onPauseToggle : null,
         cs: cs,
@@ -352,6 +358,7 @@ class NoteRecorderOverlay extends StatelessWidget {
             curve: Motion.emphasized,
             scale: recording ? 1 : 0.92,
             child: IconButton.filled(
+              tooltip: ruEn('Отправить запись', 'Send recording'),
               onPressed: recording ? onSend : null,
               icon: const Icon(Icons.send_rounded, size: 22),
               style: IconButton.styleFrom(
@@ -405,12 +412,14 @@ class NoteRecorderOverlay extends StatelessWidget {
 
 class _RoundTool extends StatelessWidget {
   final IconData icon;
+  final String tooltip;
   final VoidCallback? onTap;
   final bool active;
   final ColorScheme cs;
 
   const _RoundTool({
     required this.icon,
+    required this.tooltip,
     required this.onTap,
     required this.cs,
     this.active = false,
@@ -420,6 +429,7 @@ class _RoundTool extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onTap != null;
     return IconButton(
+      tooltip: tooltip,
       onPressed: onTap,
       icon: Icon(icon, size: 20),
       style: IconButton.styleFrom(

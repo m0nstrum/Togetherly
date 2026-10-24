@@ -1,3 +1,4 @@
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -705,7 +706,7 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        _snack('Error: $e');
+        ForkNotice.error(context, e);
       }
     }
   }

@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../../dict_strings.dart' show ruEn;
 import '../../services/watch_voice_service.dart';
 import '../e2e/room_chat.dart';
+import '../e2e/room_message_time.dart';
 import '../e2e/room_chat_ui.dart';
 import 'room_live.dart';
 import 'voice_stage.dart';
@@ -45,6 +46,8 @@ class ForkRoomTopBar extends StatelessWidget {
   final VoidCallback onCopy;
 
   static const double height = 56;
+  static double heightFor(BuildContext context) =>
+      (MediaQuery.textScalerOf(context).scale(12.5) * 2.7 + 16).clamp(height, double.infinity);
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +57,7 @@ class ForkRoomTopBar extends StatelessWidget {
     final inCall = stage != VoiceStage.idle;
     final live = stage == VoiceStage.live;
     return SizedBox(
-      height: height,
+      height: heightFor(context),
       child: Row(
         children: [
           IconButton(
@@ -63,17 +66,7 @@ class ForkRoomTopBar extends StatelessWidget {
             onPressed: onBack,
           ),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  ruEn('Смотрим вместе', 'Watching together'),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Row(
+            child: Row(
                   children: [
                     Container(
                       key: const ValueKey('fork-room-presence-dot'),
@@ -94,24 +87,19 @@ class ForkRoomTopBar extends StatelessWidget {
                             : invited
                                 ? ruEn('Позвали — ждём $name', 'Invited — waiting for $name')
                                 : ruEn('$name не в комнате', '$name isn’t here'),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
           ),
           if (!partnerHere)
-            Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: TextButton.icon(
-                onPressed: invited ? null : onInvite,
-                icon: const Icon(Icons.notifications_active_outlined, size: 18),
-                label: Text(ruEn('Позвать', 'Invite')),
-              ),
+            IconButton(
+              tooltip: invited ? ruEn('Позвали — ждём', 'Invited — waiting') : ruEn('Позвать', 'Invite'),
+              onPressed: invited ? null : onInvite,
+              icon: const Icon(Icons.notifications_active_outlined),
             ),
           IconButton(
             tooltip: inCall ? ruEn('Открыть звонок', 'Open the call') : ruEn('Позвонить', 'Call'),
@@ -162,8 +150,11 @@ class ForkNowPlaying extends StatelessWidget {
     required this.onTogether,
     required this.onPauseBoth,
     required this.onFullscreen,
+    this.onQueue,
+    this.onPip,
   });
 
+  final VoidCallback? onQueue, onPip;
   final ForkRoomLive live;
   final VoidCallback onPick;
   final VoidCallback onToggle;
@@ -185,29 +176,52 @@ class ForkNowPlaying extends StatelessWidget {
     if (!live.hasVideo) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(ruEn('Что смотрим?', 'What are we watching?'),
-                      style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(
-                    live.offline
-                        ? ruEn('Нет связи — переподключаемся…', 'Offline — reconnecting…')
-                        : ruEn('Видео включится у обоих сразу', 'It starts for both of you at once'),
-                    style: tt.bodySmall?.copyWith(color: live.offline ? cs.error : cs.onSurfaceVariant),
-                  ),
-                ],
+            Text(
+              ruEn('Что смотрим?', 'What are we watching?'),
+              style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              live.offline
+                  ? ruEn(
+                      'Нет связи — переподключаемся…',
+                      'Offline — reconnecting…',
+                    )
+                  : ruEn(
+                      'Видео включится у обоих сразу',
+                      'It starts for both of you at once',
+                    ),
+              style: tt.bodySmall?.copyWith(
+                color: live.offline ? cs.error : cs.onSurfaceVariant,
               ),
             ),
-            FilledButton.icon(
-              key: const ValueKey('fork-room-pick'),
-              onPressed: onPick,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(ruEn('Выбрать видео', 'Choose a video')),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  key: const ValueKey('fork-room-pick'),
+                  onPressed: onPick,
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(ruEn('Выбрать видео', 'Choose a video')),
+                ),
+                if (onQueue != null)
+                  TextButton.icon(
+                    onPressed: onQueue,
+                    icon: const Icon(Icons.queue_play_next_rounded),
+                    label: Text(
+                      ruEn(
+                        'Очередь видео · ${live.queue.length}',
+                        'Video queue · ${live.queue.length}',
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
@@ -241,13 +255,13 @@ class ForkNowPlaying extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(head,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                 if (sub.isNotEmpty)
                   Text(sub,
                       key: const ValueKey('fork-room-now-sub'),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: tt.bodySmall?.copyWith(color: live.offline ? cs.error : cs.onSurfaceVariant)),
               ],
@@ -271,16 +285,15 @@ class ForkNowPlaying extends StatelessWidget {
               icon: Icon(live.playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
               onPressed: onToggle,
             ),
-          IconButton(
-            tooltip: ruEn('Во весь экран', 'Full screen'),
-            icon: const Icon(Icons.fullscreen_rounded),
-            onPressed: onFullscreen,
-          ),
-          IconButton(
-            key: const ValueKey('fork-room-change'),
-            tooltip: ruEn('Другое видео', 'Another video'),
-            icon: const Icon(Icons.playlist_add_rounded),
-            onPressed: onPick,
+          PopupMenuButton<String>(
+            tooltip: ruEn('Действия с видео', 'Video actions'),
+            onSelected: (value) { if (value == 'fullscreen') { onFullscreen(); } else if (value == 'queue') { onQueue?.call(); } else if (value == 'pip') { onPip?.call(); } else { onPick(); } },
+            itemBuilder: (_) => [
+              if (onPip != null) PopupMenuItem(value: 'pip', child: Text(ruEn('Поверх приложений (PiP)', 'Picture-in-picture'))),
+              if (onQueue != null) PopupMenuItem(value: 'queue', child: Text(ruEn('Очередь видео · ${live.queue.length}', 'Video queue · ${live.queue.length}'))),
+              PopupMenuItem(value: 'fullscreen', child: Text(ruEn('Во весь экран', 'Full screen'))),
+              PopupMenuItem(value: 'pick', key: const ValueKey('fork-room-change'), child: Text(ruEn('Другое видео', 'Another video'))),
+            ],
           ),
         ],
       ),
@@ -321,12 +334,12 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
   Future<void> _send() async {
     final chat = widget.chat;
     final text = _input.text.trim();
-    if (chat == null || text.isEmpty || _sending) return;
+    if (chat == null || !chat.canSend || text.isEmpty || _sending) return;
     setState(() => _sending = true);
-    final ok = await chat.send(text);
+    _input.clear();
+    await chat.send(text);
     if (!mounted) return;
     setState(() => _sending = false);
-    if (ok) _input.clear();
   }
 
   @override
@@ -345,7 +358,7 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
       for (final m in chat?.messages ?? const <RoomMessage>[]) (at: m.at, m: m, l: null),
       for (final l in widget.live.lines) (at: l.at, m: null, l: l),
     ]..sort((a, b) => a.at.compareTo(b.at));
-    final usable = chat != null && !chat.noPairKey;
+    final usable = chat?.canSend == true;
     final warn = chat != null && !chat.secure;
     final ask = chat != null && chat.browser && !chat.openAllowed && !chat.noPairKey;
     final status = chat == null
@@ -460,6 +473,17 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
               if (!m.mine && m.open && m.name.isNotEmpty)
                 Text(m.name, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
               Text(m.text, style: TextStyle(color: m.mine ? cs.onPrimaryContainer : cs.onSurface)),
+              if (forkRoomMessageTime(m.at).isNotEmpty)
+                Text(forkRoomMessageTime(m.at), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+              if (m.pending)
+                Text(ruEn('Отправляем…', 'Sending…'), style: TextStyle(color: cs.onSurfaceVariant)),
+              if (m.failed)
+                TextButton.icon(
+                  onPressed: widget.chat?.canSend == true && !m.pending
+                      ? () => widget.chat!.retry(m) : null,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: Text(ruEn('Не отправлено · Повторить', 'Not sent · Retry')),
+                ),
             ],
           ),
         ),

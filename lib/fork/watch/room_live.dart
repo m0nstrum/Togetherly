@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'queue_item.dart';
 
 import '../../dict_strings.dart' show ruEn;
 
@@ -32,7 +33,7 @@ class ForkRoomLine {
 
 class ForkRoomLive extends ChangeNotifier {
   ForkRoomLive({required this.partnerName, DateTime Function()? now})
-      : _now = now ?? DateTime.now;
+    : _now = now ?? DateTime.now;
 
   /// Имя партнёра на момент события (пара может догрузиться позже).
   final String Function() partnerName;
@@ -74,6 +75,7 @@ class ForkRoomLive extends ChangeNotifier {
   /// Плеер просит полный экран.
   int fullscreenSeq = 0;
 
+  List<ForkQueuedVideo> queue = [];
   final List<ForkRoomLine> lines = [];
   static const int linesLimit = 80;
 
@@ -86,6 +88,14 @@ class ForkRoomLive extends ChangeNotifier {
   void handle(Map<String, dynamic> e) {
     final t = '${e['t'] ?? ''}';
     switch (t) {
+      case 'queue':
+        final items = e['items'];
+        if (items is! List) return;
+        queue = items
+            .take(20)
+            .map(ForkQueuedVideo.parse)
+            .whereType<ForkQueuedVideo>()
+            .toList();
       case 'viewers':
         final n = (e['n'] as num?)?.toInt() ?? 1;
         viewers = n < 1 ? 1 : n;
@@ -95,7 +105,10 @@ class ForkRoomLive extends ChangeNotifier {
           here ? 'here' : 'gone',
           here
               ? ruEn('$_partner в комнате', '$_partner joined')
-              : ruEn('$_partner вышел(а) из комнаты', '$_partner left the room'),
+              : ruEn(
+                  '$_partner вышел(а) из комнаты',
+                  '$_partner left the room',
+                ),
         );
       case 'source':
         _source(e);
@@ -139,11 +152,17 @@ class ForkRoomLive extends ChangeNotifier {
     final what = label.isEmpty ? ruEn('видео', 'a video') : label;
     final text = switch (by) {
       'me' => ruEn('Вы включили: $what', 'You started: $what'),
-      'room' => ruEn('Вы присоединились — идёт $what', 'You joined — $what is on'),
-      _ => kind == 'file'
-          ? ruEn('$_partner включает свой файл «$what» — откройте такой же у себя',
-              '$_partner plays their file “$what” — open the same one')
-          : ruEn('$_partner включает: $what', '$_partner started: $what'),
+      'room' => ruEn(
+        'Вы присоединились — идёт $what',
+        'You joined — $what is on',
+      ),
+      _ =>
+        kind == 'file'
+            ? ruEn(
+                '$_partner включает свой файл «$what» — откройте такой же у себя',
+                '$_partner plays their file “$what” — open the same one',
+              )
+            : ruEn('$_partner включает: $what', '$_partner started: $what'),
     };
     _line('source', text, mine: by == 'me');
   }
@@ -160,7 +179,10 @@ class ForkRoomLive extends ChangeNotifier {
       'play' => ruEn('$who — воспроизведение с $c', '$who — playing from $c'),
       'pause' => ruEn('$who — пауза на $c', '$who — paused at $c'),
       'seek' => ruEn('$who — перемотка на $c', '$who — jumped to $c'),
-      'countdown' => ruEn('$who — отсчёт 3·2·1, жмите вместе', '$who — countdown 3·2·1, press together'),
+      'countdown' => ruEn(
+        '$who — отсчёт 3·2·1, жмите вместе',
+        '$who — countdown 3·2·1, press together',
+      ),
       'pauseNow' => ruEn('$who — пауза у обоих', '$who — pause for both'),
       _ => '',
     };
@@ -171,7 +193,12 @@ class ForkRoomLive extends ChangeNotifier {
   /// Перемотка и «играть» сразу за ней — одно действие, а не две строки.
   static const mergeWindow = Duration(milliseconds: 2500);
 
-  void _line(String kind, String text, {bool mine = false, bool merge = false}) {
+  void _line(
+    String kind,
+    String text, {
+    bool mine = false,
+    bool merge = false,
+  }) {
     final now = _now().millisecondsSinceEpoch;
     final line = ForkRoomLine(at: now, text: text, kind: kind, mine: mine);
     if (merge && lines.isNotEmpty) {
@@ -196,7 +223,13 @@ class ForkRoomLive extends ChangeNotifier {
   /// «Сейчас» для полосы: что делал последний.
   String get lastAct {
     for (final l in lines.reversed) {
-      if (const {'play', 'pause', 'seek', 'countdown', 'pauseNow'}.contains(l.kind)) {
+      if (const {
+        'play',
+        'pause',
+        'seek',
+        'countdown',
+        'pauseNow',
+      }.contains(l.kind)) {
         return l.text;
       }
       if (l.kind == 'source') return '';

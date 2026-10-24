@@ -11,7 +11,7 @@ library;
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../secret_storage.dart';
 
 import 'backup.dart';
 import 'crypto.dart';
@@ -29,20 +29,15 @@ abstract interface class KeyVault {
 class SecureStorageVault implements KeyVault {
   const SecureStorageVault();
 
-  static const FlutterSecureStorage _s = FlutterSecureStorage(
-    aOptions: AndroidOptions(resetOnError: false),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
+  static const _s = ForkSecretStorage.e2e;
 
   @override
-  Future<String?> read(String key) => _s.read(key: key);
+  Future<String?> read(String key) => ForkSecretStorage.read(_s, key);
   @override
   Future<void> write(String key, String value) =>
       _s.write(key: key, value: value);
   @override
-  Future<void> delete(String key) => _s.delete(key: key);
+  Future<void> delete(String key) => ForkSecretStorage.delete(_s, key);
 }
 
 class MemoryVault implements KeyVault {
@@ -107,8 +102,12 @@ class E2EKeys implements E2EKeyring {
     this.backup,
     Map<String, List<String>>? groupMembers,
     Set<String>? rotateNeeded,
+    Map<String, int>? grantFromEpoch,
+    Set<String>? pendingGrantPeers,
   }) : groupMembers = groupMembers ?? {},
        rotateNeeded = rotateNeeded ?? {},
+       grantFromEpoch = grantFromEpoch ?? {},
+       pendingGrantPeers = pendingGrantPeers ?? {},
        pairKeys = pairKeys ?? {},
        peers = peers ?? {},
        granted = granted ?? {},
@@ -140,6 +139,11 @@ class E2EKeys implements E2EKeyring {
 
   /// Пары, которым нужна новая эпоха ключа (§6.5).
   final Set<String> rotateNeeded;
+
+  /// `group|uid`: first epoch this identity may receive after re-verification.
+  /// Retained after verification so a new device never gets older history.
+  final Map<String, int> grantFromEpoch;
+  final Set<String> pendingGrantPeers;
 
   /// Личный ключ аккаунта: свой профиль и записи без пары. Выводится из
   /// секрета ключа аккаунта ([deriveSelf]), поэтому есть на всех своих
@@ -241,6 +245,8 @@ class E2EKeyStore {
       if (k.backup != null) 'backup': k.backup!.toJson(),
       'members': k.groupMembers,
       'rotate': k.rotateNeeded.toList()..sort(),
+      'grant_from': k.grantFromEpoch,
+      'grant_pending': k.pendingGrantPeers.toList()..sort(),
     }),
   );
 
@@ -281,6 +287,11 @@ class E2EKeyStore {
           e.key as String: (e.value as List).cast<String>(),
       },
       rotateNeeded: {...((j['rotate'] as List?) ?? const []).cast<String>()},
+      grantFromEpoch: ((j['grant_from'] as Map?) ?? const {})
+          .cast<String, int>(),
+      pendingGrantPeers: {
+        ...((j['grant_pending'] as List?) ?? const []).cast<String>(),
+      },
       backup: j['backup'] == null
           ? null
           : BackupKey.fromJson(

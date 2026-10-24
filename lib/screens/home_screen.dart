@@ -1,3 +1,6 @@
+import 'miss_you_screen.dart'; // fork: quick tile opens without sending
+import '../fork/touch/touch_screen.dart'; // fork: PLAN 3.2
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import '../utils/safe_launch.dart';
 import 'dart:io';
@@ -674,6 +677,11 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
+    // fork: quick tile opens the counter; no message is sent behind app lock.
+    else if (uri.host == 'fork-miss') {
+      if (mounted && _pairData.isPaired) { _openMissYouFromTile(); }
+      else { _pendingMissYouOpen = true; }
+    }
     // loveapp://miss → сказать «скучаю» с виджета.
     else if (uri.host == 'miss') {
       if (_pairData.isPaired) {
@@ -691,6 +699,13 @@ class _HomeScreenState extends State<HomeScreen> {
         // грузится; холст откроем, как только она появится.
         _pendingDrawOpen = uri.queryParameters['canvas'] ?? '';
       }
+    }
+    // fork: invitation to the encrypted touch screen, including cold start.
+    else if (uri.host == 'touch') {
+      if (mounted && _pairData.isPaired) {
+        unawaited(ForkTouchScreen.open(context, groupId: _pairData.pairId,
+          myUid: PocketBaseService().userId ?? '', partnerUid: _pairData.partnerUid));
+      } else { _pendingTouchOpen = true; }
     }
     // fork (Rave): loveapp://watch — партнёр зовёт в комнату просмотра.
     else if (uri.host == 'watch') {
@@ -734,6 +749,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// fork (Rave): зов в комнату пришёл раньше пары.
   bool _pendingWatchOpen = false;
+  bool _pendingTouchOpen = false; // fork
+  bool _pendingMissYouOpen = false; // fork
+  void _openMissYouFromTile() {
+    _pendingMissYouOpen = false;
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      settings: const RouteSettings(name: '/miss_you'),
+      builder: (_) => MissYouScreen(theme: _t, groupId: _pairData.pairId,
+        myUid: PocketBaseService().userId ?? '', partnerUid: _pairData.partnerUid,
+        partnerName: _pairData.partnerDisplayName, partnerAvatarUrl: _pairData.partnerAvatarUrl,
+        myAvatarUrl: widget.userData.avatarUrl),
+    ));
+  }
 
   void _openLiveMapFromWidget() {
     _pendingMapOpen = false;
@@ -760,6 +787,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (draw != null && _pairData.isPaired) {
       _pendingDrawOpen = null;
       unawaited(_openCanvasFromWidget(draw));
+    }
+    if (_pendingMissYouOpen && _pairData.isPaired) _openMissYouFromTile(); // fork
+    if (_pendingTouchOpen && _pairData.isPaired) { // fork
+      _pendingTouchOpen = false;
+      unawaited(ForkTouchScreen.open(context, groupId: _pairData.pairId,
+        myUid: PocketBaseService().userId ?? '', partnerUid: _pairData.partnerUid));
     }
     if (_pendingWatchOpen && _pairData.isPaired) { // fork (Rave)
       _pendingWatchOpen = false;
@@ -2152,6 +2185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // таймер и настроения, ради которых приложение открывают.
                 // Раскладку меняют только с Плюсом, а с ним рекламы нет,
                 // так что у тех, кто её видит, место прежнее.
+                if (!ForkFlags.allFree) // fork (PLAN 2.1): no empty ad gap
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: AdBanner(
@@ -3226,17 +3260,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       onError: (_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.cameraPermissionDenied),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppSnack.error(context, LocaleService.current.cameraPermissionDenied);
         }
       },
     );
@@ -3281,23 +3305,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     // Лимит проверяем только если фото идёт в ленту воспоминаний.
-    final messenger = ScaffoldMessenger.of(context);
     if (result.toMemories) {
       try {
         await RateLimiterService().checkMemory();
       } on RateLimitException catch (e) {
         if (mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(e.message),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppSnack.error(context, e.message);
         }
         return;
       }
@@ -3429,25 +3442,14 @@ class _HomeScreenState extends State<HomeScreen> {
         } else {
           msg = LocaleService.current.photoSent;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: memoryFailed ? Colors.orange : primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        (memoryFailed ? AppSnack.error : AppSnack.success)(context, msg);
       }
       // Награда (1 🪙 в день) — только если фото РЕАЛЬНО добавлено в ленту.
       if (result.toMemories && !memoryFailed) _tryClaimMemoryReward();
     } catch (e) {
       if (mounted) Navigator.of(context).pop(); // dismiss loading
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ForkNotice.error(context, e);
       }
     }
   }
@@ -4115,7 +4117,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── In-app update ──────────────────────────────────────────────────────────
 
   Future<void> _checkForUpdate() async {
-    if (!mounted) return;
+    if (!mounted || !ForkFlags.upstreamUpdates) return; // fork (PLAN 1.9)
     // Три разные установки — три разных разговора об обновлении. Развилка
     // живёт в UpdateService, чтобы её можно было проверить тестом.
     final path = decideUpdatePath(
@@ -4884,7 +4886,7 @@ class _UpdateBottomSheetState extends State<_UpdateBottomSheet> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(LocaleService.current.failedUpdateStatus(e.toString())),
+          content: Text(ForkFailure.of(e).text),
         ),
       );
     }
@@ -4900,7 +4902,7 @@ class _UpdateBottomSheetState extends State<_UpdateBottomSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(LocaleService.current.failedUpdateStatus(e.toString())),
+          content: Text(ForkFailure.of(e).text),
         ),
       );
     }

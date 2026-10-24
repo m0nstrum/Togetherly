@@ -916,19 +916,10 @@ class _DrawScreenState extends State<DrawScreen>
 
   //  Snackbar
 
-  void _showMessage(String message, {Color? backgroundColor}) {
+  void _showMessage(String message, {bool error = false}) {
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: backgroundColor,
-        duration: const Duration(seconds: 3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    if (error) { AppSnack.error(context, message); }
+    else { AppSnack.info(context, message); }
   }
 
   //  Firebase listeners
@@ -3308,7 +3299,7 @@ class _DrawScreenState extends State<DrawScreen>
       debugPrint('[Draw] save/share error: $e');
       _showMessage(
         share ? s.failedToShareDrawing : s.failedToSaveDrawing,
-        backgroundColor: Colors.red.shade700,
+        error: true,
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -3353,7 +3344,7 @@ class _DrawScreenState extends State<DrawScreen>
       _showMessage(trKey('drawSentToChat'));
     } else {
       _showMessage(trKey('drawSendToChatFailed'),
-          backgroundColor: Colors.red.shade700);
+          error: true);
     }
   }
 

@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -130,6 +131,7 @@ class _SymbolPickerScreenState extends State<SymbolPickerScreen> {
                         prefixIcon: const Icon(Icons.search_rounded),
                         suffixIcon: searching
                             ? IconButton(
+                                tooltip: ruEn('Очистить поиск', 'Clear search'),
                                 icon: const Icon(Icons.close_rounded),
                                 onPressed: () {
                                   _query.clear();

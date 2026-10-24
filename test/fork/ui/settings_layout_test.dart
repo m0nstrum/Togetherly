@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/e2e/fork_e2e.dart';
 import 'package:love_app/screens/settings_screen.dart';
+import 'package:love_app/widgets/settings_scaffold.dart';
+import 'package:love_app/services/locale_service.dart';
 
 Widget _app() => MaterialApp(
   home: SettingsScreen(
@@ -17,12 +19,12 @@ Widget _app() => MaterialApp(
     onCoinShop: () {},
     onPrivacyPolicy: () {},
     onExport: () {},
-    onResetMissYou: () {},
     onTerms: () {},
     onSupport: () {},
     onOfficial: () {},
     onDrawTools: () {},
     onAbout: () {},
+    onHelp: () {},
     onChangePassword: () {},
     onLogout: () {},
     onDeleteAccount: () {},
@@ -45,6 +47,19 @@ double _y(WidgetTester tester, Pattern text) =>
     tester.getTopLeft(find.textContaining(text).first).dy;
 
 void main() {
+  testWidgets('coins belong to account, help to about, reset is not in settings', (tester) async {
+    _tall(tester);
+    await tester.pumpWidget(_app());
+    await tester.pump();
+    String group(IconData icon) => tester.widget<SettingsCollapsible>(
+      find.ancestor(of: find.byIcon(icon), matching: find.byType(SettingsCollapsible)),
+    ).prefsKey;
+    expect(group(Icons.monetization_on_rounded), 'account');
+    expect(group(Icons.help_rounded), 'about');
+    expect(find.textContaining(RegExp('Версия и лицензии|Version & licenses')), findsOneWidget);
+    expect(find.text(LocaleService.current.resetMissYouCount), findsNothing);
+  });
+
   testWidgets('N8: «Аккаунт» выше данных, удаление — последним и отдельно', (
     tester,
   ) async {

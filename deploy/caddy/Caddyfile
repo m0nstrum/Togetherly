@@ -11,6 +11,11 @@
 		}
 	}
 
+	# PLAN 1.5: PocketBase dashboard and superuser APIs stay private.
+	# Match the collection ID as well: PB accepts both names and IDs in URLs.
+	@admin path /_ /_/* /api/collections/_superusers /api/collections/_superusers/* /api/collections/pbc_3142635823 /api/collections/pbc_3142635823/*
+	respond @admin 404
+
 	encode zstd gzip
 
 	@ws path /connection/websocket

@@ -187,12 +187,14 @@ void main() {
       expect(
         a.sas.value,
         isA<SasStopped>().having(
-            (s) => s.why, 'why', SasStopWhy.partnerCancelled),
+          (s) => s.why,
+          'why',
+          SasStopWhy.partnerCancelled,
+        ),
       );
     });
 
-    test('партнёр не ответил — ожидание кончается, партнёру отмена',
-        () async {
+    test('партнёр не ответил — ожидание кончается, партнёру отмена', () async {
       final prev = E2EService.sasWait;
       E2EService.sasWait = const Duration(milliseconds: 30);
       addTearDown(() => E2EService.sasWait = prev);
@@ -207,8 +209,11 @@ void main() {
         isA<SasStopped>().having((s) => s.why, 'why', SasStopWhy.noAnswer),
       );
       await b.syncGroup(gid);
-      expect(b.sas.value, isA<SasStopped>(),
-          reason: 'зов, который уже отменён, не висит у партнёра');
+      expect(
+        b.sas.value,
+        isA<SasStopped>(),
+        reason: 'зов, который уже отменён, не висит у партнёра',
+      );
     });
   });
 
@@ -232,7 +237,7 @@ void main() {
   });
 
   test(
-    'переустановка партнёра без бэкапа — «ключ сменился», ключ пары доходит',
+    'переустановка партнёра без бэкапа — ключи не выдаются до сверки',
     () async {
       final db = ServerDb();
       final a = await install(db, alice);
@@ -242,10 +247,10 @@ void main() {
       final b2 = await install(db, bob); // новый Keystore
       await syncBoth(a, b2);
       expect(a.status.value[gid], PairE2EStatus.keyChanged);
+      expect(b2.currentKey(gid), isNull);
       expect(
-        keyBytes(b2),
-        keyBytes(a),
-        reason: 'работает, но с громкой плашкой',
+        db.grants.values.where((e) => e.$1.toDevice == b2.keys.device.id),
+        isEmpty,
       );
     },
   );
@@ -398,33 +403,74 @@ void main() {
     );
   });
 
+  test('смена ключа во время показа эмодзи отменяет старую сверку', () async {
+    final db = ServerDb();
+    final a = await install(db, alice);
+    final b = await install(db, bob);
+    await syncBoth(a, b);
+    await a.sasStart(gid, bob);
+    await b.syncGroup(gid);
+    await b.sasAccept();
+    await a.syncGroup(gid);
+    expect(a.sas.value, isA<SasShowCode>());
+    final replacement = await install(db, bob);
+    await a.syncGroup(gid);
+    await a.sasConfirm(match: true);
+    await syncBoth(a, replacement);
+    expect(a.keys.peers[bob]!.keyChanged, isTrue);
+    expect(replacement.currentKey(gid), isNull);
+  });
+
+  for (final third in [false, true]) {
+    test(
+      'сервер ${third ? "добавил третьего" : "заменил участника"}: до сверки нет ключей, после только новая эпоха',
+      () async {
+        final db = ServerDb();
+        final vault = MemoryVault();
+        final a = await install(db, alice, vault);
+        final b = await install(db, bob);
+        await syncBoth(a, b);
+        final stranger = await install(db, 'carol');
+        db.members[gid] = [alice, if (third) bob, 'carol'];
+        await a.syncGroup(gid);
+        await stranger.syncGroup(gid);
+        expect(stranger.currentKey(gid), isNull);
+        // Both the block and the history boundary survive app restarts.
+        final restarted = await install(db, alice, vault);
+        await restarted.syncGroup(gid);
+        expect(db.grants.values.where((e) => e.$2 == 'carol'), isEmpty);
+        expect(
+          await restarted.verifyByQr(gid, 'carol', stranger.qrPayload(alice)!),
+          isTrue,
+        );
+        await restarted.syncGroup(gid);
+        await stranger.syncGroup(gid);
+        expect(stranger.currentKey(gid), isNotNull);
+        expect(stranger.keyFor('g1:1'), isNull);
+        expect(keyBytes(stranger), keyBytes(restarted));
+        expect(
+          db.grants.values
+              .where((e) => e.$2 == 'carol')
+              .every((e) => e.$1.epoch >= 2),
+          isTrue,
+        );
+      },
+    );
+  }
+
   group('ротация эпохи (§6.5)', () {
     test('участник ушёл — новая эпоха, ему не выдана', () async {
-      const carol = 'carol';
-      final db = ServerDb()..members[gid] = [alice, bob, carol];
+      final db = ServerDb();
       final a = await install(db, alice);
       final b = await install(db, bob);
-      final cl = await install(db, carol);
-      for (var i = 0; i < 2; i++) {
-        for (final x in [a, b, cl]) {
-          await x.syncGroup(gid);
-        }
-      }
-      expect(keyBytes(cl), keyBytes(a));
-
-      db.members[gid] = [alice, bob];
       await syncBoth(a, b);
+      db.members[gid] = [alice];
+      await a.syncGroup(gid);
       expect(a.currentKey(gid)!.epoch, 2);
-      expect(keyBytes(b), keyBytes(a));
+      expect(b.currentKey(gid)!.epoch, 1);
+      expect(a.keyFor('g1:1'), isNotNull, reason: 'история доступна');
       expect(
-        b.keyFor('g1:1'),
-        isNotNull,
-        reason: 'старые эпохи остаются для истории',
-      );
-      expect(
-        db.grants.keys.where(
-          (k) => k.startsWith('g1|2|') && k.endsWith(cl.keys.device.id),
-        ),
+        db.grants.values.where((e) => e.$1.epoch == 2 && e.$2 == bob),
         isEmpty,
       );
     });
@@ -447,6 +493,11 @@ void main() {
       await b2.sasConfirm(match: true);
       await syncBoth(a, b2, 3);
       expect(a.currentKey(gid)!.epoch, 2);
+      expect(
+        b2.keyFor('g1:1'),
+        isNull,
+        reason: 'переустановке не выдаётся история',
+      );
       expect(keyBytes(b2), keyBytes(a));
       expect(a.status.value[gid], PairE2EStatus.verified);
     });

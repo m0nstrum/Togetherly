@@ -1,8 +1,13 @@
+import '../../fork/watch/picture_in_picture.dart'; // fork: PLAN 3.6
+import '../../fork/app_lock/app_lock.dart'; // fork: locked apps do not enter PiP
+import '../../fork/watch/room_queue.dart'; // fork: PLAN 3.5
+import '../../fork/ui/feedback.dart'; // fork: match persistence failures
+import '../../fork/reels/matches.dart'; // fork: PLAN 3.4
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show Factory;
+import 'package:flutter/foundation.dart' show Factory, defaultTargetPlatform;
 import 'package:flutter/gestures.dart' show EagerGestureRecognizer, OneSequenceGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOverlayStyle, SystemChrome, SystemUiMode, DeviceOrientation; // fork: ориентация
@@ -122,6 +127,17 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   int _seenPick = 0;
   int _seenFull = 0;
   bool _picking = false;
+  final _pip = ForkPictureInPicture.instance;
+  int _seenPipClose = 0;
+  bool get _videoOnly => _pip.ownedBy(this) && _pip.videoOnly;
+  void _onPip() {
+    if (!mounted || !_pip.ownedBy(this)) return;
+    if (_seenPipClose != _pip.closedSequence) {
+      _seenPipClose = _pip.closedSequence;
+      unawaited(_leave());
+    }
+    setState(() {});
+  }
   bool? _wasLandscape;
   bool _orientationLocked = false;
   DateTime? _invitedAt;
@@ -129,6 +145,8 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   @override
   void initState() {
     super.initState();
+    _seenPipClose = _pip.closedSequence;
+    _pip.addListener(_onPip);
     if (_native) {
       // Окно показывает сама система поверх экрана — открываем после первого
       // кадра, когда у маршрута уже есть место и отступы.
@@ -348,6 +366,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     mediaPlaybackRequiresUserGesture: false,
     allowsInlineMediaPlayback: true,
     javaScriptEnabled: true,
+    // fork (C3): external pages and video iframes cannot call native bridges.
+    javaScriptHandlersForMainFrameOnly: true,
+    javaScriptHandlersOriginAllowList: {'^https://${RegExp.escape(WatchRoomService.siteHost)}\$'},
     // Под нативным окном лежит экран приложения, просвечивать ему незачем.
     transparentBackground: !_native,
     supportZoom: false,
@@ -373,11 +394,9 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
 
   /// Скрипты, которые страница получает до своей загрузки.
   UnmodifiableListView<UserScript> _scripts(EdgeInsets pad) => UnmodifiableListView([
-    // Сессия для пропуска: в комнату пары пускают только участников, и без
-    // неё страница попросила бы войти ещё раз.
+    // fork (C3): имя и признак приложения; пропуск выдаёт нативный мост.
     UserScript(
       source: WatchRoomService.authScript(
-        token: PocketBaseService.instance.pb.authStore.token,
         name: PocketBaseService().userName,
       ),
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
@@ -481,6 +500,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   Animation<double>? _covered;
 
   void _onCovered(AnimationStatus status) {
+    if (status == AnimationStatus.forward && _pip.ownedBy(this) && _pip.videoOnly) _pip.release(this);
     if (!_native || _leaving || status != AnimationStatus.forward) return;
     unawaited(_leave());
   }
@@ -498,7 +518,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// Короткое сообщение человеку. Плашку Flutter под нативным окном не
   /// видно, поэтому там её показывает сама страница (`window.roomNote`).
   void _say(String text) {
-    if (!mounted) return;
+    if (!mounted || _videoOnly) return;
     if (_native) {
       unawaited(
         _web?.evaluateJavascript(source: 'window.roomNote && window.roomNote(${jsonEncode(text)})') ??
@@ -514,6 +534,8 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   @override
   void dispose() {
     // fork (Rave): чат сеанса, события и ориентация — вернуть как было.
+    _pip.removeListener(_onPip);
+    _pip.release(this);
     _live.removeListener(_onLive);
     _live.dispose();
     ForkVoiceStatus.roomOpen.value = false;
@@ -635,7 +657,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     return Scaffold(
       // Ленты идут по чёрному полю во весь экран: светлая полоса над роликом
       // выглядела бы чужой рамкой.
-      backgroundColor: widget.reels || (_shell && MediaQuery.orientationOf(context) == Orientation.landscape) ? Colors.black : cs.surface, // fork (Rave)
+      backgroundColor: _videoOnly || widget.reels || (_shell && MediaQuery.orientationOf(context) == Orientation.landscape) ? Colors.black : cs.surface, // fork (Rave)
       // Своей шапки нет: её рисует страница комнаты — «назад», код,
       // «скопировать», «поделиться», звонок и сворачивание. Две шапки подряд
       // съедали высоту и повторяли одно и то же (28.09.2026).
@@ -643,7 +665,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
         // В лентах ролик заходит под строку состояния, как в TikTok: чёрная
         // полоса над ним читалась пустой шапкой. Отступ кнопкам страница
         // берёт из `_insetScript`.
-        top: !widget.reels,
+        top: !widget.reels && !_videoOnly,
         bottom: false,
         // Нативное окно комнаты система показывает поверх этого экрана: под
         // ним остаётся только ожидание, пока окно открывается и закрывается.
@@ -728,12 +750,64 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   }
 
   /// Лист «Что смотрим?»: ссылка, недавнее, свои ролики, файл.
-  Future<void> _pick() async {
+  Future<void> _enterPip() async {
+    if (_pip.busy || !_shell || _loading || !_live.hasVideo) return;
+    final lock = ForkAppLock.instance;
+    await lock.load();
+    if (!mounted) return;
+    if (!lock.ready) {
+      _say(ruEn('Не удалось проверить настройки замка — повторите попытку.', 'Could not check app lock settings — please retry.'));
+      return;
+    }
+    if (lock.enabled) {
+      _say(ruEn('PiP недоступен с включённым замком приложения.', 'PiP is unavailable while app lock is on.'));
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+    _seenPipClose = _pip.closedSequence;
+    final result = await _pip.enter(this, canEnter: () => mounted &&
+      ModalRoute.of(context)?.isCurrent == true && lock.ready && !lock.enabled);
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true || result == ForkPipOutcome.entered) return;
+    if (result == ForkPipOutcome.unsupported) {
+      _say(ruEn('На этом устройстве PiP недоступен.', 'PiP is unavailable on this device.'));
+      return;
+    }
+    await showDialog<void>(context: context, builder: (context) => AlertDialog(
+      title: Text(ruEn('Не удалось открыть PiP', 'Could not open PiP')),
+      content: Text(ruEn('Проверьте разрешение «Картинка в картинке» для Tethered.', 'Check the Picture-in-picture permission for Tethered.')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(ruEn('Закрыть', 'Close'))),
+        TextButton(onPressed: () async {
+          Navigator.pop(context);
+          try { await ForkPictureInPicture.settings(); }
+          catch (_) { if (mounted) _say(ruEn('Настройки PiP недоступны.', 'PiP settings are unavailable.')); }
+        }, child: Text(ruEn('Настройки', 'Settings'))),
+      ]));
+  }
+
+  Future<void> _queue() => Navigator.of(context).push(MaterialPageRoute<void>(
+    builder: (_) => ForkRoomQueueScreen(live: _live,
+      onAdd: () => unawaited(_pick(enqueue: true)),
+      onPlay: (id) => unawaited(_js('window.forkRoom && window.forkRoom.queuePlay(${jsonEncode(id)})')),
+      onRemove: (id) => unawaited(_js('window.forkRoom && window.forkRoom.queueRemove(${jsonEncode(id)})')),
+      onNext: () => unawaited(_js('window.forkRoom && window.forkRoom.queueNext()')))));
+
+  Future<void> _pick({bool enqueue = false}) async {
     if (_picking) return;
     _picking = true;
     final pick = await showForkRoomPicker(context, groupId: widget.pairId);
     _picking = false;
     if (pick == null || !mounted) return;
+    if (enqueue) {
+      if (pick.file) {
+        _say(ruEn('Локальный файл нельзя добавить в общую очередь — выберите ссылку.',
+          'A local file cannot join the shared queue — choose a link.'));
+      } else {
+        await _js('window.forkRoom && window.forkRoom.queueAdd(${jsonEncode(pick.url)})');
+      }
+      return;
+    }
     if (pick.file) {
       await _js('window.forkRoom && window.forkRoom.file()');
       return;
@@ -803,10 +877,10 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     return LayoutBuilder(
       builder: (context, box) {
         final land = box.maxWidth > box.maxHeight;
-        _syncImmersive(land);
-        final video = land
+        if (!_videoOnly) _syncImmersive(land);
+        final video = land || _videoOnly
             ? Rect.fromLTWH(0, 0, box.maxWidth, box.maxHeight)
-            : Rect.fromLTWH(0, ForkRoomTopBar.height, box.maxWidth, box.maxWidth * 9 / 16);
+            : Rect.fromLTWH(0, ForkRoomTopBar.heightFor(context), box.maxWidth, box.maxWidth * 9 / 16);
         final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
         final cs = Theme.of(context).colorScheme;
         return Stack(
@@ -825,12 +899,12 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
                 ),
               ),
             ),
-            if (!land) ...[
+            if (!land && !_videoOnly) ...[
               Positioned(
                 left: 0,
                 right: 0,
                 top: 0,
-                height: ForkRoomTopBar.height,
+                height: ForkRoomTopBar.heightFor(context),
                 child: ListenableBuilder(
                   listenable: _live,
                   builder: (_, _) => ForkRoomTopBar(
@@ -860,6 +934,8 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
                         builder: (_, _) => ForkNowPlaying(
                           live: _live,
                           onPick: () => unawaited(_pick()),
+                          onQueue: () => unawaited(_queue()),
+                          onPip: defaultTargetPlatform == TargetPlatform.android ? () => unawaited(_enterPip()) : null,
                           onToggle: () => unawaited(_js('window.forkRoom && window.forkRoom.toggle()')),
                           onTogether: () => unawaited(_js('window.forkRoom && window.forkRoom.together()')),
                           onPauseBoth: () => unawaited(_js('window.forkRoom && window.forkRoom.pauseBoth()')),
@@ -873,7 +949,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
                   ],
                 ),
               ),
-            ] else ...[
+            ] else if (!_videoOnly) ...[
               Positioned(
                 left: 8,
                 top: 8,
@@ -896,6 +972,26 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
   /// окно.
   void _wire(InAppWebViewController c) {
     _web = c;
+    // fork (C3): only a ticket for this screen's room crosses the bridge.
+    c.addJavaScriptHandler(
+      handlerName: 'forkWatchTicket',
+      callback: (args) async {
+        final url = await c.getUrl();
+        if (url == null || url.scheme != 'https' || url.host != WatchRoomService.siteHost ||
+            !url.path.startsWith('/watch/')) {
+          return null;
+        }
+        final guest = args.isNotEmpty && args.first is String ? args.first as String : '';
+        try {
+          return await WatchRoomService.ticket(widget.room, guest);
+        } on ClientException catch (e) {
+          final reason = e.response['error'];
+          return {'ok': false, 'error': const ['auth_required', 'not_member', 'not_found'].contains(reason) ? reason : 'ticket_failed'};
+        } catch (_) {
+          return {'ok': false, 'error': 'ticket_failed'};
+        }
+      },
+    );
     // fork (Rave): что происходит в окне видео — полосе и чату.
     c.addJavaScriptHandler(
       handlerName: 'forkRoom',
@@ -995,6 +1091,29 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       callback: (_) async {
         await _feed?.refresh();
         return null;
+      },
+    );
+    // fork: fixed screen pair; no group, author, URL or account token from JS.
+    c.addJavaScriptHandler(
+      handlerName: 'forkReelsMatch',
+      callback: (args) async {
+        final url = await c.getUrl();
+        if (!widget.reels || url == null || url.scheme != 'https' ||
+            url.host != WatchRoomService.siteHost || !url.path.startsWith('/watch/reels/')) {
+          return {'ok': false};
+        }
+        final value = args.isNotEmpty && args.first is Map ? args.first as Map : const {};
+        final clip = value['key'], reaction = value['reaction'];
+        if (clip is! String || reaction is! String) return {'ok': false};
+        Future<void> save() => ForkReelsMatches.instance.save(widget.pairId, clip, reaction);
+        try { await save(); return {'ok': true}; }
+        catch (e) {
+          if (mounted) ForkNotice.failure(context, ForkFailure.of(e), retry: () async {
+            try { await save(); }
+            catch (error) { if (mounted) ForkNotice.failure(context, ForkFailure.of(error)); }
+          });
+          return {'ok': false};
+        }
       },
     );
     // Закладка: ролик ложится в ленту воспоминаний пары.

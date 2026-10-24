@@ -57,7 +57,7 @@
     match: 'Совпало!', matchSub: 'Вам обоим зашёл этот ролик', sound: 'Включить звук',
     copied: 'Ссылка скопирована', ourChat: 'Наш чат', empty: 'Здесь пока пусто', unavailable: 'Ролик недоступен, листаем дальше',
     save: 'Сохранить в воспоминания', saved: 'Ролик в воспоминаниях', savedSub: 'Он ждёт вас в ленте воспоминаний',
-    savedBy: (n) => n + ' сохраняет ролик', saveFailed: 'Не сохранилось, попробуйте ещё раз', needApp: 'Сохранять можно из приложения Togetherly',
+    savedBy: (n) => n + ' сохраняет ролик', saveFailed: 'Не сохранилось, попробуйте ещё раз', needApp: 'Сохранять можно из приложения Tethered',
     leads: (n) => 'Листает ' + n, take: 'Листать мне', tookLead: (n) => 'Теперь листает ' + n, youLead: 'Теперь листаете вы',
     you: 'Вы', guest: 'Гость', joined: 'Партнёр в ленте', left: 'Партнёр вышел из ленты', stuck: 'Площадка не отдаёт ролики', stuckSub: 'Бывает капча или сбой площадки. Попробуйте ещё раз или выберите другую площадку.', retry: 'Попробовать ещё раз', takeHint: 'Нажмите «Листать мне», чтобы листать самим', nothingNew: 'Новых роликов пока нет', offline: 'Нет связи — переподключаемся…', lost: 'Связь потеряна, переподключаемся…',
     authTitle: 'Нужно войти', authSub: 'Ленту пары открывают её участники. Войдите на странице комнаты.',
@@ -76,7 +76,7 @@
     match: 'It’s a match!', matchSub: 'You both liked this one', sound: 'Turn sound on',
     copied: 'Link copied', ourChat: 'Our chat', empty: 'Nothing here yet', unavailable: 'Clip unavailable, moving on',
     save: 'Save to memories', saved: 'Saved to memories', savedSub: 'Find it in your memory lane',
-    savedBy: (n) => n + ' saved this clip', saveFailed: 'Didn’t save, try again', needApp: 'Saving works in the Togetherly app',
+    savedBy: (n) => n + ' saved this clip', saveFailed: 'Didn’t save, try again', needApp: 'Saving works in the Tethered app',
     leads: (n) => n + ' is scrolling', take: 'Let me scroll', tookLead: (n) => n + ' is scrolling now', youLead: 'You’re scrolling now',
     you: 'You', guest: 'Guest', joined: 'Your partner is here', left: 'Your partner left', stuck: 'The platform isn’t sending videos', stuckSub: 'It may be a captcha or an outage. Try again or pick another platform.', retry: 'Try again', takeHint: 'Tap “Let me scroll” to take over', nothingNew: 'No new videos yet', offline: 'No connection — reconnecting…', lost: 'Connection lost, reconnecting…',
     authTitle: 'Sign in first', authSub: 'Only the couple can open their feed. Sign in on the room page.',
@@ -119,7 +119,11 @@
     pre.onload = () => { if (img.dataset.e === e) img.src = moving; };
     pre.src = moving;
   }
-  const artImg = (e, still) => '<img class="rl-art" alt="" data-e="' + e + '"' + (still ? ' data-still="1"' : '') + ' src="' + stillOf(e) + '">';
+  // fork (C3): every markup caller gets a canonical reaction.
+  const artImg = (value, still) => {
+    const e = window.ForkReelsPolicy.reaction(value) && value ? value : '❤️';
+    return '<img class="rl-art" alt="" data-e="' + e + '"' + (still ? ' data-still="1"' : '') + ' src="' + stillOf(e) + '">';
+  };
   /** Ожить рисункам, вставленным разметкой ([artImg]). */
   const liven = (node) => node.querySelectorAll('img.rl-art').forEach((i) => setArt(i, i.dataset.e, i.dataset.still === '1'));
   /** Открыли выбор — анимации всех шести тянем заранее, чтобы выбранная
@@ -1365,6 +1369,12 @@
   }
 
   function matched(e) {
+    // fork: animation alone does not mean the match was saved.
+    if (S.cur && window.ForkReelsMatches) {
+      window.ForkReelsMatches.save(S.cur.id, e).then((result) => {
+        if (!result.ok) toast(bridge() ? T.saveFailed : T.needApp);
+      });
+    }
     const old = $('.rl-match', el.root);
     if (old) old.remove();
     const m = document.createElement('div');
@@ -1579,6 +1589,8 @@
   }
 
   function onMessage(data) {
+    data = window.ForkReelsPolicy.message(data); // fork (C3)
+    if (!data) return false;
     switch (data.t) {
       case 'hello':
         // Новичку — наш ролик, наша очередь и переписка. Переписку ждёт и

@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -148,6 +149,7 @@ class _SaveIslandState extends State<SaveIsland> {
               ),
               if (action != null) ...[const SizedBox(width: 6), action],
               IconButton(
+                tooltip: ruEn('Закрыть', 'Close'),
                 key: SaveIsland.closeKey,
                 onPressed: onClose,
                 icon: Icon(Icons.close_rounded, color: cs.onInverseSurface),

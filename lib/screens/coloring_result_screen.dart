@@ -1,3 +1,4 @@
+import '../fork/identity.dart'; // fork (PLAN 2.1)
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -71,7 +72,7 @@ class _ColoringResultScreenState extends State<ColoringResultScreen> {
     setState(() => _busy = true);
     try {
       final file = await _writeTemp();
-      await Gal.putImage(file.path, album: 'Togetherly');
+      await Gal.putImage(file.path, album: ForkIdentity.appName);
       if (!mounted) return;
       AppSnack.success(context, _s.coloringSaved);
     } catch (e) {

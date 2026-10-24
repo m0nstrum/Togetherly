@@ -1,3 +1,5 @@
+import '../../../dict_strings.dart' show ruEn; // fork
+import '../../../fork/geo/map_attribution.dart'; // fork
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../fork/battery/battery_ui.dart'; // fork: заряд партнёра
@@ -260,10 +262,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
 
   Widget _header(AppTheme t) {
     final cs = ProfileTheme.themeFor(t).colorScheme;
-    return InkWell(
-      onTap: _toggleCollapsed,
-      borderRadius: BorderRadius.circular(28),
-      child: Padding(
+    return Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
         child: Row(
           children: [
@@ -290,23 +289,20 @@ class _LiveMapCardState extends State<LiveMapCard> {
               ),
             ),
             if (!_collapsed)
-              GestureDetector(
-                onTap: _openFull,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Icon(Icons.open_in_full_rounded,
-                      color: cs.primary, size: 20),
-                ),
+              IconButton(
+                tooltip: ruEn('Развернуть карту', 'Open full map'),
+                onPressed: _openFull,
+                icon: Icon(Icons.open_in_full_rounded, color: cs.primary, size: 20),
               ),
-            AnimatedRotation(
-              turns: _collapsed ? 0.5 : 0,
+            IconButton(
+              tooltip: _collapsed ? ruEn('Показать карту', 'Show map') : ruEn('Свернуть карту', 'Collapse map'),
+              onPressed: _toggleCollapsed,
+              icon: AnimatedRotation(turns: _collapsed ? .5 : 0,
               duration: const Duration(milliseconds: 250),
-              child: Icon(Icons.keyboard_arrow_up_rounded,
-                  color: cs.onSurfaceVariant, size: 24),
+                child: Icon(Icons.keyboard_arrow_up_rounded, color: cs.onSurfaceVariant, size: 24)),
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -380,6 +376,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
                         ),
                     ],
                   ),
+                  const ForkMapAttribution(),
                 ],
               ),
             ),
@@ -568,6 +565,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
         onTap: _disableSharing,
         borderRadius: BorderRadius.circular(999),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest,

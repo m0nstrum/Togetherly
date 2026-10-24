@@ -1,3 +1,6 @@
+import '../fork/ui/chat_scroll_down.dart'; // fork
+import '../fork/l10n/last_seen.dart'; // fork
+import '../fork/ui/chat_identity_layout.dart'; // fork
 import 'dart:async';
 import 'dart:io';
 
@@ -338,6 +341,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Кнопка «вниз» показывается, когда заметно отлистали вверх от низа.
   bool _showScrollDown = false;
+  final _newBelow = ValueNotifier<int>(0);
+  final _below = ForkChatBelowTracker();
+  List<ChatMsg>? _belowOf;
+  bool _belowUpdateQueued = false;
+  String _partnerGender = '';
+
+  void _queueBelowUpdate() {
+    if (_belowUpdateQueued) return;
+    _belowUpdateQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _belowUpdateQueued = false;
+      if (!mounted || _myUid.isEmpty) return;
+      _newBelow.value = _below.update(_lastMessages, myUid: _myUid,
+        atBottom: _scrollController.hasClients && _scrollController.position.extentAfter < 72);
+    });
+  }
 
   /// Держит ленту у низа, пока догружаются картинки и достраиваются ряды.
   late final BottomStick _stick = BottomStick(_scrollController);
@@ -358,8 +377,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_groupId.isEmpty || uid.isEmpty) return;
     final rec = await PbDataService().loadWidget(_groupId, uid);
     if (!mounted || rec == null) return;
-    final has = WidgetData.fromPb(rec).plus;
-    if (has && !_partnerPlus) setState(() => _partnerPlus = true);
+    final card = WidgetData.fromPb(rec);
+    setState(() { _partnerGender = card.gender; if (card.plus) _partnerPlus = true; });
   }
 
   @override
@@ -485,6 +504,7 @@ class _ChatScreenState extends State<ChatScreen> {
     NotePlayerService.instance.stop();
     VoicePlayerService.instance.stop();
     _controller.dispose();
+    _newBelow.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
     if (_lastMessageTs > 0) _chat.markRead(_groupId, _lastMessageTs);
@@ -498,6 +518,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final pos = _scrollController.position;
     // Кнопка «вниз» — когда заметно отлистали от низа.
     final show = (pos.maxScrollExtent - pos.pixels) > 320;
+    if (pos.extentAfter < 72) { _below.markSeen(_lastMessageTs); _queueBelowUpdate(); }
     if (show != _showScrollDown) setState(() => _showScrollDown = show);
     // Сохраняем позицию (троттлинг) — чтобы при перезаходе вернуть ровно сюда.
     final now = DateTime.now();
@@ -517,6 +538,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Плавно вернуться к последнему сообщению (кнопка-стрелка «вниз»).
   void _jumpToBottom() {
+    _below.markSeen(_lastMessageTs);
+    _newBelow.value = 0;
     if (!_scrollController.hasClients) return;
     _scrollController
         .animateTo(
@@ -2108,6 +2131,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           IconButton(
+            tooltip: ruEn('Отменить ответ', 'Cancel reply'),
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.close_rounded, color: _t.textMuted, size: 20),
             onPressed: () => setState(() => _replyingTo = null),
@@ -2406,27 +2430,17 @@ class _ChatScreenState extends State<ChatScreen> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: StableStreamBuilder<bool>(
             create: () => PresenceService().watchOnline(uid),
             keys: [uid],
             builder: (context, presSnap) {
               final online = presSnap.data == true;
-              return Row(
-                children: [
-                  Container(
-                    width: 11,
-                    height: 11,
-                    decoration: BoxDecoration(
+              return ForkChatIdentityLayout(
+                dot: Container(width: 8, height: 8, decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: online
-                          ? const Color(0xFF2E9E5B)
-                          : cs.onPrimaryContainer.withValues(alpha: 0.35),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: UnfoldShared(
+                  color: online ? cs.primary : cs.onPrimaryContainer.withValues(alpha: .35))),
+                name: UnfoldShared(
                       tag: 'name',
                       fit: UnfoldFit.scale,
                       child: Text(
@@ -2442,12 +2456,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  _pillTrailing(s, cs, online: online, uid: uid),
-                  // fork: заряд телефона партнёра.
-                  ForkBatteryBadge(groupId: _groupId, uid: uid, color: cs.onPrimaryContainer.withValues(alpha: 0.7)),
-                ],
+                status: _pillTrailing(s, cs, online: online, uid: uid),
+                battery: ForkBatteryBadge(groupId: _groupId, uid: uid,
+                  color: cs.onPrimaryContainer.withValues(alpha: .7)),
               );
             },
           ),
@@ -2477,7 +2488,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
         if (online) {
           return Text(
-            s.chatOnline,
+            s.chatOnline, maxLines: 1, overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: ProfileTheme.bodyFont,
               fontSize: 11.5,
@@ -2493,7 +2504,7 @@ class _ChatScreenState extends State<ChatScreen> {
             final label = _lastSeenLabel(s, seenSnap.data);
             if (label.isEmpty) return const SizedBox.shrink();
             return Text(
-              label,
+              label, maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: ProfileTheme.bodyFont,
                 fontSize: 11.5,
@@ -2507,22 +2518,9 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// «12:33» за сегодня, «вчера 22:10» и дата дальше. Пусто, если отметки
-  /// визита нет вовсе — выдумывать «был давно» не из чего.
-  String _lastSeenLabel(AppStrings s, int? seenAtMs) {
-    if (seenAtMs == null || seenAtMs <= 0) return '';
-    final seen = DateTime.fromMillisecondsSinceEpoch(seenAtMs);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(seen.year, seen.month, seen.day);
-    final hhmm =
-        '${seen.hour.toString().padLeft(2, '0')}:${seen.minute.toString().padLeft(2, '0')}';
-    if (day == today) return hhmm;
-    if (day == today.subtract(const Duration(days: 1))) {
-      return '${s.yesterday.toLowerCase()} $hhmm';
-    }
-    return '${seen.day.toString().padLeft(2, '0')}.${seen.month.toString().padLeft(2, '0')}';
-  }
+  /// Absolute visit time, labelled as presence rather than a message time.
+  String _lastSeenLabel(AppStrings s, int? seenAtMs) =>
+      forkLastSeen(seenAtMs, gender: _partnerGender, entered: false);
 
   /// Меню шапки в круглой тональной кнопке.
   Widget _headerMenu(AppStrings s, ColorScheme cs) {
@@ -2671,7 +2669,8 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Scaffold(
       backgroundColor: _t.bgGradient.last,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
+        preferredSize: Size.fromHeight((MediaQuery.textScalerOf(context).scale(16) +
+            MediaQuery.textScalerOf(context).scale(12.5) + 34).clamp(70, double.infinity)),
         // Шапка, лента и поле ввода проявляются по очереди, когда чат вырос
         // из своей плитки (UnfoldRoute). При обычном открытии обёртки
         // ничего не делают.
@@ -2744,6 +2743,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           // Во время пересоздания потока (пагинация) держим прошлый срез.
                           if (snap.data != null) _lastMessages = snap.data!;
                           final messages = snap.data ?? _lastMessages;
+                          if (!identical(_belowOf, messages)) {
+                            _belowOf = messages;
+                            _queueBelowUpdate();
+                          }
                           if (messages.isNotEmpty) {
                             _lastMessageTs = messages.last.ts;
                             _lastIsMine = messages.last.uid == _myUid;
@@ -2795,29 +2798,18 @@ class _ChatScreenState extends State<ChatScreen> {
                       Positioned(
                         right: 14,
                         bottom: 8,
-                        child: IgnorePointer(
-                          ignoring: !_showScrollDown,
-                          child: AnimatedScale(
-                            scale: _showScrollDown ? 1 : 0,
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOut,
-                            child: GestureDetector(
-                              onTap: _jumpToBottom,
-                              child: Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: _t.cardSurface,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  color: _t.primary,
-                                  size: 26,
-                                ),
+                        child: ValueListenableBuilder<int>(
+                          valueListenable: _newBelow,
+                          builder: (context, count, _) {
+                            final visible = _showScrollDown || count > 0;
+                            return IgnorePointer(ignoring: !visible,
+                              child: AnimatedScale(scale: visible ? 1 : 0,
+                                duration: const Duration(milliseconds: 180), curve: Curves.easeOut,
+                                child: ForkChatScrollDown(count: count, onTap: _jumpToBottom,
+                                  surface: _t.cardSurface, ink: _t.primary),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -3931,6 +3923,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           IconButton(
+            tooltip: ruEn('Закрыть', 'Close'),
             icon: const Icon(Icons.close_rounded, size: 18),
             color: _t.textMuted,
             onPressed: onClose,

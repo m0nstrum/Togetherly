@@ -1,3 +1,5 @@
+import '../widgets/common/app_dialog.dart'; // fork
+import '../fork/ui/feedback.dart'; // fork
 
 import 'dart:async';
 
@@ -240,6 +242,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
+              tooltip: ruEn('Назад', 'Back'),
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
@@ -638,6 +641,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           Row(
             children: [
               IconButton(
+                tooltip: ruEn('Предыдущий период', 'Previous period'),
                 visualDensity: VisualDensity.compact,
                 onPressed: () => _shiftAnchor(-1),
                 icon: Icon(Icons.chevron_left_rounded, color: scheme.onSurface),
@@ -657,6 +661,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                 ),
               ),
               IconButton(
+                tooltip: ruEn('Следующий период', 'Next period'),
                 visualDensity: VisualDensity.compact,
                 onPressed: () => _shiftAnchor(1),
                 icon:
@@ -1898,16 +1903,26 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                                   ),
                                   if (!isPartner) ...[
                                     const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        _mood.deleteMoodEntry(m.id);
-                                        Navigator.pop(context);
+                                    IconButton(
+                                      tooltip: ruEn('Удалить настроение', 'Delete mood'),
+                                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                      onPressed: () async {
+                                        final ok = await AppDialog.confirm(context,
+                                          title: ruEn('Удалить настроение?', 'Delete mood?'),
+                                          message: ruEn('Эта отметка исчезнет из календаря.', 'This entry will be removed from the calendar.'),
+                                          confirmLabel: LocaleService.current.delete,
+                                          destructive: true,
+                                        );
+                                        if (!ok || !mounted) return;
+                                        try {
+                                          await _mood.deleteMoodEntry(m.id);
+                                          if (mounted) Navigator.pop(context);
+                                        } catch (e) {
+                                          if (mounted) ForkNotice.error(context, e);
+                                        }
                                       },
-                                      child: Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 18,
-                                        color: widget.theme.textMuted,
-                                      ),
+                                      icon: Icon(Icons.delete_outline_rounded, size: 22,
+                                        color: widget.theme.textMuted),
                                     ),
                                   ],
                                 ],

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../fork/realtime/verified_delta.dart'; // fork: H3
 import 'dart:convert';
 
 import 'package:centrifuge/centrifuge.dart' as centrifuge;
@@ -57,7 +58,7 @@ class CentrifugoService {
 
   /// Берёт токен у PocketBase, а на 401 сперва освежает сессию приложения.
   ///
-  /// Токен Centrifugo живёт сутки, но выдаёт его PocketBase — и когда сессия
+  /// Токен Centrifugo живёт две минуты, но выдаёт его PocketBase — и когда сессия
   /// приложения протухла, запрос отвечает 401. Раньше на этом всё кончалось:
   /// getToken бросал, клиент уходил на новый круг с тем же ответом, канал пары
   /// не подписывался, и сообщения появлялись только при перечитывании экрана —
@@ -114,6 +115,7 @@ class CentrifugoService {
     // холст), по этому сигналу дотягивают пропущенное. Первое соединение сюда
     // не попадает — там список только что загрузили (см. ReconnectDetector).
     c.connected.listen((e) {
+      ForkVerifiedDelta.forBackend(_pb).refreshKey(); // fork: H3 fresh HTTPS clock/key after sleep
       if (kDebugMode) debugPrint('Centrifugo connected: ${e.client}');
       if (_reconnects.onConnected() && !_reconnected.isClosed) {
         _reconnected.add(null);
@@ -169,7 +171,7 @@ class CentrifugoService {
   /// [onData] получает декодированный JSON публикации.
   Future<RtUnsub> subscribeRaw(
       String channel, void Function(Map<String, dynamic>) onData) async {
-    final hub = _hub(channel);
+    final hub = _hub(ForkVerifiedDelta.signalChannel(channel));
     hub.addRaw(onData);
     return () async {
       hub.removeRaw(onData);
@@ -181,8 +183,9 @@ class CentrifugoService {
   /// allow_publish_for_subscriber). Клиент должен быть подписан на канал —
   /// поднимаем подписку при необходимости. Ошибки глотаем: эфемерная публикация
   /// (потерянный кадр live-штриха некритичен).
-  Future<void> publish(String channel, Map<String, dynamic> data) =>
-      _hub(channel).publish(data);
+  Future<void> publish(String channel, Map<String, dynamic> data,
+      {bool requireDelivery = false}) =>
+      _hub(ForkVerifiedDelta.signalChannel(channel)).publish(data, requireDelivery: requireDelivery);
 
   /// fork: публикация, пришедшая не по сокету (будильник FCM,
   /// lib/fork/push/fcm_wake.dart), — слушателям канала, как с сокета.
@@ -241,9 +244,16 @@ class _ChannelHub {
     _sub.subscribe();
   }
 
-  void _onPublication(centrifuge.PublicationEvent ev) {
+  Future<void> _onPublication(centrifuge.PublicationEvent ev) async {
     try {
-      _dispatch(jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>); // fork
+      final envelope = jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>;
+      if (_listeners.isNotEmpty) {
+        final delta = await ForkVerifiedDelta.forBackend(_pb).open(channel, envelope);
+        if (delta != null) _dispatch(delta);
+      } else {
+        // Raw hubs are separate client-publishable namespaces.
+        _dispatch(envelope);
+      } // fork: H3 fail closed for unsigned server deltas
     } catch (e) {
       debugPrint('Centrifugo publication parse error ($channel): $e');
     }
@@ -313,7 +323,7 @@ class _ChannelHub {
   /// пропадающие штрихи после каждого обрыва связи (19 августа 2026).
   ///
   /// Ошибки глотаем — данные эфемерные, потеря кадра некритична.
-  Future<void> publish(Map<String, dynamic> data) async {
+  Future<void> publish(Map<String, dynamic> data, {bool requireDelivery = false}) async {
     _ensureSubscribed();
     final ready = await awaitSubscribed(
       isSubscribed: () =>
@@ -321,12 +331,14 @@ class _ChannelHub {
       onSubscribed: () => _sub.subscribed.first,
     );
     if (!ready) {
+      if (requireDelivery) throw TimeoutException('Channel subscription unavailable');
       debugPrint('Centrifugo publish($channel): подписки нет, пропускаем');
       return;
     }
     try {
       await _sub.publish(utf8.encode(jsonEncode(data)));
     } catch (e) {
+      if (requireDelivery) rethrow;
       debugPrint('Centrifugo publish($channel) failed: $e');
     }
   }

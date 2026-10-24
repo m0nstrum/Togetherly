@@ -1,3 +1,4 @@
+import '../fork/identity.dart'; // fork
 import 'dart:async';
 import '../utils/safe_launch.dart';
 import 'package:flutter/material.dart';
@@ -160,8 +161,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// а бот знали лишь те, кому его присылали в ответ на жалобу.
   static final Uri _tgChannelUri = Uri.parse('https://t.me/sandtcompany');
   static final Uri _bugBotUri = Uri.parse('https://t.me/TogetherlyBugsBot');
-  // Лендинг тоже переехал с Firebase Hosting на VPS (pb_public).
-  static final Uri _aboutAppUri = Uri.parse(Endpoints.current.aboutUrl); // fork
   static final Uri _boostyUri = Uri.parse('https://boosty.to/sntcompany');
 
   /// Разовый донат картой или СБП.
@@ -608,10 +607,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(_s.supportCopied(email))));
-  }
-
-  Future<void> _openAboutApp() async {
-    await _openExternalUri(_aboutAppUri);
   }
 
   Future<void> _openBoosty() async {
@@ -2157,7 +2152,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  await ud.removeCustomThemeAt(slot);
+                  final ok = await AppDialog.confirm(context,
+                    title: _s.customThemeDelete,
+                    message: ruEn('Удалить эту тему вместе с её цветами и фоном?', 'Delete this theme with its colors and background?'),
+                    confirmLabel: _s.delete, destructive: true,
+                  );
+                  if (!ok || !context.mounted) return;
+                  try { await ud.removeCustomThemeAt(slot); }
+                  catch (e) { if (context.mounted) ForkNotice.error(context, e); return; }
                   if (mounted) setState(() {});
                 },
               ),
@@ -2206,14 +2208,13 @@ class _ProfileScreenState extends State<ProfileScreen>
           builder: (ctx, setSheetState) => SettingsScreen(
             accountEmail: widget.userData.email,
             scheme: _cs,
-            appVersion: 'Togetherly $version',
+            appVersion: '${ForkIdentity.appName} $version',
             onAppearance: () => _openAppearance(ctx),
             onNotifications: () => _showNotificationSettings(ctx),
             onLanguage: () => _showLanguagePicker(ctx),
             onCoinShop: () => _showCoinShop(ctx),
             onPrivacyPolicy: _openPrivacyPolicy,
             onExport: () => _handleExportConfig(ctx),
-            onResetMissYou: () => _handleResetMissYouCount(ctx),
             onTerms: _openTerms,
             onSupport: _openSupportMail,
             onOfficial: _openOfficialMail,
@@ -2234,7 +2235,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                 behavior: SnackBarBehavior.floating,
               ));
             },
-            onAbout: _openAboutApp,
+            onAbout: () => showAboutDialog(context: ctx,
+              applicationName: ForkIdentity.appName, applicationVersion: version),
             onChangePassword: () => _openChangePassword(ctx),
             onLogout: () => _showLogoutDialog(ctx),
             onDeleteAccount: () => _showDeleteAccountDialog(ctx),
@@ -2985,6 +2987,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
                   IconButton(
+                    tooltip: ruEn('Закрыть', 'Close'),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -3209,7 +3212,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
-      if (mounted) _showError(_s.uploadError(e.toString()));
+      if (mounted) ForkNotice.error(context, e, retry: () => _uploadAvatarFile(path));
     }
   }
 
@@ -3233,7 +3236,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         );
       }
     } catch (e) {
-      if (mounted) _showError(_s.uploadError(e.toString()));
+      if (mounted) _showError(ForkFailure.of(e).text);
     }
   }
 
@@ -3275,14 +3278,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.red.shade400,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    AppSnack.error(context, msg);
   }
 
   // ═══════════════════════════════════════════════════
@@ -3918,6 +3914,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
                   IconButton(
+                    tooltip: ruEn('Закрыть', 'Close'),
                     onPressed: () => Navigator.pop(ctx),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -4278,11 +4275,11 @@ class _ProfileScreenState extends State<ProfileScreen>
           // сам, без правки экрана. Название пишется на своём языке — тот, кто
           // выбирает португальский, русского слова «Португальский» не знает.
           child: SettingsGroup([
-            for (final lang in AppLanguage.values) ...[
+            for (final lang in LocaleService.availableLanguages) ...[
               // Разделитель между строками, а не условие на саму строку:
               // раньше за ним пряталась первая строка списка, то есть
               // русский, и выбрать его было нельзя вовсе.
-              if (lang != AppLanguage.values.first) const SettingsDivider(),
+              if (lang != LocaleService.availableLanguages.first) const SettingsDivider(),
               _languageRow(ctx, lang: lang),
             ],
           ]),
@@ -4353,27 +4350,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ),
     );
-  }
-
-  // ═══════════════════════════════════════════════════
-  //  RESET MISS YOU COUNT
-  // ═══════════════════════════════════════════════════
-  Future<void> _handleResetMissYouCount(BuildContext context) async {
-    final confirmed = await AppDialog.confirm(
-      context,
-      title: _s.resetMissYouConfirmTitle,
-      message: _s.resetMissYouConfirmBody,
-      confirmLabel: _s.reset,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    final groupId = widget.pairData.pairId;
-    if (groupId.isEmpty) return;
-    final myUid = PocketBaseService().userId ?? '';
-    if (myUid.isEmpty) return;
-    await PbDataService().setMissYouCount(groupId, myUid, 0);
-    if (!mounted) return;
-    AppSnack.success(this.context, _s.resetMissYouConfirmTitle);
   }
 
   // ═══════════════════════════════════════════════════
@@ -4488,12 +4464,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (cancelled) return;
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_s.exportError(e.toString())),
-            backgroundColor: Colors.red.shade400,
-          ),
-        );
+        AppSnack.error(context, ForkFailure.of(e).text);
       }
     }
   }

@@ -1,3 +1,4 @@
+import 'package:love_app/fork/outbox_attempt.dart'; // fork: same HTTP wrapper as production
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -54,11 +55,11 @@ void main() {
     calls = [];
     PocketBaseService().debugUse(PocketBase(
       'https://togetherly.day',
-      httpClientFactory: () => MockClient((req) async {
+      httpClientFactory: () => ForkOutboxHttpClient(MockClient((req) async {
         calls.add('${req.method} ${req.url.path}');
         if (req.method == 'POST') return _createRefused;
         return _notFound;
-      }),
+      })),
     ));
   }
 

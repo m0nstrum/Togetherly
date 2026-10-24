@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/material.dart';
 
 import '../../theme/fonts.dart';
@@ -325,15 +326,19 @@ abstract final class AppSnack {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    final cs = Theme.of(context).colorScheme;
+    messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
+        backgroundColor: cs.surfaceContainerHigh,
+        duration: Duration(seconds: onAction == null ? 4 : 8),
         content: Row(
           children: [
             Icon(icon, color: iconColor, size: 20),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(child: Text(message, style: TextStyle(color: cs.onSurface))),
           ],
         ),
         action: (actionLabel != null && onAction != null)
@@ -354,7 +359,7 @@ abstract final class AppSnack {
         context,
         message: message,
         icon: Icons.check_circle_rounded,
-        iconColor: const Color(0xFF4CAF50),
+        iconColor: Theme.of(context).colorScheme.primary,
         actionLabel: actionLabel,
         onAction: onAction,
       );
@@ -370,7 +375,7 @@ abstract final class AppSnack {
         context,
         message: message,
         icon: Icons.error_rounded,
-        iconColor: const Color(0xFFE5484D),
+        iconColor: Theme.of(context).colorScheme.error,
         actionLabel: actionLabel,
         onAction: onAction,
       );

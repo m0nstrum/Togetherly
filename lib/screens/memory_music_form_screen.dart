@@ -1,3 +1,5 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -189,7 +191,7 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
         }
       });
     } catch (e) {
-      _snack(e.toString());
+      ForkNotice.error(context, e);
     }
   }
 
@@ -259,6 +261,7 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        tooltip: ruEn('Закрыть', 'Close'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded, size: 22),
         style: IconButton.styleFrom(foregroundColor: widget.theme.textSecondary),

@@ -1,3 +1,7 @@
+import 'fork/privacy/logging.dart'; // fork: M6 release logging
+import 'fork/watch/picture_in_picture.dart'; // fork: orphan PiP privacy
+import 'fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
+import 'fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
@@ -60,6 +64,7 @@ import 'widgets/launch_splash/launch_splash_overlay.dart';
 import 'widgets/offline_sync_banner.dart';
 import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
+import 'fork/flags.dart'; // fork (PLAN 1.9)
 import 'fork/config/endpoints.dart'; // fork
 import 'fork/crash_reports.dart'; // fork
 import 'fork/e2e/fork_e2e.dart'; // fork
@@ -98,6 +103,7 @@ Future<void> _initConsentAndAds() =>
 /// `vm:entry-point` не даёт выбросить её при сборке.
 @pragma('vm:entry-point')
 Future<void> widgetPushRefresh() async {
+  configureForkLogging();
   WidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('love_app/widget_bg_refresh');
   var changed = false;
@@ -138,6 +144,7 @@ Future<void> widgetPushRefresh() async {
 /// чтобы парный виджет показывал актуальный статус/настроение без открытия приложения.
 @pragma('vm:entry-point')
 Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
+  configureForkLogging();
   if (!Platform.isAndroid || uri == null) return;
 
   final host = uri.host.trim().toLowerCase();
@@ -250,6 +257,7 @@ Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
 }
 
 void main() async {
+  configureForkLogging();
   // fork: сборка без адресов своего сервера не стартует (lib/fork/config/endpoints.dart).
   Endpoints.ensureConfigured();
   WidgetsFlutterBinding.ensureInitialized();
@@ -358,6 +366,13 @@ void main() async {
   // ни одной записи. Уходит предупреждением с кодом отказа — по нему видно и
   // модель телефона, и версию системы.
   onPickFailure((code, error) {
+    // fork (PLAN 2.2): safePick treats denial as cancel; show a settings action.
+    if (ForkFailure.of(error) == ForkFailure.mediaPermission) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = LoveApp.rootNavigatorKey.currentState?.overlay?.context;
+        if (ctx != null && ctx.mounted) ForkNotice.error(ctx, error);
+      });
+    }
     unawaited(
       Sentry.captureMessage(
         'picker failed: $code',
@@ -800,6 +815,8 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
   }
 
   Future<void> _checkMinBuild() async {
+    // fork: do not lock people out without an available fork release.
+    if (!ForkFlags.upstreamUpdates && Endpoints.current.releasesUrl.isEmpty) return;
     try {
       // fail-open: нет ответа или ошибка — не блокируем.
       final minBuild = await PbDataService()
@@ -942,10 +959,15 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
         ],
         navigatorObservers: [AnalyticsService.instance.observer],
         // Глобальная плашка «офлайн / ожидает синхронизации» поверх любого экрана.
-        builder: (context, child) => LaunchSplashOverlay(
+        // fork: app lock covers Navigator routes and dialog overlays (PLAN 3.1).
+        builder: (context, child) => ForkAppLockGate(
+          child: ForkPipOrphanGuard(
+            child: LaunchSplashOverlay(
           child: ThemeScope(
             theme: _userData.theme,
             child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
+              ),
+            ),
           ),
         ),
         home: _loading

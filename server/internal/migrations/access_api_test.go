@@ -46,6 +46,7 @@ func user(t testing.TB, app core.App, id, email string, groups ...string) *core.
 	u.SetEmail(email)
 	u.SetPassword("password123")
 	u.Set("group_ids", groups)
+	u.Set("live_group_ids", groups)
 	require.NoError(t, app.Save(u))
 	return u
 }
@@ -65,7 +66,7 @@ func groupField(col *core.Collection) string {
 
 func newFixture(t testing.TB) *fixture {
 	t.Helper()
-	app := newApp(t)
+	app := testutil.NewApp(t)
 	f := &fixture{app: app, recordOfA: map[string]string{}}
 
 	groups, err := app.FindCollectionByNameOrId("groups")
@@ -251,6 +252,9 @@ func TestMigrationShape(t *testing.T) {
 	gids, ok := users.Fields.GetByName("group_ids").(*core.RelationField)
 	require.True(t, ok)
 	assert.True(t, gids.Hidden, "group_ids не должен уходить клиенту")
+	live, ok := users.Fields.GetByName("live_group_ids").(*core.RelationField)
+	require.True(t, ok)
+	assert.True(t, live.Hidden, "live_group_ids не должен уходить клиенту")
 }
 
 // Копия схемы в модуле совпадает с pocketbase/collections_schema.json.
@@ -313,4 +317,49 @@ func TestMovedFieldsHaveEnc(t *testing.T) {
 		require.True(t, ok, name)
 		assert.Equal(t, migrations.E2ESealedMax, tf.Max, name)
 	}
+}
+
+// A breakup retains the archive but revokes writes and current profile access.
+// Keep the pre-breakup auth token: authorization must follow the database.
+func TestFormerPartnerAccess(t *testing.T) {
+	f := newFixture(t)
+	defer f.app.Cleanup()
+	for _, name := range []string{"user_presence", "e2e_identities", "media"} {
+		col, err := f.app.FindCollectionByNameOrId(name)
+		require.NoError(t, err)
+		r := core.NewRecord(col)
+		r.Set("user_uid", f.bob.Id)
+		r.Set("uid", f.bob.Id)
+		r.Set("group_id", f.bob.Id)
+		if name == "e2e_identities" {
+			r.Set("account_key", "public-key")
+		}
+		require.NoError(t, f.app.Save(r))
+		code, _ := call(t, f.app, "GET", "/api/collections/"+name+"/records/"+r.Id, f.aliceTok, "")
+		require.Equal(t, 200, code, name)
+	}
+	g, err := f.app.FindRecordById("groups", pairA)
+	require.NoError(t, err)
+	g.Set("disbanded", true)
+	require.NoError(t, f.app.Save(g))
+	// API-rule fixture has no JS hooks; the live-server test covers their resync.
+	f.alice.Set("live_group_ids", []string{})
+	require.NoError(t, f.app.Save(f.alice))
+	for _, name := range []string{"user_presence", "e2e_identities", "media"} {
+		code, body := call(t, f.app, "GET", "/api/collections/"+name+"/records", f.aliceTok, "")
+		require.Equal(t, 200, code)
+		assert.NotContains(t, body, f.bob.Id, name)
+	}
+	for name, id := range f.recordOfA {
+		if name == "invite_codes" {
+			continue
+		}
+		base := "/api/collections/" + name + "/records/" + id
+		code, _ := call(t, f.app, "PATCH", base, f.aliceTok, `{}`)
+		assert.NotEqual(t, 200, code, "former partner updated %s", name)
+		code, _ = call(t, f.app, "DELETE", base, f.aliceTok, "")
+		assert.NotEqual(t, 204, code, "former partner deleted %s", name)
+	}
+	code, _ := call(t, f.app, "GET", "/api/collections/chat_messages/records/"+f.recordOfA["chat_messages"], f.aliceTok, "")
+	assert.Equal(t, 200, code, "archive remains readable")
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/infrastructure/safefetch"
 	wproxy "github.com/m0nstrum/togetherly/server/internal/infrastructure/watchproxy"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/e2eretention"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
@@ -70,9 +71,15 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindCapsules(app, time.Now, log)
 	bindGuards(app)
 	bindE2EGuards(app)
+	app.Cron().MustAdd("e2e_retention", "17 * * * *", func() {
+		if err := e2eretention.Sweep(app, time.Now()); err != nil {
+			log.Error("E2E retention", "err", err)
+		}
+	})
 	bindAllFree(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
+	maps := meta.New(safefetch.New(safefetch.Options{MaxBytes: 8 << 20}), 64<<20, time.Now)
 	// Записи Викиданных тяжёлые: сотни килобайт на фильм.
 	films := movies.New(safefetch.New(safefetch.Options{Timeout: 15 * time.Second, MaxBytes: 8 << 20}),
 		&handler.IPLimiter{Max: 60, Window: 10 * time.Minute}, movies.Options{PoiskkinoKey: cfg.PoiskkinoKey}, time.Now)
@@ -96,9 +103,16 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
 	ringer := ring.New(ringPairs{app}, ringPublisher{notify}, ring.Options{}, time.Now)
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.GET("/api/fork/realtime-key", func(event *core.RequestEvent) error {
+			if !pub.Enabled() {
+				return event.JSON(http.StatusServiceUnavailable, map[string]any{"error": "realtime_unavailable"})
+			}
+			return event.JSON(http.StatusOK, map[string]any{"v": 1, "alg": "Ed25519", "key": pub.PublicKey(), "time": time.Now().UnixMilli()})
+		}).Bind(apis.RequireAuth("users"))
 		handler.WatchRTC(e.Router, turn, time.Now)
 		handler.Ring(e.Router, ringer, log)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
+		handler.MapTiles(e.Router, maps, &handler.IPLimiter{Max: 600, Window: time.Minute})
 		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
 		handler.Movies(e.Router, films, log)
 		handler.WatchProxy(e.Router, proxyInfo)
@@ -327,6 +341,10 @@ func applySettings(s *core.Settings, cfg config.Config) {
 // нужна защита от перебора). Общих лимитов на запись нет: рисование и чат
 // создают записи пачками.
 var rateLimitRules = []core.RateLimitRule{
+	// PLAN 1.8: short invitation codes and expensive external previews.
+	{Label: "POST /api/invite/accept", MaxRequests: 10, Duration: 300},
+	{Label: "POST /api/waiting/claim", MaxRequests: 10, Duration: 300},
+	{Label: "/api/link/preview", MaxRequests: 30, Duration: 60},
 	{Label: "*:authWithPassword", MaxRequests: 10, Duration: 60},
 	{Label: "*:requestPasswordReset", MaxRequests: 3, Duration: 300},
 	{Label: "*:confirmPasswordReset", MaxRequests: 10, Duration: 300},

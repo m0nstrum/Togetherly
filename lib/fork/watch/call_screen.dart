@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../ui/feedback.dart';
 import '../../dict_strings.dart' show ruEn;
 import '../../services/watch_voice_service.dart';
 import 'voice_stage.dart';
@@ -47,8 +48,10 @@ class ForkCallScreen extends StatefulWidget {
             onRetry: onRetry,
           ),
           transitionsBuilder: (_, a, _, child) => SlideTransition(
-            position: Tween(begin: const Offset(0, 1), end: Offset.zero)
-                .animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
+            position: Tween(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
             child: child,
           ),
           settings: const RouteSettings(name: '/fork_call'),
@@ -133,8 +136,11 @@ class _ForkCallScreenState extends State<ForkCallScreen> {
                 alignment: Alignment.centerLeft,
                 child: IconButton(
                   tooltip: ruEn('Свернуть', 'Minimize'),
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: fg, size: 32),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: fg,
+                    size: 32,
+                  ),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),
@@ -145,14 +151,20 @@ class _ForkCallScreenState extends State<ForkCallScreen> {
                 child: Text(
                   name.characters.first.toUpperCase(),
                   style: const TextStyle(
-                      color: fg, fontSize: 44, fontWeight: FontWeight.w600),
+                    color: fg,
+                    fontSize: 44,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
               Text(
                 name,
                 style: const TextStyle(
-                    color: fg, fontSize: 26, fontWeight: FontWeight.w600),
+                  color: fg,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 10),
               Padding(
@@ -175,12 +187,14 @@ class _ForkCallScreenState extends State<ForkCallScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _RoundButton(
-                      icon: _v.micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
+                      icon: _v.micOn
+                          ? Icons.mic_rounded
+                          : Icons.mic_off_rounded,
                       label: _v.micOn
                           ? ruEn('Микрофон', 'Mic')
                           : ruEn('Без звука', 'Muted'),
                       active: !_v.micOn,
-                      onTap: live ? _v.toggleMic : null,
+                      onTap: _v.toggleMic,
                     ),
                     _RoundButton(
                       icon: Icons.call_end_rounded,
@@ -193,12 +207,23 @@ class _ForkCallScreenState extends State<ForkCallScreen> {
                     _RoundButton(
                       icon: _v.speakerOn
                           ? Icons.volume_up_rounded
-                          : Icons.volume_off_rounded,
-                      label: _v.speakerOn
-                          ? ruEn('Звук', 'Sound')
-                          : ruEn('Звук выкл.', 'Sound off'),
-                      active: !_v.speakerOn,
-                      onTap: live ? _v.toggleSpeaker : null,
+                          : Icons.hearing_rounded,
+                      label: ruEn('Динамик', 'Speaker'),
+                      active: _v.speakerOn,
+                      onTap: _v.routing
+                          ? null
+                          : () async {
+                              if (!await _v.toggleSpeaker() && context.mounted) {
+                                ForkNotice.failure(
+                                  context,
+                                  ForkFailure.unknown,
+                                  what: ruEn(
+                                    'Не удалось переключить динамик',
+                                    'Could not switch the speaker',
+                                  ),
+                                );
+                              }
+                            },
                     ),
                   ],
                 ),
@@ -260,33 +285,30 @@ class _RoundButton extends StatelessWidget {
     final bg = danger
         ? const Color(0xFFE5484D)
         : positive
-            ? const Color(0xFF30A46C)
-            : active
-                ? Colors.white
-                : Colors.white24;
+        ? const Color(0xFF30A46C)
+        : active
+        ? Colors.white
+        : Colors.white24;
     final fg = active && !danger && !positive ? Colors.black87 : Colors.white;
-    return Opacity(
-      opacity: onTap == null ? 0.4 : 1,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Material(
-            color: bg,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onTap,
-              child: SizedBox(
-                width: 68,
-                height: 68,
-                child: Icon(icon, color: fg, size: 30),
+    return Semantics(
+      label: label, button: true, enabled: onTap != null, selected: active,
+      onTap: onTap, excludeSemantics: true,
+      child: Tooltip(message: label, excludeFromSemantics: true,
+        child: Material(color: Colors.transparent,
+          child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16),
+            child: Opacity(opacity: onTap == null ? .4 : 1,
+              child: Padding(padding: const EdgeInsets.all(4),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(width: 68, height: 68,
+                    decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+                    child: Icon(icon, color: fg, size: 30)),
+                  const SizedBox(height: 8),
+                  Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                ]),
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 13)),
-        ],
+        ),
       ),
     );
   }

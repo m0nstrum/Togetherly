@@ -131,9 +131,25 @@ class PbE2EBackend implements E2EBackend {
 
   @override
   Future<List<HandshakeMsg>> handshakes(String groupId) async {
+    final now = DateTime.now().toUtc();
+    final sasSince = now
+        .subtract(E2EService.sasTtl)
+        .toIso8601String()
+        .replaceFirst('T', ' ');
+    final inviteSince = now
+        .subtract(const Duration(days: 30))
+        .toIso8601String()
+        .replaceFirst('T', ' ');
     final items = await _pb
         .collection('e2e_handshake')
-        .getFullList(filter: 'group_id = ${_q(groupId)}', sort: 'created');
+        .getFullList(
+          filter: _pb.filter(
+            'group_id = {:g} && ((kind = "invite_proof" && created >= {:invite}) || '
+            '(kind != "invite_proof" && created >= {:sas}))',
+            {'g': groupId, 'invite': inviteSince, 'sas': sasSince},
+          ),
+          sort: 'created',
+        );
     return [
       for (final r in items)
         HandshakeMsg(

@@ -1,3 +1,5 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'package:flutter/material.dart';
 import '../models/pair_data.dart';
 import '../models/relationship_status.dart';
@@ -55,6 +57,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: ruEn('Назад', 'Back'),
           icon: Icon(Icons.arrow_back, color: t.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
@@ -67,7 +70,7 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         ),
       ),
       body: _loading
-          ? const Center(child: M3Loading(color: Color(0xFFFF7E8B)))
+          ? Center(child: M3Loading(color: Theme.of(context).colorScheme.primary))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -117,11 +120,12 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
   }
 
   Widget _buildCurrentStatusCard(RelationshipStatus? status) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.pink.shade100, Colors.purple.shade100],
+          colors: [cs.primaryContainer, cs.tertiaryContainer],
         ),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -129,10 +133,10 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         children: [
           Text(
             LocaleService.current.currentStatus,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black54,
+              color: cs.onPrimaryContainer,
             ),
           ),
           const SizedBox(height: 12),
@@ -140,10 +144,10 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
           const SizedBox(height: 8),
           Text(
             status?.label ?? LocaleService.current.notSet,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: cs.onPrimaryContainer,
             ),
           ),
         ],
@@ -175,10 +179,10 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.pink.shade50 : t.cardSurface,
+        color: isSelected ? Theme.of(context).colorScheme.primaryContainer : t.cardSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected ? Colors.pink.shade300 : t.divider,
+          color: isSelected ? Theme.of(context).colorScheme.primary : t.divider,
           width: 2,
         ),
       ),
@@ -197,22 +201,24 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isSelected)
-                    const Icon(Icons.check_circle, color: Colors.pink),
+                    Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
                   if (isSelected) const SizedBox(width: 8),
                   IconButton(
+                    tooltip: ruEn('Изменить', 'Edit'),
                     icon: const Icon(Icons.edit, size: 20),
                     onPressed: onEdit,
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   IconButton(
+                    tooltip: ruEn('Удалить', 'Delete'),
                     icon: const Icon(Icons.delete, size: 20),
                     onPressed: onDelete,
-                    color: Colors.red,
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ],
               )
             : isSelected
-            ? const Icon(Icons.check_circle, color: Colors.pink)
+            ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary)
             : null,
       ),
     );
@@ -254,21 +260,11 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
     try {
       await widget.pairData.manager.activeConnection?.setStatus(status);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.statusSetTo(status.label)),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnack.success(context, LocaleService.current.statusSetTo(status.label));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.failedSetStatus('$e')),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnack.error(context, ForkFailure.of(e).text);
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -280,21 +276,11 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
     try {
       await widget.pairData.manager.activeConnection?.clearStatus();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.statusCleared),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnack.success(context, LocaleService.current.statusCleared);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.failedClearStatus('$e')),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnack.error(context, ForkFailure.of(e).text);
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -315,21 +301,11 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
           result['emoji']!,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.customStatusAdded),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppSnack.success(context, LocaleService.current.customStatusAdded);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.failedAddStatus('$e')),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppSnack.error(context, ForkFailure.of(e).text);
         }
       } finally {
         if (mounted) setState(() => _loading = false);
@@ -356,21 +332,11 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
           result['emoji']!,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.statusUpdated),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppSnack.success(context, LocaleService.current.statusUpdated);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.failedUpdateStatus('$e')),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppSnack.error(context, ForkFailure.of(e).text);
         }
       } finally {
         if (mounted) setState(() => _loading = false);
@@ -395,21 +361,11 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
           status.id,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.statusDeleted),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppSnack.success(context, LocaleService.current.statusDeleted);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocaleService.current.failedDeleteStatus('$e')),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppSnack.error(context, ForkFailure.of(e).text);
         }
       } finally {
         if (mounted) setState(() => _loading = false);

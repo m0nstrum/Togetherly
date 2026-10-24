@@ -1,3 +1,4 @@
+// fork: own ru/en strings are resolved separately from the upstream catalog.
 import 'dart:io';
 import 'dart:ui';
 

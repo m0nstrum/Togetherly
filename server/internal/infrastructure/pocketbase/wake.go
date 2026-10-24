@@ -2,7 +2,9 @@ package pocketbase
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"strings"
 	"time"
@@ -42,22 +44,29 @@ func (t pushTokens) Forget(_ context.Context, token string) error {
 	return t.app.Delete(r)
 }
 
-// Register — токен устройства за человеком. Тот же телефон под другим
-// входом перехватывает токен: будить прежний аккаунт ему больше незачем.
+// Register never transfers an existing token between accounts. A real device
+// switching accounts obtains a fresh token from FCM instead.
 func (t pushTokens) Register(_ context.Context, uid, token string) error {
-	r, err := t.app.FindFirstRecordByData(pushTokensCol, "token", token)
-	if err != nil {
-		col, cerr := t.app.FindCollectionByNameOrId(pushTokensCol)
-		if cerr != nil {
-			return cerr
+	return t.app.RunInTransaction(func(tx core.App) error {
+		r, err := tx.FindFirstRecordByData(pushTokensCol, "token", token)
+		if err == nil {
+			if r.GetString("user_uid") != uid {
+				return wake.ErrTokenOwned
+			}
+			return nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		col, err := tx.FindCollectionByNameOrId(pushTokensCol)
+		if err != nil {
+			return err
 		}
 		r = core.NewRecord(col)
 		r.Set("token", token)
-	} else if r.GetString("user_uid") == uid {
-		return nil
-	}
-	r.Set("user_uid", uid)
-	return t.app.Save(r)
+		r.Set("user_uid", uid)
+		return tx.Save(r)
+	})
 }
 
 // Unregister — забыть токен при выходе; чужой не трогаем.

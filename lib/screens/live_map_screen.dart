@@ -1,3 +1,4 @@
+import '../fork/geo/map_attribution.dart'; // fork
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -525,6 +526,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
                     ),
                 ],
               ),
+            const ForkMapAttribution(),
           ],
         ),
       ),

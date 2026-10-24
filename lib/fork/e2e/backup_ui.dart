@@ -1,6 +1,8 @@
 /// Бэкап ключей и восстановление (docs/fork/E2E.md §7, решение §12.1).
 library;
 
+import '../secure_screen.dart';
+import 'themed_route.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/locale_service.dart';
@@ -86,9 +88,7 @@ class ForkE2EBackupRow extends StatelessWidget {
                   'There is a backup on the server — enter your phrase or password to read your history',
                 ),
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const ForkE2ERestoreScreen(),
-                  ),
+                  forkE2ERoute<void>(context, const ForkE2ERestoreScreen()),
                 ),
               )
             : ValueListenableBuilder<BackupMethod?>(
@@ -108,9 +108,7 @@ class ForkE2EBackupRow extends StatelessWidget {
                     ),
                   },
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const ForkE2EBackupScreen(),
-                    ),
+                    forkE2ERoute<void>(context, const ForkE2EBackupScreen()),
                   ),
                 ),
               ),
@@ -141,6 +139,8 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
   bool _busy = false;
   final _pw = TextEditingController();
   final _pw2 = TextEditingController();
+  bool _showPassword = false;
+  bool _showRepeat = false;
   List<PasswordProblem> _problems = const [];
 
   E2EService get _svc => ForkE2E.service.value!;
@@ -258,7 +258,9 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ForkSecureScreen(builder: _protectedBody);
+
+  Widget _protectedBody(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: Text(_t('Бэкап ключей', 'Key backup'))),
@@ -408,17 +410,29 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
             BackupMethod.password => [
               TextField(
                 controller: _pw,
-                obscureText: true,
+                obscureText: !_showPassword,
+                autocorrect: false, enableSuggestions: false,
                 autofillHints: const [AutofillHints.newPassword],
                 decoration: InputDecoration(
                   labelText: _t('Пароль', 'Password'),
+                  suffixIcon: IconButton(
+                    tooltip: _showPassword ? _t('Скрыть пароль', 'Hide password') : _t('Показать пароль', 'Show password'),
+                    onPressed: () => setState(() => _showPassword = !_showPassword),
+                    icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility)),
                 ),
                 onChanged: (_) => _check(),
               ),
               TextField(
                 controller: _pw2,
-                obscureText: true,
-                decoration: InputDecoration(labelText: _t('Ещё раз', 'Repeat')),
+                obscureText: !_showRepeat,
+                autocorrect: false, enableSuggestions: false,
+                decoration: InputDecoration(labelText: _t('Ещё раз', 'Repeat'),
+                  errorText: _pw2.text.isNotEmpty && _pw.text != _pw2.text
+                      ? _t('Пароли не совпадают', 'Passwords don’t match') : null,
+                  suffixIcon: IconButton(
+                    tooltip: _showRepeat ? _t('Скрыть пароль', 'Hide password') : _t('Показать пароль', 'Show password'),
+                    onPressed: () => setState(() => _showRepeat = !_showRepeat),
+                    icon: Icon(_showRepeat ? Icons.visibility_off : Icons.visibility))),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
@@ -464,6 +478,7 @@ class ForkE2ERestoreScreen extends StatefulWidget {
 
 class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
   final _secret = TextEditingController();
+  bool _showSecret = false;
   bool _busy = false;
   String? _error;
 
@@ -555,7 +570,7 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       if (!mounted) return;
       // Новые ключи без бэкапа (UX_AUDIT A7) — сразу к нему.
       await Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const ForkE2EBackupScreen()),
+        forkE2ERoute<void>(context, const ForkE2EBackupScreen()),
       );
     } catch (e) {
       if (mounted) {
@@ -572,7 +587,9 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ForkSecureScreen(builder: _protectedBody);
+
+  Widget _protectedBody(BuildContext context) {
     final phrase = _svc.restoreMethod == BackupMethod.phrase;
     return Scaffold(
       appBar: AppBar(title: Text(_t('Восстановить ключи', 'Restore keys'))),
@@ -595,7 +612,7 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
             const SizedBox(height: 16),
             TextField(
               controller: _secret,
-              obscureText: !phrase,
+              obscureText: !phrase && !_showSecret,
               minLines: phrase ? 3 : 1,
               maxLines: phrase ? 5 : 1,
               autocorrect: false,
@@ -605,6 +622,10 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
                     ? _t('Фраза', 'Phrase')
                     : _t('Пароль', 'Password'),
                 errorText: _error,
+                suffixIcon: phrase ? null : IconButton(
+                  tooltip: _showSecret ? _t('Скрыть пароль', 'Hide password') : _t('Показать пароль', 'Show password'),
+                  onPressed: () => setState(() => _showSecret = !_showSecret),
+                  icon: Icon(_showSecret ? Icons.visibility_off : Icons.visibility)),
               ),
             ),
             const SizedBox(height: 16),

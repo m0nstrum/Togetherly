@@ -1,3 +1,4 @@
+import '../fork/identity.dart'; // fork (PLAN 2.1)
 import 'dart:async';
 import 'dart:io';
 
@@ -86,7 +87,7 @@ class NoteExportService {
           return const NoteExportOutcome(NoteExportResult.noAccess);
         }
       }
-      await Gal.putVideo(temp.path, album: 'Togetherly');
+      await Gal.putVideo(temp.path, album: ForkIdentity.appName);
       return const NoteExportOutcome(NoteExportResult.saved);
     } on GalException catch (e, st) {
       debugPrint('NoteExport gal: ${e.type}');

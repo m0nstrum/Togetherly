@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dict_strings.dart';
+import '../fork/flags.dart'; // fork (PLAN 2.3)
+import '../fork/identity.dart'; // fork (PLAN 2.1)
 
 import 'package:love_app/config/update_notes.dart';
 import '../screens/postcard/models/postcard_template.dart';
@@ -80,8 +82,14 @@ class LocaleService extends ChangeNotifier {
 
   /// Что показывать в `MaterialApp.supportedLocales`: без этого системные части
   /// (выбор даты, меню копирования) остаются английскими при любом переводе.
+  static List<AppLanguage> get availableLanguages => ForkFlags.fullLanguageCatalog
+      ? AppLanguage.values : const [AppLanguage.ru, AppLanguage.en];
+
+  static AppLanguage supportedLanguage(AppLanguage lang) =>
+      availableLanguages.contains(lang) ? lang : AppLanguage.en;
+
   static List<ui.Locale> get supportedLocales => [
-    for (final l in AppLanguage.values) l.locale,
+    for (final l in availableLanguages) l.locale,
   ];
 
   static const Map<AppLanguage, AppStrings> _byLanguage = {
@@ -101,6 +109,9 @@ class LocaleService extends ChangeNotifier {
   /// а страна говорит иначе: латиноамериканская `es-419`, бразильская `pt-BR`,
   /// австрийская `de-AT` приходят разными кодами, а язык у них один.
   static AppLanguage detect(ui.Locale locale) {
+    if (!ForkFlags.fullLanguageCatalog) {
+      return locale.languageCode.toLowerCase() == 'ru' ? AppLanguage.ru : AppLanguage.en;
+    }
     final byLang = AppLanguage.byCode(locale.languageCode.toLowerCase());
     if (byLang != null) return byLang;
     const byCountry = <String, AppLanguage>{
@@ -152,7 +163,8 @@ class LocaleService extends ChangeNotifier {
       final saved = prefs.getString('app_language');
       if (saved != null) {
         // Прежние сборки писали сюда 'ru' или 'en', новые — любой из семи кодов.
-        _language = AppLanguage.byCode(saved) ?? AppLanguage.en;
+        _language = supportedLanguage(AppLanguage.byCode(saved) ?? AppLanguage.en);
+        if (_language.code != saved) await prefs.setString('app_language', _language.code);
       } else {
         _language = detect(ui.PlatformDispatcher.instance.locale);
         // Персистим определённый по локали язык, чтобы фоновые изоляты
@@ -171,6 +183,7 @@ class LocaleService extends ChangeNotifier {
 
   /// Change language and persist.
   Future<void> setLanguage(AppLanguage lang) async {
+    lang = supportedLanguage(lang);
     if (_language == lang) return;
     _language = lang;
     try {
@@ -2698,7 +2711,7 @@ class _RuStrings extends DictStrings {
   String membersCount(int count) => 'УЧАСТНИКИ · $count';
   @override
   String shareInviteText(String code, String link) =>
-      'Присоединяйся ко мне в Togetherly! Используй код: $code\n\nИли нажми: $link';
+      'Присоединяйся ко мне в ${ForkIdentity.appName}! Используй код: $code\n\nИли нажми: $link';
 
   @override
   String onboardingLeft(int left) => left == 1
@@ -2733,7 +2746,7 @@ class _RuStrings extends DictStrings {
   String membersOfMax(int current, int max) => '$current/$max участников';
   @override
   String shareGroupInviteText(String code, String link) =>
-      'Присоединяйся к нашей группе в Togetherly! Используй код: $code\n\nИли нажми: $link';
+      'Присоединяйся к нашей группе в ${ForkIdentity.appName}! Используй код: $code\n\nИли нажми: $link';
   @override
   String connectedWithCouple(String name) => 'Вы с $name теперь вместе!';
   @override
@@ -2747,7 +2760,7 @@ class _RuStrings extends DictStrings {
       'Вы с $name теперь $label!';
   @override
   String joinMeLinkText(String link) =>
-      'Присоединяйся ко мне в Togetherly! $link';
+      'Присоединяйся ко мне в ${ForkIdentity.appName}! $link';
   @override
   String membersCountBracket(int count) => 'УЧАСТНИКИ ($count)';
 
@@ -3595,7 +3608,7 @@ class _EnStrings extends DictStrings {
   String membersCount(int count) => 'MEMBERS · $count';
   @override
   String shareInviteText(String code, String link) =>
-      'Join me on Togetherly! Use code: $code\n\nOr click: $link';
+      'Join me on ${ForkIdentity.appName}! Use code: $code\n\nOr click: $link';
 
   @override
   String onboardingLeft(int left) =>
@@ -3628,7 +3641,7 @@ class _EnStrings extends DictStrings {
   String membersOfMax(int current, int max) => '$current/$max members';
   @override
   String shareGroupInviteText(String code, String link) =>
-      'Join our group on Togetherly! Use code: $code\n\nOr click: $link';
+      'Join our group on ${ForkIdentity.appName}! Use code: $code\n\nOr click: $link';
   @override
   String connectedWithCouple(String name) => "You're connected with $name!";
   @override
@@ -3641,7 +3654,7 @@ class _EnStrings extends DictStrings {
   String customRelWith(String label, String name) =>
       "You're now $label with $name!";
   @override
-  String joinMeLinkText(String link) => 'Join me on Togetherly! $link';
+  String joinMeLinkText(String link) => 'Join me on ${ForkIdentity.appName}! $link';
   @override
   String membersCountBracket(int count) => 'MEMBERS ($count)';
 

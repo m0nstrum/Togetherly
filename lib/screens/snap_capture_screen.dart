@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -199,12 +200,14 @@ class _SnapCaptureScreenState extends State<SnapCaptureScreen>
                 Row(
                   children: [
                     IconButton(
+                      tooltip: ruEn('Закрыть', 'Close'),
                       onPressed: () => Navigator.of(context).pop(),
                       icon: const Icon(Icons.close_rounded, color: Colors.white),
                     ),
                     const Spacer(),
                     if (_cameras.length > 1)
                       IconButton(
+                        tooltip: ruEn('Переключить камеру', 'Switch camera'),
                         onPressed: _flip,
                         icon: const Icon(Icons.cameraswitch_rounded,
                             color: Colors.white),

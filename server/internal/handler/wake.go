@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -48,6 +49,9 @@ func Wake(r *router.Router[*core.RequestEvent], tokens PushTokens, inbox WakeInb
 			return e.BadRequestError("Нужен token.", nil)
 		}
 		if err := tokens.Register(e.Request.Context(), e.Auth.Id, t); err != nil {
+			if errors.Is(err, wake.ErrTokenOwned) {
+				return e.JSON(http.StatusConflict, map[string]any{"error": "rotate_device_token"})
+			}
 			log.ErrorContext(e.Request.Context(), "push-token", "err", err)
 			return e.InternalServerError("Токен не сохранён.", nil)
 		}

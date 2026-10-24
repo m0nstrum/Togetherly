@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:pocketbase/pocketbase.dart';
 
 import 'pocketbase_service.dart';
 import '../fork/push/fcm_wake.dart'; // fork
@@ -116,6 +117,18 @@ class FcmService {
       // fork: токен — в push_tokens через свой маршрут (PLAN S12).
       if (await ForkPushToken.save(token)) {
         debugPrint('FcmService: токен устройства записан на сервер');
+      }
+    } on ClientException catch (e) {
+      // fork: M9 account change requires a new native device token.
+      if (e.statusCode == 409 && svc.userId == uid) {
+        try {
+          final renewed = await _channel.invokeMethod<String>('renewToken');
+          if (svc.userId != uid || renewed == null || renewed.isEmpty) return;
+          _token = renewed;
+          await ForkPushToken.save(renewed);
+        } catch (error) {
+          debugPrint('FcmService: обновление токена не удалось — $error');
+        }
       }
     } catch (e) {
       debugPrint('FcmService: токен не записался — $e');

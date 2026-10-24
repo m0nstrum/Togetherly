@@ -8,6 +8,8 @@
 /// звонок и плашка состояния висят поверх любого экрана.
 library;
 
+import 'picture_in_picture.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -162,7 +164,7 @@ class ForkPairCall {
       return;
     }
     _overlay = OverlayEntry(
-      builder: (_) => ValueListenableBuilder<WatchVoiceService?>(
+      builder: (_) => ForkPipHideChrome(child: ValueListenableBuilder<WatchVoiceService?>(
         valueListenable: voice,
         builder: (_, v, _) => Stack(
           children: [
@@ -175,7 +177,7 @@ class ForkPairCall {
             ),
           ],
         ),
-      ),
+      )),
     );
     overlay.insert(_overlay!);
   }

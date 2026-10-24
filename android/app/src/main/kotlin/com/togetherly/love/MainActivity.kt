@@ -18,6 +18,10 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    // fork: device authentication for opt-in app lock (PLAN 3.1).
+    private var forkAppLock: ForkAppLock? = null
+    private var forkPictureInPicture: ForkPictureInPicture? = null
+    private var forkCallProximity: ForkCallProximity? = null
     // fork: applicationId форка свой, а алиасы иконок (`.IconDefault` …)
     // в манифесте раскрываются от пакета Kotlin-кода. "$packageName.Icon…"
     // не находил компонент, и смена иконки падала.
@@ -127,7 +131,33 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (forkAppLock?.activityResult(requestCode, resultCode) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onPictureInPictureModeChanged(inPip: Boolean, config: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(inPip, config)
+        forkPictureInPicture?.changed(inPip)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        forkPictureInPicture?.resumed()
+    }
+
+    override fun onStop() {
+        forkPictureInPicture?.stopped()
+        super.onStop()
+    }
+
     override fun onDestroy() {
+        forkPictureInPicture?.close()
+        forkPictureInPicture = null
+        forkAppLock?.close()
+        forkAppLock = null
+        forkCallProximity?.close()
+        forkCallProximity = null
         ReelsInviteBridge.detach()
         userPresentReceiver?.let {
             try { unregisterReceiver(it) } catch (_: Exception) {}
@@ -138,7 +168,51 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        forkPictureInPicture?.close()
+        val pipChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/picture_in_picture")
+        forkPictureInPicture = ForkPictureInPicture(this, pipChannel)
+        pipChannel.setMethodCallHandler(forkPictureInPicture)
+        forkAppLock?.close()
+        // fork: quick settings components remain disabled until opted in.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/quick_tiles")
+            .setMethodCallHandler(ForkQuickTiles(this))
+        val appLock = ForkAppLock(this)
+        forkAppLock = appLock
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/app_lock")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "available" -> result.success(appLock.available())
+                    "authenticate" -> appLock.authenticate(call.argument<String>("reason") ?: "Tethered", result)
+                    "setRecentsProtected" -> result.success(appLock.protectRecents(call.arguments == true))
+                    "securitySettings" -> try { appLock.settings(); result.success(null) }
+                        catch (_: Exception) { result.error("unavailable", "Security settings unavailable", null) }
+                    else -> result.notImplemented()
+                }
+            }
+        forkCallProximity?.close()
+        forkCallProximity = ForkCallProximity(this)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/call_audio")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "setCallActive" && call.arguments is Boolean) {
+                    forkCallProximity?.setActive(call.arguments == true)
+                    result.success(null)
+                } else result.notImplemented()
+            }
         ReelsInviteBridge.attach(flutterEngine.dartExecutor.binaryMessenger)
+        // fork (PLAN 1.10): acknowledge only after screenshot protection is set.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "tethered/screen_security")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "setSecure" && call.arguments is Boolean) {
+                    if (call.arguments == true) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                    result.success(null)
+                } else {
+                    result.notImplemented()
+                }
+            }
 
         sharedTextChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -436,6 +510,10 @@ class MainActivity : FlutterActivity() {
                 // fork: свой Firebase оператора (PLAN S12); без
                 // google-services.json при сборке — «нет», и Dart на сокете.
                 "hasServices" -> result.success(ForkFcmService.available(this))
+
+                "renewToken" -> ForkFcmService.renewToken(this) { t -> // fork: M9
+                    runOnUiThread { result.success(t) }
+                }
 
                 "getToken" -> ForkFcmService.token(this) { t -> // fork
                     runOnUiThread { result.success(t) }

@@ -1,3 +1,6 @@
+import '../fork/ui/manual_widget_hint.dart'; // fork
+import '../fork/widget_pin_confirmation.dart'; // fork
+import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import '../fork/flags.dart'; // fork: M3
 import '../fork/identity.dart'; // fork: полное имя класса виджета
 import 'dart:async';
@@ -225,6 +228,20 @@ class _WidgetScreenState extends State<WidgetScreen>
   final GlobalKey _pairWidgetKey = GlobalKey();
 
   bool _canPinWidgets = false;
+  Timer? _pinConfirmationTimer;
+  late final _pinConfirmation = ForkWidgetPinConfirmation(
+    installed: HomeWidget.getInstalledWidgets,
+    confirmed: () async {
+      await LevelService.instance.award(XpAction.setWidget);
+      await UiPrefs.markWidgetPinned();
+      if (mounted) ForkNotice.info(context, LocaleService.current.widgetAddedToHome);
+    },
+  );
+
+  Future<void> _checkPinnedWidgets() async {
+    try { await _pinConfirmation.check(); } catch (_) { /* Retry on resume. */ }
+    if (!_pinConfirmation.pending) _pinConfirmationTimer?.cancel();
+  }
   // Счётчик дней: персонализация «наши фото» (фича за коины)
   // Цена — зеркало FEATURE_PRICES['days_widget_photos'] на сервере.
   static const int _daysPhotosPrice = 20;
@@ -434,11 +451,9 @@ class _WidgetScreenState extends State<WidgetScreen>
     if (!Platform.isAndroid) return false;
     try {
       final supported = await HomeWidget.isRequestPinWidgetSupported();
-      // Часть лончеров Android отвечает false, хотя закрепление умеет, поэтому
-      // здесь ответ системы не считаем окончательным.
-      return (supported ?? false) || true;
+      return supported ?? false;
     } catch (_) {
-      return true;
+      return false;
     }
   }
 
@@ -562,6 +577,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     // стол) — обновляем список виджетов, чтобы новый виджет появился сразу.
     if (state == AppLifecycleState.resumed) {
       _loadPhotoDayWidgets();
+      unawaited(_checkPinnedWidgets());
     }
   }
 
@@ -1153,16 +1169,19 @@ class _WidgetScreenState extends State<WidgetScreen>
         }
       }
 
+      await _pinConfirmation.request(ForkIdentity.widgetClass(className), () async {
       await HomeWidget.requestPinWidget(
-        name: className,
-        androidName: className, qualifiedAndroidName: ForkIdentity.widgetClass(className), // fork
+          name: className, androidName: className,
+          qualifiedAndroidName: ForkIdentity.widgetClass(className),
       );
-      debugPrint('_pinWidget: requestPinWidget completed successfully');
-      unawaited(LevelService.instance.award(XpAction.setWidget));
-      // Шаг «поставить виджет» в списке первых действий закрывается отсюда:
-      // записи widget_data заводятся при любой синхронизации и о рабочем столе
-      // ничего не говорят.
-      unawaited(UiPrefs.markWidgetPinned());
+      });
+      if (mounted) ForkNotice.info(context,
+        ruEn('Подтвердите добавление в окне системы', 'Confirm adding the widget in the system dialog'));
+      _pinConfirmationTimer?.cancel();
+      _pinConfirmationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted || timer.tick >= 30) { timer.cancel(); return; }
+        unawaited(_checkPinnedWidgets());
+      });
       // Привязываем виджет к текущей группе и СРАЗУ синхронизируем данные
       // For solo mode, we still sync with empty groupId
       if (widgetType != null) {
@@ -1179,26 +1198,11 @@ class _WidgetScreenState extends State<WidgetScreen>
           await _loadPhotoDayWidgets();
         }
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.widgetAddedToHome),
-            backgroundColor: Colors.green.shade400,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
     } catch (e, stack) {
       debugPrint('Pin widget failed: $e');
       debugPrint('Pin widget stack: $stack');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleService.current.failedAddWidget('$e')),
-            backgroundColor: Colors.red.shade400,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        AppSnack.error(context, ForkFailure.of(e).text);
       }
     }
   }
@@ -1247,18 +1251,12 @@ class _WidgetScreenState extends State<WidgetScreen>
         final days = timer != null
             ? timer.daysElapsed.abs()
             : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-        const months = [
-          'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-          'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-        ];
-        final startLabel = start == null
-            ? ''
-            : 'С ${start.day} ${months[start.month - 1]} ${start.year}';
+        final startLabel = start == null ? '' : _s.tgYearSince('${_s.dayLogDate(start)} ${start.year}');
         final myName = widget.userData.displayName.trim();
         final partnerName = _pair.partnerDisplayName.trim();
         final anniversary = start == null
             ? ''
-            : '${start.day} ${months[start.month - 1]}';
+            : _s.dayLogDate(start);
         await hws.syncTogether(
           groupId: _pair.pairId,
           days: days,
@@ -1453,6 +1451,7 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   @override
   void dispose() {
+    _pinConfirmationTimer?.cancel();
     _rewardedAd.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _missYouSub?.cancel();
@@ -1840,7 +1839,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     }
 
     void banner(String slot) {
-      if (!isPaired || out.isEmpty) return;
+      if (ForkFlags.allFree || !isPaired || out.isEmpty) return; // fork (PLAN 2.1)
       gap();
       out.add(_buildAdBanner(slot));
     }
@@ -2768,8 +2767,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                 onPressed: () =>
                     _pinWidget(qualifiedName, widgetType: widgetType),
                 icon: const Icon(Icons.add_to_home_screen_rounded, size: 17),
-                label: const Text(
-                  'Добавить',
+                label: Text(
+                  _s.addBtn,
                   style: TextStyle(
                     fontFamily: 'Onest',
                     fontSize: 13,
@@ -2783,6 +2782,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                 style: FilledButton.styleFrom(padding: EdgeInsets.zero),
               ),
             ),
+          ] else if (Platform.isAndroid || Platform.isIOS) ...[
+            const SizedBox(height: 9),
+            const ForkManualWidgetHint(),
           ],
         ],
       ),
@@ -2857,13 +2859,13 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   Widget _timerCompact() => _halfTileBg(
         const [Color(0xFF7A5AD0), Color(0xFF9D6FF0)],
-        const Column(
+        Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.favorite_rounded, color: Colors.white, size: 34),
+            const Icon(Icons.favorite_rounded, color: Colors.white, size: 34),
             SizedBox(height: 6),
             Text(
-              'вместе',
+              _s.together,
               style: TextStyle(
                 fontFamily: 'Onest',
                 fontSize: 12,
@@ -3218,7 +3220,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       if (mine != null && theirs != null && mine.score == theirs.score) matched++;
     }
 
-    const labels = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+    final labels = _s.shortWeekdays.map((d) => d.toLowerCase()).toList();
 
     Widget bar(double value, Color color) => Expanded(
           child: FractionallySizedBox(
@@ -4577,29 +4579,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                 style: FilledButton.styleFrom(padding: EdgeInsets.zero),
               ),
             ),
-          ] else if (Platform.isIOS) ...[
-            // На iPhone виджеты ставит система, программного «закрепить» нет.
-            // Без этой строки карточка выглядит витриной без кнопки, и человек
-            // не понимает, что делать дальше.
+          ] else if (!locked && (Platform.isAndroid || Platform.isIOS)) ...[
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    size: 16, color: _cs.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    LocaleService.current.addWidgetFromHomeHint,
-                    style: TextStyle(
-                      fontFamily: 'Onest',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _cs.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            const ForkManualWidgetHint(),
           ],
           // ── Раскрываемое содержимое ──
           AnimatedSize(
@@ -6715,6 +6697,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                 if (onClear != null) ...[
                   const SizedBox(width: 4),
                   IconButton(
+                    tooltip: ruEn('Очистить', 'Clear'),
                     onPressed: onClear,
                     visualDensity: VisualDensity.compact,
                     icon: Icon(Icons.close_rounded,
@@ -7689,27 +7672,9 @@ class _WidgetScreenState extends State<WidgetScreen>
     if (mounted && url == null) {
       // Загрузка не удалась (сеть/сессия). Раньше лоадер просто исчезал без
       // объяснений — теперь честно сообщаем, как на главном экране.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocaleService.current.failedUploadPhoto),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnack.error(context, LocaleService.current.failedUploadPhoto);
     } else if (mounted && memoryFailed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocaleService.current.memoryNotSaved),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnack.error(context, LocaleService.current.memoryNotSaved);
     }
   }
 

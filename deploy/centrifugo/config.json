@@ -4,11 +4,34 @@
   },
   "channel": {
     "namespaces": [
-      { "name": "pair",  "allow_publish_for_subscriber": true },
-      { "name": "draw",  "allow_publish_for_subscriber": true },
-      { "name": "loc",   "allow_publish_for_subscriber": true },
-      { "name": "watch", "allow_publish_for_subscriber": true, "presence": true, "join_leave": true, "force_push_join_leave": true },
-      { "name": "user" }
+      {
+        "name": "pair"
+      },
+      {
+        "name": "draw",
+        "allow_publish_for_subscriber": true
+      },
+      {
+        "name": "loc"
+      },
+      {
+        "name": "watch",
+        "allow_publish_for_subscriber": true,
+        "presence": true,
+        "join_leave": true,
+        "force_push_join_leave": true
+      },
+      {
+        "name": "user"
+      },
+      {
+        "name": "signal",
+        "allow_publish_for_subscriber": true
+      },
+      {
+        "name": "locsignal",
+        "allow_publish_for_subscriber": true
+      }
     ]
   }
 }

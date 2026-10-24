@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,6 +45,10 @@ void main() {
     // `pumpAndSettle` тут не годится: сцены анимируются бесконечно, и покоя
     // экран не достигает никогда. Листаем по времени.
     for (var i = 0; i < 2; i++) {
+      final login = find.widgetWithText(TextButton, s.alreadyHaveAccount);
+      expect(tester.widget<TextButton>(login).onPressed, isNotNull);
+      final opacity = tester.widget<AnimatedOpacity>(find.ancestor(of: login, matching: find.byType(AnimatedOpacity)).first);
+      expect(opacity.opacity, 1);
       await tester.tap(find.text(s.welcomeNext));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));

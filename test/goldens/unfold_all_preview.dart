@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 // Переходы «на всех экранах» глазами: экран настроек растёт из шестерёнки, а
 // кадр летит из обложки в просмотр. Сверяются с макетом
 // https://claude.ai/artifact/Ssgdjfc37xm7TigCWy6NGC (сцены «Кнопка → экран» и
@@ -92,7 +93,6 @@ class _Home extends StatelessWidget {
                           onCoinShop: _nothing,
                           onPrivacyPolicy: _nothing,
                           onExport: _nothing,
-                          onResetMissYou: _nothing,
                           onTerms: _nothing,
                           onSupport: _nothing,
                           onOfficial: _nothing,

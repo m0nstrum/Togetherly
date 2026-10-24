@@ -1,0 +1,4 @@
+<resources>
+    <string name="fork_tile_miss">Скучаю</string>
+    <string name="fork_tile_touch">Прикосновение</string>
+</resources>

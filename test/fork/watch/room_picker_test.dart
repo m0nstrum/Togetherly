@@ -24,6 +24,23 @@ void main() {
     expect(forkRoomLinkOf('смотри https://youtu.be/abc вот'), 'https://youtu.be/abc');
   });
 
+  testWidgets('failed lists have independent errors and retry keeps the link', (t) async {
+    var fail = true;
+    await t.pumpWidget(MaterialApp(home: Scaffold(body: ForkRoomPicker(
+      groupId: 'g', clipboard: () async => '',
+      recent: () async { if (fail) throw StateError('offline'); return []; },
+      uploaded: () async => throw StateError('offline'),
+    ))));
+    await t.pumpAndSettle();
+    expect(find.textContaining(RegExp('Не удалось загрузить список|Could not load the list')), findsNWidgets(2));
+    await t.enterText(find.byType(TextField), 'https://youtu.be/kept');
+    fail = false;
+    await t.tap(find.textContaining(RegExp('Повторить|Retry')).first);
+    await t.pumpAndSettle();
+    expect(find.textContaining(RegExp('Не удалось загрузить список|Could not load the list')), findsOneWidget);
+    expect(find.text('https://youtu.be/kept'), findsOneWidget);
+  });
+
   testWidgets('ссылка из буфера — одной кнопкой; плохая — объясняем', (tester) async {
     ForkRoomPick? got;
     await tester.pumpWidget(MaterialApp(

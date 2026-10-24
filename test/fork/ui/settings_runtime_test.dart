@@ -25,7 +25,6 @@ void main() {
           onCoinShop: () {},
           onPrivacyPolicy: () {},
           onExport: () {},
-          onResetMissYou: () {},
           onTerms: () {},
           onSupport: () {},
           onOfficial: () {},

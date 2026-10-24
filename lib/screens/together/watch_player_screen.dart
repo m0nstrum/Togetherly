@@ -476,6 +476,7 @@ class _Controls extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
+                    tooltip: ruEn('Закрыть', 'Close'),
                     onPressed: onClose,
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),

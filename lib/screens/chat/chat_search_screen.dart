@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -151,6 +152,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
               child: Row(
                 children: [
                   IconButton(
+                    tooltip: ruEn('Назад', 'Back'),
                     icon: const Icon(Icons.arrow_back_rounded),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -168,6 +170,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
                         suffixIcon: _query.text.isEmpty
                             ? null
                             : IconButton(
+                                tooltip: ruEn('Очистить поиск', 'Clear search'),
                                 icon: const Icon(Icons.close_rounded),
                                 onPressed: _query.clear,
                               ),
@@ -338,6 +341,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
         body = _highlighted(cs, m.text);
         if (link != null) {
           trail = IconButton(
+            tooltip: ruEn('Открыть ссылку', 'Open link'),
             icon: Icon(Icons.open_in_new_rounded, color: cs.primary),
             onPressed: () => safeLaunchString(link),
           );

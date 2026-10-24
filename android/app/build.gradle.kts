@@ -171,3 +171,6 @@ dependencies {
     // Google Play Billing тянет плагин in_app_purchase_android (0.5.x = billing 8.x).
     // Свою версию сюда не прописывать: Play отклоняет обновления на библиотеке ниже 8.
 }
+
+// fork: native features kept outside the upstream source directory.
+android.sourceSets.getByName("main").java.srcDir("src/fork/kotlin")

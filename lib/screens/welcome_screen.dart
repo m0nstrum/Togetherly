@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -107,6 +108,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           // глубина цветом, без градиентов и теней.
           Positioned.fill(child: _Blobs(scheme: cs, still: still)),
           SafeArea(
+            child: LayoutBuilder(builder: (context, box) => SingleChildScrollView(
             child: Column(
               children: [
                 SizedBox(
@@ -133,7 +135,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                 ),
-                Expanded(
+                SizedBox(
+                  height: (box.maxHeight * .4).clamp(260.0, 320.0),
                   child: PageView(
                     controller: _ctrl,
                     children: [
@@ -163,14 +166,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     onTap: _next,
                   ),
                 ),
-                SizedBox(
-                  height: 46,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
                   child: AnimatedOpacity(
-                    opacity: _last ? 1 : 0,
+                    opacity: 1,
                     duration: const Duration(milliseconds: 250),
                     child: TextButton(
-                      onPressed:
-                          _last ? () => _navigate(setup: false) : null,
+                      onPressed: () => _navigate(setup: false),
                       child: Text(
                         s.alreadyHaveAccount,
                         style: AppFonts.onest(
@@ -191,6 +193,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 const SizedBox(height: 16),
               ],
             ),
+            )),
           ),
         ],
       ),
@@ -303,7 +306,7 @@ class _FillingButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        height: 56,
+        height: (MediaQuery.textScalerOf(context).scale(16) * 2 + 24).clamp(56, double.infinity),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(99),
           child: Stack(
@@ -330,10 +333,10 @@ class _FillingButton extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      label,
+                    Flexible(child: Text(
+                      label, maxLines: 2, textAlign: TextAlign.center,
                       style: AppFonts.onest(size: 16, weight: 700, color: ink),
-                    ),
+                    )),
                     const SizedBox(width: 8),
                     Icon(Icons.arrow_forward_rounded, size: 19, color: ink),
                   ],

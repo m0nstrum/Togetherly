@@ -9,6 +9,8 @@
 library;
 
 import 'dart:async';
+import '../l10n/count_words.dart';
+import '../l10n/last_seen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -349,7 +351,7 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
         builder: (context, seen) {
           final online = on.data == true;
           final parts = <String>[
-            online ? ruEn('в сети', 'online') : _seenLabel(seen.data),
+            online ? ruEn('в сети', 'online') : forkLastSeen(seen.data, gender: f?.gender ?? ''),
           ];
           final local = f?.localTime(DateTime.now());
           if (local != null) {
@@ -383,20 +385,6 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
   }
 
   static String _hhmm(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-
-  static String _seenLabel(int? ms) {
-    if (ms == null || ms <= 0) return '';
-    final seen = DateTime.fromMillisecondsSinceEpoch(ms);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(seen.year, seen.month, seen.day);
-    if (day == today) return ruEn('заходил(а) в ${_hhmm(seen)}', 'last seen at ${_hhmm(seen)}');
-    if (day == today.subtract(const Duration(days: 1))) {
-      return ruEn('заходил(а) вчера в ${_hhmm(seen)}', 'last seen yesterday at ${_hhmm(seen)}');
-    }
-    final d = '${seen.day.toString().padLeft(2, '0')}.${seen.month.toString().padLeft(2, '0')}';
-    return ruEn('заходил(а) $d', 'last seen $d');
-  }
 
   Widget _actions(ColorScheme cs) {
     final items = <(IconData, String, VoidCallback, Key)>[
@@ -509,7 +497,7 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
           title: '${b.day.toString().padLeft(2, '0')}.${b.month.toString().padLeft(2, '0')}',
           sub: left == 0
               ? ruEn('день рождения сегодня!', 'birthday today!')
-              : ruEn('день рождения через $left ${_days(left)}', 'birthday in $left days'),
+              : ruEn('день рождения через $left ${forkDaysWord(left)}', 'birthday in $left ${forkDaysWord(left)}'),
         ),
       if (f.anniversary != null)
         _Row(
@@ -521,19 +509,12 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
     return _Section(title: ruEn('Даты', 'Dates'), children: rows);
   }
 
-  static String _days(int n) {
-    final a = n % 10, b = n % 100;
-    if (a == 1 && b != 11) return 'день';
-    if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return 'дня';
-    return 'дней';
-  }
-
   /// Пара в цифрах — плитками; касание ведёт в статистику.
   Widget _together(ColorScheme cs, ForkPartnerFacts f) {
     final tiles = <(String, String)>[
-      if ((widget.daysTogether ?? 0) > 0) ('${widget.daysTogether}', ruEn('дней вместе', 'days together')),
-      if (f.memories > 0) ('${f.memories}', ruEn('воспоминаний', 'memories')),
-      if (f.messages > 0) ('${f.messages}', ruEn('сообщений', 'messages')),
+      if ((widget.daysTogether ?? 0) > 0) ('${widget.daysTogether}', '${forkDaysWord(widget.daysTogether!)} ${ruEn('вместе', 'together')}'),
+      if (f.memories > 0) ('${f.memories}', forkMemoriesWord(f.memories)),
+      if (f.messages > 0) ('${f.messages}', forkMessagesWord(f.messages)),
     ];
     if (tiles.isEmpty) return const SizedBox.shrink();
     return Padding(

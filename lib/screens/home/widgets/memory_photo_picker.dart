@@ -1,3 +1,4 @@
+import '../../../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import '../../../widgets/storage_image.dart';
 import 'package:flutter/material.dart';
 import '../../../theme/fonts.dart';
@@ -98,7 +99,7 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
     }, onError: (Object e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = ForkFailure.of(e).text;
         _loading = false;
       });
     });

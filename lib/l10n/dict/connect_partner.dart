@@ -1,3 +1,5 @@
+import '../../fork/identity.dart'; // fork (PLAN 2.1)
+
 // Строки раздела. Одна запись — все языки сразу: так новый язык это
 // колонка в словаре, а не ещё один класс на полторы тысячи членов.
 //
@@ -187,13 +189,13 @@ const Map<String, Map<String, String>> connectPartnerStrings = {
     'de': 'Code kopiert!',
   },
   'loveAppInvitation': {
-    'ru': 'Приглашение Togetherly',
-    'en': 'Togetherly Invitation',
-    'pt': 'Convite do Togetherly',
-    'it': 'Invito su Togetherly',
-    'es': 'Invitación de Togetherly',
-    'fr': 'Invitation Togetherly',
-    'de': 'Einladung zu Togetherly',
+    'ru': 'Приглашение ${ForkIdentity.appName}',
+    'en': '${ForkIdentity.appName} Invitation',
+    'pt': 'Convite do ${ForkIdentity.appName}',
+    'it': 'Invito su ${ForkIdentity.appName}',
+    'es': 'Invitación de ${ForkIdentity.appName}',
+    'fr': 'Invitation ${ForkIdentity.appName}',
+    'de': 'Einladung zu ${ForkIdentity.appName}',
   },
   'newCodeGenerated': {
     'ru': 'Новый код сгенерирован',
@@ -807,13 +809,13 @@ const Map<String, Map<String, String>> connectPartnerStrings = {
     'de': 'Mitglieder einladen',
   },
   'groupInvitation': {
-    'ru': 'Приглашение в группу Togetherly',
-    'en': 'Togetherly Group Invitation',
-    'pt': 'Convite para um grupo no Togetherly',
-    'it': 'Invito a un gruppo Togetherly',
-    'es': 'Invitación a un grupo de Togetherly',
-    'fr': 'Invitation à un groupe Togetherly',
-    'de': 'Einladung in eine Togetherly-Gruppe',
+    'ru': 'Приглашение в группу ${ForkIdentity.appName}',
+    'en': '${ForkIdentity.appName} Group Invitation',
+    'pt': 'Convite para um grupo no ${ForkIdentity.appName}',
+    'it': 'Invito a un gruppo ${ForkIdentity.appName}',
+    'es': 'Invitación a un grupo de ${ForkIdentity.appName}',
+    'fr': 'Invitation à un groupe ${ForkIdentity.appName}',
+    'de': 'Einladung in eine ${ForkIdentity.appName}-Gruppe',
   },
   'joinAnotherGroup': {
     'ru': 'Присоединиться к другой группе',

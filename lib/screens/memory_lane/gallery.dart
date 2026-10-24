@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 part of '../memory_lane_screen.dart';
 
 // ══════════════════════════════════════════════════════
@@ -122,6 +123,7 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
                 fontFamily: 'Unbounded', fontSize: 18, fontWeight: FontWeight.w700),
           ),
           leading: IconButton(
+            tooltip: ruEn('Назад', 'Back'),
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_rounded),
           ),

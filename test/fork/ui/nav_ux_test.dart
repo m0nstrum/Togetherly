@@ -1,5 +1,6 @@
 // Волна 2 UX, навигация (UX_AUDIT.md: N5, N11, N12, N13).
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/connection.dart';
 import 'package:love_app/screens/home/home_bottom_nav.dart';
@@ -34,6 +35,19 @@ Widget _header(
 
 void main() {
   final theme = AppThemes.pink;
+
+  testWidgets('relationship pill exposes a named TalkBack button', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final tabs = <int>[];
+    await tester.pumpWidget(_header(theme, paired: false, onOpenTab: tabs.add));
+    final finder = find.bySemanticsLabel(RegExp('Тип связи:|Relationship type:'));
+    final node = tester.getSemantics(finder);
+    expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    await tester.tap(finder);
+    expect(tabs, [2]);
+    semantics.dispose();
+  });
 
   testWidgets('N13: «Не в паре» ведёт на вкладку «Связь»', (tester) async {
     final tabs = <int>[];

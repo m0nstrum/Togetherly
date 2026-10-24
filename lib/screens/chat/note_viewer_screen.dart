@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -393,6 +394,7 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
       child: Row(
         children: [
           IconButton(
+            tooltip: ruEn('Назад', 'Back'),
             onPressed: () => Navigator.of(context).maybePop(),
             icon: const Icon(Icons.arrow_back_rounded),
             style: IconButton.styleFrom(foregroundColor: cs.onSurface),
@@ -411,6 +413,7 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
           AnimatedBuilder(
             animation: _player,
             builder: (context, _) => IconButton(
+              tooltip: _player.state.muted ? ruEn('Включить звук', 'Unmute') : ruEn('Выключить звук', 'Mute'),
               onPressed: () => _player.toggleSound(),
               icon: Icon(_player.state.muted
                   ? Icons.volume_off_rounded

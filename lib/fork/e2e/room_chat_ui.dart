@@ -13,6 +13,7 @@ import '../../services/locale_service.dart';
 import '../../services/pocketbase_service.dart';
 import 'fork_e2e.dart';
 import 'room_chat.dart';
+import 'room_message_time.dart';
 
 bool get _ru => const {
   'ru',
@@ -30,11 +31,11 @@ class CentrifugoRoomTransport implements RoomTransport {
 
   @override
   Future<void> send(Map<String, dynamic> msg) async {
-    try {
-      await CentrifugoService.instance.publish(channel, msg);
-    } catch (_) {
-      // Обрыв лечит переподключение: реплика пропадёт, как и у страницы.
-    }
+    await CentrifugoService.instance.publish(
+      channel,
+      msg,
+      requireDelivery: msg['t'] == 'chat',
+    );
   }
 
   @override
@@ -124,6 +125,7 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
   RoomChat? _chat;
   bool _open = false;
   int _seen = 0;
+  RoomMessage? _observedMessage;
   final _input = TextEditingController();
   final _scroll = ScrollController();
 
@@ -151,13 +153,27 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
 
   void _changed() {
     if (!mounted) return;
-    setState(() {
-      if (_open) _seen = _chat?.messages.length ?? 0;
-    });
+    final count = _chat?.messages.length ?? 0;
+    final last = _chat?.messages.lastOrNull;
+    final added = last != null && !identical(last, _observedMessage);
+    _observedMessage = last;
+    final follow = added && (!_scroll.hasClients || _scroll.position.extentAfter < 72);
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    setState(() { if (_open) _seen = count; });
+    if (follow && _open) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients &&
+            !_scroll.position.isScrollingNotifier.value && (_scroll.offset - offset).abs() < 8) {
+          _scroll.jumpTo(_scroll.position.maxScrollExtent);
+        }
+      });
+    }
+  }
+
+  void _showChat() {
+    setState(() { _open = true; _seen = _chat?.messages.length ?? 0; });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients) {
-        _scroll.jumpTo(_scroll.position.maxScrollExtent);
-      }
+      if (mounted && _scroll.hasClients) _scroll.jumpTo(_scroll.position.maxScrollExtent);
     });
   }
 
@@ -173,8 +189,10 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
 
   Future<void> _send() async {
     final chat = _chat;
-    if (chat == null) return;
-    if (await chat.send(_input.text)) _input.clear();
+    if (chat == null || !chat.canSend || _input.text.trim().isEmpty) return;
+    final text = _input.text;
+    _input.clear();
+    await chat.send(text);
   }
 
   @override
@@ -193,10 +211,7 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
           child: FloatingActionButton.small(
             heroTag: 'fork-room-chat',
             tooltip: _t('Чат', 'Chat'),
-            onPressed: () => setState(() {
-              _open = true;
-              _seen = chat.messages.length;
-            }),
+            onPressed: _showChat,
             child: const Icon(Icons.chat_bubble_outline),
           ),
         ),
@@ -269,18 +284,21 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
                   Expanded(
                     child: TextField(
                       controller: _input,
+                      enabled: chat.canSend,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => unawaited(_send()),
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: _t('Сообщение', 'Message'),
+                        hintText: chat.canSend
+                            ? _t('Сообщение', 'Message')
+                            : forkRoomChatStatus(chat),
                       ),
                     ),
                   ),
                   IconButton(
                     tooltip: _t('Отправить', 'Send'),
                     icon: const Icon(Icons.send),
-                    onPressed: () => unawaited(_send()),
+                    onPressed: chat.canSend ? () => unawaited(_send()) : null,
                   ),
                 ],
               ),
@@ -290,6 +308,8 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
       ),
     );
   }
+
+  bool chatCanRetry(RoomMessage m) => _chat?.canSend == true && !m.pending;
 
   Widget _bubble(RoomMessage m, ColorScheme cs) => Align(
     alignment: m.mine ? Alignment.centerRight : Alignment.centerLeft,
@@ -310,6 +330,21 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
             ),
           Text(m.text),
+          if (forkRoomMessageTime(m.at).isNotEmpty)
+            Text(forkRoomMessageTime(m.at), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+          if (m.pending)
+            Text(
+              _t('Отправляем…', 'Sending…'),
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+          if (m.failed)
+            TextButton.icon(
+              onPressed: chatCanRetry(m)
+                  ? () => unawaited(_chat!.retry(m))
+                  : null,
+              icon: const Icon(Icons.refresh, size: 16),
+              label: Text(_t('Не отправлено · Повторить', 'Not sent · Retry')),
+            ),
         ],
       ),
     ),

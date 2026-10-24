@@ -60,9 +60,23 @@ void main() {
       ]);
     });
 
-    test('openfreemap — единственный дефолт', () {
+    test('тайлы по умолчанию идут через свой сервер', () {
       const c = EndpointsConfig(pbUrl: 'https://pb.example.org');
-      expect(c.mapTileJsonUrl, EndpointsConfig.openFreeMapTileJson);
+      expect(c.mapTileJsonUrl, 'https://pb.example.org/api/fork/map/tilejson');
+      expect(
+        c.mapTilesFallback,
+        'https://pb.example.org/api/fork/map/tiles/latest/{z}/{x}/{y}.pbf',
+      );
+      expect(c.isOwnMapUrl('https://tiles.openfreemap.org/planet'), isFalse);
+      expect(c.isOwnMapUrl('https://pb.example.org.evil.test/tiles'), isFalse);
+      expect(c.isOwnMapUrl('https://user@pb.example.org/tiles'), isFalse);
+      expect(
+        const EndpointsConfig(
+          pbUrl: 'https://pb.example.org',
+          mapTileJsonUrl: 'https://external.test/tiles',
+        ).problems(),
+        isNotEmpty,
+      );
       expect(c.sentryDsn, isEmpty);
     });
   });

@@ -1,3 +1,4 @@
+import '../widgets/common/app_dialog.dart'; // fork
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:exif/exif.dart';
@@ -183,7 +184,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
       if (picked == null || picked.isEmpty || !mounted) return;
       await _acceptPicked(picked);
     } catch (e) {
-      _showError(LocaleService.current.failedSelectPhotos(e.toString()));
+      _showError(ForkFailure.of(e).text);
     }
   }
 
@@ -227,7 +228,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
         }
       }
     } catch (e) {
-      _showError(LocaleService.current.failedSelectPhotos(e.toString()));
+      _showError(ForkFailure.of(e).text);
     }
   }
 
@@ -384,9 +385,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red.shade400),
-    );
+    AppSnack.error(context, msg);
   }
 
   // ── Build ───────────────────────────────────────────────────────────────────

@@ -9,6 +9,6 @@
   "SUPPORT_EMAIL": "",
   "OFFICIAL_EMAIL": "",
   "SENTRY_DSN": "",
-  "MAP_TILEJSON_URL": "https://tiles.openfreemap.org/planet",
-  "MAP_TILES_FALLBACK": "https://tiles.openfreemap.org/planet/latest/{z}/{x}/{y}.pbf"
+  "MAP_TILEJSON_URL": "",
+  "MAP_TILES_FALLBACK": ""
 }

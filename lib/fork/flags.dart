@@ -44,6 +44,12 @@ abstract final class ForkFlags {
   /// `--dart-define`.
   static bool get noUpstreamKeys => !_upstreamBehavior;
 
+  /// The fork offers only complete Russian and English interfaces (PLAN 2.3).
+  static bool get fullLanguageCatalog => _upstreamBehavior;
+
+  /// No upstream GitHub/Play update checks in the fork (PLAN 1.9).
+  static bool get upstreamUpdates => _upstreamBehavior;
+
   /// Из комнаты и ленты выходят с первого «назад» — кнопкой или жестом, как
   /// с любого другого экрана (просьба владельца 22.10). Апстрим просил второе
   /// нажатие с системной подсказкой «нажмите ещё раз».

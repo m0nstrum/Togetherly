@@ -1,0 +1,5 @@
+# Optional administrative access, loopback only, through an SSH tunnel.
+services:
+  server:
+    ports:
+      - "127.0.0.1:8090:8090"

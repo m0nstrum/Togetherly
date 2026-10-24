@@ -1,3 +1,4 @@
+import '../../fork/flags.dart'; // fork
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -161,7 +162,7 @@ class _GiftShopScreenState extends State<GiftShopScreen> {
     final byAd = await showAppSheet<bool>(
       context,
       builder: (_) => SheetScaffold(
-        child: _PaySheet(
+        child: GiftPaySheet(
           art: GiftImage(gift.key, side: 84),
           title: gift.title,
           price: gift.currentPrice,
@@ -869,7 +870,7 @@ class _GiftShopScreenState extends State<GiftShopScreen> {
     final byAd = await showAppSheet<bool>(
       context,
       builder: (_) => SheetScaffold(
-        child: _PaySheet(
+        child: GiftPaySheet(
           art: _framedMe(f.key, 96),
           title: f.name,
           price: quote.price,
@@ -958,8 +959,8 @@ class _GiftShopScreenState extends State<GiftShopScreen> {
 /// Главное действие залито, второе с обводкой: хватает монет — главное
 /// «За монеты», не хватает — «За рекламу», и оно встаёт первым. Две залитые
 /// кнопки подряд в светлой теме сливались в одну.
-class _PaySheet extends StatelessWidget {
-  const _PaySheet({
+class GiftPaySheet extends StatelessWidget {
+  const GiftPaySheet({
     required this.art,
     required this.title,
     required this.price,
@@ -986,6 +987,7 @@ class _PaySheet extends StatelessWidget {
     final s = LocaleService.current;
     final canPay = coins >= price;
     final adFirst = adAllowed && !canPay;
+    final onlyFree = ForkFlags.allFree && plus && adAllowed;
     const minSize = Size.fromHeight(56);
 
     final coinLabel = Row(
@@ -1089,7 +1091,11 @@ class _PaySheet extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 22),
-          if (adFirst) ...[
+          if (onlyFree)
+            FilledButton.icon(onPressed: onAd,
+              style: FilledButton.styleFrom(minimumSize: minSize),
+              icon: const Icon(Icons.card_giftcard_rounded), label: Text(ruEn('Подарить', 'Give gift')))
+          else if (adFirst) ...[
             adButton,
             const SizedBox(height: 10),
             coinButton,

@@ -1,3 +1,4 @@
+import 'fork/l10n/tip_actions.dart'; // fork (PLAN 2.3)
 import 'services/locale_service.dart';
 
 import 'l10n/dict/achievements.dart';
@@ -145,7 +146,7 @@ const Map<String, Map<String, String>> _kSectionStrings = {
 /// Откат тут главное: пока пять языков не наполнены, немец видит английскую
 /// надпись, а не пустое место и не имя ключа.
 String trDict(String key, String code) {
-  final entry = kStrings[key];
+  final entry = tipActionStrings[key] ?? kStrings[key];
   if (entry == null) return key;
   return entry[code] ?? entry['en'] ?? entry['ru'] ?? key;
 }

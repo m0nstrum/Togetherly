@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -208,6 +209,7 @@ class _DrawReplayScreenState extends State<DrawReplayScreen>
             Row(
               children: [
                 IconButton.filled(
+                  tooltip: _playing ? ruEn('Пауза', 'Pause') : _elapsed >= _base ? ruEn('Повторить', 'Replay') : ruEn('Воспроизвести', 'Play'),
                   onPressed: _toggle,
                   icon: Icon(
                     _playing

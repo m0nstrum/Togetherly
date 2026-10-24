@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:home_widget/home_widget.dart';
 
 import '../../dict_strings.dart' show ruEn;
@@ -94,13 +95,17 @@ abstract final class ForkFcmWake {
 /// Токен FCM на своём сервере (`push_tokens`, только сервер его видит).
 abstract final class ForkPushToken {
   static String _saved = '';
+  static String _owner = '';
+  static void resetRegistration() { _saved = ''; _owner = ''; }
 
   /// Сервер принял токен и сам умеет слать FCM. Пока нет — фоновый сокет
   /// не гасим: иначе без настроенного Firebase на сервере уведомления
   /// пропали бы совсем.
-  static bool get accepted => _saved.isNotEmpty;
+  static bool get accepted => _saved.isNotEmpty && _owner == PocketBaseService().userId;
 
   static Future<bool> save(String token) async {
+    final owner = PocketBaseService().userId;
+    resetRegistration();
     try {
       final res = await PocketBaseService().pb.send(
         '/api/fork/push-token',
@@ -108,9 +113,12 @@ abstract final class ForkPushToken {
         body: {'token': token},
       );
       final on = res is Map && res['enabled'] == true;
+      if (owner != PocketBaseService().userId) return false;
+      _owner = owner ?? '';
       _saved = on ? token : '';
       return on;
     } catch (e) {
+      if (e is ClientException && e.statusCode == 409) rethrow;
       debugPrint('ForkPushToken: не сохранён — $e');
       return false;
     }

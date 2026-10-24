@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/watch_voice_ui.dart';
 import 'package:love_app/services/watch_voice_service.dart';
@@ -17,9 +18,9 @@ void main() {
       expect(bar.callEndsTalk, isFalse);
     });
 
-    test('пока соединяемся — кнопка отменяет вызов, глушилок нет', () {
+    test('пока соединяемся — отмена и настройка микрофона доступны', () {
       const bar = WatchVoiceBarModel(VoiceCallState.connecting);
-      expect(bar.showsMicAndSpeaker, isFalse);
+      expect(bar.showsMicAndSpeaker, isTrue);
       expect(bar.callEndsTalk, isTrue);
       expect(bar.busy, isTrue);
     });

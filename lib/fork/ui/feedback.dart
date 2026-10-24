@@ -9,6 +9,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../system_settings.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../dict_strings.dart' show ruEn;
@@ -25,6 +27,9 @@ enum ForkFailure {
   /// Ключи пары ещё не обменялись или не восстановлены.
   noKey,
 
+  /// Access to the camera or photo library was denied.
+  mediaPermission,
+
   /// Файл больше допустимого.
   tooLarge,
 
@@ -36,6 +41,20 @@ enum ForkFailure {
 
   /// Причина по пойманной ошибке.
   static ForkFailure of(Object error) {
+    if (error is PlatformException &&
+        const {
+          'camera_access_denied',
+          'camera_access_denied_without_prompt',
+          'camera_access_restricted',
+          'photo_access_denied',
+          'photo_access_denied_without_prompt',
+          'photo_access_restricted',
+          'read_external_storage_denied',
+          'access_denied',
+          'PERMISSION_DENIED',
+        }.contains(error.code)) {
+      return mediaPermission;
+    }
     if (error is ForkFailureError) return error.failure;
     if (error is E2ENoKeyError) return noKey;
     if (error is SocketException ||
@@ -70,6 +89,10 @@ enum ForkFailure {
     noKey => ruEn(
       'Ключи шифрования ещё не готовы: дождитесь партнёра или восстановите ключи.',
       'Encryption keys aren’t ready yet: wait for your partner or restore your keys.',
+    ),
+    mediaPermission => ruEn(
+      'Нет доступа к камере или галерее. Разрешите его в настройках телефона.',
+      'Camera or photo access is denied. Allow it in your phone settings.',
     ),
     tooLarge => ruEn('Файл слишком большой.', 'The file is too large.'),
     denied => ruEn(
@@ -148,7 +171,14 @@ abstract final class ForkNotice {
       context,
       text,
       error: true,
-      action: retry != null && failure.retryable
+      action: failure == ForkFailure.mediaPermission
+          ? SnackBarAction(
+              label: ruEn('Открыть настройки', 'Open settings'),
+              onPressed: () {
+                unawaited(openSystemAppSettings());
+              },
+            )
+          : retry != null && failure.retryable
           ? SnackBarAction(label: ruEn('Повторить', 'Retry'), onPressed: retry)
           : null,
     );
@@ -233,49 +263,49 @@ class ForkStatusBar extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-          child: Row(
-            children: [
-              if (tone == ForkStatusTone.progress)
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: fg),
-                )
-              else
-                Icon(
-                  switch (tone) {
-                    ForkStatusTone.error => Icons.error_outline_rounded,
-                    ForkStatusTone.warning => Icons.warning_amber_rounded,
-                    _ => Icons.info_outline_rounded,
-                  },
-                  size: 18,
-                  color: fg,
+            padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+            child: Row(
+              children: [
+                if (tone == ForkStatusTone.progress)
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+                  )
+                else
+                  Icon(
+                    switch (tone) {
+                      ForkStatusTone.error => Icons.error_outline_rounded,
+                      ForkStatusTone.warning => Icons.warning_amber_rounded,
+                      _ => Icons.info_outline_rounded,
+                    },
+                    size: 18,
+                    color: fg,
+                  ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: fg),
+                  ),
                 ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  text,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: fg),
-                ),
-              ),
-              if (actionLabel != null && onAction != null)
-                TextButton(
-                  onPressed: onAction,
-                  style: TextButton.styleFrom(foregroundColor: fg),
-                  child: Text(actionLabel!),
-                ),
-              if (onClose != null)
-                IconButton(
-                  tooltip: ruEn('Закрыть', 'Close'),
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(Icons.close_rounded, size: 20, color: fg),
-                  onPressed: onClose,
-                ),
-            ],
-          ),
+                if (actionLabel != null && onAction != null)
+                  TextButton(
+                    onPressed: onAction,
+                    style: TextButton.styleFrom(foregroundColor: fg),
+                    child: Text(actionLabel!),
+                  ),
+                if (onClose != null)
+                  IconButton(
+                    tooltip: ruEn('Закрыть', 'Close'),
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(Icons.close_rounded, size: 20, color: fg),
+                    onPressed: onClose,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

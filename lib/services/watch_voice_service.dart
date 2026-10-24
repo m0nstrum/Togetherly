@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
+import '../fork/watch/call_proximity.dart';
 import '../fork/ui/feedback.dart' show ForkFailure; // fork
 import '../fork/watch/voice_stage.dart'; // fork
 import 'pb_data_service.dart';
@@ -34,7 +35,17 @@ enum VoiceCallState {
 /// договариваться одновременно и не перебили друг друга, предложение делает
 /// тот, чей uid «больше». Второй ждёт и отвечает.
 class WatchVoiceService extends ChangeNotifier {
-  WatchVoiceService({required this.channel, required this.me});
+  WatchVoiceService({required this.channel, required this.me,
+    Future<void> Function(bool)? setSpeakerphone,
+  }) : _setSpeakerphone = setSpeakerphone ?? Helper.setSpeakerphoneOn;
+
+  final Future<void> Function(bool) _setSpeakerphone;
+  bool _routing = false;
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() { if (!_disposed) super.notifyListeners(); }
+  bool get routing => _routing;
 
   final WatchChannel channel;
 
@@ -58,7 +69,7 @@ class WatchVoiceService extends ChangeNotifier {
   /// Микрофон включён (нас слышно).
   bool get micOn => _micOn;
 
-  /// Звук включён (мы слышим).
+  /// Выбран громкий динамик вместо разговорного динамика/гарнитуры.
   bool get speakerOn => _speakerOn;
 
   bool get active => _state != VoiceCallState.off;
@@ -208,6 +219,8 @@ class WatchVoiceService extends ChangeNotifier {
     if (_state == VoiceCallState.failed) await stop();
     if (_state != VoiceCallState.off) return;
     _restarted = false;
+    _micOn = true;
+    _speakerOn = true;
     _set(VoiceCallState.connecting);
     try {
       _local = await navigator.mediaDevices.getUserMedia({
@@ -218,7 +231,9 @@ class WatchVoiceService extends ChangeNotifier {
         },
         'video': false,
       });
-      _micOn = true;
+      for (final track in _local!.getAudioTracks()) { track.enabled = _micOn; }
+      await _setSpeakerphone(_speakerOn);
+      await ForkCallProximity.active(true);
       await _ensurePeer();
       // Зовём собеседника: он поднимет свою сторону и ответит.
       final answering = _ringing.isNotEmpty; // fork
@@ -259,6 +274,7 @@ class WatchVoiceService extends ChangeNotifier {
 
   /// Выключить микрофон и разорвать связь.
   Future<void> stop() async {
+    await ForkCallProximity.active(false);
     _stopCalling(); // fork
     _negotiating = false;
     _pending.clear();
@@ -277,22 +293,33 @@ class WatchVoiceService extends ChangeNotifier {
     _setStage(VoiceStage.idle); // fork
   }
 
-  /// Заглушить или вернуть свой микрофон, не разрывая связь.
+  /// Mute is a choice even before capture/answer; apply it when tracks arrive.
   void toggleMic() {
-    final track = _local?.getAudioTracks().firstOrNull;
-    if (track == null) return;
+    if (_stage == VoiceStage.idle && !active) return;
     _micOn = !_micOn;
+    for (final track in _local?.getAudioTracks() ?? const <MediaStreamTrack>[]) {
     track.enabled = _micOn;
+    }
     notifyListeners();
   }
 
-  /// Заглушить или вернуть звук собеседника.
-  void toggleSpeaker() {
-    _speakerOn = !_speakerOn;
-    for (final t in _remote?.getAudioTracks() ?? const <MediaStreamTrack>[]) {
-      t.enabled = _speakerOn;
-    }
+  /// Change the audio route. Never mute the partner's received audio track.
+  Future<bool> toggleSpeaker() async {
+    if (_routing) return false;
+    _routing = true;
     notifyListeners();
+    try {
+      final next = !_speakerOn;
+      await _setSpeakerphone(next);
+      _speakerOn = next;
+      await ForkCallProximity.active(active);
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      _routing = false;
+      notifyListeners();
+    }
   }
 
   /// Разбор сообщений комнаты. Возвращает true, если сообщение наше и экрану
@@ -397,9 +424,6 @@ class WatchVoiceService extends ChangeNotifier {
     _pc!.onTrack = (event) {
       if (event.streams.isEmpty) return;
       _remote = event.streams.first;
-      for (final t in _remote!.getAudioTracks()) {
-        t.enabled = _speakerOn;
-      }
       _set(VoiceCallState.live);
       _setStage(VoiceStage.live); // fork
     };
@@ -459,6 +483,7 @@ class WatchVoiceService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _ringTimer?.cancel(); // fork
     _connectTimer?.cancel(); // fork
     unawaited(stop());

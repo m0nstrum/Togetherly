@@ -1,3 +1,6 @@
+import '../../../dict_strings.dart' show ruEn; // fork
+import '../../../widgets/common/app_dialog.dart'; // fork
+import '../../../fork/ui/feedback.dart'; // fork
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -252,15 +255,29 @@ void showRelationshipTypeSheet(
                     onTap: () => pick(RelationshipType.custom,
                         label: entry['label'] ?? '',
                         emoji: entry['emoji'] ?? ''),
-                    trailing: GestureDetector(
-                      onTap: () async {
-                        await pair
-                            .deleteCustomRelationshipType(entry['id'] ?? '');
+                    trailing: IconButton(
+                      tooltip: selected
+                          ? ruEn('Сначала выберите другой тип связи', 'Choose another relationship type first')
+                          : ruEn('Удалить тип связи', 'Delete relationship type'),
+                      onPressed: selected ? null : () async {
+                        final ok = await AppDialog.confirm(ctx,
+                          title: ruEn('Удалить тип связи?', 'Delete relationship type?'),
+                          message: entry['label'] ?? s.custom,
+                          confirmLabel: s.delete, destructive: true,
+                        );
+                        if (!ok || !ctx.mounted) return;
+                        if (pair.relationshipType == RelationshipType.custom &&
+                            pair.relationshipLabel == entry['label']) return;
+                        try {
+                          await pair.deleteCustomRelationshipType(entry['id'] ?? '');
                         if (ctx.mounted) setSheet(() {});
                         onChanged();
+                        } catch (e) {
+                          if (ctx.mounted) ForkNotice.error(ctx, e);
+                        }
                       },
-                      child: Icon(Icons.delete_outline_rounded,
-                          size: 22, color: cs.error),
+                      icon: Icon(Icons.delete_outline_rounded, size: 22,
+                        color: selected ? cs.onSurfaceVariant : cs.error),
                     ),
                   );
                 }),

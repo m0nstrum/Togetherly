@@ -1,3 +1,4 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -308,7 +309,7 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
                     mode: _mode,
                   ),
                 )
-            : null,
+            : failed ? () => _uploads.retry(item.id) : null,
         onLongPress: () => _uploads.remove(item.id),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -325,7 +326,7 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
                 ),
               const SizedBox(height: 10),
               Text(
-                failed ? item.error : item.title,
+                failed ? '${item.error}\n${_s.retry}' : item.title,
                 textAlign: TextAlign.center,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,

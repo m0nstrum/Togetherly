@@ -43,6 +43,7 @@ class _MemoryDetailSheet extends StatefulWidget {
 
 class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     with SingleTickerProviderStateMixin {
+  final _commentsAnchor = GlobalKey();
   AudioPlayer? _audioPlayer;
   late final AnimationController _animCtrl;
   late final Animation<double> _fadeAnim;
@@ -309,6 +310,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                       UnfoldStagger(
                         index: 4,
                         child: RepaintBoundary(
+                          key: _commentsAnchor,
                           child: _CommentsSection(
                             groupId: widget.groupId,
                             memoryId: _memory.id,
@@ -1016,7 +1018,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
           borderRadius: BorderRadius.circular(20),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () {},
+            onTap: () {
+              final target = _commentsAnchor.currentContext;
+              if (target != null) Scrollable.ensureVisible(target,
+                duration: const Duration(milliseconds: 350), curve: Curves.easeOut, alignment: 0);
+            },
             child: Container(
               height: 40,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1337,6 +1343,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                         _buildMetaChips(memory, cs),
                         const SizedBox(height: 20),
                         RepaintBoundary(
+                          key: _commentsAnchor,
                           child: _CommentsSection(
                             groupId: widget.groupId,
                             memoryId: _memory.id,
@@ -3292,13 +3299,7 @@ class _CommentsSectionState extends State<_CommentsSection> {
       _ctrl.clear();
     } on RateLimitException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        AppSnack.error(context, e.message);
       }
     } finally {
       if (mounted) setState(() => _sending = false);

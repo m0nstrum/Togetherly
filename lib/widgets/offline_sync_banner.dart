@@ -1,3 +1,4 @@
+import '../fork/watch/picture_in_picture.dart'; // fork: video-only PiP
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -49,7 +50,7 @@ class OfflineSyncBanner extends StatelessWidget {
               // «жёлтым подчёркиванием» (нет Material-предка).
               child: Material(
                 type: MaterialType.transparency,
-                child: _SyncChips(),
+                child: ForkPipHideChrome(child: _SyncChips()),
               ),
             ),
           ),

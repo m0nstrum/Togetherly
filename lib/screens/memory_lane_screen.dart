@@ -1,3 +1,4 @@
+import '../fork/flags.dart'; // fork (PLAN 2.1)
 import '../utils/safe_pick.dart';
 import '../services/plus_service.dart';
 import '../services/plus_access.dart';
@@ -708,7 +709,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       var chunkStart = 0;
       for (var i = 0; i < mems.length; i++) {
         position++;
-        final adHere = adAfterMemory(position);
+        final adHere = !ForkFlags.allFree && adAfterMemory(position); // fork
         if (adHere || i == mems.length - 1) {
           // Сбрасываем накопленный чанк тайлов (он остаётся внутри своей даты).
           slivers.add(_memoryTilesSliver(mems.sublist(chunkStart, i + 1)));
@@ -3919,6 +3920,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         child: Row(
           children: [
             IconButton(
+              tooltip: ruEn('Отменить выбор', 'Cancel selection'),
               onPressed: _exitSelecting,
               icon: Icon(Icons.close_rounded, color: cs.onSecondaryContainer),
             ),
@@ -5339,7 +5341,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                           if (context.mounted) {
                             showFloatingNote(
                               context,
-                              LocaleService.current.failedSelectPhotos(e.toString()),
+                              ForkFailure.of(e).text,
                               icon: Icons.error_outline_rounded,
                             );
                           }
@@ -5691,7 +5693,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                           if (context.mounted) {
                             showFloatingNote(
                               context,
-                              LocaleService.current.failedSelectVideo(e.toString()),
+                              ForkFailure.of(e).text,
                               icon: Icons.error_outline_rounded,
                             );
                           }

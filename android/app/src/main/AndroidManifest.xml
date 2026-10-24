@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <!-- fork: device authentication for optional app lock; no runtime prompt. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Permissions для QR-сканера -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Голосовые сообщения в чате. -->
@@ -66,8 +68,8 @@
     <!-- Точные будильники для живого виджета-лепестка -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     
-    <!-- In-app billing for consumable products (coins) -->
-    <uses-permission android:name="com.android.vending.BILLING" />
+    <!-- fork: M11 strip billing even if a transitive library declares it. -->
+    <uses-permission android:name="com.android.vending.BILLING" tools:node="remove" />
 
     <!-- fork: рекламы нет, рекламный идентификатор не запрашиваем. Remove
          на случай, если разрешение протащит транзитивная зависимость. -->
@@ -84,6 +86,8 @@
         android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
@@ -906,6 +910,19 @@
         <service
             android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
             tools:node="remove" />
+        <!-- fork: optional tiles, visible to Android only after the settings toggle. -->
+        <service android:name="com.togetherly.love.ForkMissYouTileService"
+            android:enabled="false" android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:label="@string/fork_tile_miss" android:icon="@drawable/fork_tile_miss">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name="com.togetherly.love.ForkTouchTileService"
+            android:enabled="false" android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:label="@string/fork_tile_touch" android:icon="@drawable/fork_tile_touch">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -1,3 +1,4 @@
+import '../../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'package:flutter/material.dart';
 
 import '../../models/pair_data.dart';
@@ -256,6 +257,7 @@ class _WaitingSetupSheetState extends State<WaitingSetupSheet> {
                         ),
                       if (_returnDate != null)
                         IconButton(
+                          tooltip: ruEn('Убрать дату возвращения', 'Remove return date'),
                           onPressed: () => setState(() => _returnDate = null),
                           icon: const Icon(Icons.close_rounded, size: 18),
                           visualDensity: VisualDensity.compact,

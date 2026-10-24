@@ -1,11 +1,11 @@
+// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import '../services/watch_voice_service.dart';
 
 /// Что показывает полоса голоса в комнате совместного просмотра.
 ///
 /// Правило вынесено из виджета, потому что оно про поведение, а не про
 /// раскладку: полоса стоит ПОД плеером и работает без включённого видео —
-/// позвонить можно в пустой комнате. Глушилки микрофона и динамика имеют смысл
-/// только когда друг друга уже слышно, до этого глушить нечего.
+/// позвонить можно в пустой комнате, а звук настроить до ответа.
 class WatchVoiceBarModel {
   const WatchVoiceBarModel(this.state);
 
@@ -14,8 +14,8 @@ class WatchVoiceBarModel {
   /// Кнопка вызова есть всегда: в покое зовёт, в разговоре кладёт трубку.
   bool get showsCallButton => true;
 
-  /// Микрофон и динамик — только в живом разговоре.
-  bool get showsMicAndSpeaker => state == VoiceCallState.live;
+  /// Микрофон можно выключить и до ответа.
+  bool get showsMicAndSpeaker => state == VoiceCallState.live || state == VoiceCallState.connecting;
 
   /// Нажатие на кнопку прервёт разговор, а не начнёт его.
   bool get callEndsTalk =>

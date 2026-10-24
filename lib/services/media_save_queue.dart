@@ -1,3 +1,4 @@
+import '../fork/identity.dart'; // fork (PLAN 2.1)
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -16,7 +17,7 @@ import 'saved_media_ledger.dart';
 ///
 /// Android — `Pictures/Togetherly` (и фото, и видео: одна папка, одна плитка
 /// в галерее), iPhone — альбом «Togetherly». Просьба заказчика 19.09.2026.
-const String kGalleryAlbum = 'Togetherly';
+const String kGalleryAlbum = ForkIdentity.appName;
 
 /// Файл, который загрузчик положил на диск.
 class FetchedMedia {

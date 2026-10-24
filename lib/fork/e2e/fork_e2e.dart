@@ -5,6 +5,8 @@
 /// другу ключи пары.
 library;
 
+import '../outbox_attempt.dart';
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -174,12 +176,12 @@ abstract final class ForkE2E {
   static final Map<String, String> _groupHints = {};
 
   /// HTTP-клиент PocketBase с шифрованием полей.
-  static http.Client httpClient() => E2EHttpClient(
+  static http.Client httpClient() => ForkOutboxHttpClient(E2EHttpClient(
     http.Client(),
     codec: codec,
     context: _context,
     newId: newPbId,
-  );
+  ));
 
   /// Есть ли ключ пары [groupId], чтобы записать в неё шифром. Нет —
   /// запись в очереди не уйдёт никогда (UX_AUDIT C1): экран должен сказать

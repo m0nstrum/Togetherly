@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../fork/ui/feedback.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -30,7 +31,7 @@ class CoupleStatsService {
 
     final pb = PocketBaseService.instance.pb;
     final token = pb.authStore.token;
-    if (token.isEmpty) return null;
+    if (token.isEmpty) throw const ForkFailureError(ForkFailure.session);
 
     try {
       final res = await http.get(
@@ -42,7 +43,7 @@ class CoupleStatsService {
 
       if (res.statusCode != 200) {
         debugPrint('CoupleStatsService: HTTP ${res.statusCode}');
-        return hit?.data;
+        throw ForkFailureError(res.statusCode == 401 ? ForkFailure.session : ForkFailure.network);
       }
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       await ForkE2E.patchCoupleStats(groupId, json); // fork: даты пары шифром
@@ -51,9 +52,8 @@ class CoupleStatsService {
       return stats;
     } catch (e) {
       debugPrint('CoupleStatsService.load failed: $e');
-      // Отдаём прошлый ответ, если он был: устаревшие цифры полезнее пустого
-      // экрана, а «обновить» пользователь нажмёт сам.
-      return hit?.data;
+      // Ошибка отличается от отсутствия данных; экран предложит повтор.
+      rethrow;
     }
   }
 }

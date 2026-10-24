@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'locale_service.dart';
+import '../fork/flags.dart'; // fork (PLAN 1.9)
 
 /// Куда идти за обновлением — и идти ли вообще.
 enum UpdatePath {
@@ -180,6 +181,7 @@ class UpdateService {
   /// Возвращает [GithubUpdate], если в публичном репо лежит версия новее
   /// установленной, иначе `null` (нет обновления / ошибка сети / ошибка парсинга).
   static Future<GithubUpdate?> checkForUpdate() async {
+    if (!ForkFlags.upstreamUpdates) return null; // fork: never fetch the author's APK
     try {
       final resp = await http
           .get(Uri.parse(_versionJsonUrl))

@@ -1,3 +1,4 @@
+import '../fork/identity.dart'; // fork (PLAN 2.1)
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -97,7 +98,7 @@ class _VesselStoryScreenState extends State<VesselStoryScreen> {
     setState(() => _busy = true);
     try {
       final file = await _render();
-      await Gal.putImage(file.path, album: 'Togetherly');
+      await Gal.putImage(file.path, album: ForkIdentity.appName);
       if (mounted) AppSnack.success(context, _s.savedToGallery);
     } catch (e) {
       debugPrint('сосуд: сохранить не вышло: $e');

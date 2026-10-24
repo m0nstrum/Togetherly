@@ -1,3 +1,4 @@
+import '../fork/privacy/logging.dart'; // fork: M6 release logging
 import 'dart:async';
 import 'dart:io';
 
@@ -228,6 +229,7 @@ String _pushDayKey() {
 /// (её адрес передаётся нативной части при старте сервиса).
 @pragma('vm:entry-point')
 void pushServiceCallback() {
+  configureForkLogging();
   FlutterForegroundTask.setTaskHandler(_PushTaskHandler());
 }
 

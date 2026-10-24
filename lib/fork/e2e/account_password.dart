@@ -3,7 +3,9 @@
 /// повторов и рядов клавиатуры. Регистрация и смена пароля.
 library;
 
+import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../dict_strings.dart' show ruEn;
 
 import 'backup_ui.dart' show problemText;
 import 'fork_e2e.dart';
@@ -21,6 +23,36 @@ abstract final class ForkAccountPassword {
     email: email,
     name: name,
   );
+
+  /// OS-backed randomness; retry against the same policy used for registration.
+  static Future<String> generate({String email = '', String name = ''}) async {
+    final random = Random.secure();
+    const classes = [
+      'abcdefghjkmnpqrstuvwxyz',
+      'ABCDEFGHJKMNPQRSTUVWXYZ',
+      '23456789',
+      '!#%*-_+=?',
+    ];
+    final alphabet = classes.join();
+    final leaked = await ForkE2E.leakedPasswords();
+    for (var attempt = 0; attempt < 128; attempt++) {
+      final chars = [
+        for (final group in classes) group[random.nextInt(group.length)],
+        for (var i = 0; i < 20; i++) alphabet[random.nextInt(alphabet.length)],
+      ];
+      chars.shuffle(random);
+      final password = chars.join();
+      if (PasswordPolicy.check(
+        password,
+        leaked: leaked,
+        email: email,
+        name: name,
+      ).isEmpty) {
+        return password;
+      }
+    }
+    throw StateError('Could not generate a suitable password');
+  }
 
   /// Текст для снекбара: что не так, через запятую.
   static String describe(List<PasswordProblem> p) =>
@@ -84,7 +116,27 @@ class _ForkPasswordChecksState extends State<ForkPasswordChecks> {
           spacing: 12,
           runSpacing: 6,
           children: [
-            for (final b in _base) widget.row(problemText(b), !p.contains(b)),
+            for (final b in _base)
+              widget.row(switch (b) {
+                PasswordProblem.tooShort => ruEn(
+                  '12+ символов',
+                  '12+ characters',
+                ),
+                PasswordProblem.noLower => ruEn(
+                  'Строчная буква',
+                  'Lowercase letter',
+                ),
+                PasswordProblem.noUpper => ruEn(
+                  'Заглавная буква',
+                  'Uppercase letter',
+                ),
+                PasswordProblem.noDigit => ruEn('Цифра', 'Digit'),
+                PasswordProblem.noSymbol => ruEn(
+                  'Символ (! # - …)',
+                  'Symbol (! # - …)',
+                ),
+                _ => problemText(b),
+              }, !p.contains(b)),
           ],
         ),
         for (final x in extra)

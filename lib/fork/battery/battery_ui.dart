@@ -1,6 +1,7 @@
 /// Заряд партнёра на экранах: значок в шапке чата и строка в профиле.
 library;
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../dict_strings.dart' show ruEn;
@@ -37,46 +38,73 @@ String forkBatteryNote(ForkBatteryState s, DateTime now) {
 }
 
 /// Живой заряд [uid]; пусто, если его нет или он устарел.
-class ForkBatteryWatch extends StatelessWidget {
+class ForkBatteryWatch extends StatefulWidget {
   const ForkBatteryWatch({
     super.key,
     required this.groupId,
     required this.uid,
     required this.builder,
+    this.maxAge = const Duration(hours: 6),
+    this.states,
+    this.now,
   });
 
   final String groupId;
   final String uid;
   final Widget Function(BuildContext context, ForkBatteryState state) builder;
+  final Duration maxAge;
+  final Stream<ForkBatteryState?> Function()? states;
+  final DateTime Function()? now;
+
+  @override
+  State<ForkBatteryWatch> createState() => _ForkBatteryWatchState();
+}
+
+class _ForkBatteryWatchState extends State<ForkBatteryWatch> {
+  Timer? _expiry;
+
+  @override
+  void dispose() { _expiry?.cancel(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) => StableStreamBuilder<ForkBatteryState?>(
-        create: () => ForkBattery.instance.watch(groupId, uid),
-        keys: [groupId, uid],
+        create: widget.states ?? () => ForkBattery.instance.watch(widget.groupId, widget.uid),
+        keys: [widget.groupId, widget.uid, widget.states],
         builder: (context, snap) {
           final s = snap.data;
-          if (s == null || !s.fresh(DateTime.now())) return const SizedBox.shrink();
-          return builder(context, s);
+          if (s == null || !s.fresh((widget.now ?? DateTime.now)(), maxAge: widget.maxAge)) {
+            _expiry?.cancel(); _expiry = null;
+            return const SizedBox.shrink();
+          }
+          _expiry ??= Timer.periodic(const Duration(minutes: 1), (_) {
+            if (mounted) setState(() {});
+          });
+          return widget.builder(context, s);
         },
       );
 }
 
 /// Компактно, для шапки чата: значок и процент.
 class ForkBatteryBadge extends StatelessWidget {
-  const ForkBatteryBadge({super.key, required this.groupId, required this.uid, required this.color});
+  const ForkBatteryBadge({super.key, required this.groupId, required this.uid, required this.color, this.states, this.now});
 
   final String groupId;
   final String uid;
   final Color color;
+  final Stream<ForkBatteryState?> Function()? states;
+  final DateTime Function()? now;
 
   @override
   Widget build(BuildContext context) => ForkBatteryWatch(
         groupId: groupId,
         uid: uid,
+        maxAge: const Duration(hours: 1),
+        states: states, now: now,
         builder: (context, s) {
           final c = s.low ? Theme.of(context).colorScheme.error : color;
-          return Semantics(
-            label: ruEn('Заряд телефона ${s.level}%', 'Phone battery ${s.level}%'),
+          final note = forkBatteryNote(s, (now ?? DateTime.now)());
+          return Tooltip(message: note, child: Semantics(
+            label: '${ruEn('Заряд телефона ${s.level}%', 'Phone battery ${s.level}%')} · $note',
             child: Padding(
               padding: const EdgeInsets.only(left: 6),
               child: Row(
@@ -91,7 +119,7 @@ class ForkBatteryBadge extends StatelessWidget {
                 ],
               ),
             ),
-          );
+          ));
         },
       );
 }

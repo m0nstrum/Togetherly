@@ -1,3 +1,4 @@
+import '../dict_strings.dart' show ruEn; // fork: accessible action labels
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -277,6 +278,7 @@ class _MemoryMovieFormScreenState extends State<MemoryMovieFormScreen> {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        tooltip: ruEn('Закрыть', 'Close'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded, size: 22),
         style: IconButton.styleFrom(foregroundColor: widget.theme.textSecondary),
@@ -520,6 +522,7 @@ class _MemoryMovieFormScreenState extends State<MemoryMovieFormScreen> {
                     )
                   : (_searchCtrl.text.isNotEmpty
                       ? IconButton(
+                          tooltip: ruEn('Очистить поиск', 'Clear search'),
                           icon: Icon(Icons.clear_rounded,
                               color: widget.theme.textMuted, size: 18),
                           onPressed: () {
