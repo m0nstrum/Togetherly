@@ -270,8 +270,8 @@ void showRelationshipTypeSheet(
                             pair.relationshipLabel == entry['label']) return;
                         try {
                           await pair.deleteCustomRelationshipType(entry['id'] ?? '');
-                          if (ctx.mounted) setSheet(() {});
-                          onChanged();
+                        if (ctx.mounted) setSheet(() {});
+                        onChanged();
                         } catch (e) {
                           if (ctx.mounted) ForkNotice.error(ctx, e);
                         }

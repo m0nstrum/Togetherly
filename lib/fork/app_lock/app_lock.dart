@@ -56,8 +56,22 @@ class ForkAppLock extends ChangeNotifier {
     required this.platform,
     required this.read,
     required this.write,
-  });
+    Future<int> Function()? readGrace,
+    Future<void> Function(int)? writeGrace,
+    DateTime Function()? clock,
+  }) : readGrace = readGrace ?? (() async => 0),
+       writeGrace = writeGrace ?? ((_) async {}),
+       clock = clock ?? DateTime.now;
   static const prefKey = 'fork.app_lock.enabled';
+  static const gracePrefKey = 'fork.app_lock.grace_seconds';
+
+  /// Choices for "lock after": immediately, 1 min, 10 min, 1 hour.
+  static const graceChoices = <Duration>[
+    Duration.zero,
+    Duration(minutes: 1),
+    Duration(minutes: 10),
+    Duration(hours: 1),
+  ];
   static final instance = ForkAppLock(
     platform: ForkNativeLock(),
     read: () async =>
@@ -70,11 +84,28 @@ class ForkAppLock extends ChangeNotifier {
         throw StateError('Lock preference could not be saved');
       }
     },
+    readGrace: () async =>
+        (await SharedPreferences.getInstance()).getInt(gracePrefKey) ?? 0,
+    writeGrace: (seconds) async {
+      if (!await (await SharedPreferences.getInstance()).setInt(
+        gracePrefKey,
+        seconds,
+      )) {
+        throw StateError('Lock preference could not be saved');
+      }
+    },
   );
 
   final ForkLockPlatform platform;
   final Future<bool> Function() read;
   final Future<void> Function(bool) write;
+  final Future<int> Function() readGrace;
+  final Future<void> Function(int) writeGrace;
+  final DateTime Function() clock;
+
+  /// How long the app may stay in the background before it locks again.
+  Duration grace = Duration.zero;
+  DateTime? _hiddenAt;
   bool ready = false;
   bool enabled = false;
   bool locked = true;
@@ -105,6 +136,10 @@ class ForkAppLock extends ChangeNotifier {
   Future<void> _load() async {
     try {
       final saved = await read();
+      final seconds = await readGrace();
+      grace = Duration(
+        seconds: graceChoices.any((d) => d.inSeconds == seconds) ? seconds : 0,
+      );
       if (saved) await platform.protect(true);
       enabled = saved;
       locked = saved;
@@ -127,14 +162,46 @@ class ForkAppLock extends ChangeNotifier {
   void background() {
     if (enabled) {
       covered = true;
-      locked = true;
+      // The first hide counts: paused/hidden/detached arrive in a row.
+      _hiddenAt ??= clock();
+      if (grace == Duration.zero) locked = true;
       notifyListeners();
     }
   }
 
   void resumed() {
+    final hiddenAt = _hiddenAt;
+    _hiddenAt = null;
+    // A clock moved backwards is treated as an expired grace.
+    if (enabled && hiddenAt != null) {
+      final away = clock().difference(hiddenAt);
+      if (away.isNegative || away >= grace) locked = true;
+    }
     covered = false;
     notifyListeners();
+  }
+
+  /// Changing the grace period needs the same check as turning the lock off.
+  Future<bool> setGrace(Duration value, String reason) async {
+    if (!ready || busy || value == grace) return false;
+    if (!graceChoices.contains(value)) return false;
+    busy = true;
+    problem = null;
+    notifyListeners();
+    try {
+      if (enabled && value > grace && !await _authenticate(reason)) {
+        return false;
+      }
+      await writeGrace(value.inSeconds);
+      grace = value;
+      return true;
+    } catch (_) {
+      problem = ForkLockProblem.unavailable;
+      return false;
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
   }
 
   Future<bool> _authenticate(String reason) async {
@@ -153,6 +220,8 @@ class ForkAppLock extends ChangeNotifier {
     try {
       if (!await _authenticate(reason)) return false;
       locked = false;
+      // The system prompt itself may have sent the app to the background.
+      _hiddenAt = null;
       return true;
     } catch (_) {
       problem = ForkLockProblem.unavailable;

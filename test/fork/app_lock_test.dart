@@ -102,6 +102,65 @@ void main() {
     },
   );
 
+  test('grace period keeps short trips unlocked and is persisted', () async {
+    var now = DateTime.utc(2026, 10, 24, 12);
+    var stored = 0;
+    final graced = ForkAppLock(
+      platform: device,
+      read: () async => saved,
+      write: (value) async {
+        saved = value;
+      },
+      readGrace: () async => stored,
+      writeGrace: (value) async {
+        stored = value;
+      },
+      clock: () => now,
+    );
+    addTearDown(graced.dispose);
+    await graced.load();
+    await graced.setEnabled(true, 'enable');
+    expect(await graced.setGrace(const Duration(minutes: 7), 'x'), isFalse);
+    final prompts = device.prompts;
+    expect(await graced.setGrace(const Duration(minutes: 10), 'x'), isTrue);
+    expect(device.prompts, prompts + 1, reason: 'longer grace asks first');
+    expect(stored, 600);
+
+    graced.background();
+    expect(graced.blocked, isTrue, reason: 'recents preview stays covered');
+    now = now.add(const Duration(minutes: 9));
+    graced.resumed();
+    expect(graced.blocked, isFalse);
+
+    graced.background();
+    now = now.add(const Duration(minutes: 10));
+    graced.resumed();
+    expect(graced.blocked, isTrue);
+    await graced.unlock('unlock');
+
+    graced.background();
+    now = now.subtract(const Duration(minutes: 1));
+    graced.resumed();
+    expect(graced.blocked, isTrue, reason: 'clock moved back');
+    await graced.unlock('unlock');
+
+    expect(await graced.setGrace(Duration.zero, 'x'), isTrue);
+    graced.background();
+    graced.resumed();
+    expect(graced.blocked, isTrue);
+
+    stored = 12345;
+    final reloaded = ForkAppLock(
+      platform: device,
+      read: () async => true,
+      write: (_) async {},
+      readGrace: () async => stored,
+    );
+    addTearDown(reloaded.dispose);
+    await reloaded.load();
+    expect(reloaded.grace, Duration.zero, reason: 'unknown value → strictest');
+  });
+
   test(
     'disabling requires authentication and releases only after persistence',
     () async {

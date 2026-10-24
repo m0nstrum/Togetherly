@@ -468,7 +468,10 @@ class _NavBarItemState extends State<NavBarItem>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: Motion.medium4);
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: Motion.medium4,
+    );
     _scale = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween(
@@ -507,6 +510,7 @@ class _NavBarItemState extends State<NavBarItem>
 
   @override
   Widget build(BuildContext context) {
+    // fork (UI_AUDIT): имя пункта для TalkBack и подсказка по долгому нажатию.
     return Semantics(
       label: widget.label,
       selected: widget.isActive,
@@ -514,99 +518,98 @@ class _NavBarItemState extends State<NavBarItem>
       onTap: _handleTap,
       excludeSemantics: true,
       child: Tooltip(
-        message: widget.label,
-        excludeFromSemantics: true,
-        child: GestureDetector(
-          onTap: _handleTap,
-          behavior: HitTestBehavior.opaque,
-          child: ScaleTransition(
-            scale: _scale,
-            child: AnimatedContainer(
-              duration: Motion.medium1,
-              curve: Curves.easeOutCubic,
-              constraints: const BoxConstraints(minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
-              decoration: BoxDecoration(
-                color: widget.isActive ? widget.activeBg : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
+      message: widget.label,
+      excludeFromSemantics: true,
+      child: GestureDetector(
+      onTap: _handleTap,
+      behavior: HitTestBehavior.opaque,
+      child: ScaleTransition(
+        scale: _scale,
+        child: AnimatedContainer(
+          duration: Motion.medium1,
+          curve: Curves.easeOutCubic,
+          // fork (UI_AUDIT): палец не промахивается, подпись активного влезает.
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+          decoration: BoxDecoration(
+            color: widget.isActive ? widget.activeBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: Motion.medium1,
-                        transitionBuilder: (child, anim) => ScaleTransition(
-                          scale: CurvedAnimation(
-                            parent: anim,
-                            curve: Curves.easeOutBack,
-                          ),
-                          child: FadeTransition(opacity: anim, child: child),
-                        ),
-                        child: widget.svgIcon != null
-                            ? _SvgIconBuilder(
-                                svgString: widget.svgIcon!,
-                                size: widget.isActive ? 28 : 24,
-                                color: widget.isActive
-                                    ? widget.activeColor
-                                    : widget.inactiveColor,
-                              )
-                            : Icon(
-                                widget.icon,
-                                key: ValueKey(
-                                  '${widget.index}_${widget.isActive}',
-                                ),
-                                color: widget.isActive
-                                    ? widget.activeColor
-                                    : widget.inactiveColor,
-                                size: widget.isActive ? 28 : 24,
-                              ),
+                  AnimatedSwitcher(
+                    duration: Motion.medium1,
+                    transitionBuilder: (child, anim) => ScaleTransition(
+                      scale: CurvedAnimation(
+                        parent: anim,
+                        curve: Curves.easeOutBack,
                       ),
-                      const SizedBox(height: 3),
-                      AnimatedDefaultTextStyle(
-                        duration: Motion.medium1,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: widget.isActive
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: widget.isActive
-                              ? widget.activeColor
-                              : widget.inactiveColor,
-                        ),
-                        child: widget.isActive
-                            ? Text(
-                                widget.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                  if (widget.showBadge)
-                    Positioned(
-                      top: -2,
-                      right: -4,
-                      child: Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(
-                          color: widget.badgeColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                      ),
+                      child: FadeTransition(opacity: anim, child: child),
                     ),
+                    child: widget.svgIcon != null
+                        ? _SvgIconBuilder(
+                            svgString: widget.svgIcon!,
+                            size: widget.isActive ? 28 : 24,
+                             color: widget.isActive
+                                ? widget.activeColor
+                                : widget.inactiveColor,
+                          )
+                        : Icon(
+                            widget.icon,
+                            key: ValueKey('${widget.index}_${widget.isActive}'),
+                            color: widget.isActive
+                                ? widget.activeColor
+                                : widget.inactiveColor,
+                            size: widget.isActive ? 28 : 24,
+                          ),
+                  ),
+                  const SizedBox(height: 3),
+                  AnimatedDefaultTextStyle(
+                    duration: Motion.medium1,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: widget.isActive
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: widget.isActive
+                          ? widget.activeColor
+                          : widget.inactiveColor,
+                    ),
+                    child: widget.isActive // fork: подпись активного пункта
+                        ? Text(
+                            widget.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                 ],
               ),
-            ),
+              if (widget.showBadge)
+                Positioned(
+                  top: -2,
+                  right: -4,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: widget.badgeColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
+      ), // fork: GestureDetector
+      ), // fork: Tooltip
     );
   }
 }

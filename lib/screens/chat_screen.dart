@@ -2438,7 +2438,7 @@ class _ChatScreenState extends State<ChatScreen> {
               final online = presSnap.data == true;
               return ForkChatIdentityLayout(
                 dot: Container(width: 8, height: 8, decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                      shape: BoxShape.circle,
                   color: online ? cs.primary : cs.onPrimaryContainer.withValues(alpha: .35))),
                 name: UnfoldShared(
                       tag: 'name',

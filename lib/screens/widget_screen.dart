@@ -1170,10 +1170,10 @@ class _WidgetScreenState extends State<WidgetScreen>
       }
 
       await _pinConfirmation.request(ForkIdentity.widgetClass(className), () async {
-        await HomeWidget.requestPinWidget(
+      await HomeWidget.requestPinWidget(
           name: className, androidName: className,
           qualifiedAndroidName: ForkIdentity.widgetClass(className),
-        );
+      );
       });
       if (mounted) ForkNotice.info(context,
         ruEn('Подтвердите добавление в окне системы', 'Confirm adding the widget in the system dialog'));

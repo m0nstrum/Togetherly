@@ -963,9 +963,9 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
         builder: (context, child) => ForkAppLockGate(
           child: ForkPipOrphanGuard(
             child: LaunchSplashOverlay(
-              child: ThemeScope(
-                theme: _userData.theme,
-                child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
+          child: ThemeScope(
+            theme: _userData.theme,
+            child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
               ),
             ),
           ),

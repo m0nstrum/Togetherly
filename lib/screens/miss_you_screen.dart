@@ -1250,15 +1250,15 @@ class _VibeChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: accent ? ink : scheme.primary),
-              const SizedBox(width: 7),
+            child: Row(
+              children: [
+                Icon(icon, size: 18, color: accent ? ink : scheme.primary),
+                const SizedBox(width: 7),
               Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontFamily: ProfileTheme.bodyFont, fontSize: 13.5,
                   fontWeight: FontWeight.w600, color: ink))),
-              if (mine > 0 || partner > 0) ...[
-                const SizedBox(width: 8),
+                if (mine > 0 || partner > 0) ...[
+                  const SizedBox(width: 8),
                 _VibeTally(mine: mine, partner: partner, ink: ink,
                   muted: accent ? ink.withValues(alpha: .62) : scheme.onSurfaceVariant),
               ],

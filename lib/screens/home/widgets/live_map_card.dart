@@ -298,7 +298,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
               tooltip: _collapsed ? ruEn('Показать карту', 'Show map') : ruEn('Свернуть карту', 'Collapse map'),
               onPressed: _toggleCollapsed,
               icon: AnimatedRotation(turns: _collapsed ? .5 : 0,
-                duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 250),
                 child: Icon(Icons.keyboard_arrow_up_rounded, color: cs.onSurfaceVariant, size: 24)),
             ),
           ],

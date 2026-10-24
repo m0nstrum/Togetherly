@@ -11,6 +11,13 @@ import 'app_lock.dart';
 bool get _supported =>
     !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 String get _reason => ruEn('Разблокировать Tethered', 'Unlock Tethered');
+String graceLabel(Duration value) => switch (value.inMinutes) {
+  0 => ruEn('Сразу', 'Immediately'),
+  1 => ruEn('Через 1 минуту', 'After 1 minute'),
+  10 => ruEn('Через 10 минут', 'After 10 minutes'),
+  _ => ruEn('Через 1 час', 'After 1 hour'),
+};
+
 String _problem(ForkLockProblem value) => switch (value) {
   ForkLockProblem.deviceNotSecured => ruEn(
     'Сначала задайте PIN или пароль в настройках защиты телефона.',
@@ -152,6 +159,28 @@ class _ForkAppLockSettingsState extends State<ForkAppLockSettings> {
     if (_supported || widget.controller != null) unawaited(lock.load());
   }
 
+  Future<void> _pickGrace(BuildContext context) async {
+    final picked = await showModalBottomSheet<Duration>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final choice in ForkAppLock.graceChoices)
+              ListTile(
+                title: Text(graceLabel(choice)),
+                trailing: choice == lock.grace
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.of(context).pop(choice),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) await lock.setGrace(picked, _reason);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_supported && widget.controller == null) {
@@ -179,6 +208,13 @@ class _ForkAppLockSettingsState extends State<ForkAppLockSettings> {
                 ? () => lock.setEnabled(!lock.enabled, _reason)
                 : null,
           ),
+          if (lock.enabled)
+            SettingsRow(
+              icon: Icons.timer_outlined,
+              title: ruEn('Блокировать после фона', 'Lock after background'),
+              subtitle: graceLabel(lock.grace),
+              onTap: lock.ready && !lock.busy ? () => _pickGrace(context) : null,
+            ),
           if (lock.problem != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

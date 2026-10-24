@@ -109,7 +109,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           Positioned.fill(child: _Blobs(scheme: cs, still: still)),
           SafeArea(
             child: LayoutBuilder(builder: (context, box) => SingleChildScrollView(
-              child: Column(
+            child: Column(
               children: [
                 SizedBox(
                   height: 48,
@@ -192,7 +192,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-              ),
+            ),
             )),
           ),
         ],

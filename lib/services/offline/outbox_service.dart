@@ -545,12 +545,12 @@ class OutboxService {
     if (db == null) return;
     await db.transaction((txn) async {
       final items = await _poison.find(txn);
-      for (final s in items) {
+    for (final s in items) {
         await _store.add(txn, {
           'type': s.value['type'], 'payload': s.value['payload'], 'attempts': 0,
-        });
+      });
         await _poison.record(s.key).delete(txn);
-      }
+    }
     });
     await _updatePending();
     unawaited(flush());

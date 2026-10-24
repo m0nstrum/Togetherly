@@ -298,7 +298,7 @@ class WatchVoiceService extends ChangeNotifier {
     if (_stage == VoiceStage.idle && !active) return;
     _micOn = !_micOn;
     for (final track in _local?.getAudioTracks() ?? const <MediaStreamTrack>[]) {
-      track.enabled = _micOn;
+    track.enabled = _micOn;
     }
     notifyListeners();
   }
