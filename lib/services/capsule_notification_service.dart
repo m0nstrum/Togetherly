@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../fork/push/notif_tap.dart'; // fork: общий колбэк нажатий
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -62,6 +63,7 @@ class CapsuleNotificationService {
 
   Future<void> init() async {
     if (_initialized) return;
+    ForkNotifTap.other = _remember; // fork: общий колбэк нажатий
     tz.initializeTimeZones();
     const androidSettings =
         AndroidInitializationSettings('@drawable/ic_notification');
@@ -71,9 +73,7 @@ class CapsuleNotificationService {
         android: androidSettings,
         iOS: iosSettings,
       ),
-      onDidReceiveNotificationResponse: (response) {
-        _remember(response.payload);
-      },
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse, // fork
     );
     // Приложение могли поднять самим нажатием — забираем payload и оттуда.
     final launch = await _plugin.getNotificationAppLaunchDetails();

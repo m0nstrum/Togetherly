@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../fork/push/notif_tap.dart'; // fork: общий колбэк нажатий
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../utils/notification_permission.dart';
@@ -51,7 +52,7 @@ class CelebrationNotificationService {
       android: androidSettings,
       iOS: iosSettings,
     );
-    await _plugin.initialize(settings: settings);
+    await _plugin.initialize(settings: settings, onDidReceiveNotificationResponse: ForkNotifTap.onResponse); // fork
 
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();

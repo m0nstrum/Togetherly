@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../fork/push/notif_tap.dart'; // fork: общий колбэк нажатий
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -33,7 +34,7 @@ class MoodNotificationService {
         '@drawable/ic_notification',
       );
       const initSettings = InitializationSettings(android: androidSettings);
-      await _plugin.initialize(settings: initSettings);
+      await _plugin.initialize(settings: initSettings, onDidReceiveNotificationResponse: ForkNotifTap.onResponse); // fork
 
       final androidPlugin = _plugin
           .resolvePlatformSpecificImplementation<

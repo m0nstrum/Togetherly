@@ -29,8 +29,24 @@ abstract final class ForkNotifTap {
     return uri;
   }
 
+  /// Нажатие на чужое уведомление (не `loveapp://`): капсула времени
+  /// ждёт свой id воспоминания.
+  static void Function(String? payload)? other;
+
   /// Колбэк плагина: человек нажал на уведомление открытого приложения.
-  static void onResponse(NotificationResponse r) => open(r.payload);
+  ///
+  /// Плагин — синглтон, и колбэк хранится один: его ставит последний вызов
+  /// `initialize`. Сервисы уведомлений апстрима инициализируют плагин каждый
+  /// сам, без колбэка, — и затирали этот. Тап по «зовут в комнату» или
+  /// «порисовать» тогда никуда не вёл. Поэтому все `initialize` передают
+  /// именно этот колбэк, а он раздаёт нажатия.
+  static void onResponse(NotificationResponse r) {
+    if (parse(r.payload) != null) {
+      open(r.payload);
+    } else {
+      other?.call(r.payload);
+    }
+  }
 
   static void open(String? payload) {
     final uri = parse(payload);
