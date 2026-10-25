@@ -20,10 +20,15 @@
         break;
       case 'reels-state':
         if (!person(data.to) || (data.cur != null && !current(data.cur))) return null;
+        if (data.rate != null && data.rate !== 1 && data.rate !== 2) return null;
         // fall through
       case 'reels-queue':
         if (!Array.isArray(data.ids)) return null;
         data = {...data, ids: data.ids.filter(clip).slice(0, 100)};
+        break;
+      case 'reels-rate':
+        // fork (D1): скорость TikTok у обоих — только 1 или 2.
+        if (data.rate !== 1 && data.rate !== 2) return null;
         break;
       case 'reels-saved':
       case 'reels-pause':

@@ -49,7 +49,7 @@
   const T = RU ? {
     mine: 'Твоя лента', theirs: (n) => 'Лента · ' + n, partner: 'партнёр',
     refresh: 'Обновить рекомендации', refreshing: 'Подбираем свежие ролики…',
-    invite: 'Позвать', inviteLabel: 'Позвать партнёра в ленту', invited: 'Позвали — придёт уведомление', inviteSoon: 'Уже позвали — подождите минуту', inviteFail: 'Не получилось позвать', speed: 'Скорость ×2', speedOn: 'Скорость ×2', speedOff: 'Обычная скорость',
+    invite: 'Позвать', inviteLabel: 'Позвать партнёра в ленту', invited: 'Позвали — придёт уведомление', inviteSoon: 'Уже позвали — подождите минуту', inviteFail: 'Не получилось позвать', speed: 'Скорость ×2', speedOn: 'Скорость ×2 у обоих', speedOff: 'Обычная скорость у обоих', speedPartnerOn: (n) => n + ' включил(а) ×2', speedPartnerOff: (n) => n + ' вернул(а) обычную скорость',
     call: 'Позвонить', callShort: 'Звонок', react: 'Реакция', chat: 'Чат', share: 'Отправить ролик', prev: 'Прошлый ролик', back: 'Назад',
     mic: 'Микрофон', hang: 'Положить трубку', ringing: 'Звоним…', failed: 'Не вышло',
     write: () => 'Твоя реплика…', send: 'Отправить',
@@ -69,7 +69,7 @@
   } : {
     mine: 'Your feed', theirs: (n) => 'Feed · ' + n, partner: 'partner',
     refresh: 'Refresh recommendations', refreshing: 'Picking fresh clips…',
-    invite: 'Invite', inviteLabel: 'Invite your partner to the feed', invited: 'Invited — they’ll get a notification', inviteSoon: 'Already invited — wait a minute', inviteFail: 'Couldn’t invite', speed: 'Speed ×2', speedOn: 'Speed ×2', speedOff: 'Normal speed',
+    invite: 'Invite', inviteLabel: 'Invite your partner to the feed', invited: 'Invited — they’ll get a notification', inviteSoon: 'Already invited — wait a minute', inviteFail: 'Couldn’t invite', speed: 'Speed ×2', speedOn: 'Speed ×2 for both', speedOff: 'Normal speed for both', speedPartnerOn: (n) => n + ' switched to ×2', speedPartnerOff: (n) => n + ' switched back to normal speed',
     call: 'Call', callShort: 'Call', react: 'React', chat: 'Chat', share: 'Send clip', prev: 'Previous clip', back: 'Back',
     mic: 'Microphone', hang: 'Hang up', ringing: 'Calling…', failed: 'Failed',
     write: () => 'Your line…', send: 'Send',
@@ -1300,12 +1300,17 @@
     el.speed.setAttribute('aria-pressed', S.rate === 2 ? 'true' : 'false');
   }
 
-  /** fork (D1): скорость ×2 у роликов TikTok — своя, партнёру не передаётся. */
+  /** fork (D1): скорость ×2 у роликов TikTok — у обоих сразу. */
   function toggleSpeed() {
-    S.rate = S.rate === 2 ? 1 : 2;
+    setRate(S.rate === 2 ? 1 : 2);
+    send('reels-rate', { rate: S.rate });
+    toast(S.rate === 2 ? T.speedOn : T.speedOff, '', '');
+  }
+
+  function setRate(rate) {
+    S.rate = rate === 2 ? 2 : 1;
     [cards.cur, cards.next, cards.prev].forEach((c) => { if (c && c.api && c.api.rate) c.api.rate(S.rate); });
     paintTurn();
-    toast(S.rate === 2 ? T.speedOn : T.speedOff, '', '');
   }
 
   /** fork (D2): «Позвать партнёра» — пуш ещё раз, не чаще раза в минуту. */
@@ -1637,7 +1642,7 @@
         if (S.cur) {
           // Пришёл второй, а лента уже идёт: ведёт тот, кто листал.
           if (!S.lead) S.lead = S.me;
-          send('reels-state', { to: data.from, cur: S.cur, name: S.name, ids: S.mine.slice(0, 4), lead: S.lead });
+          send('reels-state', { to: data.from, cur: S.cur, name: S.name, ids: S.mine.slice(0, 4), lead: S.lead, rate: S.rate });
         } else announce();
         if (log.length) send('state', { to: data.from, url: '', file: null, playing: false, log: log.slice(-LOG_LIMIT) });
         return;
@@ -1654,11 +1659,20 @@
         if (data.to !== S.me) return true;
         notePartner(data);
         if (data.lead) S.lead = data.lead;
+        if (data.rate) setRate(data.rate); // fork (D1): скорость пары
         paintLead();
         if (Array.isArray(data.ids)) S.theirs = data.ids.filter((x) => !S.seen.has(x));
         if (data.cur && data.cur.id && (!S.cur || S.cur.id !== data.cur.id)) {
           if (S.cur) S.back.push(S.cur);
           show({ id: data.cur.id, owner: data.cur.owner, by: data.cur.by });
+        }
+        return true;
+      case 'reels-rate':
+        // fork (D1): партнёр переключил скорость — у нас так же.
+        notePartner(data);
+        if (data.rate !== S.rate) {
+          setRate(data.rate);
+          toast(data.rate === 2 ? T.speedPartnerOn(S.partnerName || T.partner) : T.speedPartnerOff(S.partnerName || T.partner), '', '');
         }
         return true;
       case 'reels-queue':
@@ -1673,6 +1687,7 @@
       case 'reels-reel':
         notePartner(data);
         if (data.lead) S.lead = data.lead;
+        if (data.rate) setRate(data.rate); // fork (D1): скорость пары
         paintLead();
         // Тот же ролик (напоминание листающего) — ничего не перезапускаем.
         if (S.cur && S.cur.id === data.id) return true;
