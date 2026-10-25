@@ -349,7 +349,7 @@ class E2EService implements E2EKeyring {
     if (offer == null) return;
     try {
       await backend.deleteLink(offer.qr.linkId);
-    } catch (_) {}
+    } catch (_) {} // тихо: запись истечёт сама (e2eretention), отмена не ошибка
   }
 
   /// Старое устройство: отдать ключи устройству из [qr]. QR другого
