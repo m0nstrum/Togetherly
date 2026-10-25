@@ -229,4 +229,37 @@ void main() {
       tester.view.resetDevicePixelRatio();
     }
   });
+
+  testWidgets('D5: совпадение — карточкой с реакцией и «В воспоминания»', (
+    tester,
+  ) async {
+    final saved = <String>[];
+    final items = [
+      ForkReelMatch.fromRecord(
+        RecordModel.fromJson({
+          'id': 'm1',
+          'state': {'clip': 'shorts:abcdefghijk', 'reaction': '🔥', 'at': 1760000000000},
+        }),
+      ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForkReelsMatchesScreen(
+          groupId: group,
+          load: () async => items,
+          keep: ({required groupId, required key}) async {
+            saved.add('$groupId|$key');
+            return true;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('🔥'), findsOneWidget);
+    expect(find.byIcon(Icons.play_circle_fill_rounded), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.bookmark_add_outlined));
+    await tester.pumpAndSettle();
+    expect(saved, ['$group|shorts:abcdefghijk']);
+    expect(tester.takeException(), isNull);
+  });
 }
