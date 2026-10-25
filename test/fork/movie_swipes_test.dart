@@ -197,8 +197,15 @@ void main() {
         await tester.scrollUntilVisible(
           add,
           100,
-          scrollable: find.byType(Scrollable).last,
+          // Список поиска, а не внутренний скролл поля ввода.
+          scrollable: find
+              .descendant(
+                of: find.byKey(const ValueKey('movies-search-list')),
+                matching: find.byType(Scrollable),
+              )
+              .first,
         );
+        await tester.pump(); // прокрутка применяется со следующим кадром
         await tester.tap(add);
         await tester.pumpAndSettle();
         expect(repository.rows, hasLength(1));
