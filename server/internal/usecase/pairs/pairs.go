@@ -42,7 +42,7 @@ type AcceptInput struct {
 	MyAvatar    string `json:"my_avatar"`
 }
 
-// AcceptResult — ответ hotpath, который invite.pb.js отдаёт клиенту как есть.
+// AcceptResult — ответ hotpath, который handler.InviteAccept отдаёт клиенту как есть.
 type AcceptResult struct {
 	Success  bool   `json:"success"`
 	Message  string `json:"message"`
