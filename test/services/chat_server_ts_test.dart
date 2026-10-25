@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// Сторож порядка сообщений в чате.
 ///
 /// Порядок держится на `ts`, а ставит его телефон отправителя. Когда часы врут
-/// больше чем на две минуты, сервер записывает своё время (`время_сообщения` в
-/// hotpath.py) — и на этом расхождение начинается: у отправителя в кэше остаётся
+/// больше чем на две минуты, сервер записывает своё время (`chat.MessageTime`,
+/// server/internal/domain/chat) — и на этом расхождение начинается: у отправителя в кэше остаётся
 /// его собственное, кривое. Ответ сервера код выбрасывал (upsert отдавал только
 /// «получилось/нет»), а живую дельту про свою же запись поток отбрасывает, пока
 /// она числится в очереди. Пока человек не перезапустит приложение, сообщения
@@ -18,11 +18,11 @@ void main() {
   String read(String path) => File(path).readAsStringSync();
 
   final data = read('lib/services/pb_data_service.dart');
-  final hotpath = read('pocketbase/hotpath/hotpath.py');
+  final guard = read('server/internal/infrastructure/pocketbase/guards.go');
 
   test('сервер по-прежнему вправе переписать время сообщения', () {
     expect(
-      hotpath.contains('body["ts"] = время_сообщения('),
+      guard.contains('e.Record.Set("ts", chat.MessageTime('),
       isTrue,
       reason: 'Если правило убрали, сторож ниже сторожит пустоту',
     );

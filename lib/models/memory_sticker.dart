@@ -10,10 +10,9 @@ import '../fork/config/endpoints.dart';
 /// наполовину.
 ///
 /// Лежит в json-поле `data` записи (`data.stickers`, карта id → наклейка),
-/// а пишет её сервер отдельной операцией (`sticker_put` / `sticker_del` в
-/// hotpath): так двое в паре клеят одновременно и не затирают друг друга, а
-/// обычная правка записи наклейки не трогает. Правила ниже повторены на
-/// сервере (`наклейка_из_тела` в `pocketbase/hotpath/hotpath.py`).
+/// а пишет её операция наклейки (`sticker_put` / `sticker_del`). У апстрима
+/// её применял сервер; в форке `data` под шифром, и операцию в правку `data`
+/// превращает сам телефон (`E2EHttpClient.applySticker`).
 class MemorySticker {
   const MemorySticker({
     required this.id,

@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fork_schema.dart';
+
 /// Поле, которого нет в одном из мест связки, теряется МОЛЧА — PocketBase
 /// отвечает на неизвестное поле успехом, просто выбрасывая его.
 /// В этом проекте так уже терялись ссылки желаний, заметка виджета и обложка
@@ -18,16 +20,9 @@ void main() {
   ];
 
   test('поля фигурки объявлены в схеме коллекции', () {
-    final raw = File('pocketbase/collections_schema.json').readAsStringSync();
-    final decoded = jsonDecode(raw);
-    final list = decoded is List
-        ? decoded
-        : (decoded['collections'] as List? ?? const []);
-    final chat = list.firstWhere((c) => c['name'] == 'chat_messages');
-    final fields = (chat['fields'] ?? chat['schema']) as List;
-    final names = fields.map((f) => f['name']).toSet();
+    final names = forkFields('chat_messages');
     for (final f in noteFields) {
-      expect(names, contains(f), reason: 'нет в collections_schema.json: $f');
+      expect(names, contains(f), reason: 'нет в схеме сервера: $f');
     }
   });
 
