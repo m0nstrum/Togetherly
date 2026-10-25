@@ -20,7 +20,7 @@ import (
 //	POST /api/group/patch-map       {groupId, field, value}
 //	POST /api/group/increment       {groupId, field, by}
 //	POST /api/group/leave           {groupId}
-//	POST /api/group/record-activity {groupId, today}
+//	POST /api/group/record-activity {groupId, today, restore?}
 //	POST /api/group/miss-you        {groupId, vibe, text, count, weekday}
 //
 // `uid` в теле, если прислан, обязан совпасть с вошедшим. Ответы — как у
@@ -104,7 +104,20 @@ func Group(r *router.Router[*core.RequestEvent], svc *groupops.Service, log *slo
 	})
 
 	route("/api/group/record-activity", func(q req) error {
-		a, err := svc.RecordActivity(q.gid, q.uid, strings.TrimSpace(cast.ToString(q.body["today"])))
+		today := strings.TrimSpace(cast.ToString(q.body["today"]))
+		// Возврат сгоревшей серии за ролик идёт этим же адресом (так у апстрима).
+		if v, _ := q.body["restore"].(bool); v {
+			r, err := svc.RestoreStreak(q.gid, q.uid, today)
+			if errors.Is(err, groupops.ErrNothingToRestore) {
+				return q.e.JSON(http.StatusConflict, map[string]any{"ok": false, "error": "nothing_to_restore"})
+			}
+			if err != nil {
+				return fail(q, "restore-streak", err)
+			}
+			return ok(q, map[string]any{"streak": r.Streak, "groupStreak": r.GroupStreak,
+				"mascot_streaks": r.MascotStreaks, "streak_days": r.GroupStreak, "streak_last_opened_date": r.LastOpened})
+		}
+		a, err := svc.RecordActivity(q.gid, q.uid, today)
 		switch {
 		case err != nil:
 			return fail(q, "record-activity", err)

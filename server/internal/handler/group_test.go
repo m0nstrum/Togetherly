@@ -188,3 +188,57 @@ func TestGroupMissYou(t *testing.T) {
 	code, _ := w.post(t, "miss-you", w.eve, `{"groupId":"`+gPair+`"}`)
 	assert.Equal(t, http.StatusForbidden, code)
 }
+
+// Продовые правила серии: соседний день (разные пояса), день — по первому,
+// остаток ожидания не считается; оборванную серию маскот помнит, и её можно
+// вернуть за ролик.
+func TestGroupStreakRules(t *testing.T) {
+	w := newGroupWorld(t)
+	g := w.group(t)
+	g.Set("active_mascot_id", "cat")
+	require.NoError(t, w.app.Save(g))
+	day := func(tok, today string) map[string]any {
+		code, res := w.post(t, "record-activity", tok, `{"groupId":"`+gPair+`","today":"`+today+`"}`)
+		require.Equal(t, http.StatusOK, code, res)
+		return res
+	}
+	// У неё уже 17-е, у него ещё 16-е — день общий и считается 16-м.
+	day(w.alice, "2026-10-17")
+	res := day(w.bob, "2026-10-16")
+	assert.EqualValues(t, 1, res["streak"])
+	assert.Equal(t, "2026-10-16", w.group(t).GetString("streak_last_opened_date"))
+	assert.Empty(t, w.group(t).GetString("streak_pending_uid"), "ожидание снято")
+	for _, d := range []string{"2026-10-17", "2026-10-18"} {
+		day(w.alice, d)
+		res = day(w.bob, d)
+	}
+	assert.EqualValues(t, 3, res["mascotStreak"])
+
+	// Остаток ожидания с датой закрытого дня не засчитывает новый.
+	g = w.group(t)
+	g.Set("streak_pending_date", "2026-10-18")
+	g.Set("streak_pending_uid", gA)
+	require.NoError(t, w.app.Save(g))
+	assert.Equal(t, true, day(w.bob, "2026-10-19")["pending"])
+
+	restore := func() (int, map[string]any) {
+		return w.post(t, "record-activity", w.alice, `{"groupId":"`+gPair+`","today":"2026-10-22","restore":true}`)
+	}
+	// Пара не заходила 19–21-го: на 22-е пропуск закрывается вчерашним днём.
+	code, res := restore()
+	require.Equal(t, http.StatusOK, code, res)
+	assert.EqualValues(t, 3, res["streak"])
+	day(w.alice, "2026-10-22")
+	res = day(w.bob, "2026-10-22")
+	assert.EqualValues(t, 4, res["mascotStreak"], "серия продолжилась")
+
+	// Обрыв после возврата пары: зачёт сбросил в единицу, ролик возвращает.
+	day(w.alice, "2026-10-25")
+	res = day(w.bob, "2026-10-25")
+	assert.EqualValues(t, 1, res["mascotStreak"])
+	code, res = w.post(t, "record-activity", w.alice, `{"groupId":"`+gPair+`","today":"2026-10-25","restore":true}`)
+	require.Equal(t, http.StatusOK, code, res)
+	assert.EqualValues(t, 5, res["streak"], "1 + прежние 4")
+	code, _ = w.post(t, "record-activity", w.alice, `{"groupId":"`+gPair+`","today":"2026-10-25","restore":true}`)
+	assert.Equal(t, http.StatusConflict, code, "второй раз за тот же обрыв нечего")
+}

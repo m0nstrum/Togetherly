@@ -20,6 +20,7 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	spfcast "github.com/spf13/cast"
 
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 )
@@ -155,11 +156,14 @@ type Activity struct {
 // RecordActivity отмечает, что uid зашёл в день today (YYYY-MM-DD, дата
 // телефона). Серия растёт, когда за день зашли оба: первый ставит отметку
 // ожидания, второй засчитывает день паре и активному маскоту.
+//
+// Правила — продовые (hotpath апстрима): соседний день тоже общий (у пары из
+// разных поясов даты не совпадают никогда); днём серии считается дата того,
+// кто отметился первым (партнёр часто заходит после полуночи); ожидание с
+// датой уже закрытого дня — остаток, а не отметка; оборванную серию маскот
+// помнит три дня, чтобы её можно было вернуть ([RestoreStreak]).
 func (s *Service) RecordActivity(groupID, uid, today string) (Activity, error) {
-	if groupID == "" || uid == "" {
-		return Activity{}, ErrBadParams
-	}
-	if _, err := time.Parse(time.DateOnly, today); err != nil || len(today) != 10 {
+	if groupID == "" || uid == "" || !isDay(today) {
 		return Activity{}, ErrBadParams
 	}
 	// Клиент отмечается на каждом заходе, а день засчитывается один раз:
@@ -173,64 +177,193 @@ func (s *Service) RecordActivity(groupID, uid, today string) (Activity, error) {
 		}
 	}
 	var out Activity
+	var mascot string
 	err := s.inGroup(groupID, uid, func(tx core.App, g *core.Record) error {
 		last := g.GetString("streak_last_opened_date")
 		if last == today {
 			out = Activity{Already: true}
 			return nil
 		}
-		pendUID, pendDate := g.GetString("streak_pending_uid"), g.GetString("streak_pending_date")
-		if pendDate == today && pendUID != "" && pendUID != uid {
-			out.Streak = 1
-			if consecutive(last, today) {
-				out.Streak = g.GetInt("streak_days") + 1
-			}
-			g.Set("streak_days", out.Streak)
-			g.Set("streak_last_opened_date", today)
-			// Своя серия у каждого маскота, по его последнему общему дню:
-			// пропуск — снова с единицы.
-			mascot := g.GetString("active_mascot_id")
-			if mascot != "" {
-				streaks := jsonMap(g, "mascot_streaks")
-				prev, _ := streaks[mascot].(map[string]any)
-				out.MascotStreak = 1
-				if d, _ := prev["d"].(string); consecutive(d, today) {
-					out.MascotStreak = int(toFloat(prev["s"])) + 1
-				}
-				streaks[mascot] = map[string]any{"s": out.MascotStreak, "d": today}
-				g.Set("mascot_streaks", streaks)
-			}
-			if err := tx.Save(g); err != nil {
-				return err
-			}
-			if mascot != "" {
-				// Рекорд — только у сохранённых маскотов; каталожных нет в базе.
-				m, err := tx.FindFirstRecordByFilter("mascots", "group_id = {:g} && mascot_id = {:m}",
-					dbx.Params{"g": groupID, "m": mascot})
-				if err == nil && m.GetInt("record_streak") < out.MascotStreak {
-					m.Set("record_streak", out.MascotStreak)
-					if err := tx.Save(m); err != nil {
-						return err
-					}
-				}
+		pendDate, pendUID := g.GetString("streak_pending_date"), g.GetString("streak_pending_uid")
+		if pendDate != "" && last != "" && pendDate <= last {
+			pendDate, pendUID = "", ""
+		}
+		if pendUID == "" || pendUID == uid || !sameDay(today, pendDate) {
+			out = Activity{Pending: true}
+			if !sameDay(today, pendDate) || pendUID == "" {
+				g.Set("streak_pending_date", today)
+				g.Set("streak_pending_uid", uid)
+				return tx.Save(g)
 			}
 			return nil
 		}
-		out = Activity{Pending: true}
-		if pendDate != today || pendUID == "" {
-			g.Set("streak_pending_date", today)
-			g.Set("streak_pending_uid", uid)
-			return tx.Save(g)
+
+		// Оба были — день засчитан датой первого.
+		start := min(today, pendDate)
+		groupBefore := g.GetInt("streak_days")
+		out.Streak = 1
+		if daysBetween(start, last) == 1 {
+			out.Streak = groupBefore + 1
 		}
-		return nil
+		g.Set("streak_days", out.Streak)
+		g.Set("streak_last_opened_date", start)
+		g.Set("streak_pending_date", "")
+		g.Set("streak_pending_uid", "")
+		mascot = g.GetString("active_mascot_id")
+		if mascot != "" {
+			streaks := jsonMap(g, "mascot_streaks")
+			prev, _ := streaks[mascot].(map[string]any)
+			was := int(toFloat(prev["s"]))
+			prevDay, _ := prev["d"].(string)
+			inRow := daysBetween(start, prevDay) == 1
+			out.MascotStreak = 1
+			entry := map[string]any{"d": start}
+			if inRow {
+				out.MascotStreak = was + 1
+				for _, k := range lostKeys {
+					if v, ok := prev[k]; ok {
+						entry[k] = v
+					}
+				}
+			} else if was >= 2 {
+				// Серия оборвалась: прежнее число помним, чтобы пара могла
+				// вернуть его за ролик.
+				lostGroup := 0
+				if out.Streak == 1 {
+					lostGroup = groupBefore
+				}
+				entry["lost"], entry["lost_d"], entry["lost_g"] = was, start, lostGroup
+			}
+			entry["s"] = out.MascotStreak
+			streaks[mascot] = entry
+			g.Set("mascot_streaks", streaks)
+		}
+		return tx.Save(g)
 	})
+	if err == nil && mascot != "" && out.MascotStreak > 0 {
+		s.raiseRecord(groupID, mascot, out.MascotStreak)
+	}
 	return out, err
 }
 
-func consecutive(prev, today string) bool {
-	a, err1 := time.Parse(time.DateOnly, today)
-	b, err2 := time.Parse(time.DateOnly, prev)
-	return err1 == nil && err2 == nil && a.Sub(b) == 24*time.Hour
+// lostKeys — память обрыва в записи маскота: сколько было, когда оборвалось,
+// сколько потеряла пара.
+var lostKeys = []string{"lost", "lost_d", "lost_g"}
+
+// restoreWindow — сколько дней после обрыва серию ещё можно вернуть.
+const restoreWindow = 3
+
+// Restored — серия после возврата и поля пары для кэша приложения.
+type Restored struct {
+	Streak, GroupStreak int
+	MascotStreaks       map[string]any
+	LastOpened          string
+}
+
+// ErrNothingToRestore — возвращать нечего или срок вышел.
+var ErrNothingToRestore = errors.New("groupops: нечего возвращать")
+
+// RestoreStreak возвращает сгоревшую серию активного маскота (ролик смотрит
+// клиент). Обрыв бывает двух видов: пара уже вернулась и зачёт сбросил серию
+// в единицу — прежнее число лежит в `lost`, его прибавляем; пара ещё не
+// вернулась — пропуск закрываем вчерашним днём, и сегодняшний общий день
+// продолжит серию.
+func (s *Service) RestoreStreak(groupID, uid, today string) (Restored, error) {
+	if groupID == "" || !isDay(today) {
+		return Restored{}, ErrBadParams
+	}
+	var out Restored
+	var mascot string
+	err := s.inGroup(groupID, uid, func(tx core.App, g *core.Record) error {
+		mascot = g.GetString("active_mascot_id")
+		streaks := jsonMap(g, "mascot_streaks")
+		entry, _ := streaks[mascot].(map[string]any)
+		if mascot == "" || entry == nil {
+			return ErrNothingToRestore
+		}
+		group, last := g.GetInt("streak_days"), g.GetString("streak_last_opened_date")
+		next := map[string]any{}
+		lost, lostDay := int(toFloat(entry["lost"])), str(entry["lost_d"])
+		was, day := int(toFloat(entry["s"])), str(entry["d"])
+		switch {
+		case lost >= 2 && lostDay != "" && between(daysBetween(today, lostDay), 0, restoreWindow):
+			for k, v := range entry {
+				if !slices.Contains(lostKeys, k) {
+					next[k] = v
+				}
+			}
+			next["s"] = was + lost
+			group += int(toFloat(entry["lost_g"]))
+		case was >= 2 && day != "" && between(daysBetween(today, day), 2, restoreWindow+1):
+			for k, v := range entry {
+				next[k] = v
+			}
+			yesterday := addDays(today, -1)
+			next["d"] = yesterday
+			if last != "" && between(daysBetween(today, last), 2, restoreWindow+1) {
+				last = yesterday
+			}
+		default:
+			return ErrNothingToRestore
+		}
+		streaks[mascot] = next
+		g.Set("mascot_streaks", streaks)
+		g.Set("streak_days", group)
+		g.Set("streak_last_opened_date", last)
+		out = Restored{Streak: int(toFloat(next["s"])), GroupStreak: group, MascotStreaks: streaks, LastOpened: last}
+		return tx.Save(g)
+	})
+	if err == nil {
+		s.raiseRecord(groupID, mascot, out.Streak)
+	}
+	return out, err
+}
+
+// raiseRecord поднимает рекорд серии маскота. Каталожных маскотов в базе нет
+// — им рекорд не пишется.
+func (s *Service) raiseRecord(groupID, mascot string, streak int) {
+	m, err := s.app.FindFirstRecordByFilter("mascots", "group_id = {:g} && mascot_id = {:m}",
+		dbx.Params{"g": groupID, "m": mascot})
+	if err != nil || m.GetInt("record_streak") >= streak {
+		return
+	}
+	m.Set("record_streak", streak)
+	if err := s.app.Save(m); err != nil {
+		s.app.Logger().Warn("рекорд серии не записан", "group", groupID, "err", err)
+	}
+}
+
+func isDay(s string) bool {
+	_, err := time.Parse(time.DateOnly, s)
+	return err == nil && len(s) == 10
+}
+
+// daysBetween — сколько дней от earlier до later; не даты — очень много.
+func daysBetween(later, earlier string) int {
+	a, err1 := time.Parse(time.DateOnly, later)
+	b, err2 := time.Parse(time.DateOnly, earlier)
+	if err1 != nil || err2 != nil {
+		return 1 << 20
+	}
+	return int(a.Sub(b).Hours() / 24)
+}
+
+// sameDay — отметка партнёра того же общего дня: та же дата или соседняя.
+func sameDay(today, pending string) bool {
+	d := daysBetween(today, pending)
+	return pending != "" && (d == 0 || d == 1 || d == -1)
+}
+
+func addDays(day string, n int) string {
+	t, _ := time.Parse(time.DateOnly, day)
+	return t.AddDate(0, 0, n).Format(time.DateOnly)
+}
+
+func between(v, lo, hi int) bool { return v >= lo && v <= hi }
+
+func str(v any) string {
+	s, _ := v.(string)
+	return s
 }
 
 func jsonMap(g *core.Record, field string) map[string]any {
@@ -242,14 +375,8 @@ func jsonMap(g *core.Record, field string) map[string]any {
 }
 
 func toFloat(v any) float64 {
-	switch x := v.(type) {
-	case float64:
-		return x
-	case string:
-		f, _ := strconv.ParseFloat(x, 64)
-		return f
-	}
-	return 0
+	f, _ := spfcast.ToFloat64E(v)
+	return f
 }
 
 // ── «Скучаю» ───────────────────────────────────────────────────────────────

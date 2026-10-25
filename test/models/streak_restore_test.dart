@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/streak_restore.dart';
 
-/// Правило то же, что на сервере (`_возврат_серии` в hotpath.py и
-/// pocketbase/hotpath/test_streak_restore.py): приложение показывает кнопку
+/// Правило то же, что на сервере (`RestoreStreak` в
+/// server/internal/usecase/groupops): приложение показывает кнопку
 /// «Вернуть серию» только там, где сервер согласится её вернуть.
 void main() {
   final now = DateTime(2026, 9, 22, 20);
