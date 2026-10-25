@@ -79,6 +79,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		}
 	})
 	bindAllFree(app)
+	handler.EmailCaseLogin(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
 	maps := meta.New(safefetch.New(safefetch.Options{MaxBytes: 8 << 20}), 64<<20, time.Now)
@@ -121,6 +122,8 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 			&handler.IPLimiter{Max: 300, Window: time.Hour}, log)
 		handler.Movies(e.Router, films, log)
 		handler.UserCard(e.Router)
+		handler.PasswordReset(e.Router, time.Now, log)
+		handler.EmailChange(e.Router, time.Now, log)
 		handler.Music(e.Router, music.New(safefetch.New(safefetch.Options{Timeout: 8 * time.Second, MaxBytes: 1 << 20})), log)
 		handler.WatchProxy(e.Router, proxyInfo)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {

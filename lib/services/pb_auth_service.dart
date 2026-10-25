@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -57,14 +56,19 @@ class PbAuthService {
     const createTimeout = Duration(seconds: 45);
     try {
       try {
-        await _pb.collection(_usersCol).create(body: {
-          'email': email,
-          'password': password,
-          'passwordConfirm': password,
-          // fork (E2E): имя — не здесь, а после входа шифром личного ключа
-          // (_ensureProfile); при создании аккаунта ключей ещё нет.
-          'emailVisibility': true,
-        }).timeout(createTimeout);
+        await _pb
+            .collection(_usersCol)
+            .create(
+              body: {
+                'email': email,
+                'password': password,
+                'passwordConfirm': password,
+                // fork (E2E): имя — не здесь, а после входа шифром личного ключа
+                // (_ensureProfile); при создании аккаунта ключей ещё нет.
+                'emailVisibility': true,
+              },
+            )
+            .timeout(createTimeout);
       } on TimeoutException {
         // Ответа не дождались, но запись могла лечь. Проверяем это входом: если
         // пускает — регистрация состоялась, и пугать человека нечем.
@@ -111,16 +115,24 @@ class PbAuthService {
       // Если пользователь уже создан (create прошёл), но authWithPassword
       // упал — выходим, чтобы не оставаться в частичном state.
       if (e.statusCode == 400 || e.statusCode == 403) {
-        try { _svc.signOut(); } catch (_) {}
+        try {
+          _svc.signOut();
+        } catch (_) {}
       }
       debugPrint('PbAuth.signUpWithEmail failed: $e');
       rethrow;
     } catch (e, st) {
       debugPrint('PbAuth.signUpWithEmail failed: $e');
       debugPrintStack(stackTrace: st);
-      unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-        s.setExtra('reason', 'signUpWithEmail failed');
-      }));
+      unawaited(
+        Sentry.captureException(
+          e,
+          stackTrace: st,
+          withScope: (s) {
+            s.setExtra('reason', 'signUpWithEmail failed');
+          },
+        ),
+      );
       rethrow;
     }
   }
@@ -140,8 +152,8 @@ class PbAuthService {
       await _ensureProfile();
       return _svc.currentUser;
     } catch (e, st) {
-      final cred = e is ClientException &&
-          (e.statusCode == 400 || e.statusCode == 403);
+      final cred =
+          e is ClientException && (e.statusCode == 400 || e.statusCode == 403);
       // Мигрированный из Firebase юзер: scrypt-хеш в PB не переносится, поэтому
       // первый вход паролем падает (cred-ошибка). «Мост» просит сервер проверить
       // пароль в Firebase Auth и, если верный, перенести его в PB → повторяем
@@ -158,9 +170,15 @@ class PbAuthService {
       // Неверный пароль/почта (400/403) — пользовательская ошибка, не баг:
       // не шумим в Bugsink. Остальное (5xx, сеть, неожиданное) — репортим.
       if (!cred) {
-        unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-          s.setExtra('reason', 'signInWithEmail failed');
-        }));
+        unawaited(
+          Sentry.captureException(
+            e,
+            stackTrace: st,
+            withScope: (s) {
+              s.setExtra('reason', 'signInWithEmail failed');
+            },
+          ),
+        );
       }
       rethrow;
     }
@@ -173,11 +191,13 @@ class PbAuthService {
   /// Никаких писем/сброса. Сервер — migrate_bridge.pb.js апстрима (в форке нет).
   Future<bool> _tryFirebaseBridge(String email, String password) async {
     try {
-      final res = await _pb.send(
-        '/api/migrate/verify-password',
-        method: 'POST',
-        body: {'email': email, 'password': password},
-      ).timeout(const Duration(seconds: 15));
+      final res = await _pb
+          .send(
+            '/api/migrate/verify-password',
+            method: 'POST',
+            body: {'email': email, 'password': password},
+          )
+          .timeout(const Duration(seconds: 15));
       return res is Map && res['ok'] == true;
     } catch (e) {
       debugPrint('PbAuth._tryFirebaseBridge failed: $e');
@@ -200,18 +220,23 @@ class PbAuthService {
     if (uid.isEmpty || email.isEmpty) {
       throw StateError('нет сессии для смены пароля');
     }
-    await _pb.collection(_usersCol).update(uid, body: {
-      'oldPassword': current,
-      'password': fresh,
-      'passwordConfirm': fresh,
-    });
+    await _pb
+        .collection(_usersCol)
+        .update(
+          uid,
+          body: {
+            'oldPassword': current,
+            'password': fresh,
+            'passwordConfirm': fresh,
+          },
+        );
     await _pb.collection(_usersCol).authWithPassword(email, fresh);
   }
 
   /// Письмо для сброса пароля.
   ///
-  /// Идёт через свой маршрут `/api/auth/password-reset` (хук
-  /// `email_case.pb.js`): штатный `request-password-reset` ищет почту с
+  /// Идёт через свой маршрут `/api/auth/password-reset`
+  /// (server/internal/handler/email.go): штатный `request-password-reset` ищет почту с
   /// точностью до буквы, и «Anna@gmail.com» с заглавной от клавиатуры не
   /// находил аккаунт «anna@gmail.com» — сервер отвечал «отправлено», а письмо
   /// не уходило (18.09.2026). Штатный путь остаётся запасным на случай сервера
@@ -243,11 +268,14 @@ class PbAuthService {
     if (rec == null) return null;
     final d = rec.data;
     String s(dynamic v) => v is String ? v : '';
-    final name =
-        s(d['display_name']).isNotEmpty ? s(d['display_name']) : s(d['name']);
+    final name = s(d['display_name']).isNotEmpty
+        ? s(d['display_name'])
+        : s(d['name']);
     return {
       'displayName': name,
-      'email': s(d['email']).isNotEmpty ? s(d['email']) : (_svc.userEmail ?? ''),
+      'email': s(d['email']).isNotEmpty
+          ? s(d['email'])
+          : (_svc.userEmail ?? ''),
       'gender': d['gender'],
       'avatarUrl': s(d['avatar_url']),
       // Togetherly+ — серверный флаг: подделать на устройстве нельзя, и он
@@ -321,16 +349,23 @@ class PbAuthService {
       // до ручного перелогина. Это и есть «всё сбросилось». При транзиентном
       // сбое держим текущий токен: он всё ещё валиден, запросы продолжат его
       // слать и заработают, как только вернётся связь.
-      final isAuthError = e is ClientException &&
-          (e.statusCode == 401 || e.statusCode == 403);
-      debugPrint(
-          'PbAuth.authRefresh failed (authError=$isAuthError): $e');
+      final isAuthError =
+          e is ClientException && (e.statusCode == 401 || e.statusCode == 403);
+      debugPrint('PbAuth.authRefresh failed (authError=$isAuthError): $e');
       if (isAuthError) {
-        unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-          s.setExtra('reason', 'authRefresh 401/403 → sign-out');
-          s.level = SentryLevel.warning;
-        }));
-        unawaited(ForkSessionEnd.revoked()); // fork (UX A13): экран входа объяснит
+        unawaited(
+          Sentry.captureException(
+            e,
+            stackTrace: st,
+            withScope: (s) {
+              s.setExtra('reason', 'authRefresh 401/403 → sign-out');
+              s.level = SentryLevel.warning;
+            },
+          ),
+        );
+        unawaited(
+          ForkSessionEnd.revoked(),
+        ); // fork (UX A13): экран входа объяснит
         _svc.signOut();
         return null;
       }
@@ -380,7 +415,9 @@ class PbAuthService {
     }
     if (patch.isEmpty) return;
     try {
-      final updated = await _pb.collection(_usersCol).update(rec.id, body: patch);
+      final updated = await _pb
+          .collection(_usersCol)
+          .update(rec.id, body: patch);
       // AUTH-8: update() возвращает свежую запись, но НЕ трогает authStore.record,
       // поэтому _svc.currentUser/currentProfile() продолжали отдавать старые
       // имя/аватар до следующего authRefresh. Кладём обновлённую запись в стор с
@@ -391,7 +428,9 @@ class PbAuthService {
       // best-effort обогащение, и сбой патча (напр. сетевой) не должен ронять
       // успешный вход. Профиль до-патчится при следующем входе (_ensureProfile
       // вызывается каждый раз). Ошибка видна в debug-логе.
-      debugPrint('PbAuth._ensureProfile patch failed (best-effort, ignored): $e');
+      debugPrint(
+        'PbAuth._ensureProfile patch failed (best-effort, ignored): $e',
+      );
     }
   }
 }

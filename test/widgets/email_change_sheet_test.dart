@@ -34,21 +34,36 @@ void main() {
   setUp(() => LocaleService.instance.setLanguage(AppLanguage.ru));
 
   test('ответы сервера разбираются в понятные отказы', () {
-    expect(parseEmailChange(200, {'ok': true, 'email': 'a@b.c', 'token': 'x'}).email,
-        'a@b.c');
-    expect(parseEmailChange(409, {'code': 'taken'}).error, EmailChangeError.taken);
+    expect(
+      parseEmailChange(200, {'ok': true, 'email': 'a@b.c', 'token': 'x'}).email,
+      'a@b.c',
+    );
+    expect(
+      parseEmailChange(409, {'code': 'taken'}).error,
+      EmailChangeError.taken,
+    );
     final wait = parseEmailChange(429, {'code': 'wait', 'retryIn': 42});
     expect((wait.error, wait.retryIn), (EmailChangeError.wait, 42));
     expect(parseEmailChange(500, null).error, EmailChangeError.network);
-    expect(parseEmailChange(400, {'code': 'чушь'}).error, EmailChangeError.network);
+    expect(
+      parseEmailChange(400, {'code': 'чушь'}).error,
+      EmailChangeError.network,
+    );
   });
 
   test('каждая фраза есть на семи языках', () {
     final keys = [
-      'emailChangeTitle', 'emailChangeHint', 'emailChangeNewLabel',
-      'emailChangeSend', 'emailChangeSentTo', 'emailChangeCodeLabel',
-      'emailChangeConfirm', 'emailChangeResend', 'emailChangeResendIn',
-      'emailChangeOther', 'emailChangeDone',
+      'emailChangeTitle',
+      'emailChangeHint',
+      'emailChangeNewLabel',
+      'emailChangeSend',
+      'emailChangeSentTo',
+      'emailChangeCodeLabel',
+      'emailChangeConfirm',
+      'emailChangeResend',
+      'emailChangeResendIn',
+      'emailChangeOther',
+      'emailChangeDone',
       for (final e in EmailChangeError.values) 'emailChangeErr.${e.name}',
     ];
     for (final key in keys) {
@@ -61,22 +76,28 @@ void main() {
   Future<(_FakeService, List<String?>)> open(WidgetTester tester) async {
     final fake = _FakeService();
     final results = <String?>[];
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: ElevatedButton(
-              onPressed: () async => results.add(await showEmailChangeSheet(
-                context,
-                scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B)),
-                service: fake,
-              )),
-              child: const Text('open'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () async => results.add(
+                  await showEmailChangeSheet(
+                    context,
+                    scheme: ColorScheme.fromSeed(
+                      seedColor: const Color(0xFFFF7E8B),
+                    ),
+                    service: fake,
+                  ),
+                ),
+                child: const Text('open'),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     return (fake, results);
@@ -84,18 +105,30 @@ void main() {
 
   testWidgets('адрес → код → почта сменена', (tester) async {
     final (fake, results) = await open(tester);
-    await tester.enterText(find.byKey(const Key('email-change-email')), 'new@mail.com');
+    await tester.enterText(
+      find.byKey(const Key('email-change-email')),
+      'new@mail.com',
+    );
     await tester.tap(find.byKey(const Key('email-change-main')));
     await tester.pump();
     expect(fake.requested, ['new@mail.com']);
-    expect(find.textContaining('Код отправлен на new@mail.com'), findsOneWidget);
+    expect(
+      find.textContaining('Код отправлен на new@mail.com'),
+      findsOneWidget,
+    );
     expect(find.text('Ещё раз через 60 с'), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('email-change-code')), '000000');
+    await tester.enterText(
+      find.byKey(const Key('email-change-code')),
+      '000000',
+    );
     await tester.pump();
     expect(find.text('Код не подошёл'), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('email-change-code')), '123456');
+    await tester.enterText(
+      find.byKey(const Key('email-change-code')),
+      '123456',
+    );
     await tester.pumpAndSettle();
     expect(results, ['new@mail.com']);
   });
@@ -103,7 +136,10 @@ void main() {
   testWidgets('отказ сервера показан словами, лист остаётся', (tester) async {
     final (fake, results) = await open(tester);
     fake.nextRequest = const EmailChangeResult.failed(EmailChangeError.taken);
-    await tester.enterText(find.byKey(const Key('email-change-email')), 'b@mail.com');
+    await tester.enterText(
+      find.byKey(const Key('email-change-email')),
+      'b@mail.com',
+    );
     await tester.tap(find.byKey(const Key('email-change-main')));
     await tester.pump();
     expect(find.text('Эта почта уже занята другим аккаунтом'), findsOneWidget);
@@ -111,14 +147,13 @@ void main() {
     expect(results, isEmpty);
   });
 
-  test('настройки и профиль подключены, хук закрыт входом', () {
-    final settings = File('lib/screens/settings_screen.dart').readAsStringSync();
+  test('настройки и профиль подключены', () {
+    final settings = File(
+      'lib/screens/settings_screen.dart',
+    ).readAsStringSync();
     final profile = File('lib/screens/profile_screen.dart').readAsStringSync();
-    final hook = File('server/pb_hooks/email_change.pb.js').readAsStringSync();
     expect(settings, contains("trKey('emailChangeTitle')"));
     expect(profile, contains('showEmailChangeSheet('));
     expect(profile, contains('widget.userData.setEmail(email)'));
-    expect('\$apis.requireAuth("users")'.allMatches(hook).length, 2);
-    expect(hook, contains('record.newAuthToken()'));
   });
 }
