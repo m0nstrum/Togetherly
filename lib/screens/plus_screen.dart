@@ -5,6 +5,8 @@ import '../utils/safe_launch.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../dict_strings.dart' show ruEn;
+import '../fork/flags.dart';
 import '../models/plus_gift.dart';
 import '../services/coin_store.dart';
 import '../services/locale_service.dart';
@@ -25,16 +27,73 @@ import '../widgets/plus/gift_recipient_sheet.dart';
 /// Кнопка покупки показывается только в сборках мимо Google Play: там нельзя
 /// проводить оплату цифровых товаров чужим биллингом. Уже купленный доступ
 /// работает везде — флаг живёт на аккаунте, а не в сборке.
-class PlusScreen extends StatefulWidget {
+class PlusScreen extends StatelessWidget {
   const PlusScreen({super.key, required this.scheme});
 
   final ColorScheme scheme;
 
+  // T6: в Tethered всё открыто всем — витрины с ценой нет. Входы на экран
+  // закрыты флагом; если какой-то всё же сработает, человек увидит это, а
+  // не покупку и запросы подарков к серверу.
   @override
-  State<PlusScreen> createState() => _PlusScreenState();
+  Widget build(BuildContext context) =>
+      ForkFlags.allFree ? _AllOpen(scheme: scheme) : _PlusStore(scheme: scheme);
 }
 
-class _PlusScreenState extends State<PlusScreen> {
+class _PlusStore extends StatefulWidget {
+  const _PlusStore({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  State<_PlusStore> createState() => _PlusScreenState();
+}
+
+class _AllOpen extends StatelessWidget {
+  const _AllOpen({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = scheme;
+    return Theme(
+      data: ProfileTheme.data(cs),
+      child: Scaffold(
+        backgroundColor: cs.surface,
+        appBar: AppBar(backgroundColor: cs.surface),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_open_rounded, size: 56, color: cs.primary),
+                const SizedBox(height: 16),
+                Text(
+                  ruEn('Всё уже открыто', 'Everything is already open'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  ruEn(
+                    'В Tethered нет платных функций — пользуйтесь всем.',
+                    'Tethered has no paid features — enjoy everything.',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlusScreenState extends State<_PlusStore> {
   final PlusService _plus = PlusService.instance;
   bool _busy = false;
 
