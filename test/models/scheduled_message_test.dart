@@ -44,7 +44,10 @@ void main() {
       final server = File(
         'server/internal/infrastructure/pocketbase/held.go',
       ).readAsStringSync();
-      expect(server, contains('"held = true && deliver_at <= {:now}"'));
+      expect(
+        server,
+        contains('"held = true && deleted != true && deliver_at <= {:now}"'),
+      );
       expect(server, contains('e.Record.GetInt("deliver_at")'));
     },
   );

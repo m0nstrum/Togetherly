@@ -14,6 +14,7 @@ import '../../services/pocketbase_service.dart';
 import '../../services/wish_repository.dart';
 import '../../utils/notification_permission.dart';
 import '../push/notif_tap.dart';
+import 'wish_places.dart';
 import 'wish_reminder_plan.dart';
 import 'wish_reminder_prefs.dart';
 
@@ -34,6 +35,10 @@ class WishReminders {
   bool _ready = false;
   Timer? _debounce;
   Future<void>? _running;
+
+  /// Растёт на выходе из аккаунта: пересчёт, начатый до выхода, не ставит
+  /// напоминания прежнего человека заново.
+  int _epoch = 0;
 
   Future<void> _init() async {
     if (_ready) return;
@@ -63,6 +68,26 @@ class WishReminders {
   /// Пара, для которой считали в последний раз: экран желаний пары не
   /// знает, а пересчитать после правки ему нужно.
   _PairSnapshot? _pair;
+
+  /// Пара, для которой стоят напоминания; пусто — не знаем или вышли.
+  String get groupId => _pair?.groupId ?? '';
+
+  /// Выход из аккаунта: снять все напоминания — в них названия желаний и
+  /// чьи подарки взяты, следующему человеку на телефоне их видеть незачем.
+  Future<void> reset() async {
+    _debounce?.cancel();
+    _pair = null;
+    _epoch++;
+    try {
+      await _running;
+    } catch (_) {} // тихо: сбой прежнего пересчёта не важен, ниже снимаем всё
+    try {
+      await apply(const []);
+    } catch (e) {
+      debugPrint('WishReminders: не снялись при выходе — $e');
+    }
+    WishPlaces.instance.invalidate();
+  }
 
   /// Главная сообщает пару (старт, смена пары) — и пересчитываем.
   void updatePair(PairData pair) {
@@ -96,6 +121,7 @@ class WishReminders {
   }
 
   Future<void> _syncFromStores() async {
+    final epoch = _epoch;
     try {
       final pair = _pair;
       if (pair == null) return;
@@ -125,6 +151,7 @@ class WishReminders {
         startDate: pair.startDate,
         anniversaryDate: pair.anniversaryDate,
       );
+      if (epoch != _epoch) return; // вышли, пока считали
       await apply(plan);
     } catch (e) {
       debugPrint('WishReminders: расписание не обновилось — $e');

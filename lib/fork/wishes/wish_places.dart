@@ -26,23 +26,30 @@ class WishPlaces {
 
   List<Wish> _places = const [];
   DateTime _placesAt = DateTime(0);
+  String _placesGroup = '';
   DateTime _partnerAskedAt = DateTime(0);
   bool _busy = false;
 
   /// Список желаний поменялся — места перечитать при следующей точке.
   void invalidate() => _placesAt = DateTime(0);
 
-  Future<List<Wish>> _loadPlaces() async {
+  /// Места желаний пары [groupId]. Кэш общий на все пары телефона
+  /// (`allRecords` не знает пары), поэтому фильтруем сами — иначе чужой
+  /// вишлист звал бы «вы оба рядом» с текущим партнёром.
+  Future<List<Wish>> _loadPlaces(String groupId) async {
     final now = DateTime.now();
-    if (now.difference(_placesAt) < const Duration(minutes: 10)) {
+    if (groupId == _placesGroup &&
+        now.difference(_placesAt) < const Duration(minutes: 10)) {
       return _places;
     }
     final recs = await LocalStore.instance.allRecords('wishes');
     _places = [
       for (final r in recs)
-        if (Wish.fromPb(r) case final w when w.place != null && !w.done) w,
+        if (r.getStringValue('group_id') == groupId)
+          if (Wish.fromPb(r) case final w when w.place != null && !w.done) w,
     ];
     _placesAt = now;
+    _placesGroup = groupId;
     return _places;
   }
 
@@ -58,7 +65,9 @@ class WishPlaces {
     try {
       final prefs = await WishReminderPrefs.load();
       if (!prefs.placeOn) return;
-      final places = await _loadPlaces();
+      final groupId = WishReminders.instance.groupId;
+      if (groupId.isEmpty) return;
+      final places = await _loadPlaces(groupId);
       if (places.isEmpty) return;
       final now = DateTime.now();
       final me = GeoFix(lat, lng, now, accuracy: accuracy);
