@@ -41,6 +41,7 @@ run() { # имя, команда...
 
 # 1. Тесты хуков: чистая логика, сервер не нужен.
 for t in "$here"/pb_hooks/*.test.js; do
+  [ -e "$t" ] || continue
   run "hook $(basename "$t" .test.js)" node "$t"
 done
 
