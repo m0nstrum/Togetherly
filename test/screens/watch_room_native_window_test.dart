@@ -19,10 +19,10 @@ void main() {
   test('долю с сервера принимает каждое чтение конфига', () {
     // Конфиг читают несколько мест, и первым до сервера доходит любое из
     // них. Пропустит одно — у части людей доля останется прошлой.
-    final wallet = "WalletTeaser.ingest(res.items.first.data['wallet']);".allMatches(data).length;
+    // Минимальная сборка, «Подарки» и «Хочу с тобой» — три чтения конфига
+    // на старте.
     final room = "RoomWindowFlag.ingest(res.items.first.data['room_native_ios']);".allMatches(data).length;
-    expect(wallet, greaterThan(0));
-    expect(room, wallet);
+    expect(room, greaterThanOrEqualTo(3));
     expect(read('lib/screens/home_screen.dart'), contains('RoomWindowFlag.restore()'));
   });
 

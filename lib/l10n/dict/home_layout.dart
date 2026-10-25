@@ -83,15 +83,6 @@ const Map<String, Map<String, String>> homeLayoutStrings = {
     'fr': 'Humeur',
     'de': 'Stimmung',
   },
-  'homeActionWallet': {
-    'ru': 'Togetherly Wallet',
-    'en': 'Togetherly Wallet',
-    'pt': 'Togetherly Wallet',
-    'it': 'Togetherly Wallet',
-    'es': 'Togetherly Wallet',
-    'fr': 'Togetherly Wallet',
-    'de': 'Togetherly Wallet',
-  },
   'homeActionCalendar': {
     'ru': 'Календарь настроений',
     'en': 'Mood calendar',

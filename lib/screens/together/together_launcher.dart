@@ -1,14 +1,11 @@
 import 'dart:async';
 
-import '../../services/plus_service.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../main.dart';
 import '../../models/reels_source.dart';
-import '../../models/room_exit_ad.dart';
 import '../../models/room_window.dart';
-import '../../services/interstitial_ad_service.dart';
 import '../../services/locale_service.dart';
 import '../../services/pocketbase_service.dart';
 import '../../services/room_window_flag.dart';
@@ -25,28 +22,6 @@ import '../../widgets/unfold/unfold_touch.dart';
 /// (Centrifugo), а прежняя синхронизация на Firebase RTDB убрана вместе с
 /// экраном `watch_together_screen.dart`.
 class TogetherLauncher {
-  /// Межстраничный ролик после выхода из комнаты. Перед комнатой рекламы
-  /// больше нет (19.10.2026), почему — в [roomExitAdDue].
-  static final InterstitialAdService _exitAd = InterstitialAdService(room: true);
-
-  /// Показывает ролик, когда экран комнаты или плеера ушёл целиком.
-  static Future<void> _afterRoom(TransitionRoute<void> route, {required bool reels}) async {
-    // Браузер комнаты к этому моменту закрыт, и ролик встаёт поверх прежнего
-    // экрана, а не поверх уходящей комнаты.
-    await route.completed;
-    final due = roomExitAdDue(
-      plus: PlusService.instance.active,
-      reels: reels,
-      lifecycle: WidgetsBinding.instance.lifecycleState,
-    );
-    if (!due) return;
-    if (!_exitAd.isReady) {
-      unawaited(_exitAd.load());
-      return;
-    }
-    await _exitAd.show();
-  }
-
   /// Открыть комнату пары. [videoUrl] — ссылка из карточки воспоминания,
   /// её подставят в комнату сразу после открытия.
   static Future<void> open(
@@ -68,9 +43,6 @@ class TogetherLauncher {
     }
     if (!context.mounted) return;
 
-    // Ролик к выходу заказываем на входе: пока пара смотрит, он загрузится.
-    if (!reels && !PlusService.instance.active) unawaited(_exitAd.load());
-
     final navigator = LoveApp.rootNavigatorKey.currentState;
     if (navigator == null) return;
 
@@ -88,7 +60,6 @@ class TogetherLauncher {
         ),
       );
       await navigator.push(player);
-      await _afterRoom(player, reels: false);
       return;
     }
 
@@ -117,7 +88,6 @@ class TogetherLauncher {
       ),
     );
     await navigator.push(screen);
-    await _afterRoom(screen, reels: reels);
   }
 
   /// Номер сборки для метки в адресе комнаты. Ноль, если узнать не вышло:

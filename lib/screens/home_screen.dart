@@ -84,7 +84,6 @@ import '../theme/app_theme.dart';
 import '../theme/theme_scope.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'canvas_create_flow.dart';
-import '../widgets/common/ad_banner.dart';
 import '../widgets/common/animations.dart';
 import '../widgets/common/hint_bubble.dart';
 import '../widgets/common/m3_loading.dart';
@@ -159,9 +158,7 @@ import 'snap_capture_screen.dart';
 import '../services/offline/media_view_cache.dart';
 import '../dict_strings.dart' show trKey;
 import '../services/room_window_flag.dart';
-import '../services/wallet_teaser.dart';
 import '../services/media_save_queue.dart';
-import 'wallet_wait_screen.dart';
 import '../widgets/common/gift_image.dart';
 import '../widgets/common/coin_image.dart';
 import '../widgets/season/season_backdrop_layer.dart';
@@ -360,7 +357,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSideActionPref();
     _loadPromptState();
     _loadGiftsFlag();
-    WalletTeaser.restore();
     RoomWindowFlag.restore();
     _loadWishesFlag();
     _loadIncomingGifts();
@@ -2092,8 +2088,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             onCalendar: _openMoodCalendar,
                             onPost: _postPhoto,
                             onPostHold: _postSnap,
-                            // fork: Wallet — отдельный продукт автора апстрима.
-                            onWallet: ForkFlags.hideUpstreamChannels ? null : _openWallet,
                             // С Плюсом лишние кнопки ряда можно спрятать в
                             // настройках, раздел «Главный экран».
                             hidden: HomeLayoutService.instance.current
@@ -2179,23 +2173,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 AnimatedSlideIn(
                   delay: const Duration(milliseconds: 160),
                   child: _buildMascotRow(),
-                ),
-                // Реклама сразу под маскотом — единственное место на
-                // главной, где она никому не мешает: до сгиба ничего не
-                // трогает, а в зону видимости попадает при первом же
-                // движении пальца. Выше по экрану её ставить нельзя, там
-                // таймер и настроения, ради которых приложение открывают.
-                // Раскладку меняют только с Плюсом, а с ним рекламы нет,
-                // так что у тех, кто её видит, место прежнее.
-                if (!ForkFlags.allFree) // fork (PLAN 2.1): no empty ad gap
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: AdBanner(
-                    key: const ValueKey('home_ad'),
-                    framed: true,
-                    label: LocaleService.current.adLabel,
-                    slot: 'home',
-                  ),
                 ),
               ],
             ),
@@ -2712,27 +2689,6 @@ class _HomeScreenState extends State<HomeScreen> {
           theme: _t,
         ),
         settings: const RouteSettings(name: '/draw_gallery'),
-      ),
-    );
-  }
-
-  /// Кнопка Togetherly Wallet: пока приложение не вышло — стена ожидания,
-  /// после выхода — сам Wallet (или его страница в магазине). Флаг выхода
-  /// приходит с сервера, см. `WalletTeaser`.
-  Future<void> _openWallet() async {
-    if (WalletTeaser.released) {
-      if (await WalletTeaser.open()) return;
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(trKey('walletOpenFailed'))),
-      );
-      return;
-    }
-    if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => WalletWaitScreen(theme: _t),
-        settings: const RouteSettings(name: '/wallet_wait'),
       ),
     );
   }

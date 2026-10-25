@@ -33,7 +33,7 @@ enum HomeTab {
 }
 
 /// Кнопки ряда под таймером, слева направо по дуге.
-enum HomeAction { draw, mood, wallet, calendar, post }
+enum HomeAction { draw, mood, calendar, post }
 
 class HomeLayout {
   const HomeLayout({

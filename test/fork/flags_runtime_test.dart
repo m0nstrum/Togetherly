@@ -11,7 +11,6 @@ import 'package:love_app/services/coin_store.dart';
 import 'package:love_app/services/movie_search_service.dart';
 import 'package:love_app/services/plus_service.dart';
 import 'package:love_app/widgets/auth_widgets.dart';
-import 'package:love_app/widgets/common/ad_banner.dart';
 
 /// Поведение сборки форка. Запускается без env/test.json
 /// (`flutter test --tags fork-runtime`), иначе флаги вернут поведение апстрима.
@@ -51,16 +50,6 @@ void main() {
     expect(ids, isNot(contains('plusStore')));
     expect(ids, isNot(contains('plusSite')));
     expect(ids, isNot(contains('telegram')));
-  });
-
-  testWidgets('рекламный баннер не занимает места', (tester) async {
-    await tester.pumpWidget(
-      const Directionality(
-        textDirection: TextDirection.ltr,
-        child: Center(child: AdBanner(height: 50)),
-      ),
-    );
-    expect(tester.getSize(find.byType(AdBanner)), Size.zero);
   });
 
   test('фильмы не ищутся общим ключом poiskkino автора', () async {

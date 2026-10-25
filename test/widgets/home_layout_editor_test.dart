@@ -157,10 +157,9 @@ void main() {
   });
 
   for (final hidden in <Set<HomeAction>>[
-    {HomeAction.wallet},
-    {HomeAction.draw, HomeAction.wallet},
-    {HomeAction.draw, HomeAction.wallet, HomeAction.calendar},
-    {HomeAction.draw, HomeAction.mood, HomeAction.wallet, HomeAction.calendar},
+    {HomeAction.calendar},
+    {HomeAction.draw, HomeAction.calendar},
+    {HomeAction.draw, HomeAction.mood, HomeAction.calendar},
   ]) {
     testWidgets('ряд под таймером без ${hidden.map((a) => a.name).join(', ')}',
         (tester) async {
@@ -177,20 +176,19 @@ void main() {
             onMood: () => taps++,
             onCalendar: () => taps++,
             onPost: () => taps++,
-            onWallet: () => taps++,
             hidden: hidden,
           ),
         ),
       );
       expect(tester.takeException(), isNull);
       final pills = find.byType(SvgPicture);
-      expect(pills, findsNWidgets(5 - hidden.length));
+      expect(pills, findsNWidgets(4 - hidden.length));
       // Каждая оставшаяся кнопка нажимается и попадает в свой обработчик.
       for (final e in pills.evaluate().toList()) {
         await tester.tap(find.byWidget(e.widget));
         await tester.pump(const Duration(milliseconds: 300));
       }
-      expect(taps, 5 - hidden.length);
+      expect(taps, 4 - hidden.length);
     });
   }
 
@@ -205,7 +203,6 @@ void main() {
         onMood: () {},
         onCalendar: () {},
         onPost: () {},
-        onWallet: () {},
         hidden: HomeAction.values.toSet(),
       ),
     );

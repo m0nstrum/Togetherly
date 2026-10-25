@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:love_app/screens/home/home_action_buttons.dart';
 import 'package:love_app/screens/home/home_bottom_nav.dart';
 import 'package:love_app/theme/app_theme.dart';
@@ -83,11 +84,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // Кнопка Wallet пятой в ряду. На главной ряд живёт внутри отступов 24 с
-  // двух сторон, поэтому на экране 320 dp ему достаётся 272 — это и есть
-  // самый тесный случай.
+  // На главной ряд живёт внутри отступов 24 с двух сторон, поэтому на
+  // экране 320 dp ему достаётся 272 — это и есть самый тесный случай.
   for (final width in [272.0, 320.0, 345.0]) {
-    testWidgets('ряд из пяти с Wallet помещается в ${width.toInt()} dp',
+    testWidgets('ряд из четырёх помещается в ${width.toInt()} dp',
         (tester) async {
       var tapped = false;
       await render(
@@ -101,14 +101,13 @@ void main() {
             onDraw: () {},
             onMood: () {},
             onCalendar: () {},
-            onPost: () {},
-            onWallet: () => tapped = true,
+            onPost: () => tapped = true,
           ),
         ),
       );
       expect(tester.takeException(), isNull);
-      await tester.tap(find.bySemanticsLabel('Togetherly Wallet'));
-      expect(tapped, isTrue, reason: 'кнопка Wallet не нажимается');
+      await tester.tap(find.byType(SvgPicture).last);
+      expect(tapped, isTrue, reason: 'крайняя кнопка не нажимается');
     });
   }
 }

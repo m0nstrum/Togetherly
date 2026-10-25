@@ -62,10 +62,6 @@ const _lowercaseOnPurpose = <String>{
   'mascotWidgetToTeen', 'mascotWidgetToAdult', 'mascotWidgetGrown',
   // Подписи под числом в плитках: «12 · дней серии», «64 · рекорд».
   'mascotWidgetStreakLabel', 'mascotWidgetRecord',
-  // Чек Togetherly Wallet: значение стоит справа от точек и продолжает строку
-  // «Общий бюджет ······ на двоих».
-  'walletRowBudgetValue', 'walletRowPersonalValue', 'walletRowSplitValue',
-  'walletRowGoalsValue', 'walletRowBankValue', 'walletRowChatValue',
 };
 
 /// Строчная, законная только в отдельных языках.

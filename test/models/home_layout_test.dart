@@ -18,15 +18,15 @@ void main() {
 
     test('кнопки ряда прячутся и переживают сохранение', () {
       final l = const HomeLayout()
-          .withAction(HomeAction.wallet, shown: false)
+          .withAction(HomeAction.calendar, shown: false)
           .withAction(HomeAction.draw, shown: false);
-      expect(l.showsAction(HomeAction.wallet), isFalse);
+      expect(l.showsAction(HomeAction.calendar), isFalse);
       expect(l.showsAction(HomeAction.mood), isTrue);
       expect(l.isDefault, isFalse);
       final back = HomeLayout.fromJson(l.toJson());
-      expect(back.hiddenActions, {HomeAction.wallet, HomeAction.draw});
+      expect(back.hiddenActions, {HomeAction.calendar, HomeAction.draw});
       expect(l.effective(plus: false).hiddenActions, isEmpty);
-      expect(l.withAction(HomeAction.wallet, shown: true)
+      expect(l.withAction(HomeAction.calendar, shown: true)
           .withAction(HomeAction.draw, shown: true).isDefault, isTrue);
     });
 

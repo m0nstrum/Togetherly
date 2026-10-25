@@ -201,7 +201,6 @@ const Map<String, String> smallCZh = {
   'homeLayoutActionsSub': '计时器下方的按钮',
   'homeActionDraw': '画画',
   'homeActionMood': '心情',
-  'homeActionWallet': 'Togetherly Wallet',
   'homeActionCalendar': '心情日历',
   'homeActionPost': '照片',
   'homeBlockChest': '每周宝箱',

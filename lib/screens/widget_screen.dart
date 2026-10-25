@@ -88,7 +88,6 @@ import '../services/widget_rotation.dart';
 import '../services/widget_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/profile_theme.dart';
-import '../widgets/common/ad_banner.dart';
 import '../widgets/common/m3_loading.dart';
 import '../widgets/petal_timer_dial.dart';
 import '../widgets/mood_hearts_preview.dart';
@@ -1838,18 +1837,10 @@ class _WidgetScreenState extends State<WidgetScreen>
       out.add(_sectionBlock(key, cards));
     }
 
-    void banner(String slot) {
-      if (ForkFlags.allFree || !isPaired || out.isEmpty) return; // fork (PLAN 2.1)
-      gap();
-      out.add(_buildAdBanner(slot));
-    }
-
     section(WidgetPanels.sectionPair);
-    banner('ad_banner_1');
     section(WidgetPanels.sectionTime);
     section(WidgetPanels.sectionPhotos);
     section(WidgetPanels.sectionMood);
-    banner('ad_banner_2');
     section(WidgetPanels.sectionNotes);
     return out;
   }
@@ -2877,16 +2868,6 @@ class _WidgetScreenState extends State<WidgetScreen>
           ],
         ),
       );
-
-  Widget _buildAdBanner(String slot) {
-    // Стабильный ключ: без него при каждом setState (раскрытие/сворачивание
-    // карточек выше) Flutter может пересоздать элемент баннера и дёрнуть
-    // новый запрос рекламы — лишние запросы и спам в сеть.
-    return AdBanner(
-      key: ValueKey(slot),
-      slot: 'widgets',
-    );
-  }
 
 
   /// Экран покупки — с карточки виджета, который закрыт замком.

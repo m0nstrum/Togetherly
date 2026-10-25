@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../dict_strings.dart' show trKey;
 import '../fork/home_defaults.dart'; // fork
-import '../fork/flags.dart'; // fork (PLAN 2.1)
 import '../models/home_layout.dart';
 import '../screens/plus_screen.dart';
 import '../services/home_layout_service.dart';
@@ -66,7 +65,6 @@ IconData homeTabIcon(HomeTab t) => switch (t) {
 String homeActionName(HomeAction a) => trKey(switch (a) {
       HomeAction.draw => 'homeActionDraw',
       HomeAction.mood => 'homeActionMood',
-      HomeAction.wallet => 'homeActionWallet',
       HomeAction.calendar => 'homeActionCalendar',
       HomeAction.post => 'homeActionPost',
     });
@@ -74,7 +72,6 @@ String homeActionName(HomeAction a) => trKey(switch (a) {
 IconData homeActionIcon(HomeAction a) => switch (a) {
       HomeAction.draw => Icons.edit_square,
       HomeAction.mood => Icons.sentiment_satisfied_alt_rounded,
-      HomeAction.wallet => Icons.payments_rounded,
       HomeAction.calendar => Icons.calendar_month_rounded,
       HomeAction.post => Icons.photo_camera_rounded,
     };
@@ -131,7 +128,7 @@ class _HomeLayoutEditor extends StatelessWidget {
     final plus = PlusService.instance.active;
     final svc = HomeLayoutService.instance;
     final layout = svc.saved;
-    final actions = HomeAction.values.where((a) => !ForkFlags.hideUpstreamChannels || a != HomeAction.wallet).toList();
+    final actions = HomeAction.values.toList();
     const outer = Radius.circular(SettingsGroup.outerRadius);
     const inner = Radius.circular(SettingsGroup.innerRadius);
     BorderRadius shape(int i, int n) => BorderRadius.vertical(

@@ -1,4 +1,3 @@
-import '../fork/flags.dart'; // fork (PLAN 2.1)
 import '../utils/safe_pick.dart';
 import '../services/plus_service.dart';
 import '../services/plus_access.dart';
@@ -64,11 +63,9 @@ import '../utils/lost_pick.dart';
 import '../models/memory_sort.dart';
 import '../services/ui_prefs.dart';
 import '../models/comment.dart';
-import '../models/feed_ad_rule.dart';
 import '../models/pair_data.dart';
 import '../models/user_data.dart';
 import '../widgets/common/coin_reward_toast.dart';
-import '../widgets/common/ad_banner.dart';
 import '../services/pb_media_service.dart';
 import '../services/screen_awake.dart';
 import '../services/offline/media_cache.dart';
@@ -688,35 +685,12 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 
-  // ── In-feed реклама ────────────────────────────────────────────────────────
-  // Расстановку задаёт `adAfterMemory` (lib/models/feed_ad_rule.dart): первый
-  // баннер после первого воспоминания, дальше через каждые шесть. Раньше
-  // первые шесть карточек шли без рекламы, и до первого баннера долистывали
-  // не все — отсюда трёхкратный разрыв между запросами и показами в РСЯ.
-
-
-  /// Секции ленты (заголовок даты + тайлы) с full-width баннером после каждого
-  /// N-го воспоминания. Счётчик ГЛОБАЛЬНЫЙ — не сбрасывается между днями.
-  /// Если N-е воспоминание попадает в середину дня, день режется на чанки,
-  /// чтобы баннер встал ровно между тайлами, а не ломал тайл.
+  /// Секции ленты: заголовок даты и тайлы этого дня.
   List<Widget> _buildDateGroupedSlivers() {
     final slivers = <Widget>[];
-    var position = 0; // сквозной номер воспоминания по всей ленте
-    var adIndex = 0; // порядковый номер баннера (для стабильного ключа)
     for (final entry in _groupedByDate.entries) {
       slivers.add(_sectionHeader(entry.key));
-      final mems = entry.value;
-      var chunkStart = 0;
-      for (var i = 0; i < mems.length; i++) {
-        position++;
-        final adHere = !ForkFlags.allFree && adAfterMemory(position); // fork
-        if (adHere || i == mems.length - 1) {
-          // Сбрасываем накопленный чанк тайлов (он остаётся внутри своей даты).
-          slivers.add(_memoryTilesSliver(mems.sublist(chunkStart, i + 1)));
-          chunkStart = i + 1;
-          if (adHere) slivers.add(_inFeedBannerSliver(adIndex++));
-        }
-      }
+      slivers.add(_memoryTilesSliver(entry.value));
     }
     return slivers;
   }
@@ -728,22 +702,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         delegate: SliverChildBuilderDelegate(
           (_, i) => _memoryTile(mems[i]),
           childCount: mems.length,
-        ),
-      ),
-    );
-  }
-
-  Widget _inFeedBannerSliver(int adIndex) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        // Стабильный ключ по порядковому номеру баннера: лента пересоздаётся на
-        // setState (refresh / «загрузить ещё» / лайки), и без ключа баннер
-        // дёргал бы новый loadAd при каждом ребилде — лишние запросы и спам в
-        // сеть. С ключом инстанс баннера переживает ребилды.
-        child: AdBanner(
-          key: ValueKey('memlane_ad_$adIndex'),
-          slot: 'memlane',
         ),
       ),
     );
