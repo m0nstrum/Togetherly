@@ -1,14 +1,17 @@
-# CI форка Tethered (docs/fork/PLAN.md, S0).
+# CI Tethered (docs/DEVELOPMENT.md, раздел CI).
 #
-# Воркфлоу апстрима не трогаем: так они не конфликтуют при мёржах. Те, что
-# форку не нужны (iOS, релизы в сторы), выключаются в настройках Actions
-# репозитория — см. docs/fork/README.md.
+# Когда запускается: push в main, pull request, ручной запуск. Push в
+# рабочую ветку CI не будит — для неё есть PR (раньше каждая правка в ветке
+# с открытым PR гоняла всё дважды). Правки только документации CI не будят.
+# Внутри — по частям: клиент, сервер и APK проверяются, только если менялись.
 name: Fork CI
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
   pull_request:
+    paths-ignore: ['docs/**', '**/*.md']
   workflow_dispatch:
 
 concurrency:
@@ -16,12 +19,48 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Та же версия, что в release-apk.yml апстрима.
+  # Версия Flutter для всех сборок.
   FLUTTER_VERSION: 3.47.6
 
 jobs:
+  changes:
+    name: что менялось
+    runs-on: ubuntu-latest
+    outputs:
+      client: ${{ steps.f.outputs.client }}
+      server: ${{ steps.f.outputs.server }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: f
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            client:
+              - 'lib/**'
+              - 'test/**'
+              - 'assets/**'
+              - 'android/**'
+              - 'ios/**'
+              - 'env/**'
+              - 'tool/**'
+              - 'third_party/**'
+              - 'pubspec.*'
+              - 'analysis_options.yaml'
+              - 'dart_test.yaml'
+              - 'pocketbase/pb_public/**'
+              - '.github/workflows/fork-ci.yml'
+            server:
+              - 'server/**'
+              - 'pocketbase/pb_hooks/**'
+              - 'pocketbase/pb_public/**'
+              - 'deploy/**'
+              - '.github/workflows/fork-ci.yml'
+
   check:
     name: analyze + test
+    needs: changes
+    # Живой E2E-тест клиента ходит в сервер — правки сервера его тоже будят.
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.client == 'true' || needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -44,15 +83,15 @@ jobs:
           mkdir -p "$HOME/snap/flutter/common"
           ln -sfn "$(dirname "$(dirname "$(command -v flutter)")")" "$HOME/snap/flutter/common/flutter"
 
-      # Правки форка на месте, роуты клиента есть на сервере, состав
-      # апстрима разобран (docs/fork/MERGE.md).
+      # Роуты клиента есть на сервере, убранные зависимости не вернулись,
+      # хуки и статика собираются (tool/fork/repo_check.py).
       - name: подписи кнопок
         run: |
           python3 tool/fork/icon_tooltips_test.py
           python3 tool/fork/icon_tooltips.py
 
-      - name: проверки мёржа
-        run: python3 tool/fork/merge_check.py
+      - name: проверки репозитория
+        run: python3 tool/fork/repo_check.py
 
       - uses: actions/setup-node@v4
         with:
@@ -90,6 +129,8 @@ jobs:
 
   server:
     name: server (Go)
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -158,6 +199,8 @@ jobs:
 
   apk:
     name: build APK
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.client == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

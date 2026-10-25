@@ -150,9 +150,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   final CoinStore _iap = sharedCoinStore;
   bool _iapLoading = false;
 
-  // Политика и условия живут на PocketBase-VPS (Firebase Hosting гасится вместе
-  // с проектом). Раздаются из pb_public, исходники — PRIVACY_POLICY.md и
-  // TERMS_OF_USE.md в репо (регенерация: tool/gen_legal_html.py).
+  // Политика и условия раздаёт наш сервер (server/public); адреса — из
+  // конфига сборки.
   static final Uri _privacyPolicyUri = Uri.parse(Endpoints.current.privacyPolicyUrl); // fork
   static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
 

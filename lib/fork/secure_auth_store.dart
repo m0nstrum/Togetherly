@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'secret_storage.dart';
 
 /// Сессия PocketBase в Keystore/Keychain, а не в SharedPreferences
-/// (docs/fork/PLAN.md, S6; AUDIT §1: токен лежал открытым текстом).
+/// (docs/history/PLAN.md, S6; AUDIT §1: токен лежал открытым текстом).
 ///
 /// Токен, сохранённый прежней версией в SharedPreferences, переносится при
 /// первом запуске и оттуда стирается.

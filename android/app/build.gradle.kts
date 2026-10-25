@@ -13,7 +13,7 @@ plugins {
     id("com.google.gms.google-services") apply false
 }
 
-// ── fork: Tethered ── (docs/fork/TOUCHPOINTS.md)
+// ── fork: Tethered ── (docs/history/TOUCHPOINTS.md)
 // Своя идентичность, чтобы форк ставился рядом с приложением апстрима и не
 // перехватывал его ссылки. namespace (пакет Kotlin-кода) не меняем: это
 // внутреннее имя, и смена потянула бы перенос всех исходников.

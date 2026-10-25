@@ -1,4 +1,4 @@
-/// Все адреса сервера форка в одном месте (docs/fork/PLAN.md, S1).
+/// Все адреса сервера форка в одном месте (docs/history/PLAN.md, S1).
 ///
 /// Значения задаются при сборке:
 ///
@@ -193,7 +193,7 @@ class EndpointsConfig {
     throw StateError(
       'Сборка без адресов сервера: ${p.join('; ')}.\n'
       'Соберите с --dart-define-from-file=env/<name>.json '
-      '(пример — env/example.json, описание — docs/fork/README.md).',
+      '(пример — env/example.json, описание — docs/DEVELOPMENT.md).',
     );
   }
 

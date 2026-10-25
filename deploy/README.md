@@ -77,7 +77,7 @@ NAT облака) — допишите coturn `--external-ip` и откройт�
 { "PB_URL": "https://tethered.example.org" }
 ```
 
-(`env/<name>.local.json`, см. [docs/fork/README.md](../docs/fork/README.md)).
+(`env/<name>.local.json`, см. [docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md)).
 `CENTRIFUGO_WS` по умолчанию — `wss://<домен>/connection/websocket`, как и
 маршрутизирует Caddy.
 
@@ -115,7 +115,7 @@ Centrifugo — Android с энергосбережением его убивае
    новый проект (Google Analytics — выключить).
 2. Добавить Android-приложение `io.github.m0nstrum.tethered` (SHA-1 не
    нужен) и скачать `google-services.json` — его содержимое в секрет
-   `GOOGLE_SERVICES_JSON` репозитория (docs/fork/README.md), пересобрать APK.
+   `GOOGLE_SERVICES_JSON` репозитория (docs/DEVELOPMENT.md), пересобрать APK.
 3. Project settings → Service accounts → Generate new private key: файл
    положить в `deploy/secrets/fcm-service-account.json`, в `.env` —
    `FCM_CREDENTIALS_FILE=/secrets/fcm-service-account.json`,

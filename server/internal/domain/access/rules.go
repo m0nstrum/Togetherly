@@ -206,7 +206,7 @@ var Collections = map[string]Rules{
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
 	},
 
-	// E2E (docs/fork/E2E.md). Ключ аккаунта и список устройств видят свои и
+	// E2E (docs/E2E.md). Ключ аккаунта и список устройств видят свои и
 	// партнёры по парам; правка — только своя, версию списка держит страж.
 	"e2e_identities": {
 		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.live_group_ids.members ?~ user_uid)`),

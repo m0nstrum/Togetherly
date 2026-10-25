@@ -1,4 +1,4 @@
-// fork: панель чата комнаты (docs/fork/E2E.md §10.1).
+// fork: панель чата комнаты (docs/E2E.md §10.1).
 import 'package:love_app/fork/watch/room_shell.dart';
 import 'package:love_app/fork/watch/room_live.dart';
 

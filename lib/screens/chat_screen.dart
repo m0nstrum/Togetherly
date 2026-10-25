@@ -2718,7 +2718,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           Column(
             children: [
-              // fork: состояние ключей E2E пары (docs/fork/E2E.md §6.3).
+              // fork: состояние ключей E2E пары (docs/E2E.md §6.3).
               ForkE2EBanner(
                 groupId: _groupId,
                 partnerUid: widget.pairData.partnerUid,

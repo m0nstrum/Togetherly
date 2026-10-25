@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 part of '../memory_lane_screen.dart';
 
 // ══════════════════════════════════════════════════════

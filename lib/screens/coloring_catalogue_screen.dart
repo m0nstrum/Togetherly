@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

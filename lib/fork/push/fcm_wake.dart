@@ -1,4 +1,4 @@
-/// FCM как будильник (docs/fork/PLAN.md, S12).
+/// FCM как будильник (docs/history/PLAN.md, S12).
 ///
 /// Пуш несёт только `{type: "sync", event: <id>}`. Нативный
 /// `ForkFcmService.kt` будит Dart задачей workmanager, а здесь событие

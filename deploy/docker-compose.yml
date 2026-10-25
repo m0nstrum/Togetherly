@@ -1,4 +1,4 @@
-# Инстанс Tethered одной командой (docs/fork/PLAN.md, S4):
+# Инстанс Tethered одной командой (docs/history/PLAN.md, S4):
 #   cp .env.example .env && $EDITOR .env && docker compose up -d
 # Bugsink (крашрепорты) — по желанию: docker compose --profile crash up -d
 name: tethered

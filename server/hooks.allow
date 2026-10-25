@@ -1,5 +1,5 @@
 # JS-хуки апстрима (pocketbase/pb_hooks), которые сервер форка запускает как
-# есть, пока они не перенесены на Go (docs/fork/API_INVENTORY.md).
+# есть, пока они не перенесены на Go (docs/history/API_INVENTORY.md).
 # Собирает каталог scripts/sync-hooks.sh. Строка — имя файла; # — комментарий.
 #
 # Не берём: centrifugo.pb.js (рассылка на Go), watch_rtc.pb.js (на Go),

@@ -128,7 +128,7 @@
             <!-- fork: Web link приглашений на домене своего инстанса. Хост
                  подставляет Gradle из SITE_URL/PB_URL (inviteHost). Брошенные
                  домены апстрима (duckdns, web.app) убраны: их можно занять и
-                 уводить через них приглашения (docs/fork/AUDIT.md §2). -->
+                 уводить через них приглашения (docs/history/AUDIT.md §2). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

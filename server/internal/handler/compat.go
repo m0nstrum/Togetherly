@@ -95,7 +95,7 @@ func (h compat) notify(w http.ResponseWriter, r *http.Request) {
 var sealedToken = regexp.MustCompile(`e2e1\.[A-Za-z0-9_:.+/=\-]+`)
 
 // dropSealed убирает шифртекст из текста уведомления: хуки апстрима берут
-// имя из профиля, а там теперь шифр личного ключа (docs/fork/E2E.md).
+// имя из профиля, а там теперь шифр личного ключа (docs/E2E.md).
 func dropSealed(s string) string {
 	if !strings.Contains(s, "e2e1.") {
 		return s

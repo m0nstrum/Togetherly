@@ -1,4 +1,4 @@
-// fork: плашка ключей и экран сверки (docs/fork/E2E.md §6.3, §12.4).
+// fork: плашка ключей и экран сверки (docs/E2E.md §6.3, §12.4).
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';

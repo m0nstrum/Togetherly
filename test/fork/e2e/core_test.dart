@@ -1,4 +1,4 @@
-// fork: ядро E2E (docs/fork/E2E.md, PLAN S8) на настоящей libsodium.
+// fork: ядро E2E (docs/E2E.md, PLAN S8) на настоящей libsodium.
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';

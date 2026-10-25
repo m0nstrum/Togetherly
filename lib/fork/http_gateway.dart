@@ -10,7 +10,7 @@ import 'flags.dart';
 import 'meta_direct.dart';
 
 /// Все запросы приложения к сторонним сайтам — через свой сервер
-/// (meta gateway, docs/fork/PLAN.md S5).
+/// (meta gateway, docs/history/PLAN.md S5).
 ///
 /// Перехватывает `dart:io` целиком (`HttpOverrides`), то есть и
 /// `package:http`, и `Image.network`, и всё, что апстрим добавит позже, — без

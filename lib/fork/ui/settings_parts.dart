@@ -1,4 +1,4 @@
-/// Куски экрана настроек форка (docs/fork/UX_AUDIT.md: N1, N14).
+/// Куски экрана настроек форка (docs/history/UX_AUDIT.md: N1, N14).
 library;
 
 import 'dart:io' show Platform;

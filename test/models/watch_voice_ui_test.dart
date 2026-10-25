@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/watch_voice_ui.dart';
 import 'package:love_app/services/watch_voice_service.dart';

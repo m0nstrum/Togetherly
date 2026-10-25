@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Фильтр Блума утёкших паролей для проверки пароля бэкапа ключей
-(docs/fork/E2E.md §7, lib/fork/e2e/password_policy.dart).
+(docs/E2E.md §7, lib/fork/e2e/password_policy.dart).
 
     python3 -I tool/fork/gen_password_bloom.py Pwdb_top-1000000.txt
 

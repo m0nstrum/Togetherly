@@ -1,4 +1,4 @@
-// fork: чат комнаты на ключе сессии (docs/fork/E2E.md §10.1).
+// fork: чат комнаты на ключе сессии (docs/E2E.md §10.1).
 import 'dart:async';
 import 'dart:convert';
 
