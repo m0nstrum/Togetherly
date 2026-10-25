@@ -513,10 +513,15 @@
             onStateChange: (e) => {
               if (e.target !== state.player) return; // fork: ignore an old destroyed player.
               if (e.data === YT.PlayerState.ENDED) { queueEnded(); return; } // fork
-              if (e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.PAUSED) actSync(ytTime(), e.data === YT.PlayerState.PLAYING);
-              if (state.applying) return;
-              if (e.data === YT.PlayerState.PLAYING) { leadHere(); send('play', ytTime()); }
-              if (e.data === YT.PlayerState.PAUSED) { leadHere(); send('pause', ytTime()); }
+              if (e.data !== YT.PlayerState.PLAYING && e.data !== YT.PlayerState.PAUSED) return;
+              const playing = e.data === YT.PlayerState.PLAYING;
+              // fork (B5): чужую команду уже отметил noteAct — только сверяем
+              // время. Своё нажатие в кадре YouTube отмечает send → noteAct:
+              // ранний actSync делал его «тем же состоянием», и кнопка паузы
+              // в приложении не узнавала о паузе из плеера.
+              if (state.applying) { actSync(ytTime(), playing); return; }
+              leadHere();
+              send(playing ? 'play' : 'pause', ytTime());
             },
           },
         });
