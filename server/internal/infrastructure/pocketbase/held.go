@@ -2,6 +2,8 @@ package pocketbase
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -76,20 +78,23 @@ func bindHeld(app core.App, now func() time.Time, log *slog.Logger) {
 	})
 }
 
-// releaseDue выпускает сообщения, срок которых наступил.
+// releaseDue выпускает сообщения, срок которых наступил. Удалённое автором
+// до срока остаётся придержанным: партнёр не должен увидеть даже надгробие.
+// Запись, которая не сохранилась, не задерживает остальные.
 func releaseDue(app core.App, now time.Time) error {
-	recs, err := app.FindRecordsByFilter(chatCol, "held = true && deliver_at <= {:now}", "deliver_at", 200, 0,
+	recs, err := app.FindRecordsByFilter(chatCol, "held = true && deleted != true && deliver_at <= {:now}", "deliver_at", 200, 0,
 		dbx.Params{"now": now.UnixMilli()})
 	if err != nil {
 		return err
 	}
+	var errs []error
 	for _, r := range recs {
 		r.Set("held", false)
 		if err := app.SaveWithContext(context.Background(), r); err != nil {
-			return err
+			errs = append(errs, fmt.Errorf("%s: %w", r.Id, err))
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // heldEvent — как изменение записи видят партнёр и его телефон. Придержанное
@@ -99,10 +104,12 @@ func heldEvent(ev realtime.Event, rec *core.Record) (realtime.Event, bool) {
 		return ev, true
 	}
 	switch {
-	case ev == realtime.EventDelete:
-		return ev, true
+	// Придержанное партнёру не рассылалось — и удаление тоже: событие несёт
+	// запись целиком, ключ пары у партнёра есть.
 	case rec.GetBool("held"):
 		return ev, false
+	case ev == realtime.EventDelete:
+		return ev, true
 	case ev == realtime.EventUpdate && rec.Original().GetBool("held"):
 		return realtime.EventCreate, true
 	}

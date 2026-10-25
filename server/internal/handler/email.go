@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/mail"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -189,7 +190,17 @@ func EmailChange(r *router.Router[*core.RequestEvent], now func() time.Time, log
 			mu.Unlock()
 			return fail(e, http.StatusTooManyRequests, "limit")
 		}
+		// Отметку ставим до отправки: иначе пачка параллельных запросов
+		// проходила проверку «раз в минуту», пока письмо ещё шло.
+		p.sends = append(p.sends, at)
 		mu.Unlock()
+		unsend := func() {
+			mu.Lock()
+			if i := slices.Index(p.sends, at); i >= 0 {
+				p.sends = slices.Delete(p.sends, i, i+1)
+			}
+			mu.Unlock()
+		}
 
 		code := security.RandomStringWithAlphabet(6, "0123456789")
 		meta := e.App.Settings().Meta
@@ -201,12 +212,12 @@ func EmailChange(r *router.Router[*core.RequestEvent], now func() time.Time, log
 			HTML:    htmlBody,
 		}
 		if err := e.App.NewMailClient().Send(msg); err != nil {
+			unsend()
 			log.Warn("email-change: письмо не ушло", "uid", e.Auth.Id, "err", err)
 			return fail(e, http.StatusBadGateway, "mail")
 		}
 		mu.Lock()
 		p.email, p.code, p.exp, p.tries = email, code, at.Add(15*time.Minute), 0
-		p.sends = append(p.sends, at)
 		mu.Unlock()
 		log.Info("email-change: код отправлен", "uid", e.Auth.Id)
 		return e.JSON(http.StatusOK, map[string]any{"ok": true, "retryIn": 60})

@@ -84,11 +84,15 @@ func immutableAuthored(groupField, authorField string) Rules {
 }
 
 // heldUntilDue — отложенное сообщение («отправить утром») до срока видит
-// только автор: флаг `held` ставит и снимает сервер.
+// только автор: флаг `held` ставит и снимает сервер. Правка и удаление —
+// тоже: ответ на PATCH отдаёт запись целиком мимо правила View.
 func heldUntilDue(r Rules, authorField string) Rules {
 	hidden := ` && (held = false || ` + authorField + ` = @request.auth.id)`
-	r.List = s(*r.List + hidden)
-	r.View = s(*r.View + hidden)
+	for _, rule := range []**string{&r.List, &r.View, &r.Update, &r.Delete} {
+		if *rule != nil {
+			*rule = s(**rule + hidden)
+		}
+	}
 	return r
 }
 

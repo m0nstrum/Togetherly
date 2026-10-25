@@ -52,6 +52,8 @@ jobs:
             server:
               - 'server/**'
               - 'pocketbase/pb_public/**'
+              # Источник копии server/internal/migrations/schema (go generate).
+              - 'pocketbase/collections_schema.json'
               - 'deploy/**'
               - '.github/workflows/fork-ci.yml'
 

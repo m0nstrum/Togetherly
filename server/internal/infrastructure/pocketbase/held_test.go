@@ -37,8 +37,13 @@ func TestHeldMessages(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, code, "партнёр до срока не видит")
 	_, list := w.do(t, http.MethodGet, "/api/collections/chat_messages/records", w.bTok, "")
 	assert.NotContains(t, list, created.ID)
+	code, body = w.do(t, http.MethodPatch, path, w.bTok, `{"reactions":{"x":1}}`)
+	assert.Equal(t, http.StatusNotFound, code, "ответ на правку отдал бы запись целиком")
+	assert.NotContains(t, body, "e2e1.k.n.c")
 	code, _ = w.do(t, http.MethodGet, path, w.aTok, "")
 	assert.Equal(t, http.StatusOK, code, "автор видит своё")
+	_, ok = tpb.HeldEvent(realtime.EventDelete, rec)
+	assert.False(t, ok, "удаление придержанного не рассылается: событие несёт запись")
 	code, _ = w.do(t, http.MethodPatch, path, w.aTok, `{"held":false}`)
 	require.Equal(t, http.StatusOK, code)
 	rec, err = w.app.FindRecordById("chat_messages", created.ID)
@@ -84,6 +89,27 @@ func TestHeldSendNow(t *testing.T) {
 	assert.False(t, rec.GetBool("held"))
 	assert.EqualValues(t, now, rec.GetInt("ts"))
 	assert.Equal(t, []realtime.Event{realtime.EventCreate}, events, "партнёру выпущенное приходит как новое")
+}
+
+// Удалённое автором до срока не выпускается: партнёр не видит даже
+// надгробия на месте сообщения, которого не было.
+func TestHeldDeletedStaysHeld(t *testing.T) {
+	w := newWorld(t)
+	due := time.Now().Add(time.Hour).UnixMilli()
+	code, body := w.do(t, http.MethodPost, "/api/collections/chat_messages/records", w.aTok,
+		`{"group_id":"`+pairA+`","user_uid":"`+alice+`","ts":1,"deliver_at":`+strconv.FormatInt(due, 10)+`}`)
+	require.Equal(t, http.StatusOK, code, body)
+	var created struct{ ID string }
+	require.NoError(t, json.Unmarshal([]byte(body), &created))
+	code, body = w.do(t, http.MethodPatch, "/api/collections/chat_messages/records/"+created.ID, w.aTok, `{"deleted":true}`)
+	require.Equal(t, http.StatusOK, code, body)
+
+	require.NoError(t, tpb.ReleaseDue(w.app, time.UnixMilli(due+1)))
+	rec, err := w.app.FindRecordById("chat_messages", created.ID)
+	require.NoError(t, err)
+	assert.True(t, rec.GetBool("held"))
+	code, _ = w.do(t, http.MethodGet, "/api/collections/chat_messages/records/"+created.ID, w.bTok, "")
+	assert.Equal(t, http.StatusNotFound, code)
 }
 
 // Воспоминание с часов из будущего встаёт сегодняшним, со сдвигом по
