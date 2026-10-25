@@ -11,7 +11,9 @@ import '../services/locale_service.dart';
 import '../models/symbol_catalog.dart';
 import '../theme/profile_theme.dart';
 import '../widgets/app_sheet.dart';
+import '../widgets/digital_timer.dart';
 import '../widgets/petal_timer_dial.dart';
+import '../dict_strings.dart' show ruEn;
 import '../widgets/common/app_dialog.dart';
 import 'date_time_picker_screen.dart';
 import 'symbol_picker_screen.dart';
@@ -66,6 +68,8 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
 
     _pageController = PageController(initialPage: _currentIndex);
     widget.timerService.addListener(_onTimerChanged);
+    TimerViewPref.digital.addListener(_onViewChanged); // D7
+    TimerViewPref.load();
     _startTicker();
   }
 
@@ -74,7 +78,12 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
     _pageController.dispose();
     _ticker?.cancel();
     widget.timerService.removeListener(_onTimerChanged);
+    TimerViewPref.digital.removeListener(_onViewChanged);
     super.dispose();
+  }
+
+  void _onViewChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onTimerChanged() {
@@ -213,12 +222,22 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                         child: SizedBox(
                           width: dialSize,
                           height: dialSize,
-                          child: PetalTimerDial(
-                            theme: _t,
-                            startDate: timers[index].startDate,
-                            isCountdown: timers[index].isCountdown,
-                            onPetalTap: widget.onPetalTap,
-                          ),
+                          // D7: круг или цифры — по выбору человека.
+                          child: TimerViewPref.digital.value
+                              ? Center(
+                                  child: DigitalTimer(
+                                    theme: _t,
+                                    startDate: timers[index].startDate,
+                                    isCountdown: timers[index].isCountdown,
+                                    onPartTap: widget.onPetalTap,
+                                  ),
+                                )
+                              : PetalTimerDial(
+                                  theme: _t,
+                                  startDate: timers[index].startDate,
+                                  isCountdown: timers[index].isCountdown,
+                                  onPetalTap: widget.onPetalTap,
+                                ),
                         ),
                       );
                     },
@@ -254,6 +273,14 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
       ),
       _ArcAction(icon: Icons.edit_rounded, onTap: () => _showEditDialog(timer)),
       _ArcAction(icon: Icons.add_rounded, onTap: _showCreateDialog),
+      // D7: переключатель вида — круг ↔ цифры.
+      _ArcAction(
+        icon: TimerViewPref.digital.value ? Icons.donut_large_rounded : Icons.pin_outlined,
+        onTap: TimerViewPref.toggle,
+        tooltip: TimerViewPref.digital.value
+            ? ruEn('Показать кругом', 'Show as a dial')
+            : ruEn('Показать цифрами', 'Show as digits'),
+      ),
       _ArcAction(
         icon: Icons.delete_outline_rounded,
         onTap: () => _showDeleteConfirm(timer),
@@ -294,6 +321,7 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
             icon: visibleActions[i].icon,
             onTap: visibleActions[i].onTap,
             theme: _t,
+            tooltip: visibleActions[i].tooltip,
           ),
         );
       }),
@@ -814,7 +842,8 @@ class _ArcAction {
   final IconData icon;
   final VoidCallback onTap;
   final bool visible;
-  _ArcAction({required this.icon, required this.onTap, this.visible = true});
+  final String? tooltip;
+  _ArcAction({required this.icon, required this.onTap, this.visible = true, this.tooltip});
 }
 
 class _RadialButton extends StatefulWidget {
@@ -822,10 +851,13 @@ class _RadialButton extends StatefulWidget {
   final VoidCallback onTap;
   final AppTheme theme;
 
+  final String? tooltip;
+
   const _RadialButton({
     required this.icon,
     required this.onTap,
     required this.theme,
+    this.tooltip,
   });
 
   @override
@@ -837,7 +869,7 @@ class _RadialButtonState extends State<_RadialButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final button = GestureDetector(
       onTapDown: (_) => setState(() => _scale = 0.95),
       onTapUp: (_) => setState(() => _scale = 1.0),
       onTapCancel: () => setState(() => _scale = 1.0),
@@ -855,6 +887,12 @@ class _RadialButtonState extends State<_RadialButton> {
           child: Icon(widget.icon, color: Colors.white, size: 18),
         ),
       ),
+    );
+    final tip = widget.tooltip;
+    if (tip == null) return button;
+    return Tooltip(
+      message: tip,
+      child: Semantics(button: true, label: tip, child: button),
     );
   }
 }

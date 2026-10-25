@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../utils/petal_clock.dart';
+import '../utils/timer_parts.dart';
 import '../theme/fonts.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
@@ -250,39 +251,10 @@ class _PetalTimerDialState extends State<PetalTimerDial>
   }
 
   List<_PetalData> _computePetalsAt(DateTime now) {
-    final DateTime from, to;
-    if (widget.isCountdown) {
-      from = now;
-      to = widget.startDate;
-    } else {
-      from = widget.startDate;
-      to = now;
-    }
-
-    if (!to.isAfter(from)) {
-      return _zeroPetals();
-    }
-
-    // Calendar-aware years / months / days
-    int years  = to.year  - from.year;
-    int months = to.month - from.month;
-    int days   = to.day   - from.day;
-
-    if (days < 0) {
-      months--;
-      // day 0 = last day of the month before `to`
-      days += DateTime(to.year, to.month, 0).day;
-    }
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-
-    // Sub-day components derived from total elapsed ms
-    final diffMs = to.difference(from).inMilliseconds;
-    final hI   = (diffMs ~/ 3600000) % 24;
-    final minI = (diffMs ~/ 60000)   % 60;
-    final sI   = (diffMs ~/ 1000)    % 60;
+    final p = TimerParts.of(widget.startDate, now, countdown: widget.isCountdown);
+    if (identical(p, TimerParts.zero)) return _zeroPetals();
+    final years = p.years, months = p.months, days = p.days;
+    final hI = p.hours, minI = p.minutes, sI = p.seconds;
 
     return [
       _PetalData(
