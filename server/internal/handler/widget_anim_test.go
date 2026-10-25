@@ -3,6 +3,7 @@ package handler_test
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -84,4 +85,14 @@ func TestWidgetAnim(t *testing.T) {
 	}
 	code, _ := testutil.Do(t, app, http.MethodPost, "/api/widget/anim/prepare", alice, `{"mediaId":"nope"}`)
 	assert.Equal(t, http.StatusNotFound, code)
+
+	// Битый файл ffmpeg не берёт — метка, и добор его больше не гоняет.
+	junk := filepath.Join(dir, "junk.mp4")
+	require.NoError(t, os.WriteFile(junk, []byte("not a video"), 0o644))
+	id := upload(junk)
+	for range 2 {
+		code, _ = testutil.Do(t, app, http.MethodPost, "/api/widget/anim/prepare", alice, `{"mediaId":"`+id+`"}`)
+		assert.Equal(t, http.StatusUnprocessableEntity, code)
+	}
+	assert.FileExists(t, filepath.Join(filepath.Dir(svc.SheetPath(id)), id+".bad"))
 }

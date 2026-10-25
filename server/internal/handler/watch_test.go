@@ -62,7 +62,13 @@ func TestWatchRooms(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "watch:"+open, claims["channel"])
 
-	code, _ = post("/api/watch/token", "", `{"room":"`+open[:9]+`x"}`)
+	// Последний знак подписи меняем на заведомо другой: `x` там выпадает
+	// в одном случае из 31.
+	forged := open[:9] + "x"
+	if open[9] == 'x' {
+		forged = open[:9] + "y"
+	}
+	code, _ = post("/api/watch/token", "", `{"room":"`+forged+`"}`)
 	assert.Equal(t, http.StatusNotFound, code, "набранный руками код")
 
 	code, res = post("/api/watch/token", alice, `{"room":"`+pairRoom+`"}`)

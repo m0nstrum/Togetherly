@@ -12,11 +12,11 @@
 package widgetanim
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image/gif"
 	"io"
 	"os"
 	"os/exec"
@@ -81,6 +81,10 @@ func (s *Service) SheetPath(id string) string { return filepath.Join(s.dir, id+"
 
 func (s *Service) manifestPath(id string) string { return filepath.Join(s.dir, id+".json") }
 
+// badPath — метка файла, который ffmpeg не разобрал: добор раз в десять
+// минут не гоняет его снова, а клиент сразу получает «не подходит».
+func (s *Service) badPath(id string) string { return filepath.Join(s.dir, id+".bad") }
+
 // Ready — манифест готовой раскадровки, если она есть.
 func (s *Service) Ready(id string) (*Manifest, bool) {
 	raw, err := os.ReadFile(s.manifestPath(id))
@@ -105,6 +109,9 @@ func (s *Service) Prepare(ctx context.Context, rec *core.Record) (*Manifest, err
 	}
 	if s.ffmpeg == "" {
 		return nil, ErrUnavailable
+	}
+	if _, err := os.Stat(s.badPath(rec.Id)); err == nil {
+		return nil, ErrUnsupported
 	}
 	name := rec.GetString("file")
 	ext := strings.ToLower(filepath.Ext(name))
@@ -162,6 +169,10 @@ func (s *Service) Prepare(ctx context.Context, rec *core.Record) (*Manifest, err
 	if out, err := cmd.CombinedOutput(); err != nil {
 		_ = os.Remove(part)
 		s.app.Logger().Warn("widget_anim: ffmpeg", "media", rec.Id, "err", err, "out", strings.TrimSpace(string(out)))
+		// Оборванная нарезка (таймаут, отмена) — не приговор файлу.
+		if cctx.Err() == nil {
+			_ = os.WriteFile(s.badPath(rec.Id), nil, 0o644)
+		}
 		return nil, ErrUnsupported
 	}
 	if err := os.Rename(part, s.SheetPath(rec.Id)); err != nil {
@@ -223,24 +234,93 @@ func (s *Service) Sweep(ctx context.Context) {
 
 // gifDuration — длительность гифки в мс (0 — не гифка или не разобралась).
 // Кадр без задержки считается за 100 мс, как в браузерах.
+//
+// Файл присылает человек, поэтому кадры не распаковываем: gif.DecodeAll
+// держит в памяти каждый, и гифка в пару мегабайт разворачивается в
+// гигабайты. Задержки лежат в заголовках кадров — проходим блоки, пропуская
+// данные картинок.
 func gifDuration(path string) int {
 	f, err := os.Open(path)
 	if err != nil {
 		return 0
 	}
 	defer f.Close()
-	g, err := gif.DecodeAll(f)
-	if err != nil {
+	r := bufio.NewReader(f)
+	head := make([]byte, 13)
+	if _, err := io.ReadFull(r, head); err != nil || string(head[:3]) != "GIF" {
 		return 0
 	}
-	total := 0
-	for _, d := range g.Delay {
-		if d <= 0 {
-			d = 10
+	skipTable := func(flags byte) bool {
+		if flags&0x80 == 0 {
+			return true
 		}
-		total += d * 10
+		_, err := r.Discard(3 << ((flags & 7) + 1))
+		return err == nil
 	}
-	return total
+	skipBlocks := func() bool {
+		for {
+			n, err := r.ReadByte()
+			if err != nil {
+				return false
+			}
+			if n == 0 {
+				return true
+			}
+			if _, err := r.Discard(int(n)); err != nil {
+				return false
+			}
+		}
+	}
+	if !skipTable(head[10]) {
+		return 0
+	}
+	total, delay := 0, 0
+	for {
+		kind, err := r.ReadByte()
+		if err != nil {
+			return 0
+		}
+		switch kind {
+		case 0x3B: // конец файла
+			return total
+		case 0x21: // расширение; 0xF9 — управление кадром с задержкой
+			label, err := r.ReadByte()
+			if err != nil {
+				return 0
+			}
+			if label == 0xF9 {
+				gce := make([]byte, 5)
+				if _, err := io.ReadFull(r, gce); err != nil || gce[0] < 4 {
+					return 0
+				}
+				delay = int(gce[2]) | int(gce[3])<<8
+				if _, err := r.Discard(int(gce[0]) - 4); err != nil {
+					return 0
+				}
+			}
+			if !skipBlocks() {
+				return 0
+			}
+		case 0x2C: // кадр
+			desc := make([]byte, 9)
+			if _, err := io.ReadFull(r, desc); err != nil || !skipTable(desc[8]) {
+				return 0
+			}
+			if _, err := r.ReadByte(); err != nil { // размер кода LZW
+				return 0
+			}
+			if !skipBlocks() {
+				return 0
+			}
+			if delay <= 0 {
+				delay = 10
+			}
+			total += delay * 10
+			delay = 0
+		default:
+			return 0
+		}
+	}
 }
 
 func contains(list []string, v string) bool {

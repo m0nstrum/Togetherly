@@ -54,9 +54,18 @@ def server_routes() -> dict[str, set[str]]:
         for method, path in re.findall(r"routerAdd\(\s*['\"]([A-Z]+)['\"]\s*,\s*['\"]([^'\"]+)", p.read_text()):
             out[path].add(f"{method} {p.name}")
     for p in ROOT.glob("server/internal/handler/*.go"):
-        for method, path in re.findall(r'\.(GET|POST|PATCH|PUT|DELETE)\("(/api/[^"]+)"', p.read_text()):
+        text = p.read_text()
+        for method, path in re.findall(r'\.(GET|POST|PATCH|PUT|DELETE)\("(/api/[^"]+)"', text):
             out[path].add(f"{method} {p.name}")
+        # Роуты через локальный помощник: route("/api/group/leave", …).
+        for path in re.findall(r'\broute\(\s*"(/api/[^"]+)"', text):
+            out[path].add(f"POST {p.name}")
     return out
+
+
+def covered(path: str, server: dict[str, set[str]]) -> bool:
+    # `/api/waiting/*` в комментарии клиента — это семейство роутов.
+    return path in server or any(s.startswith(path + "/") for s in server)
 
 
 def absent() -> set[str]:
@@ -71,7 +80,7 @@ def main() -> None:
     for path in sorted(set(client) | set(server)):
         if path.startswith(BUILTIN_PREFIXES) or path in BUILTIN or path in EXTERNAL:
             continue
-        if missing_only and (path in server or path not in client or path in skip):
+        if missing_only and (covered(path, server) or path not in client or path in skip):
             continue
         srv = ", ".join(sorted(server.get(path, ()))) or "—"
         cli = ", ".join(sorted(client.get(path, ()))) or "—"

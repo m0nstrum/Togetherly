@@ -29,7 +29,7 @@ func Compat(svc *pairs.Service, recs *records.Service, notif *notify.Service, lo
 	mux.HandleFunc("GET /internal/groups-of", h.groupsOf)
 	mux.HandleFunc("POST /internal/record", h.record)
 	// Своё, не hotpath: пуши хуков (зов в ленту, порисовать) вместо
-	// APNs/FCM — server/hooks/apns_push.js.
+	// APNs/FCM — server/pb_hooks/apns_push.js.
 	mux.HandleFunc("POST /internal/notify", h.notify)
 	// Страна по IP — для правил рекламы сундука. Рекламы нет, страна не нужна.
 	mux.HandleFunc("GET /internal/geo", func(w http.ResponseWriter, _ *http.Request) {
