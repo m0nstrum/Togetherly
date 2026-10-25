@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/wish.dart';
 import '../models/wish_reservation.dart';
 import '../models/wish_category.dart';
+import '../models/wish_due.dart';
 import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/pb_id.dart';
@@ -72,6 +73,7 @@ class WishRepository {
     String url = '',
     String image = '',
     String shop = '',
+    WishDue due = WishDue.none,
   }) async {
     final uid = _uid;
     final text = title.trim();
@@ -92,6 +94,7 @@ class WishRepository {
       url: url,
       image: image,
       shop: shop,
+      due: due,
       createdAt: DateTime.now(),
     );
     await _save(groupId, wish);
@@ -111,6 +114,7 @@ class WishRepository {
     String? url,
     String? image,
     String? shop,
+    WishDue? due,
   }) async {
     final text = title.trim();
     if (groupId.isEmpty || text.isEmpty) return;
@@ -127,8 +131,36 @@ class WishRepository {
         url: url,
         image: image,
         shop: shop,
+        due: due,
       ),
     );
+  }
+
+  /// «Я тоже хочу» и обратно. Ставит сам партнёр — поле общее, страж
+  /// пускает в него не-автора.
+  Future<Wish?> toggleAlso({
+    required String groupId,
+    required Wish wish,
+  }) async {
+    final uid = _uid;
+    if (uid == null || uid.isEmpty || groupId.isEmpty) return null;
+    final also = wish.also.contains(uid)
+        ? (List.of(wish.also)..remove(uid))
+        : [...wish.also, uid];
+    final next = wish.copyWith(also: also);
+    await _save(groupId, next, shared: const ['also']);
+    return next;
+  }
+
+  /// Новое место карточки в общем порядке. Двигает любой из пары.
+  Future<Wish> setPos({
+    required String groupId,
+    required Wish wish,
+    required double pos,
+  }) async {
+    final next = wish.copyWith(pos: pos);
+    if (groupId.isNotEmpty) await _save(groupId, next, shared: const ['pos']);
+    return next;
   }
 
   /// Заводит свою категорию пары. Доступ решает вызывающий: создание закрыто
@@ -309,7 +341,14 @@ class WishRepository {
   /// Чужое желание уходит на сервер урезанным заданием: страж
   /// `wishes_guard.pb.js` пускает не-автора только в поля отметки, а полное
   /// тело он отвергнет — вместе с обычной галочкой «сбылось».
-  Future<void> _save(String groupId, Wish wish) async {
+  ///
+  /// [shared] — какие общие поля поменялись: партнёр шлёт только их, чтобы
+  /// перестановка карточки не перетёрла свежую отметку автора.
+  Future<void> _save(
+    String groupId,
+    Wish wish, {
+    List<String> shared = const ['done'],
+  }) async {
     final map = wish.toMap(groupId: groupId);
     await LocalStore.instance.upsertRaw(_collection, wish.id, map);
 
@@ -317,10 +356,15 @@ class WishRepository {
       await OutboxService.instance.enqueue('wishMark', {
         'id': wish.id,
         'fields': {
-          'done': wish.done,
-          'done_at': wish.doneAt?.toIso8601String(),
-          'done_by': wish.doneBy,
-          'done_note': wish.doneNote,
+          if (shared.contains('done')) ...{
+            'done': wish.done,
+            'done_at': wish.doneAt?.toIso8601String(),
+            'done_by': wish.doneBy,
+            'done_note': wish.doneNote,
+          },
+          if (shared.contains('also')) 'also': wish.also.join(','),
+          if (shared.contains('pos'))
+            'pos': wish.pos == null ? '' : Wish.posText(wish.pos!),
         },
       });
       return;

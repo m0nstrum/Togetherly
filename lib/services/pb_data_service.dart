@@ -1741,6 +1741,24 @@ class PbDataService {
         'url': wish['url'] ?? '',
         'image': wish['image'] ?? '',
         'shop': wish['shop'] ?? '',
+        // «Когда», «я тоже хочу», порядок (docs/WISHLIST.md): пустое тоже
+        // доезжает — так срок снимают.
+        'due': wish['due'] ?? '',
+        'also': wish['also'] ?? '',
+        'pos': wish['pos'] ?? '',
+      };
+
+  /// Тело правки чужого желания: только присланные общие поля. Задания
+  /// прежних сборок несут все четыре поля отметки — они уходят как раньше.
+  static Map<String, dynamic> wishMarkBody(Map<String, dynamic> fields) => {
+        if (fields.containsKey('done')) 'done': fields['done'] ?? false,
+        if (fields.containsKey('done_at'))
+          'done_at': _iso(fields['done_at']) ?? '',
+        if (fields.containsKey('done_by')) 'done_by': fields['done_by'] ?? '',
+        if (fields.containsKey('done_note'))
+          'done_note': fields['done_note'] ?? '',
+        if (fields.containsKey('also')) 'also': fields['also'] ?? '',
+        if (fields.containsKey('pos')) 'pos': fields['pos'] ?? '',
       };
 
   /// Свои категории желаний, заведённые парой.
@@ -1782,21 +1800,18 @@ class PbDataService {
     }
   }
 
-  /// Отметка «сбылось» на ЧУЖОМ желании: шлём только поля отметки.
+  /// Правка ЧУЖОГО желания: шлём только общие поля — отметку «сбылось»,
+  /// «я тоже хочу» (`also`) и место в порядке (`pos`).
   ///
   /// Полное тело здесь не годится — страж `wishes_guard.pb.js` пускает не-автора
-  /// ровно в эти четыре поля, а `upsertWish` отправляет и название с заметкой,
+  /// ровно в эти поля, а `upsertWish` отправляет и название с заметкой,
   /// и обычная галочка отваливалась бы с 403. Записи может не быть только если
   /// её только что снёс автор — тогда отмечать нечего, и это не ошибка.
   Future<bool> markWish(String wishId, Map<String, dynamic> fields) async {
     if (wishId.isEmpty) return false;
     try {
-      await _pb.collection('wishes').update(wishId, body: {
-        'done': fields['done'] ?? false,
-        'done_at': _iso(fields['done_at']) ?? '',
-        'done_by': fields['done_by'] ?? '',
-        'done_note': fields['done_note'] ?? '',
-      }).timeout(const Duration(seconds: 15));
+      await _pb.collection('wishes').update(wishId, body: wishMarkBody(fields))
+          .timeout(const Duration(seconds: 15));
       return true;
     } catch (e) {
       if (e is ClientException && e.statusCode == 404) return true;

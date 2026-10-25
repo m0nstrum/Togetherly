@@ -222,6 +222,37 @@ void main() {
         ),
         'Плед',
       );
+      // Партнёр отмечает чужое желание: дата отметки уходит шифром в `enc`,
+      // «я тоже хочу» — в `also`; сервер пускает не-автора в эти поля, а
+      // цена автора в `enc` не теряется (docs/WISHLIST.md).
+      // Контекст правки — расшифрованная запись, как у приложения (кэш или
+      // сервер): из неё кодек добирает в `enc` чужие поля (цену).
+      final bobFull = PocketBase(
+        url,
+        httpClientFactory: () => E2EHttpClient(
+          http.Client(),
+          codec: () async => RecordCodec(c, b),
+          context: (col, id, _) async =>
+              (await bobChat.collection(col).getOne(id)).toJson(),
+          newId: newPbId,
+        ),
+      )..authStore.save(env['SMOKE_BTOK']!, null);
+      await bobFull.collection('wishes').update(
+        wish.id,
+        body: {
+          'done': true,
+          'done_at': DateTime.utc(2026, 10, 25).toIso8601String(),
+          'done_by': b.uid,
+          'also': b.uid,
+        },
+      );
+      final marked = await chat(env['SMOKE_ATOK']!, a)
+          .collection('wishes')
+          .getOne(wish.id);
+      expect(marked.getBoolValue('done'), isTrue);
+      expect(marked.getStringValue('also'), b.uid);
+      expect(marked.getIntValue('price'), 990);
+      expect(marked.getStringValue('done_at'), startsWith('2026-10-25'));
       await chat(env['SMOKE_ATOK']!, a).send(
         '/api/group/miss-you',
         method: 'POST',

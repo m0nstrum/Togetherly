@@ -6,6 +6,8 @@
 library;
 
 import 'memory.dart';
+import 'wish.dart';
+import 'wish_due.dart';
 
 enum PairEventKind {
   /// Воспоминание этого дня.
@@ -25,15 +27,27 @@ enum PairEventKind {
 
   /// День рождения участника.
   birthday,
+
+  /// Срок желания из «Хочу с тобой» (docs/WISHLIST.md).
+  wish,
 }
 
 class PairEvent {
-  const PairEvent(this.kind, {this.memory, this.uid = '', this.years = 0});
+  const PairEvent(
+    this.kind, {
+    this.memory,
+    this.wish,
+    this.uid = '',
+    this.years = 0,
+  });
 
   final PairEventKind kind;
 
   /// Для [PairEventKind.memory] и [PairEventKind.capsule].
   final Memory? memory;
+
+  /// Для [PairEventKind.wish].
+  final Wish? wish;
 
   /// Чей день рождения.
   final String uid;
@@ -61,6 +75,7 @@ Map<String, List<PairEvent>> pairCalendarEvents({
   DateTime? anniversaryDate,
   DateTime? firstKissDate,
   Map<String, DateTime> birthdays = const {},
+  Iterable<Wish> wishes = const [],
 }) {
   final first = DateTime(from.year, from.month, from.day);
   final last = DateTime(to.year, to.month, to.day);
@@ -83,6 +98,12 @@ Map<String, List<PairEvent>> pairCalendarEvents({
         PairEvent(PairEventKind.capsule, memory: m),
       );
     }
+  }
+
+  // Желания со сроком-датой; месяц и «когда-нибудь» в сетку не ложатся.
+  for (final w in wishes) {
+    if (w.done || w.due.kind != WishDueKind.date) continue;
+    add(w.due.anchor!, PairEvent(PairEventKind.wish, wish: w));
   }
 
   void yearly(DateTime? origin, PairEvent Function(int years) make) {

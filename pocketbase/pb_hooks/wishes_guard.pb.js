@@ -42,7 +42,9 @@ onRecordUpdateRequest((e) => {
       // Клиент при отметке чужого желания шлёт РОВНО эти поля
       // (`PbDataService.markWish`), а не всю запись — иначе страж отклонил бы
       // обычную галочку вместе с попыткой переписать название.
-      const allowed = { done: 1, done_at: 1, done_by: 1, done_note: 1, id: 1 };
+      // enc — шифр переехавших полей (там и дата отметки), also — «я тоже
+      // хочу», pos — общий порядок карточек (docs/WISHLIST.md).
+      const allowed = { done: 1, done_at: 1, done_by: 1, done_note: 1, enc: 1, also: 1, pos: 1, id: 1 };
       const body = (e.requestInfo().body || {});
       const keys = Object.keys(body);
       for (let i = 0; i < keys.length; i++) {

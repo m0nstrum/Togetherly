@@ -637,8 +637,22 @@ class OutboxService {
       case 'wishUpsert':
         return _replaceOrMerge(db, type, p,
             (a, b) => (a['wish'] as Map?)?['id'] == (b['wish'] as Map?)?['id']);
+      // Партнёр шлёт только свои поля (отметка, «я тоже», порядок): поля
+      // двух заданий складываются, иначе перестановка стёрла бы отметку.
       case 'wishMark':
-        return _replaceOrMerge(db, type, p, (a, b) => a['id'] == b['id']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => a['id'] == b['id'],
+          merge: (o, n) => {
+            ...o,
+            'fields': {
+              ...?(o['fields'] as Map?)?.cast<String, dynamic>(),
+              ...?(n['fields'] as Map?)?.cast<String, dynamic>(),
+            },
+          },
+        );
       case 'wishCategoryUpsert':
         return _replaceOrMerge(db, type, p,
             (a, b) => (a['kind'] as Map?)?['id'] == (b['kind'] as Map?)?['id']);

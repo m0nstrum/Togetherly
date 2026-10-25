@@ -51,3 +51,32 @@ func TestPairAuthorship(t *testing.T) {
 		})
 	}
 }
+
+// Чужое желание партнёр отмечает сбывшимся (дата — в шифре `enc`), ставит
+// «я тоже хочу» и двигает в общем порядке; название не трогает.
+func TestWishSharedFields(t *testing.T) {
+	w := newWorld(t)
+	col, err := w.app.FindCollectionByNameOrId("wishes")
+	require.NoError(t, err)
+	r := core.NewRecord(col)
+	r.Set("author_uid", alice)
+	r.Set("group_id", pairA)
+	r.Set("title", "e2e1.k.n.c")
+	require.NoError(t, w.app.Save(r))
+	path := "/api/collections/wishes/records/" + r.Id
+
+	for _, patch := range []string{
+		`{"done":true,"done_by":"` + bob + `","enc":"e2e1.k.n.c"}`,
+		`{"also":"e2e1.k.n.c"}`,
+		`{"pos":"e2e1.k.n.c"}`,
+	} {
+		code, body := w.do(t, http.MethodPatch, path, w.bTok, patch)
+		assert.Equal(t, http.StatusOK, code, patch+" "+body)
+	}
+	for _, patch := range []string{`{"title":"x"}`, `{"due":"e2e1.k.n.c"}`} {
+		code, _ := w.do(t, http.MethodPatch, path, w.bTok, patch)
+		assert.Equal(t, http.StatusForbidden, code, patch)
+	}
+	code, body := w.do(t, http.MethodPatch, path, w.aTok, `{"due":"e2e1.k.n.c"}`)
+	assert.Equal(t, http.StatusOK, code, body)
+}

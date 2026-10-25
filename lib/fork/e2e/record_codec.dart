@@ -152,6 +152,10 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'currency': SealedField.text(),
     'price': SealedField.moved(cleared: 0, locked: 0),
     'done_at': SealedField.moved(),
+    // «Когда», «я тоже хочу», порядок (docs/WISHLIST.md).
+    'due': SealedField.text(),
+    'also': SealedField.text(),
+    'pos': SealedField.text(),
   },
   'wish_categories': {
     'title': SealedField.text(),

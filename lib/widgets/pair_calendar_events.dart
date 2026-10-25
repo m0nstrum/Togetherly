@@ -12,6 +12,7 @@ String pairEventEmoji(PairEvent e) => switch (e.kind) {
   PairEventKind.celebration => '🎉',
   PairEventKind.firstKiss => '💋',
   PairEventKind.birthday => '🎂',
+  PairEventKind.wish => '✨',
 };
 
 String _years(int n) => ruEn(
@@ -52,6 +53,8 @@ String pairEventTitle(PairEvent e, String Function(String uid) nameOf) {
       return who.isEmpty
           ? ruEn('День рождения', 'Birthday')
           : ruEn('День рождения: $who', '$who’s birthday');
+    case PairEventKind.wish:
+      return ruEn('Хотим: ${e.wish!.title}', 'We want: ${e.wish!.title}');
   }
 }
 

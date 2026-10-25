@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/symbol_catalog.dart';
 import '../../models/wish.dart';
 import '../../models/wish_category.dart';
+import '../../models/wish_due.dart';
 import '../../dict_strings.dart' show zhForEnglishIfZh;
 import '../../services/locale_service.dart';
 import '../../services/pb_data_service.dart';
@@ -14,6 +15,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/fonts.dart';
 import '../../theme/profile_theme.dart';
 import '../app_sheet.dart';
+import 'wish_due_picker.dart';
 import '../storage_image.dart';
 
 /// Что вернул лист: новое желание или правка старого.
@@ -28,6 +30,7 @@ class WishDraft {
     this.url = '',
     this.image = '',
     this.shop = '',
+    this.due = WishDue.none,
   });
 
   final String title;
@@ -41,6 +44,9 @@ class WishDraft {
   final String url;
   final String image;
   final String shop;
+
+  /// «Когда»: дата, месяц или «когда-нибудь».
+  final WishDue due;
 }
 
 /// Лист «Новое желание»: категория чипами, название и необязательная заметка.
@@ -165,6 +171,7 @@ class _WishFormState extends State<_WishForm> {
   late String _image = widget.existing?.image ?? '';
   late String _shop = widget.existing?.shop ?? '';
   late String _currency = widget.existing?.currency ?? '';
+  late WishDue _due = widget.existing?.due ?? WishDue.none;
 
   /// Тянет карточку товара со страницы магазина. Что не нашлось — человек
   /// вписывает сам: у половины магазинов og-тегов нет вовсе, и пустая форма
@@ -311,6 +318,7 @@ class _WishFormState extends State<_WishForm> {
         url: _url.text.trim(),
         image: _image,
         shop: _shop,
+        due: _due,
       ),
     );
   }
@@ -379,7 +387,14 @@ class _WishFormState extends State<_WishForm> {
               hint: _tr('не обязательно', 'optional'),
               maxLength: 200,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 4),
+            WishDuePicker(
+              value: _due,
+              scheme: _cs,
+              ru: widget.ru,
+              onChanged: (v) => setState(() => _due = v),
+            ),
+            const SizedBox(height: 12),
             _linkField(),
             const SizedBox(height: 10),
             _photoButton(),

@@ -25,6 +25,8 @@ import '../dict_strings.dart' show ruEn;
 import '../services/locale_service.dart';
 import '../services/chat_service.dart';
 import '../services/memory_repository.dart';
+import '../services/wish_repository.dart';
+import '../models/wish.dart';
 import '../services/mood_service.dart';
 import '../services/widget_service.dart';
 import '../theme/app_theme.dart';
@@ -92,7 +94,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   /// События пары по дням за год вокруг листаемого периода (D8).
   Map<String, List<PairEvent>> get _events {
     final y = _calAnchor.year;
-    final key = '$y|${_memories.length}|${identityHashCode(_memories)}';
+    final key = '$y|${identityHashCode(_memories)}|${identityHashCode(_wishes)}';
     if (key != _eventsKey) {
       _eventsKey = key;
       _eventsCache = pairCalendarEvents(
@@ -103,10 +105,15 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
         anniversaryDate: _pair.anniversaryDate,
         firstKissDate: _pair.firstKissDate,
         birthdays: _pair.memberBirthdays,
+        wishes: _wishes,
       );
     }
     return _eventsCache;
   }
+
+  /// Желания со сроком «когда» — тоже события пары (docs/WISHLIST.md).
+  List<Wish> _wishes = const [];
+  StreamSubscription? _wishesSub;
 
   String _eventsKey = '';
   Map<String, List<PairEvent>> _eventsCache = const {};
@@ -146,7 +153,16 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
       _mood.listenToPartner(p.uid);
     }
     _listenMemories();
+    _listenWishes();
     _listenChat();
+  }
+
+  void _listenWishes() {
+    final groupId = _pair.pairId;
+    if (groupId.isEmpty) return;
+    _wishesSub = WishRepository.instance.watch(groupId).listen((wishes) {
+      if (mounted) setState(() => _wishes = wishes);
+    });
   }
 
   void _listenChat() {
@@ -190,6 +206,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     _mood.removeListener(_onChanged);
     _cycle.removeListener(_onChanged);
     _memoriesSub?.cancel();
+    _wishesSub?.cancel();
     _chatSub?.cancel();
     super.dispose();
   }

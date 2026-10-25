@@ -1,6 +1,7 @@
 import 'package:pocketbase/pocketbase.dart';
 
 import 'wish_category.dart';
+import 'wish_due.dart';
 
 /// Общее желание пары: фильм, который ждут, место, куда хотят, или что-то своё.
 ///
@@ -26,6 +27,9 @@ class Wish {
     this.url = '',
     this.image = '',
     this.shop = '',
+    this.due = WishDue.none,
+    this.also = const [],
+    this.pos,
     required this.createdAt,
   });
 
@@ -81,6 +85,21 @@ class Wish {
   /// Название магазина из ссылки — подпись под ценой.
   final String shop;
 
+  /// «Когда» (docs/WISHLIST.md): дата, месяц или «когда-нибудь». Правит
+  /// автор.
+  final WishDue due;
+
+  /// «Я тоже хочу»: кто, кроме автора, отметил желание своим. Ставит сам
+  /// партнёр, поэтому поле общее — как отметка «сбылось».
+  final List<String> also;
+
+  /// Место в общем порядке карточек (перетаскивание). Null — порядка ещё не
+  /// задавали: такие желания идут по дате добавления, сверху новые.
+  final double? pos;
+
+  /// Хотят оба: автор и кто-то ещё.
+  bool get wantedByBoth => also.any((u) => u.isNotEmpty && u != authorUid);
+
   bool get hasPrice => price > 0;
 
   /// Цена как в карточке: «12 990 ₽».
@@ -104,10 +123,19 @@ class Wish {
     return builtinWishKind(categoryId)?.symbol ?? 'star';
   }
 
-  /// Мечты: сверху то, что задумали недавно.
+  /// Мечты в общем порядке пары. Желания без места (новые, записи прежних
+  /// сборок) — сверху, свежие первыми: только что добавленное должно быть
+  /// видно сразу, а не уехать в конец списка.
   static List<Wish> dreaming(Iterable<Wish> all) {
     final list = all.where((w) => !w.done).toList();
-    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    list.sort((a, b) {
+      final ap = a.pos, bp = b.pos;
+      if (ap == null && bp == null) return b.createdAt.compareTo(a.createdAt);
+      if (ap == null) return -1;
+      if (bp == null) return 1;
+      final c = ap.compareTo(bp);
+      return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
+    });
     return list;
   }
 
@@ -123,6 +151,17 @@ class Wish {
       return bd.compareTo(ad);
     });
     return list;
+  }
+
+  static List<String> _uids(String raw) => [
+        for (final u in raw.split(','))
+          if (u.trim().isNotEmpty) u.trim(),
+      ];
+
+  static double? _pos(Object? raw) {
+    if (raw is num) return raw.toDouble();
+    final s = (raw ?? '').toString();
+    return s.isEmpty ? null : double.tryParse(s);
   }
 
   static DateTime? _date(Object? raw) {
@@ -151,6 +190,9 @@ class Wish {
         url: rec.getStringValue('url'),
         image: rec.getStringValue('image'),
         shop: rec.getStringValue('shop'),
+        due: WishDue.parse(rec.getStringValue('due')),
+        also: _uids(rec.getStringValue('also')),
+        pos: _pos(rec.getStringValue('pos')),
         createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
       );
 
@@ -173,6 +215,9 @@ class Wish {
         url: (map['url'] ?? '') as String,
         image: (map['image'] ?? '') as String,
         shop: (map['shop'] ?? '') as String,
+        due: WishDue.parse(map['due']?.toString()),
+        also: _uids((map['also'] ?? '').toString()),
+        pos: _pos(map['pos']),
         createdAt: _date(map['created']) ?? DateTime.now(),
       );
 
@@ -194,6 +239,9 @@ class Wish {
         if (url.isNotEmpty) 'url': url,
         if (image.isNotEmpty) 'image': image,
         if (shop.isNotEmpty) 'shop': shop,
+        if (due.isSet) 'due': due.encode(),
+        if (also.isNotEmpty) 'also': also.join(','),
+        if (pos != null) 'pos': posText(pos!),
         'created': createdAt.toIso8601String(),
       };
 
@@ -212,6 +260,9 @@ class Wish {
     String? url,
     String? image,
     String? shop,
+    WishDue? due,
+    List<String>? also,
+    double? pos,
   }) =>
       Wish(
         id: id,
@@ -230,6 +281,9 @@ class Wish {
         url: url ?? this.url,
         image: image ?? this.image,
         shop: shop ?? this.shop,
+        due: due ?? this.due,
+        also: also ?? this.also,
+        pos: pos ?? this.pos,
         createdAt: createdAt,
       );
 
@@ -260,6 +314,13 @@ class Wish {
         url: url,
         image: image,
         shop: shop,
+        due: due,
+        also: also,
+        pos: pos,
         createdAt: createdAt,
       );
+
+  /// Место в порядке строкой: шифруется текстом, лишние нули не нужны.
+  static String posText(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 }

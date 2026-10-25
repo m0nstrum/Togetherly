@@ -21,6 +21,7 @@ import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/storage_image.dart';
 import '../widgets/wishes/wish_category_sheet.dart';
 import '../widgets/wishes/wish_details_sheet.dart';
+import '../widgets/wishes/wish_due_picker.dart';
 import '../widgets/wishes/wish_form_sheet.dart';
 import 'plus_screen.dart';
 
@@ -113,6 +114,7 @@ class _WishesScreenState extends State<WishesScreen> {
       url: draft.url,
       image: draft.image,
       shop: draft.shop,
+      due: draft.due,
     );
   }
 
@@ -197,6 +199,7 @@ class _WishesScreenState extends State<WishesScreen> {
       url: draft.url,
       image: draft.image,
       shop: draft.shop,
+      due: draft.due,
     );
   }
 
@@ -215,6 +218,7 @@ class _WishesScreenState extends State<WishesScreen> {
       url: draft.url,
       image: draft.image,
       shop: draft.shop,
+      due: draft.due,
     );
   }
 
@@ -268,6 +272,10 @@ class _WishesScreenState extends State<WishesScreen> {
       ),
     );
   }
+
+  /// «Я тоже хочу» на желании партнёра.
+  Future<void> _toggleAlso(Wish wish) =>
+      _repo.toggleAlso(groupId: widget.groupId, wish: wish);
 
   Future<void> _toggle(Wish wish) async {
     if (wish.done) {
@@ -443,6 +451,10 @@ class _WishesScreenState extends State<WishesScreen> {
                                                 wish: wish,
                                                 authorName:
                                                     _nameOf(wish.authorUid),
+                                                alsoMine: wish.also
+                                                    .contains(widget.myUid),
+                                                onAlso: () =>
+                                                    _toggleAlso(wish),
                                               ),
                                   onLongPress:
                                       mine ? () => _remove(wish) : null,
@@ -456,6 +468,11 @@ class _WishesScreenState extends State<WishesScreen> {
                                       ? null
                                       : () => _toggleReserve(wish),
                                   reserved: _reserved.contains(wish.id),
+                                  onAlso: mine || wish.done
+                                      ? null
+                                      : () => _toggleAlso(wish),
+                                  alsoMine:
+                                      wish.also.contains(widget.myUid),
                                 );
                               },
                             ),
@@ -632,6 +649,8 @@ class _WishTile extends StatelessWidget {
     this.onEditDate,
     this.onReserve,
     this.reserved = false,
+    this.onAlso,
+    this.alsoMine = false,
   });
 
   final Wish wish;
@@ -656,10 +675,15 @@ class _WishTile extends StatelessWidget {
   /// Уже взял. Знают об этом только даритель и сервер.
   final bool reserved;
 
+  /// «Я тоже хочу» — на чужом несбывшемся желании.
+  final VoidCallback? onAlso;
+
+  /// Я уже отметил «я тоже хочу».
+  final bool alsoMine;
+
   @override
   Widget build(BuildContext context) {
     final done = wish.done;
-    final s = LocaleService.current;
 
     // Сбывшееся садится на контейнер ниже — тем же приёмом гаснут выполненные
     // шаги онбординга.
@@ -675,11 +699,40 @@ class _WishTile extends StatelessWidget {
       if (wish.note.isNotEmpty) wish.note,
     ].join(' · ');
 
+    // Хотят оба — карточка заметнее: обводка цветом темы (docs/WISHLIST.md).
+    final both = wish.wantedByBoth && !done;
+    final due = done ? '' : wishDueLabel(wish.due);
+    final duePast = wish.due.isPast(DateTime.now());
+
+    return DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: both ? Border.all(color: scheme.primary, width: 1.6) : null,
+      ),
+      child: _card(context, background, leadBackground, leadColor, subtitle,
+          both, due, duePast),
+    );
+  }
+
+  Widget _card(
+    BuildContext context,
+    Color background,
+    Color leadBackground,
+    Color leadColor,
+    String subtitle,
+    bool both,
+    String due,
+    bool duePast,
+  ) {
+    final done = wish.done;
+    final s = LocaleService.current;
     return Material(
       color: background,
       borderRadius: BorderRadius.circular(28),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
+        key: Key('wish-tile-${wish.id}'),
         onTap: onTap,
         onLongPress: onLongPress,
         child: Padding(
@@ -737,6 +790,30 @@ class _WishTile extends StatelessWidget {
                         color: done ? scheme.onSurfaceVariant : scheme.onSurface,
                       ),
                     ),
+                    if (due.isNotEmpty || both)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 4,
+                          children: [
+                            if (due.isNotEmpty)
+                              _Meta(
+                                icon: Icons.event_rounded,
+                                label: due,
+                                color: duePast
+                                    ? scheme.error
+                                    : scheme.onSurfaceVariant,
+                              ),
+                            if (both)
+                              _Meta(
+                                icon: Icons.favorite_rounded,
+                                label: ru ? 'Хотим оба' : 'We both want it',
+                                color: scheme.primary,
+                              ),
+                          ],
+                        ),
+                      ),
                     if (wish.hasPrice || wish.shop.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -860,6 +937,21 @@ class _WishTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onAlso != null)
+                IconButton(
+                  key: Key('wish-also-${wish.id}'),
+                  tooltip: alsoMine
+                      ? (ru ? 'Вы тоже хотите' : 'You want it too')
+                      : (ru ? 'Я тоже хочу' : 'I want it too'),
+                  onPressed: onAlso,
+                  icon: Icon(
+                    alsoMine
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    size: 20,
+                    color: alsoMine ? scheme.primary : scheme.onSurfaceVariant,
+                  ),
+                ),
               // «Дарю» — только на чужой вещи и только пока она не сбылась.
               // Кнопки нет у автора вовсе: он и записи такой не получает,
               // а пустая кнопка выдала бы, что подарок кто-то готовит.
@@ -894,6 +986,30 @@ class _WishTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Строка-примета под названием: срок, «хотим оба».
+class _Meta extends StatelessWidget {
+  const _Meta({required this.icon, required this.label, required this.color});
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: AppFonts.onest(size: 12.5, weight: 600, color: color),
+        ),
+      ],
     );
   }
 }
