@@ -122,7 +122,7 @@ func Do(t testing.TB, app core.App, method, url, token, body string) (int, strin
 }
 
 // User — пользователь с паролем password123 и группами groups (group_ids
-// обычно ведёт JS-хук groups_membership, в тестах его нет).
+// ведёт bindMembership; здесь ставим сразу, без пересчёта).
 func User(t testing.TB, app core.App, id string, groups ...string) (*core.Record, string) {
 	t.Helper()
 	col, err := app.FindCollectionByNameOrId("users")

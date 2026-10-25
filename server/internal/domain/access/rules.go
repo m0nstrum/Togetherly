@@ -4,7 +4,7 @@
 // pocketbase/collections_schema.json (через `@request.auth.group_ids`) и в
 // pocketbase/apply_acl.py (через join к groups). Форк берёт первый вариант —
 // он опирается на скрытое поле `users.group_ids`, которое ведёт хук
-// groups_membership, и не требует тяжёлых join'ов. Миграция применяет эти
+// bindMembership, и не требует тяжёлых join'ов. Миграция применяет эти
 // правила поверх импортированной схемы, так что источник истины — этот файл.
 //
 // Правило — фильтр PocketBase. nil — доступ только суперпользователю
@@ -93,7 +93,7 @@ func own(ownerField string) Rules {
 var Collections = map[string]Rules{
 	// Пара. Список и чтение — по своему members (до появления group_ids у
 	// создателя группа уже должна быть ему видна). Состав при правке
-	// защищает хук groups_guard, при создании — страж на Go (только ты).
+	// защищает bindGroupsGuard, при создании — страж на Go (только ты).
 	"groups": {
 		List:   s(authed + ` && members ?~ @request.auth.id`),
 		View:   s(authed + ` && members ?~ @request.auth.id`),
