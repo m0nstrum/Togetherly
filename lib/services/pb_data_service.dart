@@ -1748,6 +1748,7 @@ class PbDataService {
         'pos': wish['pos'] ?? '',
         'skip': wish['skip'] ?? '',
         'place': wish['place'] ?? '',
+        'memory': wish['memory'] ?? '',
       };
 
   /// Тело правки чужого желания: только присланные общие поля. Задания
@@ -1762,6 +1763,7 @@ class PbDataService {
         if (fields.containsKey('also')) 'also': fields['also'] ?? '',
         if (fields.containsKey('pos')) 'pos': fields['pos'] ?? '',
         if (fields.containsKey('skip')) 'skip': fields['skip'] ?? '',
+        if (fields.containsKey('memory')) 'memory': fields['memory'] ?? '',
       };
 
   /// Комментарий к желанию (docs/WISHLIST.md).

@@ -14,10 +14,11 @@ func bindAuthorship(app core.App) {
 		"chat_messages":     {"user_uid", map[string]bool{"reactions": true, "voice_heard_at": true}},
 		"live_session_chat": {"uid", map[string]bool{"reactions": true}},
 		// `enc` — шифр переехавших полей (дата отметки среди них): без него
-		// партнёр не отметил бы сбывшимся. `also`, `pos`, `skip` — «я тоже
-		// хочу», общий порядок карточек и «другое желание недели».
+		// партнёр не отметил бы сбывшимся. `also`, `pos`, `skip`, `memory` —
+		// «я тоже хочу», общий порядок карточек, «другое желание недели» и
+		// воспоминание, к которому привязано сбывшееся.
 		"wishes": {"author_uid", map[string]bool{"done": true, "done_at": true, "done_by": true, "done_note": true,
-			"enc": true, "also": true, "pos": true, "skip": true}},
+			"enc": true, "also": true, "pos": true, "skip": true, "memory": true}},
 	} {
 		app.OnRecordUpdateRequest(name).BindFunc(func(e *core.RecordRequestEvent) error {
 			if e.HasSuperuserAuth() || e.Auth == nil {

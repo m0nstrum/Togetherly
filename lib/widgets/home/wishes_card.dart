@@ -27,6 +27,7 @@ class WishesCard extends StatelessWidget {
     required this.partnerName,
     this.myAvatarUrl,
     this.partnerAvatarUrl,
+    this.onOpenMemory,
   });
 
   final AppTheme theme;
@@ -37,6 +38,9 @@ class WishesCard extends StatelessWidget {
   final String partnerName;
   final String? myAvatarUrl;
   final String? partnerAvatarUrl;
+
+  /// fork: открыть воспоминание сбывшегося (docs/WISHLIST.md).
+  final void Function(String memoryId)? onOpenMemory;
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +166,7 @@ class WishesCard extends StatelessWidget {
           myAvatarUrl: myAvatarUrl,
           partnerAvatarUrl: partnerAvatarUrl,
           openFulfilled: fulfilled,
+          onOpenMemory: onOpenMemory,
         ),
       ),
     );

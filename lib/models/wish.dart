@@ -33,6 +33,7 @@ class Wish {
     this.pos,
     this.skip = '',
     this.place,
+    this.memoryId = '',
     required this.createdAt,
   });
 
@@ -106,6 +107,10 @@ class Wish {
 
   /// Точка «Места» на карте. Правит автор.
   final WishPlace? place;
+
+  /// Воспоминание, к которому привязано сбывшееся. Привязывает любой из
+  /// пары — сразу или позже, не обязательно.
+  final String memoryId;
 
   /// Хотят оба: автор и кто-то ещё.
   bool get wantedByBoth => also.any((u) => u.isNotEmpty && u != authorUid);
@@ -205,6 +210,7 @@ class Wish {
         pos: _pos(rec.getStringValue('pos')),
         skip: rec.getStringValue('skip'),
         place: WishPlace.parse(rec.getStringValue('place')),
+        memoryId: rec.getStringValue('memory'),
         createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
       );
 
@@ -232,6 +238,7 @@ class Wish {
         pos: _pos(map['pos']),
         skip: (map['skip'] ?? '').toString(),
         place: WishPlace.parse(map['place']?.toString()),
+        memoryId: (map['memory'] ?? '').toString(),
         createdAt: _date(map['created']) ?? DateTime.now(),
       );
 
@@ -258,6 +265,7 @@ class Wish {
         if (pos != null) 'pos': posText(pos!),
         if (skip.isNotEmpty) 'skip': skip,
         if (place != null) 'place': place!.encode(),
+        if (memoryId.isNotEmpty) 'memory': memoryId,
         'created': createdAt.toIso8601String(),
       };
 
@@ -282,6 +290,7 @@ class Wish {
     String? skip,
     WishPlace? place,
     bool noPlace = false,
+    String? memoryId,
   }) =>
       Wish(
         id: id,
@@ -305,6 +314,7 @@ class Wish {
         pos: pos ?? this.pos,
         skip: skip ?? this.skip,
         place: noPlace ? null : place ?? this.place,
+        memoryId: memoryId ?? this.memoryId,
         createdAt: createdAt,
       );
 
@@ -340,6 +350,7 @@ class Wish {
         pos: pos,
         skip: skip,
         place: place,
+        memoryId: memoryId,
         createdAt: createdAt,
       );
 

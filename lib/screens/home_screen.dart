@@ -556,6 +556,7 @@ class _HomeScreenState extends State<HomeScreen> {
           myAvatarUrl: widget.userData.avatarUrl,
           partnerAvatarUrl: _pairData.partnerAvatarUrl,
           sharedUrl: sharedUrl,
+          onOpenMemory: _openMemoryById,
         ),
         settings: const RouteSettings(name: '/wishes'),
       ),
@@ -1907,6 +1908,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Открыть Ленту воспоминаний (общий навбар внутри; вкладки возвращают
   /// на главную через onNavTab). Без авто-создания пина.
+  /// fork: воспоминание сбывшегося желания — лента сразу на нём.
+  void _openMemoryById(String memoryId) {
+    if (memoryId.isEmpty || !_pairData.isPaired) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MemoryLaneScreen(
+          pairData: _pairData,
+          theme: _t,
+          userData: widget.userData,
+          initialMemoryId: memoryId,
+        ),
+        settings: const RouteSettings(name: '/memory_lane'),
+      ),
+    );
+  }
+
   void _openMemoryLane({
     bool openCreateOnStart = false,
     MemoryType? openCreateType,
@@ -2233,6 +2251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 partnerName: _pairData.partnerDisplayName,
                 myAvatarUrl: widget.userData.avatarUrl,
                 partnerAvatarUrl: _pairData.partnerAvatarUrl,
+                onOpenMemory: _openMemoryById, // fork
               ),
             ),
           );

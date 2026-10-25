@@ -21,11 +21,15 @@ import '../widgets/avatar_widget.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/storage_image.dart';
+import '../fork/wishes/wish_memory.dart';
 import '../fork/wishes/wish_place_picker.dart';
 import '../fork/wishes/wish_places.dart';
 import '../fork/wishes/wish_reminder_plan.dart';
 import '../fork/wishes/wish_reminder_settings.dart';
 import '../fork/wishes/wish_reminders.dart';
+import '../fork/wishes/wish_wall.dart';
+import '../models/memory.dart';
+import '../services/memory_repository.dart';
 import '../widgets/wishes/wish_category_sheet.dart';
 import '../widgets/wishes/wish_comments_sheet.dart';
 import '../widgets/wishes/wish_details_sheet.dart';
@@ -52,6 +56,7 @@ class WishesScreen extends StatefulWidget {
     this.partnerAvatarUrl,
     this.openFulfilled = false,
     this.sharedUrl = '',
+    this.onOpenMemory,
   });
 
   final AppTheme theme;
@@ -70,6 +75,10 @@ class WishesScreen extends StatefulWidget {
 
   /// Ссылка из «Поделиться»: экран открывается с готовой формой вещи.
   final String sharedUrl;
+
+  /// Открыть воспоминание, привязанное к сбывшемуся (docs/WISHLIST.md).
+  /// Null — экран открыт без ленты под рукой: кнопки «Открыть» нет.
+  final void Function(String memoryId)? onOpenMemory;
 
   @override
   State<WishesScreen> createState() => _WishesScreenState();
@@ -98,6 +107,10 @@ class _WishesScreenState extends State<WishesScreen> {
   Map<String, int> _commentCounts = const {};
   StreamSubscription<List<WishComment>>? _commentsSub;
 
+  /// Воспоминания пары: выбор для сбывшегося и картинки стены.
+  Map<String, Memory> _memories = const {};
+  StreamSubscription<List<Memory>>? _memoriesSub;
+
   /// Места после перетаскивания, пока запись не вернулась из кэша: без них
   /// карточка на миг прыгала бы обратно.
   final Map<String, double> _posOverride = {};
@@ -112,6 +125,10 @@ class _WishesScreenState extends State<WishesScreen> {
     super.initState();
     _customSub = _repo.watchCategories(widget.groupId).listen((list) {
       if (mounted) setState(() => _custom = list);
+    });
+    _memoriesSub =
+        MemoryRepository.instance.watch(widget.groupId).listen((list) {
+      if (mounted) setState(() => _memories = {for (final m in list) m.id: m});
     });
     _commentsSub = _repo.watchComments(widget.groupId).listen((list) {
       if (mounted) setState(() => _commentCounts = wishCommentCounts(list));
@@ -269,6 +286,40 @@ class _WishesScreenState extends State<WishesScreen> {
     }
   }
 
+  /// Привязать сбывшееся к воспоминанию — сразу после отметки или позже.
+  Future<void> _linkMemory(Wish wish) async {
+    final id = await pickWishMemory(
+      context,
+      wish: wish,
+      memories: _memories.values.toList(),
+    );
+    if (id == null || !mounted) return;
+    await _repo.linkMemory(groupId: widget.groupId, wish: wish, memoryId: id);
+  }
+
+  void _openWall(List<Wish> fulfilled) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Theme(
+          data: ProfileTheme.data(_cs),
+          child: WishWallScreen(
+            fulfilled: fulfilled,
+            memories: _memories,
+            onOpen: widget.onOpenMemory == null
+                ? null
+                : (w) {
+                    if (w.memoryId.isNotEmpty &&
+                        _memories.containsKey(w.memoryId)) {
+                      widget.onOpenMemory!(w.memoryId);
+                    }
+                  },
+          ),
+        ),
+        settings: const RouteSettings(name: '/wishes/wall'),
+      ),
+    );
+  }
+
   /// Попросили другое желание недели: это до конца недели не выпадает.
   Future<void> _anotherWeekly(Wish wish) => _repo.skipWeek(
         groupId: widget.groupId,
@@ -305,6 +356,7 @@ class _WishesScreenState extends State<WishesScreen> {
   void dispose() {
     _customSub?.cancel();
     _commentsSub?.cancel();
+    _memoriesSub?.cancel();
     super.dispose();
   }
 
@@ -614,10 +666,23 @@ class _WishesScreenState extends State<WishesScreen> {
                               ? ListView.separated(
                                   padding:
                                       const EdgeInsets.fromLTRB(16, 2, 16, 8),
-                                  itemCount: shown.length,
+                                  itemCount: shown.length + 1,
                                   separatorBuilder: (_, _) =>
                                       const SizedBox(height: 10),
-                                  itemBuilder: (_, i) => _tile(shown[i]),
+                                  // Сверху — вход на стену «Сбылось».
+                                  itemBuilder: (_, i) => i == 0
+                                      ? Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: FilledButton.tonalIcon(
+                                            key: const Key('wish-wall'),
+                                            onPressed: () => _openWall(shown),
+                                            icon: const Icon(
+                                                Icons.grid_view_rounded),
+                                            label: Text(wishWallButtonLabel(
+                                                shown.length)),
+                                          ),
+                                        )
+                                      : _tile(shown[i - 1]),
                                 )
                               // Мечты двигают долгим нажатием; порядок общий
                               // для пары (docs/WISHLIST.md).
@@ -744,6 +809,16 @@ class _WishesScreenState extends State<WishesScreen> {
       alsoMine: wish.also.contains(widget.myUid),
       comments: _commentCounts[wish.id] ?? 0,
       onComments: () => _openComments(wish),
+      onLinkMemory: wish.done ? () => _linkMemory(wish) : null,
+      onOpenMemory: wish.memoryId.isNotEmpty &&
+              widget.onOpenMemory != null &&
+              _memories.containsKey(wish.memoryId)
+          ? () => widget.onOpenMemory!(wish.memoryId)
+          : null,
+      onUnlinkMemory: wish.memoryId.isEmpty
+          ? null
+          : () => _repo.linkMemory(
+              groupId: widget.groupId, wish: wish, memoryId: ''),
       onShowPlace: wish.place == null
           ? null
           : () => WishPlacePicker.show(context,
@@ -920,6 +995,9 @@ class _WishTile extends StatelessWidget {
     this.comments = 0,
     this.onComments,
     this.onShowPlace,
+    this.onLinkMemory,
+    this.onOpenMemory,
+    this.onUnlinkMemory,
   });
 
   final Wish wish;
@@ -959,6 +1037,11 @@ class _WishTile extends StatelessWidget {
 
   /// Показать точку «Места» на карте.
   final VoidCallback? onShowPlace;
+
+  /// Сбывшееся и воспоминание: привязать, открыть, отвязать.
+  final VoidCallback? onLinkMemory;
+  final VoidCallback? onOpenMemory;
+  final VoidCallback? onUnlinkMemory;
 
   @override
   Widget build(BuildContext context) {
@@ -1199,6 +1282,38 @@ class _WishTile extends StatelessWidget {
                                 color: scheme.onSurfaceVariant),
                           ),
                         ),
+                      // Воспоминание: привязать (не обязательно) или открыть.
+                      if (wish.memoryId.isEmpty && onLinkMemory != null)
+                        TextButton.icon(
+                          key: Key('wish-link-memory-${wish.id}'),
+                          onPressed: onLinkMemory,
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            foregroundColor: scheme.onSurfaceVariant,
+                          ),
+                          icon: const Icon(Icons.add_photo_alternate_outlined,
+                              size: 16),
+                          label: Text(
+                            ru ? 'Привязать воспоминание' : 'Link a memory',
+                            style: AppFonts.onest(size: 12.5, weight: 600),
+                          ),
+                        )
+                      else if (wish.memoryId.isNotEmpty)
+                        TextButton.icon(
+                          onPressed: onOpenMemory,
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            foregroundColor: scheme.primary,
+                          ),
+                          icon: const Icon(Icons.photo_library_outlined,
+                              size: 16),
+                          label: Text(
+                            ru ? 'Воспоминание' : 'Memory',
+                            style: AppFonts.onest(size: 12.5, weight: 600),
+                          ),
+                        ),
                     ] else if (subtitle.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 3),
@@ -1277,10 +1392,24 @@ class _WishTile extends StatelessWidget {
                     if (action == 'delete') { onDelete?.call(); return; }
                     if (action == 'comments') { onComments?.call(); return; }
                     if (action == 'map') { onShowPlace?.call(); return; }
+                    if (action == 'link') { onLinkMemory?.call(); return; }
+                    if (action == 'unlink') { onUnlinkMemory?.call(); return; }
                     final uri = Uri.tryParse(wish.url);
                     if (uri != null) await safeLaunchUrl(uri, mode: LaunchMode.externalApplication);
                   },
                   itemBuilder: (_) => [
+                    if (onLinkMemory != null)
+                      PopupMenuItem(
+                        value: 'link',
+                        child: Text(wish.memoryId.isEmpty
+                            ? (ru ? 'Привязать воспоминание' : 'Link a memory')
+                            : (ru ? 'Другое воспоминание' : 'Another memory')),
+                      ),
+                    if (onUnlinkMemory != null)
+                      PopupMenuItem(
+                        value: 'unlink',
+                        child: Text(ru ? 'Отвязать воспоминание' : 'Unlink the memory'),
+                      ),
                     if (onShowPlace != null)
                       PopupMenuItem(
                         value: 'map',

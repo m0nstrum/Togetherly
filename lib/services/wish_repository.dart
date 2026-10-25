@@ -184,6 +184,19 @@ class WishRepository {
     return next;
   }
 
+  /// Привязать сбывшееся к воспоминанию; пустой [memoryId] — отвязать.
+  Future<Wish> linkMemory({
+    required String groupId,
+    required Wish wish,
+    required String memoryId,
+  }) async {
+    final next = wish.copyWith(memoryId: memoryId);
+    if (groupId.isNotEmpty) {
+      await _save(groupId, next, shared: const ['memory']);
+    }
+    return next;
+  }
+
   /// Заводит свою категорию пары. Доступ решает вызывающий: создание закрыто
   /// Togetherly+, но уже созданными категориями пользуются оба.
   Future<WishKind?> addCategory({
@@ -447,6 +460,7 @@ class WishRepository {
           if (shared.contains('pos'))
             'pos': wish.pos == null ? '' : Wish.posText(wish.pos!),
           if (shared.contains('skip')) 'skip': wish.skip,
+          if (shared.contains('memory')) 'memory': wish.memoryId,
         },
       });
       return;

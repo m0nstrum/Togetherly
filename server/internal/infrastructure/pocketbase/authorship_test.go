@@ -71,6 +71,7 @@ func TestWishSharedFields(t *testing.T) {
 		`{"also":"e2e1.k.n.c"}`,
 		`{"pos":"e2e1.k.n.c"}`,
 		`{"skip":"e2e1.k.n.c"}`,
+		`{"memory":"e2e1.k.n.c"}`,
 	} {
 		code, body := w.do(t, http.MethodPatch, path, w.bTok, patch)
 		assert.Equal(t, http.StatusOK, code, patch+" "+body)

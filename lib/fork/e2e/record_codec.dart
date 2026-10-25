@@ -158,6 +158,7 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'pos': SealedField.text(),
     'skip': SealedField.text(),
     'place': SealedField.text(),
+    'memory': SealedField.text(),
   },
   // Срок «Дарю» — видит только дарящий, но даты всё равно шифром.
   'wish_reservations': {'until': SealedField.text()},

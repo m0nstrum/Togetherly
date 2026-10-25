@@ -260,13 +260,13 @@ void main() {
       // «Другое желание недели» ставит и партнёр; срок «Дарю» — шифром.
       await bobFull.collection('wishes').update(
         wish.id,
-        body: {'skip': '2026-W43'},
+        body: {'skip': '2026-W43', 'memory': 'mem123'},
       );
-      expect(
-        (await chat(env['SMOKE_ATOK']!, a).collection('wishes').getOne(wish.id))
-            .getStringValue('skip'),
-        '2026-W43',
-      );
+      final shared = await chat(env['SMOKE_ATOK']!, a)
+          .collection('wishes')
+          .getOne(wish.id);
+      expect(shared.getStringValue('skip'), '2026-W43');
+      expect(shared.getStringValue('memory'), 'mem123');
       final res = await bobChat.collection('wish_reservations').create(
         body: {
           'group_id': pair,
