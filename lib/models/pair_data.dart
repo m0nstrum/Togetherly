@@ -96,6 +96,10 @@ class PairData extends ChangeNotifier {
   // ── Counter values ──
   int get daysInLove => _active?.daysInLove ?? 0;
   DateTime? get anniversaryDate => _active?.anniversaryDate;
+  DateTime? get firstKissDate => _active?.firstKissDate;
+
+  /// uid → дата рождения участников пары (D8: общий календарь).
+  Map<String, DateTime> get memberBirthdays => _active?.memberBirthdays ?? const {};
   int get monthsInLove => _active?.monthsInLove ?? 0;
   Duration get timeInLove => _active?.timeInLove ?? Duration.zero;
 

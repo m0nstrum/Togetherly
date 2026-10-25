@@ -10,6 +10,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../widgets/mood/mood_year_sheet.dart';
 import '../models/cycle_entry.dart';
 import '../models/memory.dart';
+import '../models/pair_calendar.dart';
+import '../widgets/pair_calendar_events.dart';
 import '../models/mood_entry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ui_prefs.dart';
@@ -83,6 +85,31 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   /// Сосуд считает события пары, а не только настроения: вечер, с которого
   /// осталась пачка снимков, — это ровно то, ради чего его смотрят.
   Map<String, List<MemoryType>> _memoryDays = const {};
+
+  /// D8: сами записи — для событий общего календаря.
+  List<Memory> _memories = const [];
+
+  /// События пары по дням за год вокруг листаемого периода (D8).
+  Map<String, List<PairEvent>> get _events {
+    final y = _calAnchor.year;
+    final key = '$y|${_memories.length}|${identityHashCode(_memories)}';
+    if (key != _eventsKey) {
+      _eventsKey = key;
+      _eventsCache = pairCalendarEvents(
+        from: DateTime(y - 1, 12, 1),
+        to: DateTime(y + 1, 1, 31),
+        memories: _memories,
+        startDate: _pair.startDate,
+        anniversaryDate: _pair.anniversaryDate,
+        firstKissDate: _pair.firstKissDate,
+        birthdays: _pair.memberBirthdays,
+      );
+    }
+    return _eventsCache;
+  }
+
+  String _eventsKey = '';
+  Map<String, List<PairEvent>> _eventsCache = const {};
   StreamSubscription? _memoriesSub;
 
   /// Дни, когда пара разговаривала в чате.
@@ -151,7 +178,10 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
         (byDay[key] ??= <MemoryType>[]).add(m.type);
       }
       if (!mounted) return;
-      setState(() => _memoryDays = byDay);
+      setState(() {
+        _memoryDays = byDay;
+        _memories = memories;
+      });
     });
   }
 
@@ -247,7 +277,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
-              LocaleService.current.moodCalendarTitle,
+              ruEn('Наш календарь', 'Our calendar'), // D8: не только настроения
               style: AppFonts.onest(size: 20, weight: 800, color: widget.theme.textPrimary),
             ),
             centerTitle: true,
@@ -1203,6 +1233,8 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     final latest = hasMood
         ? moods.reduce((a, b) => a.timestamp.isAfter(b.timestamp) ? a : b)
         : null;
+    final dayEvents = isPartner ? const <PairEvent>[] : (_events[pairDayKey(day)] ?? const <PairEvent>[]);
+    final special = dayEvents.where((e) => e.special).firstOrNull;
 
     // Отметки цикла: свои в своей сетке, партнёрские — в партнёрской, и только
     // те, что она разрешила показывать (лишнее отсекает сервер).
@@ -1232,7 +1264,8 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           if (hasMood) _showDayLanes(day, moods);
           return;
         }
-        if (isFuture) return;
+        // Будущий день открывается, только если в нём что-то есть (D8).
+        if (isFuture && dayEvents.isEmpty) return;
         _showDayLog(day);
       },
       onLongPress: hasMood
@@ -1292,6 +1325,26 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                 ),
             ],
           ),
+              // D8: праздник — значком в углу, записи дня — точкой. Только в
+              // своей сетке: события общие, дважды их рисовать незачем.
+              if (!isPartner && dayEvents.isNotEmpty) ...[
+                if (special != null)
+                  Positioned(
+                    top: -1,
+                    left: 0,
+                    child: Text(pairEventEmoji(special), style: TextStyle(fontSize: numberSize * 0.8)),
+                  ),
+                if (dayEvents.any((e) => e.kind == PairEventKind.memory))
+                  Positioned(
+                    top: 1,
+                    right: 1,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(color: scheme.tertiary, shape: BoxShape.circle),
+                    ),
+                  ),
+              ],
               // Точки цикла у края клетки: настроение занимает середину, поэтому
               // отметки живут отдельным слоем и не сжимают его. Свои прижаты
               // книзу, партнёрские кверху — владельца видно и на чёрно-белом
@@ -1765,6 +1818,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
       widgetService: _ws,
       theme: widget.theme,
       userData: widget.userData,
+      events: _events[pairDayKey(day)] ?? const [],
     );
   }
 

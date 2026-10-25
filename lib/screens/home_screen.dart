@@ -80,7 +80,6 @@ import '../services/ui_prefs.dart';
 import '../services/update_service.dart';
 import '../l10n/palette_names.dart';
 import '../theme/app_theme.dart';
-import '../theme/motion.dart';
 import '../theme/theme_scope.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'canvas_create_flow.dart';
@@ -106,7 +105,6 @@ import '../services/map/pair_map_widget_service.dart'; // fork: виджет к�
 import 'together/together_launcher.dart';
 import '../services/reels/reels_invite.dart';
 import '../widgets/common/app_dialog.dart';
-import 'mini_mood_calendar.dart';
 import 'mood_calendar_screen.dart';
 import 'plus_screen.dart';
 import 'profile_screen.dart';
@@ -189,7 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // -- State --
   int _selectedNavIndex = 0;
-  bool _showTodayButton = false;
 
   // Слот подсказки на главной: список первых действий и напоминание о
   // затихшем партнёре. Флаги локальные — сервер о них ничего не знает.
@@ -2023,52 +2020,25 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
-                const SizedBox(height: 16),
-                AnimatedSlideIn(
-                  delay: const Duration(milliseconds: 0),
-                  child: MiniMoodCalendar(
-                    moodService: _moodService,
-                    theme: _t,
-                    onDayTap: _pairData.isPaired
-                        ? _showMoodPickerForDate
-                        : null,
-                    onTodayButtonVisibilityChanged: (v) =>
-                        setState(() => _showTodayButton = v),
-                  ),
-                ),
+                // D8: большого календаря сверху больше нет — всё, что
+                // привязано ко времени, в общем календаре (кнопка ниже).
                 const SizedBox(height: 8),
-                // Shift dial UP closer to calendar (disabled when Today button is visible)
-                AnimatedContainer(
-                  duration: Motion.nudge,
-                  curve: Motion.standard,
-                  transform: Matrix4.translationValues(
-                    0,
-                    _showTodayButton ? 0 : -20,
-                    0,
-                  ),
-                  child: AnimatedSlideIn(
-                    delay: const Duration(milliseconds: 80),
-                    child: ExpandableTimerCard(
-                      theme: _t,
-                      timerService: _timerService,
-                      myAvatarUrl: widget.userData.avatarUrl,
-                      partnerAvatarUrl: _pairData.partnerAvatarUrl,
-                      isPaired: _pairData.isPaired,
-                      onPetalTap: _pairData.isPaired
-                          ? (label) => _openMemoryLaneForPetal(label)
-                          : null,
-                    ),
+                AnimatedSlideIn(
+                  delay: const Duration(milliseconds: 80),
+                  child: ExpandableTimerCard(
+                    theme: _t,
+                    timerService: _timerService,
+                    myAvatarUrl: widget.userData.avatarUrl,
+                    partnerAvatarUrl: _pairData.partnerAvatarUrl,
+                    isPaired: _pairData.isPaired,
+                    onPetalTap: _pairData.isPaired
+                        ? (label) => _openMemoryLaneForPetal(label)
+                        : null,
                   ),
                 ),
-                // Restore buttons offset to -15 for tighter layout
-                AnimatedContainer(
-                  duration: Motion.nudge,
-                  curve: Motion.standard,
-                  transform: Matrix4.translationValues(
-                    0,
-                    _showTodayButton ? 0 : -15,
-                    0,
-                  ),
+                // Кнопки чуть ближе к таймеру: под ним пустое поле дуги.
+                Transform.translate(
+                  offset: const Offset(0, -15),
                   // Ряд быстрых действий — только в паре. Все четыре пишут в
                   // коллекции с group_id, и без партнёра не работают ни одна:
                   // показывать их выключенными значит держать на главной
@@ -2756,21 +2726,6 @@ class _HomeScreenState extends State<HomeScreen> {
   /// состояния группы нет вовсе.
   void _publishPairOwned() =>
       CatalogService.instance.updatePairOwned(_mascotService.state.ownedFeatures);
-
-  void _showMoodPickerForDate(DateTime date) {
-    _publishPairOwned();
-    showMoodPickerForDate(
-      context: context,
-      date: date,
-      pairData: _pairData,
-      moodService: _moodService,
-      widgetService: _widgetService,
-      primary: primary,
-      navActiveIcon: _t.navActiveIcon, // добавлено
-      user: widget.userData,
-      pairOwned: _mascotService.state.ownedFeatures,
-    );
-  }
 
   /// Баннер под шапкой: показывается, когда партнёру нездоровится
   /// (он выбрал «болячку» в пикере «Самочувствие»).
