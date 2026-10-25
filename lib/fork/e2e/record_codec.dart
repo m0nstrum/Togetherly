@@ -37,7 +37,7 @@ const String e2ePartialKey = 'e2e';
 
 /// Ключи `memories.data`, которые читает или пишет сервер: капсула
 /// (server/internal/domain/capsule `visible`, `sealed`/`openAt`), счётчик
-/// комментариев (comments_count.js), наклейки (правка на сервере).
+/// комментариев (bindCommentsCount на сервере), наклейки (правка на сервере).
 const Set<String> memoryOpenKeys = {
   'id',
   'groupId',

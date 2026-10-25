@@ -73,7 +73,7 @@ routerAdd("POST", "/api/group/increment", (e) => {
   } catch (_) { return e.json(404, {ok: false, error: "not found"}); }
   const field = String(body.field || "").trim();
   const by = Number(body.by);
-  // drawings_count и memories_count теперь ведёт серверный хук counters.pb.js
+  // drawings_count и memories_count теперь ведёт серверный хук bindCounters (Go)
   // (по canvas_catalogue и memories create/delete). Старые клиенты всё ещё
   // дёргают increment по этим полям — гасим в NO-OP с ok:true (клиент считает
   // операцию выполненной и НЕ падает в локальный RMW), иначе счётчик задвоился

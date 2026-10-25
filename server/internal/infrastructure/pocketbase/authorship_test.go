@@ -119,3 +119,84 @@ func TestWishComments(t *testing.T) {
 	_, err = w.app.FindRecordById("wish_comments", id)
 	assert.Error(t, err, "комментарий ушёл вместе с желанием")
 }
+
+// Счётчик комментариев под воспоминанием ведёт сервер: создание, мягкое
+// удаление и удаление записи; прочие ключи `data` остаются.
+func TestCommentsCount(t *testing.T) {
+	w := newWorld(t)
+	mcol, err := w.app.FindCollectionByNameOrId("memories")
+	require.NoError(t, err)
+	mem := core.NewRecord(mcol)
+	mem.Set("group_id", pairA)
+	mem.Set("author_uid", alice)
+	mem.Set("data", map[string]any{"type": "text", "e2e": "e2e1.k.n.c"})
+	require.NoError(t, w.app.Save(mem))
+	count := func() any {
+		r, err := w.app.FindRecordById("memories", mem.Id)
+		require.NoError(t, err)
+		data := map[string]any{}
+		require.NoError(t, r.UnmarshalJSONField("data", &data))
+		assert.Equal(t, "e2e1.k.n.c", data["e2e"])
+		return data["commentsCount"]
+	}
+	ccol, err := w.app.FindCollectionByNameOrId("memory_comments")
+	require.NoError(t, err)
+	add := func() *core.Record {
+		c := core.NewRecord(ccol)
+		c.Set("group_id", pairA)
+		c.Set("memory_id", mem.Id)
+		c.Set("author_uid", bob)
+		c.Set("text", "x")
+		require.NoError(t, w.app.Save(c))
+		return c
+	}
+	a, b := add(), add()
+	assert.EqualValues(t, 2, count())
+	a.Set("deleted", true)
+	require.NoError(t, w.app.Save(a))
+	assert.EqualValues(t, 1, count())
+	require.NoError(t, w.app.Delete(b))
+	assert.EqualValues(t, 0, count())
+}
+
+// Счётчики пары: сообщения, холсты и лента (мягкое удаление тоже считается).
+func TestPairCounters(t *testing.T) {
+	w := newWorld(t)
+	save := func(name string, set map[string]any) *core.Record {
+		col, err := w.app.FindCollectionByNameOrId(name)
+		require.NoError(t, err)
+		r := core.NewRecord(col)
+		r.Set("group_id", pairA)
+		for k, v := range set {
+			r.Set(k, v)
+		}
+		require.NoError(t, w.app.Save(r))
+		return r
+	}
+	count := func(f string) float64 {
+		g, err := w.app.FindRecordById("groups", pairA)
+		require.NoError(t, err)
+		return g.GetFloat(f)
+	}
+	save("chat_messages", map[string]any{"user_uid": alice, "ts": 1})
+	save("chat_messages", map[string]any{"user_uid": bob, "ts": 2})
+	assert.EqualValues(t, 2, count("messages_count"))
+
+	c := save("canvas_catalogue", map[string]any{"name": "x", "canvas_id": "c1"})
+	assert.EqualValues(t, 1, count("drawings_count"))
+	require.NoError(t, w.app.Delete(c))
+	require.NoError(t, w.app.Delete(save("canvas_catalogue", map[string]any{"name": "y", "canvas_id": "c2"})))
+	assert.EqualValues(t, 0, count("drawings_count"), "ниже нуля не уходит")
+
+	m := save("memories", map[string]any{"author_uid": alice})
+	save("memories", map[string]any{"author_uid": alice, "deleted": true})
+	assert.EqualValues(t, 1, count("memories_count"))
+	m.Set("deleted", true)
+	require.NoError(t, w.app.Save(m))
+	assert.EqualValues(t, 0, count("memories_count"))
+	m, err := w.app.FindRecordById("memories", m.Id) // как в настоящем запросе
+	require.NoError(t, err)
+	m.Set("deleted", false)
+	require.NoError(t, w.app.Save(m))
+	assert.EqualValues(t, 1, count("memories_count"))
+}
