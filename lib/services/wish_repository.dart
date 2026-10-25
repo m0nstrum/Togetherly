@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/wish.dart';
 import '../models/wish_reservation.dart';
 import '../models/wish_category.dart';
+import '../models/wish_comment.dart';
 import '../models/wish_due.dart';
 import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
@@ -24,6 +25,7 @@ class WishRepository {
   static const String _collection = 'wishes';
   static const String _categories = 'wish_categories';
   static const String _reservations = 'wish_reservations';
+  static const String _comments = 'wish_comments';
 
   final PbDataService _data = PbDataService();
   final PbRealtimeService _rt = PbRealtimeService();
@@ -274,6 +276,50 @@ class WishRepository {
     if (wishId.isEmpty) return;
     await LocalStore.instance.deleteRecord(_collection, wishId);
     await OutboxService.instance.enqueue('wishDelete', {'id': wishId});
+  }
+
+  // ── комментарии ──
+
+  /// Все комментарии пары к желаниям, старые сверху.
+  Stream<List<WishComment>> watchComments(String groupId) => _rt
+      .watchWishComments(groupId)
+      .map((recs) => recs.map(WishComment.fromPb).toList());
+
+  /// Пишет комментарий: сразу в кэш, следом в очередь — работает без сети.
+  Future<WishComment?> addComment({
+    required String groupId,
+    required String wishId,
+    required String text,
+  }) async {
+    final uid = _uid;
+    final body = text.trim();
+    if (uid == null ||
+        uid.isEmpty ||
+        groupId.isEmpty ||
+        wishId.isEmpty ||
+        body.isEmpty) {
+      return null;
+    }
+    final c = WishComment(
+      id: newPbId(),
+      wishId: wishId,
+      authorUid: uid,
+      text: body,
+      createdAt: DateTime.now(),
+    );
+    final map = c.toMap(groupId: groupId);
+    await LocalStore.instance.upsertRaw(_comments, c.id, map);
+    await OutboxService.instance.enqueue('wishCommentUpsert', {
+      'groupId': groupId,
+      'comment': map,
+    });
+    return c;
+  }
+
+  Future<void> removeComment(String id) async {
+    if (id.isEmpty) return;
+    await LocalStore.instance.deleteRecord(_comments, id);
+    await OutboxService.instance.enqueue('wishCommentDelete', {'id': id});
   }
 
   // ── «дарю»: отметки, которых автор не видит ──

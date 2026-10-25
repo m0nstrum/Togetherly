@@ -253,6 +253,32 @@ void main() {
       expect(marked.getStringValue('also'), b.uid);
       expect(marked.getIntValue('price'), 990);
       expect(marked.getStringValue('done_at'), startsWith('2026-10-25'));
+      // Комментарий партнёра — шифром; удалённое желание уносит его.
+      final comment = await bobChat.collection('wish_comments').create(
+        body: {
+          'group_id': pair,
+          'wish_id': wish.id,
+          'author_uid': b.uid,
+          'text': 'в пятницу?',
+        },
+      );
+      final rawComment =
+          await (PocketBase(url)..authStore.save(env['SMOKE_ATOK']!, null))
+              .collection('wish_comments')
+              .getOne(comment.id);
+      expect(rawComment.getStringValue('text'), startsWith(e2eFieldPrefix));
+      expect(
+        (await chat(env['SMOKE_ATOK']!, a)
+                .collection('wish_comments')
+                .getOne(comment.id))
+            .getStringValue('text'),
+        'в пятницу?',
+      );
+      await chat(env['SMOKE_ATOK']!, a).collection('wishes').delete(wish.id);
+      await expectLater(
+        bobChat.collection('wish_comments').getOne(comment.id),
+        throwsA(isA<ClientException>()),
+      );
       await chat(env['SMOKE_ATOK']!, a).send(
         '/api/group/miss-you',
         method: 'POST',

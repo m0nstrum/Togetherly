@@ -125,7 +125,8 @@ class WishDuePicker extends StatelessWidget {
                 backgroundColor: scheme.surfaceContainerHigh,
                 side: BorderSide.none,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 onSelected: (_) => switch (kind) {
                   WishDueKind.none => onChanged(WishDue.none),
                   WishDueKind.someday => onChanged(WishDue.someday),
@@ -165,8 +166,7 @@ class _MonthDialogState extends State<_MonthDialog> {
         children: [
           IconButton(
             tooltip: widget.ru ? 'Раньше' : 'Earlier',
-            onPressed:
-                _year > _now.year ? () => setState(() => _year--) : null,
+            onPressed: _year > _now.year ? () => setState(() => _year--) : null,
             icon: const Icon(Icons.chevron_left_rounded),
           ),
           Expanded(
@@ -193,10 +193,7 @@ class _MonthDialogState extends State<_MonthDialog> {
           childAspectRatio: 2.2,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          children: [
-            for (var m = 1; m <= 12; m++)
-              _cell(cs, m, names[m - 1]),
-          ],
+          children: [for (var m = 1; m <= 12; m++) _cell(cs, m, names[m - 1])],
         ),
       ),
       actions: [
@@ -210,7 +207,8 @@ class _MonthDialogState extends State<_MonthDialog> {
 
   Widget _cell(ColorScheme cs, int m, String name) {
     final past = _year == _now.year && m < _now.month;
-    final selected = widget.initial?.year == _year && widget.initial?.month == m;
+    final selected =
+        widget.initial?.year == _year && widget.initial?.month == m;
     return Material(
       color: selected ? cs.primary : cs.surfaceContainerHigh,
       borderRadius: BorderRadius.circular(14),
@@ -229,8 +227,8 @@ class _MonthDialogState extends State<_MonthDialog> {
               color: selected
                   ? cs.onPrimary
                   : past
-                      ? cs.onSurface.withValues(alpha: .38)
-                      : cs.onSurface,
+                  ? cs.onSurface.withValues(alpha: .38)
+                  : cs.onSurface,
             ),
           ),
         ),

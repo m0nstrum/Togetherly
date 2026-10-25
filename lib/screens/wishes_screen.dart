@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/symbol_catalog.dart';
 import '../models/wish.dart';
 import '../models/wish_category.dart';
+import '../models/wish_comment.dart';
+import '../models/wish_order.dart';
 import '../models/wish_reservation.dart';
 import '../dict_strings.dart';
 import '../services/locale_service.dart';
@@ -20,6 +22,7 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/storage_image.dart';
 import '../widgets/wishes/wish_category_sheet.dart';
+import '../widgets/wishes/wish_comments_sheet.dart';
 import '../widgets/wishes/wish_details_sheet.dart';
 import '../widgets/wishes/wish_due_picker.dart';
 import '../widgets/wishes/wish_form_sheet.dart';
@@ -82,6 +85,14 @@ class _WishesScreenState extends State<WishesScreen> {
   Set<String> _reserved = const {};
   Map<String, String> _reservationIds = const {};
 
+  /// Сколько комментариев у желаний — цифра на карточке.
+  Map<String, int> _commentCounts = const {};
+  StreamSubscription<List<WishComment>>? _commentsSub;
+
+  /// Места после перетаскивания, пока запись не вернулась из кэша: без них
+  /// карточка на миг прыгала бы обратно.
+  final Map<String, double> _posOverride = {};
+
   ColorScheme get _cs => Theme.of(context).colorScheme;
   bool get _ru => LocaleService.instance.isRussian;
 
@@ -92,6 +103,9 @@ class _WishesScreenState extends State<WishesScreen> {
     super.initState();
     _customSub = _repo.watchCategories(widget.groupId).listen((list) {
       if (mounted) setState(() => _custom = list);
+    });
+    _commentsSub = _repo.watchComments(widget.groupId).listen((list) {
+      if (mounted) setState(() => _commentCounts = wishCommentCounts(list));
     });
     _loadReservations();
     if (widget.sharedUrl.isNotEmpty) {
@@ -166,6 +180,7 @@ class _WishesScreenState extends State<WishesScreen> {
   @override
   void dispose() {
     _customSub?.cancel();
+    _commentsSub?.cancel();
     super.dispose();
   }
 
@@ -271,6 +286,31 @@ class _WishesScreenState extends State<WishesScreen> {
         settings: const RouteSettings(name: '/plus'),
       ),
     );
+  }
+
+  Future<void> _openComments(Wish wish) => showWishCommentsSheet(
+        context,
+        theme: widget.theme,
+        wish: wish,
+        myUid: widget.myUid,
+        comments: _repo.watchComments(widget.groupId),
+        nameOf: _nameOf,
+        onSend: (text) => _repo.addComment(
+            groupId: widget.groupId, wishId: wish.id, text: text),
+        onDelete: (c) => _repo.removeComment(c.id),
+      );
+
+  /// Перетащили карточку в «мечтаем»: новое место пишет любой из пары.
+  Future<void> _reorder(List<Wish> shown, int from, int to) async {
+    final changed = wishReorder(shown, from, to);
+    if (changed.isEmpty) return;
+    setState(() => _posOverride.addAll(changed));
+    final byId = {for (final w in shown) w.id: w};
+    for (final e in changed.entries) {
+      final w = byId[e.key];
+      if (w == null) continue;
+      await _repo.setPos(groupId: widget.groupId, wish: w, pos: e.value);
+    }
   }
 
   /// «Я тоже хочу» на желании партнёра.
@@ -398,7 +438,17 @@ class _WishesScreenState extends State<WishesScreen> {
         create: () => _repo.watch(widget.groupId),
         keys: [widget.groupId],
         builder: (context, snapshot) {
-          final all = snapshot.data ?? const <Wish>[];
+          final raw = snapshot.data ?? const <Wish>[];
+          // Вернувшаяся из кэша запись с тем же местом снимает подмену.
+          for (final w in raw) {
+            if (_posOverride[w.id] == w.pos) _posOverride.remove(w.id);
+          }
+          final all = [
+            for (final w in raw)
+              _posOverride.containsKey(w.id)
+                  ? w.copyWith(pos: _posOverride[w.id])
+                  : w,
+          ];
           final dreaming = Wish.dreaming(all);
           final fulfilled = Wish.fulfilled(all);
           final shown = _fulfilledTab ? fulfilled : dreaming;
@@ -424,58 +474,36 @@ class _WishesScreenState extends State<WishesScreen> {
                       ? _empty()
                       : shown.isEmpty
                           ? _emptyTab()
-                          : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-                              itemCount: shown.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(height: 10),
-                              itemBuilder: (_, i) {
-                                final wish = shown[i];
-                                final mine = wish.authorUid == widget.myUid;
-                                return _WishTile(
-                                  wish: wish,
-                                  scheme: _cs,
-                                  ru: _ru,
-                                  authorName: _nameOf(wish.authorUid),
-                                  authorAvatarUrl: _avatarOf(wish.authorUid),
-                                  onToggle: () => _toggle(wish),
-                                  // Чужое не правим, но читать его надо
-                                  // целиком: в списке описание в одну строку.
-                                  onTap: wish.done
-                                      ? () => _editDoneNote(wish)
-                                      : mine
-                                          ? () => _edit(wish)
-                                          : () => showWishDetailsSheet(
-                                                context,
-                                                theme: widget.theme,
-                                                wish: wish,
-                                                authorName:
-                                                    _nameOf(wish.authorUid),
-                                                alsoMine: wish.also
-                                                    .contains(widget.myUid),
-                                                onAlso: () =>
-                                                    _toggleAlso(wish),
-                                              ),
-                                  onLongPress:
-                                      mine ? () => _remove(wish) : null,
-                                  // fork (D11): то же удаление — видимой кнопкой.
-                                  onDelete:
-                                      mine ? () => _remove(wish) : null,
-                                  onEditDate: wish.done
-                                      ? () => _editDoneDate(wish)
-                                      : null,
-                                  onReserve: mine
-                                      ? null
-                                      : () => _toggleReserve(wish),
-                                  reserved: _reserved.contains(wish.id),
-                                  onAlso: mine || wish.done
-                                      ? null
-                                      : () => _toggleAlso(wish),
-                                  alsoMine:
-                                      wish.also.contains(widget.myUid),
-                                );
-                              },
-                            ),
+                          : _fulfilledTab
+                              ? ListView.separated(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                                  itemCount: shown.length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(height: 10),
+                                  itemBuilder: (_, i) => _tile(shown[i]),
+                                )
+                              // Мечты двигают долгим нажатием; порядок общий
+                              // для пары (docs/WISHLIST.md).
+                              : ReorderableListView.builder(
+                                  key: const Key('wishes-reorder'),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                                  buildDefaultDragHandles: false,
+                                  itemCount: shown.length,
+                                  onReorder: (from, to) => _reorder(
+                                      shown, from, to > from ? to - 1 : to),
+                                  itemBuilder: (_, i) =>
+                                      ReorderableDelayedDragStartListener(
+                                    key: ValueKey(shown[i].id),
+                                    index: i,
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 10),
+                                      child: _tile(shown[i], draggable: true),
+                                    ),
+                                  ),
+                                ),
                 ),
                 _addButton(),
               ],
@@ -483,6 +511,44 @@ class _WishesScreenState extends State<WishesScreen> {
           );
         },
       ),
+    );
+  }
+
+  /// Карточка списка. [draggable] — в «мечтаем»: долгое нажатие там тянет
+  /// карточку, а удаление остаётся в меню.
+  Widget _tile(Wish wish, {bool draggable = false}) {
+    final mine = wish.authorUid == widget.myUid;
+    return _WishTile(
+      wish: wish,
+      scheme: _cs,
+      ru: _ru,
+      authorName: _nameOf(wish.authorUid),
+      authorAvatarUrl: _avatarOf(wish.authorUid),
+      onToggle: () => _toggle(wish),
+      // Чужое не правим, но читать его надо целиком: в списке описание в
+      // одну строку.
+      onTap: wish.done
+          ? () => _editDoneNote(wish)
+          : mine
+              ? () => _edit(wish)
+              : () => showWishDetailsSheet(
+                    context,
+                    theme: widget.theme,
+                    wish: wish,
+                    authorName: _nameOf(wish.authorUid),
+                    alsoMine: wish.also.contains(widget.myUid),
+                    onAlso: () => _toggleAlso(wish),
+                  ),
+      onLongPress: mine && !draggable ? () => _remove(wish) : null,
+      // fork (D11): то же удаление — видимой кнопкой.
+      onDelete: mine ? () => _remove(wish) : null,
+      onEditDate: wish.done ? () => _editDoneDate(wish) : null,
+      onReserve: mine ? null : () => _toggleReserve(wish),
+      reserved: _reserved.contains(wish.id),
+      onAlso: mine || wish.done ? null : () => _toggleAlso(wish),
+      alsoMine: wish.also.contains(widget.myUid),
+      comments: _commentCounts[wish.id] ?? 0,
+      onComments: () => _openComments(wish),
     );
   }
 
@@ -651,6 +717,8 @@ class _WishTile extends StatelessWidget {
     this.reserved = false,
     this.onAlso,
     this.alsoMine = false,
+    this.comments = 0,
+    this.onComments,
   });
 
   final Wish wish;
@@ -680,6 +748,10 @@ class _WishTile extends StatelessWidget {
 
   /// Я уже отметил «я тоже хочу».
   final bool alsoMine;
+
+  /// Сколько комментариев и как их открыть.
+  final int comments;
+  final VoidCallback? onComments;
 
   @override
   Widget build(BuildContext context) {
@@ -790,7 +862,7 @@ class _WishTile extends StatelessWidget {
                         color: done ? scheme.onSurfaceVariant : scheme.onSurface,
                       ),
                     ),
-                    if (due.isNotEmpty || both)
+                    if (due.isNotEmpty || both || comments > 0)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Wrap(
@@ -804,6 +876,12 @@ class _WishTile extends StatelessWidget {
                                 color: duePast
                                     ? scheme.error
                                     : scheme.onSurfaceVariant,
+                              ),
+                            if (comments > 0)
+                              _Meta(
+                                icon: Icons.chat_bubble_outline_rounded,
+                                label: '$comments',
+                                color: scheme.onSurfaceVariant,
                               ),
                             if (both)
                               _Meta(
@@ -969,15 +1047,24 @@ class _WishTile extends StatelessWidget {
                     color: reserved ? scheme.primary : scheme.onSurfaceVariant,
                   ),
                 ),
-              if (wish.url.isNotEmpty || onDelete != null)
+              if (wish.url.isNotEmpty || onDelete != null || onComments != null)
                 PopupMenuButton<String>(
+                  key: Key('wish-menu-${wish.id}'),
                   tooltip: ru ? 'Действия с желанием' : 'Wish actions',
                   onSelected: (action) async {
                     if (action == 'delete') { onDelete?.call(); return; }
+                    if (action == 'comments') { onComments?.call(); return; }
                     final uri = Uri.tryParse(wish.url);
                     if (uri != null) await safeLaunchUrl(uri, mode: LaunchMode.externalApplication);
                   },
                   itemBuilder: (_) => [
+                    if (onComments != null)
+                      PopupMenuItem(
+                        value: 'comments',
+                        child: Text(ru
+                            ? (comments > 0 ? 'Комментарии · $comments' : 'Комментировать')
+                            : (comments > 0 ? 'Comments · $comments' : 'Comment')),
+                      ),
                     if (wish.url.isNotEmpty) PopupMenuItem(value: 'open', child: Text(ru ? 'Открыть ссылку' : 'Open link')),
                     if (onDelete != null) PopupMenuItem(value: 'delete', child: Text(ru ? 'Удалить' : 'Delete')),
                   ],

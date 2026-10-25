@@ -868,6 +868,16 @@ class PbRealtimeService {
     rtChannel: 'pair:$groupId',
   );
 
+  /// Комментарии ко всем желаниям пары — старые сверху. Одним потоком:
+  /// карточкам нужны счётчики, листу желания — свои строки из того же списка.
+  Stream<List<RecordModel>> watchWishComments(String groupId) => watchList(
+    'wish_comments',
+    filter: _pb.filter('group_id = {:g}', {'g': groupId}),
+    scope: RecordScope('wish_comments:g=$groupId', equals: {'group_id': groupId}),
+    compare: (a, b) => _strAsc(a.data['created'], b.data['created']),
+    rtChannel: 'pair:$groupId',
+  );
+
   /// Свои категории желаний — в порядке заведения.
   Stream<List<RecordModel>> watchWishCategories(String groupId) => watchList(
     'wish_categories',

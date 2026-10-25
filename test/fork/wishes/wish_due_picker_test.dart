@@ -7,20 +7,24 @@ import 'package:love_app/widgets/wishes/wish_due_picker.dart';
 
 void main() {
   Widget host(Widget child) => MaterialApp(
-        theme: ThemeData(colorScheme: const ColorScheme.light()),
-        home: Scaffold(body: SingleChildScrollView(child: child)),
-      );
+    theme: ThemeData(colorScheme: const ColorScheme.light()),
+    home: Scaffold(body: SingleChildScrollView(child: child)),
+  );
 
   testWidgets('«Когда»: когда-нибудь, месяц и сброс', (tester) async {
     var due = WishDue.none;
-    await tester.pumpWidget(host(StatefulBuilder(
-      builder: (_, set) => WishDuePicker(
-        value: due,
-        scheme: const ColorScheme.light(),
-        ru: true,
-        onChanged: (v) => set(() => due = v),
+    await tester.pumpWidget(
+      host(
+        StatefulBuilder(
+          builder: (_, set) => WishDuePicker(
+            value: due,
+            scheme: const ColorScheme.light(),
+            ru: true,
+            onChanged: (v) => set(() => due = v),
+          ),
+        ),
       ),
-    )));
+    );
 
     await tester.tap(find.byKey(const Key('wish-due-someday')));
     await tester.pump();
@@ -39,8 +43,9 @@ void main() {
     expect(due, WishDue.none);
   });
 
-  testWidgets('чужое желание: срок виден, «я тоже хочу» переключается',
-      (tester) async {
+  testWidgets('чужое желание: срок виден, «я тоже хочу» переключается', (
+    tester,
+  ) async {
     var calls = 0;
     final wish = Wish(
       id: 'w',
@@ -49,11 +54,15 @@ void main() {
       due: WishDue.someday,
       createdAt: DateTime(2026),
     );
-    await tester.pumpWidget(host(WishDetailsSheet(
-      wish: wish,
-      authorName: 'Аня',
-      onAlso: () async => calls++,
-    )));
+    await tester.pumpWidget(
+      host(
+        WishDetailsSheet(
+          wish: wish,
+          authorName: 'Аня',
+          onAlso: () async => calls++,
+        ),
+      ),
+    );
 
     expect(find.text(wishDueLabel(WishDue.someday)), findsOneWidget);
     final chip = find.byKey(const Key('wish-details-also'));

@@ -430,6 +430,10 @@ class OutboxService {
         return k('wish_categories', (p['kind'] as Map?)?['id']);
       case 'wishCategoryDelete':
         return k('wish_categories', p['id']);
+      case 'wishCommentUpsert':
+        return k('wish_comments', (p['comment'] as Map?)?['id']);
+      case 'wishCommentDelete':
+        return k('wish_comments', p['id']);
       case 'chatUpsert':
       case 'chatVoice':
       case 'chatNote':
@@ -844,6 +848,13 @@ class OutboxService {
         );
       case 'wishCategoryDelete':
         return data.deleteWishCategory(p['id'] as String? ?? '');
+      case 'wishCommentUpsert':
+        return data.upsertWishComment(
+          p['groupId'] as String? ?? '',
+          Map<String, dynamic>.from(p['comment'] as Map? ?? const {}),
+        );
+      case 'wishCommentDelete':
+        return data.deleteWishComment(p['id'] as String? ?? '');
       // ── комментарии ──
       case 'commentUpsert':
         return data.upsertComment(

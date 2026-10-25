@@ -25,10 +25,10 @@ class WishDue {
   /// День, к которому привязаны напоминания и календарь: у месяца — первое
   /// число. Null у «когда-нибудь» и пустого.
   DateTime? get anchor => switch (kind) {
-        WishDueKind.date => DateTime(year, month, day),
-        WishDueKind.month => DateTime(year, month),
-        _ => null,
-      };
+    WishDueKind.date => DateTime(year, month, day),
+    WishDueKind.month => DateTime(year, month),
+    _ => null,
+  };
 
   static final RegExp _dateRe = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
   static final RegExp _monthRe = RegExp(r'^(\d{4})-(\d{2})$');
@@ -88,12 +88,14 @@ class WishDue {
     return switch (kind) {
       WishDueKind.none => '',
       WishDueKind.someday => somedayLabel,
-      WishDueKind.date => year == thisYear
-          ? '$day ${genitive[month - 1]}'
-          : '$day ${genitive[month - 1]} $year',
-      WishDueKind.month => year == thisYear
-          ? nominative[month - 1]
-          : '${nominative[month - 1]} $year',
+      WishDueKind.date =>
+        year == thisYear
+            ? '$day ${genitive[month - 1]}'
+            : '$day ${genitive[month - 1]} $year',
+      WishDueKind.month =>
+        year == thisYear
+            ? nominative[month - 1]
+            : '${nominative[month - 1]} $year',
     };
   }
 

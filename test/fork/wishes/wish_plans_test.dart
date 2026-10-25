@@ -13,17 +13,16 @@ void main() {
     double? pos,
     bool done = false,
     DateTime? createdAt,
-  }) =>
-      Wish(
-        id: id,
-        title: 'Желание $id',
-        authorUid: 'a',
-        due: due,
-        also: also,
-        pos: pos,
-        done: done,
-        createdAt: createdAt ?? DateTime(2026, 1, 1),
-      );
+  }) => Wish(
+    id: id,
+    title: 'Желание $id',
+    authorUid: 'a',
+    due: due,
+    also: also,
+    pos: pos,
+    done: done,
+    createdAt: createdAt ?? DateTime(2026, 1, 1),
+  );
 
   group('WishDue', () {
     test('строка туда и обратно', () {
@@ -58,11 +57,11 @@ void main() {
       final gen = List.generate(12, (i) => 'г$i');
       final nom = List.generate(12, (i) => 'и$i');
       String label(WishDue d) => d.label(
-            genitive: gen,
-            nominative: nom,
-            somedayLabel: 'когда-нибудь',
-            now: DateTime(2026, 6, 1),
-          );
+        genitive: gen,
+        nominative: nom,
+        somedayLabel: 'когда-нибудь',
+        now: DateTime(2026, 6, 1),
+      );
       expect(label(WishDue.date(DateTime(2026, 11, 4))), '4 г10');
       expect(label(WishDue.date(DateTime(2027, 1, 2))), '2 г0 2027');
       expect(label(WishDue.month(2026, 3)), 'и2');
@@ -74,8 +73,12 @@ void main() {
 
   group('Wish', () {
     test('срок, «я тоже» и порядок переживают запись', () {
-      final w = wish('1',
-          due: WishDue.month(2027, 5), also: const ['b'], pos: 1.5);
+      final w = wish(
+        '1',
+        due: WishDue.month(2027, 5),
+        also: const ['b'],
+        pos: 1.5,
+      );
       final back = Wish.fromMap(w.toMap(groupId: 'g'));
       expect(back.due, WishDue.month(2027, 5));
       expect(back.also, ['b']);
@@ -86,9 +89,12 @@ void main() {
     });
 
     test('отмена отметки не теряет срок и «я тоже»', () {
-      final w = wish('1', due: WishDue.someday, also: const ['b'], pos: 3)
-          .markDone(by: 'b')
-          .undone();
+      final w = wish(
+        '1',
+        due: WishDue.someday,
+        also: const ['b'],
+        pos: 3,
+      ).markDone(by: 'b').undone();
       expect(w.due, WishDue.someday);
       expect(w.also, ['b']);
       expect(w.pos, 3);
@@ -109,12 +115,16 @@ void main() {
   group('тела запросов', () {
     test('автор шлёт срок, «я тоже» и порядок; пустой срок стирает', () {
       final body = PbDataService.wishUpsertBody(
-          'g', wish('1', due: WishDue.someday, pos: 2).toMap(groupId: 'g'));
+        'g',
+        wish('1', due: WishDue.someday, pos: 2).toMap(groupId: 'g'),
+      );
       expect(body['due'], 'someday');
       expect(body['pos'], '2');
       expect(body['also'], '');
       final cleared = PbDataService.wishUpsertBody(
-          'g', wish('1').toMap(groupId: 'g'));
+        'g',
+        wish('1').toMap(groupId: 'g'),
+      );
       expect(cleared['due'], '');
     });
 

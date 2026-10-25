@@ -27,6 +27,7 @@ class DataExportService {
     'memories': 'memories',
     'wishes': 'wishes',
     'wish_categories': 'wish_categories',
+    'wish_comments': 'wish_comments',
     'moods': 'moods',
     'cycle': 'cycle_entries',
     'timers': 'timers',

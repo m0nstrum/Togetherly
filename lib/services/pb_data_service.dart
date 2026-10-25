@@ -1761,6 +1761,31 @@ class PbDataService {
         if (fields.containsKey('pos')) 'pos': fields['pos'] ?? '',
       };
 
+  /// Комментарий к желанию (docs/WISHLIST.md).
+  Future<bool> upsertWishComment(
+      String groupId, Map<String, dynamic> comment) async {
+    final id = comment['id'] as String?;
+    if (id == null || id.isEmpty || groupId.isEmpty) return false;
+    return _upsertById('wish_comments', id, {
+      'group_id': groupId,
+      'wish_id': comment['wish_id'] ?? '',
+      'author_uid': comment['author_uid'] ?? '',
+      'text': comment['text'] ?? '',
+    }, op: 'upsertWishComment');
+  }
+
+  Future<bool> deleteWishComment(String id) async {
+    if (id.isEmpty) return false;
+    try {
+      await _pb.collection('wish_comments').delete(id);
+      return true;
+    } catch (e) {
+      if (e is ClientException && e.statusCode == 404) return true;
+      debugPrint('PbData.deleteWishComment($id) failed: $e');
+      return false;
+    }
+  }
+
   /// Свои категории желаний, заведённые парой.
   Future<List<RecordModel>> loadWishCategories(String groupId) async {
     if (groupId.isEmpty) return const [];

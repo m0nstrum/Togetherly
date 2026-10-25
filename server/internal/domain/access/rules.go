@@ -114,6 +114,7 @@ var Collections = map[string]Rules{
 
 	"memories":        memberAuthored("group_id", "author_uid"),
 	"memory_comments": personalAuthored("group_id", "author_uid"),
+	"wish_comments":   personalAuthored("group_id", "author_uid"),
 	"mood_entries":    personalAuthored("group_id", "user_uid"),
 	"chat_messages":   memberAuthored("group_id", "user_uid"),
 	"chat_reads":      personalAuthored("group_id", "user_uid"),

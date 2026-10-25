@@ -1,6 +1,7 @@
 package pocketbase_test
 
 import (
+	"encoding/json"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -79,4 +80,40 @@ func TestWishSharedFields(t *testing.T) {
 	}
 	code, body := w.do(t, http.MethodPatch, path, w.aTok, `{"due":"e2e1.k.n.c"}`)
 	assert.Equal(t, http.StatusOK, code, body)
+}
+
+// Комментарии к желанию: пишут оба, правит и удаляет только автор
+// комментария, чужая пара не видит; удалённое желание уносит комментарии.
+func TestWishComments(t *testing.T) {
+	w := newWorld(t)
+	col, err := w.app.FindCollectionByNameOrId("wishes")
+	require.NoError(t, err)
+	wish := core.NewRecord(col)
+	wish.Set("author_uid", alice)
+	wish.Set("group_id", pairA)
+	wish.Set("title", "e2e1.k.n.c")
+	require.NoError(t, w.app.Save(wish))
+
+	const list = "/api/collections/wish_comments/records"
+	code, body := w.do(t, http.MethodPost, list, w.bTok,
+		`{"group_id":"`+pairA+`","wish_id":"`+wish.Id+`","author_uid":"`+bob+`","text":"e2e1.k.n.c"}`)
+	require.Equal(t, http.StatusOK, code, body)
+	var created struct{ ID string }
+	require.NoError(t, json.Unmarshal([]byte(body), &created))
+	id := created.ID
+
+	code, _ = w.do(t, http.MethodPost, list, w.aTok,
+		`{"group_id":"`+pairA+`","wish_id":"`+wish.Id+`","author_uid":"`+bob+`","text":"x"}`)
+	assert.NotEqual(t, http.StatusOK, code, "от чужого имени")
+	code, _ = w.do(t, http.MethodPatch, list+"/"+id, w.aTok, `{"text":"x"}`)
+	assert.NotEqual(t, http.StatusOK, code, "чужой комментарий не правят")
+	code, body = w.do(t, http.MethodGet, list+"/"+id, w.eTok, "")
+	assert.NotEqual(t, http.StatusOK, code, body)
+	code, _ = w.do(t, http.MethodGet, list+"/"+id, w.aTok, "")
+	assert.Equal(t, http.StatusOK, code)
+
+	code, _ = w.do(t, http.MethodDelete, "/api/collections/wishes/records/"+wish.Id, w.aTok, "")
+	require.Equal(t, http.StatusNoContent, code)
+	_, err = w.app.FindRecordById("wish_comments", id)
+	assert.Error(t, err, "комментарий ушёл вместе с желанием")
 }

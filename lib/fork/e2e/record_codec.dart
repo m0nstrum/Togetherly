@@ -157,6 +157,7 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'also': SealedField.text(),
     'pos': SealedField.text(),
   },
+  'wish_comments': {'text': SealedField.text(locked: e2eLockedText)},
   'wish_categories': {
     'title': SealedField.text(),
     'note': SealedField.text(),
