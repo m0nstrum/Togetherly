@@ -56,7 +56,7 @@ type reelsSession struct {
 // Calls — POST /api/draw/invite, POST /api/reels/invite, GET /api/reels/active.
 func Calls(r *router.Router[*core.RequestEvent], push *notify.Service, now func() time.Time) {
 	var mu sync.Mutex
-	drawn := map[string]time.Time{} // uid → последний зов порисовать
+	drawn := map[string]time.Time{}  // uid → последний зов порисовать
 	called := map[string]time.Time{} // uid → последний зов в ленту
 	reels := map[string]*reelsSession{}
 

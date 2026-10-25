@@ -83,6 +83,15 @@ func immutableAuthored(groupField, authorField string) Rules {
 	return r
 }
 
+// heldUntilDue — отложенное сообщение («отправить утром») до срока видит
+// только автор: флаг `held` ставит и снимает сервер.
+func heldUntilDue(r Rules, authorField string) Rules {
+	hidden := ` && (held = false || ` + authorField + ` = @request.auth.id)`
+	r.List = s(*r.List + hidden)
+	r.View = s(*r.View + hidden)
+	return r
+}
+
 // own — запись принадлежит человеку из поля ownerField.
 func own(ownerField string) Rules {
 	return same(authed + ` && ` + ownerField + ` = @request.auth.id`)
@@ -116,7 +125,7 @@ var Collections = map[string]Rules{
 	"memory_comments": personalAuthored("group_id", "author_uid"),
 	"wish_comments":   personalAuthored("group_id", "author_uid"),
 	"mood_entries":    personalAuthored("group_id", "user_uid"),
-	"chat_messages":   memberAuthored("group_id", "user_uid"),
+	"chat_messages":   heldUntilDue(memberAuthored("group_id", "user_uid"), "user_uid"),
 	"chat_reads":      personalAuthored("group_id", "user_uid"),
 	"chat_typing":     personalAuthored("group_id", "user_uid"),
 	"widget_data":     personalAuthored("group_id", "user_uid"),

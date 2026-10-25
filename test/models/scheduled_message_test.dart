@@ -40,9 +40,12 @@ void main() {
       expect(chat, contains("'deliver_at': ?deliverAt"));
       final model = File('lib/models/chat_msg.dart').readAsStringSync();
       expect(model, contains("deliverAt: nzInt(m['deliver_at'])"));
-      final hp = File('pocketbase/hotpath/hotpath.py').readAsStringSync();
-      expect(hp, contains('"deliver_at": "num"'));
-      expect(hp, contains('_deliver_worker'));
+      // Придерживает и выпускает сервер (held.go).
+      final server = File(
+        'server/internal/infrastructure/pocketbase/held.go',
+      ).readAsStringSync();
+      expect(server, contains('"held = true && deliver_at <= {:now}"'));
+      expect(server, contains('e.Record.GetInt("deliver_at")'));
     },
   );
 }

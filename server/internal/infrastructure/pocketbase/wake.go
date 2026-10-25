@@ -128,6 +128,10 @@ func bindWake(app core.App, opt fcm.Options, pub handler.Publisher, timeout time
 		}()
 	}
 	onRecord := func(ev realtime.Event, rec *core.Record) {
+		ev, ok := heldEvent(ev, rec)
+		if !ok {
+			return
+		}
 		r := wakeRecord{rec}
 		var members []string
 		if wakedom.NeedsMembers(string(ev), r) {

@@ -106,6 +106,9 @@ func withAutodates(c map[string]any) {
 // правило обязано быть описано: забытая коллекция — ошибка, а не тихий
 // доступ «только суперпользователю» или «всем».
 func ApplyRules(app core.App) error {
+	if err := ensureRuleFields(app); err != nil {
+		return err
+	}
 	cols, err := app.FindAllCollections()
 	if err != nil {
 		return err
@@ -127,6 +130,18 @@ func ApplyRules(app core.App) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// ensureRuleFields заводит поля, на которые опираются правила: их ставит
+// каждая миграция правил, в том числе первая на пустой базе.
+func ensureRuleFields(app core.App) error {
+	col, err := app.FindCollectionByNameOrId("chat_messages")
+	if err != nil || col.Fields.GetByName("held") != nil {
+		return nil
+	}
+	// held — отложенное сообщение до срока (chat_held.go).
+	col.Fields.Add(&core.BoolField{Name: "held"})
+	return app.Save(col)
 }
 
 const jsonMax = 5_000_000

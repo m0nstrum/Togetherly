@@ -74,6 +74,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	pub := centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout)
 	bindRealtime(app, pub, mx.Published, cfg.Centrifugo.Timeout, log)
 	bindCapsules(app, time.Now, log)
+	bindHeld(app, time.Now, log)
 	bindGuards(app)
 	bindE2EGuards(app)
 	app.Cron().MustAdd("e2e_retention", "17 * * * *", func() {
@@ -131,7 +132,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.UserCard(e.Router)
 		handler.Group(e.Router, groups, log)
 		handler.WidgetAnim(e.Router, anim)
-		handler.Calls(e.Router, pushes.New(app, pub, time.Now), time.Now)
+		handler.Calls(e.Router, pushes.New(app, notify, time.Now), time.Now)
 		handler.InviteAccept(e.Router, pairs.New(app), log)
 		handler.CoupleStats(e.Router, stats.New(app), time.Now, log)
 		handler.Waiting(e.Router, pairs.New(app), time.Now, log)
@@ -280,6 +281,10 @@ func bindRealtime(app core.App, pub *centrifugo.Publisher, observe func(error), 
 		return
 	}
 	publish := func(ev realtime.Event, rec *core.Record) {
+		ev, ok := heldEvent(ev, rec)
+		if !ok {
+			return
+		}
 		r := recordAdapter{rec}
 		channels := realtime.Channels(r)
 		if len(channels) == 0 {
