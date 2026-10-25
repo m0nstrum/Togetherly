@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags=
  && sh scripts/sync-public.sh /out/pb_public
 
 FROM alpine:3.22
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk add --no-cache ca-certificates tzdata ffmpeg \
  && adduser -D -H -u 10001 tethered \
  && mkdir /data /backups && chown tethered /data /backups
 WORKDIR /app

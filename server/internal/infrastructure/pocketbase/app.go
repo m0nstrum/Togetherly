@@ -38,6 +38,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/ring"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/stats"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/widgetanim"
 
 	// Миграции регистрируются в init().
 	_ "github.com/m0nstrum/togetherly/server/internal/migrations"
@@ -106,6 +107,9 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
 	groups := groupops.New(app, time.Now)
+	anim := widgetanim.New(app)
+	// Добор раскадровок, до которых клиент не дозвался.
+	app.Cron().MustAdd("widgetAnimSweep", "*/10 * * * *", func() { anim.Sweep(context.Background()) })
 	ringer := ring.New(ringPairs{app}, ringPublisher{notify}, ring.Options{}, time.Now)
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.GET("/api/fork/realtime-key", func(event *core.RequestEvent) error {
@@ -125,6 +129,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.Movies(e.Router, films, log)
 		handler.UserCard(e.Router)
 		handler.Group(e.Router, groups, log)
+		handler.WidgetAnim(e.Router, anim)
 		handler.InviteAccept(e.Router, pairs.New(app), log)
 		handler.CoupleStats(e.Router, stats.New(app), time.Now, log)
 		handler.Waiting(e.Router, pairs.New(app), time.Now, log)

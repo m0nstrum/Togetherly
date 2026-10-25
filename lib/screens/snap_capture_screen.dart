@@ -21,7 +21,7 @@ import '../widgets/unfold/unfold_route.dart';
 /// а нужно именно удержание. Поэтому здесь своё превью на пакете `camera`.
 ///
 /// Предел в три секунды не выдуман: ролик уезжает живым фото в парный виджет,
-/// а сервер режет его на восемнадцать кадров (`tools/widget_anim.py`). Длиннее
+/// а сервер режет его на восемнадцать кадров (usecase/widgetanim на сервере). Длиннее
 /// — и движение распадётся на слайд-шоу.
 class SnapCaptureScreen extends StatefulWidget {
   const SnapCaptureScreen({super.key, required this.theme});
