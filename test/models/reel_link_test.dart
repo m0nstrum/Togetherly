@@ -90,4 +90,24 @@ void main() {
       expect(ReelMeta.fromJson({'author': 'строкой'}).author, isNull);
     });
   });
+
+  group('B6: TikTok в воспоминаниях', () {
+    test('адрес — с ником автора из oEmbed, без него — прежний', () {
+      final link = ReelLink.parse('tiktok:7400000000000000001')!;
+      final meta = ReelMeta.fromJson({'author_unique_id': 'cat.lover_1'});
+      expect(meta.handle, 'cat.lover_1');
+      expect(link.urlWith(meta), 'https://www.tiktok.com/@cat.lover_1/video/7400000000000000001');
+      expect(link.urlWith(ReelMeta.empty), link.url);
+    });
+
+    test('чужие символы в нике отбрасываются', () {
+      expect(ReelMeta.fromJson({'author_unique_id': 'a/../b'}).handle, isNull);
+      expect(ReelMeta.fromJson({'author_unique_id': 'x?y=1'}).handle, isNull);
+    });
+
+    test('ник не меняет адрес других площадок', () {
+      final link = ReelLink.parse('shorts:abcdefghijk')!;
+      expect(link.urlWith(const ReelMeta(handle: 'x')), link.url);
+    });
+  });
 }

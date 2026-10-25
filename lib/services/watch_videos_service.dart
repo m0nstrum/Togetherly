@@ -310,7 +310,7 @@ class WatchVideosService {
       id: id,
       title: pick(const ['title', 'caption', 'text']),
       url: url,
-      thumbUrl: own.isNotEmpty ? own : videoLinkThumb(url),
+      thumbUrl: videoThumbFor(own, url),
       seconds: 0,
       // Не «начинается на pb://», а «откроет ли это вкладка комнаты»:
       // защищённый файл по обычному https туда уезжал и висел спиннером.

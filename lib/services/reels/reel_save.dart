@@ -9,6 +9,7 @@ import '../../models/reel_link.dart';
 import '../locale_service.dart';
 import '../memory_repository.dart';
 import '../pb_auth_service.dart';
+import '../../utils/video_link_thumb.dart';
 
 /// Закладка совместной ленты: ролик ложится в ленту воспоминаний пары
 /// обычной записью «видео по ссылке». Там он открывается в приложении
@@ -34,8 +35,9 @@ class ReelSave {
       authorName: (p['displayName'] as String?) ?? '',
       authorAvatar: (p['avatarUrl'] as String?) ?? '',
       type: MemoryType.videoLink,
-      videoUrl: link.url,
-      imageUrl: meta.thumb ?? link.knownThumb,
+      videoUrl: link.urlWith(meta),
+      // B6: подписанная обложка CDN (TikTok) истекает — её не храним.
+      imageUrl: (meta.thumb != null && !isExpiringThumb(meta.thumb!)) ? meta.thumb : link.knownThumb,
       title: meta.title ?? link.platform,
       // Карточка видео по ссылке держит автора ролика в поле музыки — так
       // её заполняет и форма воспоминания.

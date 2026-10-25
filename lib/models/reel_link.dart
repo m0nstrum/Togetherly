@@ -55,6 +55,16 @@ class ReelLink {
         _ => null,
       };
 
+  /// Адрес для сохранения: у TikTok с ником автора из [meta], если он есть.
+  /// Ссылку `@/video/…` без ника приложение TikTok открывает не всегда (B6).
+  String urlWith(ReelMeta meta) {
+    final handle = meta.handle;
+    if (source == 'tiktok' && handle != null) {
+      return 'https://www.tiktok.com/@$handle/video/$id';
+    }
+    return url;
+  }
+
   /// Подпись площадки в карточке воспоминания.
   String get platform => switch (source) {
         'tiktok' => 'TikTok',
@@ -67,11 +77,14 @@ class ReelLink {
 
 /// Название, автор и обложка ролика из ответа площадки.
 class ReelMeta {
-  const ReelMeta({this.title, this.author, this.thumb});
+  const ReelMeta({this.title, this.author, this.thumb, this.handle});
 
   final String? title;
   final String? author;
   final String? thumb;
+
+  /// Ник автора TikTok (`author_unique_id`) — только безопасные символы.
+  final String? handle;
 
   static const empty = ReelMeta();
 
@@ -89,6 +102,10 @@ class ReelMeta {
       title: str(json['title']),
       author: str(json['author_name']) ?? (author is Map ? str(author['name']) : null),
       thumb: str(json['thumbnail_url']),
+      handle: () {
+        final h = str(json['author_unique_id']);
+        return h != null && RegExp(r'^[A-Za-z0-9._]{1,40}$').hasMatch(h) ? h : null;
+      }(),
     );
   }
 }

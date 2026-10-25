@@ -3027,9 +3027,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       url: url,
                       platformName: platformName,
                       platformIcon: _videoPlatformIcon(platformName),
-                      thumbUrl: memory.imageUrl?.isNotEmpty == true
-                          ? memory.imageUrl
-                          : videoLinkThumb(url),
+                      thumbUrl: videoThumbFor(memory.imageUrl, url),
                       title: memory.title,
                       author: memory.musicArtist,
                       caption: memory.caption,

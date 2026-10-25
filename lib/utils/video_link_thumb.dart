@@ -25,6 +25,30 @@ String videoLinkThumb(String url) {
   return '';
 }
 
+/// Обложка записи, если она переживёт завтрашний день, иначе — открытая по
+/// ссылке ([videoLinkThumb]).
+///
+/// B6: TikTok в oEmbed отдаёт подписанный адрес CDN (`*.tiktokcdn*.com`,
+/// `x-expires`): через сутки-двое он отвечает 403, и сохранённый ролик
+/// выглядел пустым высоким кадром. Такие адреса считаем отсутствующими.
+String videoThumbFor(String? own, String url) {
+  final o = (own ?? '').trim();
+  if (o.isNotEmpty && !isExpiringThumb(o)) return o;
+  return videoLinkThumb(url);
+}
+
+/// Адрес обложки, который площадка подписала сроком.
+bool isExpiringThumb(String url) {
+  final Uri u;
+  try {
+    u = Uri.parse(url.trim());
+  } catch (_) {
+    return false;
+  }
+  final host = u.host.toLowerCase();
+  return host.contains('tiktokcdn') || u.queryParameters.containsKey('x-expires');
+}
+
 final _ytIdShape = RegExp(r'^[A-Za-z0-9_-]{11}$');
 
 String? _youtubeId(String host, Uri u) {

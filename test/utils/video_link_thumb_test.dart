@@ -67,4 +67,29 @@ void main() {
       expect(WatchVideosService.fromMemoryData('m4', {'imageUrl': 'x'}), isNull);
     });
   });
+
+  group('B6: истекающие обложки', () {
+    const cdn = 'https://p16-sign-va.tiktokcdn.com/obj/x.jpeg?x-expires=1729000000&x-signature=abc';
+    test('подписанная обложка TikTok не считается своей', () {
+      expect(isExpiringThumb(cdn), isTrue);
+      expect(isExpiringThumb('https://i.ytimg.com/vi/ro0KqgvlS4Y/hqdefault.jpg'), isFalse);
+      expect(videoThumbFor(cdn, 'https://www.tiktok.com/@/video/1'), '');
+    });
+
+    test('у YouTube вместо истёкшей — открытая обложка по ссылке', () {
+      expect(
+        videoThumbFor(cdn, 'https://youtu.be/ro0KqgvlS4Y'),
+        'https://i.ytimg.com/vi/ro0KqgvlS4Y/hqdefault.jpg',
+      );
+      expect(videoThumbFor('https://example.org/a.jpg', 'https://youtu.be/ro0KqgvlS4Y'), 'https://example.org/a.jpg');
+    });
+
+    test('«Наши видео» тоже не берут истёкшую обложку', () {
+      final v = WatchVideosService.fromMemoryData('m5', {
+        'videoUrl': 'https://www.tiktok.com/@/video/7400000000000000001',
+        'imageUrl': cdn,
+      })!;
+      expect(v.thumbUrl, '');
+    });
+  });
 }
