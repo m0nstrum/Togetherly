@@ -45,6 +45,13 @@ func TestPairAuthorship(t *testing.T) {
 			} else {
 				assert.NotEqual(t, http.StatusOK, code)
 			}
+			if tc.col == "chat_messages" {
+				// Смотрящий отмечает фигурку просмотренной и ставит сердечки.
+				code, body := w.do(t, http.MethodPatch, path, w.bTok, `{"note_seen_at":5,"note_hearts":"1.2"}`)
+				assert.Equal(t, http.StatusOK, code, body)
+				code, _ = w.do(t, http.MethodPatch, path, w.bTok, `{"deliver_at":5}`)
+				assert.NotEqual(t, http.StatusOK, code, "срок правит только автор")
+			}
 			code, _ = w.do(t, http.MethodDelete, path, w.bTok, "")
 			assert.NotEqual(t, http.StatusNoContent, code)
 			code, _ = w.do(t, http.MethodDelete, path, w.aTok, "")

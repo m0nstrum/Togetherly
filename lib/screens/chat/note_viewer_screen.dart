@@ -229,13 +229,13 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
     unawaited(ChatService.instance.addNoteHeart(_msg.id, _hearts));
   }
 
-  /// Сохраняет фигурку в галерею: квадратный ролик с формой и подписью.
+  /// Сохраняет ролик фигурки в галерею.
   Future<void> _save() async {
     if (_saving) return;
     final s = LocaleService.current;
     setState(() => _saving = true);
     _toast(s.noteSaving);
-    final out = await NoteExportService.saveToGallery(_msg.id);
+    final out = await NoteExportService.saveToGallery(_msg.id, _note.url);
     if (!mounted) return;
     setState(() => _saving = false);
     // Код ответа в тосте — не техническая утечка, а единственный способ понять

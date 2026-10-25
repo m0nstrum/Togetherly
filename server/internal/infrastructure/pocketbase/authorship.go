@@ -11,7 +11,9 @@ func bindAuthorship(app core.App) {
 		author string
 		shared map[string]bool
 	}{
-		"chat_messages":     {"user_uid", map[string]bool{"reactions": true, "voice_heard_at": true}},
+		// Смотрящий ставит «послушал», «посмотрел фигурку» и сердечки на ней.
+		"chat_messages": {"user_uid", map[string]bool{"reactions": true, "voice_heard_at": true,
+			"note_seen_at": true, "note_hearts": true}},
 		"live_session_chat": {"uid", map[string]bool{"reactions": true}},
 		// `enc` — шифр переехавших полей (дата отметки среди них): без него
 		// партнёр не отметил бы сбывшимся. `also`, `pos`, `skip`, `memory` —

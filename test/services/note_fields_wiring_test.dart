@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Поле, которого нет в одном из четырёх мест, теряется МОЛЧА — и PocketBase,
-/// и hotpath отвечают на неизвестное поле успехом, просто выбрасывая его.
+/// Поле, которого нет в одном из мест связки, теряется МОЛЧА — PocketBase
+/// отвечает на неизвестное поле успехом, просто выбрасывая его.
 /// В этом проекте так уже терялись ссылки желаний, заметка виджета и обложка
 /// роликов, поэтому у фигурок связка проверяется тестом.
 void main() {
@@ -31,21 +31,6 @@ void main() {
     }
   });
 
-  test('поля фигурки знает hotpath — иначе запись их выбросит', () {
-    final src = File('pocketbase/hotpath/hotpath.py').readAsStringSync();
-    final chatBlock = src.split('"chat_messages": {')[1].split('"sortable"')[0];
-    for (final f in noteFields) {
-      expect(chatBlock, contains('"$f"'), reason: 'нет в COLLECTIONS: $f');
-    }
-  });
-
-  test('колонки заведены миграцией Postgres', () {
-    final sql = File('pocketbase/hotpath/note_fields.sql').readAsStringSync();
-    for (final f in noteFields) {
-      expect(sql, contains(f), reason: 'нет в note_fields.sql: $f');
-    }
-  });
-
   test('отправка кладёт поля фигурки в тело запроса', () {
     final src = File('lib/services/pb_data_service.dart').readAsStringSync();
     // Тело собирает chatBody: и прямая отправка, и повтор из очереди берут
@@ -60,30 +45,28 @@ void main() {
   });
 
   test('смотрящему открыты только отметка просмотра и сердечки', () {
-    final src = File('pocketbase/hotpath/hotpath.py').readAsStringSync();
-    final guard = src
-        .split('if meta["guard"] == "chat":')[1]
-        .split('return _err(403')[0];
-    expect(guard, contains('note_seen_at'));
-    expect(guard, contains('note_hearts'));
+    final guard = File(
+      'server/internal/infrastructure/pocketbase/authorship.go',
+    ).readAsStringSync();
+    final chat = guard.split('"chat_messages":')[1].split('}},')[0];
+    expect(chat, contains('"note_seen_at": true'));
+    expect(chat, contains('"note_hearts": true'));
     // Ссылку на файл и форму чужой правит только автор.
-    expect(guard, isNot(contains('note_url')));
-    expect(guard, isNot(contains('note_shape')));
+    expect(chat, isNot(contains('note_url')));
+    expect(chat, isNot(contains('note_shape')));
   });
 
-  test('сохранение в галерею ходит в роут, который объявлен на сервере', () {
+  test('сохранение в галерею берёт сам файл фигурки через прокси', () {
+    // Файл зашифрован ключом пары: серверного экспорта в форке нет.
     final client = File(
       'lib/services/note_export_service.dart',
     ).readAsStringSync();
-    final server = File('pocketbase/hotpath/hotpath.py').readAsStringSync();
-    expect(client, contains('/api/note/export'));
-    expect(server, contains('@app.get("/api/note/export")'));
-    // Сервер отдаёт файл только участнику пары — проверка обязана остаться.
-    final route = server
-        .split('async def note_export(')[1]
-        .split('@app.get')[0];
-    expect(route, contains('not your message'));
-    expect(route, contains('groups'));
+    expect(client, contains('resolveUrlAuthed(noteUrl)'));
+    expect(client, isNot(contains('/api/note/export')));
+    final viewer = File(
+      'lib/screens/chat/note_viewer_screen.dart',
+    ).readAsStringSync();
+    expect(viewer, contains('saveToGallery(_msg.id, _note.url)'));
   });
 
   test('форма для экспорта берётся из того же профиля, что и в приложении', () {
