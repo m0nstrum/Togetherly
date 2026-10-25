@@ -10,8 +10,8 @@ import '../services/hint_queue.dart';
 import '../services/pocketbase_service.dart';
 import '../theme/app_theme.dart';
 import 'miss_you_screen.dart';
-import '../dict_strings.dart' show ruEn; // fork
-import '../fork/ui/feedback.dart'; // fork
+import '../dict_strings.dart' show ruEn;
+import '../fork/ui/feedback.dart';
 
 // ─── Раскладка ─────────────────────────────────────────────────────────────────
 //
@@ -84,7 +84,7 @@ class _MissYouButtonState extends State<MissYouButton>
   /// сдаёмся и говорим человеку: бесконечный повтор копил тапы, которых
   /// сервер так и не принял.
   static const int _kMaxRetries = 2;
-  int _retries = 0; // fork
+  int _retries = 0;
 
   final MissYouBatch _batch = MissYouBatch();
   Timer? _flushTimer;
@@ -443,7 +443,7 @@ class _MissYouButtonState extends State<MissYouButton>
                 ),
               ),
             ),
-          ), // fork
+          ),
 
           const SizedBox(width: 4),
 
@@ -497,7 +497,7 @@ class _MissYouButtonState extends State<MissYouButton>
                         ),
                       ),
                     ),
-                  ), // fork
+                  ),
                 ),
               ),
             ],

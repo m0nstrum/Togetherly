@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart' show ClientException;
 
-import '../../fork/e2e/account_password.dart'; // fork
-import '../../fork/e2e/fork_e2e.dart'; // fork
+import '../../fork/e2e/account_password.dart';
+import '../../fork/e2e/fork_e2e.dart';
 import '../../models/password_change.dart';
 import '../../services/locale_service.dart';
 import '../../services/pb_auth_service.dart';

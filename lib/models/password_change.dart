@@ -9,7 +9,7 @@
 /// человеку нужно знать, какое из трёх полей поправить.
 library;
 
-import '../fork/e2e/password_policy.dart' show PasswordPolicy; // fork
+import '../fork/e2e/password_policy.dart' show PasswordPolicy;
 
 /// Что не так с введённым. `null` — всё в порядке, можно отправлять.
 PasswordChangeProblem? passwordChangeProblem({

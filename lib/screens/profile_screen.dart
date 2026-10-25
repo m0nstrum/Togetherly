@@ -1,4 +1,4 @@
-import '../fork/identity.dart'; // fork
+import '../fork/identity.dart';
 import 'dart:async';
 import '../utils/safe_launch.dart';
 import 'package:flutter/material.dart';
@@ -97,7 +97,7 @@ import '../models/help_items.dart';
 import '../widgets/common/email_change_sheet.dart';
 import '../widgets/unfold/unfold_route.dart';
 import 'help_screen.dart';
-import '../fork/config/endpoints.dart'; // fork
+import '../fork/config/endpoints.dart';
 import '../fork/system_settings.dart'; // fork: N2
 import '../fork/ui/logout_guard.dart'; // fork (UX A4)
 import '../fork/push/push_health.dart'; // fork (UX G9)
@@ -149,8 +149,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   // конфига сборки.
   static final Uri _privacyPolicyUri = Uri.parse(
     Endpoints.current.privacyPolicyUrl,
-  ); // fork
-  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
+  );
+  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl);
 
   Color get _accent => widget.userData.themeAccent;
   Color get _accentLight => widget.userData.themeAccentLight;

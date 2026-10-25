@@ -1,5 +1,5 @@
-import '../../../dict_strings.dart' show ruEn; // fork
-import '../../../fork/geo/map_attribution.dart'; // fork
+import '../../../dict_strings.dart' show ruEn;
+import '../../../fork/geo/map_attribution.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../fork/battery/battery_ui.dart'; // fork: заряд партнёра
@@ -20,8 +20,8 @@ import '../../../services/map/map_tiles.dart';
 import '../../../widgets/map/map_arc_layer.dart';
 import '../../../utils/safe_text.dart';
 import '../../../widgets/unfold/unfold_route.dart';
-import '../../../fork/geo/geo_status.dart'; // fork
-import '../../../fork/geo/share_ui.dart'; // fork
+import '../../../fork/geo/geo_status.dart';
+import '../../../fork/geo/share_ui.dart';
 
 const String _kCollapsedKey = 'live_map_card_collapsed';
 const Color _kPartnerColor = Color(0xFFFF5C8A);
@@ -92,9 +92,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
     LiveLocationService.instance.sharingEnabled.removeListener(
       _onSharingChanged,
     );
-    LiveLocationService.instance.issue.removeListener(
-      _onSharingChanged,
-    ); // fork
+    LiveLocationService.instance.issue.removeListener(_onSharingChanged);
     super.dispose();
   }
 

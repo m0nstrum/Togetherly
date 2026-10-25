@@ -841,9 +841,7 @@ class WidgetService extends ChangeNotifier {
       await HomeWidget.updateWidget(
         name: 'LoveWidgetProvider',
         androidName: 'LoveWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'LoveWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
       );
       if (_isDisposed || bindGeneration != _bindGeneration) return;
       debugPrint(
@@ -888,7 +886,7 @@ class WidgetService extends ChangeNotifier {
             androidName: 'LoveWidgetProvider',
             qualifiedAndroidName: ForkIdentity.widgetClass(
               'LoveWidgetProvider',
-            ), // fork
+            ),
           );
         } catch (e) {
           debugPrint('WidgetService emoji update failed: $e');
@@ -969,9 +967,7 @@ class WidgetService extends ChangeNotifier {
         await HomeWidget.updateWidget(
           name: 'LoveWidgetProvider',
           androidName: 'LoveWidgetProvider',
-          qualifiedAndroidName: ForkIdentity.widgetClass(
-            'LoveWidgetProvider',
-          ), // fork
+          qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
         );
       } catch (e) {
         debugPrint('WidgetService._cachePhotosForWidget update failed: $e');
@@ -1022,9 +1018,7 @@ class WidgetService extends ChangeNotifier {
         await HomeWidget.updateWidget(
           name: 'LoveWidgetProvider',
           androidName: 'LoveWidgetProvider',
-          qualifiedAndroidName: ForkIdentity.widgetClass(
-            'LoveWidgetProvider',
-          ), // fork
+          qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
         );
       } catch (e) {
         debugPrint(
@@ -1053,9 +1047,7 @@ class WidgetService extends ChangeNotifier {
         await HomeWidget.updateWidget(
           name: 'MoodWidgetProvider',
           androidName: 'MoodWidgetProvider',
-          qualifiedAndroidName: ForkIdentity.widgetClass(
-            'MoodWidgetProvider',
-          ), // fork
+          qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
         );
       } catch (e) {
         debugPrint(

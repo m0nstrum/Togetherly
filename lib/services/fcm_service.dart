@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'pocketbase_service.dart';
-import '../fork/push/fcm_wake.dart'; // fork
+import '../fork/push/fcm_wake.dart';
 
 /// Нужен ли фоновый сокет-сервис вместо пушей.
 ///

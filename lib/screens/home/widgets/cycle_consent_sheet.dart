@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../services/locale_service.dart';
 import '../../../theme/fonts.dart';
 import '../../../widgets/app_sheet.dart';
-import '../../../fork/config/endpoints.dart'; // fork
+import '../../../fork/config/endpoints.dart';
 
 /// Согласие на обработку данных цикла — перед первой отметкой.
 ///
@@ -52,7 +52,7 @@ Future<bool?> showCycleConsentSheet(
             const SizedBox(height: 12),
             TextButton.icon(
               onPressed: () => safeLaunchUrl(
-                Uri.parse(Endpoints.current.privacyPolicyUrl), // fork
+                Uri.parse(Endpoints.current.privacyPolicyUrl),
                 mode: LaunchMode.externalApplication,
               ),
               icon: Icon(

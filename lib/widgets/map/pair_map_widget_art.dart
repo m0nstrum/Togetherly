@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
 
-import '../../fork/battery/battery_ui.dart' show forkBatteryIconFor; // fork
+import '../../fork/battery/battery_ui.dart' show forkBatteryIconFor;
 import '../../models/globe_math.dart';
 import '../../models/pair_map_widget_view.dart';
 import '../../services/map/map_palette.dart';

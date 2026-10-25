@@ -782,7 +782,7 @@ class WatchBento extends StatelessWidget {
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: _gamesAndComputer(title), // fork
+                  children: _gamesAndComputer(title),
                 ),
               ),
             ],
@@ -793,7 +793,7 @@ class WatchBento extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: reelsTile == null
-                ? _gamesAndComputer(title) // fork
+                ? _gamesAndComputer(title)
                 : [
                     Expanded(child: reelsTile),
                     const SizedBox(width: _gap),

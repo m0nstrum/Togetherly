@@ -10,8 +10,8 @@ import '../../theme/app_theme.dart';
 import '../../widgets/common/animations.dart';
 import '../miss_you_button.dart';
 import 'widgets/relationship_type_dialog.dart';
-import '../gifts/partner_profile_screen.dart'; // fork
-import '../../dict_strings.dart' show ruEn; // fork
+import '../gifts/partner_profile_screen.dart';
+import '../../dict_strings.dart' show ruEn;
 
 /// Высота всех блоков шапки.
 ///
@@ -71,7 +71,7 @@ class HomeHeader extends StatelessWidget {
     required this.pairId,
     this.missKey,
     this.onMissYou,
-    this.onOpenTab, // fork
+    this.onOpenTab,
   });
 
   @override
@@ -372,7 +372,7 @@ class HomeHeader extends StatelessWidget {
                 ),
               ),
               if (active) Icon(Icons.expand_more_rounded, size: 16, color: fg),
-              if (inviteTap != null) // fork
+              if (inviteTap != null)
                 Icon(
                   Icons.person_add_alt_1_rounded,
                   size: 16,

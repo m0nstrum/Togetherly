@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import '../fork/config/endpoints.dart'; // fork
+import '../fork/config/endpoints.dart';
 
 /// Наклейка на пине: картинка из набора настроений поверх главного блока
 /// записи — фото, листа заметки или обложки.

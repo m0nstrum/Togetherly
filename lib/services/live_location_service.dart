@@ -14,10 +14,10 @@ import 'centrifugo_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import 'pocketbase_service.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
-import '../fork/location_consent.dart'; // fork
-import '../fork/geo/geo_status.dart'; // fork
-import '../fork/wishes/wish_places.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
+import '../fork/location_consent.dart';
+import '../fork/geo/geo_status.dart';
+import '../fork/wishes/wish_places.dart';
 
 const String _kSharingEnabledKey = 'live_location_sharing_enabled';
 
@@ -156,7 +156,7 @@ class LiveLocationService with WidgetsBindingObserver {
       return true;
     } catch (e) {
       debugPrint('LiveLocationService.ensurePermission failed: $e');
-      issue.value = ShareIssue.denied; // fork
+      issue.value = ShareIssue.denied;
       return false;
     }
   }
@@ -238,8 +238,8 @@ class LiveLocationService with WidgetsBindingObserver {
     } else {
       await _persist(false);
       issue.value = ShareIssue.none; // fork (UX G3)
-      backgroundLimited.value = false; // fork
-      await LocationConsent.remember(_uid, ''); // fork
+      backgroundLimited.value = false;
+      await LocationConsent.remember(_uid, '');
       final wasActive = _activePairId; // fork (UX G2)
       await stopSharing(removePoint: true);
       // fork (UX G2): стрим мог и не стартовать (фон, нет партнёра) — точку
@@ -662,7 +662,7 @@ class LiveLocationService with WidgetsBindingObserver {
             });
 
         unsub = await CentrifugoService().subscribeRaw('loc:$channel', (raw) {
-          final data = ForkE2E.openPoint(channel, raw); // fork
+          final data = ForkE2E.openPoint(channel, raw);
           if (data == null) return;
           if ((data['uid'] ?? '').toString() != uid) return;
           if (data['t'] == 'stop') {

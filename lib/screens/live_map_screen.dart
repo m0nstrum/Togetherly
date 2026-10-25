@@ -1,11 +1,11 @@
-import '../fork/geo/map_attribution.dart'; // fork
+import '../fork/geo/map_attribution.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import '../dict_strings.dart' show ruEn; // fork
-import '../fork/geo/geo_status.dart'; // fork
-import '../fork/geo/share_ui.dart'; // fork
+import '../dict_strings.dart' show ruEn;
+import '../fork/geo/geo_status.dart';
+import '../fork/geo/share_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -154,7 +154,7 @@ class _LiveMapScreenState extends State<LiveMapScreen>
     LiveLocationService.instance.sharingEnabled.addListener(
       _onShareChanged,
     ); // fork (UX G5)
-    LiveLocationService.instance.issue.addListener(_onShareChanged); // fork
+    LiveLocationService.instance.issue.addListener(_onShareChanged);
     _loadShapes();
     LandShapes.coarse().then(
       (v) => mounted ? setState(() => _land110 = v) : null,
@@ -186,10 +186,8 @@ class _LiveMapScreenState extends State<LiveMapScreen>
   @override
   void dispose() {
     _partnerSub?.cancel();
-    LiveLocationService.instance.sharingEnabled.removeListener(
-      _onShareChanged,
-    ); // fork
-    LiveLocationService.instance.issue.removeListener(_onShareChanged); // fork
+    LiveLocationService.instance.sharingEnabled.removeListener(_onShareChanged);
+    LiveLocationService.instance.issue.removeListener(_onShareChanged);
     _meFeed?.dispose();
     _decideTimer?.cancel();
     _toastTimer?.cancel();
@@ -568,7 +566,7 @@ class _LiveMapScreenState extends State<LiveMapScreen>
           mapController: _map,
           options: MapOptions(
             initialCenter: center,
-            initialZoom: known == null ? 2 : widget.initialZoom, // fork
+            initialZoom: known == null ? 2 : widget.initialZoom,
             minZoom: 1.5,
             maxZoom: 18,
             backgroundColor: palette.land,

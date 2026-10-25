@@ -1,4 +1,4 @@
-import '../fork/ui/feedback.dart'; // fork
+import '../fork/ui/feedback.dart';
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';

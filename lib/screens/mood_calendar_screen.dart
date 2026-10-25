@@ -1,5 +1,5 @@
-import '../widgets/common/app_dialog.dart'; // fork
-import '../fork/ui/feedback.dart'; // fork
+import '../widgets/common/app_dialog.dart';
+import '../fork/ui/feedback.dart';
 
 import 'dart:async';
 

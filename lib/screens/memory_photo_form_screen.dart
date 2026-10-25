@@ -1,4 +1,4 @@
-import '../widgets/common/app_dialog.dart'; // fork
+import '../widgets/common/app_dialog.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:exif/exif.dart';

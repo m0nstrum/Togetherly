@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dict_strings.dart' show ruEn;
 import '../widgets/common/app_dialog.dart';
-import 'fcm_service.dart'; // fork
+import 'fcm_service.dart';
 
 /// Надёжность мгновенной фоновой доставки БЕЗ FCM.
 ///

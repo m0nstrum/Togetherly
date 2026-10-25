@@ -5,9 +5,9 @@ import 'package:flutter/services.dart';
 
 import 'system_route_link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../fork/identity.dart'; // fork
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/identity.dart';
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 
 /// Сервис для обработки deep links
 class DeepLinkService {
@@ -143,7 +143,7 @@ class DeepLinkService {
       // tethered://invite/ABC123
       final code = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
       if (code != null && code.length == 6) {
-        ForkE2E.rememberFragment(code, uri.fragment); // fork
+        ForkE2E.rememberFragment(code, uri.fragment);
         _pendingInviteCode = code.toUpperCase();
         _inviteCodeController.add(code.toUpperCase());
       }
@@ -158,12 +158,11 @@ class DeepLinkService {
           uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'invite';
 
       if (isMainHost && isInvitePath) {
-        // fork
         // https://<host>/invite/ABC123
         final code = uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
         if (code != null && code.length == 6) {
           debugPrint('DeepLinkService: invite code from web link: $code');
-          ForkE2E.rememberFragment(code, uri.fragment); // fork
+          ForkE2E.rememberFragment(code, uri.fragment);
           _pendingInviteCode = code.toUpperCase();
           _inviteCodeController.add(code.toUpperCase());
         }

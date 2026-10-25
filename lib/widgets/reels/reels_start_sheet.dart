@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/reels_source.dart';
 import '../../services/locale_service.dart';
 import '../app_sheet.dart';
-import '../../fork/reels/platform_account.dart'; // fork
+import '../../fork/reels/platform_account.dart';
 
 /// Лист перед «Лентами вдвоём»: откуда смотреть. Возвращает выбранную
 /// площадку или null, если лист закрыли. Макет — шаг 2 артефакта «Ленты

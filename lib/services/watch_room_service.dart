@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'pocketbase_service.dart';
-import '../fork/config/endpoints.dart'; // fork
+import '../fork/config/endpoints.dart';
 
 /// Комната совместного просмотра.
 ///

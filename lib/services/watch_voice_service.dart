@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../fork/watch/call_proximity.dart';
-import '../fork/ui/feedback.dart' show ForkFailure; // fork
-import '../fork/watch/voice_stage.dart'; // fork
+import '../fork/ui/feedback.dart' show ForkFailure;
+import '../fork/watch/voice_stage.dart';
 import 'pb_data_service.dart';
 import 'watch_channel_service.dart';
 
@@ -246,9 +246,9 @@ class WatchVoiceService extends ChangeNotifier {
       await ForkCallProximity.active(true);
       await _ensurePeer();
       // Зовём собеседника: он поднимет свою сторону и ответит.
-      final answering = _ringing.isNotEmpty; // fork
-      _setRinging(''); // fork
-      _setStage(answering ? VoiceStage.connecting : VoiceStage.calling); // fork
+      final answering = _ringing.isNotEmpty;
+      _setRinging('');
+      _setStage(answering ? VoiceStage.connecting : VoiceStage.calling);
       // fork (UX L5): зов не ушёл — сразу говорим почему, а не ждём 45 с.
       if (!await channel.send('voice-hello', extra: {'uid': me})) {
         await _fail(
@@ -258,7 +258,7 @@ class WatchVoiceService extends ChangeNotifier {
         );
         return;
       }
-      if (answering) _awaitConnection(); // fork
+      if (answering) _awaitConnection();
       // fork: зов повторяется, пока партнёр не ответит (он мог зайти в
       // комнату позже), и снимается через [ringFor].
       _stopCalling();
@@ -273,7 +273,7 @@ class WatchVoiceService extends ChangeNotifier {
         });
         _noAnswerTimer = Timer(ringFor, () async {
           if (_peer.isNotEmpty || _state != VoiceCallState.connecting) return;
-          await _fail(VoiceProblem.noAnswer); // fork
+          await _fail(VoiceProblem.noAnswer);
           onUnanswered?.call(false);
         });
       }
@@ -287,7 +287,7 @@ class WatchVoiceService extends ChangeNotifier {
   /// Выключить микрофон и разорвать связь.
   Future<void> stop() async {
     await ForkCallProximity.active(false);
-    _stopCalling(); // fork
+    _stopCalling();
     _negotiating = false;
     _pending.clear();
     try {
@@ -304,7 +304,7 @@ class WatchVoiceService extends ChangeNotifier {
     _peer = '';
     _micOn = false;
     _set(VoiceCallState.off);
-    _setStage(VoiceStage.idle); // fork
+    _setStage(VoiceStage.idle);
   }
 
   /// Mute is a choice even before capture/answer; apply it when tracks arrive.
@@ -353,7 +353,7 @@ class WatchVoiceService extends ChangeNotifier {
           if (from.isNotEmpty && from != me) _setRinging(from);
           return true;
         }
-        final fresh = _peer != from; // fork
+        final fresh = _peer != from;
         _peer = from;
         _polite = me.compareTo(from) < 0;
         _awaitConnection(); // fork (UX L4)
@@ -409,7 +409,7 @@ class WatchVoiceService extends ChangeNotifier {
         if (from == _ringing) _setRinging(''); // fork: передумал звонить
         if (from == _peer) await stop();
         break;
-      case 'voice-decline': // fork
+      case 'voice-decline':
         if (_state == VoiceCallState.connecting && _peer.isEmpty) {
           await _fail(VoiceProblem.declined);
           onUnanswered?.call(true);
@@ -447,14 +447,14 @@ class WatchVoiceService extends ChangeNotifier {
       if (event.streams.isEmpty) return;
       _remote = event.streams.first;
       _set(VoiceCallState.live);
-      _setStage(VoiceStage.live); // fork
+      _setStage(VoiceStage.live);
     };
     _pc!.onConnectionState = (s) {
       switch (s) {
         case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
           _set(VoiceCallState.live);
-          _restarted = false; // fork
-          _setStage(VoiceStage.live); // fork
+          _restarted = false;
+          _setStage(VoiceStage.live);
           break;
         case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
           // fork (UX L2): сначала один ICE restart, потом — причина.
@@ -506,8 +506,8 @@ class WatchVoiceService extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    _ringTimer?.cancel(); // fork
-    _connectTimer?.cancel(); // fork
+    _ringTimer?.cancel();
+    _connectTimer?.cancel();
     unawaited(stop());
     super.dispose();
   }

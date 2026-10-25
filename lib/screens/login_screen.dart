@@ -1,5 +1,5 @@
-import '../fork/ui/password_reset_email.dart'; // fork
-import '../widgets/common/app_dialog.dart'; // fork
+import '../fork/ui/password_reset_email.dart';
+import '../widgets/common/app_dialog.dart';
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
 import 'package:flutter/material.dart';

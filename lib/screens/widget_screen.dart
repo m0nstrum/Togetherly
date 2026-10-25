@@ -1,5 +1,5 @@
-import '../fork/ui/manual_widget_hint.dart'; // fork
-import '../fork/widget_pin_confirmation.dart'; // fork
+import '../fork/ui/manual_widget_hint.dart';
+import '../fork/widget_pin_confirmation.dart';
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import '../fork/identity.dart'; // fork: полное имя класса виджета
 import 'dart:async';

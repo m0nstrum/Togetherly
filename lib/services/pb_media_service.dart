@@ -10,7 +10,7 @@ import '../models/upload_timeout.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 import 'pocketbase_service.dart';
 
 /// Медиа-слой PocketBase (миграция Firebase→PB, Этап 6).

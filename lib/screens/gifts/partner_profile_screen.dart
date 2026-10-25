@@ -6,8 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/profile_theme.dart';
 import '../profile/profile_hero.dart';
 import '../../fork/profile/partner_page.dart'; // fork: страница партнёра
-import '../../widgets/widget_content_view.dart'
-    show openWidgetPhotoView; // fork
+import '../../widgets/widget_content_view.dart' show openWidgetPhotoView;
 
 /// Профиль партнёра в том же виде, что и наш: общая шапка [ProfileHero]
 /// (серверный баннер + аватар + имя/дни), только показ. Ниже — «Открытка»
@@ -37,7 +36,7 @@ class PartnerProfileScreen extends StatefulWidget {
 class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
   // Ключ живёт в поле, а не в build(): иначе pull-to-refresh пересоздавал бы
   // состояние тела на каждой перестройке и сбрасывал загруженные данные.
-  final _bodyKey = GlobalKey<ForkPartnerPageState>(); // fork
+  final _bodyKey = GlobalKey<ForkPartnerPageState>();
   String _bannerUrl = '';
 
   /// fork: карточка партнёра — дата рождения и пол для страницы ниже.
@@ -56,7 +55,7 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
   Future<void> _loadBanner() async {
     final m = await PbDataService().loadPartnerCard(widget.partnerUid);
     if (!mounted || m == null) return;
-    setState(() => _card = m); // fork
+    setState(() => _card = m);
     final b = (m['bannerUrl'] as String?) ?? '';
     final live = m['bannerLive'] == true;
     if (b != _bannerUrl || live != _bannerLive) {

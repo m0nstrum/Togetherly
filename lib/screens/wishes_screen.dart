@@ -1036,7 +1036,7 @@ class _WishTile extends StatelessWidget {
     this.authorAvatarUrl,
     this.onTap,
     this.onLongPress,
-    this.onDelete, // fork
+    this.onDelete,
     this.onEditDate,
     this.onReserve,
     this.reserved = false,

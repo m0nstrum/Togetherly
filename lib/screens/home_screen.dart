@@ -155,7 +155,7 @@ import '../widgets/common/coin_image.dart';
 import '../widgets/season/season_backdrop_layer.dart';
 import '../widgets/theme/theme_pattern_layer.dart';
 import '../widgets/unfold/unfold_route.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 import '../fork/watch/pair_call.dart'; // fork (UX C0)
 
 class HomeScreen extends StatefulWidget {
@@ -765,8 +765,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// fork (Rave): зов в комнату пришёл раньше пары.
   bool _pendingWatchOpen = false;
-  bool _pendingTouchOpen = false; // fork
-  bool _pendingMissYouOpen = false; // fork
+  bool _pendingTouchOpen = false;
+  bool _pendingMissYouOpen = false;
   void _openMissYouFromTile() {
     _pendingMissYouOpen = false;
     Navigator.of(context).push(
@@ -812,10 +812,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _pendingDrawOpen = null;
       unawaited(_openCanvasFromWidget(draw));
     }
-    if (_pendingMissYouOpen && _pairData.isPaired)
-      _openMissYouFromTile(); // fork
+    if (_pendingMissYouOpen && _pairData.isPaired) _openMissYouFromTile();
     if (_pendingTouchOpen && _pairData.isPaired) {
-      // fork
       _pendingTouchOpen = false;
       unawaited(
         ForkTouchScreen.open(
@@ -1508,7 +1506,7 @@ class _HomeScreenState extends State<HomeScreen> {
         unawaited(WidgetBackgroundRefreshService.instance.ensureScheduled());
       }
     } else {
-      unawaited(ForkE2E.detach()); // fork
+      unawaited(ForkE2E.detach());
       PbPushService().stop();
       unawaited(PushBackgroundService().stop());
       unawaited(WidgetBackgroundRefreshService.instance.cancel());
@@ -2203,7 +2201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 partnerName: _pairData.partnerDisplayName,
                 myAvatarUrl: widget.userData.avatarUrl,
                 partnerAvatarUrl: _pairData.partnerAvatarUrl,
-                onOpenMemory: _openMemoryById, // fork
+                onOpenMemory: _openMemoryById,
               ),
             ),
           );

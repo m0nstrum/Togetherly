@@ -16,8 +16,8 @@ import 'voice_recorder_service.dart';
 import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/pb_id.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
-import '../fork/ui/feedback.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
+import '../fork/ui/feedback.dart';
 import 'centrifugo_service.dart';
 import 'media_service.dart';
 import 'pb_data_service.dart';
@@ -589,7 +589,7 @@ class ChatService {
         }, onError: (_) {});
 
         unsub = await CentrifugoService().subscribeRaw('pair:$groupId', (raw) {
-          final data = ForkE2E.openSignal('pair:$groupId', raw); // fork
+          final data = ForkE2E.openSignal('pair:$groupId', raw);
           if (data == null || data['t'] != 'typing') return;
           final uid = (data['uid'] ?? '').toString();
           if (uid.isEmpty || uid == _uid) return;

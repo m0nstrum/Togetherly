@@ -9,8 +9,8 @@ import 'package:pocketbase/pocketbase.dart';
 import 'pocketbase_service.dart';
 import 'publish_gate.dart';
 import 'reconnect_detector.dart';
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 
 /// Транспорт realtime через Centrifugo (замена встроенного SSE PocketBase).
 ///
@@ -45,7 +45,7 @@ class CentrifugoService {
 
   /// Внешний TLS-порт Centrifugo (тот же домен/сертификат, что у PocketBase).
   /// Переопределяется: `--dart-define=CENTRIFUGO_WS=wss://.../connection/websocket`
-  static final String _wsUrl = Endpoints.current.centrifugoUrl; // fork
+  static final String _wsUrl = Endpoints.current.centrifugoUrl;
 
   centrifuge.Client? _client;
   final Map<String, _ChannelHub> _channels = {};
@@ -292,10 +292,7 @@ class _ChannelHub {
       final recMap = map['record'];
       if (recMap is Map) {
         rec = RecordModel.fromJson(
-          ForkE2E.decodeSync(
-            collection,
-            Map<String, dynamic>.from(recMap),
-          ), // fork
+          ForkE2E.decodeSync(collection, Map<String, dynamic>.from(recMap)),
         );
       }
       // Копия списка: слушатель может отписаться из колбэка.

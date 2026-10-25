@@ -4,13 +4,13 @@ import 'connections_manager.dart';
 import 'connection.dart';
 import 'invite_code_state.dart';
 import '../services/nickname_service.dart';
-import '../fork/identity.dart'; // fork
+import '../fork/identity.dart';
 
 // Re-export for convenience
 export 'connection.dart'
     show RelationshipType, GroupMember, MemberMood, MemberAilment;
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 export 'invite_code_state.dart' show InviteCodeState;
 
 /// Wrapper around ConnectionsManager for backward compatibility
@@ -81,12 +81,12 @@ class PairData extends ChangeNotifier {
   String get inviteLink => Endpoints.current.inviteLink(
     inviteCode,
     fragment: ForkE2E.inviteFragment(inviteCode),
-  ); // fork
+  );
 
   /// Прямой deep link без веб-хоста: партнёр сканирует QR камерой → сразу в
   /// приложение (App Links-верификация не нужна, работает офлайн от Firebase).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.
-  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode); // fork
+  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode);
 
   // ── Multi-member getters ──
   List<GroupMember> get members => _active?.members ?? [];

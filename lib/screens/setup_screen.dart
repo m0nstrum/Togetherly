@@ -26,8 +26,8 @@ import '../utils/auth_failure.dart';
 import '../theme/theme_scope.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/common/app_dialog.dart';
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/account_password.dart'; // fork
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/account_password.dart';
 
 class SetupScreen extends StatefulWidget {
   final UserData userData;
@@ -54,10 +54,8 @@ class _SetupScreenState extends State<SetupScreen>
   bool _agreeToTerms = false;
 
   // Ссылки на юридические документы (раздаются с нашего сервера, pb_public).
-  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
-  static final Uri _privacyUri = Uri.parse(
-    Endpoints.current.privacyPolicyUrl,
-  ); // fork
+  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl);
+  static final Uri _privacyUri = Uri.parse(Endpoints.current.privacyPolicyUrl);
   final _termsRecognizer = TapGestureRecognizer();
   final _privacyRecognizer = TapGestureRecognizer();
 
@@ -757,7 +755,6 @@ class _SetupScreenState extends State<SetupScreen>
                   ),
                   const SizedBox(height: 14),
                   ForkPasswordChecks(
-                    // fork
                     password: _passwordController.text,
                     email: _emailController.text.trim(),
                     name: _nameController.text.trim(),

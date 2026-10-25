@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../fork/e2e/fork_e2e.dart'; // fork
-import '../fork/ui/feedback.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
+import '../fork/ui/feedback.dart';
 import 'centrifugo_service.dart';
 
 /// Канал комнаты совместного просмотра.

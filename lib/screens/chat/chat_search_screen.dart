@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../dict_strings.dart' show trKey;
-import '../../fork/e2e/chat_search.dart'; // fork
+import '../../fork/e2e/chat_search.dart';
 import '../../models/chat_msg.dart';
 import '../../models/chat_search.dart';
 import '../../models/shape_note.dart';
@@ -113,8 +113,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
     if (widget.searcher != null) {
       got = await widget.searcher!(filter);
     } else {
-      final recs =
-          ForkChatSearch.applies(widget.groupId, _kind) // fork
+      final recs = ForkChatSearch.applies(widget.groupId, _kind)
           ? await ForkChatSearch.search(
               groupId: widget.groupId,
               kind: _kind,

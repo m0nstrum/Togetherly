@@ -1,6 +1,6 @@
-import '../../../dict_strings.dart' show ruEn; // fork
-import '../../../widgets/common/app_dialog.dart'; // fork
-import '../../../fork/ui/feedback.dart'; // fork
+import '../../../dict_strings.dart' show ruEn;
+import '../../../widgets/common/app_dialog.dart';
+import '../../../fork/ui/feedback.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';

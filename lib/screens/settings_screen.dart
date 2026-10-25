@@ -10,11 +10,11 @@ import '../widgets/home_layout_editor.dart';
 import '../widgets/settings_scaffold.dart';
 import '../fork/quick_tiles.dart'; // fork: PLAN 3.3
 import '../fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
-import '../fork/crash_reports.dart'; // fork
-import '../fork/battery/battery_share.dart'; // fork
-import '../fork/battery/battery_ui.dart'; // fork
-import '../fork/meta_direct.dart'; // fork
-import '../fork/ui/settings_parts.dart'; // fork
+import '../fork/crash_reports.dart';
+import '../fork/battery/battery_share.dart';
+import '../fork/battery/battery_ui.dart';
+import '../fork/meta_direct.dart';
+import '../fork/ui/settings_parts.dart';
 
 /// Экран настроек.
 ///
@@ -91,13 +91,10 @@ class SettingsScreen extends StatelessWidget {
 
   /// Оба адреса стоят подписями к строкам: «Написать нам» не говорит, куда
   /// именно письмо уйдёт, а человеку это надо знать заранее.
-  static const String supportEmail = String.fromEnvironment(
-    'SUPPORT_EMAIL',
-  ); // fork
+  static const String supportEmail = String.fromEnvironment('SUPPORT_EMAIL');
 
   /// Ящик для писем от организаций, а не от людей.
   static const String officialEmail = String.fromEnvironment(
-    // fork
     'OFFICIAL_EMAIL',
     defaultValue: supportEmail,
   );
@@ -266,7 +263,7 @@ class SettingsScreen extends StatelessWidget {
 
               SettingsCollapsible(
                 prefsKey: 'appearance',
-                title: ruEn('Внешний вид и язык', 'Look & language'), // fork
+                title: ruEn('Внешний вид и язык', 'Look & language'),
                 icon: Icons.brush_rounded,
                 children: [
                   SettingsRow(
@@ -320,11 +317,11 @@ class SettingsScreen extends StatelessWidget {
                 title: ruEn(
                   'Телефон и экран блокировки',
                   'Phone & lock screen',
-                ), // fork
+                ),
                 icon: Icons.campaign_rounded,
                 children: [
-                  const ForkAppLockSettings(), // fork
-                  const ForkQuickTilesSettings(), // fork
+                  const ForkAppLockSettings(),
+                  const ForkQuickTilesSettings(),
                   SettingsRow(
                     icon: Icons.notifications_rounded,
                     title: s.notifications,
@@ -436,7 +433,7 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: ruEn(
                       'Полный архив всех ваших данных',
                       'Full archive of all your data',
-                    ), // fork
+                    ),
                     trailing: const SettingsChevron(),
                     onTap: onExportMyData,
                   ),
@@ -446,7 +443,7 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: ruEn(
                       'Только воспоминания — файлом на память',
                       'Just your memories, as a file',
-                    ), // fork
+                    ),
                     trailing: const SettingsChevron(),
                     onTap: onExport,
                   ),
@@ -473,8 +470,8 @@ class SettingsScreen extends StatelessWidget {
                       trailing: const SettingsChevron(),
                       onTap: onHelp,
                     ),
-                  const ForkCrashReportsRow(), // fork
-                  const ForkMetaDirectRow(), // fork
+                  const ForkCrashReportsRow(),
+                  const ForkMetaDirectRow(),
                   SettingsRow(
                     icon: Icons.info_rounded,
                     title: ruEn('Версия и лицензии', 'Version & licenses'),
@@ -488,7 +485,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onTerms,
                   ),
-                  if (SettingsScreen.supportEmail.isNotEmpty) // fork
+                  if (SettingsScreen.supportEmail.isNotEmpty)
                     SettingsRow(
                       icon: Icons.mail_rounded,
                       title: s.supportTitle,
@@ -499,7 +496,7 @@ class SettingsScreen extends StatelessWidget {
                   // Официальные обращения идут в отдельный ящик: письма от
                   // магазинов, юристов и правообладателей нельзя терять в
                   // потоке жалоб на ошибки.
-                  if (SettingsScreen.officialEmail.isNotEmpty) // fork
+                  if (SettingsScreen.officialEmail.isNotEmpty)
                     SettingsRow(
                       icon: Icons.gavel_rounded,
                       title: s.officialTitle,

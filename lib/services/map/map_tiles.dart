@@ -13,7 +13,7 @@ import '../../theme/profile_theme.dart';
 import '../locale_service.dart';
 import 'map_palette.dart';
 import 'map_style.dart';
-import '../../fork/config/endpoints.dart'; // fork
+import '../../fork/config/endpoints.dart';
 
 /// Векторные тайлы OpenFreeMap: бесплатно, без ключа, без лимитов.
 ///
@@ -24,8 +24,8 @@ import '../../fork/config/endpoints.dart'; // fork
 class MapTiles {
   MapTiles._();
 
-  static final _tileJson = Endpoints.current.mapTileJsonUrl; // fork
-  static final _fallback = Endpoints.current.mapTilesFallback; // fork
+  static final _tileJson = Endpoints.current.mapTileJsonUrl;
+  static final _fallback = Endpoints.current.mapTilesFallback;
   static const _prefKey = 'ofm_tiles_template';
   static const _prefAt = 'ofm_tiles_template_at';
   static const maxZoom = 14;
@@ -36,7 +36,7 @@ class MapTiles {
   static final Map<String, vtr.Theme> _themes = {};
 
   static const Map<String, String> headers = {
-    'User-Agent': 'Tethered (io.github.m0nstrum.tethered)', // fork
+    'User-Agent': 'Tethered (io.github.m0nstrum.tethered)',
   };
 
   /// Адрес тайлов, который можно отдать слою прямо сейчас.

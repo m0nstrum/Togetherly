@@ -16,7 +16,7 @@ import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
 import '../../models/geo_arc.dart';
 import '../../models/globe_math.dart';
 import '../../models/live_point_age.dart';
-import '../../fork/geo/geo_status.dart'; // fork
+import '../../fork/geo/geo_status.dart';
 import '../../models/pair_map_widget_view.dart';
 import '../../theme/app_palettes.dart';
 import '../../theme/app_theme.dart';
@@ -161,7 +161,7 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
   final battery =
       b0 != null && b0.fresh(DateTime.fromMillisecondsSinceEpoch(input.nowMs))
       ? b0
-      : null; // fork
+      : null;
 
   final out = <MapWidgetSize, Uint8List>{};
   for (final kind in MapWidgetSize.values) {
@@ -559,7 +559,7 @@ class PairMapWidgetService {
       partner == null
           ? 0
           : LivePointAge.of(partner.updatedAt, nowMs: now).value,
-      batteryShown?.level, batteryShown?.charging, // fork
+      batteryShown?.level, batteryShown?.charging,
     ]);
     // Подписи мало: на iPhone путь в контейнер мог не записаться (мост App
     // Group вернул пусто) или файл оттуда пропал, а подпись уже стояла — и
@@ -589,7 +589,7 @@ class PairMapWidgetService {
         nowMs: now,
         myPlace: myPlace,
         partnerPlace: partnerPlace,
-        partnerBattery: batteryShown, // fork
+        partnerBattery: batteryShown,
         pixelRatio: dpr,
         maxPixels: Platform.isIOS
             ? kMapWidgetMaxPixelsIos

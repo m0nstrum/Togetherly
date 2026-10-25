@@ -9,9 +9,9 @@ import 'home_widget_service.dart';
 import 'locale_service.dart';
 import 'map/pair_map_widget_service.dart';
 import 'pocketbase_service.dart';
-import '../fork/battery/battery_share.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
-import '../fork/push/fcm_wake.dart'; // fork
+import '../fork/battery/battery_share.dart';
+import '../fork/e2e/fork_e2e.dart';
+import '../fork/push/fcm_wake.dart';
 
 /// Периодический фоновый ФОЛБЭК обновления виджетов через WorkManager (Android).
 ///

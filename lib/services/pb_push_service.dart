@@ -4,10 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-import '../fork/push_relay.dart'; // fork
-import '../fork/push/notif_prefs.dart'; // fork
+import '../fork/push_relay.dart';
+import '../fork/push/notif_prefs.dart';
 import '../fork/push/notif_tap.dart'; // fork (UX D8)
-import '../utils/notification_permission.dart'; // fork
+import '../utils/notification_permission.dart';
 import '../models/chat_msg.dart';
 import '../models/avatar_frame.dart';
 import '../models/gift.dart';
@@ -320,7 +320,7 @@ class PbPushService {
         myUid,
         (id, t, b, {payload}) => _notify(id, t, b, payload: payload),
       ),
-    ); // fork
+    );
 
     debugPrint(
       'PbPush: подписки запущены (group=$groupId, partner=$partnerUid)',

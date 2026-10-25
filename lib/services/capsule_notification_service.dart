@@ -74,7 +74,7 @@ class CapsuleNotificationService {
         android: androidSettings,
         iOS: iosSettings,
       ),
-      onDidReceiveNotificationResponse: ForkNotifTap.onResponse, // fork
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
     );
     // Приложение могли поднять самим нажатием — забираем payload и оттуда.
     final launch = await _plugin.getNotificationAppLaunchDetails();

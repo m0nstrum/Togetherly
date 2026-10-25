@@ -26,9 +26,9 @@ import 'avatar_frame.dart';
 import 'pair_book.dart' show kPairBookAdultKey;
 import '../services/avatar_frames.dart';
 import '../services/home_layout_service.dart';
-import '../fork/push/fcm_wake.dart'; // fork
+import '../fork/push/fcm_wake.dart';
 import '../fork/watch/pair_call.dart'; // fork (UX C0)
-import '../fork/own_name.dart'; // fork
+import '../fork/own_name.dart';
 
 enum Gender { male, female, unspecified }
 
@@ -1019,7 +1019,7 @@ class UserData extends ChangeNotifier {
         // они не должны затирать имя, иначе партнёр видит «Гость».
         final serverName = '${data['displayName'] ?? ''}';
         if (ForkOwnName.usable(serverName)) _displayName = serverName.trim();
-        ForkOwnName.value = _displayName; // fork
+        ForkOwnName.value = _displayName;
         _email = data['email'] ?? _email;
         // Only overwrite local avatar if Firestore has a real non-empty value.
         // An empty string in Firestore means the field was accidentally cleared —
@@ -1218,7 +1218,7 @@ class UserData extends ChangeNotifier {
     }
 
     _displayName = displayName;
-    ForkOwnName.value = _displayName; // fork
+    ForkOwnName.value = _displayName;
     _email = email;
     _gender = gender;
     _customGender = customGender;
@@ -1306,7 +1306,7 @@ class UserData extends ChangeNotifier {
     Gender? gender,
   }) async {
     if (displayName != null) _displayName = displayName;
-    ForkOwnName.value = _displayName; // fork
+    ForkOwnName.value = _displayName;
     if (email != null) _email = email;
     if (avatarUrl != null) _avatarUrl = avatarUrl;
     if (bannerUrl != null) _bannerUrl = bannerUrl;
@@ -1462,7 +1462,7 @@ class UserData extends ChangeNotifier {
     await WidgetBackgroundRefreshService.instance.cancel();
     _isRegistered = false;
     _displayName = '';
-    ForkOwnName.value = ''; // fork
+    ForkOwnName.value = '';
     _email = '';
     _avatarUrl = '';
     _bannerUrl = '';

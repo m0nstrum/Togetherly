@@ -466,9 +466,7 @@ class HomeWidgetService {
     await HomeWidget.updateWidget(
       name: 'LoveWidgetProvider',
       androidName: 'LoveWidgetProvider',
-      qualifiedAndroidName: ForkIdentity.widgetClass(
-        'LoveWidgetProvider',
-      ), // fork
+      qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
     );
 
     // Картинки кладём файлами в контейнер: виджет умеет только файлы. Половину
@@ -512,7 +510,7 @@ class HomeWidgetService {
                   androidName: 'LoveWidgetProvider',
                   qualifiedAndroidName: ForkIdentity.widgetClass(
                     'LoveWidgetProvider',
-                  ), // fork
+                  ),
                 );
                 debugPrint('refreshLoveWidgetFromServer: картинки догнали');
               } catch (e, st) {
@@ -543,9 +541,7 @@ class HomeWidgetService {
     await HomeWidget.updateWidget(
       name: 'LoveWidgetProvider',
       androidName: 'LoveWidgetProvider',
-      qualifiedAndroidName: ForkIdentity.widgetClass(
-        'LoveWidgetProvider',
-      ), // fork
+      qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
     );
 
     // Сетка фото — из того же пробуждения. В фоне её не обновлял никто: она
@@ -677,23 +673,19 @@ class HomeWidgetService {
     await HomeWidget.updateWidget(
       name: 'PhotoDayWidgetProvider',
       androidName: 'PhotoDayWidgetProvider',
-      qualifiedAndroidName: ForkIdentity.widgetClass(
-        'PhotoDayWidgetProvider',
-      ), // fork
+      qualifiedAndroidName: ForkIdentity.widgetClass('PhotoDayWidgetProvider'),
     );
     await HomeWidget.updateWidget(
       name: 'SelfPhotoWidgetProvider',
       androidName: 'SelfPhotoWidgetProvider',
-      qualifiedAndroidName: ForkIdentity.widgetClass(
-        'SelfPhotoWidgetProvider',
-      ), // fork
+      qualifiedAndroidName: ForkIdentity.widgetClass('SelfPhotoWidgetProvider'),
     );
     await HomeWidget.updateWidget(
       name: 'PartnerPhotoWidgetProvider',
       androidName: 'PartnerPhotoWidgetProvider',
       qualifiedAndroidName: ForkIdentity.widgetClass(
         'PartnerPhotoWidgetProvider',
-      ), // fork
+      ),
     );
   }
 
@@ -1633,7 +1625,7 @@ class HomeWidgetService {
         androidName: 'DaysCounterWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'DaysCounterWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint(
         'HomeWidgetService: days counter synced — $daysCount days (group=$groupId)',
@@ -1745,7 +1737,7 @@ class HomeWidgetService {
         androidName: 'DaysCounterWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'DaysCounterWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint(
         'HomeWidgetService.setDaysCounterPhotos: enabled=$enabled usePhotos=$usePhotos group=$g',
@@ -1789,9 +1781,7 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: 'StreakWidgetProvider',
         androidName: 'StreakWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'StreakWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('StreakWidgetProvider'),
       );
       debugPrint(
         'HomeWidgetService: streak synced — $streakDays days '
@@ -1896,16 +1886,14 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: 'TimerWidgetProvider',
         androidName: 'TimerWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'TimerWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'PetalTimerWidgetProvider',
         androidName: 'PetalTimerWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'PetalTimerWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint(
         'HomeWidgetService: timer synced — ${timer.title}, days=${timer.daysElapsed}, startMs=${timer.startDate.millisecondsSinceEpoch}, group=$g',
@@ -2674,7 +2662,7 @@ class HomeWidgetService {
         androidName: 'DaysCounterWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'DaysCounterWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint(
         'HomeWidgetService.syncTimerAndDays: days=${timer.daysElapsed.abs()} myGender=$_cachedMyGender partnerGender=$_cachedPartnerGender group=$g',
@@ -2701,16 +2689,14 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: 'TimerWidgetProvider',
         androidName: 'TimerWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'TimerWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'PetalTimerWidgetProvider',
         androidName: 'PetalTimerWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'PetalTimerWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint('HomeWidgetService: timer widget cleared');
     } catch (e) {
@@ -3341,9 +3327,7 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: 'MoodWidgetProvider',
         androidName: 'MoodWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'MoodWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
       );
       debugPrint(
         'HomeWidgetService: mood synced — me=$moodLabel, partner=$partnerMoodLabel',
@@ -3379,9 +3363,7 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: 'MoodWidgetProvider',
         androidName: 'MoodWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'MoodWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
       );
       debugPrint(
         'HomeWidgetService: group mood synced for ${members.length} users',
@@ -3456,7 +3438,7 @@ class HomeWidgetService {
         androidName: 'RelationshipStatsWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'RelationshipStatsWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint(
         'HomeWidgetService: relationship stats synced (group=$groupId)',
@@ -4018,38 +4000,32 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: 'LoveWidgetProvider',
         androidName: 'LoveWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'LoveWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'DaysCounterWidgetProvider',
         androidName: 'DaysCounterWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'DaysCounterWidgetProvider',
-        ), // fork
+        ),
       );
       await HomeWidget.updateWidget(
         name: 'TimerWidgetProvider',
         androidName: 'TimerWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'TimerWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'),
       );
       await _updateAllPhotoWidgetProviders();
       await HomeWidget.updateWidget(
         name: 'MoodWidgetProvider',
         androidName: 'MoodWidgetProvider',
-        qualifiedAndroidName: ForkIdentity.widgetClass(
-          'MoodWidgetProvider',
-        ), // fork
+        qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'RelationshipStatsWidgetProvider',
         androidName: 'RelationshipStatsWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'RelationshipStatsWidgetProvider',
-        ), // fork
+        ),
       );
     } catch (e) {
       debugPrint('HomeWidgetService.updateAllProviders failed: $e');
@@ -4380,7 +4356,7 @@ class HomeWidgetService {
         androidName: 'LockScreenMoodWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'LockScreenMoodWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint(
         'HomeWidgetService: lock screen mood synced — '
@@ -4467,7 +4443,7 @@ class HomeWidgetService {
         androidName: 'PhotoGridWidgetProvider',
         qualifiedAndroidName: ForkIdentity.widgetClass(
           'PhotoGridWidgetProvider',
-        ), // fork
+        ),
       );
       debugPrint(
         'HomeWidgetService.refreshPhotoGrid: count=$count, urls=$urls, widgets=$widgetIds',

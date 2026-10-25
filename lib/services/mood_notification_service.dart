@@ -37,7 +37,7 @@ class MoodNotificationService {
       await _plugin.initialize(
         settings: initSettings,
         onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
-      ); // fork
+      );
 
       final androidPlugin = _plugin
           .resolvePlatformSpecificImplementation<

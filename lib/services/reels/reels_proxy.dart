@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
-import '../../fork/config/endpoints.dart'; // fork
+import '../../fork/config/endpoints.dart';
 
 /// Посредник для TikTok, пока открыты «Ленты вдвоём».
 ///
@@ -65,7 +65,7 @@ class ReelsProxy {
   /// Включить посредника, если TikTok с этого адреса закрыт. Где он открыт,
   /// ходим напрямую: лишний круг через Францию только замедлял бы плеер.
   static Future<void> enable() async {
-    if (_url.isEmpty) return; // fork
+    if (_url.isEmpty) return;
     if (!await _isBlocked()) return;
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {

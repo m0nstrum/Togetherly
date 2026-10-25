@@ -1,6 +1,6 @@
-import '../fork/ui/chat_scroll_down.dart'; // fork
-import '../fork/l10n/last_seen.dart'; // fork
-import '../fork/ui/chat_identity_layout.dart'; // fork
+import '../fork/ui/chat_scroll_down.dart';
+import '../fork/l10n/last_seen.dart';
+import '../fork/ui/chat_identity_layout.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -77,8 +77,8 @@ import '../utils/couple_days.dart';
 import 'gifts/partner_profile_screen.dart';
 import '../widgets/common/scaled_asset.dart';
 import '../widgets/common/coin_image.dart';
-import '../fork/e2e/ui.dart'; // fork
-import '../fork/ui/feedback.dart'; // fork
+import '../fork/e2e/ui.dart';
+import '../fork/ui/feedback.dart';
 import '../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../fork/ui/chat_hints.dart'; // fork (UX C2-C4, C12)
 
@@ -2396,9 +2396,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: GestureDetector(
         // Фото партнёра открывается целиком: в шапке от него остаётся кружок
         // в 44 точки. У заглушки с буквой открывать нечего.
-        onTap:
-            url.isEmpty ||
-                profile // fork
+        onTap: url.isEmpty || profile
             ? null
             : () =>
                   openWidgetPhotoView(context, imageUrl: url, authorName: name),

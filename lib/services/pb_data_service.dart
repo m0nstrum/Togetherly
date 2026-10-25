@@ -6,9 +6,9 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-import '../fork/meta_direct.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
-import '../fork/e2e/profile.dart'; // fork
+import '../fork/meta_direct.dart';
+import '../fork/e2e/fork_e2e.dart';
+import '../fork/e2e/profile.dart';
 import '../models/miss_you_event.dart';
 import '../models/invite_code_state.dart';
 import '../models/timer_sync.dart';
@@ -678,7 +678,7 @@ class PbDataService {
       }
       final pairId = (map['pairId'] ?? '').toString();
       await ForkE2E.sealWaiting(
-        pairId, // fork
+        pairId,
         name: name,
         avatar: avatar != null && avatar.isNotEmpty ? avatar : null,
         returnDate: returnDate == null ? null : _iso(returnDate),
@@ -840,7 +840,7 @@ class PbDataService {
   /// заполнить руками, а не покажет пустоту после «загрузки».
   Future<Map<String, dynamic>?> linkPreview(String url) async {
     if (url.trim().isEmpty) return null;
-    if (ForkMetaDirect.enabled.value) return ForkLinkPreview.fetch(url); // fork
+    if (ForkMetaDirect.enabled.value) return ForkLinkPreview.fetch(url);
     try {
       final res = await _pb
           .send('/api/link/preview?url=${Uri.encodeQueryComponent(url.trim())}')

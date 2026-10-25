@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/locale_service.dart';
-import '../../dict_strings.dart' show ruEn; // fork
+import '../../dict_strings.dart' show ruEn;
 import '../../theme/app_theme.dart';
 import '../../widgets/common/animations.dart';
 import '../../widgets/unfold/unfold_route.dart';
@@ -267,14 +267,14 @@ class _CreatePinButton extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final Key? buttonKey;
-  final String label; // fork
-  final String? longPressHint; // fork
+  final String label;
+  final String? longPressHint;
 
   const _CreatePinButton({
     required this.color,
     required this.isArrow,
-    required this.label, // fork
-    this.longPressHint, // fork
+    required this.label,
+    this.longPressHint,
     required this.onTap,
     this.onLongPress,
     this.buttonKey,

@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/locale_service.dart';
 import '../theme/theme_scope.dart';
-import '../fork/config/endpoints.dart'; // fork
+import '../fork/config/endpoints.dart';
 
 /// Блокирующий экран принудительного обновления.
 ///
@@ -15,8 +15,7 @@ class ForceUpdateScreen extends StatelessWidget {
   const ForceUpdateScreen({super.key});
 
   /// Страница последнего релиза; сборка сама из магазина не обновляется.
-  static final String _releasesLatestUrl =
-      Endpoints.current.releasesUrl; // fork
+  static final String _releasesLatestUrl = Endpoints.current.releasesUrl;
 
   Future<void> _openUpdate() async {
     if (_releasesLatestUrl.isNotEmpty) await _launch(_releasesLatestUrl);

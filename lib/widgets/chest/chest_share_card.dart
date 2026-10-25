@@ -7,7 +7,7 @@ import '../../theme/fonts.dart';
 import 'chest_frames.dart';
 import 'chest_prize_image.dart';
 import 'chest_rays.dart';
-import '../../fork/config/endpoints.dart'; // fork
+import '../../fork/config/endpoints.dart';
 
 /// Сторона карточки: снимок ×3 даёт 1080×1920, как у сторис сосуда.
 const double kChestShareWidth = 360;
@@ -199,7 +199,7 @@ class ChestShareCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      Endpoints.current.siteHost, // fork
+                      Endpoints.current.siteHost,
                       style: AppFonts.onest(
                         size: 10,
                         weight: 500,

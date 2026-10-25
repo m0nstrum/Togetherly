@@ -10,9 +10,9 @@ import '../services/pocketbase_service.dart';
 import 'invite_code_state.dart';
 import 'relationship_status.dart';
 import 'waiting_state.dart';
-import '../fork/identity.dart'; // fork
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/identity.dart';
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 
 /// Пора ли выходить из группы, где кроме меня никого не осталось.
 ///
@@ -256,11 +256,11 @@ class Connection {
   String get inviteLink => Endpoints.current.inviteLink(
     inviteCode,
     fragment: ForkE2E.inviteFragment(inviteCode),
-  ); // fork
+  );
 
   /// Прямой deep link без веб-хоста (для QR).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.
-  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode); // fork
+  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode);
 
   /// Max members allowed — always 2 (couples only)
   int get maxMembers => 2;

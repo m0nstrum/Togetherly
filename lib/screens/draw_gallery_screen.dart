@@ -1,4 +1,4 @@
-import '../fork/l10n/count_words.dart'; // fork
+import '../fork/l10n/count_words.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';

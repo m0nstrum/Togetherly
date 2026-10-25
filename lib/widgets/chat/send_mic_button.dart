@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../dict_strings.dart' show ruEn; // fork
-import '../../fork/ui/chat_hints.dart'; // fork
-import '../memory_save/floating_note.dart'; // fork
+import '../../dict_strings.dart' show ruEn;
+import '../../fork/ui/chat_hints.dart';
+import '../memory_save/floating_note.dart';
 import 'note_shape_view.dart';
 import 'note_shapes.dart';
 

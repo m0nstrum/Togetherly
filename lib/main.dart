@@ -63,9 +63,9 @@ import 'widgets/launch_splash/launch_splash_overlay.dart';
 import 'widgets/offline_sync_banner.dart';
 import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
-import 'fork/config/endpoints.dart'; // fork
-import 'fork/crash_reports.dart'; // fork
-import 'fork/e2e/fork_e2e.dart'; // fork
+import 'fork/config/endpoints.dart';
+import 'fork/crash_reports.dart';
+import 'fork/e2e/fork_e2e.dart';
 import 'fork/ui/session_note.dart'; // fork (UX A13)
 
 // ATT/трекинг убран НАМЕРЕННО: приложение НЕ отслеживает пользователей

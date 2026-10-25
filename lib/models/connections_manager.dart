@@ -9,7 +9,7 @@ import '../services/pocketbase_service.dart';
 import '../services/offline/offline_reset.dart';
 import 'connection.dart';
 import 'waiting_cancel.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 
 /// Индекс активной связи, приведённый к границам списка.
 ///

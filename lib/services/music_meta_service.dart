@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import '../fork/config/endpoints.dart'; // fork
+import '../fork/config/endpoints.dart';
 
 /// Метаданные трека по ссылке: название, исполнитель, обложка.
 ///
@@ -43,7 +43,7 @@ class MusicMetaService {
 
   /// Адрес своего PocketBase. Держим строкой, чтобы сервис не тянул за собой
   /// весь клиент PB ради одного запроса.
-  static const String pbBaseUrl = Endpoints.pbUrl; // fork
+  static const String pbBaseUrl = Endpoints.pbUrl;
 
   /// Номер трека из ссылки: `/album/<id>/track/<id>`, `/track/<id>`.
   static String? yandexTrackId(String url) {

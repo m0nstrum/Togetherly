@@ -41,7 +41,7 @@ import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/unfold/unfold_route.dart';
 import '../utils/invite_code.dart';
 import '../widgets/common/badge_image.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 import '../dict_strings.dart' show ruEn; // fork (UX A12)
 
 class ConnectPartnerScreen extends StatefulWidget {

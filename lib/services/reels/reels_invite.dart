@@ -119,9 +119,9 @@ class ReelsInviteBus {
   Stream<({ReelsInvite invite, bool opened})> get invites => _ctrl.stream;
   bool _wired = false;
 
-  /// Зов, пришедший не через мост FCM (lib/fork/push_relay.dart). // fork
-  void deliver(ReelsInvite invite, {bool opened = false}) => // fork
-      _ctrl.add((invite: invite, opened: opened)); // fork
+  /// Зов, пришедший не через мост FCM (lib/fork/push_relay.dart).
+  void deliver(ReelsInvite invite, {bool opened = false}) =>
+      _ctrl.add((invite: invite, opened: opened));
 
   /// Подключить канал и забрать касание, которым запустили приложение.
   Future<void> init() async {

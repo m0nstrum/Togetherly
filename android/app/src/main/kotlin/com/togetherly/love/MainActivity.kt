@@ -364,7 +364,7 @@ class MainActivity : FlutterActivity() {
                     try {
                         val pm = packageManager
                         for ((aliasId, suffix) in ICON_ALIASES) {
-                            val component = ComponentName(packageName, "$aliasPackage$suffix") // fork
+                            val component = ComponentName(packageName, "$aliasPackage$suffix")
                             val state = if (aliasId == id)
                                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                             else
@@ -392,7 +392,7 @@ class MainActivity : FlutterActivity() {
                         val pm = packageManager
                         val on = mutableListOf<String>()
                         for ((aliasId, suffix) in ICON_ALIASES) {
-                            val component = ComponentName(packageName, "$aliasPackage$suffix") // fork
+                            val component = ComponentName(packageName, "$aliasPackage$suffix")
                             val state = pm.getComponentEnabledSetting(component)
                             val enabled = when (state) {
                                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
@@ -455,7 +455,7 @@ class MainActivity : FlutterActivity() {
                     runOnUiThread { result.success(t) }
                 }
 
-                "getToken" -> ForkFcmService.token(this) { t -> // fork
+                "getToken" -> ForkFcmService.token(this) { t ->
                     runOnUiThread { result.success(t) }
                 }
 

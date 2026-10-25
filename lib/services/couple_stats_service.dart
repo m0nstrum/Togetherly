@@ -4,7 +4,7 @@ import '../fork/ui/feedback.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 import '../models/mood_entry.dart';
 import 'mood_repository.dart';
 import 'pocketbase_service.dart';

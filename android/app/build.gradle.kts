@@ -1,7 +1,7 @@
 import java.util.Properties
 import java.io.FileInputStream
-import java.net.URI // fork
-import java.util.Base64 // fork
+import java.net.URI
+import java.util.Base64
 
 plugins {
     id("com.android.application")
@@ -100,8 +100,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = forkApplicationId // fork
-        manifestPlaceholders += forkManifestPlaceholders // fork
+        applicationId = forkApplicationId
+        manifestPlaceholders += forkManifestPlaceholders
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

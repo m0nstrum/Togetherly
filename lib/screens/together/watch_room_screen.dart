@@ -22,7 +22,7 @@ import 'package:flutter/services.dart'
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../fork/e2e/room_chat_ui.dart'; // fork
+import '../../fork/e2e/room_chat_ui.dart';
 import '../../fork/e2e/room_chat.dart'; // fork (Rave)
 import '../../fork/watch/call_screen.dart'; // fork (Rave)
 import '../../fork/watch/room_live.dart'; // fork (Rave)
@@ -31,10 +31,10 @@ import '../../fork/watch/room_shell.dart'; // fork (Rave)
 import '../../fork/watch/voice_status.dart'; // fork (Rave)
 import '../../dict_strings.dart' show ruEn; // fork (Rave)
 import 'package:pocketbase/pocketbase.dart' show ClientException; // fork (Rave)
-import '../../fork/watch_proxy.dart'; // fork
-import '../../fork/watch/voice_stage.dart'; // fork
+import '../../fork/watch_proxy.dart';
+import '../../fork/watch/voice_stage.dart';
 import '../../fork/watch/pair_call.dart'; // fork (UX C0)
-import '../../fork/e2e/reels_chat_bridge.dart'; // fork
+import '../../fork/e2e/reels_chat_bridge.dart';
 import '../../fork/reels/tiktok_comments.dart'; // fork: комментарии TikTok
 import '../../fork/reels/tiktok_rate.dart'; // fork (D1)
 import '../../services/locale_service.dart';
@@ -183,7 +183,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
     // Ленту запускает купивший — он и зовёт партнёра: тому придёт пуш
     // «Аня зовёт смотреть TikTok», по которому он войдёт без своего Плюса.
     if (widget.reels && PlusService.instance.active) {
-      unawaited(_inviteUnlessJoining()); // fork
+      unawaited(_inviteUnlessJoining());
     }
   }
 
@@ -625,7 +625,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
       unawaited(SystemChrome.setPreferredOrientations(const []));
     if (_wasLandscape == true)
       unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
-    unawaited(ForkWatchProxy.disable()); // fork
+    unawaited(ForkWatchProxy.disable());
     _covered?.removeStatusListener(_onCovered);
     unawaited(_closeWindow());
     ScreenAwake.release(this);
@@ -637,8 +637,8 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
     unawaited(_feed?.dispose() ?? Future<void>.value());
     if (widget.reels) unawaited(ReelsProxy.disable());
     if (_invited) unawaited(ReelsInvite.stop(widget.pairId));
-    if (widget.reels) _reelsChat.dispose(); // fork
-    unawaited(_tiktok?.dispose() ?? Future<void>.value()); // fork
+    if (widget.reels) _reelsChat.dispose();
+    unawaited(_tiktok?.dispose() ?? Future<void>.value());
     super.dispose();
   }
 
@@ -757,7 +757,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
                     ForkRoomChatOverlay(
                       room: widget.room,
                       groupId: widget.pairId,
-                    ), // fork
+                    ),
                   // fork (UX C0): входящий и плашка звонка — поверх всего приложения (ForkPairCall).
                 ],
               ),
@@ -781,8 +781,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
       onWebViewCreated: _wire,
       onLoadStop: (c, _) => _onPageLoaded(c),
       onRenderProcessGone: (_, _) => _onRendererGone(),
-      onReceivedHttpAuthRequest: (_, ch) async =>
-          ForkWatchProxy.answer(ch), // fork
+      onReceivedHttpAuthRequest: (_, ch) async => ForkWatchProxy.answer(ch),
     );
   }
 
@@ -1448,7 +1447,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
       );
     }
     if (widget.reels && _thumbs.isNotEmpty) _pushThumbs(Map.of(_thumbs));
-    if (widget.reels) _reelsChat.pageReady(); // fork
+    if (widget.reels) _reelsChat.pageReady();
   }
 }
 

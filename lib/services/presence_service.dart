@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../models/presence_liveness.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 import 'centrifugo_service.dart';
 import 'pocketbase_service.dart';
 import 'pb_data_service.dart';
@@ -83,7 +83,7 @@ class PresenceService with WidgetsBindingObserver {
       raw,
     ) {
       if (!_started || generation != _generation) return;
-      final data = ForkE2E.openSignal(_channel(groupId), raw); // fork
+      final data = ForkE2E.openSignal(_channel(groupId), raw);
       if (data == null || data['t'] != 'alive') return;
       final uid = (data['uid'] ?? '').toString();
       if (uid.isEmpty || uid == _uid) return;

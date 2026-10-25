@@ -8,7 +8,7 @@ import '../models/draw_stroke.dart';
 import 'centrifugo_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 
 /// Один пакет живого мазка: чей он и что в нём. `data == null` — мазок снят.
 class LivePacket {

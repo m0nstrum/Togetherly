@@ -40,7 +40,7 @@ class MascotInactivityNotificationService {
     await _plugin.initialize(
       settings: settings,
       onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
-    ); // fork
+    );
 
     final androidPlugin = _plugin
         .resolvePlatformSpecificImplementation<
