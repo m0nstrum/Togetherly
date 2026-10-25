@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -112,6 +113,10 @@ type Centrifugo struct {
 	API     string        `koanf:"api"`
 	APIKey  string        `koanf:"api_key"`
 	Timeout time.Duration `koanf:"timeout"`
+	// TokenHMAC — общий с Centrifugo ключ подписи токенов клиентов
+	// (TETHERED_CENTRIFUGO__TOKEN_HMAC; по старинке — CENTRIFUGO_TOKEN_HMAC,
+	// его же читают оставшиеся JS-хуки).
+	TokenHMAC string `koanf:"token_hmac"`
 }
 
 // SMTP — свой почтовый сервер (вместо Gmail-релея апстрима).
@@ -157,6 +162,9 @@ func Load() (Config, error) {
 	}
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return Config{}, fmt.Errorf("config: разбор: %w", err)
+	}
+	if cfg.Centrifugo.TokenHMAC == "" {
+		cfg.Centrifugo.TokenHMAC = os.Getenv("CENTRIFUGO_TOKEN_HMAC")
 	}
 	return cfg, cfg.Validate()
 }

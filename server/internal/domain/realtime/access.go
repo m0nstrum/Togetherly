@@ -1,0 +1,65 @@
+package realtime
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"strings"
+)
+
+// Scope — что нужно проверить, чтобы выдать подписку на канал.
+type Scope struct {
+	// Kind: pair (участник пары Target), user (сам Target или его пара),
+	// loc (геоканал пары двух людей A и B), watch (комната с кодом Target).
+	// Пусто — канал не выдаётся.
+	Kind   string
+	Target string
+	A, B   string
+}
+
+// SubscribeScope разбирает имя канала. Каналы сигналинга (`signal:`,
+// `locsignal:`) проверяются как их основные (`pair:`, `loc:`), а рисование
+// (`draw:`) — как канал пары.
+func SubscribeScope(channel, uid string) Scope {
+	switch {
+	case strings.HasPrefix(channel, "signal:"):
+		channel = "pair:" + channel[len("signal:"):]
+	case strings.HasPrefix(channel, "locsignal:"):
+		channel = "loc:" + channel[len("locsignal:"):]
+	}
+	ns, rest, ok := strings.Cut(channel, ":")
+	if !ok {
+		return Scope{}
+	}
+	switch ns {
+	case "pair", "draw":
+		return Scope{Kind: "pair", Target: rest}
+	case "user":
+		return Scope{Kind: "user", Target: rest}
+	case "loc":
+		// loc:pair_<a>_<b> — геопозиция только своей настоящей пары.
+		p := strings.Split(rest, "_")
+		if len(p) == 3 && p[0] == "pair" && (p[1] == uid || p[2] == uid) {
+			return Scope{Kind: "loc", A: p[1], B: p[2]}
+		}
+	case "watch":
+		return Scope{Kind: "watch", Target: rest}
+	}
+	return Scope{}
+}
+
+const roomAlphabet = "abcdefghjkmnpqrstuvwxyz23456789"
+
+// RoomCode — код комнаты совместного просмотра пары: восемь знаков из
+// HMAC-SHA256(groupID, secret). Повторяет `$security.hs256` JS-хуков: буквы
+// берутся по кодам символов hex-записи подписи.
+func RoomCode(groupID, secret string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(groupID))
+	digest := hex.EncodeToString(mac.Sum(nil))
+	var b strings.Builder
+	for i := range 8 {
+		b.WriteByte(roomAlphabet[int(digest[i])%len(roomAlphabet)])
+	}
+	return b.String()
+}

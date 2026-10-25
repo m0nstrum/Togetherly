@@ -122,6 +122,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 			&handler.IPLimiter{Max: 300, Window: time.Hour}, log)
 		handler.Movies(e.Router, films, log)
 		handler.UserCard(e.Router)
+		handler.RealtimeTokens(e.Router, cfg.Centrifugo.TokenHMAC)
 		handler.PasswordReset(e.Router, time.Now, log)
 		handler.EmailChange(e.Router, time.Now, log)
 		handler.Music(e.Router, music.New(safefetch.New(safefetch.Options{Timeout: 8 * time.Second, MaxBytes: 1 << 20})), log)
