@@ -11,6 +11,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
 
+	dmeta "github.com/m0nstrum/togetherly/server/internal/domain/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 )
 
@@ -18,20 +19,30 @@ import (
 //
 //	GET /api/meta/fetch?url=…   — ответ стороннего адреса как есть. Белый
 //	                              список — без входа, остальное — вошедшим
-//	                              (usecase/meta.Fetch). Лимит запросов на IP.
+//	                              (usecase/meta.Fetch). Лимит запросов на IP,
+//	                              а адресов вне списка — ещё и на аккаунт
+//	                              (perUser): регистрация открыта, и без него
+//	                              любой вошедший качал бы через нас что
+//	                              угодно (CODE_AUDIT M8, BACKLOG T5).
 //	                              С X-Meta-Redirect: manual — без перехода
 //	                              по редиректу: 3xx и Location как есть.
 //	GET /api/link/preview?url=… — карточка товара (форма ответа апстрима).
-func Meta(r *router.Router[*core.RequestEvent], svc *meta.Service, limit *IPLimiter, log *slog.Logger) {
+func Meta(r *router.Router[*core.RequestEvent], svc *meta.Service, limit, perUser *IPLimiter, log *slog.Logger) {
 	r.GET("/api/meta/fetch", func(e *core.RequestEvent) error {
-		if !limit.Allow(e.RealIP(), time.Now()) {
+		now := time.Now()
+		if !limit.Allow(e.RealIP(), now) {
 			return e.TooManyRequestsError("Слишком часто.", nil)
+		}
+		raw := e.Request.URL.Query().Get("url")
+		if _, listed := dmeta.Allowed(raw); !listed && e.Auth != nil && !perUser.Allow(e.Auth.Id, now) {
+			log.WarnContext(e.Request.Context(), "meta/fetch: квота аккаунта", "uid", e.Auth.Id)
+			return e.TooManyRequestsError("Слишком много ссылок за час.", nil)
 		}
 		fetch := svc.Fetch
 		if e.Request.Header.Get("X-Meta-Redirect") == "manual" {
 			fetch = svc.FetchManual
 		}
-		res, err := fetch(e.Request.Context(), e.Request.URL.Query().Get("url"), e.Auth != nil)
+		res, err := fetch(e.Request.Context(), raw, e.Auth != nil)
 		switch {
 		case errors.Is(err, meta.ErrNotAllowed):
 			return e.ForbiddenError("Адрес не разрешён.", nil)
@@ -71,7 +82,8 @@ func Meta(r *router.Router[*core.RequestEvent], svc *meta.Service, limit *IPLimi
 	}).Bind(apis.RequireAuth())
 }
 
-// IPLimiter — простое окно: не больше Max запросов с IP за Window.
+// IPLimiter — простое окно: не больше Max запросов с ключа (IP или id
+// аккаунта) за Window.
 type IPLimiter struct {
 	Max    int
 	Window time.Duration

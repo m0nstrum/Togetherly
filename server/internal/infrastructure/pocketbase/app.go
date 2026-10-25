@@ -113,7 +113,10 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.Ring(e.Router, ringer, log)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
 		handler.MapTiles(e.Router, maps, &handler.IPLimiter{Max: 600, Window: time.Minute})
-		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
+		// Адреса вне белого списка (превью ссылок, картинки из заметок) —
+		// не больше 300 в час на аккаунт: человеку хватает с запасом.
+		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute},
+			&handler.IPLimiter{Max: 300, Window: time.Hour}, log)
 		handler.Movies(e.Router, films, log)
 		handler.WatchProxy(e.Router, proxyInfo)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
