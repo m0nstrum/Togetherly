@@ -30,6 +30,7 @@ import (
 	wproxy "github.com/m0nstrum/togetherly/server/internal/infrastructure/watchproxy"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/e2eretention"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/groupops"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/music"
@@ -104,6 +105,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	proxyInfo := bindWatchProxy(app, cfg, mx, log)
 
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
+	groups := groupops.New(app, time.Now)
 	ringer := ring.New(ringPairs{app}, ringPublisher{notify}, ring.Options{}, time.Now)
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.GET("/api/fork/realtime-key", func(event *core.RequestEvent) error {
@@ -122,6 +124,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 			&handler.IPLimiter{Max: 300, Window: time.Hour}, log)
 		handler.Movies(e.Router, films, log)
 		handler.UserCard(e.Router)
+		handler.Group(e.Router, groups, log)
 		handler.RealtimeTokens(e.Router, cfg.Centrifugo.TokenHMAC)
 		handler.PasswordReset(e.Router, time.Now, log)
 		handler.EmailChange(e.Router, time.Now, log)
