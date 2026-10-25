@@ -25,7 +25,7 @@ func (p *fakePub) Publish(_ context.Context, ch string, data any) error {
 
 func TestCompatNotify(t *testing.T) {
 	pub := &fakePub{}
-	h := handler.Compat(nil, nil, pub, nil)
+	h := handler.Compat(nil, nil, nil, pub, nil)
 	do := func(body string) int {
 		req := httptest.NewRequest(http.MethodPost, "/internal/notify", strings.NewReader(body))
 		req.RemoteAddr = "127.0.0.1:5555"
