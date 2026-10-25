@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../dict_strings.dart' show trKey, ruEn;
-import '../fork/flags.dart'; // fork: M11
 import '../fork/ui/feedback.dart'; // fork: M7
 import '../models/chest.dart';
 import '../models/chest_pending.dart';
@@ -472,12 +471,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   List<ChestPrize> get _odds {
     final st = _s.state;
     // fork: M11 — Плюс в форке и так открыт, в таблице шансов его не показываем
-    List<ChestPrize> noPlus(List<ChestPrize> all) => !ForkFlags.allFree
-        ? all
-        : [
-            for (final p in all)
-              if (p.kind != ChestPrizeKind.plus && p.kind != ChestPrizeKind.plusTrial) p,
-          ];
+    List<ChestPrize> noPlus(List<ChestPrize> all) => [
+          for (final p in all)
+            if (p.kind != ChestPrizeKind.plus && p.kind != ChestPrizeKind.plusTrial) p,
+        ];
     if (st != null) return noPlus(st.odds);
     if (!_s.isMain) return const [];
     return noPlus(fallbackChestOdds(withPlus: PlusService.instance.visible && !PlusService.instance.active));
@@ -631,7 +628,6 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     // иначе «Надеть» упрётся в «не твоя» до следующей синхронизации.
     if (res.ownedFeatures != null) widget.userData?.applyOwnedFeatures(res.ownedFeatures!);
     if (res.ownedIcons != null) widget.userData?.applyOwnedIcons(res.ownedIcons!);
-    if (res.plusTrialUntil != null) PlusService.instance.setTrialUntil(res.plusTrialUntil!);
     setState(() {
       slot.opening = res.prize;
       slot.animating = true;

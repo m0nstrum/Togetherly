@@ -2,7 +2,7 @@
 library;
 
 // Настройки в сборке форка: без `env/test.json`, поэтому SUPPORT_EMAIL пуст, а
-// ForkFlags.allFree включён (UX_AUDIT.md: N6, N9).
+// в Tethered всё открыто (UX_AUDIT.md: N6, N9).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/screens/settings_screen.dart';

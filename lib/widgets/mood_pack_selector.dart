@@ -1,9 +1,7 @@
 import 'dart:io' show Platform;
-import '../utils/safe_launch.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/level.dart';
 import '../models/mood_pack.dart';
 import '../models/own_mood_pack.dart';
@@ -18,7 +16,6 @@ import '../theme/app_theme.dart';
 import '../theme/theme_scope.dart';
 import 'mood_image.dart';
 import '../models/catalog_price.dart';
-import '../fork/flags.dart'; // fork: M2
 
 /// Выбор пака настроений в пикере: таблетки без обводки.
 ///
@@ -107,7 +104,7 @@ class MoodPackSelector extends StatelessWidget {
         // нельзя.
         final packs = CatalogService.instance.allPacks
             // fork: M2 — платных за деньги закрытых наборов в форке нет
-            .where((p) => !(ForkFlags.allFree && p.unlock.isMoney && !isOpen(p)))
+            .where((p) => !(p.unlock.isMoney && !isOpen(p)))
             .where((p) => moodPackVisible(
                   isIOS: Platform.isIOS,
                   isMoney: p.unlock.isMoney,
@@ -246,73 +243,9 @@ Future<void> buyMoodPack(
     return;
   }
 
-  // Пак за деньги: монеты тут ни при чём, оплату ведёт lava.top. Счёт заводит
-  // сервер на почту аккаунта — по витринной ссылке уведомление об оплате не
-  // приходит вовсе, и набор пришлось бы выдавать руками.
+  // Наборов за деньги в Tethered нет: всё бесплатно, внешней оплаты нет.
   if (pack.unlock.isMoney) {
-    // fork: M2 — в форке всё бесплатно, внешней оплаты (lava.top) нет
-    if (ForkFlags.allFree) {
-      say(ru ? 'Этот набор недоступен' : 'This pack is not available');
-      return;
-    }
-    final featureKey = Unlock.featureKey(kMoodPackFeatureKind, pack.id);
-    // На iPhone покупка идёт только через StoreKit: внешняя оплата — 3.1.1.
-    // Товара там нет (сборка старее самого товара) — молчим, а не ведём на
-    // сайт.
-    if (Platform.isIOS && !kCatalogBuysInStore) return;
-
-    if (kCatalogBuysInStore) {
-      final store = sharedCoinStore;
-      final productId = catalogProductId(featureKey);
-      final known = await store.ensureProduct(productId);
-      if (!context.mounted) return;
-      if (!known) {
-        say(ru ? 'Набор пока недоступен к покупке' : 'This pack is not available yet');
-        return;
-      }
-      final res = await store.buy(productId);
-      if (!context.mounted) return;
-      switch (res.status) {
-        case IapStatus.success:
-          // Ключ владения положил сервер при сверке чека — перечитываем свой
-          // профиль (`refreshCoinsFromServer` тянет и `owned_features`), на нём
-          // завязаны все проверки доступа.
-          await user.refreshCoinsFromServer();
-          if (!context.mounted) return;
-          HapticFeedback.selectionClick();
-          await MoodPackService.instance.setSelectedPack(pack.id);
-          onBought?.call();
-        case IapStatus.pending:
-          say(ru
-              ? 'Оплата обрабатывается — набор откроется сам'
-              : 'Payment is processing — the pack will open by itself');
-        case IapStatus.cancelled:
-          break;
-        case IapStatus.error:
-          say(ru ? 'Покупка не прошла' : 'Purchase failed');
-      }
-      return;
-    }
-
-    final res = await CatalogService.instance.purchaseUrl(
-      featureKey,
-      currency: pack.unlock.currency,
-    );
-    if (!context.mounted) return;
-    if (res.already) {
-      say(ru ? 'Набор уже открыт' : 'You already own this pack');
-      return;
-    }
-    final url = res.url;
-    if (url == null) {
-      say(ru ? 'Не удалось открыть оплату' : 'Could not open checkout');
-      return;
-    }
-    final ok = await safeLaunchUrl(Uri.parse(url),
-        mode: LaunchMode.externalApplication);
-    if (!ok && context.mounted) {
-      say(ru ? 'Не удалось открыть оплату' : 'Could not open checkout');
-    }
+    say(ru ? 'Этот набор недоступен' : 'This pack is not available');
     return;
   }
 

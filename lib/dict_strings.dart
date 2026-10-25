@@ -45,7 +45,6 @@ import 'l10n/dict/pair_book.dart';
 import 'l10n/dict/account_email.dart';
 import 'l10n/dict/mascot_source.dart';
 import 'l10n/dict/memory_sort.dart';
-import 'l10n/dict/plus_promo.dart';
 import 'l10n/dict/moods.dart';
 import 'l10n/dict/postcard_templates.dart';
 import 'l10n/dict/profile.dart';
@@ -92,7 +91,6 @@ const Map<String, Map<String, String>> _kSectionStrings = {
   ...accountEmailStrings,
   ...mascotSourceStrings,
   ...memorySortStrings,
-  ...plusPromoStrings,
   ...ailmentsStrings,
   ...appIconsStrings,
   ...chatStrings,
@@ -632,23 +630,14 @@ abstract class DictStrings extends AppStrings {
   @override
   String get customMoodLimitReached => _t('customMoodLimitReached');
   @override
-  String get plusPromoTitle => _t('plusPromoTitle');
   @override
-  String get plusPromoBody => _t('plusPromoBody');
   @override
-  String get plusPromoPerkMoods => _t('plusPromoPerkMoods');
   @override
-  String get plusPromoPerkCycle => _t('plusPromoPerkCycle');
   @override
-  String get plusPromoPerkStats => _t('plusPromoPerkStats');
   @override
-  String get plusPromoPerkWidgets => _t('plusPromoPerkWidgets');
   @override
-  String get plusPromoPerkNoAds => _t('plusPromoPerkNoAds');
   @override
-  String get plusPromoOpen => _t('plusPromoOpen');
   @override
-  String get plusPromoLater => _t('plusPromoLater');
   @override
   String get memoryDailyTaskBadge => _t('memoryDailyTaskBadge');
   @override

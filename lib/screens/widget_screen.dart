@@ -1,7 +1,6 @@
 import '../fork/ui/manual_widget_hint.dart'; // fork
 import '../fork/widget_pin_confirmation.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
-import '../fork/flags.dart'; // fork: M3
 import '../fork/identity.dart'; // fork: полное имя класса виджета
 import 'dart:async';
 import 'dart:io';
@@ -15,7 +14,6 @@ import '../widgets/mood_image.dart';
 import '../widgets/storage_image.dart';
 import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
-import '../widgets/common/ad_result.dart';
 import '../theme/fonts.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:image_picker/image_picker.dart';
@@ -48,7 +46,6 @@ import '../models/together_caption.dart';
 import '../models/timer_item.dart';
 import '../models/widget_data.dart';
 import '../models/year_progress.dart';
-import '../models/ad_grants.dart';
 import '../models/user_data.dart';
 import '../models/mood_entry.dart';
 import '../models/memory.dart';
@@ -4795,18 +4792,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                 ),
               ),
             ),
-          if (!owned && !ForkFlags.allFree) ...[ // fork: M3 — рекламной пробы в форке нет
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                onPressed: _daysPhotosBusy ? null : _tryDaysPhotosTrial,
-                icon: const Icon(Icons.play_circle_outline_rounded, size: 18),
-                label: Text(LocaleService.current.adTrialPhotoSlot),
-              ),
-            ),
-          ]
-          else if (owned) ...[ // fork: M3
+          if (owned) ...[ // fork: M3
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: _daysPhotosEnabled,
@@ -4828,37 +4814,6 @@ class _WidgetScreenState extends State<WidgetScreen>
         ],
       ),
     );
-  }
-
-  /// Проба «наших фото» в виджете дней: неделя за один просмотр рекламы.
-  Future<void> _tryDaysPhotosTrial() async {
-    final ud = widget.userData;
-    setState(() => _daysPhotosBusy = true);
-    try {
-      if (!await ensureAdReady(_rewardedAd)) {
-        if (mounted) showAdNote(context, LocaleService.current.adNotReady);
-        return;
-      }
-      final earned = await _rewardedAd.show(uid: PocketBaseService().userId ?? '');
-      unawaited(_rewardedAd.load());
-      if (!mounted) return;
-      if (!earned) {
-        await showAdNotEarned(context);
-        return;
-      }
-      final res =
-          await ud.takeAdGrant(AdGrantKind.widgetPhoto, 'days_widget_photos');
-      await untilAppVisible();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(res.kind == AdGrantOutcome.ok
-            ? LocaleService.current.adTrialTaken
-            : LocaleService.current.adRewardLimitReached),
-        behavior: SnackBarBehavior.floating,
-      ));
-    } finally {
-      if (mounted) setState(() => _daysPhotosBusy = false);
-    }
   }
 
   Future<void> _buyDaysPhotos() async {

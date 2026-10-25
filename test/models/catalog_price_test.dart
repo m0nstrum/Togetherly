@@ -74,13 +74,6 @@ void main() {
           reason: 'иначе набор так и остался бы скрытым на iPhone');
     });
 
-    test('покупка на iPhone идёт через магазин, а не на сайт', () {
-      final src = File('lib/widgets/mood_pack_selector.dart').readAsStringSync();
-      expect(src.contains('if (Platform.isIOS && !kCatalogBuysInStore) return;'),
-          isTrue,
-          reason: 'внешняя оплата на iPhone — 3.1.1');
-    });
-
     test('цена на кнопке одна и от магазина', () {
       for (final path in [
         'lib/widgets/mood_pack_selector.dart',

@@ -7,7 +7,6 @@ import 'package:love_app/screens/home/home_action_buttons.dart';
 import 'package:love_app/screens/home/home_bottom_nav.dart';
 import 'package:love_app/services/home_layout_service.dart';
 import 'package:love_app/services/locale_service.dart';
-import 'package:love_app/services/plus_service.dart';
 import 'package:love_app/theme/app_theme.dart';
 import 'package:love_app/widgets/common/animations.dart' show NavBarItem;
 import 'package:love_app/widgets/home_layout_editor.dart';
@@ -38,9 +37,6 @@ void main() {
   }
 
   group('с Плюсом', () {
-    setUp(() => PlusService.instance.setTrialUntil(
-        DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch));
-    tearDown(() => PlusService.instance.setTrialUntil(0));
 
     testWidgets('строку зажали и перетащили — порядок поменялся',
         (tester) async {

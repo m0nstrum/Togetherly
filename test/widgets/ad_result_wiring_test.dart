@@ -10,8 +10,7 @@ void main() {
   const screens = {
     'lib/screens/gifts/gift_shop_screen.dart': 1,
     'lib/screens/draw_screen.dart': 1,
-    'lib/screens/widget_screen.dart': 1,
-    'lib/screens/profile_screen.dart': 2,
+    'lib/screens/profile_screen.dart': 1,
     'lib/screens/home_screen.dart': 1,
     'lib/screens/chest_screen.dart': 1,
   };
@@ -25,7 +24,7 @@ void main() {
   }
 
   test('ролика нет — «реклама не готова», а не «не засчитан»', () {
-    for (final f in ['lib/screens/draw_screen.dart', 'lib/screens/widget_screen.dart', 'lib/screens/profile_screen.dart']) {
+    for (final f in ['lib/screens/draw_screen.dart', 'lib/screens/profile_screen.dart']) {
       expect(File(f).readAsStringSync().contains('ensureAdReady('), isTrue, reason: f);
     }
   });

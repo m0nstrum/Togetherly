@@ -69,7 +69,6 @@ import 'memory_lane_screen.dart';
 import '../widgets/common/m3_loading.dart';
 import '../models/widget_data.dart';
 import '../widgets/common/plus_badge.dart';
-import '../widgets/plus/plus_promo_sheet.dart';
 import '../widgets/common/stable_stream_builder.dart';
 import '../fork/battery/battery_ui.dart'; // fork: заряд партнёра
 import '../widgets/unfold/unfold_route.dart';
@@ -1228,16 +1227,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _setNoteShape(NoteShape shape) async {
     if (shape.id == _noteShape.id) return;
-    // Форма под замком: показываем витрину прямо поверх съёмки. Съёмку при
-    // этом не рвём — человек закроет лист и продолжит снимать кругом.
-    if (!PlusAccess.ownsNoteShape(
-      id: shape.id,
-      gate: PlusService.instance.gate,
-    )) {
-      HapticFeedback.lightImpact();
-      await showPlusPromoSheet(context);
-      return;
-    }
     setState(() => _noteShape = shape);
     HapticFeedback.selectionClick();
     await UiPrefs.setChatNoteShape(shape.id);

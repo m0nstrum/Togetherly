@@ -1,4 +1,3 @@
-import '../../fork/flags.dart'; // fork
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -987,7 +986,7 @@ class GiftPaySheet extends StatelessWidget {
     final s = LocaleService.current;
     final canPay = coins >= price;
     final adFirst = adAllowed && !canPay;
-    final onlyFree = ForkFlags.allFree && plus && adAllowed;
+    final onlyFree = plus && adAllowed;
     const minSize = Size.fromHeight(56);
 
     final coinLabel = Row(

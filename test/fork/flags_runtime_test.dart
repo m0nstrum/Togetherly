@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:love_app/fork/flags.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:love_app/models/help_items.dart';
@@ -10,14 +9,9 @@ import 'package:love_app/services/coin_store.dart';
 import 'package:love_app/services/movie_search_service.dart';
 import 'package:love_app/services/plus_service.dart';
 
-/// Поведение сборки форка. Запускается без env/test.json
-/// (`flutter test --tags fork-runtime`), иначе флаги вернут поведение апстрима.
+/// Поведение сборки форка без env/test.json (`flutter test --tags fork-runtime`):
+/// адреса и ключи как в настоящей сборке.
 void main() {
-  test('флаги форка включены', () {
-    expect(ForkFlags.allFree, isTrue);
-    expect(ForkFlags.hideUpstreamChannels, isTrue);
-  });
-
   test('Плюс открыт у всех, купить и задонатить нельзя', () {
     expect(PlusService.instance.active, isTrue);
     expect(PlusService.canPurchase, isFalse);

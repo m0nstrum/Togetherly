@@ -446,17 +446,7 @@ abstract class AppStrings {
   String get customMoodLimitReached;
 
   // Плашка Togetherly+ на главной
-  String get plusPromoTitle;
-  String get plusPromoBody;
 
-  /// Витрина плашки построчно.
-  String get plusPromoPerkMoods;
-  String get plusPromoPerkCycle;
-  String get plusPromoPerkStats;
-  String get plusPromoPerkWidgets;
-  String get plusPromoPerkNoAds;
-  String get plusPromoOpen;
-  String get plusPromoLater;
 
   // Порядок ленты воспоминаний
   /// Ярлык на карточке ленты: запись была ответом на задание дня.

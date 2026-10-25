@@ -11,7 +11,6 @@ import '../widgets/common/ad_result.dart';
 import '../widgets/common/ailment_icon.dart';
 import '../widgets/common/email_typo_prompt.dart';
 import '../widgets/common/tab_fade.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geocoding/geocoding.dart';
@@ -101,7 +100,6 @@ import 'together/together_launcher.dart';
 import '../services/reels/reels_invite.dart';
 import '../widgets/common/app_dialog.dart';
 import 'mood_calendar_screen.dart';
-import 'plus_screen.dart';
 import 'profile_screen.dart';
 import '../theme/profile_theme.dart';
 import '../services/cycle_service.dart';
@@ -109,8 +107,6 @@ import '../services/daily_task_service.dart';
 import '../services/apns_service.dart';
 import '../services/fcm_service.dart';
 import '../services/platform_tag.dart';
-import '../widgets/plus/plus_promo_rule.dart';
-import '../widgets/plus/plus_promo_sheet.dart';
 import '../models/streak_restore.dart';
 import '../services/plus_service.dart';
 import '../services/rewarded_ad_service.dart';
@@ -904,13 +900,6 @@ class _HomeScreenState extends State<HomeScreen> {
         // Календарь цикла: раздел показывается только женскому полу, но
         // привязку делаем всегда — партнёрские отметки нужны и мужчине,
         // когда она разрешила их видеть.
-        // Togetherly+ — серверный флаг: перечитываем при каждом входе, чтобы
-        // покупка с сайта открылась сама, без перезапуска приложения.
-        unawaited(PlusService.instance.refresh().then((_) {
-          // Ежемесячные монеты владельцам: сервер сам решит, прошёл ли месяц.
-          unawaited(PlusService.instance.claimMonthlyCoins());
-        }));
-
         unawaited(CycleService.instance.bind(
           groupId: _pairData.pairId,
           partnerUid: _pairData.partnerUid,
@@ -1737,76 +1726,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     unawaited(_checkWidgetOnScreen());
     await _maybeShowInviteScreen();
-    // Флаг `users.plus` серверный, и до ответа сервера человек считается
-    // некупившим. Обе витрины ниже спрашивают его, поэтому сперва поднимаем
-    // последний известный ответ (а без копии ходим на сервер).
-    await PlusService.instance.ensureLoaded();
-    await _maybePitchPlus();
-    await _maybeRemindPlus();
-  }
-
-  /// Плашка Togetherly+ — раз в семь часов тем, кто не купил.
-  ///
-  /// Раньше тут стоял только одноразовый рассказ после обновления, и заказчик
-  /// попросил напоминать регулярно («раз в 6–8 часов, попапом, а не экраном»).
-  /// Поэтому нижний лист, а не экран: человек открывал приложение ради своей
-  /// пары, и полноэкранная витрина на входе читается как «сначала заплати».
-  ///
-  /// Правило показа живёт в [shouldShowPlusPromo] под тестами: купившему не
-  /// показываем никогда, на iPhone Плюса не существует вовсе, а в первые сутки
-  /// после установки молчим.
-  Future<void> _maybeRemindPlus() async {
-    if (!mounted) return;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final show = shouldShowPlusPromo(
-      gate: PlusService.instance.gate,
-      plusKnown: PlusService.instance.known,
-      nowMs: now,
-      lastShownMs: await UiPrefs.plusPromoAt(),
-      installedMs: await UiPrefs.firstRunAt(now),
-    );
-    if (!show || !mounted) return;
-    await UiPrefs.setPlusPromoShown(now);
-    if (!mounted) return;
-    await showPlusPromoSheet(context);
-  }
-
-  /// Рассказ про Togetherly+ — один раз после обновления.
-  ///
-  /// Не показываем: тем, у кого Плюс уже куплен; там, где его не существует
-  /// (iOS — витрины нет вовсе, экран с ценой попал бы под 3.1.1); и новичку в
-  /// первый запуск — ему сначала нужно позвать партнёра.
-  ///
-  /// Периодических напоминаний нет намеренно: приложение открывают по
-  /// несколько раз в день, и показ «раз в N заходов» превращается в долбёжку.
-  /// Дальше Плюс продаёт себя по месту — там, где человек упирается в замок.
-  Future<void> _maybePitchPlus() async {
-    if (!mounted) return;
-    if (!PlusService.instance.known) return;
-    if (!PlusService.instance.visible || PlusService.instance.active) return;
-    if (await UiPrefs.isFirstLaunchEver()) return;
-
-    String version;
-    try {
-      final info = await PackageInfo.fromPlatform();
-      version = '${info.version}+${info.buildNumber}';
-    } catch (_) {
-      return;
-    }
-    if (await UiPrefs.plusPitchShownFor(version)) return;
-    await UiPrefs.markPlusPitchShown(version);
-    // Экран засчитывается за напоминание: без отметки нижний лист выскакивал
-    // сразу, как только человек закрывал экран, — две витрины подряд на одном
-    // заходе («при каждом заходе окно, чтоб сделали покупку», отзыв 10.09.2026).
-    await UiPrefs.setPlusPromoShown(DateTime.now().millisecondsSinceEpoch);
-    if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            PlusScreen(scheme: ProfileTheme.themeFor(_t).colorScheme),
-        settings: const RouteSettings(name: '/plus_pitch'),
-      ),
-    );
   }
 
   /// Экран «позовите свою половинку» — один раз после регистрации и только пока

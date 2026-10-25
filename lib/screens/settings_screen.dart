@@ -11,7 +11,6 @@ import '../widgets/settings_scaffold.dart';
 import '../fork/quick_tiles.dart'; // fork: PLAN 3.3
 import '../fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
 import '../fork/crash_reports.dart'; // fork
-import '../fork/flags.dart'; // fork
 import '../fork/battery/battery_share.dart'; // fork
 import '../fork/battery/battery_ui.dart'; // fork
 import '../fork/meta_direct.dart'; // fork
@@ -259,24 +258,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-
-              // fork: при ForkFlags.allFree Плюс открыт всем, продавать нечего — строки нет.
-              if (plusVisible && !ForkFlags.allFree)
-                SettingsGroup([
-                  SettingsRow(
-                    icon: Icons.workspace_premium_rounded,
-                    title: s.plusTitle,
-                    subtitle: plusActive ? s.plusActiveBody : s.plusHeroBody,
-                    iconBg: plusActive
-                        ? scheme.primary
-                        : scheme.primaryContainer,
-                    iconFg: plusActive
-                        ? scheme.onPrimary
-                        : scheme.onPrimaryContainer,
-                    trailing: const SettingsChevron(),
-                    onTap: onPlus,
-                  ),
-                ]),
 
               SettingsCollapsible(
                 prefsKey: 'appearance',
