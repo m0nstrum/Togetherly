@@ -52,8 +52,8 @@ func bindUsersGuard(app core.App) {
 		if err := checkEconomy(body); err != nil {
 			return err
 		}
-		for _, f := range adCounters {
-			if _, ok := body[f]; ok {
+		for k := range body {
+			if slices.Contains(adCounters, fieldName(k)) {
 				return router.NewApiError(http.StatusForbidden, "read-only economy field", nil)
 			}
 		}
@@ -91,14 +91,25 @@ func requestBody(e *core.RecordRequestEvent) map[string]any {
 
 // checkEconomy отказывает, если клиент прислал непустое поле экономики.
 // Сверяем тело запроса, а не запись: присланное пустым — дефолт схемы.
+// Поле с модификатором (`coins+`, `+owned_themes`) — всегда отказ: оно
+// меняет значение, а не задаёт его.
 func checkEconomy(body map[string]any) error {
-	for _, f := range economyFields {
-		v, ok := body[f]
-		if ok && !emptyValue(v) {
+	for k, v := range body {
+		f := fieldName(k)
+		if slices.Contains(economyFields, f) && (k != f || !emptyValue(v)) {
 			return router.NewApiError(http.StatusForbidden, "read-only economy field", nil)
 		}
 	}
 	return nil
+}
+
+// fieldName — имя поля без модификатора PocketBase: `coins+`, `coins-`,
+// `+tags` и `slug:autogenerate` пишут в то же поле, что и `coins`, `tags`,
+// `slug`. Стражи, сверяющие тело запроса по имени, смотрят на него.
+func fieldName(key string) string {
+	key, _, _ = strings.Cut(key, ":")
+	key = strings.TrimPrefix(key, "+")
+	return strings.TrimRight(key, "+-")
 }
 
 func emptyValue(v any) bool {

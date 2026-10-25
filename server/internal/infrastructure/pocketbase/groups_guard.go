@@ -35,6 +35,13 @@ func bindGroupsGuard(app core.App) {
 		saved := e.Record.Original()
 		me := e.Auth.Id
 		deny := func(msg string) error { return router.NewApiError(http.StatusForbidden, msg, nil) }
+		// Модификатор (`members+`, `claim_token:autogenerate`) обошёл бы
+		// сверку по имени ниже: для этих полей он запрещён целиком.
+		for k := range body {
+			if f := fieldName(k); k != f && (f == "members" || slices.Contains(memberMaps, f) || slices.Contains(pairingFields, f)) {
+				return deny("field modifiers are not allowed: " + k)
+			}
+		}
 
 		if raw, ok := body["members"]; ok {
 			var next []string

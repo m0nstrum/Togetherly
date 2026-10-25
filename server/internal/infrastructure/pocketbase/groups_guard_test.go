@@ -26,6 +26,8 @@ func TestGroupsGuard(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, patch(w.aTok, `{"member_names":{"`+alice+`":"e2e1.x","`+bob+`":"e2e1.fake"}}`))
 	assert.Equal(t, http.StatusForbidden, patch(w.aTok, `{"member_names":{"`+alice+`":"e2e1.x"}}`), "стереть чужой ключ")
 	assert.Equal(t, http.StatusForbidden, patch(w.aTok, `{"claim_token":"x"}`))
+	assert.Equal(t, http.StatusForbidden, patch(w.aTok, `{"claim_token:autogenerate":""}`), "модификатор")
+	assert.Equal(t, http.StatusForbidden, patch(w.aTok, `{"members+":["`+eve+`"]}`), "модификатор")
 	assert.Equal(t, http.StatusOK, patch(w.aTok, `{"member_names":{"`+bob+`":"e2e1.b","`+alice+`":"e2e1.x"}}`), "свой ключ")
 
 	// Ушла сама — пара пропала из её быстрых правил, у партнёра осталась.

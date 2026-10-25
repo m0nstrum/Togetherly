@@ -20,7 +20,9 @@ func TestUsersGuard(t *testing.T) {
 		return code
 	}
 	assert.NotEqual(t, http.StatusOK, patch(w.bTok, `{"display_name":"x"}`), "чужая запись")
-	for _, body := range []string{`{"coins":100}`, `{"plus":true}`, `{"owned_themes":["x"]}`, `{"ad_views_today":0}`, `{"ad_grants":{}}`} {
+	for _, body := range []string{`{"coins":100}`, `{"plus":true}`, `{"owned_themes":["x"]}`, `{"ad_views_today":0}`, `{"ad_grants":{}}`,
+		// Модификаторы PocketBase пишут в то же поле: coins+ прибавляет.
+		`{"coins+":100}`, `{"coins-":-100}`, `{"+owned_themes":["x"]}`, `{"ad_views_today+":0}`} {
 		assert.Equal(t, http.StatusForbidden, patch(w.aTok, body), body)
 	}
 	code, body := w.do(t, http.MethodPatch, path, w.aTok, `{"coins":0,"owned_themes":[],"plus":false,"gender":"f"}`)
@@ -52,5 +54,6 @@ func TestUsersRegistrationGuard(t *testing.T) {
 	}
 	assert.Equal(t, http.StatusForbidden, reg("bad@example.org", ""))
 	assert.Equal(t, http.StatusForbidden, reg("new1@example.org", `,"coins":500`))
+	assert.Equal(t, http.StatusForbidden, reg("new3@example.org", `,"coins+":500`))
 	assert.Equal(t, http.StatusOK, reg("new2@example.org", `,"coins":0`))
 }
