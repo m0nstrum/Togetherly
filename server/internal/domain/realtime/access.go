@@ -63,3 +63,51 @@ func RoomCode(groupID, secret string) string {
 	}
 	return b.String()
 }
+
+// Открытая комната просмотра — код из десяти знаков: шесть случайных и
+// четыре подписи от них. Подпись знает только сервер, поэтому набранный
+// руками код честно отвечает «комнаты нет», а хранить ничего не нужно.
+// Длина 10 не пересекается с кодом пары (8).
+
+// NewOpenRoom — свежий код открытой комнаты; random — 6 случайных байт.
+func NewOpenRoom(random []byte, secret string) string {
+	var b strings.Builder
+	for i := range 6 {
+		b.WriteByte(roomAlphabet[int(random[i%len(random)])%len(roomAlphabet)])
+	}
+	head := b.String()
+	return head + openRoomTail(head, secret)
+}
+
+// IsOpenRoom — код открытой комнаты, выданный этим сервером.
+func IsOpenRoom(room, secret string) bool {
+	return len(room) == 10 && hmac.Equal([]byte(openRoomTail(room[:6], secret)), []byte(room[6:]))
+}
+
+func openRoomTail(head, secret string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte("watch-open:" + head))
+	sum := mac.Sum(nil)
+	var b strings.Builder
+	for i := range 4 {
+		b.WriteByte(roomAlphabet[int(sum[i])%len(roomAlphabet)])
+	}
+	return b.String()
+}
+
+// pairRoomChars — знаки, которые даёт RoomCode: он берёт коды символов
+// hex-записи, и их всего шестнадцать.
+const pairRoomChars = "efghjkuvwxyz2345"
+
+// LooksLikePairRoom — код по форме похож на комнату пары.
+func LooksLikePairRoom(room string) bool {
+	if len(room) != 8 {
+		return false
+	}
+	for _, r := range room {
+		if !strings.ContainsRune(pairRoomChars, r) {
+			return false
+		}
+	}
+	return true
+}

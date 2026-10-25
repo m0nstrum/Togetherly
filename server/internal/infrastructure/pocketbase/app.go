@@ -142,6 +142,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 			IOSAppID: cfg.Invite.IOSAppID,
 		})
 		handler.RealtimeTokens(e.Router, cfg.Centrifugo.TokenHMAC)
+		handler.WatchRooms(e.Router, cfg.Centrifugo.TokenHMAC, pub)
 		handler.PasswordReset(e.Router, time.Now, log)
 		handler.EmailChange(e.Router, time.Now, log)
 		handler.Music(e.Router, music.New(safefetch.New(safefetch.Options{Timeout: 8 * time.Second, MaxBytes: 1 << 20})), log)

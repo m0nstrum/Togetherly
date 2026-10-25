@@ -88,3 +88,26 @@ func TestSharedSignatureFixture(t *testing.T) {
 	message := fmt.Sprintf("tethered-realtime-v1\n%s\n%d\n%s\n%s", e.Channel, e.At, e.Nonce, e.Payload)
 	require.True(t, ed25519.Verify(key, []byte(message), sig))
 }
+
+// Метка подписки приходит объектом или строкой с JSON — разбираем обе.
+func TestPresence(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/presence", r.URL.Path)
+		assert.Equal(t, "k", r.Header.Get("X-API-Key"))
+		fmt.Fprint(w, `{"result":{"presence":{
+			"c1":{"client":"c1","user":"u1","chan_info":{"app":1}},
+			"c2":{"client":"c2","user":"g2","chan_info":"{\"vouch\":1}"},
+			"c3":{"client":"c3","user":"g3"}}}}`)
+	}))
+	defer srv.Close()
+	p := centrifugo.New(srv.URL+"/api", "k", time.Second)
+	got, err := p.Presence(context.Background(), "watch:x")
+	require.NoError(t, err)
+	assert.Equal(t, "u1", got["c1"].User)
+	assert.EqualValues(t, 1, got["c1"].Info["app"])
+	assert.EqualValues(t, 1, got["c2"].Info["vouch"])
+	assert.Nil(t, got["c3"].Info["auth"])
+
+	_, err = centrifugo.New("", "", time.Second).Presence(context.Background(), "watch:x")
+	assert.ErrorIs(t, err, centrifugo.ErrDisabled)
+}
