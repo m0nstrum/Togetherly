@@ -11,7 +11,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// Пара «с пустым местом» (waiting.pb.js): второе место держит заглушка, а
+// Пара «с пустым местом» (handler.Waiting): второе место держит заглушка, а
 // войти в него можно по коду (claim_token) с подтверждением хозяина.
 
 // codeAlphabet — без похожих символов (0/O, 1/I), как у hotpath.

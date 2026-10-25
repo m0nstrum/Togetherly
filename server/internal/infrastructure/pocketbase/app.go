@@ -126,6 +126,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.UserCard(e.Router)
 		handler.Group(e.Router, groups, log)
 		handler.InviteAccept(e.Router, pairs.New(app), log)
+		handler.Waiting(e.Router, pairs.New(app), time.Now, log)
 		handler.RealtimeTokens(e.Router, cfg.Centrifugo.TokenHMAC)
 		handler.PasswordReset(e.Router, time.Now, log)
 		handler.EmailChange(e.Router, time.Now, log)
