@@ -72,7 +72,9 @@ void main() {
       ].reduce((a, b) => a < b ? a : b);
       if (main < WidgetThemeSync.minFillContrast ||
           second < WidgetThemeSync.minSoftContrast) {
-        bad.add('$name: ${main.toStringAsFixed(2)} / ${second.toStringAsFixed(2)}');
+        bad.add(
+          '$name: ${main.toStringAsFixed(2)} / ${second.toStringAsFixed(2)}',
+        );
       }
     }
     expect(bad, isEmpty, reason: 'подписи сливаются:\n${bad.join('\n')}');
@@ -98,8 +100,7 @@ void main() {
         on.withValues(alpha: YearRingSpec.softAlpha),
         corner,
       );
-      final softRole =
-          Color.lerp(fill, on, WidgetThemeSync.softShare)!;
+      final softRole = Color.lerp(fill, on, WidgetThemeSync.softShare)!;
       if (contrastRatio(on, fill) >= WidgetThemeSync.minFillContrast &&
           contrastRatio(soft, corner) >= WidgetThemeSync.minSoftContrast &&
           contrastRatio(softRole, fill) >= WidgetThemeSync.minSoftContrast) {
@@ -113,7 +114,10 @@ void main() {
     final fill = WidgetThemeSync.rolesOf(s)['primary']!;
     final a = Hct.fromInt(s.primary.toARGB32());
     final b = Hct.fromInt(fill.toARGB32());
-    expect(a.tone - b.tone, lessThan(10),
-        reason: 'заливка темнее темы больше чем на 10 тонов');
+    expect(
+      a.tone - b.tone,
+      lessThan(10),
+      reason: 'заливка темнее темы больше чем на 10 тонов',
+    );
   });
 }

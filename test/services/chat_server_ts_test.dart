@@ -21,26 +21,41 @@ void main() {
   final hotpath = read('pocketbase/hotpath/hotpath.py');
 
   test('сервер по-прежнему вправе переписать время сообщения', () {
-    expect(hotpath.contains('body["ts"] = время_сообщения('), isTrue,
-        reason: 'Если правило убрали, сторож ниже сторожит пустоту');
+    expect(
+      hotpath.contains('body["ts"] = время_сообщения('),
+      isTrue,
+      reason: 'Если правило убрали, сторож ниже сторожит пустоту',
+    );
   });
 
   test('отправка сообщения возвращает серверную запись', () {
-    expect(data.contains('Future<RecordModel?> chatSendRecord('), isTrue,
-        reason: 'Без записи от сервера исправленное время некуда взять');
+    expect(
+      data.contains('Future<RecordModel?> chatSendRecord('),
+      isTrue,
+      reason: 'Без записи от сервера исправленное время некуда взять',
+    );
   });
 
   test('серверное время сразу ложится в кэш', () {
-    expect(data.contains("LocalStore.instance.upsert('chat_messages'"), isTrue,
-        reason: 'Иначе порядок исправит только перезапуск приложения');
+    expect(
+      data.contains("LocalStore.instance.upsert('chat_messages'"),
+      isTrue,
+      reason: 'Иначе порядок исправит только перезапуск приложения',
+    );
   });
 
   test('очередь чата идёт через этот же путь', () {
     final outbox = read('lib/services/offline/outbox_service.dart');
-    expect(outbox.contains('data.chatSend('), isTrue,
-        reason: 'Сообщения уходят очередью — правка мимо неё ничего не меняет');
+    expect(
+      outbox.contains('data.chatSend('),
+      isTrue,
+      reason: 'Сообщения уходят очередью — правка мимо неё ничего не меняет',
+    );
     final send = data.substring(data.indexOf('Future<bool> chatSend('));
-    expect(send.substring(0, 600).contains('chatSendRecord('), isTrue,
-        reason: 'chatSend обязан спрашивать сервер, а не только «получилось ли»');
+    expect(
+      send.substring(0, 600).contains('chatSendRecord('),
+      isTrue,
+      reason: 'chatSend обязан спрашивать сервер, а не только «получилось ли»',
+    );
   });
 }

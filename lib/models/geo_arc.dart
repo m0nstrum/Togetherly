@@ -22,7 +22,9 @@ List<LatLng> greatCircle(LatLng a, LatLng b, {int segments = 64}) {
         final x = k1 * pa[0] + k2 * pb[0];
         final y = k1 * pa[1] + k2 * pb[1];
         final z = k1 * pa[2] + k2 * pb[2];
-        final lat = math.asin((z / math.sqrt(x * x + y * y + z * z)).clamp(-1.0, 1.0));
+        final lat = math.asin(
+          (z / math.sqrt(x * x + y * y + z * z)).clamp(-1.0, 1.0),
+        );
         final lon = math.atan2(y, x);
         return LatLng(lat * 180 / math.pi, lon * 180 / math.pi);
       }(),
@@ -31,7 +33,11 @@ List<LatLng> greatCircle(LatLng a, LatLng b, {int segments = 64}) {
 
 List<double> _vec(LatLng p) {
   final la = p.latitudeInRad, lo = p.longitudeInRad;
-  return [math.cos(la) * math.cos(lo), math.cos(la) * math.sin(lo), math.sin(la)];
+  return [
+    math.cos(la) * math.cos(lo),
+    math.cos(la) * math.sin(lo),
+    math.sin(la),
+  ];
 }
 
 /// Высота дуги над хордой: растёт с длиной, но в пределах 28…110 точек.

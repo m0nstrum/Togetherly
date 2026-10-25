@@ -30,14 +30,20 @@ Future<String?> showGiftNoteSheet(
       curve: _emphasizedDecelerate,
       builder: (ctx, v, child) => Opacity(
         opacity: v.clamp(0, 1),
-        child: Transform.translate(offset: Offset(0, (1 - v) * 40), child: child),
+        child: Transform.translate(
+          offset: Offset(0, (1 - v) * 40),
+          child: child,
+        ),
       ),
       child: Padding(
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
           top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 20,
+          bottom:
+              MediaQuery.of(ctx).viewInsets.bottom +
+              MediaQuery.of(ctx).padding.bottom +
+              20,
         ),
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -54,7 +60,10 @@ Future<String?> showGiftNoteSheet(
                   Container(
                     width: 52,
                     height: 52,
-                    decoration: BoxDecoration(color: cs.primaryContainer, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
                     padding: const EdgeInsets.all(8),
                     child: GiftImage(giftKey, side: 36),
                   ),

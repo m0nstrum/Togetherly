@@ -17,7 +17,12 @@ void main() {
       MaterialApp(
         home: ChestPrizeScreen(
           theme: t,
-          prize: const ChestPrize(key: 'frame_autumnwreath', kind: ChestPrizeKind.frame, weight: 0, tier: ChestTier.common),
+          prize: const ChestPrize(
+            key: 'frame_autumnwreath',
+            kind: ChestPrizeKind.frame,
+            weight: 0,
+            tier: ChestTier.common,
+          ),
           title: 'Рамка «Осенний венок»',
           subtitle: 'Рамка для аватарки, навсегда',
           tier: 'Обычные',

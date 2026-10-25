@@ -39,10 +39,22 @@ class MoodYearGridView extends StatelessWidget {
   List<Color> _ramp() {
     final base = scheme.primary;
     return [
-      Color.alphaBlend(base.withValues(alpha: 0.22), scheme.surfaceContainerHigh),
-      Color.alphaBlend(base.withValues(alpha: 0.40), scheme.surfaceContainerHigh),
-      Color.alphaBlend(base.withValues(alpha: 0.58), scheme.surfaceContainerHigh),
-      Color.alphaBlend(base.withValues(alpha: 0.78), scheme.surfaceContainerHigh),
+      Color.alphaBlend(
+        base.withValues(alpha: 0.22),
+        scheme.surfaceContainerHigh,
+      ),
+      Color.alphaBlend(
+        base.withValues(alpha: 0.40),
+        scheme.surfaceContainerHigh,
+      ),
+      Color.alphaBlend(
+        base.withValues(alpha: 0.58),
+        scheme.surfaceContainerHigh,
+      ),
+      Color.alphaBlend(
+        base.withValues(alpha: 0.78),
+        scheme.surfaceContainerHigh,
+      ),
       base,
     ];
   }
@@ -68,9 +80,7 @@ class MoodYearGridView extends StatelessWidget {
         // клетки (крупнее квадрата ей быть незачем), пол — шесть точек, ниже
         // которых тон уже не различить.
         const available = 360.0;
-        final fit = rows == 0
-            ? side
-            : (available - gap * (rows - 1)) / rows;
+        final fit = rows == 0 ? side : (available - gap * (rows - 1)) / rows;
         final cellH = fit.clamp(6.0, side);
         final height = rows * cellH + gap * (rows - 1);
 
@@ -194,20 +204,22 @@ class MoodYearGridView extends StatelessWidget {
     // Запятая как разделитель дробной части — русская норма; в остальных
     // языках строка приходит из словаря со своей точкой.
     final avg = s.average!.toStringAsFixed(1);
-    final shown = LocaleService.instance.isRussian ? avg.replaceAll('.', ',') : avg;
+    final shown = LocaleService.instance.isRussian
+        ? avg.replaceAll('.', ',')
+        : avg;
     return '${l.moodYearAverage(shown)} · ${l.moodYearMissing(s.missing)}';
   }
 
   Widget _legend(List<Color> ramp) {
     Widget dot(Color c) => Container(
-          width: 12,
-          height: 12,
-          margin: const EdgeInsets.only(right: 3),
-          decoration: BoxDecoration(
-            color: c,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        );
+      width: 12,
+      height: 12,
+      margin: const EdgeInsets.only(right: 3),
+      decoration: BoxDecoration(
+        color: c,
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
     final style = TextStyle(
       fontFamily: 'Onest',
       fontSize: 11,

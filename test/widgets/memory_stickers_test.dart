@@ -16,8 +16,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _img = 'assets/images/mood_packs/bunny/love.webp';
 
-MemorySticker _s(String id, {double x = .5, double y = .5, double size = .28}) =>
-    MemorySticker(id: id, uid: 'me', image: _img, x: x, y: y, size: size);
+MemorySticker _s(
+  String id, {
+  double x = .5,
+  double y = .5,
+  double size = .28,
+}) => MemorySticker(id: id, uid: 'me', image: _img, x: x, y: y, size: size);
 
 Widget _app(Widget home, {Brightness b = Brightness.light, double scale = 1}) {
   final theme = buildAppTheme(kPalettes[21], b);
@@ -28,8 +32,9 @@ Widget _app(Widget home, {Brightness b = Brightness.light, double scale = 1}) {
       theme: ProfileTheme.data(cs),
       home: Builder(
         builder: (context) => MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(textScaler: TextScaler.linear(scale)),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(scale)),
           child: home,
         ),
       ),
@@ -61,24 +66,31 @@ Future<_Opened> _open(
 }) async {
   _screen(tester, width: width);
   final opened = _Opened();
-  await tester.pumpWidget(_app(
-    Scaffold(
-      body: Builder(
-        builder: (ctx) => Center(
-          child: TextButton(
-            onPressed: () async {
-              opened.result = await placeStickerOnCard(ctx,
-                  block: _block, card: _card, sticker: _s('n'), isNew: isNew);
-              opened.done = true;
-            },
-            child: const Text('открыть'),
+  await tester.pumpWidget(
+    _app(
+      Scaffold(
+        body: Builder(
+          builder: (ctx) => Center(
+            child: TextButton(
+              onPressed: () async {
+                opened.result = await placeStickerOnCard(
+                  ctx,
+                  block: _block,
+                  card: _card,
+                  sticker: _s('n'),
+                  isNew: isNew,
+                );
+                opened.done = true;
+              },
+              child: const Text('открыть'),
+            ),
           ),
         ),
       ),
+      b: b,
+      scale: scale,
     ),
-    b: b,
-    scale: scale,
-  ));
+  );
   await tester.tap(find.text('открыть'));
   await tester.pumpAndSettle();
   expect(find.byType(StickerEditor), findsOneWidget);
@@ -92,18 +104,24 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({'app_language': 'ru'}));
 
   group('слой', () {
-    testWidgets('наклейка стоит в долях блока и свисает за край', (tester) async {
+    testWidgets('наклейка стоит в долях блока и свисает за край', (
+      tester,
+    ) async {
       _screen(tester);
-      await tester.pumpWidget(_app(Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.only(left: 40, top: 100),
-          child: SizedBox(
-            width: 200,
-            height: 100,
-            child: StickerLayer(stickers: [_s('a', x: 1, y: 0, size: .5)]),
+      await tester.pumpWidget(
+        _app(
+          Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.only(left: 40, top: 100),
+              child: SizedBox(
+                width: 200,
+                height: 100,
+                child: StickerLayer(stickers: [_s('a', x: 1, y: 0, size: .5)]),
+              ),
+            ),
           ),
         ),
-      )));
+      );
       final r = tester.getRect(find.byKey(const ValueKey('sticker-a')));
       // Центр в правом верхнем углу блока, сторона — половина ширины.
       expect(r.center.dx, closeTo(240, .01));
@@ -115,74 +133,111 @@ void main() {
     testWidgets('спрятанную не рисует, касание говорит, какая', (tester) async {
       _screen(tester);
       MemorySticker? tapped;
-      await tester.pumpWidget(_app(Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 300,
-            height: 200,
-            child: StickerLayer(
-              stickers: [_s('a', x: .25), _s('b', x: .75)],
-              hiddenId: 'a',
-              onTap: (s) => tapped = s,
+      await tester.pumpWidget(
+        _app(
+          Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 300,
+                height: 200,
+                child: StickerLayer(
+                  stickers: [_s('a', x: .25), _s('b', x: .75)],
+                  hiddenId: 'a',
+                  onTap: (s) => tapped = s,
+                ),
+              ),
             ),
           ),
         ),
-      )));
+      );
       expect(find.byKey(const ValueKey('sticker-a')), findsNothing);
       await tester.tap(find.byKey(const ValueKey('sticker-b')));
       expect(tapped?.id, 'b');
     });
 
-    testWidgets('своё настроение пары клеится со скруглёнными углами',
-        (tester) async {
+    testWidgets('своё настроение пары клеится со скруглёнными углами', (
+      tester,
+    ) async {
       _screen(tester);
-      await tester.pumpWidget(_app(const Scaffold(
-        body: Center(
-          child: Column(children: [
-            StickerPicture(key: Key('own'), image: _img, side: 100, rounded: true),
-            StickerPicture(key: Key('pack'), image: _img, side: 100),
-          ]),
+      await tester.pumpWidget(
+        _app(
+          const Scaffold(
+            body: Center(
+              child: Column(
+                children: [
+                  StickerPicture(
+                    key: Key('own'),
+                    image: _img,
+                    side: 100,
+                    rounded: true,
+                  ),
+                  StickerPicture(key: Key('pack'), image: _img, side: 100),
+                ],
+              ),
+            ),
+          ),
         ),
-      )));
+      );
       Finder clipIn(String key) => find.descendant(
-          of: find.byKey(Key(key)), matching: find.byType(ClipRSuperellipse));
+        of: find.byKey(Key(key)),
+        matching: find.byType(ClipRSuperellipse),
+      );
       expect(clipIn('own'), findsOneWidget);
       expect(clipIn('pack'), findsNothing);
     });
 
-    testWidgets('пропавшая картинка не оставляет заглушку поверх фото',
-        (tester) async {
+    testWidgets('пропавшая картинка не оставляет заглушку поверх фото', (
+      tester,
+    ) async {
       _screen(tester);
-      await tester.pumpWidget(_app(const Scaffold(
-        body: Center(
-          child: StickerPicture(image: 'assets/images/нет-такой.webp', side: 100),
+      await tester.pumpWidget(
+        _app(
+          const Scaffold(
+            body: Center(
+              child: StickerPicture(
+                image: 'assets/images/нет-такой.webp',
+                side: 100,
+              ),
+            ),
+          ),
         ),
-      )));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+      );
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 300)),
+      );
       await tester.pump();
       expect(find.byIcon(Icons.sentiment_satisfied_alt_rounded), findsNothing);
     });
 
-    testWidgets('блок сообщает о себе карточке, поставленная видна сразу',
-        (tester) async {
+    testWidgets('блок сообщает о себе карточке, поставленная видна сразу', (
+      tester,
+    ) async {
       _screen(tester);
       final anchorKey = GlobalKey<StickerAnchorState>();
       late BuildContext inside;
-      await tester.pumpWidget(_app(Scaffold(
-        body: StickerCardScope(
-          child: Builder(builder: (ctx) {
-            inside = ctx;
-            return Column(children: [
-              const SizedBox(height: 50),
-              StickerAnchor(
-                key: anchorKey,
-                stickers: [_s('a')],
-                child: const SizedBox(width: 300, height: 200),
+      await tester.pumpWidget(
+        _app(
+          Scaffold(
+            body: StickerCardScope(
+              child: Builder(
+                builder: (ctx) {
+                  inside = ctx;
+                  return Column(
+                    children: [
+                      const SizedBox(height: 50),
+                      StickerAnchor(
+                        key: anchorKey,
+                        stickers: [_s('a')],
+                        child: const SizedBox(width: 300, height: 200),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ]);
-          }),
+            ),
+          ),
         ),
-      )));
+      );
       final card = StickerCardScope.maybeOf(inside);
       expect(card?.anchor, same(anchorKey.currentState));
       expect(card!.anchor!.globalRect!.size, const Size(300, 200));
@@ -210,7 +265,9 @@ void main() {
     final grab = centre + const Offset(side / 2 + 5, side / 2 + 5);
     final cross = centre - const Offset(side / 2 + 5, side / 2 + 5);
 
-    testWidgets('пальцем двигается, «Готово» отдаёт новое место', (tester) async {
+    testWidgets('пальцем двигается, «Готово» отдаёт новое место', (
+      tester,
+    ) async {
       final opened = await _open(tester);
       final g = await tester.startGesture(const Offset(180, 650));
       await g.moveBy(const Offset(20, 0));
@@ -279,13 +336,16 @@ void main() {
 
     for (final b in Brightness.values) {
       for (final lang in [AppLanguage.ru, AppLanguage.de]) {
-        testWidgets('320 точек, шрифт 1.3, ${lang.name}, ${b.name}',
-            (tester) async {
+        testWidgets('320 точек, шрифт 1.3, ${lang.name}, ${b.name}', (
+          tester,
+        ) async {
           await LocaleService.instance.setLanguage(lang);
           addTearDown(() => LocaleService.instance.setLanguage(AppLanguage.ru));
           await _open(tester, b: b, scale: 1.3, width: 320);
           expect(tester.takeException(), isNull);
-          final cancel = tester.getRect(find.byKey(const Key('sticker-cancel')));
+          final cancel = tester.getRect(
+            find.byKey(const Key('sticker-cancel')),
+          );
           final done = tester.getRect(find.byKey(const Key('sticker-done')));
           expect(cancel.right, lessThan(done.left));
           expect(done.right, lessThanOrEqualTo(320 - 16 + .01));

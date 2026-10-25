@@ -11,35 +11,36 @@ import 'package:love_app/services/app_icon_service.dart';
 /// оставались на месте — не работал только вход. Тест держит строку, чтобы она
 /// не потерялась при следующей перестройке экрана.
 Widget _app({String? appIconId}) => MaterialApp(
-      home: SettingsScreen(
-        scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE91E63)),
-        accountEmail: 'sasha@example.com',
-        appIconId: appIconId,
-        onAppIcon: () {},
-        onAppearance: () {},
-        onNotifications: () {},
-        onLanguage: () {},
-        onCoinShop: () {},
-        onPrivacyPolicy: () {},
-        onExport: () {},
-        onTerms: () {},
-        onSupport: () {},
-        onOfficial: () {},
-        onDrawTools: () {},
-        onAbout: () {},
-        onChangePassword: () {},
-        onLogout: () {},
-        onDeleteAccount: () {},
-        lockScreenMood: false,
-        onLockScreenMoodChanged: (_) {},
-        sideActionIsArrow: true,
-        onToggleSideAction: () {},
-      ),
-    );
+  home: SettingsScreen(
+    scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE91E63)),
+    accountEmail: 'sasha@example.com',
+    appIconId: appIconId,
+    onAppIcon: () {},
+    onAppearance: () {},
+    onNotifications: () {},
+    onLanguage: () {},
+    onCoinShop: () {},
+    onPrivacyPolicy: () {},
+    onExport: () {},
+    onTerms: () {},
+    onSupport: () {},
+    onOfficial: () {},
+    onDrawTools: () {},
+    onAbout: () {},
+    onChangePassword: () {},
+    onLogout: () {},
+    onDeleteAccount: () {},
+    lockScreenMood: false,
+    onLockScreenMoodChanged: (_) {},
+    sideActionIsArrow: true,
+    onToggleSideAction: () {},
+  ),
+);
 
 void main() {
-  testWidgets('строка «Иконка приложения» есть и называет текущий значок',
-      (tester) async {
+  testWidgets('строка «Иконка приложения» есть и называет текущий значок', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 3600);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -54,10 +55,7 @@ void main() {
       findsOneWidget,
     );
     final current = AppIconService.options.first;
-    expect(
-      find.textContaining(RegExp(current.name)),
-      findsOneWidget,
-    );
+    expect(find.textContaining(RegExp(current.name)), findsOneWidget);
   });
 
   testWidgets('без поддержки платформы строки нет', (tester) async {

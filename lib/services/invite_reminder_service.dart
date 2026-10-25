@@ -44,10 +44,15 @@ class InviteReminderService {
       android: AndroidInitializationSettings('@drawable/ic_notification'),
       iOS: DarwinInitializationSettings(),
     );
-    await _plugin.initialize(settings: settings, onDidReceiveNotificationResponse: ForkNotifTap.onResponse); // fork
+    await _plugin.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
+    ); // fork
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
@@ -60,7 +65,8 @@ class InviteReminderService {
     if (Platform.isIOS || Platform.isMacOS) {
       await _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     }
 
@@ -74,8 +80,10 @@ class InviteReminderService {
   Future<void> scheduleIfSolo() async {
     if (!_initialized) await init();
     try {
-      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       await requestNotificationPermissionSafely(androidPlugin);
 
       final s = LocaleService.current;

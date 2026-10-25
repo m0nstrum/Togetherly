@@ -68,8 +68,9 @@ class DayMoodLanes extends StatelessWidget {
       );
       return Expanded(
         child: Row(
-          mainAxisAlignment:
-              left ? MainAxisAlignment.start : MainAxisAlignment.end,
+          mainAxisAlignment: left
+              ? MainAxisAlignment.start
+              : MainAxisAlignment.end,
           children: left
               ? [avatar, const SizedBox(width: 8), label]
               : [label, const SizedBox(width: 8), avatar],
@@ -87,7 +88,9 @@ class DayMoodLanes extends StatelessWidget {
         double width(String text, double size, double weight) {
           final p = TextPainter(
             text: TextSpan(
-                text: text, style: AppFonts.onest(size: size, weight: weight)),
+              text: text,
+              style: AppFonts.onest(size: size, weight: weight),
+            ),
             textDirection: TextDirection.ltr,
             textScaler: scaler,
             maxLines: 1,
@@ -145,8 +148,12 @@ class DayMoodLanes extends StatelessWidget {
     );
   }
 
-  Widget _row(ColorScheme cs, bool isMine, MoodEntry e,
-      {required bool compact}) {
+  Widget _row(
+    ColorScheme cs,
+    bool isMine,
+    MoodEntry e, {
+    required bool compact,
+  }) {
     final entry = _entry(cs, isMine, e, compact: compact);
     return Row(
       children: [
@@ -165,8 +172,11 @@ class DayMoodLanes extends StatelessWidget {
           ),
           child: Text(
             _hhmm(e.timestamp),
-            style: AppFonts.onest(size: 12.5, weight: 700, color: cs.onSurface)
-                .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+            style: AppFonts.onest(
+              size: 12.5,
+              weight: 700,
+              color: cs.onSurface,
+            ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
           ),
         ),
         const SizedBox(width: 6),
@@ -180,8 +190,12 @@ class DayMoodLanes extends StatelessWidget {
     );
   }
 
-  Widget _entry(ColorScheme cs, bool isMine, MoodEntry e,
-      {required bool compact}) {
+  Widget _entry(
+    ColorScheme cs,
+    bool isMine,
+    MoodEntry e, {
+    required bool compact,
+  }) {
     final image = ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: e.imagePath.isNotEmpty
@@ -194,7 +208,11 @@ class DayMoodLanes extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.center,
-      style: AppFonts.onest(size: compact ? 12.5 : 13.5, weight: 700, color: fg),
+      style: AppFonts.onest(
+        size: compact ? 12.5 : 13.5,
+        weight: 700,
+        color: fg,
+      ),
     );
     final background = isMine ? cs.surfaceContainerHigh : cs.primaryContainer;
     if (compact) {

@@ -46,7 +46,12 @@ class StickerPicture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget picture = MoodImage(image, width: side, height: side, quietError: true);
+    Widget picture = MoodImage(
+      image,
+      width: side,
+      height: side,
+      quietError: true,
+    );
     if (rounded ?? isOwnMoodSticker(image)) {
       picture = ClipRSuperellipse(
         borderRadius: BorderRadius.circular(side * 0.26),
@@ -188,12 +193,14 @@ class StickerAnchorState extends State<StickerAnchor> {
     super.didUpdateWidget(old);
     final fresh = _fresh;
     if (fresh != null &&
-        widget.stickers.any((s) =>
-            s.id == fresh.id &&
-            s.x == fresh.x &&
-            s.y == fresh.y &&
-            s.size == fresh.size &&
-            s.angle == fresh.angle)) {
+        widget.stickers.any(
+          (s) =>
+              s.id == fresh.id &&
+              s.x == fresh.x &&
+              s.y == fresh.y &&
+              s.size == fresh.size &&
+              s.angle == fresh.angle,
+        )) {
       _fresh = null;
     }
     _gone.removeWhere((id) => widget.stickers.every((s) => s.id != id));

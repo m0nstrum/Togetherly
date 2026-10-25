@@ -17,18 +17,17 @@ TipContext ctx({
   bool cycleVisible = false,
   int? daysSinceMemory,
   int? daysSinceChat,
-}) =>
-    TipContext(
-      daysSinceMiss: daysSinceMiss,
-      partnerMoodScore: partnerMoodScore,
-      myMoodScore: myMoodScore,
-      daysToAnniversary: daysToAnniversary,
-      daysTogether: daysTogether,
-      cycle: cycle,
-      cycleVisible: cycleVisible,
-      daysSinceMemory: daysSinceMemory,
-      daysSinceChat: daysSinceChat,
-    );
+}) => TipContext(
+  daysSinceMiss: daysSinceMiss,
+  partnerMoodScore: partnerMoodScore,
+  myMoodScore: myMoodScore,
+  daysToAnniversary: daysToAnniversary,
+  daysTogether: daysTogether,
+  cycle: cycle,
+  cycleVisible: cycleVisible,
+  daysSinceMemory: daysSinceMemory,
+  daysSinceChat: daysSinceChat,
+);
 
 void main() {
   group('приватность цикла', () {
@@ -107,36 +106,38 @@ void main() {
 
   group('порядок и объём', () {
     test('советы отсортированы по важности', () {
-      final tips = RelationshipTips.forToday(ctx(
-        partnerMoodScore: 1,
-        daysSinceChat: 1,
-        daysToAnniversary: 200,
-      ));
+      final tips = RelationshipTips.forToday(
+        ctx(partnerMoodScore: 1, daysSinceChat: 1, daysToAnniversary: 200),
+      );
       expect(tips.first.id, 'mood_low');
     });
 
     test('за раз не больше трёх советов: список ради списка не читают', () {
-      final tips = RelationshipTips.forToday(ctx(
-        partnerMoodScore: 1,
-        daysSinceMiss: 9,
-        daysSinceChat: 5,
-        daysSinceMemory: 30,
-        daysToAnniversary: 3,
-        cycle: CyclePhaseHint.period,
-        cycleVisible: true,
-      ));
+      final tips = RelationshipTips.forToday(
+        ctx(
+          partnerMoodScore: 1,
+          daysSinceMiss: 9,
+          daysSinceChat: 5,
+          daysSinceMemory: 30,
+          daysToAnniversary: 3,
+          cycle: CyclePhaseHint.period,
+          cycleVisible: true,
+        ),
+      );
       expect(tips.length, lessThanOrEqualTo(3));
     });
 
     test('когда всё хорошо, советов нет — молчание лучше пустого совета', () {
-      final tips = RelationshipTips.forToday(ctx(
-        partnerMoodScore: 5,
-        myMoodScore: 5,
-        daysSinceMiss: 0,
-        daysSinceChat: 0,
-        daysSinceMemory: 1,
-        daysToAnniversary: 200,
-      ));
+      final tips = RelationshipTips.forToday(
+        ctx(
+          partnerMoodScore: 5,
+          myMoodScore: 5,
+          daysSinceMiss: 0,
+          daysSinceChat: 0,
+          daysSinceMemory: 1,
+          daysToAnniversary: 200,
+        ),
+      );
       expect(tips, isEmpty);
     });
   });
@@ -153,8 +154,11 @@ void main() {
         for (final tip in tips) {
           final text = '${tip.title} ${tip.body}'.toLowerCase();
           for (final word in forbidden) {
-            expect(text.contains(word), isFalse,
-                reason: 'совет ${tip.id} содержит «$word»');
+            expect(
+              text.contains(word),
+              isFalse,
+              reason: 'совет ${tip.id} содержит «$word»',
+            );
           }
         }
       }

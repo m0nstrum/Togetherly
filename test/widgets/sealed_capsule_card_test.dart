@@ -39,27 +39,35 @@ Future<AppTheme> _pump(
   tester.view.physicalSize = Size(width * 3, 900 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(MaterialApp(
-    home: MediaQuery(
-      data: MediaQueryData(size: Size(width, 900), textScaler: TextScaler.linear(scale)),
-      child: Scaffold(
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            SealedCapsuleCard(
-              theme: theme,
-              header: const Text('Аня · 12 июля', key: ValueKey('pin-header')),
-              sealedAt: DateTime(2026, 7, 12, 20),
-              openAt: DateTime(2027, 2, 14, 9),
-              onTapTooEarly: onTap ?? () {},
-              onLongPress: onLongPress,
-              now: () => DateTime(2026, 10, 14, 12),
-            ),
-          ],
+  await tester.pumpWidget(
+    MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: Size(width, 900),
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: Scaffold(
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              SealedCapsuleCard(
+                theme: theme,
+                header: const Text(
+                  'Аня · 12 июля',
+                  key: ValueKey('pin-header'),
+                ),
+                sealedAt: DateTime(2026, 7, 12, 20),
+                openAt: DateTime(2027, 2, 14, 9),
+                onTapTooEarly: onTap ?? () {},
+                onLongPress: onLongPress,
+                now: () => DateTime(2026, 10, 14, 12),
+              ),
+            ],
+          ),
         ),
       ),
     ),
-  ));
+  );
   await tester.pump();
   return theme;
 }
@@ -75,43 +83,67 @@ void main() {
     await _loadFont('Unbounded', 'assets/fonts/Unbounded.ttf');
   });
 
-  testWidgets('шапка пина, отсчёт по календарю и дата открытия словами', (tester) async {
+  testWidgets('шапка пина, отсчёт по календарю и дата открытия словами', (
+    tester,
+  ) async {
     await _pump(tester);
     expect(find.byKey(const ValueKey('pin-header')), findsOneWidget);
     expect(find.text('123'), findsOneWidget);
     expect(find.text('дня до открытия'), findsOneWidget);
     expect(find.text('Откроется 14 февраля 2027'), findsOneWidget);
-    expect(find.textContaining('от '), findsNothing, reason: 'автора называет шапка');
+    expect(
+      find.textContaining('от '),
+      findsNothing,
+      reason: 'автора называет шапка',
+    );
   });
 
-  testWidgets('полоса срока: прошло 43% от запечатывания до открытия', (tester) async {
+  testWidgets('полоса срока: прошло 43% от запечатывания до открытия', (
+    tester,
+  ) async {
     await _pump(tester);
-    final bar = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+    final bar = tester.widget<LinearProgressIndicator>(
+      find.byType(LinearProgressIndicator),
+    );
     expect(bar.value, closeTo(0.43, 0.01));
   });
 
-  testWidgets('лист заметки с печатью: secondaryContainer, без рамок, теней, градиентов и эмодзи',
-      (tester) async {
-    final theme = await _pump(tester);
-    final cs = ProfileTheme.schemeFor(theme);
-    final card = find.byType(SealedCapsuleCard);
-    final fills = <Color>[];
-    for (final w in tester.widgetList<Container>(find.descendant(of: card, matching: find.byType(Container)))) {
-      final d = w.decoration;
-      if (d is BoxDecoration) {
-        expect(d.border, isNull, reason: 'рамок нет');
-        expect(d.boxShadow, isNull, reason: 'теней нет');
-        expect(d.gradient, isNull, reason: 'градиентов нет');
-        if (d.color != null) fills.add(d.color!);
+  testWidgets(
+    'лист заметки с печатью: secondaryContainer, без рамок, теней, градиентов и эмодзи',
+    (tester) async {
+      final theme = await _pump(tester);
+      final cs = ProfileTheme.schemeFor(theme);
+      final card = find.byType(SealedCapsuleCard);
+      final fills = <Color>[];
+      for (final w in tester.widgetList<Container>(
+        find.descendant(of: card, matching: find.byType(Container)),
+      )) {
+        final d = w.decoration;
+        if (d is BoxDecoration) {
+          expect(d.border, isNull, reason: 'рамок нет');
+          expect(d.boxShadow, isNull, reason: 'теней нет');
+          expect(d.gradient, isNull, reason: 'градиентов нет');
+          if (d.color != null) fills.add(d.color!);
+        }
       }
-    }
-    expect(fills, contains(cs.secondaryContainer));
-    expect(fills, contains(theme.cardSurface), reason: 'карточка как у всех пинов');
-    expect(find.byIcon(Icons.lock_rounded), findsOneWidget, reason: 'печать с замком');
-    expect(find.textContaining('⏳'), findsNothing);
-  });
+      expect(fills, contains(cs.secondaryContainer));
+      expect(
+        fills,
+        contains(theme.cardSurface),
+        reason: 'карточка как у всех пинов',
+      );
+      expect(
+        find.byIcon(Icons.lock_rounded),
+        findsOneWidget,
+        reason: 'печать с замком',
+      );
+      expect(find.textContaining('⏳'), findsNothing);
+    },
+  );
 
-  testWidgets('касание — «ещё рано», удержание — у того, кому его дали', (tester) async {
+  testWidgets('касание — «ещё рано», удержание — у того, кому его дали', (
+    tester,
+  ) async {
     var taps = 0, holds = 0;
     await _pump(tester, onTap: () => taps++, onLongPress: () => holds++);
     await tester.tap(find.byType(SealedCapsuleCard));
@@ -125,10 +157,19 @@ void main() {
   for (final language in [AppLanguage.ru, AppLanguage.de]) {
     for (final b in Brightness.values) {
       for (final w in [320.0, 360.0]) {
-        testWidgets('без переполнений: ${language.code}, ${b.name}, $w dp, шрифт 1.3', (tester) async {
-          await _pump(tester, brightness: b, width: w, scale: 1.3, language: language);
-          expect(tester.takeException(), isNull);
-        });
+        testWidgets(
+          'без переполнений: ${language.code}, ${b.name}, $w dp, шрифт 1.3',
+          (tester) async {
+            await _pump(
+              tester,
+              brightness: b,
+              width: w,
+              scale: 1.3,
+              language: language,
+            );
+            expect(tester.takeException(), isNull);
+          },
+        );
       }
     }
   }

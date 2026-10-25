@@ -159,7 +159,10 @@ class _PixelMascotViewState extends State<PixelMascotView>
     if (_listener != null) _stream?.removeListener(_listener!);
     // Атлас качается один раз и живёт в кэше картинок: маскот из каталога не
     // должен тянуть сеть при каждом открытии главной.
-    final provider = CachedNetworkImageProvider(widget.anim.sheetUrl, cacheManager: OfflineImageCacheManager.instance);
+    final provider = CachedNetworkImageProvider(
+      widget.anim.sheetUrl,
+      cacheManager: OfflineImageCacheManager.instance,
+    );
     _stream = provider.resolve(const ImageConfiguration());
     _listener = ImageStreamListener((info, _) {
       if (!mounted) return;

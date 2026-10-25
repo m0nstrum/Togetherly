@@ -53,9 +53,10 @@ void main() {
     await _font('Onest', 'assets/fonts/Onest.ttf');
     await _font('Unbounded', 'assets/fonts/Unbounded.ttf');
     await _font(
-        'MaterialIcons',
-        '${Platform.environment['HOME']}/snap/flutter/common/flutter'
-            '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+      'MaterialIcons',
+      '${Platform.environment['HOME']}/snap/flutter/common/flutter'
+          '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
   });
 
   setUp(() async {
@@ -63,21 +64,20 @@ void main() {
     await LocaleService.instance.setLanguage(AppLanguage.ru);
   });
 
-  testWidgets('карточка кода: ждём сервер и код готов',
-      (tester) async {
+  testWidgets('карточка кода: ждём сервер и код готов', (tester) async {
     final key = GlobalKey();
 
     Widget phone(PairData pair, theme, double w, double scale) => SizedBox(
-          width: w,
-          height: 640,
-          child: MediaQuery(
-            data: MediaQueryData(
-              size: Size(w, 640),
-              textScaler: TextScaler.linear(scale),
-            ),
-            child: InvitePartnerScreen(pairData: pair, theme: theme),
-          ),
-        );
+      width: w,
+      height: 640,
+      child: MediaQuery(
+        data: MediaQueryData(
+          size: Size(w, 640),
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: InvitePartnerScreen(pairData: pair, theme: theme),
+      ),
+    );
 
     Widget row(int palette, Brightness mode, double w, double scale) {
       final theme = buildAppTheme(kPalettes[palette], mode);
@@ -94,32 +94,34 @@ void main() {
 
     await tester.binding.setSurfaceSize(const Size(860, 2680));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(RepaintBoundary(
-      key: key,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Material(
-          color: const Color(0xFF8A8A8A),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Розовая светлая — тема новичка по умолчанию.
-                row(0, Brightness.light, 320, 1.3),
-                const SizedBox(height: 16),
-                row(0, Brightness.dark, 393, 1.0),
-                const SizedBox(height: 16),
-                row(1, Brightness.light, 393, 1.0),
-                const SizedBox(height: 16),
-                row(13, Brightness.dark, 393, 1.0),
-              ],
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Material(
+            color: const Color(0xFF8A8A8A),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Розовая светлая — тема новичка по умолчанию.
+                  row(0, Brightness.light, 320, 1.3),
+                  const SizedBox(height: 16),
+                  row(0, Brightness.dark, 393, 1.0),
+                  const SizedBox(height: 16),
+                  row(1, Brightness.light, 393, 1.0),
+                  const SizedBox(height: 16),
+                  row(13, Brightness.dark, 393, 1.0),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 

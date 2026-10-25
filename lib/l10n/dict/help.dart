@@ -167,12 +167,18 @@ const Map<String, Map<String, String>> helpStrings = {
   },
   'help.unpair.s3': {
     'ru': 'Нажмите красную кнопку «{disconnect}». Пара отвяжется у вас обоих.',
-    'en': 'Tap the red «{disconnect}» button. The couple is removed for both of you.',
-    'pt': 'Toque no botão vermelho «{disconnect}». O casal é desfeito para os dois.',
-    'it': 'Tocca il pulsante rosso «{disconnect}». La coppia si scioglie per entrambi.',
-    'es': 'Toca el botón rojo «{disconnect}». La pareja se deshace para los dos.',
-    'fr': 'Touchez le bouton rouge «{disconnect}». Le couple est supprimé pour vous deux.',
-    'de': 'Tippe auf den roten Button «{disconnect}». Das Paar wird für euch beide aufgelöst.',
+    'en':
+        'Tap the red «{disconnect}» button. The couple is removed for both of you.',
+    'pt':
+        'Toque no botão vermelho «{disconnect}». O casal é desfeito para os dois.',
+    'it':
+        'Tocca il pulsante rosso «{disconnect}». La coppia si scioglie per entrambi.',
+    'es':
+        'Toca el botón rojo «{disconnect}». La pareja se deshace para los dos.',
+    'fr':
+        'Touchez le bouton rouge «{disconnect}». Le couple est supprimé pour vous deux.',
+    'de':
+        'Tippe auf den roten Button «{disconnect}». Das Paar wird für euch beide aufgelöst.',
   },
 
   // ── Дата начала ──────────────────────────────────────────────────────────
@@ -204,22 +210,36 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Öffne den Tab «{home}».',
   },
   'help.startDate.s2': {
-    'ru': 'Над кругом с годами, месяцами и днями нажмите круглую кнопку с карандашом.',
-    'en': 'Above the circle with years, months and days, tap the round pencil button.',
-    'pt': 'Acima do círculo com anos, meses e dias, toque no botão redondo com lápis.',
-    'it': 'Sopra il cerchio con anni, mesi e giorni, tocca il pulsante tondo con la matita.',
-    'es': 'Encima del círculo con años, meses y días, toca el botón redondo con lápiz.',
-    'fr': 'Au-dessus du cercle des années, mois et jours, touchez le bouton rond crayon.',
-    'de': 'Tippe über dem Kreis mit Jahren, Monaten und Tagen auf den runden Stift-Button.',
+    'ru':
+        'Над кругом с годами, месяцами и днями нажмите круглую кнопку с карандашом.',
+    'en':
+        'Above the circle with years, months and days, tap the round pencil button.',
+    'pt':
+        'Acima do círculo com anos, meses e dias, toque no botão redondo com lápis.',
+    'it':
+        'Sopra il cerchio con anni, mesi e giorni, tocca il pulsante tondo con la matita.',
+    'es':
+        'Encima del círculo con años, meses y días, toca el botón redondo con lápiz.',
+    'fr':
+        'Au-dessus du cercle des années, mois et jours, touchez le bouton rond crayon.',
+    'de':
+        'Tippe über dem Kreis mit Jahren, Monaten und Tagen auf den runden Stift-Button.',
   },
   'help.startDate.s3': {
-    'ru': 'Выберите дату, когда вы начали встречаться. Дни вместе на счётчике пересчитаются у вас обоих.',
-    'en': 'Pick the date you started dating. Your days together on the counter update for both of you.',
-    'pt': 'Escolha a data em que começaram a namorar. Os dias juntos no contador mudam para os dois.',
-    'it': 'Scegli la data in cui vi siete messi insieme. I giorni insieme sul contatore si aggiornano per entrambi.',
-    'es': 'Elige la fecha en que empezasteis a salir. Los días juntos del contador cambian para los dos.',
-    'fr': 'Choisissez la date de début de votre relation. Les jours ensemble du compteur changent pour vous deux.',
-    'de': 'Wähle das Datum, an dem ihr zusammengekommen seid. Die Tage zusammen im Zähler ändern sich für euch beide.',
+    'ru':
+        'Выберите дату, когда вы начали встречаться. Дни вместе на счётчике пересчитаются у вас обоих.',
+    'en':
+        'Pick the date you started dating. Your days together on the counter update for both of you.',
+    'pt':
+        'Escolha a data em que começaram a namorar. Os dias juntos no contador mudam para os dois.',
+    'it':
+        'Scegli la data in cui vi siete messi insieme. I giorni insieme sul contatore si aggiornano per entrambi.',
+    'es':
+        'Elige la fecha en que empezasteis a salir. Los días juntos del contador cambian para los dos.',
+    'fr':
+        'Choisissez la date de début de votre relation. Les jours ensemble du compteur changent pour vous deux.',
+    'de':
+        'Wähle das Datum, an dem ihr zusammengekommen seid. Die Tage zusammen im Zähler ändern sich für euch beide.',
   },
 
   // ── Рисовать вместе ──────────────────────────────────────────────────────
@@ -243,12 +263,18 @@ const Map<String, Map<String, String>> helpStrings = {
   },
   'help.draw.s1': {
     'ru': 'На главной нажмите круглую кнопку с карандашом, первую в ряду.',
-    'en': 'On the home screen, tap the round pencil button, the first in the row.',
-    'pt': 'Na tela inicial, toque no botão redondo com lápis, o primeiro da fila.',
-    'it': 'Nella schermata home tocca il pulsante tondo con la matita, il primo della fila.',
-    'es': 'En la pantalla de inicio, toca el botón redondo con lápiz, el primero de la fila.',
-    'fr': 'Sur l’accueil, touchez le bouton rond crayon, le premier de la rangée.',
-    'de': 'Tippe auf dem Startbildschirm auf den runden Stift-Button, den ersten in der Reihe.',
+    'en':
+        'On the home screen, tap the round pencil button, the first in the row.',
+    'pt':
+        'Na tela inicial, toque no botão redondo com lápis, o primeiro da fila.',
+    'it':
+        'Nella schermata home tocca il pulsante tondo con la matita, il primo della fila.',
+    'es':
+        'En la pantalla de inicio, toca el botón redondo con lápiz, el primero de la fila.',
+    'fr':
+        'Sur l’accueil, touchez le bouton rond crayon, le premier de la rangée.',
+    'de':
+        'Tippe auf dem Startbildschirm auf den runden Stift-Button, den ersten in der Reihe.',
   },
   'help.draw.s2': {
     'ru': 'Нажмите «{newCanvas}» и выберите, каким будет холст.',
@@ -260,13 +286,20 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Tippe auf «{newCanvas}» und wähle die Art der Leinwand.',
   },
   'help.draw.s3': {
-    'ru': 'Партнёр открывает «{myDrawings}» и заходит в тот же холст. Если каждый создаст свой, вы окажетесь на разных листах.',
-    'en': 'Your partner opens «{myDrawings}» and joins the same canvas. If each of you creates one, you’ll be on different sheets.',
-    'pt': 'Seu par abre «{myDrawings}» e entra na mesma tela. Se cada um criar a sua, vocês ficam em folhas diferentes.',
-    'it': 'Il partner apre «{myDrawings}» ed entra nella stessa tela. Se ognuno ne crea una, sarete su fogli diversi.',
-    'es': 'Tu pareja abre «{myDrawings}» y entra en el mismo lienzo. Si cada uno crea el suyo, estaréis en hojas distintas.',
-    'fr': 'Votre partenaire ouvre «{myDrawings}» et rejoint la même toile. Si chacun en crée une, vous serez sur des feuilles différentes.',
-    'de': 'Dein Partner öffnet «{myDrawings}» und geht in dieselbe Leinwand. Legt jeder eine eigene an, landet ihr auf verschiedenen Blättern.',
+    'ru':
+        'Партнёр открывает «{myDrawings}» и заходит в тот же холст. Если каждый создаст свой, вы окажетесь на разных листах.',
+    'en':
+        'Your partner opens «{myDrawings}» and joins the same canvas. If each of you creates one, you’ll be on different sheets.',
+    'pt':
+        'Seu par abre «{myDrawings}» e entra na mesma tela. Se cada um criar a sua, vocês ficam em folhas diferentes.',
+    'it':
+        'Il partner apre «{myDrawings}» ed entra nella stessa tela. Se ognuno ne crea una, sarete su fogli diversi.',
+    'es':
+        'Tu pareja abre «{myDrawings}» y entra en el mismo lienzo. Si cada uno crea el suyo, estaréis en hojas distintas.',
+    'fr':
+        'Votre partenaire ouvre «{myDrawings}» et rejoint la même toile. Si chacun en crée une, vous serez sur des feuilles différentes.',
+    'de':
+        'Dein Partner öffnet «{myDrawings}» und geht in dieselbe Leinwand. Legt jeder eine eigene an, landet ihr auf verschiedenen Blättern.',
   },
 
   // ── Смотреть вместе ──────────────────────────────────────────────────────
@@ -298,13 +331,20 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Öffne unten den Tab «{watchTogether}».',
   },
   'help.watch.s2': {
-    'ru': 'Вставьте ссылку на видео: YouTube, ВК, Rutube, Яндекс Диск или Google Диск.',
-    'en': 'Paste a video link: YouTube, VK, Rutube, Yandex Disk or Google Drive.',
-    'pt': 'Cole o link do vídeo: YouTube, VK, Rutube, Yandex Disk ou Google Drive.',
-    'it': 'Incolla il link del video: YouTube, VK, Rutube, Yandex Disk o Google Drive.',
-    'es': 'Pega el enlace del vídeo: YouTube, VK, Rutube, Yandex Disk o Google Drive.',
-    'fr': 'Collez le lien de la vidéo : YouTube, VK, Rutube, Yandex Disk ou Google Drive.',
-    'de': 'Füge den Videolink ein: YouTube, VK, Rutube, Yandex Disk oder Google Drive.',
+    'ru':
+        'Вставьте ссылку на видео: YouTube, ВК, Rutube, Яндекс Диск или Google Диск.',
+    'en':
+        'Paste a video link: YouTube, VK, Rutube, Yandex Disk or Google Drive.',
+    'pt':
+        'Cole o link do vídeo: YouTube, VK, Rutube, Yandex Disk ou Google Drive.',
+    'it':
+        'Incolla il link del video: YouTube, VK, Rutube, Yandex Disk o Google Drive.',
+    'es':
+        'Pega el enlace del vídeo: YouTube, VK, Rutube, Yandex Disk o Google Drive.',
+    'fr':
+        'Collez le lien de la vidéo : YouTube, VK, Rutube, Yandex Disk ou Google Drive.',
+    'de':
+        'Füge den Videolink ein: YouTube, VK, Rutube, Yandex Disk oder Google Drive.',
   },
   'help.watch.s3': {
     'ru': 'Запустите видео: оно пойдёт у вас обоих одновременно.',
@@ -354,13 +394,20 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Die Karte «{tasks_title}» liegt unter der Karte «{liveMapTitle}».',
   },
   'help.tasks.s3': {
-    'ru': 'Нажмите на задание, и откроется нужная форма. Карточка видна, только когда вы в паре.',
-    'en': 'Tap a task to open its form. The card shows only when you’re in a couple.',
-    'pt': 'Toque numa tarefa para abrir o formulário. O cartão só aparece quando vocês estão em casal.',
-    'it': 'Tocca un’attività per aprirne il modulo. La scheda si vede solo quando siete in coppia.',
-    'es': 'Toca una tarea para abrir su formulario. La tarjeta solo se ve cuando estáis en pareja.',
-    'fr': 'Touchez un défi pour ouvrir son formulaire. La carte n’apparaît qu’en couple.',
-    'de': 'Tippe auf eine Aufgabe, um das Formular zu öffnen. Die Karte erscheint nur, wenn ihr ein Paar seid.',
+    'ru':
+        'Нажмите на задание, и откроется нужная форма. Карточка видна, только когда вы в паре.',
+    'en':
+        'Tap a task to open its form. The card shows only when you’re in a couple.',
+    'pt':
+        'Toque numa tarefa para abrir o formulário. O cartão só aparece quando vocês estão em casal.',
+    'it':
+        'Tocca un’attività per aprirne il modulo. La scheda si vede solo quando siete in coppia.',
+    'es':
+        'Toca una tarea para abrir su formulario. La tarjeta solo se ve cuando estáis en pareja.',
+    'fr':
+        'Touchez un défi pour ouvrir son formulaire. La carte n’apparaît qu’en couple.',
+    'de':
+        'Tippe auf eine Aufgabe, um das Formular zu öffnen. Die Karte erscheint nur, wenn ihr ein Paar seid.',
   },
 
   // ── Фото в виджете ───────────────────────────────────────────────────────
@@ -401,13 +448,20 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Suche im Block «{myWidget}» die Zeile «{photo}».',
   },
   'help.widgetPhoto.s3': {
-    'ru': 'Нажмите крестик справа от миниатюры. На iPhone виджет обновится за несколько минут.',
-    'en': 'Tap the cross next to the thumbnail. On iPhone the widget updates within a few minutes.',
-    'pt': 'Toque no X ao lado da miniatura. No iPhone o widget muda em alguns minutos.',
-    'it': 'Tocca la croce accanto alla miniatura. Su iPhone il widget si aggiorna in pochi minuti.',
-    'es': 'Toca la cruz junto a la miniatura. En iPhone el widget cambia en unos minutos.',
-    'fr': 'Touchez la croix à côté de la miniature. Sur iPhone, le widget change en quelques minutes.',
-    'de': 'Tippe auf das Kreuz neben dem Vorschaubild. Auf dem iPhone ändert sich das Widget in ein paar Minuten.',
+    'ru':
+        'Нажмите крестик справа от миниатюры. На iPhone виджет обновится за несколько минут.',
+    'en':
+        'Tap the cross next to the thumbnail. On iPhone the widget updates within a few minutes.',
+    'pt':
+        'Toque no X ao lado da miniatura. No iPhone o widget muda em alguns minutos.',
+    'it':
+        'Tocca la croce accanto alla miniatura. Su iPhone il widget si aggiorna in pochi minuti.',
+    'es':
+        'Toca la cruz junto a la miniatura. En iPhone el widget cambia en unos minutos.',
+    'fr':
+        'Touchez la croix à côté de la miniature. Sur iPhone, le widget change en quelques minutes.',
+    'de':
+        'Tippe auf das Kreuz neben dem Vorschaubild. Auf dem iPhone ändert sich das Widget in ein paar Minuten.',
   },
 
   // ── Виджет пустой ────────────────────────────────────────────────────────
@@ -439,22 +493,36 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Aktualisiere ${ForkIdentity.appName} auf die neueste Version.',
   },
   'help.widgetStale.s2': {
-    'ru': 'Откройте приложение и подержите его открытым минуту: виджеты наполнятся сами.',
-    'en': 'Open the app and keep it open for a minute. The widgets fill in by themselves.',
-    'pt': 'Abra o app e deixe aberto por um minuto. Os widgets se preenchem sozinhos.',
-    'it': 'Apri l’app e tienila aperta un minuto. I widget si riempiono da soli.',
-    'es': 'Abre la app y déjala abierta un minuto. Los widgets se llenan solos.',
-    'fr': 'Ouvrez l’app et laissez-la ouverte une minute. Les widgets se remplissent seuls.',
-    'de': 'Öffne die App und lass sie eine Minute offen. Die Widgets füllen sich von selbst.',
+    'ru':
+        'Откройте приложение и подержите его открытым минуту: виджеты наполнятся сами.',
+    'en':
+        'Open the app and keep it open for a minute. The widgets fill in by themselves.',
+    'pt':
+        'Abra o app e deixe aberto por um minuto. Os widgets se preenchem sozinhos.',
+    'it':
+        'Apri l’app e tienila aperta un minuto. I widget si riempiono da soli.',
+    'es':
+        'Abre la app y déjala abierta un minuto. Los widgets se llenan solos.',
+    'fr':
+        'Ouvrez l’app et laissez-la ouverte une minute. Les widgets se remplissent seuls.',
+    'de':
+        'Öffne die App und lass sie eine Minute offen. Die Widgets füllen sich von selbst.',
   },
   'help.widgetStale.s3': {
-    'ru': 'На Android разрешите работу в фоне: настройки телефона → Приложения → ${ForkIdentity.appName} → Батарея → Без ограничений.',
-    'en': 'On Android, allow background activity: phone settings → Apps → ${ForkIdentity.appName} → Battery → Unrestricted.',
-    'pt': 'No Android, permita a atividade em segundo plano: ajustes do telefone → Apps → ${ForkIdentity.appName} → Bateria → Sem restrições.',
-    'it': 'Su Android consenti l’attività in background: impostazioni del telefono → App → ${ForkIdentity.appName} → Batteria → Senza restrizioni.',
-    'es': 'En Android, permite la actividad en segundo plano: ajustes del teléfono → Aplicaciones → ${ForkIdentity.appName} → Batería → Sin restricciones.',
-    'fr': 'Sur Android, autorisez l’activité en arrière-plan : réglages du téléphone → Applications → ${ForkIdentity.appName} → Batterie → Non restreinte.',
-    'de': 'Erlaube unter Android die Hintergrundaktivität: Telefoneinstellungen → Apps → ${ForkIdentity.appName} → Akku → Nicht eingeschränkt.',
+    'ru':
+        'На Android разрешите работу в фоне: настройки телефона → Приложения → ${ForkIdentity.appName} → Батарея → Без ограничений.',
+    'en':
+        'On Android, allow background activity: phone settings → Apps → ${ForkIdentity.appName} → Battery → Unrestricted.',
+    'pt':
+        'No Android, permita a atividade em segundo plano: ajustes do telefone → Apps → ${ForkIdentity.appName} → Bateria → Sem restrições.',
+    'it':
+        'Su Android consenti l’attività in background: impostazioni del telefono → App → ${ForkIdentity.appName} → Batteria → Senza restrizioni.',
+    'es':
+        'En Android, permite la actividad en segundo plano: ajustes del teléfono → Aplicaciones → ${ForkIdentity.appName} → Batería → Sin restricciones.',
+    'fr':
+        'Sur Android, autorisez l’activité en arrière-plan : réglages du téléphone → Applications → ${ForkIdentity.appName} → Batterie → Non restreinte.',
+    'de':
+        'Erlaube unter Android die Hintergrundaktivität: Telefoneinstellungen → Apps → ${ForkIdentity.appName} → Akku → Nicht eingeschränkt.',
   },
 
   // ── Сменить пароль ───────────────────────────────────────────────────────
@@ -497,11 +565,16 @@ const Map<String, Map<String, String>> helpStrings = {
   'help.password.s3': {
     'ru': 'Письмо со ссылкой придёт на почту аккаунта. Загляните и в «Спам».',
     'en': 'An email with a link goes to your account address. Check spam too.',
-    'pt': 'Um e-mail com um link chega ao endereço da conta. Veja também o spam.',
-    'it': 'Arriva un’email con un link all’indirizzo dell’account. Controlla anche lo spam.',
-    'es': 'Llega un correo con un enlace a la dirección de la cuenta. Mira también el spam.',
-    'fr': 'Un e-mail avec un lien arrive à l’adresse du compte. Regardez aussi les spams.',
-    'de': 'Eine E-Mail mit Link geht an die Adresse deines Kontos. Schau auch im Spam nach.',
+    'pt':
+        'Um e-mail com um link chega ao endereço da conta. Veja também o spam.',
+    'it':
+        'Arriva un’email con un link all’indirizzo dell’account. Controlla anche lo spam.',
+    'es':
+        'Llega un correo con un enlace a la dirección de la cuenta. Mira también el spam.',
+    'fr':
+        'Un e-mail avec un lien arrive à l’adresse du compte. Regardez aussi les spams.',
+    'de':
+        'Eine E-Mail mit Link geht an die Adresse deines Kontos. Schau auch im Spam nach.',
   },
 
   // ── Письмо не приходит ───────────────────────────────────────────────────
@@ -525,7 +598,8 @@ const Map<String, Map<String, String>> helpStrings = {
   },
   'help.resetMail.s1': {
     'ru': 'Письмо приходит за пару минут. Проверьте папку «Спам».',
-    'en': 'The email arrives within a couple of minutes. Check your spam folder.',
+    'en':
+        'The email arrives within a couple of minutes. Check your spam folder.',
     'pt': 'O e-mail chega em poucos minutos. Veja a pasta de spam.',
     'it': 'L’email arriva in un paio di minuti. Controlla la cartella spam.',
     'es': 'El correo llega en un par de minutos. Revisa la carpeta de spam.',
@@ -533,22 +607,32 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Die E-Mail kommt in ein paar Minuten. Schau im Spam-Ordner nach.',
   },
   'help.resetMail.s2': {
-    'ru': 'Проверьте адрес: опечатка вроде «gmail.con» вместо «gmail.com» не даст письму дойти.',
-    'en': 'Check the address: a typo like «gmail.con» instead of «gmail.com» stops the email.',
-    'pt': 'Confira o endereço: um erro como «gmail.con» em vez de «gmail.com» impede o e-mail.',
-    'it': 'Controlla l’indirizzo: un errore come «gmail.con» invece di «gmail.com» blocca l’email.',
-    'es': 'Revisa la dirección: una errata como «gmail.con» en vez de «gmail.com» impide el correo.',
-    'fr': 'Vérifiez l’adresse : une faute comme «gmail.con» au lieu de «gmail.com» bloque l’e-mail.',
-    'de': 'Prüfe die Adresse: Ein Tippfehler wie «gmail.con» statt «gmail.com» hält die E-Mail auf.',
+    'ru':
+        'Проверьте адрес: опечатка вроде «gmail.con» вместо «gmail.com» не даст письму дойти.',
+    'en':
+        'Check the address: a typo like «gmail.con» instead of «gmail.com» stops the email.',
+    'pt':
+        'Confira o endereço: um erro como «gmail.con» em vez de «gmail.com» impede o e-mail.',
+    'it':
+        'Controlla l’indirizzo: un errore come «gmail.con» invece di «gmail.com» blocca l’email.',
+    'es':
+        'Revisa la dirección: una errata como «gmail.con» en vez de «gmail.com» impide el correo.',
+    'fr':
+        'Vérifiez l’adresse : une faute comme «gmail.con» au lieu de «gmail.com» bloque l’e-mail.',
+    'de':
+        'Prüfe die Adresse: Ein Tippfehler wie «gmail.con» statt «gmail.com» hält die E-Mail auf.',
   },
   'help.resetMail.s3': {
     'ru': 'Не пришло за полчаса? Напишите нам, посмотрим ваш аккаунт.',
-    'en': 'Nothing after half an hour? Write to us and we’ll check your account.',
+    'en':
+        'Nothing after half an hour? Write to us and we’ll check your account.',
     'pt': 'Nada em meia hora? Escreva para nós e vemos sua conta.',
     'it': 'Niente dopo mezz’ora? Scrivici e controlliamo il tuo account.',
     'es': '¿Nada en media hora? Escríbenos y miramos tu cuenta.',
-    'fr': 'Rien après une demi-heure ? Écrivez-nous, nous vérifierons votre compte.',
-    'de': 'Nach einer halben Stunde nichts? Schreib uns, wir schauen uns dein Konto an.',
+    'fr':
+        'Rien après une demi-heure ? Écrivez-nous, nous vérifierons votre compte.',
+    'de':
+        'Nach einer halben Stunde nichts? Schreib uns, wir schauen uns dein Konto an.',
   },
 
   // ── Сменить почту ────────────────────────────────────────────────────────
@@ -585,17 +669,25 @@ const Map<String, Map<String, String>> helpStrings = {
     'pt': 'Embaixo, toque em «{emailChangeTitle}» e digite o novo endereço.',
     'it': 'In basso tocca «{emailChangeTitle}» e scrivi il nuovo indirizzo.',
     'es': 'Abajo, toca «{emailChangeTitle}» y escribe la nueva dirección.',
-    'fr': 'En bas, touchez «{emailChangeTitle}» et saisissez la nouvelle adresse.',
+    'fr':
+        'En bas, touchez «{emailChangeTitle}» et saisissez la nouvelle adresse.',
     'de': 'Tippe unten auf «{emailChangeTitle}» und gib die neue Adresse ein.',
   },
   'help.email.s3': {
-    'ru': 'Введите код из письма, которое придёт на новый адрес. Почта сменится сразу.',
-    'en': 'Enter the code from the email sent to the new address. The email changes right away.',
-    'pt': 'Digite o código do e-mail enviado ao novo endereço. O e-mail muda na hora.',
-    'it': 'Inserisci il codice dall’e-mail arrivata al nuovo indirizzo. L’e-mail cambia subito.',
-    'es': 'Escribe el código del correo que llegará a la nueva dirección. El correo cambia al momento.',
-    'fr': 'Saisissez le code reçu à la nouvelle adresse. L’e-mail change tout de suite.',
-    'de': 'Gib den Code aus der E-Mail an die neue Adresse ein. Die E-Mail ändert sich sofort.',
+    'ru':
+        'Введите код из письма, которое придёт на новый адрес. Почта сменится сразу.',
+    'en':
+        'Enter the code from the email sent to the new address. The email changes right away.',
+    'pt':
+        'Digite o código do e-mail enviado ao novo endereço. O e-mail muda na hora.',
+    'it':
+        'Inserisci il codice dall’e-mail arrivata al nuovo indirizzo. L’e-mail cambia subito.',
+    'es':
+        'Escribe el código del correo que llegará a la nueva dirección. El correo cambia al momento.',
+    'fr':
+        'Saisissez le code reçu à la nouvelle adresse. L’e-mail change tout de suite.',
+    'de':
+        'Gib den Code aus der E-Mail an die neue Adresse ein. Die E-Mail ändert sich sofort.',
   },
 
   // ── Пол ──────────────────────────────────────────────────────────────────
@@ -640,7 +732,8 @@ const Map<String, Map<String, String>> helpStrings = {
     'en': 'Pick the right one. Mood labels and quizzes adjust to it.',
     'pt': 'Escolha o certo. Os nomes dos humores e os testes se ajustam.',
     'it': 'Scegli quello giusto. Umori e quiz si adattano.',
-    'es': 'Elige el correcto. Los nombres de los ánimos y los tests se ajustan.',
+    'es':
+        'Elige el correcto. Los nombres de los ánimos y los tests se ajustan.',
     'fr': 'Choisissez le bon. Les humeurs et les quiz s’y adaptent.',
     'de': 'Wähle das richtige. Stimmungen und Tests passen sich an.',
   },
@@ -686,9 +779,11 @@ const Map<String, Map<String, String>> helpStrings = {
     'ru': 'Там новости и обновления. Кнопка ниже откроет канал сразу.',
     'en': 'News and updates are there. The button below opens it right away.',
     'pt': 'Lá ficam novidades e atualizações. O botão abaixo abre na hora.',
-    'it': 'Lì trovi novità e aggiornamenti. Il pulsante qui sotto lo apre subito.',
+    'it':
+        'Lì trovi novità e aggiornamenti. Il pulsante qui sotto lo apre subito.',
     'es': 'Ahí hay noticias y novedades. El botón de abajo lo abre al momento.',
-    'fr': 'Vous y trouverez les nouvelles et mises à jour. Le bouton ci-dessous l’ouvre tout de suite.',
+    'fr':
+        'Vous y trouverez les nouvelles et mises à jour. Le bouton ci-dessous l’ouvre tout de suite.',
     'de': 'Dort gibt es News und Updates. Der Button unten öffnet ihn sofort.',
   },
 
@@ -730,12 +825,14 @@ const Map<String, Map<String, String>> helpStrings = {
     'de': 'Tippe ganz oben auf «{plusTitle}».',
   },
   'help.plusStore.s3': {
-    'ru': 'Оплатите покупку в магазине приложений. Плюс включится на ваш аккаунт сразу.',
+    'ru':
+        'Оплатите покупку в магазине приложений. Плюс включится на ваш аккаунт сразу.',
     'en': 'Pay in the app store. Plus turns on for your account right away.',
     'pt': 'Pague na loja de apps. O Plus é ativado na sua conta na hora.',
     'it': 'Paga nello store. Plus si attiva subito sul tuo account.',
     'es': 'Paga en la tienda de apps. Plus se activa en tu cuenta al momento.',
-    'fr': 'Payez dans la boutique d’apps. Plus s’active tout de suite sur votre compte.',
+    'fr':
+        'Payez dans la boutique d’apps. Plus s’active tout de suite sur votre compte.',
     'de': 'Bezahle im App-Store. Plus wird sofort für dein Konto aktiviert.',
   },
 
@@ -762,10 +859,13 @@ const Map<String, Map<String, String>> helpStrings = {
     'ru': 'Нажмите кнопку ниже: откроется страница оплаты на lava.top.',
     'en': 'Tap the button below to open the payment page on lava.top.',
     'pt': 'Toque no botão abaixo para abrir a página de pagamento no lava.top.',
-    'it': 'Tocca il pulsante qui sotto per aprire la pagina di pagamento su lava.top.',
+    'it':
+        'Tocca il pulsante qui sotto per aprire la pagina di pagamento su lava.top.',
     'es': 'Toca el botón de abajo para abrir la página de pago en lava.top.',
-    'fr': 'Touchez le bouton ci-dessous pour ouvrir la page de paiement sur lava.top.',
-    'de': 'Tippe auf den Button unten, um die Bezahlseite auf lava.top zu öffnen.',
+    'fr':
+        'Touchez le bouton ci-dessous pour ouvrir la page de paiement sur lava.top.',
+    'de':
+        'Tippe auf den Button unten, um die Bezahlseite auf lava.top zu öffnen.',
   },
   'help.plusSite.s2': {
     'ru': 'Укажите ту же почту, с которой входите в ${ForkIdentity.appName}.',
@@ -773,16 +873,21 @@ const Map<String, Map<String, String>> helpStrings = {
     'pt': 'Informe o mesmo e-mail com que entra no ${ForkIdentity.appName}.',
     'it': 'Inserisci la stessa email con cui accedi a ${ForkIdentity.appName}.',
     'es': 'Pon el mismo correo con el que entras en ${ForkIdentity.appName}.',
-    'fr': 'Indiquez le même e-mail que pour vous connecter à ${ForkIdentity.appName}.',
-    'de': 'Gib dieselbe E-Mail an, mit der du dich bei ${ForkIdentity.appName} anmeldest.',
+    'fr':
+        'Indiquez le même e-mail que pour vous connecter à ${ForkIdentity.appName}.',
+    'de':
+        'Gib dieselbe E-Mail an, mit der du dich bei ${ForkIdentity.appName} anmeldest.',
   },
   'help.plusSite.s3': {
-    'ru': 'Плюс включится сам за несколько минут. Потом перезапустите приложение.',
+    'ru':
+        'Плюс включится сам за несколько минут. Потом перезапустите приложение.',
     'en': 'Plus turns on by itself within a few minutes. Then restart the app.',
     'pt': 'O Plus é ativado sozinho em alguns minutos. Depois reinicie o app.',
     'it': 'Plus si attiva da solo in pochi minuti. Poi riavvia l’app.',
     'es': 'Plus se activa solo en unos minutos. Después reinicia la app.',
-    'fr': 'Plus s’active tout seul en quelques minutes. Redémarrez ensuite l’app.',
-    'de': 'Plus wird in ein paar Minuten von selbst aktiviert. Starte die App danach neu.',
+    'fr':
+        'Plus s’active tout seul en quelques minutes. Redémarrez ensuite l’app.',
+    'de':
+        'Plus wird in ein paar Minuten von selbst aktiviert. Starte die App danach neu.',
   },
 };

@@ -69,7 +69,8 @@ abstract final class ProfileTheme {
   /// каталоге (свои цвета из паков), разворачивается спокойным `tonalSpot`.
   static DynamicSchemeVariant variantFor(Color accent) {
     for (final palette in kPalettes) {
-      if (palette.accent.toARGB32() == accent.toARGB32()) return palette.variant;
+      if (palette.accent.toARGB32() == accent.toARGB32())
+        return palette.variant;
     }
     return DynamicSchemeVariant.tonalSpot;
   }
@@ -166,7 +167,10 @@ abstract final class ProfileTheme {
           padding: const EdgeInsets.symmetric(horizontal: 28),
           shape: const StadiumBorder(),
           textStyle: const TextStyle(
-              fontFamily: bodyFont, fontSize: 16, fontWeight: FontWeight.w700),
+            fontFamily: bodyFont,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -176,14 +180,20 @@ abstract final class ProfileTheme {
           shape: const StadiumBorder(),
           side: BorderSide(color: scheme.outline),
           textStyle: const TextStyle(
-              fontFamily: bodyFont, fontSize: 16, fontWeight: FontWeight.w700),
+            fontFamily: bodyFont,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           shape: const StadiumBorder(),
           textStyle: const TextStyle(
-              fontFamily: bodyFont, fontSize: 15, fontWeight: FontWeight.w600),
+            fontFamily: bodyFont,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       switchTheme: const SwitchThemeData(),
@@ -212,24 +222,28 @@ abstract final class ProfileTheme {
     // fontVariations: без него Flutter рисует одно начертание, и «жирный»
     // заголовок выглядит обычным.
     TextStyle display(TextStyle? s) => (s ?? const TextStyle()).copyWith(
-        fontFamily: displayFont,
-        fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
-        letterSpacing: -0.5);
+      fontFamily: displayFont,
+      fontWeight: FontWeight.w800,
+      fontVariations: const [FontVariation('wght', 800)],
+      letterSpacing: -0.5,
+    );
     TextStyle headline(TextStyle? s) => (s ?? const TextStyle()).copyWith(
-        fontFamily: displayFont,
-        fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-        letterSpacing: -0.3);
+      fontFamily: displayFont,
+      fontWeight: FontWeight.w700,
+      fontVariations: const [FontVariation('wght', 700)],
+      letterSpacing: -0.3,
+    );
     TextStyle title(TextStyle? s) => (s ?? const TextStyle()).copyWith(
-        fontFamily: displayFont,
-        fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)]);
+      fontFamily: displayFont,
+      fontWeight: FontWeight.w600,
+      fontVariations: const [FontVariation('wght', 600)],
+    );
     TextStyle body(TextStyle? s) => (s ?? const TextStyle()).copyWith(
-        fontFamily: bodyFont,
-        fontVariations: [
-          FontVariation('wght', (s?.fontWeight?.value ?? 400).toDouble()),
-        ]);
+      fontFamily: bodyFont,
+      fontVariations: [
+        FontVariation('wght', (s?.fontWeight?.value ?? 400).toDouble()),
+      ],
+    );
     return base.copyWith(
       displayLarge: display(base.displayLarge),
       displayMedium: display(base.displayMedium),

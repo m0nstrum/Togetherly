@@ -33,5 +33,6 @@ class ForkEncryptionSection extends StatelessWidget {
 
 /// Подпись строки монет в настройках — та же, что в профиле: где паков нет,
 /// это не магазин, а «Задания за монеты» (N14).
-String forkCoinsRowTitle() =>
-    trKey(!Platform.isIOS && kCoinsPurchasable ? 'coinShopTitle' : 'coinEarnTitle');
+String forkCoinsRowTitle() => trKey(
+  !Platform.isIOS && kCoinsPurchasable ? 'coinShopTitle' : 'coinEarnTitle',
+);

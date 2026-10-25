@@ -20,28 +20,35 @@ void main() {
   });
 
   test('подпись-заглушка рисунка не выводится текстом в пузыре', () {
-    expect(showsChatText(pinId: chatDrawingPinId('a'), text: kChatDrawingText),
-        isFalse);
-    expect(showsChatText(pinId: chatDrawingPinId('a'), text: 'Смотри!'),
-        isTrue);
+    expect(
+      showsChatText(pinId: chatDrawingPinId('a'), text: kChatDrawingText),
+      isFalse,
+    );
+    expect(
+      showsChatText(pinId: chatDrawingPinId('a'), text: 'Смотри!'),
+      isTrue,
+    );
     expect(showsChatText(pinId: null, text: kChatDrawingText), isTrue);
   });
 
-  testWidgets('карточка крупная, с названием, и открывается по нажатию',
-      (tester) async {
+  testWidgets('карточка крупная, с названием, и открывается по нажатию', (
+    tester,
+  ) async {
     var opened = 0;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: ChatDrawingCard(
-            imageUrl: '',
-            title: 'Наш кот',
-            foreground: Colors.black,
-            onTap: () => opened++,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: ChatDrawingCard(
+              imageUrl: '',
+              title: 'Наш кот',
+              foreground: Colors.black,
+              onTap: () => opened++,
+            ),
           ),
         ),
       ),
-    ));
+    );
     expect(find.text('Наш кот'), findsOneWidget);
     final size = tester.getSize(find.byType(ChatDrawingCard));
     expect(size.width, greaterThanOrEqualTo(180));
@@ -50,7 +57,12 @@ void main() {
   });
 
   test('строки есть на всех семи языках', () {
-    for (final key in ['drawSendToChat', 'drawSentToChat', 'drawSendToChatFailed', 'chatDrawingTitle']) {
+    for (final key in [
+      'drawSendToChat',
+      'drawSentToChat',
+      'drawSendToChatFailed',
+      'chatDrawingTitle',
+    ]) {
       for (final lang in ['ru', 'en', 'pt', 'it', 'es', 'fr', 'de']) {
         expect(kStrings[key]?[lang], isNotNull, reason: '$key/$lang');
       }

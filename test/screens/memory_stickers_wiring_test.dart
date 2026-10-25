@@ -36,8 +36,11 @@ void main() {
       final end = feed.indexOf('\n  Widget _', start + 10);
       final body = feed.substring(start, end < 0 ? feed.length : end);
       final viaMedia = tile == '_photoTile' && body.contains('_momentMedia(');
-      expect(body.contains('_stickerAnchor(') || viaMedia, isTrue,
-          reason: '$tile без слоя наклеек');
+      expect(
+        body.contains('_stickerAnchor(') || viaMedia,
+        isTrue,
+        reason: '$tile без слоя наклеек',
+      );
     }
   });
 

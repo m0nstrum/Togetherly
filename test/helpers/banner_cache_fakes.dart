@@ -21,8 +21,10 @@ class FakeBannerServer extends FileService {
   Completer<void>? gate;
 
   @override
-  Future<FileServiceResponse> get(String url,
-      {Map<String, String>? headers}) async {
+  Future<FileServiceResponse> get(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
     downloads.add(url);
     await gate?.future;
     if (offline) throw const io.SocketException('нет сети');
@@ -61,12 +63,14 @@ class _Dir implements FileSystem {
 
 /// Менеджер кэша во временной папке [dir] поверх [server].
 CacheManager fakeBannerManager(io.Directory dir, FakeBannerServer server) =>
-    CacheManager(Config(
-      'banner_test',
-      repo: JsonCacheInfoRepository.withFile(io.File('${dir.path}/db.json')),
-      fileSystem: _Dir(dir),
-      fileService: server,
-    ));
+    CacheManager(
+      Config(
+        'banner_test',
+        repo: JsonCacheInfoRepository.withFile(io.File('${dir.path}/db.json')),
+        fileSystem: _Dir(dir),
+        fileService: server,
+      ),
+    );
 
 /// Кэш баннеров поверх [manager]. Токен в адресе каждый раз новый, как у
 /// настоящего сервера.

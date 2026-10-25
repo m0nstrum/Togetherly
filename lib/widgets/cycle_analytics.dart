@@ -55,8 +55,12 @@ class _CycleAnalyticsState extends State<CycleAnalytics> {
 
   /// Длительности самих месячных — вторая серия.
   List<int> get _durations {
-    final days = widget.periodDays.map((d) => DateTime(d.year, d.month, d.day)).toSet().toList()
-      ..sort();
+    final days =
+        widget.periodDays
+            .map((d) => DateTime(d.year, d.month, d.day))
+            .toSet()
+            .toList()
+          ..sort();
     if (days.isEmpty) return const [];
     final runs = <int>[];
     var run = 1;
@@ -101,8 +105,11 @@ class _CycleAnalyticsState extends State<CycleAnalytics> {
                       color: _cs.primaryContainer,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.insights_rounded,
-                        size: 22, color: _cs.onPrimaryContainer),
+                    child: Icon(
+                      Icons.insights_rounded,
+                      size: 22,
+                      color: _cs.onPrimaryContainer,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -135,8 +142,10 @@ class _CycleAnalyticsState extends State<CycleAnalytics> {
                     turns: _expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOutCubic,
-                    child: Icon(Icons.expand_more_rounded,
-                        color: _cs.onSurfaceVariant),
+                    child: Icon(
+                      Icons.expand_more_rounded,
+                      color: _cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -216,8 +225,12 @@ class _CycleAnalyticsState extends State<CycleAnalytics> {
     );
   }
 
-  Widget _numberTile(String label, String value, String? unit,
-      {Color? accent}) {
+  Widget _numberTile(
+    String label,
+    String value,
+    String? unit, {
+    Color? accent,
+  }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -294,10 +307,12 @@ class _CycleAnalyticsState extends State<CycleAnalytics> {
           ),
         ),
         titlesData: FlTitlesData(
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -393,12 +408,15 @@ class _CycleAnalyticsState extends State<CycleAnalytics> {
           ),
         ),
         titlesData: FlTitlesData(
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,

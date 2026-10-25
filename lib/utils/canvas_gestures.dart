@@ -39,8 +39,7 @@ bool strokeSurvivesSecondFinger({
   required Duration held,
   double minTravel = 16,
   Duration minHeld = const Duration(milliseconds: 250),
-}) =>
-    travel >= minTravel || held >= minHeld;
+}) => travel >= minTravel || held >= minHeld;
 
 /// Что делает короткий тап несколькими пальцами.
 enum MultiTapAction { none, undo, redo }

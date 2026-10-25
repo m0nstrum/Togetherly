@@ -73,7 +73,13 @@ class ChestPrizeImage extends StatelessWidget {
 /// загрузками — пусто, приз мигал «есть — нет» всё время подъёма (жалоба
 /// 28.09.2026).
 class ChestPrizeFlight extends StatelessWidget {
-  const ChestPrizeFlight({super.key, required this.prize, required this.spot, required this.stage, this.peak});
+  const ChestPrizeFlight({
+    super.key,
+    required this.prize,
+    required this.spot,
+    required this.stage,
+    this.peak,
+  });
 
   final ChestPrize prize;
   final List<double> spot;
@@ -100,7 +106,10 @@ class ChestPrizeFlight extends StatelessWidget {
       child: FittedBox(
         fit: BoxFit.contain,
         clipBehavior: Clip.none,
-        child: SizedBox.square(dimension: full, child: ChestPrizeImage(prize, side: full)),
+        child: SizedBox.square(
+          dimension: full,
+          child: ChestPrizeImage(prize, side: full),
+        ),
       ),
     );
   }

@@ -10,14 +10,14 @@ import 'package:love_app/models/draw_stroke.dart';
 
 void main() {
   DrawStroke stroke({String? clientId}) => DrawStroke(
-        id: 'local-1',
-        clientId: clientId,
-        userId: 'u1',
-        colorValue: 0xFF223344,
-        strokeWidth: 3,
-        points: const [DrawPoint(0.1, 0.2), DrawPoint(0.3, 0.4)],
-        orderIndex: 5,
-      );
+    id: 'local-1',
+    clientId: clientId,
+    userId: 'u1',
+    colorValue: 0xFF223344,
+    strokeWidth: 3,
+    points: const [DrawPoint(0.1, 0.2), DrawPoint(0.3, 0.4)],
+    orderIndex: 5,
+  );
 
   test('идентификатор уезжает в запись и читается обратно', () {
     final map = stroke(clientId: 'abc123').toFirestore();
@@ -29,8 +29,11 @@ void main() {
   });
 
   test('без идентификатора поле в записи не заводится', () {
-    expect(stroke().toFirestore().containsKey('clientId'), isFalse,
-        reason: 'старым записям лишнее поле ни к чему');
+    expect(
+      stroke().toFirestore().containsKey('clientId'),
+      isFalse,
+      reason: 'старым записям лишнее поле ни к чему',
+    );
   });
 
   test('запись прежней сборки читается без идентификатора', () {

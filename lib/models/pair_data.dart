@@ -79,7 +79,9 @@ class PairData extends ChangeNotifier {
   /// 18–19 августа 2026 на такую ссылку зашли 30 раз с настоящих устройств —
   /// жалоба звучала как «партнёр не может перейти по пригласительной ссылке».
   String get inviteLink => Endpoints.current.inviteLink(
-      inviteCode, fragment: ForkE2E.inviteFragment(inviteCode)); // fork
+    inviteCode,
+    fragment: ForkE2E.inviteFragment(inviteCode),
+  ); // fork
 
   /// Прямой deep link без веб-хоста: партнёр сканирует QR камерой → сразу в
   /// приложение (App Links-верификация не нужна, работает офлайн от Firebase).
@@ -99,7 +101,8 @@ class PairData extends ChangeNotifier {
   DateTime? get firstKissDate => _active?.firstKissDate;
 
   /// uid → дата рождения участников пары (D8: общий календарь).
-  Map<String, DateTime> get memberBirthdays => _active?.memberBirthdays ?? const {};
+  Map<String, DateTime> get memberBirthdays =>
+      _active?.memberBirthdays ?? const {};
   int get monthsInLove => _active?.monthsInLove ?? 0;
   Duration get timeInLove => _active?.timeInLove ?? Duration.zero;
 

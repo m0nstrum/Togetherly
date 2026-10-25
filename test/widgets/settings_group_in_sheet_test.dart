@@ -49,30 +49,40 @@ void main() {
 
     for (final label in ['Мужской', 'Женский']) {
       final opacity = tester.widget<Opacity>(
-        find.ancestor(of: find.text(label), matching: find.byType(Opacity)).first,
+        find
+            .ancestor(of: find.text(label), matching: find.byType(Opacity))
+            .first,
       );
-      expect(opacity.opacity, 1.0, reason: 'строка «$label» осталась невидимой');
+      expect(
+        opacity.opacity,
+        1.0,
+        reason: 'строка «$label» осталась невидимой',
+      );
     }
   });
 
-  testWidgets('без прокрутки и без маршрута блок всё равно виден',
-      (tester) async {
+  testWidgets('без прокрутки и без маршрута блок всё равно виден', (
+    tester,
+  ) async {
     // Страховка на будущее: любой контейнер, у которого нет ни прокрутки, ни
     // анимации появления (например, всплывашка через Overlay), не должен
     // оставлять содержимое прозрачным.
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: Center(
-            child: AppearOnScroll(child: Text('Видно сразу')),
-          ),
+          body: Center(child: AppearOnScroll(child: Text('Видно сразу'))),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
     final opacity = tester.widget<Opacity>(
-      find.ancestor(of: find.text('Видно сразу'), matching: find.byType(Opacity)).first,
+      find
+          .ancestor(
+            of: find.text('Видно сразу'),
+            matching: find.byType(Opacity),
+          )
+          .first,
     );
     expect(opacity.opacity, 1.0);
   });

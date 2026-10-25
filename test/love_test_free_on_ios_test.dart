@@ -15,10 +15,11 @@ void main() {
   test('вход в «Умение любить» не закрыт проверкой Togetherly+', () {
     final offenders = <String>[];
 
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       final lines = file.readAsLinesSync();
       final openGates = <int>[]; // отступы открытых блоков «за Плюсом»
       for (final line in lines) {
@@ -26,8 +27,9 @@ void main() {
         if (line.trimLeft().startsWith(']')) {
           openGates.removeWhere((gate) => indent <= gate);
         }
-        if (RegExp(r'^\s*if\s*\(.*PlusService\.instance\.visible')
-            .hasMatch(line)) {
+        if (RegExp(
+          r'^\s*if\s*\(.*PlusService\.instance\.visible',
+        ).hasMatch(line)) {
           openGates.add(indent);
         }
         if (openGates.isNotEmpty && line.contains('_loveTestLink(')) {
@@ -39,7 +41,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'тест бесплатный, а его вход спрятан вместе с платным разделом, '
+      reason:
+          'тест бесплатный, а его вход спрятан вместе с платным разделом, '
           'и на iPhone о нём никто не узнает: ${offenders.join('; ')}',
     );
   });

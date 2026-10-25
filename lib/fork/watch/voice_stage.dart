@@ -66,14 +66,18 @@ String voiceStageText(
 
   return switch (stage) {
     VoiceStage.idle => '',
-    VoiceStage.calling => ruEn('Зовём $who… ждём ответа', 'Calling $who… waiting for an answer'),
+    VoiceStage.calling => ruEn(
+      'Зовём $who… ждём ответа',
+      'Calling $who… waiting for an answer',
+    ),
     VoiceStage.connecting => ruEn(
       '$whoCap ответил(а) — соединяем телефоны…',
       '$whoCap answered — connecting the phones…',
     ),
-    VoiceStage.live => talked == null
-        ? ruEn('На связи', 'Connected')
-        : ruEn('На связи · ${clock(talked)}', 'Connected · ${clock(talked)}'),
+    VoiceStage.live =>
+      talked == null
+          ? ruEn('На связи', 'Connected')
+          : ruEn('На связи · ${clock(talked)}', 'Connected · ${clock(talked)}'),
     VoiceStage.reconnecting => ruEn(
       'Связь прервалась — восстанавливаем…',
       'Connection dropped — reconnecting…',

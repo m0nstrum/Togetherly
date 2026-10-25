@@ -11,8 +11,11 @@ void main() {
     test('конфликт по первичному ключу', () {
       final e = _err(400, {
         'data': {
-          'id': {'code': 'validation_not_unique', 'message': 'Value must be unique.'}
-        }
+          'id': {
+            'code': 'validation_not_unique',
+            'message': 'Value must be unique.',
+          },
+        },
       });
       expect(alreadyExists(e), isTrue);
     });
@@ -22,7 +25,7 @@ void main() {
         'data': {
           'group_id': {'message': 'Value must be unique.'},
           'user_uid': {'message': 'Value must be unique.'},
-        }
+        },
       });
       expect(alreadyExists(e), isTrue);
     });
@@ -30,8 +33,8 @@ void main() {
     test('другая ошибка проверки — это настоящий отказ', () {
       final e = _err(400, {
         'data': {
-          'coins': {'message': 'cannot be blank'}
-        }
+          'coins': {'message': 'cannot be blank'},
+        },
       });
       expect(alreadyExists(e), isFalse);
     });

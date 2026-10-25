@@ -32,11 +32,11 @@ class CanvasWidgetItem {
   });
 
   Map<String, Object> toJson() => {
-        'id': id,
-        'name': name,
-        'path': path,
-        'updated': updatedMs,
-      };
+    'id': id,
+    'name': name,
+    'path': path,
+    'updated': updatedMs,
+  };
 }
 
 /// Ключи, которые уезжают в `HomeWidgetPreferences`.

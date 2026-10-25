@@ -73,10 +73,16 @@ class PbCoinsService {
       // связи, окна перезапуска сервера и протухшую сессию в панель не шлём:
       // они давали четыре пятых потока и топили настоящие ошибки транзакций.
       if (!isCoinsRouteNoise(e)) {
-        unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-          s.setExtra('reason', 'coins route /api/coins/$path failed');
-          s.level = SentryLevel.warning;
-        }));
+        unawaited(
+          Sentry.captureException(
+            e,
+            stackTrace: st,
+            withScope: (s) {
+              s.setExtra('reason', 'coins route /api/coins/$path failed');
+              s.level = SentryLevel.warning;
+            },
+          ),
+        );
       }
       return null;
     }
@@ -89,13 +95,18 @@ class PbCoinsService {
   /// вышло не больше трёх и чтобы одно задание не оплатили дважды.
   Future<Map<String, dynamic>?> taskReward(String taskId) =>
       _call('task-reward', {'task_id': taskId});
+
   /// [groupId] — пара, в копилку которой падает капля за ролик.
   /// [chestOpenId] — ролик за сундук: сервер пишет номер открытия в журнал,
   /// и ролик без открытия находится (`tools/chest_lost_ads.py`).
-  Future<Map<String, dynamic>?> adReward({String? groupId, String? chestOpenId}) => _call('ad-reward', {
-        if (groupId != null && groupId.isNotEmpty) 'groupId': groupId,
-        if (chestOpenId != null && chestOpenId.isNotEmpty) 'chestOpenId': chestOpenId,
-      });
+  Future<Map<String, dynamic>?> adReward({
+    String? groupId,
+    String? chestOpenId,
+  }) => _call('ad-reward', {
+    if (groupId != null && groupId.isNotEmpty) 'groupId': groupId,
+    if (chestOpenId != null && chestOpenId.isNotEmpty)
+      'chestOpenId': chestOpenId,
+  });
 
   /// Просит временную награду за рекламу: [kind] — ключ из `adGrantKey`,
   /// [id] — номер темы строкой или id фона.
@@ -138,6 +149,7 @@ class PbCoinsService {
       _call('purchase-icon', {'iconId': iconId});
   Future<Map<String, dynamic>?> purchaseFeature(String featureId) =>
       _call('purchase-feature', {'featureId': featureId});
+
   /// Ежемесячные монеты владельцам Togetherly+. Сервер сам решает, пора ли.
   Future<Map<String, dynamic>?> plusMonthly() => _call('plus-monthly', {});
 

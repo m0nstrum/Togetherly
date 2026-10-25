@@ -14,12 +14,14 @@ class GiftTelemetry {
   /// Шаг сценария. Оседает крошкой и попадает в отчёт о любой последующей
   /// ошибке — видно, что человек делал до сбоя.
   static void step(String giftId, String step, {Map<String, dynamic>? data}) {
-    Sentry.addBreadcrumb(Breadcrumb(
-      category: 'gift',
-      message: step,
-      level: SentryLevel.info,
-      data: {'gift_id': giftId, ...?data},
-    ));
+    Sentry.addBreadcrumb(
+      Breadcrumb(
+        category: 'gift',
+        message: step,
+        level: SentryLevel.info,
+        data: {'gift_id': giftId, ...?data},
+      ),
+    );
   }
 
   /// Сбой шага. Код ошибки уходит тегом, чтобы события группировались по
@@ -32,14 +34,18 @@ class GiftTelemetry {
     required String step,
     GiftError? code,
   }) {
-    Sentry.captureException(e, stackTrace: st, withScope: (s) {
-      s.setTag('feature', 'gifts');
-      s.setTag('gift_id', giftId);
-      s.setTag('gift_key', giftKey);
-      s.setTag('gift_step', step);
-      s.setTag('error_code', code?.name ?? 'unknown');
-      s.level = SentryLevel.error;
-    });
+    Sentry.captureException(
+      e,
+      stackTrace: st,
+      withScope: (s) {
+        s.setTag('feature', 'gifts');
+        s.setTag('gift_id', giftId);
+        s.setTag('gift_key', giftKey);
+        s.setTag('gift_step', step);
+        s.setTag('error_code', code?.name ?? 'unknown');
+        s.level = SentryLevel.error;
+      },
+    );
   }
 
   /// Рассинхрон: приложение не упало, но состояние разъехалось — монеты

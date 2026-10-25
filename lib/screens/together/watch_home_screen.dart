@@ -82,15 +82,17 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
   ReelsInvite? _invite;
 
   ReelsEntry get _reelsEntry => PlusAccess.reelsEntry(
-        mine: PlusService.instance.gate,
-        partnerPlus: _partnerPlus,
-        invited: _invite != null,
-      );
+    mine: PlusService.instance.gate,
+    partnerPlus: _partnerPlus,
+    invited: _invite != null,
+  );
 
   Future<void> _loadInvite() async {
     final invite = await ReelsInvite.active(widget.pairData.pairId);
     if (!mounted) return;
-    if (invite?.source != _invite?.source || (invite == null) != (_invite == null)) setState(() => _invite = invite);
+    if (invite?.source != _invite?.source ||
+        (invite == null) != (_invite == null))
+      setState(() => _invite = invite);
   }
 
   /// Флаг лежит в карточке виджета партнёра — его ставит сервер.
@@ -453,17 +455,30 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
       reels: _reelsEntry == ReelsEntry.hidden
           ? null
           : (w) => WatchReelsTile(
-                title: s.reelsTogether,
-                text: _invite != null && _reelsEntry == ReelsEntry.join
-                    ? s.reelsInvitedBy(_invite!.name.isEmpty ? s.partner : _invite!.name, _invite!.source.title)
-                    : s.watchReelsTileHint,
-                plusLocked: _reelsEntry == ReelsEntry.buy || _reelsEntry == ReelsEntry.askPartner,
-                onTap: _openReels, // fork (UX V4)
-                titleWidth: w,
-                seed: _seed,
-              ),
+              title: s.reelsTogether,
+              text: _invite != null && _reelsEntry == ReelsEntry.join
+                  ? s.reelsInvitedBy(
+                      _invite!.name.isEmpty ? s.partner : _invite!.name,
+                      _invite!.source.title,
+                    )
+                  : s.watchReelsTileHint,
+              plusLocked:
+                  _reelsEntry == ReelsEntry.buy ||
+                  _reelsEntry == ReelsEntry.askPartner,
+              onTap: _openReels, // fork (UX V4)
+              titleWidth: w,
+              seed: _seed,
+            ),
       // fork: пустой GAMES_URL — плитки игр нет.
-      games: WatchRoomService.gamesUrl.isEmpty ? null : (w) => WatchGamesTile(title: s.gamesForTwo, text: s.watchGamesTileHint, onTap: _openGames, titleWidth: w, seed: _seed),
+      games: WatchRoomService.gamesUrl.isEmpty
+          ? null
+          : (w) => WatchGamesTile(
+              title: s.gamesForTwo,
+              text: s.watchGamesTileHint,
+              onTap: _openGames,
+              titleWidth: w,
+              seed: _seed,
+            ),
       computer: (w) => WatchComputerTile(
         titleWidth: w,
         code: _room,
@@ -482,7 +497,8 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
     final cs = Theme.of(context).colorScheme;
     final partner = widget.pairData.partnerName;
     final me = PocketBaseService().userId ?? '';
-    final profile = PbAuthService().currentProfile() ?? const <String, dynamic>{};
+    final profile =
+        PbAuthService().currentProfile() ?? const <String, dynamic>{};
 
     return RefreshIndicator(
       onRefresh: _refreshAll,
@@ -498,7 +514,9 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
           const SizedBox(height: 8),
           WatchKinoCard(
             theme: widget.theme,
-            title: partner.isEmpty ? s.watchTogether : s.watchWithPartner(partner),
+            title: partner.isEmpty
+                ? s.watchTogether
+                : s.watchWithPartner(partner),
             hint: s.watchKinoSources,
             myUid: me,
             myAvatar: (profile['avatarUrl'] as String?) ?? '',
@@ -506,29 +524,50 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
             partnerUid: widget.pairData.partnerUid,
             partnerAvatar: widget.pairData.partnerAvatarUrl,
             partnerName: partner,
-            enabled: !_loading && _room.isNotEmpty, // fork (UX V4): тап при серой карточке отвечает сообщением
+            enabled:
+                !_loading &&
+                _room
+                    .isNotEmpty, // fork (UX V4): тап при серой карточке отвечает сообщением
             onTap: _openInApp,
             seed: _seed,
           ),
           const SizedBox(height: 8),
           _bento(s),
-          ListTile( // fork: shared movie decisions, independently rated.
+          ListTile(
+            // fork: shared movie decisions, independently rated.
             enabled: widget.pairData.isPaired,
-            subtitle: widget.pairData.isPaired ? null : Text(ruEn('Подключите партнёра, чтобы выбирать вместе', 'Connect a partner to choose together')),
+            subtitle: widget.pairData.isPaired
+                ? null
+                : Text(
+                    ruEn(
+                      'Подключите партнёра, чтобы выбирать вместе',
+                      'Connect a partner to choose together',
+                    ),
+                  ),
             leading: const Icon(Icons.swipe_rounded),
             title: Text(ruEn('Что посмотрим?', 'What shall we watch?')),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => ForkMovieSwipesScreen(groupId: widget.pairData.pairId,
-                myUid: PocketBaseService().userId ?? '', partnerUid: widget.pairData.partnerUid))),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ForkMovieSwipesScreen(
+                  groupId: widget.pairData.pairId,
+                  myUid: PocketBaseService().userId ?? '',
+                  partnerUid: widget.pairData.partnerUid,
+                ),
+              ),
+            ),
           ),
           // fork: saved mutual reactions are separate from watch history.
           ListTile(
             leading: const Icon(Icons.favorite_rounded),
             title: Text(ruEn('Совпадения в ленте', 'Reel matches')),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => ForkReelsMatchesScreen(groupId: widget.pairData.pairId))),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    ForkReelsMatchesScreen(groupId: widget.pairData.pairId),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           // fork (UX V5): списки остались прежними, потому что обновление не вышло.
@@ -622,7 +661,10 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
   bool _roomMissing() {
     if (_room.isNotEmpty) return false;
     if (_loading) {
-      ForkNotice.info(context, ruEn('Ищем вашу комнату…', 'Looking for your room…'));
+      ForkNotice.info(
+        context,
+        ruEn('Ищем вашу комнату…', 'Looking for your room…'),
+      );
     } else {
       ForkNotice.failure(
         context,
@@ -653,7 +695,9 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
         return;
       case ReelsEntry.buy:
         await Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => PlusScreen(scheme: Theme.of(context).colorScheme)),
+          MaterialPageRoute<void>(
+            builder: (_) => PlusScreen(scheme: Theme.of(context).colorScheme),
+          ),
         );
         // Вернулся с покупкой — плитка откроется сама.
         if (mounted) setState(() {});
@@ -667,12 +711,22 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
         return;
       case ReelsEntry.join:
         // Вхожу по зову — площадку выбрал тот, кто позвал.
-        await TogetherLauncher.open(context, pairId: widget.pairData.pairId, reels: true, reelsSource: _invite!.source);
+        await TogetherLauncher.open(
+          context,
+          pairId: widget.pairData.pairId,
+          reels: true,
+          reelsSource: _invite!.source,
+        );
         return;
       case ReelsEntry.start:
         final source = await showReelsStartSheet(context);
         if (source == null || !mounted) return;
-        await TogetherLauncher.open(context, pairId: widget.pairData.pairId, reels: true, reelsSource: source);
+        await TogetherLauncher.open(
+          context,
+          pairId: widget.pairData.pairId,
+          reels: true,
+          reelsSource: source,
+        );
     }
   }
 
@@ -715,7 +769,9 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
     // fork (UX V1): сказать партнёру, что смотрим; снять отметку на выходе.
     final me = PocketBaseService().userId ?? '';
     if (video.uploaded && !WatchVideosService.playsInRoom(video.url)) {
-      unawaited(WatchVideosService.markWatching(video.id, me: me, watching: true));
+      unawaited(
+        WatchVideosService.markWatching(video.id, me: me, watching: true),
+      );
     }
     try {
       await TogetherLauncher.open(
@@ -725,7 +781,9 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
       );
     } finally {
       if (video.uploaded && !WatchVideosService.playsInRoom(video.url)) {
-        unawaited(WatchVideosService.markWatching(video.id, me: me, watching: false));
+        unawaited(
+          WatchVideosService.markWatching(video.id, me: me, watching: false),
+        );
       }
     }
     await _loadRecent();
@@ -940,7 +998,12 @@ class _UploadTile extends StatelessWidget {
   /// Потолок размера — свой у бесплатной версии и у Togetherly+.
   final int limitMb;
 
-  const _UploadTile({required this.busy, required this.limitMb, this.uploadingBytes = 0, this.onCancel});
+  const _UploadTile({
+    required this.busy,
+    required this.limitMb,
+    this.uploadingBytes = 0,
+    this.onCancel,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -237,9 +237,7 @@ class _PhotoViewState extends State<_PhotoView> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: PhotoFlightBackdrop(
-              child: ColoredBox(color: Colors.black),
-            ),
+            child: PhotoFlightBackdrop(child: ColoredBox(color: Colors.black)),
           ),
           SafeArea(
             child: Column(
@@ -262,8 +260,10 @@ class _PhotoViewState extends State<_PhotoView> {
                         IconButton(
                           tooltip: ruEn('Закрыть', 'Close'),
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close_rounded,
-                              color: Colors.white),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -385,11 +385,7 @@ class _AuthorLine extends StatelessWidget {
 }
 
 class _TrackText extends StatelessWidget {
-  const _TrackText({
-    required this.scheme,
-    required this.title,
-    this.artist,
-  });
+  const _TrackText({required this.scheme, required this.title, this.artist});
 
   final ColorScheme scheme;
   final String title;

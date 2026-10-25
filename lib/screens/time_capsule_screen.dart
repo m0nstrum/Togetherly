@@ -125,7 +125,11 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
-                        12, 6, 12, 108 + media.padding.bottom),
+                      12,
+                      6,
+                      12,
+                      108 + media.padding.bottom,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -167,7 +171,11 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
           Expanded(
             child: Text(
               s.capsuleIntro,
-              style: AppFonts.onest(size: 13, weight: 500, color: cs.onSurfaceVariant),
+              style: AppFonts.onest(
+                size: 13,
+                weight: 500,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -177,15 +185,15 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
 
   /// Поле без своей подложки: лист уже даёт и цвет, и форму.
   InputDecoration _bare(String hint, TextStyle style) => InputDecoration(
-        hintText: hint,
-        hintStyle: style,
-        filled: false,
-        isDense: true,
-        contentPadding: EdgeInsets.zero,
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-      );
+    hintText: hint,
+    hintStyle: style,
+    filled: false,
+    isDense: true,
+    contentPadding: EdgeInsets.zero,
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: InputBorder.none,
+  );
 
   /// Письмо на листе пина-заметки: тот же `secondaryContainer`, радиус 28 и
   /// кавычка цвета темы над краем, что у `NotePin`. Что человек пишет, так оно
@@ -216,8 +224,10 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
                   textCapitalization: TextCapitalization.sentences,
                   style: titleStyle,
                   cursorColor: ink,
-                  decoration: _bare(s.titleHint, titleStyle.copyWith(color: hint))
-                      .copyWith(counterText: ''),
+                  decoration: _bare(
+                    s.titleHint,
+                    titleStyle.copyWith(color: hint),
+                  ).copyWith(counterText: ''),
                 ),
                 const SizedBox(height: 8),
                 // Письмо в будущее пишут не подписью к фото: 800 символов
@@ -233,7 +243,10 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
                   textCapitalization: TextCapitalization.sentences,
                   style: bodyStyle,
                   cursorColor: ink,
-                  decoration: _bare(s.capsuleLetterHint, bodyStyle.copyWith(color: hint)),
+                  decoration: _bare(
+                    s.capsuleLetterHint,
+                    bodyStyle.copyWith(color: hint),
+                  ),
                 ),
               ],
             ),
@@ -261,16 +274,21 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
   }
 
   /// Счётчик молчит, пока запас велик, и подсказывает на последней тысяче.
-  Widget? _counter(BuildContext context,
-      {required int currentLength,
-      required int? maxLength,
-      required bool isFocused}) {
+  Widget? _counter(
+    BuildContext context, {
+    required int currentLength,
+    required int? maxLength,
+    required bool isFocused,
+  }) {
     final limit = maxLength ?? kCapsuleLetterMax;
     if (limit - currentLength > 1000) return const SizedBox.shrink();
     return Text(
       '$currentLength / $limit',
       style: AppFonts.onest(
-          size: 12, weight: 600, color: _cs.onSecondaryContainer.withValues(alpha: 0.7)),
+        size: 12,
+        weight: 600,
+        color: _cs.onSecondaryContainer.withValues(alpha: 0.7),
+      ),
     );
   }
 
@@ -290,14 +308,22 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_photo_alternate_rounded, size: 28, color: cs.primary),
+                Icon(
+                  Icons.add_photo_alternate_rounded,
+                  size: 28,
+                  color: cs.primary,
+                ),
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
                     s.capsuleAttachPhoto,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppFonts.onest(size: 15, weight: 600, color: cs.onSurface),
+                    style: AppFonts.onest(
+                      size: 15,
+                      weight: 600,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ),
               ],
@@ -306,9 +332,10 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
         ),
       );
     }
-    final decode = (MediaQuery.sizeOf(context).width *
-            MediaQuery.devicePixelRatioOf(context))
-        .round();
+    final decode =
+        (MediaQuery.sizeOf(context).width *
+                MediaQuery.devicePixelRatioOf(context))
+            .round();
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
       child: AspectRatio(
@@ -320,7 +347,8 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
               File(path),
               fit: BoxFit.cover,
               cacheWidth: decode,
-              errorBuilder: (_, _, _) => ColoredBox(color: cs.surfaceContainerHigh),
+              errorBuilder: (_, _, _) =>
+                  ColoredBox(color: cs.surfaceContainerHigh),
             ),
             Positioned(
               top: 10,
@@ -336,8 +364,11 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
                     child: SizedBox(
                       width: 36,
                       height: 36,
-                      child: Icon(Icons.close_rounded,
-                          size: 20, color: cs.onInverseSurface),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: cs.onInverseSurface,
+                      ),
                     ),
                   ),
                 ),
@@ -402,12 +433,19 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
                     children: [
                       Text(
                         s.tgYearDaysUnit(days),
-                        style: AppFonts.onest(size: 17, weight: 700, color: cs.onSurface),
+                        style: AppFonts.onest(
+                          size: 17,
+                          weight: 700,
+                          color: cs.onSurface,
+                        ),
                       ),
                       Text(
                         s.capsuleUntilOpen,
                         style: AppFonts.onest(
-                            size: 14, weight: 500, color: cs.onSurfaceVariant),
+                          size: 14,
+                          weight: 500,
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -420,12 +458,20 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               children: [
-                Icon(Icons.schedule_rounded, size: 18, color: cs.onSurfaceVariant),
+                Icon(
+                  Icons.schedule_rounded,
+                  size: 18,
+                  color: cs.onSurfaceVariant,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     '${memoryDateLabel(_openAt)}, $time',
-                    style: AppFonts.onest(size: 14, weight: 600, color: cs.onSurfaceVariant),
+                    style: AppFonts.onest(
+                      size: 14,
+                      weight: 600,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -452,45 +498,54 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
       (CapsulePreset.halfYear, s.capsulePreset6m),
       (CapsulePreset.year, s.capsulePreset1y),
     ];
-    return LayoutBuilder(builder: (context, c) {
-      // Подписи уменьшаются вместе: одна мелкая «6 Monate» рядом с крупными
-      // «Monat» и «Jahr» выглядела опечаткой.
-      final size = _segmentFontSize(
-        context,
-        labels: [for (final i in items) i.$2],
-        width: (c.maxWidth - 2 * (items.length - 1)) / items.length - 12,
-      );
-      return Row(
-        children: [
-          for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) const SizedBox(width: 2),
-            Expanded(
-              child: _segment(
-                cs,
-                label: items[i].$2,
-                fontSize: size,
-                on: selected == items[i].$1,
-                first: i == 0,
-                last: i == items.length - 1,
-                onTap: () => setState(
-                    () => _openAt = capsulePresetDate(_clock(), items[i].$1)),
+    return LayoutBuilder(
+      builder: (context, c) {
+        // Подписи уменьшаются вместе: одна мелкая «6 Monate» рядом с крупными
+        // «Monat» и «Jahr» выглядела опечаткой.
+        final size = _segmentFontSize(
+          context,
+          labels: [for (final i in items) i.$2],
+          width: (c.maxWidth - 2 * (items.length - 1)) / items.length - 12,
+        );
+        return Row(
+          children: [
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0) const SizedBox(width: 2),
+              Expanded(
+                child: _segment(
+                  cs,
+                  label: items[i].$2,
+                  fontSize: size,
+                  on: selected == items[i].$1,
+                  first: i == 0,
+                  last: i == items.length - 1,
+                  onTap: () => setState(
+                    () => _openAt = capsulePresetDate(_clock(), items[i].$1),
+                  ),
+                ),
               ),
-            ),
+            ],
           ],
-        ],
-      );
-    });
+        );
+      },
+    );
   }
 
   /// Общий размер подписей кнопок срока: 14, а если самая длинная не влезает
   /// в кнопку — меньше, одинаково для всех.
-  double _segmentFontSize(BuildContext context,
-      {required List<String> labels, required double width}) {
+  double _segmentFontSize(
+    BuildContext context, {
+    required List<String> labels,
+    required double width,
+  }) {
     const base = 14.0;
     var size = base;
     for (final label in labels) {
       final tp = TextPainter(
-        text: TextSpan(text: label, style: AppFonts.onest(size: base, weight: 600)),
+        text: TextSpan(
+          text: label,
+          style: AppFonts.onest(size: base, weight: 600),
+        ),
         textDirection: Directionality.of(context),
         textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,
@@ -541,7 +596,10 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
                     label,
                     maxLines: 1,
                     style: AppFonts.onest(
-                        size: fontSize, weight: 600, color: on ? _onFill : cs.onSurface),
+                      size: fontSize,
+                      weight: 600,
+                      color: on ? _onFill : cs.onSurface,
+                    ),
                   ),
                 ),
               ),
@@ -566,8 +624,11 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
           child: SizedBox(
             width: 48,
             height: 48,
-            child: Icon(Icons.edit_calendar_rounded,
-                size: 22, color: selected ? _onFill : cs.onSurface),
+            child: Icon(
+              Icons.edit_calendar_rounded,
+              size: 22,
+              color: selected ? _onFill : cs.onSurface,
+            ),
           ),
         ),
       ),
@@ -593,7 +654,9 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: cs.onPrimary),
+                      strokeWidth: 2.5,
+                      color: cs.onPrimary,
+                    ),
                   )
                 : const Icon(Icons.lock_rounded, size: 22),
             label: Text(s.capsuleSeal),
@@ -635,7 +698,9 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
         builder: (_) => DateTimePickerScreen(
           title: LocaleService.current.capsuleOpenDate,
           theme: _t,
-          initial: _openAt.isAfter(now) ? _openAt : now.add(const Duration(days: 1)),
+          initial: _openAt.isAfter(now)
+              ? _openAt
+              : now.add(const Duration(days: 1)),
           firstYear: now.year,
           lastYear: now.year + 10,
           // Час открытия фиксированный (девять утра), время выбирать нечего.
@@ -645,7 +710,12 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
       ),
     );
     if (picked == null || !mounted) return;
-    final at = DateTime(picked.year, picked.month, picked.day, kCapsuleOpenHour);
+    final at = DateTime(
+      picked.year,
+      picked.month,
+      picked.day,
+      kCapsuleOpenHour,
+    );
     // Дату из прошлого барабан отдать может (год начинается с нынешнего) —
     // проверку оставляем здесь: она же ловит и «сегодня».
     if (!at.isAfter(_clock()) || capsuleDaysLeft(at, _clock()) < 1) {
@@ -672,8 +742,10 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
       if (_photoPath != null) {
         final ts = DateTime.now().millisecondsSinceEpoch;
         final ext = _photoPath!.split('.').last;
-        imageUrl = await MediaService()
-            .uploadFile(_photoPath!, 'memories/${widget.pairId}/capsule_$ts.$ext');
+        imageUrl = await MediaService().uploadFile(
+          _photoPath!,
+          'memories/${widget.pairId}/capsule_$ts.$ext',
+        );
         if (imageUrl == null) {
           if (mounted) {
             setState(() => _saving = false);
@@ -698,8 +770,13 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
       // Уведомление планируем в фоне — не держим закрытие экрана на платформенном
       // вызове (мог зависнуть на запросе разрешения → композер «крутился»).
       if (created != null) {
-        unawaited(CapsuleNotificationService.instance
-            .schedule(created.id, _openAt, capsuleTitle: title));
+        unawaited(
+          CapsuleNotificationService.instance.schedule(
+            created.id,
+            _openAt,
+            capsuleTitle: title,
+          ),
+        );
       }
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -713,10 +790,12 @@ class _TimeCapsuleScreenState extends State<TimeCapsuleScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
   }
 }

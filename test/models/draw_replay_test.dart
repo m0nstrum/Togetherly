@@ -3,15 +3,15 @@ import 'package:love_app/models/draw_replay.dart';
 import 'package:love_app/models/draw_stroke.dart';
 
 DrawStroke _stroke(String id, int points) => DrawStroke(
-      id: id,
-      userId: 'u',
-      colorValue: 0xFF000000,
-      strokeWidth: 4,
-      points: List.generate(points, (i) => DrawPoint(i / 10, 0.5)),
-      isEraser: false,
-      isFilledShape: false,
-      orderIndex: int.parse(id),
-    );
+  id: id,
+  userId: 'u',
+  colorValue: 0xFF000000,
+  strokeWidth: 4,
+  points: List.generate(points, (i) => DrawPoint(i / 10, 0.5)),
+  isEraser: false,
+  isFilledShape: false,
+  orderIndex: int.parse(id),
+);
 
 void main() {
   final all = [_stroke('1', 5), _stroke('2', 3), _stroke('3', 4)];
@@ -73,23 +73,23 @@ void main() {
 
   group('повтор со слоями и заливкой (20.10.2026)', () {
     DrawStroke layered(String id, int order, int layer) => DrawStroke(
-          id: id,
-          userId: 'u',
-          colorValue: 0xFF000000,
-          strokeWidth: 4,
-          points: const [DrawPoint(0, 0), DrawPoint(1, 1)],
-          orderIndex: order,
-          layer: layer,
-        );
+      id: id,
+      userId: 'u',
+      colorValue: 0xFF000000,
+      strokeWidth: 4,
+      points: const [DrawPoint(0, 0), DrawPoint(1, 1)],
+      orderIndex: order,
+      layer: layer,
+    );
     DrawStroke fill(String id, int order) => DrawStroke(
-          id: id,
-          userId: 'u',
-          colorValue: 0xFF000000,
-          strokeWidth: 0,
-          points: const [],
-          orderIndex: order,
-          imageUrl: 'pb://media/x/fill.png',
-        );
+      id: id,
+      userId: 'u',
+      colorValue: 0xFF000000,
+      strokeWidth: 0,
+      points: const [],
+      orderIndex: order,
+      imageUrl: 'pb://media/x/fill.png',
+    );
 
     test('проигрывается в порядке рисования, а не по слоям', () {
       // Холст отдаёт штрихи по слоям: весь нижний, потом весь верхний.

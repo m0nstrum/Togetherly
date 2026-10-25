@@ -56,10 +56,13 @@ void main() {
     }
   });
 
-  test('несуществующий домен верхнего уровня .con чинится у любого сервиса', () {
-    expect(emailTypoFix('a@outlook.con'), 'a@outlook.com');
-    expect(emailTypoFix('a@company.con'), 'a@company.com');
-  });
+  test(
+    'несуществующий домен верхнего уровня .con чинится у любого сервиса',
+    () {
+      expect(emailTypoFix('a@outlook.con'), 'a@outlook.com');
+      expect(emailTypoFix('a@company.con'), 'a@company.com');
+    },
+  );
 
   test('имя до собачки и регистр сохраняются, пробелы по краям уходят', () {
     expect(emailTypoFix('  Ivan.Petrov@Gmail.Con '), 'Ivan.Petrov@gmail.com');

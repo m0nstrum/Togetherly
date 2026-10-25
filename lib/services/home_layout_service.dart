@@ -28,8 +28,7 @@ class HomeLayoutService extends ChangeNotifier {
   HomeLayout get saved => _saved;
 
   /// То, что действует на главной сейчас.
-  HomeLayout get current =>
-      _saved.effective(plus: PlusService.instance.active);
+  HomeLayout get current => _saved.effective(plus: PlusService.instance.active);
 
   Future<void> ensureLoaded() async {
     if (_loaded) return;

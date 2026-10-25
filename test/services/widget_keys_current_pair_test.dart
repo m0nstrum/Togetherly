@@ -17,7 +17,9 @@ void main() {
   group('Запись картинок сверяется с текущей парой', () {
     test('_downloadPhoto принимает поколение привязки', () {
       expect(
-        src.contains('Future<void> _downloadPhoto(\n    String? url,\n    String key, {\n    required int generation,\n  }) async {'),
+        src.contains(
+          'Future<void> _downloadPhoto(\n    String? url,\n    String key, {\n    required int generation,\n  }) async {',
+        ),
         isTrue,
         reason: 'без поколения запись нечем отличить от устаревшей',
       );
@@ -30,8 +32,11 @@ void main() {
       // осталась запись ключа под сверку с текущей парой.
       final end = src.indexOf('\n  // ═══', start);
       final body = src.substring(start, end > 0 ? end : src.length);
-      expect(body.contains('HomeWidget.saveWidgetData'), isFalse,
-          reason: 'прямая запись обходит проверку пары');
+      expect(
+        body.contains('HomeWidget.saveWidgetData'),
+        isFalse,
+        reason: 'прямая запись обходит проверку пары',
+      );
       expect(body.contains('_saveIfCurrent('), isTrue);
     });
 
@@ -52,11 +57,14 @@ void main() {
           .toList();
       expect(calls.length, 5, reason: 'фото обоих, аватарки обоих и группа');
       for (final args in calls) {
-        expect(args.contains('generation: bindGeneration'), isTrue,
-            reason: 'вызов без сверки с текущей парой: $args');
+        expect(
+          args.contains('generation: bindGeneration'),
+          isTrue,
+          reason: 'вызов без сверки с текущей парой: $args',
+        );
       }
     });
-  
+
     // Файл и запись кэша ведутся по ключу ПАРЫ. С общим ключом переключение
     // между связями сносило снимок предыдущей: уборка старых файлов удаляет
     // всё по тому же имени, а запись кэша указывает уже на чужую ссылку.
@@ -64,8 +72,13 @@ void main() {
       final start = src.indexOf('Future<void> _downloadPhoto(');
       final end = src.indexOf('\n  // ═══', start);
       final body = src.substring(start, end > 0 ? end : src.length);
-      expect(body.contains('pairImagePath(pairWidgetKey(_groupId, key)'), isTrue,
-          reason: 'иначе связи воюют за один файл');
+      expect(
+        RegExp(
+          r'pairImagePath\(\s*pairWidgetKey\(_groupId, key\)',
+        ).hasMatch(body),
+        isTrue,
+        reason: 'иначе связи воюют за один файл',
+      );
     });
   });
 }

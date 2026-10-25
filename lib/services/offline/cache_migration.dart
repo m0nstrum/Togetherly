@@ -55,8 +55,10 @@ class CacheMigration {
       );
       await fresh.close();
     } catch (e) {
-      debugPrint('CacheMigration: перенос не удался ($e); '
-          'кэш и очередь отправки будут собраны заново');
+      debugPrint(
+        'CacheMigration: перенос не удался ($e); '
+        'кэш и очередь отправки будут собраны заново',
+      );
       await _drop(factory, plainPath);
       return false;
     }

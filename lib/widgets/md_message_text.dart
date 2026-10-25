@@ -105,16 +105,24 @@ class MdMessageText extends StatefulWidget {
     _Rule(
       RegExp(r'\*\*(?=\S)(.+?)(?<=\S)\*\*'),
       (m, base, onLink, recs) => TextSpan(
-        children: buildSpans(m.group(1)!, base.copyWith(fontWeight: FontWeight.w700),
-            onLink: onLink, recognizers: recs),
+        children: buildSpans(
+          m.group(1)!,
+          base.copyWith(fontWeight: FontWeight.w700),
+          onLink: onLink,
+          recognizers: recs,
+        ),
       ),
     ),
     // __жирный__
     _Rule(
       RegExp(r'__(?=\S)(.+?)(?<=\S)__'),
       (m, base, onLink, recs) => TextSpan(
-        children: buildSpans(m.group(1)!, base.copyWith(fontWeight: FontWeight.w700),
-            onLink: onLink, recognizers: recs),
+        children: buildSpans(
+          m.group(1)!,
+          base.copyWith(fontWeight: FontWeight.w700),
+          onLink: onLink,
+          recognizers: recs,
+        ),
       ),
     ),
     // ~~зачёркнутый~~
@@ -122,8 +130,11 @@ class MdMessageText extends StatefulWidget {
       RegExp(r'~~(?=\S)(.+?)(?<=\S)~~'),
       (m, base, onLink, recs) => TextSpan(
         children: buildSpans(
-            m.group(1)!, base.copyWith(decoration: TextDecoration.lineThrough),
-            onLink: onLink, recognizers: recs),
+          m.group(1)!,
+          base.copyWith(decoration: TextDecoration.lineThrough),
+          onLink: onLink,
+          recognizers: recs,
+        ),
       ),
     ),
     // *курсив* — без пробела сразу за/перед звёздочкой (чтобы «5 * 3» не ловилось).
@@ -131,8 +142,11 @@ class MdMessageText extends StatefulWidget {
       RegExp(r'\*(?=\S)([^*\n]+?)(?<=\S)\*'),
       (m, base, onLink, recs) => TextSpan(
         children: buildSpans(
-            m.group(1)!, base.copyWith(fontStyle: FontStyle.italic),
-            onLink: onLink, recognizers: recs),
+          m.group(1)!,
+          base.copyWith(fontStyle: FontStyle.italic),
+          onLink: onLink,
+          recognizers: recs,
+        ),
       ),
     ),
     // «Голая» http(s)-ссылка. Завершающую пунктуацию (. , ) ] и т.п.) не съедаем.
@@ -194,7 +208,9 @@ class _MdMessageTextState extends State<MdMessageText> {
     if (uri == null) return;
     try {
       await safeLaunchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {/* нет обработчика ссылки — молча игнорируем */}
+    } catch (_) {
+      /* нет обработчика ссылки — молча игнорируем */
+    }
   }
 }
 
@@ -205,7 +221,8 @@ class _Rule {
     TextStyle base,
     void Function(String url)? onLink,
     List<TapGestureRecognizer>? recs,
-  ) build;
+  )
+  build;
   const _Rule(this.re, this.build);
 }
 

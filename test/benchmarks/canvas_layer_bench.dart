@@ -19,16 +19,16 @@ const _size = ui.Size(1080, 1080);
 const _tailLimit = 48;
 
 DrawStroke _stroke(int i) => DrawStroke(
-      id: 's$i',
-      userId: 'u',
-      colorValue: 0xFF223344,
-      strokeWidth: 4,
-      points: List.generate(
-        12,
-        (k) => DrawPoint(((i + k) % 100) / 100, ((i * 7 + k) % 100) / 100),
-      ),
-      orderIndex: i,
-    );
+  id: 's$i',
+  userId: 'u',
+  colorValue: 0xFF223344,
+  strokeWidth: 4,
+  points: List.generate(
+    12,
+    (k) => DrawPoint(((i + k) % 100) / 100, ((i * 7 + k) % 100) / 100),
+  ),
+  orderIndex: i,
+);
 
 void _paintStroke(ui.Canvas canvas, DrawStroke s) {
   final paint = ui.Paint()
@@ -69,8 +69,11 @@ int _newWay(List<DrawStroke> strokes, int frames) {
   for (var f = 0; f < frames; f++) {
     final upTo = strokes.length - frames + f + 1;
     final visible = strokes.sublist(0, upTo);
-    var picture =
-        cache.prefixFor(revision: revision, available: visible.length, size: _size);
+    var picture = cache.prefixFor(
+      revision: revision,
+      available: visible.length,
+      size: _size,
+    );
     var painted = picture == null ? 0 : cache.prefixCount;
     if (picture != null && visible.length - painted > _tailLimit) {
       picture = null;
@@ -83,8 +86,12 @@ int _newWay(List<DrawStroke> strokes, int frames) {
         _paintStroke(buffer, s);
       }
       picture = recorder.endRecording();
-      cache.save(picture,
-          revision: revision, size: _size, prefixCount: visible.length);
+      cache.save(
+        picture,
+        revision: revision,
+        size: _size,
+        prefixCount: visible.length,
+      );
       painted = visible.length;
     }
     // Кадр: выкладываем слой и дорисовываем хвост.
@@ -111,14 +118,24 @@ void main() {
     );
     // Мазок в двести точек: примерно две секунды ведения пальцем.
     final points = List.generate(
-        200, (i) => DrawPoint((i % 100) / 100, (i * 7 % 100) / 100));
+      200,
+      (i) => DrawPoint((i % 100) / 100, (i * 7 % 100) / 100),
+    );
 
     var oldBytes = 0;
     // Прежняя схема: каждые 150 мс уходит весь мазок целиком.
     for (var sent = 10; sent <= points.length; sent += 10) {
       oldBytes += utf8
-          .encode(jsonEncode(LiveStrokeWire.keyframe(
-              sid: 's', seq: 0, points: points.sublist(0, sent), meta: meta)))
+          .encode(
+            jsonEncode(
+              LiveStrokeWire.keyframe(
+                sid: 's',
+                seq: 0,
+                points: points.sublist(0, sent),
+                meta: meta,
+              ),
+            ),
+          )
           .length;
     }
 
@@ -128,21 +145,28 @@ void main() {
       final isKeyframe = sent % 12 < 3;
       final packet = isKeyframe
           ? LiveStrokeWire.keyframe(
-              sid: 's', seq: 0, points: points.sublist(0, sent), meta: meta)
+              sid: 's',
+              seq: 0,
+              points: points.sublist(0, sent),
+              meta: meta,
+            )
           : LiveStrokeWire.increment(
               sid: 's',
               seq: 0,
               from: sent - 3,
               points: points.sublist(sent - 3, sent),
-              meta: meta);
+              meta: meta,
+            );
       newBytes += utf8.encode(jsonEncode(packet)).length;
     }
 
     // ignore: avoid_print
-    print('мазок в 200 точек: было ${(oldBytes / 1024).toStringAsFixed(1)} КБ '
-        'за 20 пакетов, стало ${(newBytes / 1024).toStringAsFixed(1)} КБ '
-        'за 66 пакетов. Вес тот же, обновлений втрое больше: весь вес держат '
-        'ключевые кадры, которые остались для сборок постарше.');
+    print(
+      'мазок в 200 точек: было ${(oldBytes / 1024).toStringAsFixed(1)} КБ '
+      'за 20 пакетов, стало ${(newBytes / 1024).toStringAsFixed(1)} КБ '
+      'за 66 пакетов. Вес тот же, обновлений втрое больше: весь вес держат '
+      'ключевые кадры, которые остались для сборок постарше.',
+    );
   });
 
   test('замер цены кадра', () {
@@ -155,8 +179,10 @@ void main() {
       final perNew = (newUs / frames / 1000).toStringAsFixed(2);
       final gain = (oldUs / (newUs == 0 ? 1 : newUs)).toStringAsFixed(1);
       // ignore: avoid_print
-      print('$total штрихов, 60 кадров рисования: '
-          'было $perOld мс на кадр, стало $perNew мс — в $gain раза дешевле');
+      print(
+        '$total штрихов, 60 кадров рисования: '
+        'было $perOld мс на кадр, стало $perNew мс — в $gain раза дешевле',
+      );
     }
   });
 }

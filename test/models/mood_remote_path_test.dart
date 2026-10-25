@@ -63,12 +63,17 @@ void main() {
   });
 
   test('ассеты сборки и чужие ссылки не задеваются', () {
-    expect(MoodOption.freshRemotePath('assets/images/new emodji/Счастье.webp'),
-        isNull);
+    expect(
+      MoodOption.freshRemotePath('assets/images/new emodji/Счастье.webp'),
+      isNull,
+    );
     expect(MoodOption.freshRemotePath('https://example.com/a/b.webp'), isNull);
   });
 
   test('неизвестный пак оставляем как есть', () {
-    expect(MoodOption.freshRemotePath('$base/cat/pride_aaaaaaaaaa.webp'), isNull);
+    expect(
+      MoodOption.freshRemotePath('$base/cat/pride_aaaaaaaaaa.webp'),
+      isNull,
+    );
   });
 }

@@ -29,26 +29,31 @@ void main() {
     uid: alice,
   );
 
-  testWidgets('без бэкапа — экран восстановления предлагает только QR и «заново»', (t) async {
-    final db = ServerDb();
-    late E2EService fresh;
-    await t.runAsync(() async {
-      await make(db).start();
-      fresh = make(db);
-      await fresh.start();
-    });
-    expect(fresh.needsRestore.value, isTrue);
-    expect(fresh.restoreMethod, isNull);
-    ForkE2E.service.value = fresh;
-    await t.pumpWidget(const MaterialApp(home: ForkE2ERestoreScreen()));
-    await t.pumpAndSettle();
-    expect(find.byType(TextField), findsNothing, reason: 'вводить нечего');
-    expect(find.text('Link from another phone'), findsOneWidget);
-    expect(find.text('No other phone — start over'), findsOneWidget);
-    await t.pumpWidget(const SizedBox.shrink());
-  });
+  testWidgets(
+    'без бэкапа — экран восстановления предлагает только QR и «заново»',
+    (t) async {
+      final db = ServerDb();
+      late E2EService fresh;
+      await t.runAsync(() async {
+        await make(db).start();
+        fresh = make(db);
+        await fresh.start();
+      });
+      expect(fresh.needsRestore.value, isTrue);
+      expect(fresh.restoreMethod, isNull);
+      ForkE2E.service.value = fresh;
+      await t.pumpWidget(const MaterialApp(home: ForkE2ERestoreScreen()));
+      await t.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing, reason: 'вводить нечего');
+      expect(find.text('Link from another phone'), findsOneWidget);
+      expect(find.text('No other phone — start over'), findsOneWidget);
+      await t.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
-  testWidgets('QR на новом телефоне доводит до привязки после ответа старого', (t) async {
+  testWidgets('QR на новом телефоне доводит до привязки после ответа старого', (
+    t,
+  ) async {
     final db = ServerDb();
     late E2EService old, fresh;
     await t.runAsync(() async {
@@ -76,9 +81,13 @@ void main() {
     );
     await t.tap(find.text('open'));
     await t.pump(const Duration(milliseconds: 400)); // переход
-    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
     await t.pump(); // «Ждём…» крутится вечно — без pumpAndSettle
-    final shown = t.widget<QrImageView>(find.byType(QrImageView)).key! as ValueKey<String>;
+    final shown =
+        t.widget<QrImageView>(find.byType(QrImageView)).key!
+            as ValueKey<String>;
     final qr = LinkQr.parse(shown.value)!;
     expect(qr.uid, alice);
 
@@ -86,12 +95,18 @@ void main() {
     // Тик опроса: запрос к «серверу» — настоящий async.
     for (var i = 0; i < 10 && fresh.needsRestore.value; i++) {
       await t.pump(const Duration(milliseconds: 120));
-      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
     }
     await t.pump(const Duration(seconds: 1));
     expect(fresh.needsRestore.value, isFalse);
     expect(fresh.keys.account.publicKey, old.keys.account.publicKey);
-    expect(find.byType(ForkE2ELinkShowScreen), findsNothing, reason: 'экран закрылся');
+    expect(
+      find.byType(ForkE2ELinkShowScreen),
+      findsNothing,
+      reason: 'экран закрылся',
+    );
     await t.pumpWidget(const SizedBox.shrink());
   });
 }

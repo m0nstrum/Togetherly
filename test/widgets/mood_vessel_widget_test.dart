@@ -4,15 +4,19 @@ import 'package:love_app/models/memory.dart';
 import 'package:love_app/models/mood_vessel.dart';
 import 'package:love_app/widgets/mood/mood_vessel.dart';
 
-VesselDay _day(int d, {bool mine = false, bool partner = false,
-    bool intimacy = false, bool period = false}) =>
-    VesselDay(
-      date: DateTime(2026, 8, d),
-      mineMood: mine ? const Color(0xFFFF7E8B) : null,
-      partnerMood: partner ? const Color(0xFF3B82F6) : null,
-      intimacy: intimacy,
-      period: period,
-    );
+VesselDay _day(
+  int d, {
+  bool mine = false,
+  bool partner = false,
+  bool intimacy = false,
+  bool period = false,
+}) => VesselDay(
+  date: DateTime(2026, 8, d),
+  mineMood: mine ? const Color(0xFFFF7E8B) : null,
+  partnerMood: partner ? const Color(0xFF3B82F6) : null,
+  intimacy: intimacy,
+  period: period,
+);
 
 Future<void> _pumpVessel(WidgetTester tester, List<VesselDay> days) async {
   await tester.pumpWidget(
@@ -73,7 +77,8 @@ void main() {
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
     await _pumpVessel(tester, [
-      for (var d = 1; d <= 31; d++) _day(d, mine: true, partner: true, intimacy: d % 5 == 0),
+      for (var d = 1; d <= 31; d++)
+        _day(d, mine: true, partner: true, intimacy: d % 5 == 0),
     ]);
     expect(tester.takeException(), isNull);
   });

@@ -185,7 +185,8 @@ class _FrStrings extends _EnStrings {
   String downloadFailed(String e) => 'Téléchargement échoué : $e';
 
   @override
-  String failedSelectPhotos(String e) => 'Impossible de choisir les photos : $e';
+  String failedSelectPhotos(String e) =>
+      'Impossible de choisir les photos : $e';
 
   @override
   String failedSelectVideo(String e) => 'Impossible de choisir la vidéo : $e';
@@ -206,10 +207,12 @@ class _FrStrings extends _EnStrings {
   String failedAddStatus(String e) => 'Impossible d’ajouter le statut : $e';
 
   @override
-  String failedUpdateStatus(String e) => 'Impossible de modifier le statut : $e';
+  String failedUpdateStatus(String e) =>
+      'Impossible de modifier le statut : $e';
 
   @override
-  String failedDeleteStatus(String e) => 'Impossible de supprimer le statut : $e';
+  String failedDeleteStatus(String e) =>
+      'Impossible de supprimer le statut : $e';
 
   // ── Главная, таймеры, счётчики ──────────────────────────────────────────
 
@@ -237,7 +240,8 @@ class _FrStrings extends _EnStrings {
   String timerDaysCount(int days) => '$days ${_n(days, 'jour', 'jours')}';
 
   @override
-  String timerDeleteConfirm(String name) => '« $name » disparaîtra pour de bon.';
+  String timerDeleteConfirm(String name) =>
+      '« $name » disparaîtra pour de bon.';
 
   @override
   String widgetSlotTitle(int index) => 'Widget ${index + 1}';
@@ -247,8 +251,7 @@ class _FrStrings extends _EnStrings {
       'Vous êtes ensemble depuis $days ${_n(days, 'jour', 'jours')} ❤️';
 
   @override
-  String streakLabel(int days) =>
-      'Série : $days ${_n(days, 'jour', 'jours')}';
+  String streakLabel(int days) => 'Série : $days ${_n(days, 'jour', 'jours')}';
 
   @override
   String recordStreakDays(int days) => 'Record : $days j.';
@@ -389,9 +392,8 @@ class _FrStrings extends _EnStrings {
       'Te voilà $label avec $name !';
 
   @override
-  String onboardingLeft(int left) => left <= 1
-      ? 'Encore une étape'
-      : 'Encore $left étapes';
+  String onboardingLeft(int left) =>
+      left <= 1 ? 'Encore une étape' : 'Encore $left étapes';
 
   @override
   String onboardingNext(String step) => 'Encore une étape : $step';
@@ -519,7 +521,8 @@ class _FrStrings extends _EnStrings {
   String thinkingOfYouNotifTitle(String name) => '$name pense à toi 💭';
 
   @override
-  String wantHugNotifTitle(String name) => '$name veut te serrer dans ses bras 🤗';
+  String wantHugNotifTitle(String name) =>
+      '$name veut te serrer dans ses bras 🤗';
 
   @override
   String customVibeNotifTitle(String name) => name;
@@ -776,8 +779,7 @@ class _FrStrings extends _EnStrings {
   String cycleOf(String name) => 'Cycle de $name';
 
   @override
-  String cycleDaysLeft(int days) =>
-      'Dans $days ${_n(days, 'jour', 'jours')}';
+  String cycleDaysLeft(int days) => 'Dans $days ${_n(days, 'jour', 'jours')}';
 
   @override
   String cycleDayOfCycle(int day) => 'Jour $day du cycle';

@@ -56,8 +56,10 @@ void main() {
     // Пустая строка обязана доехать: иначе снятую ссылку не убрать, как это уже
     // было с фото в виджетах.
     final cleared = wish.copyWith(url: '', image: '', shop: '');
-    final body =
-        PbDataService.wishUpsertBody('g1', cleared.toMap(groupId: 'g1'));
+    final body = PbDataService.wishUpsertBody(
+      'g1',
+      cleared.toMap(groupId: 'g1'),
+    );
 
     expect(body.containsKey('url'), isTrue);
     expect(body['url'], '');

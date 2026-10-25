@@ -55,8 +55,11 @@ void main() {
         lang: kLoveBank.map((q) => loveTestStrings[q.key]![lang]).toSet(),
     };
     for (final entry in texts.entries) {
-      expect(entry.value.length, 80,
-          reason: 'в языке ${entry.key} есть повторяющиеся утверждения');
+      expect(
+        entry.value.length,
+        80,
+        reason: 'в языке ${entry.key} есть повторяющиеся утверждения',
+      );
     }
   });
 
@@ -65,8 +68,11 @@ void main() {
     // лежать заметно больше, чем берётся за один раз.
     for (final entry in kLoveRoundLayout.entries) {
       final have = kLoveBank.where((q) => q.facet == entry.key).length;
-      expect(have, greaterThanOrEqualTo(entry.value * 3),
-          reason: 'грань ${entry.key.name}: $have утверждений');
+      expect(
+        have,
+        greaterThanOrEqualTo(entry.value * 3),
+        reason: 'грань ${entry.key.name}: $have утверждений',
+      );
     }
     expect(
       kLoveRoundLayout.values.fold<int>(0, (a, b) => a + b),

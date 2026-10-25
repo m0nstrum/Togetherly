@@ -35,15 +35,18 @@ class ConnectivityService {
       debugPrint('ConnectivityService.checkConnectivity failed: $e');
       _online = true; // fail-open
     }
-    _sub = _conn.onConnectivityChanged.listen((res) {
-      final now = _isOnline(res);
-      if (now != _online) {
-        _online = now;
-        if (!_controller.isClosed) _controller.add(now);
-      }
-    }, onError: (Object e) {
-      debugPrint('ConnectivityService.onConnectivityChanged error: $e');
-    });
+    _sub = _conn.onConnectivityChanged.listen(
+      (res) {
+        final now = _isOnline(res);
+        if (now != _online) {
+          _online = now;
+          if (!_controller.isClosed) _controller.add(now);
+        }
+      },
+      onError: (Object e) {
+        debugPrint('ConnectivityService.onConnectivityChanged error: $e');
+      },
+    );
   }
 
   // connectivity_plus v7: и checkConnectivity, и поток отдают List<...>.

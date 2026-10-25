@@ -42,7 +42,9 @@ int compareMemories(
 }) {
   final now = DateTime.now();
   DateTime effective(DateTime own, DateTime? openAt) =>
-      (openAt != null && !openAt.isAfter(now) && openAt.isAfter(own)) ? openAt : own;
+      (openAt != null && !openAt.isAfter(now) && openAt.isAfter(own))
+      ? openAt
+      : own;
 
   final a = effective(aEvent, aOpenAt);
   final b = effective(bEvent, bOpenAt);
@@ -50,7 +52,9 @@ int compareMemories(
     case MemorySort.eventDate:
       return b.compareTo(a);
     case MemorySort.addedAt:
-      return effective(bAdded ?? bEvent, bOpenAt)
-          .compareTo(effective(aAdded ?? aEvent, aOpenAt));
+      return effective(
+        bAdded ?? bEvent,
+        bOpenAt,
+      ).compareTo(effective(aAdded ?? aEvent, aOpenAt));
   }
 }

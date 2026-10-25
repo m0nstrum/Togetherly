@@ -79,7 +79,10 @@ class HomeHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 2, 14, 2),
       child: SizedBox(
-        height: (MediaQuery.textScalerOf(context).scale(13) + 30).clamp(kHeaderRowHeight, double.infinity),
+        height: (MediaQuery.textScalerOf(context).scale(13) + 30).clamp(
+          kHeaderRowHeight,
+          double.infinity,
+        ),
         child: Row(
           children: [
             _avatars(context),
@@ -102,7 +105,10 @@ class HomeHeader extends StatelessWidget {
                 partnerAvatarUrl: partners.isEmpty
                     ? null
                     : partners.first.avatar,
-                height: (MediaQuery.textScalerOf(context).scale(13) + 16).clamp(kHeaderControlHeight, double.infinity),
+                height: (MediaQuery.textScalerOf(context).scale(13) + 16).clamp(
+                  kHeaderControlHeight,
+                  double.infinity,
+                ),
                 onSent: onMissYou,
               ),
             ],
@@ -188,11 +194,8 @@ class HomeHeader extends StatelessWidget {
         onTap: onTap,
         onLongPress: url.isEmpty
             ? null
-            : () => openWidgetPhotoView(
-                context,
-                imageUrl: url,
-                authorName: name,
-              ),
+            : () =>
+                  openWidgetPhotoView(context, imageUrl: url, authorName: name),
         child: _avatarStack(uid, url, name, mood, moodPosition, badge),
       ),
     );
@@ -322,50 +325,62 @@ class HomeHeader extends StatelessWidget {
     final inviteTap = !active && onOpenTab != null ? () => onOpenTab!(2) : null;
     final tap = active ? onRelationshipTap : inviteTap;
     return Semantics(
-      label: ruEn('Тип связи: $statusBadgeText', 'Relationship type: $statusBadgeText'),
-      button: tap != null, onTap: tap, excludeSemantics: true,
-      child: GestureDetector(
-      onTap: tap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        height: (MediaQuery.textScalerOf(context).scale(13) + 16).clamp(kHeaderControlHeight, double.infinity),
-        padding: const EdgeInsets.symmetric(horizontal: 11),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(kHeaderControlHeight / 2),
-        ),
-        // Строка во всю ширину пилюли: значок слева, название занимает всё
-        // свободное место, стрелка прижата к правому краю. При `min` она
-        // липла к слову, и справа оставалась пустая половина пилюли.
-        child: Row(
-          children: [
-            Icon(
-              statusBadgeEmoji.isNotEmpty
-                  ? relIconForEmoji(statusBadgeEmoji)
-                  : Icons.favorite_border_rounded,
-              color: fg,
-              size: 16,
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                statusBadgeText,
-                style: TextStyle(
-                  fontFamily: 'Onest',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: fg,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (active) Icon(Icons.expand_more_rounded, size: 16, color: fg),
-            if (inviteTap != null) // fork
-              Icon(Icons.person_add_alt_1_rounded, size: 16, color: theme.primary),
-          ],
-        ),
+      label: ruEn(
+        'Тип связи: $statusBadgeText',
+        'Relationship type: $statusBadgeText',
       ),
+      button: tap != null,
+      onTap: tap,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: tap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          height: (MediaQuery.textScalerOf(context).scale(13) + 16).clamp(
+            kHeaderControlHeight,
+            double.infinity,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(kHeaderControlHeight / 2),
+          ),
+          // Строка во всю ширину пилюли: значок слева, название занимает всё
+          // свободное место, стрелка прижата к правому краю. При `min` она
+          // липла к слову, и справа оставалась пустая половина пилюли.
+          child: Row(
+            children: [
+              Icon(
+                statusBadgeEmoji.isNotEmpty
+                    ? relIconForEmoji(statusBadgeEmoji)
+                    : Icons.favorite_border_rounded,
+                color: fg,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  statusBadgeText,
+                  style: TextStyle(
+                    fontFamily: 'Onest',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (active) Icon(Icons.expand_more_rounded, size: 16, color: fg),
+              if (inviteTap != null) // fork
+                Icon(
+                  Icons.person_add_alt_1_rounded,
+                  size: 16,
+                  color: theme.primary,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

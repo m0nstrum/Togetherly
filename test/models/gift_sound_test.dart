@@ -27,8 +27,10 @@ void main() {
   test('без ссылки звука нет, битый meta даёт звук без волны', () {
     expect(SoundClip.fromGiftRecord({'sound': '', 'sound_meta': meta}), isNull);
     expect(SoundClip.fromGiftRecord({'note': 'привет'}), isNull);
-    final broken = SoundClip.fromGiftRecord(
-        {'sound': 'pb://media/a/b.m4a', 'sound_meta': '{битый'})!;
+    final broken = SoundClip.fromGiftRecord({
+      'sound': 'pb://media/a/b.m4a',
+      'sound_meta': '{битый',
+    })!;
     expect(broken.duration, Duration.zero);
     expect(broken.kind, SoundKind.voice);
     expect(broken.bars, hasLength(40));

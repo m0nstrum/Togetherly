@@ -79,12 +79,16 @@ class MovieSearchService {
     String token,
     String lang,
   ) async {
-    final uri = Uri.parse('$base/api/movies/search')
-        .replace(queryParameters: {'q': q, 'lang': lang});
+    final uri = Uri.parse(
+      '$base/api/movies/search',
+    ).replace(queryParameters: {'q': q, 'lang': lang});
     final http.Response resp;
     try {
       resp = await c
-          .get(uri, headers: {'Authorization': token, 'accept': 'application/json'})
+          .get(
+            uri,
+            headers: {'Authorization': token, 'accept': 'application/json'},
+          )
           .timeout(_serverTimeout);
     } catch (e) {
       debugPrint('[MovieSearch] сервер не ответил: $e');
@@ -122,7 +126,8 @@ class MovieSearchService {
   }
 
   static List<MovieResult> _parseDocs(http.Response resp) {
-    final data = json.decode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
+    final data =
+        json.decode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
     final docs = (data['docs'] as List?) ?? const [];
     return docs
         .whereType<Map<String, dynamic>>()
@@ -131,7 +136,10 @@ class MovieSearchService {
         .toList();
   }
 
-  static Future<List<MovieResult>> _viaPoiskkino(http.Client c, String q) async {
+  static Future<List<MovieResult>> _viaPoiskkino(
+    http.Client c,
+    String q,
+  ) async {
     if (!isConfigured) {
       throw const MovieSearchException(notConfigured: true);
     }
@@ -145,15 +153,16 @@ class MovieSearchService {
     });
     debugPrint('[MovieSearch] GET $uri');
     try {
-      final resp = await c.get(
-        uri,
-        headers: {
-          'accept': 'application/json',
-          'X-API-KEY': _token,
-        },
-      ).timeout(const Duration(seconds: 10));
+      final resp = await c
+          .get(
+            uri,
+            headers: {'accept': 'application/json', 'X-API-KEY': _token},
+          )
+          .timeout(const Duration(seconds: 10));
 
-      debugPrint('[MovieSearch] ← ${resp.statusCode}, ${resp.body.length} bytes');
+      debugPrint(
+        '[MovieSearch] ← ${resp.statusCode}, ${resp.body.length} bytes',
+      );
       // 401 — ключ не тот. 403 у poiskkino.dev значит другое: «вы израсходовали
       // ваш суточный лимит по запросам». Ключ один на всех, и к вечеру он
       // выгорает, а наутро оживает. Смешивать это с «нет ключа» нельзя:
@@ -261,8 +270,8 @@ class MovieResult {
     final enName = (doc['enName'] as String?)?.trim();
     // Приоритет — русское название. Если его нет, берём оригинальное.
     final original = (altName?.isNotEmpty == true ? altName : enName);
-    final title =
-        (ruName?.isNotEmpty == true ? ruName! : (original ?? '')).trim();
+    final title = (ruName?.isNotEmpty == true ? ruName! : (original ?? ''))
+        .trim();
 
     final yearRaw = doc['year'];
     String? year = (yearRaw is num) ? yearRaw.toInt().toString() : null;
@@ -312,7 +321,8 @@ class MovieResult {
       id: (doc['id'] as num?)?.toInt() ?? 0,
       title: title,
       // originalTitle храним только если реально отличается от заголовка.
-      originalTitle: (original != null && original.isNotEmpty && original != title)
+      originalTitle:
+          (original != null && original.isNotEmpty && original != title)
           ? original
           : null,
       posterUrl: (poster != null && poster.isNotEmpty) ? poster : null,
@@ -321,7 +331,8 @@ class MovieResult {
       genres: (genres != null && genres.isNotEmpty) ? genres : null,
       country: country,
       ratingKp: ratingKp,
-      description: (doc['shortDescription'] as String?)?.trim().isNotEmpty == true
+      description:
+          (doc['shortDescription'] as String?)?.trim().isNotEmpty == true
           ? (doc['shortDescription'] as String).trim()
           : (doc['description'] as String?)?.trim(),
       link: (doc['link'] as String?)?.trim().isNotEmpty == true
@@ -334,9 +345,9 @@ class MovieResult {
 }
 
 /// Человекочитаемая метка типа («Фильм» / «Сериал» / «Мультфильм» / «Аниме»).
-String movieKindLabel(String? kind, {required bool isRu}) =>
-    isRu ? _movieKindLabel(kind, isRu: true) : zhForEnglishIfZh(
-        _movieKindLabel(kind, isRu: false));
+String movieKindLabel(String? kind, {required bool isRu}) => isRu
+    ? _movieKindLabel(kind, isRu: true)
+    : zhForEnglishIfZh(_movieKindLabel(kind, isRu: false));
 
 String _movieKindLabel(String? kind, {required bool isRu}) {
   switch (kind) {

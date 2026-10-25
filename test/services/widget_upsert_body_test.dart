@@ -11,7 +11,9 @@ import 'package:love_app/services/pb_data_service.dart';
 void main() {
   group('Тело запроса widget_data', () {
     test('поля, которых не просили менять, в тело не попадают', () {
-      final body = PbDataService.widgetUpsertBody('g1', 'u1', {'status': 'дома'});
+      final body = PbDataService.widgetUpsertBody('g1', 'u1', {
+        'status': 'дома',
+      });
 
       expect(body['status'], 'дома');
       expect(body.containsKey('data'), isFalse);

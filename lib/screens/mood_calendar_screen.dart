@@ -94,7 +94,8 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   /// События пары по дням за год вокруг листаемого периода (D8).
   Map<String, List<PairEvent>> get _events {
     final y = _calAnchor.year;
-    final key = '$y|${identityHashCode(_memories)}|${identityHashCode(_wishes)}';
+    final key =
+        '$y|${identityHashCode(_memories)}|${identityHashCode(_wishes)}';
     if (key != _eventsKey) {
       _eventsKey = key;
       _eventsCache = pairCalendarEvents(
@@ -168,13 +169,14 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   void _listenChat() {
     final groupId = _pair.pairId;
     if (groupId.isEmpty) return;
-    _chatSub = ChatService.instance
-        .watchMessages(groupId, limit: 500)
-        .listen((messages) {
+    _chatSub = ChatService.instance.watchMessages(groupId, limit: 500).listen((
+      messages,
+    ) {
       final days = <String>{};
       for (final m in messages) {
-        days.add(vesselDayKey(
-            DateTime.fromMillisecondsSinceEpoch(m.ts).toLocal()));
+        days.add(
+          vesselDayKey(DateTime.fromMillisecondsSinceEpoch(m.ts).toLocal()),
+        );
       }
       if (!mounted) return;
       setState(() => _chatDays = days);
@@ -184,8 +186,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   void _listenMemories() {
     final groupId = _pair.pairId;
     if (groupId.isEmpty) return;
-    _memoriesSub =
-        MemoryRepository.instance.watch(groupId).listen((memories) {
+    _memoriesSub = MemoryRepository.instance.watch(groupId).listen((memories) {
       // Виды записей, а не их число: сосуд кладёт этаж на каждый вид, и
       // значок этажа берётся отсюда.
       final byDay = <String, List<MemoryType>>{};
@@ -220,8 +221,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   DateTime get _periodStart {
     switch (_calMode) {
       case _CalMode.week:
-        final monday =
-            _calAnchor.subtract(Duration(days: _calAnchor.weekday - 1));
+        final monday = _calAnchor.subtract(
+          Duration(days: _calAnchor.weekday - 1),
+        );
         return DateTime(monday.year, monday.month, monday.day);
       case _CalMode.month:
         return DateTime(_calAnchor.year, _calAnchor.month);
@@ -260,8 +262,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     final short = LocaleService.current.shortMonths; // 0-based
     switch (_calMode) {
       case _CalMode.week:
-        final monday =
-            _calAnchor.subtract(Duration(days: _calAnchor.weekday - 1));
+        final monday = _calAnchor.subtract(
+          Duration(days: _calAnchor.weekday - 1),
+        );
         final sunday = monday.add(const Duration(days: 6));
         if (monday.month == sunday.month) {
           return '${monday.day}–${sunday.day} ${months[monday.month]}';
@@ -295,23 +298,35 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
             ),
             title: Text(
               ruEn('Наш календарь', 'Our calendar'), // D8: не только настроения
-              style: AppFonts.onest(size: 20, weight: 800, color: widget.theme.textPrimary),
+              style: AppFonts.onest(
+                size: 20,
+                weight: 800,
+                color: widget.theme.textPrimary,
+              ),
             ),
             centerTitle: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.zoom_out_rounded, size: 22),
                 onPressed: _calendarScale > 0.7
-                    ? () => setState(() => _calendarScale =
-                        (_calendarScale - 0.15).clamp(0.7, 1.5))
+                    ? () => setState(
+                        () => _calendarScale = (_calendarScale - 0.15).clamp(
+                          0.7,
+                          1.5,
+                        ),
+                      )
                     : null,
                 tooltip: LocaleService.current.zoomOut,
               ),
               IconButton(
                 icon: const Icon(Icons.zoom_in_rounded, size: 22),
                 onPressed: _calendarScale < 1.5
-                    ? () => setState(() => _calendarScale =
-                        (_calendarScale + 0.15).clamp(0.7, 1.5))
+                    ? () => setState(
+                        () => _calendarScale = (_calendarScale + 0.15).clamp(
+                          0.7,
+                          1.5,
+                        ),
+                      )
                     : null,
                 tooltip: LocaleService.current.zoomIn,
               ),
@@ -346,47 +361,52 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           // ── Мой календарь ──
           if (!_vesselView)
             SliverToBoxAdapter(
-            child: GestureDetector(
-              onScaleStart: (_) => _baseScale = _calendarScale,
-              onScaleUpdate: (d) => setState(() =>
-                  _calendarScale = (_baseScale * d.scale).clamp(0.7, 1.5)),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: Transform.scale(
-                  scale: _calendarScale,
-                  alignment: Alignment.topCenter,
-                  child: _buildCalendarSection(
-                    scheme: scheme,
-                    label: LocaleService.current.myMood,
-                    entries: _mood.myEntries,
-                    stats: _mood.myStats(from: _periodStart, to: _periodEnd),
+              child: GestureDetector(
+                onScaleStart: (_) => _baseScale = _calendarScale,
+                onScaleUpdate: (d) => setState(
+                  () => _calendarScale = (_baseScale * d.scale).clamp(0.7, 1.5),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Transform.scale(
+                    scale: _calendarScale,
+                    alignment: Alignment.topCenter,
+                    child: _buildCalendarSection(
+                      scheme: scheme,
+                      label: LocaleService.current.myMood,
+                      entries: _mood.myEntries,
+                      stats: _mood.myStats(from: _periodStart, to: _periodEnd),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
           // ── Календари партнёров ──
-          if (!_vesselView) ..._pair.partners.map(
-            (p) => SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: Transform.scale(
-                  scale: _calendarScale,
-                  alignment: Alignment.topCenter,
-                  child: _buildCalendarSection(
-                    scheme: scheme,
-                    label: LocaleService.current.partnerMood(p.name),
-                    entries: _mood.partnerEntries(p.uid),
-                    stats: _mood.partnerStats(p.uid,
-                        from: _periodStart, to: _periodEnd),
-                    isPartner: true,
-                    ownerName: p.name,
+          if (!_vesselView)
+            ..._pair.partners.map(
+              (p) => SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: Transform.scale(
+                    scale: _calendarScale,
+                    alignment: Alignment.topCenter,
+                    child: _buildCalendarSection(
+                      scheme: scheme,
+                      label: LocaleService.current.partnerMood(p.name),
+                      entries: _mood.partnerEntries(p.uid),
+                      stats: _mood.partnerStats(
+                        p.uid,
+                        from: _periodStart,
+                        to: _periodEnd,
+                      ),
+                      isPartner: true,
+                      ownerName: p.name,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
@@ -476,21 +496,42 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
             spacing: 12,
             runSpacing: 6,
             children: [
-              _vesselLegend(scheme, Icons.emoji_emotions_rounded, s.vesselLegendMood,
-                  scheme.primary),
-              _vesselLegend(scheme, Icons.chat_bubble_rounded,
-                  s.vesselLegendChat, scheme.secondary),
-              _vesselLegend(scheme, Icons.photo_camera_rounded,
-                  s.vesselLegendMemory, scheme.tertiary),
+              _vesselLegend(
+                scheme,
+                Icons.emoji_emotions_rounded,
+                s.vesselLegendMood,
+                scheme.primary,
+              ),
+              _vesselLegend(
+                scheme,
+                Icons.chat_bubble_rounded,
+                s.vesselLegendChat,
+                scheme.secondary,
+              ),
+              _vesselLegend(
+                scheme,
+                Icons.photo_camera_rounded,
+                s.vesselLegendMemory,
+                scheme.tertiary,
+              ),
               // Цикл в легенде один, а этажей у него два: свой и партнёрши.
               // Показываем своим цветом — чей этаж, видно по тону, как у точек
               // в календаре.
-              _vesselLegend(scheme, Icons.water_drop_rounded,
-                  s.vesselLegendCycle,
-                  CycleColors.period(Theme.of(context).brightness,
-                      partner: false)),
-              _vesselLegend(scheme, Icons.favorite_rounded,
-                  s.cycleLegendIntimacy, scheme.primary),
+              _vesselLegend(
+                scheme,
+                Icons.water_drop_rounded,
+                s.vesselLegendCycle,
+                CycleColors.period(
+                  Theme.of(context).brightness,
+                  partner: false,
+                ),
+              ),
+              _vesselLegend(
+                scheme,
+                Icons.favorite_rounded,
+                s.cycleLegendIntimacy,
+                scheme.primary,
+              ),
             ],
           ),
         ],
@@ -499,7 +540,11 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   }
 
   Widget _vesselLegend(
-      ColorScheme scheme, IconData icon, String label, Color color) {
+    ColorScheme scheme,
+    IconData icon,
+    String label,
+    Color color,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -515,8 +560,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
 
   /// Столбцов в кладке. Шесть — предел для телефона: блок уже пальца, и значок
   /// в нём перестаёт читаться.
-  int get _vesselColumns =>
-      MediaQuery.sizeOf(context).width < 360 ? 5 : 6;
+  int get _vesselColumns => MediaQuery.sizeOf(context).width < 360 ? 5 : 6;
 
   Future<void> _loadViewPref() async {
     final p = await SharedPreferences.getInstance();
@@ -543,44 +587,46 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   /// сверху продолжало стоять «Сосуд месяца», и цифры под ним читались как
   /// ошибка.
   String _vesselTitle(AppStrings s) => switch (_calMode) {
-        _CalMode.week => s.moodVesselTitleWeek,
-        _CalMode.month => s.moodVesselTitle,
-        _CalMode.year => s.moodVesselTitleYear,
-      };
+    _CalMode.week => s.moodVesselTitleWeek,
+    _CalMode.month => s.moodVesselTitle,
+    _CalMode.year => s.moodVesselTitleYear,
+  };
 
   void _openVesselStory(List<VesselDay> days, ColorScheme scheme) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => VesselStoryScreen(
-        days: days,
-        columns: _vesselColumns,
-        title: _vesselTitle(LocaleService.current),
-        scheme: scheme,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VesselStoryScreen(
+          days: days,
+          columns: _vesselColumns,
+          title: _vesselTitle(LocaleService.current),
+          scheme: scheme,
+        ),
       ),
-    ));
+    );
   }
 
   /// Кладка за выбранный период.
   List<VesselDay> _vesselDaysForPeriod() => switch (_calMode) {
-        _CalMode.year => buildVesselYear(
-            year: _calAnchor.year,
-            mineMoods: _moodColors(_mood.myEntries),
-            partnerMoods: _partnerMoodColors(),
-            myCycle: _cycle.mine,
-            partnerCycle: _cycle.partner,
-            memories: _memoryDays,
-            chatDays: _chatDays,
-          ),
-        _ => buildVesselRange(
-            from: _periodStart,
-            to: _periodEnd,
-            mineMoods: _moodColors(_mood.myEntries),
-            partnerMoods: _partnerMoodColors(),
-            myCycle: _cycle.mine,
-            partnerCycle: _cycle.partner,
-            memories: _memoryDays,
-            chatDays: _chatDays,
-          ),
-      };
+    _CalMode.year => buildVesselYear(
+      year: _calAnchor.year,
+      mineMoods: _moodColors(_mood.myEntries),
+      partnerMoods: _partnerMoodColors(),
+      myCycle: _cycle.mine,
+      partnerCycle: _cycle.partner,
+      memories: _memoryDays,
+      chatDays: _chatDays,
+    ),
+    _ => buildVesselRange(
+      from: _periodStart,
+      to: _periodEnd,
+      mineMoods: _moodColors(_mood.myEntries),
+      partnerMoods: _partnerMoodColors(),
+      myCycle: _cycle.mine,
+      partnerCycle: _cycle.partner,
+      memories: _memoryDays,
+      chatDays: _chatDays,
+    ),
+  };
 
   /// Прошлый такой же период — пунктирная черта «обгони себя вчерашнего».
   List<VesselDay> _vesselDaysForPrevPeriod() {
@@ -621,18 +667,18 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   }
 
   Map<String, Color> _partnerMoodColors() => _moodColors([
-        for (final p in _pair.partners) ..._mood.partnerEntries(p.uid),
-      ]);
+    for (final p in _pair.partners) ..._mood.partnerEntries(p.uid),
+  ]);
 
   List<VesselDay> _vesselDaysFor(DateTime month) => buildVesselDays(
-        month: month,
-        mineMoods: _moodColors(_mood.myEntries),
-        partnerMoods: _moodColors([
-          for (final p in _pair.partners) ..._mood.partnerEntries(p.uid),
-        ]),
-        myCycle: _cycle.mine,
-        partnerCycle: _cycle.partner,
-      );
+    month: month,
+    mineMoods: _moodColors(_mood.myEntries),
+    partnerMoods: _moodColors([
+      for (final p in _pair.partners) ..._mood.partnerEntries(p.uid),
+    ]),
+    myCycle: _cycle.mine,
+    partnerCycle: _cycle.partner,
+  );
 
   // ═══════════════════════════════════════════
   //  КОНТРОЛЫ КАЛЕНДАРЯ (чипы + навигация)
@@ -669,19 +715,27 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           // разовое любопытство.
           Row(
             children: [
-              _calModeChip(LocaleService.current.moodVesselGrid, !_vesselView,
-                  () {
-                HapticFeedback.selectionClick();
-                setState(() => _vesselView = false);
-                unawaited(_saveViewPref(false));
-              }, scheme),
+              _calModeChip(
+                LocaleService.current.moodVesselGrid,
+                !_vesselView,
+                () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _vesselView = false);
+                  unawaited(_saveViewPref(false));
+                },
+                scheme,
+              ),
               const SizedBox(width: 8),
-              _calModeChip(LocaleService.current.moodVesselMode, _vesselView,
-                  () {
-                HapticFeedback.selectionClick();
-                setState(() => _vesselView = true);
-                unawaited(_saveViewPref(true));
-              }, scheme),
+              _calModeChip(
+                LocaleService.current.moodVesselMode,
+                _vesselView,
+                () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _vesselView = true);
+                  unawaited(_saveViewPref(true));
+                },
+                scheme,
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -700,7 +754,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                   style: TextStyle(
                     fontFamily: 'Unbounded',
                     fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                    fontVariations: const [FontVariation('wght', 700)],
                     letterSpacing: -0.3,
                     fontSize: 16,
                     color: scheme.onSurface,
@@ -711,8 +765,10 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                 tooltip: ruEn('Следующий период', 'Next period'),
                 visualDensity: VisualDensity.compact,
                 onPressed: () => _shiftAnchor(1),
-                icon:
-                    Icon(Icons.chevron_right_rounded, color: scheme.onSurface),
+                icon: Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -722,7 +778,11 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   }
 
   Widget _calModeChip(
-      String label, bool sel, VoidCallback onTap, ColorScheme scheme) {
+    String label,
+    bool sel,
+    VoidCallback onTap,
+    ColorScheme scheme,
+  ) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -740,7 +800,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
               fontFamily: 'Onest',
               fontSize: 13,
               fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+              fontVariations: const [FontVariation('wght', 700)],
               color: sel ? scheme.onPrimary : scheme.onSurfaceVariant,
             ),
           ),
@@ -864,7 +924,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                   fontFamily: 'Unbounded',
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                  fontVariations: const [FontVariation('wght', 700)],
                   letterSpacing: -0.2,
                   color: scheme.onSurface,
                 ),
@@ -886,7 +946,8 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                 ),
                 child: KeyedSubtree(
                   key: ValueKey(
-                      '${_calMode.name}-${_calAnchor.toIso8601String()}-$isPartner'),
+                    '${_calMode.name}-${_calAnchor.toIso8601String()}-$isPartner',
+                  ),
                   child: _buildGrid(byDay, scheme, isPartner: isPartner),
                 ),
               ),
@@ -1045,8 +1106,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                             note,
                             style: TextStyle(
                               fontSize: 13,
-                              color: scheme.onPrimaryContainer
-                                  .withValues(alpha: 0.75),
+                              color: scheme.onPrimaryContainer.withValues(
+                                alpha: 0.75,
+                              ),
                             ),
                           ),
                         ],
@@ -1054,16 +1116,20 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              Icon(Icons.info_rounded,
-                                  size: 15, color: scheme.onPrimaryContainer),
+                              Icon(
+                                Icons.info_rounded,
+                                size: 15,
+                                color: scheme.onPrimaryContainer,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   s.cycleIrregularWarning,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: scheme.onPrimaryContainer
-                                        .withValues(alpha: 0.9),
+                                    color: scheme.onPrimaryContainer.withValues(
+                                      alpha: 0.9,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1079,15 +1145,21 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                       children: [
                         if (cycleLen != null)
                           Expanded(
-                            child: _statTile(scheme, s.cycleDaysValue(cycleLen),
-                                s.cycleAverageLength),
+                            child: _statTile(
+                              scheme,
+                              s.cycleDaysValue(cycleLen),
+                              s.cycleAverageLength,
+                            ),
                           ),
                         if (cycleLen != null && periodLen != null)
                           const SizedBox(width: 10),
                         if (periodLen != null)
                           Expanded(
-                            child: _statTile(scheme,
-                                s.cycleDaysValue(periodLen), s.cycleAveragePeriod),
+                            child: _statTile(
+                              scheme,
+                              s.cycleDaysValue(periodLen),
+                              s.cycleAveragePeriod,
+                            ),
                           ),
                       ],
                     ),
@@ -1162,28 +1234,27 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     String label, {
     Color? fill,
     Color? outline,
-  }) =>
-      Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: fill,
-              border: outline == null
-                  ? null
-                  : Border.all(color: outline.withValues(alpha: 0.75), width: 1.5),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(fontSize: 12.5, color: widget.theme.textSecondary),
-          ),
-        ],
-      );
+  }) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: fill,
+          border: outline == null
+              ? null
+              : Border.all(color: outline.withValues(alpha: 0.75), width: 1.5),
+        ),
+      ),
+      const SizedBox(width: 6),
+      Text(
+        label,
+        style: TextStyle(fontSize: 12.5, color: widget.theme.textSecondary),
+      ),
+    ],
+  );
 
   String _shortDate(DateTime d) =>
       '${d.day} ${LocaleService.current.cycleMonthsGenitive[d.month - 1]}';
@@ -1220,7 +1291,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                   fontFamily: 'Onest',
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                  fontVariations: const [FontVariation('wght', 700)],
                   color: scheme.onSurfaceVariant,
                 ),
               ),
@@ -1250,25 +1321,32 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     final latest = hasMood
         ? moods.reduce((a, b) => a.timestamp.isAfter(b.timestamp) ? a : b)
         : null;
-    final dayEvents = isPartner ? const <PairEvent>[] : (_events[pairDayKey(day)] ?? const <PairEvent>[]);
+    final dayEvents = isPartner
+        ? const <PairEvent>[]
+        : (_events[pairDayKey(day)] ?? const <PairEvent>[]);
     final special = dayEvents.where((e) => e.special).firstOrNull;
 
     // Отметки цикла: свои в своей сетке, партнёрские — в партнёрской, и только
     // те, что она разрешила показывать (лишнее отсекает сервер).
     final cycleEntries = isPartner ? _cycle.partner : _cycle.mine;
-    final hasPeriod = cycleEntries
-        .any((e) => e.kind == CycleKind.period && e.day == day);
-    final hasSex = cycleEntries
-        .any((e) => e.kind == CycleKind.intimacy && e.day == day);
+    final hasPeriod = cycleEntries.any(
+      (e) => e.kind == CycleKind.period && e.day == day,
+    );
+    final hasSex = cycleEntries.any(
+      (e) => e.kind == CycleKind.intimacy && e.day == day,
+    );
     // Ожидаемые дни считаем от той же сетки, что рисуем: расчёт не спрашивает,
     // чьи отметки ему дали. Раньше прогноз был только своим, и в паре из двух
     // девушек каждая видела у второй голый календарь без ожидаемых дней.
-    final expectsPeriod = !hasPeriod &&
+    final expectsPeriod =
+        !hasPeriod &&
         CycleService.phaseOf(cycleEntries, day) == CyclePhase.predictedPeriod;
 
     var bg = hasMood
         ? Color.alphaBlend(
-            latest!.color.withValues(alpha: 0.22), scheme.surfaceContainerHighest)
+            latest!.color.withValues(alpha: 0.22),
+            scheme.surfaceContainerHighest,
+          )
         : scheme.surfaceContainerHighest;
     final periodColor = _periodColorOf(scheme, partner: isPartner);
     if (hasPeriod) {
@@ -1300,48 +1378,53 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                 // Ожидаемые месячные — пунктирный по смыслу контур: прогноз,
                 // а не факт, поэтому он тоньше и полупрозрачный.
                 : (expectsPeriod
-                    ? Border.all(
-                        color: periodColor.withValues(alpha: 0.55), width: 1.5)
-                    : null),
+                      ? Border.all(
+                          color: periodColor.withValues(alpha: 0.55),
+                          width: 1.5,
+                        )
+                      : null),
           ),
           padding: const EdgeInsets.all(3),
           child: Stack(
             alignment: Alignment.center,
             children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${day.day}',
-                style: TextStyle(
-                  fontFamily: 'Onest',
-                  fontSize: numberSize,
-                  fontWeight: hasMood || isToday
-                      ? FontWeight.w800
-                      : FontWeight.w500,
-                  color: isToday && !hasMood
-                      ? scheme.primary
-                      : (isFuture
-                          ? scheme.onSurfaceVariant.withValues(alpha: 0.5)
-                          : scheme.onSurface),
-                ),
-              ),
-              if (hasMood && latest!.imagePath.isNotEmpty)
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      // Круглая маска: классические эмодзи — квадратные плитки с
-                      // цветным фоном; в круге они выглядят так же округло, как
-                      // прозрачные стикеры розового пака (cover заполняет круг).
-                      child: ClipOval(
-                        child: MoodImage(latest.imagePath, fit: BoxFit.cover),
-                      ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      fontFamily: 'Onest',
+                      fontSize: numberSize,
+                      fontWeight: hasMood || isToday
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                      color: isToday && !hasMood
+                          ? scheme.primary
+                          : (isFuture
+                                ? scheme.onSurfaceVariant.withValues(alpha: 0.5)
+                                : scheme.onSurface),
                     ),
                   ),
-                ),
-            ],
-          ),
+                  if (hasMood && latest!.imagePath.isNotEmpty)
+                    Expanded(
+                      child: Center(
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          // Круглая маска: классические эмодзи — квадратные плитки с
+                          // цветным фоном; в круге они выглядят так же округло, как
+                          // прозрачные стикеры розового пака (cover заполняет круг).
+                          child: ClipOval(
+                            child: MoodImage(
+                              latest.imagePath,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               // D8: праздник — значком в углу, записи дня — точкой. Только в
               // своей сетке: события общие, дважды их рисовать незачем.
               if (!isPartner && dayEvents.isNotEmpty) ...[
@@ -1349,7 +1432,10 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                   Positioned(
                     top: -1,
                     left: 0,
-                    child: Text(pairEventEmoji(special), style: TextStyle(fontSize: numberSize * 0.8)),
+                    child: Text(
+                      pairEventEmoji(special),
+                      style: TextStyle(fontSize: numberSize * 0.8),
+                    ),
                   ),
                 if (dayEvents.any((e) => e.kind == PairEventKind.memory))
                   Positioned(
@@ -1358,7 +1444,10 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                     child: Container(
                       width: 6,
                       height: 6,
-                      decoration: BoxDecoration(color: scheme.tertiary, shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: scheme.tertiary,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
               ],
@@ -1369,8 +1458,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
               // спасает.
               if (hasPeriod || hasSex)
                 Align(
-                  alignment:
-                      isPartner ? Alignment.topCenter : Alignment.bottomCenter,
+                  alignment: isPartner
+                      ? Alignment.topCenter
+                      : Alignment.bottomCenter,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1393,18 +1483,17 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
       CycleColors.period(scheme.brightness, partner: partner);
 
   Widget _cycleDot(Color color) => Container(
-        width: 5,
-        height: 5,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      );
+    width: 5,
+    height: 5,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
 
   Widget _weekGrid(
     Map<String, List<MoodEntry>> byDay,
     ColorScheme scheme, {
     bool isPartner = false,
   }) {
-    final monday =
-        _calAnchor.subtract(Duration(days: _calAnchor.weekday - 1));
+    final monday = _calAnchor.subtract(Duration(days: _calAnchor.weekday - 1));
     final days = [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
     return Column(
       children: [
@@ -1414,8 +1503,13 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           children: [
             for (final d in days)
               Expanded(
-                child: _moodDayCell(d, byDay, scheme,
-                    isPartner: isPartner, numberSize: 13),
+                child: _moodDayCell(
+                  d,
+                  byDay,
+                  scheme,
+                  isPartner: isPartner,
+                  numberSize: 13,
+                ),
               ),
           ],
         ),
@@ -1429,8 +1523,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     bool isPartner = false,
   }) {
     final first = DateTime(_calAnchor.year, _calAnchor.month, 1);
-    final daysInMonth =
-        DateTime(_calAnchor.year, _calAnchor.month + 1, 0).day;
+    final daysInMonth = DateTime(_calAnchor.year, _calAnchor.month + 1, 0).day;
     final leadBlanks = first.weekday - 1; // понедельник = 0
 
     final cells = <Widget>[];
@@ -1439,9 +1532,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     }
     for (var d = 1; d <= daysInMonth; d++) {
       final day = DateTime(_calAnchor.year, _calAnchor.month, d);
-      cells.add(Expanded(
-        child: _moodDayCell(day, byDay, scheme, isPartner: isPartner),
-      ));
+      cells.add(
+        Expanded(child: _moodDayCell(day, byDay, scheme, isPartner: isPartner)),
+      );
     }
     while (cells.length % 7 != 0) {
       cells.add(const Expanded(child: SizedBox.shrink()));
@@ -1451,11 +1544,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
       rows.add(Row(children: cells.sublist(i, i + 7)));
     }
     return Column(
-      children: [
-        _weekHeader(scheme),
-        const SizedBox(height: 6),
-        ...rows,
-      ],
+      children: [_weekHeader(scheme), const SizedBox(height: 6), ...rows],
     );
   }
 
@@ -1471,7 +1560,8 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
       final day = DateTime.tryParse(key);
       if (day == null || day.year != _calAnchor.year || list.isEmpty) return;
       // День бывает отмечен не раз — берём среднее, как и на графике тренда.
-      final avg = list.map((e) => e.score).reduce((a, b) => a + b) / list.length;
+      final avg =
+          list.map((e) => e.score).reduce((a, b) => a + b) / list.length;
       scores[DateTime(day.year, day.month, day.day)] = avg.round().clamp(1, 5);
     });
 
@@ -1528,7 +1618,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
       final dayEntries = byDay[day]!;
       final dayAvg =
           dayEntries.map((e) => e.score).reduce((a, b) => a + b) /
-              dayEntries.length;
+          dayEntries.length;
       spots.add(FlSpot(i.toDouble(), dayAvg));
     }
 
@@ -1566,7 +1656,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                     fontFamily: 'Unbounded',
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                    fontVariations: const [FontVariation('wght', 700)],
                     letterSpacing: -0.2,
                     color: scheme.onSurface,
                   ),
@@ -1574,8 +1664,10 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
               ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(999),
@@ -1586,7 +1678,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                     fontFamily: 'Onest',
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
+                    fontVariations: const [FontVariation('wght', 800)],
                     color: scheme.onPrimaryContainer,
                   ),
                 ),
@@ -1598,16 +1690,28 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           Row(
             children: [
               Expanded(
-                  child: _statTile(
-                      scheme, '${entries.length}', ruEn('Записей', 'Entries'))),
+                child: _statTile(
+                  scheme,
+                  '${entries.length}',
+                  ruEn('Записей', 'Entries'),
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(
-                  child: _statTile(scheme, '${byDay.length}',
-                      ruEn('Дней отмечено', 'Days tracked'))),
+                child: _statTile(
+                  scheme,
+                  '${byDay.length}',
+                  ruEn('Дней отмечено', 'Days tracked'),
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(
-                  child: _moodStatTile(
-                      scheme, topMood, ruEn('Чаще всего', 'Most often'))),
+                child: _moodStatTile(
+                  scheme,
+                  topMood,
+                  ruEn('Чаще всего', 'Most often'),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1650,7 +1754,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                                     color: scheme.onSurfaceVariant,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)],
+                                    fontVariations: const [
+                                      FontVariation('wght', 600),
+                                    ],
                                   ),
                                 );
                               }
@@ -1679,7 +1785,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                                       color: scheme.onSurfaceVariant,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)],
+                                      fontVariations: const [
+                                        FontVariation('wght', 600),
+                                      ],
                                     ),
                                   ),
                                 );
@@ -1705,11 +1813,11 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                             show: true,
                             getDotPainter: (spot, percent, barData, index) =>
                                 FlDotCirclePainter(
-                              radius: 4,
-                              color: scheme.surface,
-                              strokeWidth: 2.5,
-                              strokeColor: scheme.primary,
-                            ),
+                                  radius: 4,
+                                  color: scheme.surface,
+                                  strokeWidth: 2.5,
+                                  strokeColor: scheme.primary,
+                                ),
                           ),
                           belowBarData: BarAreaData(
                             show: true,
@@ -1731,7 +1839,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                       LocaleService.current.notEnoughData,
                       style: TextStyle(
                         fontFamily: 'Onest',
-        fontVariations: const [FontVariation('wght', 400)],
+                        fontVariations: const [FontVariation('wght', 400)],
                         fontSize: 12,
                         color: scheme.onSurfaceVariant,
                       ),
@@ -1760,7 +1868,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
               fontFamily: 'Unbounded',
               fontSize: 18,
               fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
+              fontVariations: const [FontVariation('wght', 800)],
               letterSpacing: -0.4,
               color: scheme.primary,
             ),
@@ -1773,7 +1881,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
               fontFamily: 'Onest',
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)],
+              fontVariations: const [FontVariation('wght', 600)],
               height: 1.1,
               color: scheme.onSurfaceVariant,
             ),
@@ -1798,9 +1906,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
             height: 26,
             width: 26,
             child: mood != null && mood.imagePath.isNotEmpty
-                ? ClipOval(
-                    child: MoodImage(mood.imagePath, fit: BoxFit.cover),
-                  )
+                ? ClipOval(child: MoodImage(mood.imagePath, fit: BoxFit.cover))
                 : Icon(Icons.mood_rounded, size: 22, color: scheme.primary),
           ),
           const SizedBox(height: 4),
@@ -1811,7 +1917,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
               fontFamily: 'Onest',
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)],
+              fontVariations: const [FontVariation('wght', 600)],
               height: 1.1,
               color: scheme.onSurfaceVariant,
             ),
@@ -1975,13 +2081,27 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                                   if (!isPartner) ...[
                                     const SizedBox(width: 8),
                                     IconButton(
-                                      tooltip: ruEn('Удалить настроение', 'Delete mood'),
-                                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                      tooltip: ruEn(
+                                        'Удалить настроение',
+                                        'Delete mood',
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 48,
+                                        minHeight: 48,
+                                      ),
                                       onPressed: () async {
-                                        final ok = await AppDialog.confirm(context,
-                                          title: ruEn('Удалить настроение?', 'Delete mood?'),
-                                          message: ruEn('Эта отметка исчезнет из календаря.', 'This entry will be removed from the calendar.'),
-                                          confirmLabel: LocaleService.current.delete,
+                                        final ok = await AppDialog.confirm(
+                                          context,
+                                          title: ruEn(
+                                            'Удалить настроение?',
+                                            'Delete mood?',
+                                          ),
+                                          message: ruEn(
+                                            'Эта отметка исчезнет из календаря.',
+                                            'This entry will be removed from the calendar.',
+                                          ),
+                                          confirmLabel:
+                                              LocaleService.current.delete,
                                           destructive: true,
                                         );
                                         if (!ok || !mounted) return;
@@ -1989,11 +2109,15 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                                           await _mood.deleteMoodEntry(m.id);
                                           if (mounted) Navigator.pop(context);
                                         } catch (e) {
-                                          if (mounted) ForkNotice.error(context, e);
+                                          if (mounted)
+                                            ForkNotice.error(context, e);
                                         }
                                       },
-                                      icon: Icon(Icons.delete_outline_rounded, size: 22,
-                                        color: widget.theme.textMuted),
+                                      icon: Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 22,
+                                        color: widget.theme.textMuted,
+                                      ),
                                     ),
                                   ],
                                 ],

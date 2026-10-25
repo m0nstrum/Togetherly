@@ -57,9 +57,11 @@ List<MoodCell> moodYearCells({
   final origin = first.subtract(Duration(days: first.weekday - 1));
 
   final out = <MoodCell>[];
-  for (var day = first;
-      !day.isAfter(last);
-      day = DateTime(day.year, day.month, day.day + 1)) {
+  for (
+    var day = first;
+    !day.isAfter(last);
+    day = DateTime(day.year, day.month, day.day + 1)
+  ) {
     final score = byDay[_key(day)];
     final column = day.difference(origin).inDays ~/ 7;
 
@@ -67,21 +69,25 @@ List<MoodCell> moodYearCells({
     final next = DateTime(day.year, day.month, day.day + 1);
     // Сосед считается своим, только если он в том же столбце: воскресенье и
     // понедельник стоят рядом по датам, но в сетке они в разных неделях.
-    final samePrev = score != null &&
+    final samePrev =
+        score != null &&
         day.weekday != DateTime.monday &&
         byDay[_key(prev)] == score;
-    final sameNext = score != null &&
+    final sameNext =
+        score != null &&
         day.weekday != DateTime.sunday &&
         byDay[_key(next)] == score;
 
-    out.add(MoodCell(
-      date: day,
-      column: column,
-      weekday: day.weekday,
-      score: score,
-      startsRun: !samePrev,
-      endsRun: !sameNext,
-    ));
+    out.add(
+      MoodCell(
+        date: day,
+        column: column,
+        weekday: day.weekday,
+        score: score,
+        startsRun: !samePrev,
+        endsRun: !sameNext,
+      ),
+    );
   }
   return out;
 }
@@ -158,9 +164,11 @@ MoodYearSummary moodYearSummary({
   var marked = 0;
   var missing = 0;
   var sum = 0;
-  for (var day = DateTime(year);
-      !day.isAfter(edge);
-      day = DateTime(day.year, day.month, day.day + 1)) {
+  for (
+    var day = DateTime(year);
+    !day.isAfter(edge);
+    day = DateTime(day.year, day.month, day.day + 1)
+  ) {
     final score = byDay[_key(day)];
     if (score == null) {
       missing++;

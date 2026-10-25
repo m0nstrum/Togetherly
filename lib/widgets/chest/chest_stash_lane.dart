@@ -54,9 +54,15 @@ class _ChestStashLaneState extends State<ChestStashLane> {
     );
     if (note == null || !mounted) return;
     setState(() => _giving = key);
-    final ok = await ChestService.instance.give(openId, widget.groupId, note: note);
+    final ok = await ChestService.instance.give(
+      openId,
+      widget.groupId,
+      note: note,
+    );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(trKey(ok ? 'chestGiven' : 'chestChoiceFailed'))));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(trKey(ok ? 'chestGiven' : 'chestChoiceFailed'))),
+    );
     setState(() => _giving = null);
     if (ok) await _load();
   }
@@ -104,7 +110,12 @@ class _ChestStashLaneState extends State<ChestStashLane> {
 }
 
 class _StashCard extends StatelessWidget {
-  const _StashCard({required this.giftKey, required this.count, required this.busy, required this.onGive});
+  const _StashCard({
+    required this.giftKey,
+    required this.count,
+    required this.busy,
+    required this.onGive,
+  });
 
   final String giftKey;
   final int count;
@@ -117,7 +128,10 @@ class _StashCard extends StatelessWidget {
     return Container(
       width: 118,
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
-      decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer,
+        borderRadius: BorderRadius.circular(22),
+      ),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -131,7 +145,11 @@ class _StashCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: cs.onPrimaryContainer),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onPrimaryContainer,
+                  ),
                 ),
               ),
               SizedBox(
@@ -152,7 +170,11 @@ class _StashCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  child: Text(trKey('chestGive'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    trKey('chestGive'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
@@ -163,10 +185,17 @@ class _StashCard extends StatelessWidget {
               right: -2,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(999)),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(999),
+                ),
                 child: Text(
                   '×$count',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cs.onSurface),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
                 ),
               ),
             ),

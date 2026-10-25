@@ -40,28 +40,37 @@ void main() {
     expect(giftTimesLabel(1, ru: false), 'once');
   });
 
-  Future<void> pump(WidgetTester tester, String shelfOwner,
-      {Size size = const Size(390, 844), double scale = 1}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    String shelfOwner, {
+    Size size = const Size(390, 844),
+    double scale = 1,
+  }) async {
     tester.view.devicePixelRatio = 3;
     tester.view.physicalSize = size * 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
-        child: Scaffold(
-          body: GiftMemoList(
-            gift: _gift,
-            memos: _memos,
-            myUid: 'me',
-            shelfOwnerUid: shelfOwner,
-            counterpartName: 'Саша',
-            scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B)),
-            ru: true,
-            strings: LocaleService.current,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: size,
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: Scaffold(
+            body: GiftMemoList(
+              gift: _gift,
+              memos: _memos,
+              myUid: 'me',
+              shelfOwnerUid: shelfOwner,
+              counterpartName: 'Саша',
+              scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B)),
+              ru: true,
+              strings: LocaleService.current,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -75,8 +84,9 @@ void main() {
     expect(find.text('Без записки'), findsOneWidget);
   });
 
-  testWidgets('на своей полке ответ ваш, на чужой — просто ответ',
-      (tester) async {
+  testWidgets('на своей полке ответ ваш, на чужой — просто ответ', (
+    tester,
+  ) async {
     await pump(tester, 'me');
     expect(find.text('Ваш ответ'), findsOneWidget);
     await pump(tester, 'partner');

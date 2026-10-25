@@ -121,7 +121,8 @@ class ForkReelsChatBridge {
         'A browser joined: its messages are hidden',
       );
     }
-    if (!chat.secure) return _t('Договариваемся о ключе…', 'Agreeing on a key…');
+    if (!chat.secure)
+      return _t('Договариваемся о ключе…', 'Agreeing on a key…');
     return _t(
       '🔒 Чат зашифрован ключом сеанса',
       '🔒 Chat is end-to-end encrypted',

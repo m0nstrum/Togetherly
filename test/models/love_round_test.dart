@@ -39,9 +39,10 @@ void main() {
         exclude: first.map((q) => q.key).toSet(),
       );
       expect(
-        second.map((q) => q.key).toSet().intersection(
-              first.map((q) => q.key).toSet(),
-            ),
+        second
+            .map((q) => q.key)
+            .toSet()
+            .intersection(first.map((q) => q.key).toSet()),
         isEmpty,
       );
     });
@@ -90,9 +91,9 @@ void main() {
 
   group('история прохождений', () {
     LoveTestResult res(int score, String at) => LoveTestResult(
-          facets: {for (final f in LoveFacet.values) f: score},
-          takenAt: DateTime.parse(at),
-        );
+      facets: {for (final f in LoveFacet.values) f: score},
+      takenAt: DateTime.parse(at),
+    );
 
     test('прошлый результат уезжает в историю вместе со свежим', () {
       final first = res(40, '2026-07-01T10:00:00Z');
@@ -107,20 +108,16 @@ void main() {
     });
 
     test('история не растёт бесконечно', () {
-      final old = [
-        for (var i = 0; i < 20; i++)
-          res(i, '2026-01-01T10:00:00Z'),
-      ];
+      final old = [for (var i = 0; i < 20; i++) res(i, '2026-01-01T10:00:00Z')];
       final payload = loveTestPayload(res(90, '2026-08-19T10:00:00Z'), old);
       expect(loveHistoryFromMap(payload).length, kLoveHistoryKeep);
     });
 
     test('в истории лежат самые свежие прохождения', () {
-      final old = [
-        for (var i = 0; i < 20; i++)
-          res(i, '2026-01-01T10:00:00Z'),
-      ];
-      final history = loveHistoryFromMap(loveTestPayload(res(90, '2026-08-19T10:00:00Z'), old));
+      final old = [for (var i = 0; i < 20; i++) res(i, '2026-01-01T10:00:00Z')];
+      final history = loveHistoryFromMap(
+        loveTestPayload(res(90, '2026-08-19T10:00:00Z'), old),
+      );
       expect(history.last.total, 19);
     });
 
@@ -164,8 +161,10 @@ void main() {
     });
 
     test('первого прохождения не с чем сравнивать', () {
-      expect(loveProgress(res({LoveFacet.trust: 50}, '2026-08-19T10:00:00Z'), null),
-          isNull);
+      expect(
+        loveProgress(res({LoveFacet.trust: 50}, '2026-08-19T10:00:00Z'), null),
+        isNull,
+      );
     });
   });
 }

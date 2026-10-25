@@ -25,7 +25,8 @@ const int _kQuantizeTo = 24;
 Future<List<SeedCandidate>> candidatesFromPixels(Uint32List argb) async {
   if (argb.isEmpty) return const [];
   final opaque = Uint32List.fromList(
-      argb.where((p) => (p >> 24) & 0xFF == 0xFF).toList(growable: false));
+    argb.where((p) => (p >> 24) & 0xFF == 0xFF).toList(growable: false),
+  );
   if (opaque.isEmpty) return const [];
   final result = await QuantizerCelebi().quantize(opaque, _kQuantizeTo);
   final out = <SeedCandidate>[];
@@ -42,11 +43,15 @@ Future<List<SeedCandidate>> candidatesFromPixels(Uint32List argb) async {
 /// (`targetWidth`), поэтому полный кадр в память не разворачивается.
 Future<List<Color>> seedColorsFromImage(Uint8List bytes) async {
   try {
-    final codec = await ui.instantiateImageCodec(bytes,
-        targetWidth: _kSampleSide, targetHeight: _kSampleSide);
+    final codec = await ui.instantiateImageCodec(
+      bytes,
+      targetWidth: _kSampleSide,
+      targetHeight: _kSampleSide,
+    );
     final frame = await codec.getNextFrame();
-    final data =
-        await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final data = await frame.image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
     frame.image.dispose();
     codec.dispose();
     if (data == null) return const [];
@@ -64,7 +69,8 @@ Uint32List _argbFromRgba(ByteData data) {
   final out = Uint32List(bytes.length ~/ 4);
   for (var i = 0; i < out.length; i++) {
     final o = i * 4;
-    out[i] = (bytes[o + 3] << 24) |
+    out[i] =
+        (bytes[o + 3] << 24) |
         (bytes[o] << 16) |
         (bytes[o + 1] << 8) |
         bytes[o + 2];

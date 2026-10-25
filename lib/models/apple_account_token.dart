@@ -23,7 +23,10 @@ const String kAppleAccountNamespace = '6f2b1c7e-9a4d-5f88-b3e1-0c7d5a2f4e91';
 /// покупку выдуманный токен хуже, чем не класть никакого.
 String appleAccountTokenFor(String uid) {
   if (uid.isEmpty) return '';
-  final bytes = <int>[..._uuidBytes(kAppleAccountNamespace), ...utf8.encode(uid)];
+  final bytes = <int>[
+    ..._uuidBytes(kAppleAccountNamespace),
+    ...utf8.encode(uid),
+  ];
   final digest = sha1.convert(bytes).bytes.sublist(0, 16);
   // Версия 5 в старшем полубайте седьмого байта, вариант RFC 4122 в девятом.
   digest[6] = (digest[6] & 0x0f) | 0x50;

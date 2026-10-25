@@ -69,8 +69,10 @@ class NoteExportService {
           .timeout(_timeout);
       if (res.statusCode != 200 || res.bodyBytes.isEmpty) {
         debugPrint('NoteExport: ${res.statusCode} ${res.body}');
-        return NoteExportOutcome(NoteExportResult.serverFailed,
-            status: res.statusCode);
+        return NoteExportOutcome(
+          NoteExportResult.serverFailed,
+          status: res.statusCode,
+        );
       }
 
       bytes = res.bodyBytes.length;
@@ -94,14 +96,20 @@ class NoteExportService {
       if (e.type != GalExceptionType.accessDenied) {
         // Отказ галереи прилетает только с чужих телефонов и только словами
         // «не сохраняется». Пусть приезжает сам, с типом и размером файла.
-        unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-          s.level = SentryLevel.warning;
-          s.setContexts('note_export', {
-            'gal': e.type.name,
-            'bytes': bytes,
-            'message': messageId,
-          });
-        }));
+        unawaited(
+          Sentry.captureException(
+            e,
+            stackTrace: st,
+            withScope: (s) {
+              s.level = SentryLevel.warning;
+              s.setContexts('note_export', {
+                'gal': e.type.name,
+                'bytes': bytes,
+                'message': messageId,
+              });
+            },
+          ),
+        );
       }
       return NoteExportOutcome(
         e.type == GalExceptionType.accessDenied
@@ -111,17 +119,30 @@ class NoteExportService {
       );
     } catch (e, st) {
       debugPrint('NoteExport failed: $e');
-      unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-        s.level = SentryLevel.warning;
-        s.setContexts('note_export', {'bytes': bytes, 'message': messageId});
-      }));
-      return NoteExportOutcome(NoteExportResult.saveFailed,
-          reason: e.runtimeType.toString());
+      unawaited(
+        Sentry.captureException(
+          e,
+          stackTrace: st,
+          withScope: (s) {
+            s.level = SentryLevel.warning;
+            s.setContexts('note_export', {
+              'bytes': bytes,
+              'message': messageId,
+            });
+          },
+        ),
+      );
+      return NoteExportOutcome(
+        NoteExportResult.saveFailed,
+        reason: e.runtimeType.toString(),
+      );
     } finally {
       // Копия в галерее уже своя, временный файл держать незачем.
       try {
         if (temp != null && await temp.exists()) await temp.delete();
-      } catch (_) {/* уберёт система */}
+      } catch (_) {
+        /* уберёт система */
+      }
     }
   }
 }

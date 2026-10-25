@@ -42,7 +42,11 @@ class FormTopBar extends StatelessWidget {
                 child: SizedBox(
                   width: 48,
                   height: 48,
-                  child: Icon(Icons.close_rounded, size: 22, color: cs.onSurface),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 22,
+                    color: cs.onSurface,
+                  ),
                 ),
               ),
             ),
@@ -61,7 +65,10 @@ class FormTopBar extends StatelessWidget {
                   Container(
                     width: 7,
                     height: 7,
-                    decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: dot,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -69,7 +76,11 @@ class FormTopBar extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppFonts.onest(size: 13.5, weight: 700, color: cs.onSurface),
+                      style: AppFonts.onest(
+                        size: 13.5,
+                        weight: 700,
+                        color: cs.onSurface,
+                      ),
                     ),
                   ),
                 ],

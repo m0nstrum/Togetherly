@@ -10,9 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   test('снимок несёт только «Кадр»', () {
     expect(GiftCatalog.byKey('photo')!.carriesPhoto, isTrue);
-    final others = [...GiftCatalog.all, ...GiftCatalog.chest]
-        .where((g) => g.key != 'photo' && g.carriesPhoto)
-        .map((g) => g.key);
+    final others = [
+      ...GiftCatalog.all,
+      ...GiftCatalog.chest,
+    ].where((g) => g.key != 'photo' && g.carriesPhoto).map((g) => g.key);
     // Зеркало PHOTO_GIFTS в gifts.pb.js: сервер примет снимок только у них.
     expect(others, isEmpty);
   });
@@ -37,38 +38,43 @@ void main() {
     expect(memo.hasText, isFalse);
   });
 
-  testWidgets('лист снимка помещается на 320 dp при шрифте 1.3',
-      (tester) async {
+  testWidgets('лист снимка помещается на 320 dp при шрифте 1.3', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(320 * 3, 700 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
 
     String? result = 'не закрыт';
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: const MediaQueryData(
-            size: Size(320, 700), textScaler: TextScaler.linear(1.3)),
-        child: Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: TextButton(
-                onPressed: () async {
-                  result = await showGiftPhotoSheet(
-                    context,
-                    gift: GiftCatalog.byKey('photo')!,
-                    scheme: ColorScheme.fromSeed(seedColor: Colors.pink),
-                    groupId: 'g1',
-                    uid: 'u1',
-                  );
-                },
-                child: const Text('open'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 700),
+            textScaler: TextScaler.linear(1.3),
+          ),
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () async {
+                    result = await showGiftPhotoSheet(
+                      context,
+                      gift: GiftCatalog.byKey('photo')!,
+                      scheme: ColorScheme.fromSeed(seedColor: Colors.pink),
+                      groupId: 'g1',
+                      uid: 'u1',
+                    );
+                  },
+                  child: const Text('open'),
+                ),
               ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

@@ -10,19 +10,19 @@ import 'package:love_app/models/memory.dart';
 /// проходила ни у кого (обращение 219). Колонка — запасной источник автора.
 void main() {
   RecordModel salute({String authorUid = 'xsu4phxpjp55ogk'}) => RecordModel({
-        'id': 'r8e5769ef9ac62f',
-        'group_id': '74zgucs1ewo83xo',
-        'author_uid': authorUid,
-        'author_name': 'Ульяна',
-        'author_avatar': 'pb://media/xw09ma03d1eman4/profile_z85c5stiwy.jpg',
-        'created_at': '2026-08-31 12:44:58.916Z',
-        'data': jsonEncode({
-          'type': 'gift',
-          'giftKey': 'salute',
-          'title': 'Салют',
-          'createdAt': '2026-08-31T12:44:58.916Z',
-        }),
-      });
+    'id': 'r8e5769ef9ac62f',
+    'group_id': '74zgucs1ewo83xo',
+    'author_uid': authorUid,
+    'author_name': 'Ульяна',
+    'author_avatar': 'pb://media/xw09ma03d1eman4/profile_z85c5stiwy.jpg',
+    'created_at': '2026-08-31 12:44:58.916Z',
+    'data': jsonEncode({
+      'type': 'gift',
+      'giftKey': 'salute',
+      'title': 'Салют',
+      'createdAt': '2026-08-31T12:44:58.916Z',
+    }),
+  });
 
   test('автор без json берётся из колонок', () {
     final m = Memory.fromPb(salute());

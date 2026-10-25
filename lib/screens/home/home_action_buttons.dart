@@ -85,7 +85,10 @@ class HomeActionButtons extends StatelessWidget {
       HomeAction.calendar,
       HomeAction.post,
     ];
-    final shown = [for (final a in present) if (!hidden.contains(a)) a];
+    final shown = [
+      for (final a in present)
+        if (!hidden.contains(a)) a,
+    ];
     if (shown.isEmpty) return const SizedBox.shrink();
     if (shown.length != present.length) return _customRow(context, shown);
     return Padding(
@@ -93,58 +96,62 @@ class HomeActionButtons extends StatelessWidget {
       // Ширина пилюли считается от экрана, а не задана числом: четыре по 74
       // с зазорами это 326 точек, и на 320 ряд вылезал вправо на 54 пикселя
       // (эмулятор, `wm size 720x1600` + `wm density 360`, шрифт 1.3).
-      child: LayoutBuilder(builder: (context, box) {
-        final free = box.maxWidth.isFinite
-            ? box.maxWidth
-            : MediaQuery.of(context).size.width;
-        final width =
-            ((free - _gap * 3) / 4).clamp(_pillMinWidth, _pillMaxWidth);
-        final height = width * _pillRatio;
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final free = box.maxWidth.isFinite
+              ? box.maxWidth
+              : MediaQuery.of(context).size.width;
+          final width = ((free - _gap * 3) / 4).clamp(
+            _pillMinWidth,
+            _pillMaxWidth,
+          );
+          final height = width * _pillRatio;
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _pillButton(
-              index: 0,
-              svgIcon: _drawSvg,
-              enabled: isPaired,
-              onTap: onDraw,
-              width: width,
-              height: height,
-            ),
-            const SizedBox(width: _gap),
-            _pillButton(
-              index: 1,
-              svgIcon: _moodSvg,
-              enabled: isPaired,
-              onTap: onMood,
-              moodImagePath: myMoodImagePath,
-              width: width,
-              height: height,
-            ),
-            const SizedBox(width: _gap),
-            _pillButton(
-              index: 2,
-              svgIcon: _calendarSvg,
-              enabled: isPaired,
-              onTap: onCalendar,
-              width: width,
-              height: height,
-            ),
-            const SizedBox(width: _gap),
-            _pillButton(
-              index: 3,
-              svgIcon: _postSvg,
-              enabled: isPaired,
-              onTap: onPost,
-              onLongPress: onPostHold,
-              key: postButtonKey,
-              width: width,
-              height: height,
-            ),
-          ],
-        );
-      }),
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _pillButton(
+                index: 0,
+                svgIcon: _drawSvg,
+                enabled: isPaired,
+                onTap: onDraw,
+                width: width,
+                height: height,
+              ),
+              const SizedBox(width: _gap),
+              _pillButton(
+                index: 1,
+                svgIcon: _moodSvg,
+                enabled: isPaired,
+                onTap: onMood,
+                moodImagePath: myMoodImagePath,
+                width: width,
+                height: height,
+              ),
+              const SizedBox(width: _gap),
+              _pillButton(
+                index: 2,
+                svgIcon: _calendarSvg,
+                enabled: isPaired,
+                onTap: onCalendar,
+                width: width,
+                height: height,
+              ),
+              const SizedBox(width: _gap),
+              _pillButton(
+                index: 3,
+                svgIcon: _postSvg,
+                enabled: isPaired,
+                onTap: onPost,
+                onLongPress: onPostHold,
+                key: postButtonKey,
+                width: width,
+                height: height,
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -157,70 +164,74 @@ class HomeActionButtons extends StatelessWidget {
     final bend = n >= 3 ? _bend : 0.0;
     return Padding(
       padding: EdgeInsets.only(bottom: bend),
-      child: LayoutBuilder(builder: (context, box) {
-        final free = box.maxWidth.isFinite
-            ? box.maxWidth
-            : MediaQuery.of(context).size.width;
-        final width =
-            ((free - _gap * (n - 1)) / n).clamp(_pillMinWidth, _pillMaxWidth);
-        final height = width * _pillRatio;
-        double dip(int i) {
-          if (n < 3) return 0;
-          // Четыре — та же дуга, что у полного ряда.
-          if (n == 4) return (i == 1 || i == 2) ? bend : 0;
-          final mid = (n - 1) / 2;
-          final k = (i - mid) / mid;
-          return bend * (1 - k * k);
-        }
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final free = box.maxWidth.isFinite
+              ? box.maxWidth
+              : MediaQuery.of(context).size.width;
+          final width = ((free - _gap * (n - 1)) / n).clamp(
+            _pillMinWidth,
+            _pillMaxWidth,
+          );
+          final height = width * _pillRatio;
+          double dip(int i) {
+            if (n < 3) return 0;
+            // Четыре — та же дуга, что у полного ряда.
+            if (n == 4) return (i == 1 || i == 2) ? bend : 0;
+            final mid = (n - 1) / 2;
+            final k = (i - mid) / mid;
+            return bend * (1 - k * k);
+          }
 
-        Widget button(HomeAction a, int i) => switch (a) {
-              HomeAction.draw => _pillButton(
-                  index: i,
-                  svgIcon: _drawSvg,
-                  onTap: onDraw,
-                  width: width,
-                  height: height,
-                  dy: dip(i),
-                ),
-              HomeAction.mood => _pillButton(
-                  index: i,
-                  svgIcon: _moodSvg,
-                  onTap: onMood,
-                  moodImagePath: myMoodImagePath,
-                  width: width,
-                  height: height,
-                  dy: dip(i),
-                ),
-              HomeAction.calendar => _pillButton(
-                  index: i,
-                  svgIcon: _calendarSvg,
-                  onTap: onCalendar,
-                  width: width,
-                  height: height,
-                  dy: dip(i),
-                ),
-              HomeAction.post => _pillButton(
-                  index: i,
-                  svgIcon: _postSvg,
-                  onTap: onPost,
-                  onLongPress: onPostHold,
-                  key: postButtonKey,
-                  width: width,
-                  height: height,
-                  dy: dip(i),
-                ),
-            };
+          Widget button(HomeAction a, int i) => switch (a) {
+            HomeAction.draw => _pillButton(
+              index: i,
+              svgIcon: _drawSvg,
+              onTap: onDraw,
+              width: width,
+              height: height,
+              dy: dip(i),
+            ),
+            HomeAction.mood => _pillButton(
+              index: i,
+              svgIcon: _moodSvg,
+              onTap: onMood,
+              moodImagePath: myMoodImagePath,
+              width: width,
+              height: height,
+              dy: dip(i),
+            ),
+            HomeAction.calendar => _pillButton(
+              index: i,
+              svgIcon: _calendarSvg,
+              onTap: onCalendar,
+              width: width,
+              height: height,
+              dy: dip(i),
+            ),
+            HomeAction.post => _pillButton(
+              index: i,
+              svgIcon: _postSvg,
+              onTap: onPost,
+              onLongPress: onPostHold,
+              key: postButtonKey,
+              width: width,
+              height: height,
+              dy: dip(i),
+            ),
+          };
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (var i = 0; i < n; i++) ...[
-              if (i > 0) const SizedBox(width: _gap),
-              button(shown[i], i),
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < n; i++) ...[
+                if (i > 0) const SizedBox(width: _gap),
+                button(shown[i], i),
+              ],
             ],
-          ],
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 

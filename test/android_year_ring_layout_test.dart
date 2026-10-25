@@ -29,12 +29,16 @@ void main() {
   }
 
   test('4×2 трогает только свои id', () {
-    final missing = idsIn(body('renderMedium')).difference(layoutIds('tg_ring_4x2'));
+    final missing = idsIn(
+      body('renderMedium'),
+    ).difference(layoutIds('tg_ring_4x2'));
     expect(missing, isEmpty, reason: 'нет в tg_ring_4x2.xml: $missing');
   });
 
   test('2×2 трогает только свои id', () {
-    final missing = idsIn(body('renderSmall')).difference(layoutIds('tg_ring_2x2'));
+    final missing = idsIn(
+      body('renderSmall'),
+    ).difference(layoutIds('tg_ring_2x2'));
     expect(missing, isEmpty, reason: 'нет в tg_ring_2x2.xml: $missing');
   });
 

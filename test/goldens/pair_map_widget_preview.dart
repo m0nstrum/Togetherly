@@ -22,7 +22,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> _font(String family, String path) async {
   final f = File(path);
   if (!f.existsSync()) return;
-  final loader = FontLoader(family)..addFont(f.readAsBytes().then(ByteData.sublistView));
+  final loader = FontLoader(family)
+    ..addFont(f.readAsBytes().then(ByteData.sublistView));
   await loader.load();
 }
 
@@ -36,20 +37,31 @@ Future<Uint8List> _fakeAvatar(Color a, Color b) async {
   final rec = ui.PictureRecorder();
   final c = Canvas(rec);
   const r = Rect.fromLTWH(0, 0, 160, 160);
-  c.drawRect(r, Paint()..shader = ui.Gradient.linear(r.topLeft, r.bottomRight, [a, b]));
-  c.drawCircle(const Offset(80, 70), 30, Paint()..color = const Color(0xFFF6D5C2));
-  c.drawOval(const Rect.fromLTWH(30, 108, 100, 80), Paint()..color = const Color(0xFF5B4A86));
+  c.drawRect(
+    r,
+    Paint()..shader = ui.Gradient.linear(r.topLeft, r.bottomRight, [a, b]),
+  );
+  c.drawCircle(
+    const Offset(80, 70),
+    30,
+    Paint()..color = const Color(0xFFF6D5C2),
+  );
+  c.drawOval(
+    const Rect.fromLTWH(30, 108, 100, 80),
+    Paint()..color = const Color(0xFF5B4A86),
+  );
   final img = await rec.endRecording().toImage(160, 160);
   final png = await img.toByteData(format: ui.ImageByteFormat.png);
   return png!.buffer.asUint8List();
 }
 
 LivePoint _p(double lat, double lng, {int agoMin = 2}) => LivePoint(
-      lat: lat,
-      lng: lng,
-      accuracy: 10,
-      updatedAt: DateTime(2026, 9, 19, 20, 0).millisecondsSinceEpoch - agoMin * 60000,
-    );
+  lat: lat,
+  lng: lng,
+  accuracy: 10,
+  updatedAt:
+      DateTime(2026, 9, 19, 20, 0).millisecondsSinceEpoch - agoMin * 60000,
+);
 
 void main() {
   setUpAll(() async {
@@ -57,8 +69,10 @@ void main() {
     await LocaleService.instance.init();
     await _font('Onest', 'assets/fonts/Onest.ttf');
     await _font('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _font('MaterialIcons',
-        '/home/alelx/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _font(
+      'MaterialIcons',
+      '/home/alelx/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
   });
 
   final me = _p(47.0245, 28.8325);
@@ -86,8 +100,14 @@ void main() {
               partner: e.value.$2,
               myName: 'Саша',
               partnerName: 'Аня',
-              myAvatar: await _fakeAvatar(const Color(0xFFFFB38A), const Color(0xFFFF7E8B)),
-              partnerAvatar: await _fakeAvatar(const Color(0xFF8FB6FF), const Color(0xFF6A4C93)),
+              myAvatar: await _fakeAvatar(
+                const Color(0xFFFFB38A),
+                const Color(0xFFFF7E8B),
+              ),
+              partnerAvatar: await _fakeAvatar(
+                const Color(0xFF8FB6FF),
+                const Color(0xFF6A4C93),
+              ),
               scheme: ProfileTheme.themeFor(t).colorScheme,
               fill: t.fillColor,
               sizes: {for (final k in MapWidgetSize.values) k: k.size},
@@ -99,7 +119,9 @@ void main() {
           );
           Directory('build/map-widget-preview').createSync(recursive: true);
           for (final img in images.entries) {
-            File('build/map-widget-preview/${name}_${img.key.id}.png').writeAsBytesSync(img.value);
+            File(
+              'build/map-widget-preview/${name}_${img.key.id}.png',
+            ).writeAsBytesSync(img.value);
           }
           expect(images.length, 3);
         });

@@ -7,39 +7,46 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/widgets/connect_expressive.dart';
 
 Widget _peek() => Container(
-      width: 56,
-      height: 56,
-      decoration:
-          const BoxDecoration(shape: BoxShape.circle, color: Colors.pink),
-    );
+  width: 56,
+  height: 56,
+  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.pink),
+);
 
 Widget _centerPill(String name, Key key) => SizedBox(
-      key: key,
-      width: double.infinity,
-      height: 56,
-      child: Container(
-        decoration: BoxDecoration(
-            color: Colors.pinkAccent,
-            borderRadius: BorderRadius.circular(28)),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                    color: Colors.green, shape: BoxShape.circle)),
-            const SizedBox(width: 9),
-            Flexible(
-              child: Text(name,
-                  maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis),
-            ),
-          ],
+  key: key,
+  width: double.infinity,
+  height: 56,
+  child: Container(
+    decoration: BoxDecoration(
+      color: Colors.pinkAccent,
+      borderRadius: BorderRadius.circular(28),
+    ),
+    alignment: Alignment.center,
+    padding: const EdgeInsets.symmetric(horizontal: 18),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Colors.green,
+            shape: BoxShape.circle,
+          ),
         ),
-      ),
-    );
+        const SizedBox(width: 9),
+        Flexible(
+          child: Text(
+            name,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  ),
+);
 
 Widget _carousel(String centerName, String centerId) {
   return SizedBox(
@@ -62,12 +69,16 @@ Widget _carousel(String centerName, String centerId) {
                       opacity: anim,
                       child: SlideTransition(
                         position: Tween<Offset>(
-                                begin: const Offset(0.16, 0), end: Offset.zero)
-                            .animate(anim),
+                          begin: const Offset(0.16, 0),
+                          end: Offset.zero,
+                        ).animate(anim),
                         child: child,
                       ),
                     ),
-                    child: _centerPill(centerName, ValueKey('center-$centerId')),
+                    child: _centerPill(
+                      centerName,
+                      ValueKey('center-$centerId'),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -84,18 +95,18 @@ Widget _carousel(String centerName, String centerId) {
 }
 
 void main() {
-  testWidgets('центр-карусель: раскладка и переход без ошибок констрейнтов',
-      (tester) async {
+  testWidgets('центр-карусель: раскладка и переход без ошибок констрейнтов', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
     Widget wrap(String name, String id) => MaterialApp(
-          home: Scaffold(
-            body: Align(
-                alignment: Alignment.topCenter, child: _carousel(name, id)),
-          ),
-        );
+      home: Scaffold(
+        body: Align(alignment: Alignment.topCenter, child: _carousel(name, id)),
+      ),
+    );
 
     // Покой: длинный ник, узкий экран — пилюля обязана усечься, не переполнять.
     await tester.pumpWidget(wrap('Очень Длинный Ник Партнёра Плюс Ещё', 'a'));
@@ -115,20 +126,20 @@ void main() {
     expect(pill.height, closeTo(56, 1));
   });
 
-  testWidgets('MarqueeText: короткий статичен, длинный едет — без ошибок',
-      (tester) async {
+  testWidgets('MarqueeText: короткий статичен, длинный едет — без ошибок', (
+    tester,
+  ) async {
     Widget box(double w, String text) => MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: w,
-                height: 40,
-                child: MarqueeText(text,
-                    style: const TextStyle(fontSize: 15)),
-              ),
-            ),
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: w,
+            height: 40,
+            child: MarqueeText(text, style: const TextStyle(fontSize: 15)),
           ),
-        );
+        ),
+      ),
+    );
 
     // Влезает → статичный текст, без прокрутки.
     await tester.pumpWidget(box(320, 'Олена'));
@@ -138,7 +149,8 @@ void main() {
 
     // Не влезает → бегущая строка (две копии), крутится без исключений.
     await tester.pumpWidget(
-        box(70, 'Очень Длинное Имя Партнёра Которое Не Влезет'));
+      box(70, 'Очень Длинное Имя Партнёра Которое Не Влезет'),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 600));
@@ -150,10 +162,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('hero-бенто «Ступени»: колонны ровны, без ошибок констрейнтов',
-      (tester) async {
+  testWidgets('hero-бенто «Ступени»: колонны ровны, без ошибок констрейнтов', (
+    tester,
+  ) async {
     Widget tile([double? h]) => Container(
-        height: h, width: double.infinity, color: const Color(0xFFECDCFF));
+      height: h,
+      width: double.infinity,
+      color: const Color(0xFFECDCFF),
+    );
     final hero = Column(
       children: [
         SizedBox(
@@ -163,21 +179,25 @@ void main() {
             children: [
               SizedBox(
                 width: 116,
-                child: Column(children: [
-                  Container(width: 92, height: 92, color: Colors.purple),
-                  const SizedBox(height: 12),
-                  Expanded(child: tile()),
-                ]),
+                child: Column(
+                  children: [
+                    Container(width: 92, height: 92, color: Colors.purple),
+                    const SizedBox(height: 12),
+                    Expanded(child: tile()),
+                  ],
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(children: [
-                  Expanded(child: tile()),
-                  const SizedBox(height: 12),
-                  SizedBox(height: 46, child: tile()),
-                  const SizedBox(height: 10),
-                  SizedBox(height: 46, child: tile()),
-                ]),
+                child: Column(
+                  children: [
+                    Expanded(child: tile()),
+                    const SizedBox(height: 12),
+                    SizedBox(height: 46, child: tile()),
+                    const SizedBox(height: 10),
+                    SizedBox(height: 46, child: tile()),
+                  ],
+                ),
               ),
             ],
           ),
@@ -187,13 +207,13 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(width: 350, child: hero),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(child: SizedBox(width: 350, child: hero)),
         ),
       ),
-    ));
+    );
     await tester.pump();
     expect(tester.takeException(), isNull);
     // верхний ряд ровно 214, обе колонны одной высоты

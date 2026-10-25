@@ -13,13 +13,19 @@ void main() {
   });
 
   test('без имени метки нет, только точка', () {
-    expect(androidGeoUri(to, '  ').toString(), 'geo:55.752,37.6175?q=55.752,37.6175');
+    expect(
+      androidGeoUri(to, '  ').toString(),
+      'geo:55.752,37.6175?q=55.752,37.6175',
+    );
   });
 
   test('на iPhone Apple Карты идут первыми и открываются всегда', () {
     final apps = iosMapApps(to);
     expect(apps.first.uri.host, 'maps.apple.com');
-    expect(apps.map((a) => a.uri.scheme).toSet(), containsAll(['https', 'comgooglemaps', 'yandexmaps', 'dgis']));
+    expect(
+      apps.map((a) => a.uri.scheme).toSet(),
+      containsAll(['https', 'comgooglemaps', 'yandexmaps', 'dgis']),
+    );
   });
 
   test('2ГИС ждёт долготу первой', () {

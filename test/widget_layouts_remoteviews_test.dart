@@ -67,8 +67,11 @@ List<File> _widgetLayouts() {
 void main() {
   test('в разметках виджетов только классы из белого списка RemoteViews', () {
     final layouts = _widgetLayouts();
-    expect(layouts, isNotEmpty,
-        reason: 'не нашлось ни одной разметки виджета — проверь пути');
+    expect(
+      layouts,
+      isNotEmpty,
+      reason: 'не нашлось ни одной разметки виджета — проверь пути',
+    );
 
     final tag = RegExp(r'<([A-Za-z][\w.]*)');
     final violations = <String>[];
@@ -94,7 +97,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'RemoteViews не умеет инфлейтить эти классы, на рабочем столе '
+      reason:
+          'RemoteViews не умеет инфлейтить эти классы, на рабочем столе '
           'будет «Невозможно загрузить виджет»:\n${violations.join('\n')}',
     );
   });
@@ -124,8 +128,11 @@ void main() {
       }
     }
 
-    expect(bad, isEmpty,
-        reason: 'размер не лежит на сетке 70*n-30: ${bad.join(', ')}');
+    expect(
+      bad,
+      isEmpty,
+      reason: 'размер не лежит на сетке 70*n-30: ${bad.join(', ')}',
+    );
   });
 
   test('у каждого appwidget-provider есть previewImage', () {
@@ -144,7 +151,10 @@ void main() {
       }
     }
 
-    expect(missing, isEmpty,
-        reason: 'без previewImage виджет не появится в списке: $missing');
+    expect(
+      missing,
+      isEmpty,
+      reason: 'без previewImage виджет не появится в списке: $missing',
+    );
   });
 }

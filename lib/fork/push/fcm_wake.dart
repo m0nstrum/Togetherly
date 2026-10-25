@@ -54,8 +54,10 @@ abstract final class ForkFcmWake {
           title: ForkIdentity.appName,
           // UX G16: не «Новое событие» без адресата — человек видит, что это
           // от партнёра и что делать.
-          body: ruEn('Партнёр что-то прислал — откройте приложение',
-              'Your partner sent something — open the app'),
+          body: ruEn(
+            'Партнёр что-то прислал — откройте приложение',
+            'Your partner sent something — open the app',
+          ),
         );
         return true;
       }
@@ -96,12 +98,16 @@ abstract final class ForkFcmWake {
 abstract final class ForkPushToken {
   static String _saved = '';
   static String _owner = '';
-  static void resetRegistration() { _saved = ''; _owner = ''; }
+  static void resetRegistration() {
+    _saved = '';
+    _owner = '';
+  }
 
   /// Сервер принял токен и сам умеет слать FCM. Пока нет — фоновый сокет
   /// не гасим: иначе без настроенного Firebase на сервере уведомления
   /// пропали бы совсем.
-  static bool get accepted => _saved.isNotEmpty && _owner == PocketBaseService().userId;
+  static bool get accepted =>
+      _saved.isNotEmpty && _owner == PocketBaseService().userId;
 
   static Future<bool> save(String token) async {
     final owner = PocketBaseService().userId;

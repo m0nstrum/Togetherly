@@ -64,9 +64,9 @@ class HomeLayout {
 
   /// Номера видимых вкладок по порядку — для `HomeBottomNav.order`.
   List<int> get navOrder => [
-        for (final t in tabOrder)
-          if (showsTab(t)) t.navIndex,
-      ];
+    for (final t in tabOrder)
+      if (showsTab(t)) t.navIndex,
+  ];
 
   HomeLayout _copy({
     List<HomeBlock>? order,
@@ -74,14 +74,13 @@ class HomeLayout {
     Set<HomeTab>? hiddenTabs,
     Set<HomeAction>? hiddenActions,
     List<HomeTab>? tabOrder,
-  }) =>
-      HomeLayout(
-        order: order ?? this.order,
-        hiddenBlocks: hiddenBlocks ?? this.hiddenBlocks,
-        hiddenTabs: hiddenTabs ?? this.hiddenTabs,
-        hiddenActions: hiddenActions ?? this.hiddenActions,
-        tabOrder: tabOrder ?? this.tabOrder,
-      );
+  }) => HomeLayout(
+    order: order ?? this.order,
+    hiddenBlocks: hiddenBlocks ?? this.hiddenBlocks,
+    hiddenTabs: hiddenTabs ?? this.hiddenTabs,
+    hiddenActions: hiddenActions ?? this.hiddenActions,
+    tabOrder: tabOrder ?? this.tabOrder,
+  );
 
   /// Переставляет вкладку, индексы как у `onReorder` (то есть [to] ещё до
   /// удаления перетаскиваемой).
@@ -99,17 +98,18 @@ class HomeLayout {
       plus ? this : const HomeLayout();
 
   /// Видимые блоки по порядку.
-  List<HomeBlock> get visibleBlocks =>
-      [for (final b in order) if (!hiddenBlocks.contains(b)) b];
+  List<HomeBlock> get visibleBlocks => [
+    for (final b in order)
+      if (!hiddenBlocks.contains(b)) b,
+  ];
 
   bool showsBlock(HomeBlock b) => !hiddenBlocks.contains(b);
   bool showsTab(HomeTab t) => !hiddenTabs.contains(t);
   bool showsAction(HomeAction a) => !hiddenActions.contains(a);
 
   HomeLayout withBlock(HomeBlock b, {required bool shown}) => _copy(
-        hiddenBlocks:
-            shown ? ({...hiddenBlocks}..remove(b)) : {...hiddenBlocks, b},
-      );
+    hiddenBlocks: shown ? ({...hiddenBlocks}..remove(b)) : {...hiddenBlocks, b},
+  );
 
   HomeLayout withTab(HomeTab t, {required bool shown}) {
     if (!shown && !t.canHide) return this;
@@ -119,9 +119,10 @@ class HomeLayout {
   }
 
   HomeLayout withAction(HomeAction a, {required bool shown}) => _copy(
-        hiddenActions:
-            shown ? ({...hiddenActions}..remove(a)) : {...hiddenActions, a},
-      );
+    hiddenActions: shown
+        ? ({...hiddenActions}..remove(a))
+        : {...hiddenActions, a},
+  );
 
   /// Переставляет блок с места [from] на место [to] (индексы в [order], как
   /// после удаления элемента — то есть уже поправленные под ReorderableList).
@@ -171,12 +172,12 @@ class HomeLayout {
   }
 
   Map<String, Object> toJson() => {
-        'order': [for (final b in order) b.name],
-        'hiddenBlocks': [for (final b in hiddenBlocks) b.name],
-        'hiddenTabs': [for (final t in hiddenTabs) t.name],
-        'hiddenActions': [for (final a in hiddenActions) a.name],
-        'tabOrder': [for (final t in tabOrder) t.name],
-      };
+    'order': [for (final b in order) b.name],
+    'hiddenBlocks': [for (final b in hiddenBlocks) b.name],
+    'hiddenTabs': [for (final t in hiddenTabs) t.name],
+    'hiddenActions': [for (final a in hiddenActions) a.name],
+    'tabOrder': [for (final t in tabOrder) t.name],
+  };
 
   /// Разбор сохранённого. Незнакомые имена (блок убрали из приложения)
   /// пропускаются, новые блоки встают на своё место по умолчанию: сразу за

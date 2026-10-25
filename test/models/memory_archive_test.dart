@@ -9,35 +9,40 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/memory.dart';
 import 'package:love_app/models/memory_archive.dart';
 
-Memory _m(String id, DateTime at,
-        {List<String>? urls,
-        String? video,
-        String? caption,
-        bool sealed = false,
-        DateTime? openAt}) =>
-    Memory(
-      id: id,
-      groupId: 'g',
-      authorUid: 'u',
-      authorName: 'Саша',
-      type: MemoryType.photo,
-      createdAt: at,
-      imageUrls: urls,
-      imageUrl: urls?.first,
-      videoUrl: video,
-      caption: caption,
-      sealed: sealed,
-      openAt: openAt,
-    );
+Memory _m(
+  String id,
+  DateTime at, {
+  List<String>? urls,
+  String? video,
+  String? caption,
+  bool sealed = false,
+  DateTime? openAt,
+}) => Memory(
+  id: id,
+  groupId: 'g',
+  authorUid: 'u',
+  authorName: 'Саша',
+  type: MemoryType.photo,
+  createdAt: at,
+  imageUrls: urls,
+  imageUrl: urls?.first,
+  videoUrl: video,
+  caption: caption,
+  sealed: sealed,
+  openAt: openAt,
+);
 
 void main() {
   final at = DateTime(2026, 9, 5, 13, 5, 7);
 
   test('в архив идут все кадры и ролик каждой записи', () {
     final entries = archiveEntries([
-      _m('a', at,
-          urls: ['pb://media/a/1.webp', 'pb://media/a/2.webp'],
-          video: 'pb://media/a/v.mp4'),
+      _m(
+        'a',
+        at,
+        urls: ['pb://media/a/1.webp', 'pb://media/a/2.webp'],
+        video: 'pb://media/a/v.mp4',
+      ),
       _m('b', at.add(const Duration(days: 1)), urls: ['pb://media/b/1.jpg']),
     ], now: DateTime(2026, 9, 19));
     expect(entries, hasLength(4));
@@ -59,16 +64,21 @@ void main() {
 
   test('запечатанная капсула в архив не идёт', () {
     final entries = archiveEntries([
-      _m('a', at,
-          urls: ['pb://media/a/1.webp'],
-          sealed: true,
-          openAt: DateTime(2027, 1, 1)),
+      _m(
+        'a',
+        at,
+        urls: ['pb://media/a/1.webp'],
+        sealed: true,
+        openAt: DateTime(2027, 1, 1),
+      ),
     ], now: DateTime(2026, 9, 19));
     expect(entries, isEmpty);
   });
 
   test('текст записей — UTF-8, русские буквы целы', () {
-    final memories = [_m('a', at, urls: ['pb://media/a/1.webp'], caption: 'Лето на Днестре')];
+    final memories = [
+      _m('a', at, urls: ['pb://media/a/1.webp'], caption: 'Лето на Днестре'),
+    ];
     final entries = archiveEntries(memories, now: DateTime(2026, 9, 19));
     final bytes = archiveText(memoriesText(memories, entries));
     final back = utf8.decode(bytes);

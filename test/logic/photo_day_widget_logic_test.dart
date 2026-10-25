@@ -8,17 +8,11 @@ void main() {
     });
 
     test('keeps current selection when it still exists', () {
-      expect(
-        PhotoDayWidgetLogic.resolveSelectedWidgetId([101, 102], 101),
-        101,
-      );
+      expect(PhotoDayWidgetLogic.resolveSelectedWidgetId([101, 102], 101), 101);
     });
 
     test('falls back to last widget when current selection is missing', () {
-      expect(
-        PhotoDayWidgetLogic.resolveSelectedWidgetId([101, 102], 999),
-        102,
-      );
+      expect(PhotoDayWidgetLogic.resolveSelectedWidgetId([101, 102], 999), 102);
     });
 
     test('picks last widget when nothing was selected before', () {
@@ -91,19 +85,22 @@ void main() {
       expect(result.previewPath(), '/local/mine.jpg');
     });
 
-    test('mine + custom falls back to uploaded myPhotoUrl when local file is absent', () {
-      final result = PhotoDayWidgetLogic.resolveState(
-        selectedWidgetId: 1,
-        mode: 'custom',
-        display: 'mine',
-        widgetPreviewPath: '/widget/partner.jpg',
-        widgetCustomPath: null,
-        myPhotoUrl: 'https://cdn.example.com/mine.jpg',
-      );
+    test(
+      'mine + custom falls back to uploaded myPhotoUrl when local file is absent',
+      () {
+        final result = PhotoDayWidgetLogic.resolveState(
+          selectedWidgetId: 1,
+          mode: 'custom',
+          display: 'mine',
+          widgetPreviewPath: '/widget/partner.jpg',
+          widgetCustomPath: null,
+          myPhotoUrl: 'https://cdn.example.com/mine.jpg',
+        );
 
-      expect(result.ownPhotoPath, 'https://cdn.example.com/mine.jpg');
-      expect(result.previewPath(), 'https://cdn.example.com/mine.jpg');
-    });
+        expect(result.ownPhotoPath, 'https://cdn.example.com/mine.jpg');
+        expect(result.previewPath(), 'https://cdn.example.com/mine.jpg');
+      },
+    );
 
     test('mine preview keeps own photo even in random mode', () {
       final result = PhotoDayWidgetLogic.resolveState(
@@ -148,38 +145,44 @@ void main() {
       );
     });
 
-    test('loaded widget state resolves exact widget instance configuration', () {
-      final selectedWidgetId = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-        [11, 12],
-        11,
-      );
-      final result = PhotoDayWidgetLogic.resolveState(
-        selectedWidgetId: selectedWidgetId,
-        mode: 'custom',
-        display: 'mine',
-        widgetPreviewPath: '/widget12-preview.jpg',
-        widgetCustomPath: '/widget11-custom.jpg',
-      );
+    test(
+      'loaded widget state resolves exact widget instance configuration',
+      () {
+        final selectedWidgetId = PhotoDayWidgetLogic.resolveSelectedWidgetId([
+          11,
+          12,
+        ], 11);
+        final result = PhotoDayWidgetLogic.resolveState(
+          selectedWidgetId: selectedWidgetId,
+          mode: 'custom',
+          display: 'mine',
+          widgetPreviewPath: '/widget12-preview.jpg',
+          widgetCustomPath: '/widget11-custom.jpg',
+        );
 
-      expect(result.selectedWidgetId, 11);
-      expect(result.mode, 'custom');
-      expect(result.display, 'mine');
-      expect(result.ownPhotoPath, '/widget11-custom.jpg');
-    });
+        expect(result.selectedWidgetId, 11);
+        expect(result.mode, 'custom');
+        expect(result.display, 'mine');
+        expect(result.ownPhotoPath, '/widget11-custom.jpg');
+      },
+    );
 
-    test('selecting another widget resolves that widget preview and display', () {
-      final result = PhotoDayWidgetLogic.resolveState(
-        selectedWidgetId: 22,
-        mode: 'random',
-        display: 'partner',
-        widgetPreviewPath: '/widget22-preview.jpg',
-        fallbackOwnPhotoPath: '/widget11-custom.jpg',
-      );
+    test(
+      'selecting another widget resolves that widget preview and display',
+      () {
+        final result = PhotoDayWidgetLogic.resolveState(
+          selectedWidgetId: 22,
+          mode: 'random',
+          display: 'partner',
+          widgetPreviewPath: '/widget22-preview.jpg',
+          fallbackOwnPhotoPath: '/widget11-custom.jpg',
+        );
 
-      expect(result.selectedWidgetId, 22);
-      expect(result.previewShowsPartner, isTrue);
-      expect(result.widgetPhotoPath, '/widget22-preview.jpg');
-      expect(result.previewPath(), '/widget22-preview.jpg');
-    });
+        expect(result.selectedWidgetId, 22);
+        expect(result.previewShowsPartner, isTrue);
+        expect(result.widgetPhotoPath, '/widget22-preview.jpg');
+        expect(result.previewPath(), '/widget22-preview.jpg');
+      },
+    );
   });
 }

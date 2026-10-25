@@ -18,10 +18,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// остаётся со своей надписью.
 void main() {
   setUp(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (_) async => Directory.systemTemp.path,
-    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (_) async => Directory.systemTemp.path,
+        );
     SharedPreferences.setMockInitialValues({'chest_sound': false});
     LocaleService.instance.setLanguage(AppLanguage.ru);
     PairJarService.instance.debugReset();
@@ -34,23 +35,42 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.runAsync(() => ChestSound.instance.load());
-    final t = buildAppTheme(kPalettes.firstWhere((p) => p.name == 'Розовая'), Brightness.light);
-    await tester.pumpWidget(MaterialApp(
-      theme: ProfileTheme.data(t.scheme!),
-      home: ChestScreen(theme: t, groupId: 'g', debugSeasons: const []),
-    ));
+    final t = buildAppTheme(
+      kPalettes.firstWhere((p) => p.name == 'Розовая'),
+      Brightness.light,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ProfileTheme.data(t.scheme!),
+        home: ChestScreen(theme: t, groupId: 'g', debugSeasons: const []),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 300));
 
-    final jar = find.ancestor(of: find.textContaining('копилки'), matching: find.byType(FilledButton));
-    expect(jar, findsOneWidget, reason: 'кнопки копилки нет, а открытие в ней есть');
+    final jar = find.ancestor(
+      of: find.textContaining('копилки'),
+      matching: find.byType(FilledButton),
+    );
+    expect(
+      jar,
+      findsOneWidget,
+      reason: 'кнопки копилки нет, а открытие в ней есть',
+    );
     // Надпись кнопки сейчас сменится, поэтому кнопку узнаём по месту.
     final jarPlace = tester.getRect(jar);
     await tester.tap(jar);
     await tester.pump();
 
-    expect(find.text('Открываем…'), findsOneWidget, reason: 'две одинаковые кнопки «Открываем…»');
-    expect(jarPlace.contains(tester.getCenter(find.text('Открываем…'))), isTrue,
-        reason: '«Открываем…» обязана писать нажатая кнопка');
+    expect(
+      find.text('Открываем…'),
+      findsOneWidget,
+      reason: 'две одинаковые кнопки «Открываем…»',
+    );
+    expect(
+      jarPlace.contains(tester.getCenter(find.text('Открываем…'))),
+      isTrue,
+      reason: '«Открываем…» обязана писать нажатая кнопка',
+    );
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 30));

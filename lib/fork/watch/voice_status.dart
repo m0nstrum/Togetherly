@@ -84,14 +84,17 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
   }
 
   void _expand(WatchVoiceService v) {
-    final nav = widget.navigator ?? Navigator.maybeOf(context, rootNavigator: true);
+    final nav =
+        widget.navigator ?? Navigator.maybeOf(context, rootNavigator: true);
     if (nav == null) return;
-    unawaited(ForkCallScreen.open(
-      nav,
-      voice: v,
-      partnerName: widget.partnerName,
-      onRetry: widget.onRetry,
-    ));
+    unawaited(
+      ForkCallScreen.open(
+        nav,
+        voice: v,
+        partnerName: widget.partnerName,
+        onRetry: widget.onRetry,
+      ),
+    );
   }
 
   @override
@@ -105,10 +108,13 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
       name: widget.partnerName,
       talked: since == null ? null : DateTime.now().difference(since),
     );
-    final show = v != null &&
+    final show =
+        v != null &&
         stage != VoiceStage.idle &&
         text.isNotEmpty &&
-        !ForkCallScreen.visible.value && // fork: экран звонка открыт — плашка не нужна
+        !ForkCallScreen
+            .visible
+            .value && // fork: экран звонка открыт — плашка не нужна
         !(ForkVoiceStatus.roomOpen.value && stage != VoiceStage.failed);
     final (tone, label, action) = switch (stage) {
       // Закрыть — крестиком всегда; «Позвонить ещё» — где повтор поможет.
@@ -124,8 +130,16 @@ class _ForkVoiceStatusState extends State<ForkVoiceStatus> {
                 unawaited(widget.onRetry());
               },
       ),
-      VoiceStage.live => (ForkStatusTone.info, ruEn('Положить', 'Hang up'), () => unawaited(v?.stop())),
-      _ => (ForkStatusTone.progress, ruEn('Отменить', 'Cancel'), () => unawaited(v?.stop())),
+      VoiceStage.live => (
+        ForkStatusTone.info,
+        ruEn('Положить', 'Hang up'),
+        () => unawaited(v?.stop()),
+      ),
+      _ => (
+        ForkStatusTone.progress,
+        ruEn('Отменить', 'Cancel'),
+        () => unawaited(v?.stop()),
+      ),
     };
     return Align(
       alignment: Alignment.topCenter,

@@ -38,16 +38,22 @@ void main() {
     // Сторож ровно того случая, что был: `syncTimerAndDays` клал в ключи
     // `_cachedMyGender`/`_cachedPartnerGender` без проверки, а зовётся он и до
     // того, как кэш заполнен. Пустая строка перебивала верный пол.
-    final src = File('lib/services/home_widget_service.dart').readAsStringSync();
+    final src = File(
+      'lib/services/home_widget_service.dart',
+    ).readAsStringSync();
     final lines = src.split('\n');
     var found = 0;
     for (var i = 0; i < lines.length; i++) {
       if (!lines[i].contains('_gender\'')) continue;
       found++;
       final around = lines.sublist(i - 4 < 0 ? 0 : i - 4, i + 1).join('\n');
-      expect(around.contains('shouldWriteGender'), isTrue,
-          reason: 'строка ${i + 1}: пол пишется без проверки на пустоту, '
-              'а пустая строка нарисует паре по умолчанию мальчика');
+      expect(
+        around.contains('shouldWriteGender'),
+        isTrue,
+        reason:
+            'строка ${i + 1}: пол пишется без проверки на пустоту, '
+            'а пустая строка нарисует паре по умолчанию мальчика',
+      );
     }
     expect(found, greaterThan(0), reason: 'запись пола вообще не найдена');
   });

@@ -42,7 +42,8 @@ Offset pointAlong(List<Offset> pts, double t) {
   var want = total * t.clamp(0.0, 1.0);
   for (var i = 1; i < pts.length; i++) {
     final seg = (pts[i] - pts[i - 1]).distance;
-    if (want <= seg && seg > 0) return Offset.lerp(pts[i - 1], pts[i], want / seg)!;
+    if (want <= seg && seg > 0)
+      return Offset.lerp(pts[i - 1], pts[i], want / seg)!;
     want -= seg;
   }
   return pts.last;

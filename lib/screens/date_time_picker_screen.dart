@@ -85,8 +85,9 @@ class _DateTimePickerScreenState extends State<DateTimePickerScreen> {
 
     _dayCtrl = FixedExtentScrollController(initialItem: _day - 1);
     _monthCtrl = FixedExtentScrollController(initialItem: _month - 1);
-    _yearCtrl =
-        FixedExtentScrollController(initialItem: _year - widget.firstYear);
+    _yearCtrl = FixedExtentScrollController(
+      initialItem: _year - widget.firstYear,
+    );
     _hourCtrl = FixedExtentScrollController(initialItem: _hour);
     _minuteCtrl = FixedExtentScrollController(initialItem: _minute);
   }
@@ -125,9 +126,9 @@ class _DateTimePickerScreenState extends State<DateTimePickerScreen> {
       minute: widget.withTime ? _minute : 0,
     );
     final latest = widget.latest;
-    Navigator.of(context).pop(
-      latest != null && picked.isAfter(latest) ? latest : picked,
-    );
+    Navigator.of(
+      context,
+    ).pop(latest != null && picked.isAfter(latest) ? latest : picked);
   }
 
   @override
@@ -152,52 +153,52 @@ class _DateTimePickerScreenState extends State<DateTimePickerScreen> {
   // ── шапка ─────────────────────────────────────────────────────────────────
 
   Widget _header(ColorScheme cs) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: Icon(Icons.arrow_back_rounded, color: _t.textPrimary),
-                  tooltip: _s.cancel,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    widget.title,
-                    maxLines: 2,
-                    style: TextStyle(
-                      fontFamily: ProfileTheme.displayFont,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                      height: 1.1,
-                      color: _t.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
+            IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: Icon(Icons.arrow_back_rounded, color: _t.textPrimary),
+              tooltip: _s.cancel,
             ),
-            const SizedBox(height: 6),
-            // Выбранное словами: барабан читают краем глаза, а тут дата видна
-            // целиком и без сокращений.
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
+            const SizedBox(width: 4),
+            Expanded(
               child: Text(
-                _spelled(),
+                widget.title,
+                maxLines: 2,
                 style: TextStyle(
-                  fontFamily: ProfileTheme.bodyFont,
-                  fontSize: 15,
-                  color: cs.primary,
-                  fontWeight: FontWeight.w600,
+                  fontFamily: ProfileTheme.displayFont,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                  height: 1.1,
+                  color: _t.textPrimary,
                 ),
               ),
             ),
           ],
         ),
-      );
+        const SizedBox(height: 6),
+        // Выбранное словами: барабан читают краем глаза, а тут дата видна
+        // целиком и без сокращений.
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text(
+            _spelled(),
+            style: TextStyle(
+              fontFamily: ProfileTheme.bodyFont,
+              fontSize: 15,
+              color: cs.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   String _spelled() {
     final months = _s.cycleMonthsGenitive;
@@ -211,115 +212,124 @@ class _DateTimePickerScreenState extends State<DateTimePickerScreen> {
   // ── переключатель ─────────────────────────────────────────────────────────
 
   Widget _tabs(ColorScheme cs) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 2),
-        child: SegmentedButton<bool>(
-          segments: [
-            ButtonSegment(value: false, label: Text(_s.pickerDateTab)),
-            ButtonSegment(value: true, label: Text(_s.pickerTimeTab)),
-          ],
-          selected: {_timeTab},
-          showSelectedIcon: false,
-          onSelectionChanged: (v) {
-            HapticFeedback.selectionClick();
-            setState(() => _timeTab = v.first);
-          },
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(20, 10, 20, 2),
+    child: SegmentedButton<bool>(
+      segments: [
+        ButtonSegment(value: false, label: Text(_s.pickerDateTab)),
+        ButtonSegment(value: true, label: Text(_s.pickerTimeTab)),
+      ],
+      selected: {_timeTab},
+      showSelectedIcon: false,
+      onSelectionChanged: (v) {
+        HapticFeedback.selectionClick();
+        setState(() => _timeTab = v.first);
+      },
+    ),
+  );
 
   // ── барабаны ──────────────────────────────────────────────────────────────
 
   Widget _wheels(ColorScheme cs) => Stack(
-        alignment: Alignment.center,
-        children: [
-          // Подложка выбранной строки. Лежит под барабанами и во всю ширину:
-          // так три колонки читаются как одна строка, а не три отдельных.
-          Center(
-            child: Container(
-              height: _extent * 1.22,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: cs.primaryContainer,
-                borderRadius: BorderRadius.circular(26),
-              ),
-            ),
+    alignment: Alignment.center,
+    children: [
+      // Подложка выбранной строки. Лежит под барабанами и во всю ширину:
+      // так три колонки читаются как одна строка, а не три отдельных.
+      Center(
+        child: Container(
+          height: _extent * 1.22,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: cs.primaryContainer,
+            borderRadius: BorderRadius.circular(26),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: _timeTab ? _timeWheels(cs) : _dateWheels(cs),
-          ),
-        ],
-      );
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: _timeTab ? _timeWheels(cs) : _dateWheels(cs),
+      ),
+    ],
+  );
 
   Widget _dateWheels(ColorScheme cs) => Row(
-        children: [
-          // Пропорции подобраны под самый длинный месяц: «сентября» должно
-          // помещаться целиком, поэтому средняя колонка заметно шире.
-          Expanded(flex: 22, child: _wheel(
-            cs: cs,
-            controller: _dayCtrl,
-            count: _daysInMonth,
-            builder: (i) => '${i + 1}',
-            onChanged: (i) => setState(() => _day = i + 1),
-          )),
-          Expanded(flex: 40, child: _wheel(
-            cs: cs,
-            controller: _monthCtrl,
-            count: 12,
-            builder: (i) => _s.cycleMonthsGenitive[i],
-            onChanged: (i) => setState(() {
-              _month = i + 1;
-              _syncDay();
-            }),
-          )),
-          Expanded(flex: 28, child: _wheel(
-            cs: cs,
-            controller: _yearCtrl,
-            count: widget.lastYear - widget.firstYear + 1,
-            builder: (i) => '${widget.firstYear + i}',
-            onChanged: (i) => setState(() {
-              _year = widget.firstYear + i;
-              _syncDay();
-            }),
-          )),
-        ],
-      );
+    children: [
+      // Пропорции подобраны под самый длинный месяц: «сентября» должно
+      // помещаться целиком, поэтому средняя колонка заметно шире.
+      Expanded(
+        flex: 22,
+        child: _wheel(
+          cs: cs,
+          controller: _dayCtrl,
+          count: _daysInMonth,
+          builder: (i) => '${i + 1}',
+          onChanged: (i) => setState(() => _day = i + 1),
+        ),
+      ),
+      Expanded(
+        flex: 40,
+        child: _wheel(
+          cs: cs,
+          controller: _monthCtrl,
+          count: 12,
+          builder: (i) => _s.cycleMonthsGenitive[i],
+          onChanged: (i) => setState(() {
+            _month = i + 1;
+            _syncDay();
+          }),
+        ),
+      ),
+      Expanded(
+        flex: 28,
+        child: _wheel(
+          cs: cs,
+          controller: _yearCtrl,
+          count: widget.lastYear - widget.firstYear + 1,
+          builder: (i) => '${widget.firstYear + i}',
+          onChanged: (i) => setState(() {
+            _year = widget.firstYear + i;
+            _syncDay();
+          }),
+        ),
+      ),
+    ],
+  );
 
   Widget _timeWheels(ColorScheme cs) => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 130,
-            child: _wheel(
-              cs: cs,
-              controller: _hourCtrl,
-              count: 24,
-              loop: true,
-              builder: (i) => i.toString().padLeft(2, '0'),
-              onChanged: (i) => setState(() => _hour = i),
-            ),
-          ),
-          Text(
-            ':',
-            style: TextStyle(
-              fontFamily: ProfileTheme.displayFont,
-              fontSize: 34,
-              fontWeight: FontWeight.w800,
-              color: cs.onPrimaryContainer,
-            ),
-          ),
-          SizedBox(
-            width: 130,
-            child: _wheel(
-              cs: cs,
-              controller: _minuteCtrl,
-              count: 60,
-              loop: true,
-              builder: (i) => i.toString().padLeft(2, '0'),
-              onChanged: (i) => setState(() => _minute = i),
-            ),
-          ),
-        ],
-      );
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      SizedBox(
+        width: 130,
+        child: _wheel(
+          cs: cs,
+          controller: _hourCtrl,
+          count: 24,
+          loop: true,
+          builder: (i) => i.toString().padLeft(2, '0'),
+          onChanged: (i) => setState(() => _hour = i),
+        ),
+      ),
+      Text(
+        ':',
+        style: TextStyle(
+          fontFamily: ProfileTheme.displayFont,
+          fontSize: 34,
+          fontWeight: FontWeight.w800,
+          color: cs.onPrimaryContainer,
+        ),
+      ),
+      SizedBox(
+        width: 130,
+        child: _wheel(
+          cs: cs,
+          controller: _minuteCtrl,
+          count: 60,
+          loop: true,
+          builder: (i) => i.toString().padLeft(2, '0'),
+          onChanged: (i) => setState(() => _minute = i),
+        ),
+      ),
+    ],
+  );
 
   Widget _wheel({
     required ColorScheme cs,
@@ -372,55 +382,58 @@ class _DateTimePickerScreenState extends State<DateTimePickerScreen> {
       onSelectedItemChanged: changed,
       childDelegate: loop
           ? ListWheelChildLoopingListDelegate(
-              children: List.generate(count, cell))
+              children: List.generate(count, cell),
+            )
           : ListWheelChildBuilderDelegate(
-              childCount: count, builder: (_, i) => cell(i)),
+              childCount: count,
+              builder: (_, i) => cell(i),
+            ),
     );
   }
 
   // ── кнопки ────────────────────────────────────────────────────────────────
 
   Widget _actions(ColorScheme cs) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                ),
-                child: Text(
-                  _s.cancel,
-                  style: TextStyle(
-                    fontFamily: ProfileTheme.bodyFont,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _t.textSecondary,
-                  ),
-                ),
+    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+    child: Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+            ),
+            child: Text(
+              _s.cancel,
+              style: TextStyle(
+                fontFamily: ProfileTheme.bodyFont,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: _t.textSecondary,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: FilledButton(
-                onPressed: _submit,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: const StadiumBorder(),
-                ),
-                child: Text(
-                  _s.done,
-                  style: const TextStyle(
-                    fontFamily: ProfileTheme.bodyFont,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: FilledButton(
+            onPressed: _submit,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: const StadiumBorder(),
+            ),
+            child: Text(
+              _s.done,
+              style: const TextStyle(
+                fontFamily: ProfileTheme.bodyFont,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

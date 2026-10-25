@@ -50,13 +50,13 @@ class LiveLocationTuning {
 
   @override
   int get hashCode => Object.hash(
-        distanceFilter,
-        highAccuracy,
-        wakeLock,
-        pauseAutomatically,
-        forceIndicator,
-        interval,
-      );
+    distanceFilter,
+    highAccuracy,
+    wakeLock,
+    pauseAutomatically,
+    forceIndicator,
+    interval,
+  );
 }
 
 /// Профиль под текущее состояние приложения.

@@ -20,10 +20,8 @@ void main() {
     en = LocaleService.instance.strings;
   });
 
-  YearProgress progress(String start, String now) => YearProgress.between(
-        DateTime.parse(start),
-        DateTime.parse(now),
-      );
+  YearProgress progress(String start, String now) =>
+      YearProgress.between(DateTime.parse(start), DateTime.parse(now));
 
   test('до первой годовщины считаем месяцами, а не нулём лет', () {
     // Ровно случай со снимка: 01.09.2025 → 15.08.2026, 348 дней.
@@ -49,12 +47,18 @@ void main() {
   });
 
   test('склонения русских месяцев', () {
-    expect(togetherAlreadyCaption(progress('2026-07-10', '2026-08-15'), ru),
-        '1 месяц уже ❤️');
-    expect(togetherAlreadyCaption(progress('2026-05-10', '2026-08-15'), ru),
-        '3 месяца уже ❤️');
-    expect(togetherAlreadyCaption(progress('2025-10-10', '2026-08-15'), ru),
-        '10 месяцев уже ❤️');
+    expect(
+      togetherAlreadyCaption(progress('2026-07-10', '2026-08-15'), ru),
+      '1 месяц уже ❤️',
+    );
+    expect(
+      togetherAlreadyCaption(progress('2026-05-10', '2026-08-15'), ru),
+      '3 месяца уже ❤️',
+    );
+    expect(
+      togetherAlreadyCaption(progress('2025-10-10', '2026-08-15'), ru),
+      '10 месяцев уже ❤️',
+    );
   });
 
   test('дата в будущем не даёт отрицательных подписей', () {

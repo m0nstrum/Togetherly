@@ -17,8 +17,14 @@ void main() {
 
   test('правка и новый таймер не пишут на сервер весь свой список', () {
     // Старая копия списка на одном телефоне затирала свежую дату с другого.
-    expect(body(service, 'Future<bool> updateTimer('), isNot(contains('_saveToFirestore')));
-    expect(body(service, 'Future<void> addTimer('), isNot(contains('_saveToFirestore')));
+    expect(
+      body(service, 'Future<bool> updateTimer('),
+      isNot(contains('_saveToFirestore')),
+    );
+    expect(
+      body(service, 'Future<void> addTimer('),
+      isNot(contains('_saveToFirestore')),
+    );
   });
 
   test('правка и новый таймер ждут подтверждения сервера', () {
@@ -33,6 +39,9 @@ void main() {
   });
 
   test('сервер сам сводит флаг основного таймера', () {
-    expect(body(data, 'Future<bool> upsertGroupTimer('), contains('upsertTimerJson('));
+    expect(
+      body(data, 'Future<bool> upsertGroupTimer('),
+      contains('upsertTimerJson('),
+    );
   });
 }

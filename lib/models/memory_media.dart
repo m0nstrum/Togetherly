@@ -114,39 +114,46 @@ List<MediaFile> memoryMediaFiles(
       }
       for (final u in urls) {
         if (!isOwnMediaUrl(u)) continue;
-        out.add(MediaFile(
-            ref: u, kind: SaveKind.photo, index: out.length, thumb: u));
+        out.add(
+          MediaFile(ref: u, kind: SaveKind.photo, index: out.length, thumb: u),
+        );
       }
       // Смешанная запись: снимки и ролик в одном воспоминании.
       final v = m.videoUrl?.trim() ?? '';
       if (v.isNotEmpty && isOwnMediaUrl(v)) {
-        out.add(MediaFile(
-          ref: v,
-          kind: SaveKind.video,
-          index: out.length,
-          thumb: urls.isNotEmpty ? urls.first : null,
-        ));
+        out.add(
+          MediaFile(
+            ref: v,
+            kind: SaveKind.video,
+            index: out.length,
+            thumb: urls.isNotEmpty ? urls.first : null,
+          ),
+        );
       }
     case MemoryType.video:
       final v = m.videoUrl?.trim() ?? '';
       if (v.isNotEmpty && isOwnMediaUrl(v)) {
         final t = m.imageUrl?.trim();
-        out.add(MediaFile(
-          ref: v,
-          kind: SaveKind.video,
-          index: 0,
-          thumb: (t != null && t.isNotEmpty) ? t : null,
-        ));
+        out.add(
+          MediaFile(
+            ref: v,
+            kind: SaveKind.video,
+            index: 0,
+            thumb: (t != null && t.isNotEmpty) ? t : null,
+          ),
+        );
       }
     case MemoryType.music:
       final a = m.musicUrl?.trim() ?? '';
       if (a.isNotEmpty && isOwnMediaUrl(a)) {
-        out.add(MediaFile(
-          ref: a,
-          kind: SaveKind.audio,
-          index: 0,
-          thumb: m.musicCoverUrl,
-        ));
+        out.add(
+          MediaFile(
+            ref: a,
+            kind: SaveKind.audio,
+            index: 0,
+            thumb: m.musicCoverUrl,
+          ),
+        );
       }
     case MemoryType.videoLink:
     case MemoryType.location:
@@ -160,13 +167,17 @@ List<MediaFile> memoryMediaFiles(
   final sound = m.sound?.url.trim() ?? '';
   final withSound = m.type == MemoryType.photo || m.type == MemoryType.video;
   if (withSound && sound.isNotEmpty && isOwnMediaUrl(sound)) {
-    final cover = m.imageUrls?.isNotEmpty == true ? m.imageUrls!.first : m.imageUrl;
-    out.add(MediaFile(
-      ref: sound,
-      kind: SaveKind.audio,
-      index: out.length,
-      thumb: (cover != null && cover.trim().isNotEmpty) ? cover.trim() : null,
-    ));
+    final cover = m.imageUrls?.isNotEmpty == true
+        ? m.imageUrls!.first
+        : m.imageUrl;
+    out.add(
+      MediaFile(
+        ref: sound,
+        kind: SaveKind.audio,
+        index: out.length,
+        thumb: (cover != null && cover.trim().isNotEmpty) ? cover.trim() : null,
+      ),
+    );
   }
   return out;
 }
@@ -230,7 +241,8 @@ String _two(int n) => n.toString().padLeft(2, '0');
 /// своими, даже если галерея не прочтёт дату из самого файла.
 String galleryFileName(DateTime takenAt, MediaFile f) {
   final d = takenAt;
-  final stamp = '${d.year}${_two(d.month)}${_two(d.day)}_'
+  final stamp =
+      '${d.year}${_two(d.month)}${_two(d.day)}_'
       '${_two(d.hour)}${_two(d.minute)}${_two(d.second)}';
   return 'Togetherly_${stamp}_${_two(f.index + 1)}.${f.ext}';
 }

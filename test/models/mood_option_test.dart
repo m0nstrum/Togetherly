@@ -4,12 +4,7 @@ import 'package:love_app/models/mood_entry.dart';
 
 void main() {
   group('MoodOption.score — happy tier (5)', () {
-    const happyIds = [
-      'happy',
-      'love',
-      'laugh',
-      'kiss',
-    ];
+    const happyIds = ['happy', 'love', 'laugh', 'kiss'];
     for (final id in happyIds) {
       test(id, () {
         final mood = MoodOption.all.firstWhere(
@@ -45,12 +40,7 @@ void main() {
   });
 
   group('MoodOption.score — neutral tier (3)', () {
-    const neutralIds = [
-      'no_emotion',
-      'embarrassed',
-      'surprise',
-      'liar',
-    ];
+    const neutralIds = ['no_emotion', 'embarrassed', 'surprise', 'liar'];
     for (final id in neutralIds) {
       test(id, () {
         final mood = MoodOption.all.firstWhere(

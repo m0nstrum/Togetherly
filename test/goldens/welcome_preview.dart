@@ -79,8 +79,9 @@ void main() {
               key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
           final image = await boundary.toImage(pixelRatio: 1);
           final data = await image.toByteData(format: ui.ImageByteFormat.png);
-          File('${dir.path}/slide${i + 1}_$f.png')
-              .writeAsBytesSync(data!.buffer.asUint8List());
+          File(
+            '${dir.path}/slide${i + 1}_$f.png',
+          ).writeAsBytesSync(data!.buffer.asUint8List());
         });
       }
     }

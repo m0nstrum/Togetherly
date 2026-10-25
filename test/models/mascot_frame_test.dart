@@ -4,10 +4,14 @@ import 'package:love_app/models/mascot_frame.dart';
 void main() {
   group('nextMascotFrame', () {
     test('кадры идут по кругу', () {
-      expect(nextMascotFrame(frame: 0, cols: 4, oneShot: false),
-          const MascotFrameStep(frame: 1, looped: false, finished: false));
-      expect(nextMascotFrame(frame: 2, cols: 4, oneShot: false),
-          const MascotFrameStep(frame: 3, looped: false, finished: false));
+      expect(
+        nextMascotFrame(frame: 0, cols: 4, oneShot: false),
+        const MascotFrameStep(frame: 1, looped: false, finished: false),
+      );
+      expect(
+        nextMascotFrame(frame: 2, cols: 4, oneShot: false),
+        const MascotFrameStep(frame: 3, looped: false, finished: false),
+      );
     });
 
     test('последний кадр возвращает на начало и отмечает круг', () {

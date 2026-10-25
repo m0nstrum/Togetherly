@@ -89,9 +89,10 @@ class MoodPackSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge(
-        [MoodPackService.instance, CatalogService.instance],
-      ),
+      animation: Listenable.merge([
+        MoodPackService.instance,
+        CatalogService.instance,
+      ]),
       builder: (context, _) {
         final selectedId = MoodPackService.instance.selectedPackId;
         // Подсвечиваем тот набор, который человек сейчас видит: у закрытого это
@@ -105,12 +106,14 @@ class MoodPackSelector extends StatelessWidget {
         final packs = CatalogService.instance.allPacks
             // fork: M2 — платных за деньги закрытых наборов в форке нет
             .where((p) => !(p.unlock.isMoney && !isOpen(p)))
-            .where((p) => moodPackVisible(
-                  isIOS: Platform.isIOS,
-                  isMoney: p.unlock.isMoney,
-                  isOpen: isOpen(p),
-                  buysInStore: kCatalogBuysInStore,
-                ))
+            .where(
+              (p) => moodPackVisible(
+                isIOS: Platform.isIOS,
+                isMoney: p.unlock.isMoney,
+                isOpen: isOpen(p),
+                buysInStore: kCatalogBuysInStore,
+              ),
+            )
             .toList();
         if (packs.isEmpty) return const SizedBox.shrink();
 
@@ -132,20 +135,20 @@ class MoodPackSelector extends StatelessWidget {
         final own = this.own;
         final ownSelected = shownId == kOwnMoodPackId;
         Widget ownChip({required bool stretched}) => OwnMoodPackChip(
-              key: const Key('mood-pack-own'),
-              chip: own!,
-              selected: ownSelected,
-              stretched: stretched,
-            );
+          key: const Key('mood-pack-own'),
+          chip: own!,
+          selected: ownSelected,
+          stretched: stretched,
+        );
         Widget packChip(MoodPack p, {required bool stretched}) => MoodPackChip(
-              key: Key('mood-pack-${p.id}'),
-              pack: p,
-              selected: p.id == shownId,
-              locked: !isOpen(p),
-              primary: primary,
-              stretched: stretched,
-              onTap: () => select(p),
-            );
+          key: Key('mood-pack-${p.id}'),
+          pack: p,
+          selected: p.id == shownId,
+          locked: !isOpen(p),
+          primary: primary,
+          stretched: stretched,
+          onTap: () => select(p),
+        );
         final count = packs.length + (own == null ? 0 : 1);
 
         if (count <= _stretchUpTo) {
@@ -172,10 +175,14 @@ class MoodPackSelector extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: count,
             // «Свои» отделены от наборов чуть шире: это набор пары, а не пак.
-            separatorBuilder: (_, i) => SizedBox(width: own != null && i == 0 ? 12 : 8),
+            separatorBuilder: (_, i) =>
+                SizedBox(width: own != null && i == 0 ? 12 : 8),
             itemBuilder: (context, i) {
               if (own != null && i == 0) return ownChip(stretched: false);
-              return packChip(packs[i - (own == null ? 0 : 1)], stretched: false);
+              return packChip(
+                packs[i - (own == null ? 0 : 1)],
+                stretched: false,
+              );
             },
           ),
         );
@@ -192,7 +199,8 @@ bool moodPackOpenFor(
   Set<String> pairOwned = const {},
 }) {
   final key = Unlock.featureKey(kMoodPackFeatureKind, pack.id);
-  final byPair = pairOwned.contains(key) ||
+  final byPair =
+      pairOwned.contains(key) ||
       CatalogService.instance.pairOwned.contains(key);
   if (user == null) return byPair || !pack.unlock.isForSale;
   return user.unlocksCatalogItem(
@@ -232,11 +240,11 @@ Future<void> buyMoodPack(
   // Сообщения ниже написаны парой «русский / английский»; китайский берёт
   // перевод английской половины.
   void say(String text) => messenger.showSnackBar(
-        SnackBar(
-          content: Text(ru ? text : zhForEnglishIfZh(text)),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    SnackBar(
+      content: Text(ru ? text : zhForEnglishIfZh(text)),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
 
   if (!pack.unlock.isForSale) {
     say(ru ? 'Этот набор пока не продаётся' : 'This pack is not for sale yet');
@@ -250,9 +258,11 @@ Future<void> buyMoodPack(
   }
 
   if (user.coins < price) {
-    say(ru
-        ? 'Не хватает монет: нужно $price, у вас ${user.coins}'
-        : 'Not enough coins: $price needed, you have ${user.coins}');
+    say(
+      ru
+          ? 'Не хватает монет: нужно $price, у вас ${user.coins}'
+          : 'Not enough coins: $price needed, you have ${user.coins}',
+    );
     return;
   }
 
@@ -302,7 +312,12 @@ class OwnMoodPackChip extends StatelessWidget {
   final bool selected;
   final bool stretched;
 
-  const OwnMoodPackChip({super.key, required this.chip, required this.selected, required this.stretched});
+  const OwnMoodPackChip({
+    super.key,
+    required this.chip,
+    required this.selected,
+    required this.stretched,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -344,8 +359,17 @@ class OwnMoodPackChip extends StatelessWidget {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: chip.preview.isEmpty
-                    ? Icon(Icons.add_rounded, size: 18, color: selected ? bg : onFill)
-                    : MoodImage(chip.preview, fit: BoxFit.cover, width: 24, height: 24),
+                    ? Icon(
+                        Icons.add_rounded,
+                        size: 18,
+                        color: selected ? bg : onFill,
+                      )
+                    : MoodImage(
+                        chip.preview,
+                        fit: BoxFit.cover,
+                        width: 24,
+                        height: 24,
+                      ),
               ),
               const SizedBox(width: 8),
               Flexible(
@@ -467,8 +491,11 @@ class MoodPackChip extends StatelessWidget {
                   // товар не подгрузился (см. catalogPriceLabel).
                   catalogPriceLabel(
                     storePrice: kCatalogBuysInStore
-                        ? sharedCoinStore.priceLabel(catalogProductId(
-                            Unlock.featureKey(kMoodPackFeatureKind, pack.id)))
+                        ? sharedCoinStore.priceLabel(
+                            catalogProductId(
+                              Unlock.featureKey(kMoodPackFeatureKind, pack.id),
+                            ),
+                          )
                         : null,
                     catalogPrice: pack.unlock.priceLabel,
                   ),

@@ -97,16 +97,29 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('paired home header at 360 and scale 2 fits its controls', (t) async {
+  testWidgets('paired home header at 360 and scale 2 fits its controls', (
+    t,
+  ) async {
     t.view.physicalSize = const Size(360, 780);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
-    await t.pumpWidget(host(HomeHeader(theme: AppThemes.pink, isPaired: true,
-      myAvatarUrl: '', myDisplayName: 'A',
-      partners: const [GroupMember(uid: 'p', name: 'P', avatar: '')],
-      myMood: const MemberMood(), moodOf: (_) => const MemberMood(),
-      statusBadgeText: 'Very long relationship', statusBadgeEmoji: '', pairId: '',
-    ), 2));
+    await t.pumpWidget(
+      host(
+        HomeHeader(
+          theme: AppThemes.pink,
+          isPaired: true,
+          myAvatarUrl: '',
+          myDisplayName: 'A',
+          partners: const [GroupMember(uid: 'p', name: 'P', avatar: '')],
+          myMood: const MemberMood(),
+          moodOf: (_) => const MemberMood(),
+          statusBadgeText: 'Very long relationship',
+          statusBadgeEmoji: '',
+          pairId: '',
+        ),
+        2,
+      ),
+    );
     await t.pump();
     expect(t.takeException(), isNull);
   });

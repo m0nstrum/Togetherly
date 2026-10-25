@@ -8,13 +8,12 @@ void main() {
       int ms = 160,
       double travel = 3,
       bool zoomed = false,
-    }) =>
-        multiTapAction(
-          fingers: fingers,
-          held: Duration(milliseconds: ms),
-          travel: travel,
-          zoomed: zoomed,
-        );
+    }) => multiTapAction(
+      fingers: fingers,
+      held: Duration(milliseconds: ms),
+      travel: travel,
+      zoomed: zoomed,
+    );
 
     test('два пальца отменяют', () {
       expect(call(), MultiTapAction.undo);

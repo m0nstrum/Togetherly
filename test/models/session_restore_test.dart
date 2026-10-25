@@ -8,14 +8,8 @@ import 'package:love_app/models/session_restore.dart';
 void main() {
   group('needsProfileRestore', () {
     test('токен есть, записи нет — чиним', () {
-      expect(
-        needsProfileRestore(hasSession: true, recordId: ''),
-        isTrue,
-      );
-      expect(
-        needsProfileRestore(hasSession: true, recordId: null),
-        isTrue,
-      );
+      expect(needsProfileRestore(hasSession: true, recordId: ''), isTrue);
+      expect(needsProfileRestore(hasSession: true, recordId: null), isTrue);
     });
 
     test('запись на месте — не трогаем', () {

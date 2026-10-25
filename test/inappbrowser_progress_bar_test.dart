@@ -9,9 +9,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// ещё пустое поле. В Bugsink это `EXC_BREAKPOINT: 🤯 > close` (19.10.2026,
 /// пятеро за полдня и обращение 343: «смотрю рекламу и приложение вылетает»).
 void main() {
-  final src = File('third_party/flutter_inappwebview_ios/ios/flutter_inappwebview_ios/'
-          'Sources/flutter_inappwebview_ios/InAppBrowser/InAppBrowserWebViewController.swift')
-      .readAsStringSync();
+  final src = File(
+    'third_party/flutter_inappwebview_ios/ios/flutter_inappwebview_ios/'
+    'Sources/flutter_inappwebview_ios/InAppBrowser/InAppBrowserWebViewController.swift',
+  ).readAsStringSync();
 
   String bodyOf(String signature) {
     final start = src.indexOf(signature);
@@ -29,14 +30,26 @@ void main() {
     final bar = load.indexOf('progressBar = UIProgressView(');
     final prepare = load.indexOf('prepareWebView()');
     expect(bar, isNot(-1), reason: 'loadView больше не создаёт полосу');
-    expect(prepare, isNot(-1), reason: 'loadView больше не зовёт prepareWebView');
-    expect(bar < prepare, isTrue,
-        reason: 'prepareWebView трогает progressBar, пустое поле роняет приложение');
+    expect(
+      prepare,
+      isNot(-1),
+      reason: 'loadView больше не зовёт prepareWebView',
+    );
+    expect(
+      bar < prepare,
+      isTrue,
+      reason:
+          'prepareWebView трогает progressBar, пустое поле роняет приложение',
+    );
   });
 
   test('панель окна не трогает полосу, если её нет', () {
     final prepare = bodyOf('public func prepareWebView()');
-    expect(prepare, isNot(contains('progressBar.isHidden')),
-        reason: 'progressBar — неявно развёрнутое поле, писать через progressBar?.');
+    expect(
+      prepare,
+      isNot(contains('progressBar.isHidden')),
+      reason:
+          'progressBar — неявно развёрнутое поле, писать через progressBar?.',
+    );
   });
 }

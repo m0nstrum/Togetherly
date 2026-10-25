@@ -27,7 +27,10 @@ void main() {
   );
 
   test('ключ владения пака отличается от маскотского', () {
-    expect(Unlock.featureKey(kMoodPackFeatureKind, 'kawaii'), 'mood_pack:kawaii');
+    expect(
+      Unlock.featureKey(kMoodPackFeatureKind, 'kawaii'),
+      'mood_pack:kawaii',
+    );
     expect(
       Unlock.featureKey(kMascotFeatureKind, 'kawaii'),
       isNot(Unlock.featureKey(kMoodPackFeatureKind, 'kawaii')),
@@ -41,15 +44,21 @@ void main() {
     // считался открытым, и на экране виджетов (пикер звался без user) платный
     // набор предлагался к выбору, хотя его никто не покупал.
     const noUser = MoodPackSelector(primary: Colors.pink);
-    expect(noUser.isOpen(paid), isFalse,
-        reason: 'нет кошелька — платный набор не отдаём');
+    expect(
+      noUser.isOpen(paid),
+      isFalse,
+      reason: 'нет кошелька — платный набор не отдаём',
+    );
 
     // Купленное парой открыто и без данных о человеке: покупка партнёра
     // приезжает ключами группы, а на iPhone от этого зависит, увидит ли он
     // набор вообще.
     final byPair = MoodPackSelector(primary: Colors.pink, pairOwned: {key});
-    expect(byPair.isOpen(paid), isTrue,
-        reason: 'партнёр купил — набор открыт обоим');
+    expect(
+      byPair.isOpen(paid),
+      isTrue,
+      reason: 'партнёр купил — набор открыт обоим',
+    );
 
     expect(
       paid.unlock.isUnlocked(level: 99, owned: false, plus: false),

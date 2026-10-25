@@ -16,9 +16,11 @@ class OfflineMediaCacheManager extends CacheManager {
   static final OfflineMediaCacheManager instance = OfflineMediaCacheManager._();
 
   OfflineMediaCacheManager._()
-      : super(Config(
+    : super(
+        Config(
           key,
           stalePeriod: const Duration(days: 90),
           maxNrOfCacheObjects: 300,
-        ));
+        ),
+      );
 }

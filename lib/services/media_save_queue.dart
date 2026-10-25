@@ -81,19 +81,24 @@ class LocalSaveExecutor implements SaveExecutor {
   int get concurrency => 3;
 
   @override
-  Future<String?> run(SaveItem item,
-      {required bool hidden, String title = ''}) async {
+  Future<String?> run(
+    SaveItem item, {
+    required bool hidden,
+    String title = '',
+  }) async {
     final got = await fetcher.fetch(item.file);
     try {
-      return await target.save(GallerySaveRequest(
-        path: got.file.path,
-        kind: item.file.kind,
-        takenAt: item.takenAt,
-        latitude: item.latitude,
-        longitude: item.longitude,
-        name: galleryFileName(item.takenAt, item.file),
-        hidden: hidden,
-      ));
+      return await target.save(
+        GallerySaveRequest(
+          path: got.file.path,
+          kind: item.file.kind,
+          takenAt: item.takenAt,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          name: galleryFileName(item.takenAt, item.file),
+          hidden: hidden,
+        ),
+      );
     } finally {
       if (got.temporary) {
         try {
@@ -163,22 +168,22 @@ class SaveItem {
   });
 
   factory SaveItem.of(Memory m, MediaFile f) => SaveItem(
-        memoryId: m.id,
-        takenAt: m.createdAt,
-        latitude: m.latitude,
-        longitude: m.longitude,
-        file: f,
-      );
+    memoryId: m.id,
+    takenAt: m.createdAt,
+    latitude: m.latitude,
+    longitude: m.longitude,
+    file: f,
+  );
 
   Map<String, Object?> toJson() => {
-        'm': memoryId,
-        't': takenAt.millisecondsSinceEpoch,
-        'la': latitude,
-        'lo': longitude,
-        'r': file.ref,
-        'k': file.kind.name,
-        'i': file.index,
-      };
+    'm': memoryId,
+    't': takenAt.millisecondsSinceEpoch,
+    'la': latitude,
+    'lo': longitude,
+    'r': file.ref,
+    'k': file.kind.name,
+    'i': file.index,
+  };
 
   static SaveItem? fromJson(Object? raw) {
     if (raw is! Map) return null;
@@ -206,7 +211,7 @@ enum _St { pending, running, done, failed }
 /// Задание: всё, что человек отправил в галерею одним нажатием.
 class SaveJob {
   SaveJob._(this.id, this.title, this.items, this.hidden)
-      : _st = List<_St>.filled(items.length, _St.pending);
+    : _st = List<_St>.filled(items.length, _St.pending);
 
   final String id;
 
@@ -258,16 +263,16 @@ class MediaSaveQueue extends ChangeNotifier {
     SaveExecutor? executor,
     required this.ledger,
     this.retryDelays = const [Duration(seconds: 1), Duration(seconds: 3)],
-  })  : assert(executor != null || (fetcher != null && target != null)),
-        executor = executor ?? LocalSaveExecutor(fetcher!, target!);
+  }) : assert(executor != null || (fetcher != null && target != null)),
+       executor = executor ?? LocalSaveExecutor(fetcher!, target!);
 
   static MediaSaveQueue? _instance;
   static MediaSaveQueue get instance => _instance ??= MediaSaveQueue(
-        executor: (Platform.isAndroid || Platform.isIOS)
-            ? NativeSaveExecutor.instance
-            : LocalSaveExecutor(HttpMediaFetcher(), GalleryWriter.instance),
-        ledger: SavedMediaLedger.instance,
-      );
+    executor: (Platform.isAndroid || Platform.isIOS)
+        ? NativeSaveExecutor.instance
+        : LocalSaveExecutor(HttpMediaFetcher(), GalleryWriter.instance),
+    ledger: SavedMediaLedger.instance,
+  );
 
   static const String prefsKey = 'media_save_queue_v1';
 
@@ -337,11 +342,11 @@ class MediaSaveQueue extends ChangeNotifier {
   bool isQueued(String key) => _queuedKeys.contains(mediaKey(key));
 
   Set<String> get _queuedKeys => {
-        for (final j in _jobs)
-          if (!j.finished && !j.cancelled)
-            for (var i = 0; i < j.items.length; i++)
-              if (!j.isDoneAt(i) && !j.isFailedAt(i)) j.items[i].file.key,
-      };
+    for (final j in _jobs)
+      if (!j.finished && !j.cancelled)
+        for (var i = 0; i < j.items.length; i++)
+          if (!j.isDoneAt(i) && !j.isFailedAt(i)) j.items[i].file.key,
+  };
 
   /// Ставит файлы в очередь. Уже лежащее в галерее и уже стоящее в очереди
   /// пропускается; если сохранять нечего, задания нет.
@@ -380,10 +385,12 @@ class MediaSaveQueue extends ChangeNotifier {
     job.cancelled = true;
     // Нативная запись держит файлы у себя — снимаем их и там, иначе она
     // докачает всё, что ей успели отдать.
-    unawaited(executor.cancel([
-      for (var i = 0; i < job.items.length; i++)
-        if (!job.isDoneAt(i) && !job.isFailedAt(i)) job.items[i],
-    ]));
+    unawaited(
+      executor.cancel([
+        for (var i = 0; i < job.items.length; i++)
+          if (!job.isDoneAt(i) && !job.isFailedAt(i)) job.items[i],
+      ]),
+    );
     if (job.finished) _finish(job);
     notifyListeners();
     unawaited(persistNow());
@@ -435,7 +442,7 @@ class MediaSaveQueue extends ChangeNotifier {
     final item = job.items[i];
     try {
       String? uri;
-      for (var attempt = 0;; attempt++) {
+      for (var attempt = 0; ; attempt++) {
         try {
           uri = await executor.run(item, hidden: job.hidden, title: job.title);
           break;

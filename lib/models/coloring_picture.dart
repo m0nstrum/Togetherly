@@ -36,8 +36,11 @@ enum ColoringMode {
 /// стороне, а касания туда не проходят, потому что сторона по умолчанию левая.
 bool coloringSplitApplies(String partnerUid) => partnerUid.trim().isNotEmpty;
 
-ColoringSide coloringSideFor(String myUid, String partnerUid,
-    {bool swapped = false}) {
+ColoringSide coloringSideFor(
+  String myUid,
+  String partnerUid, {
+  bool swapped = false,
+}) {
   if (partnerUid.isEmpty) return ColoringSide.left;
   final base = myUid.toLowerCase().compareTo(partnerUid.toLowerCase()) <= 0
       ? ColoringSide.left
@@ -73,8 +76,7 @@ class ColoringPicture {
     required String title,
     required double ratio,
   }) =>
-      ColoringPicture(
-          id: id, titleRu: title, titleEn: title, ownRatio: ratio);
+      ColoringPicture(id: id, titleRu: title, titleEn: title, ownRatio: ratio);
 
   /// Пропорция листа для своей раскраски. У встроенных лист квадратный.
   final double? ownRatio;
@@ -104,8 +106,11 @@ class ColoringPicture {
     ColoringPicture(id: 'cafe', titleRu: 'Кафе', titleEn: 'Cafe'),
     ColoringPicture(id: 'castle', titleRu: 'Замок', titleEn: 'Castle'),
     ColoringPicture(id: 'rain', titleRu: 'Дождь', titleEn: 'Rain'),
-    ColoringPicture(id: 'ferris',
-        titleRu: 'Колесо обозрения', titleEn: 'Ferris wheel'),
+    ColoringPicture(
+      id: 'ferris',
+      titleRu: 'Колесо обозрения',
+      titleEn: 'Ferris wheel',
+    ),
     ColoringPicture(id: 'metro', titleRu: 'Метро', titleEn: 'Metro'),
     ColoringPicture(id: 'camping', titleRu: 'Палатка', titleEn: 'Camping'),
     ColoringPicture(id: 'festival', titleRu: 'Фестиваль', titleEn: 'Festival'),
@@ -120,8 +125,10 @@ class ColoringPicture {
   /// экранами и в паре ходит только id. Пока их сюда не передавали, свой
   /// рисунок открывался пустым листом: id вида `own_…` не находился нигде,
   /// раскраска считалась невыбранной и контур не грузился вовсе.
-  static ColoringPicture? byId(String? id,
-      {List<ColoringPicture> own = const []}) {
+  static ColoringPicture? byId(
+    String? id, {
+    List<ColoringPicture> own = const [],
+  }) {
     if (id == null || id.isEmpty) return null;
     for (final p in all) {
       if (p.id == id) return p;

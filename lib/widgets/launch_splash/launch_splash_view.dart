@@ -10,7 +10,12 @@ import 'launch_splash_painter.dart';
 /// создания виджета: иначе медленный первый кадр съел бы начало сцены.
 /// По концу зовёт [onDone] один раз.
 class LaunchSplashView extends StatefulWidget {
-  const LaunchSplashView({super.key, required this.splash, required this.images, this.onDone});
+  const LaunchSplashView({
+    super.key,
+    required this.splash,
+    required this.images,
+    this.onDone,
+  });
 
   final LaunchSplash splash;
   final Map<String, ui.Image> images;
@@ -20,7 +25,8 @@ class LaunchSplashView extends StatefulWidget {
   State<LaunchSplashView> createState() => _LaunchSplashViewState();
 }
 
-class _LaunchSplashViewState extends State<LaunchSplashView> with SingleTickerProviderStateMixin {
+class _LaunchSplashViewState extends State<LaunchSplashView>
+    with SingleTickerProviderStateMixin {
   final ValueNotifier<double> _ms = ValueNotifier<double>(0);
   late final Ticker _ticker = createTicker(_tick);
   bool _done = false;
@@ -55,7 +61,11 @@ class _LaunchSplashViewState extends State<LaunchSplashView> with SingleTickerPr
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: CustomPaint(
-        painter: LaunchSplashPainter(splash: widget.splash, images: widget.images, ms: _ms),
+        painter: LaunchSplashPainter(
+          splash: widget.splash,
+          images: widget.images,
+          ms: _ms,
+        ),
         size: Size.infinite,
       ),
     );

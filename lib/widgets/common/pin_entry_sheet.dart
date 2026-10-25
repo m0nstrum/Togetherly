@@ -102,11 +102,11 @@ class _PinEntryState extends State<PinEntry> {
 
   /// Сброс после неверного PIN — экран остаётся, ячейки пустеют.
   void reset() => setState(() {
-        _value = '';
-        _sent = false;
-        _first = '';
-        _mismatch = null;
-      });
+    _value = '';
+    _sent = false;
+    _first = '';
+    _mismatch = null;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -127,10 +127,7 @@ class _PinEntryState extends State<PinEntry> {
         ),
         if (_mismatch != null) ...[
           const SizedBox(height: 14),
-          Text(
-            _mismatch!,
-            style: TextStyle(fontSize: 13.5, color: cs.error),
-          ),
+          Text(_mismatch!, style: TextStyle(fontSize: 13.5, color: cs.error)),
         ] else if (widget.error != null) ...[
           const SizedBox(height: 14),
           Text(

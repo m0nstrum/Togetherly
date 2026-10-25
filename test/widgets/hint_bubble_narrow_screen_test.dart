@@ -38,19 +38,23 @@ void main() {
       expect(
         () => leftFor(targetCenterX: width / 2, screenWidth: width),
         returnsNormally,
-        reason: 'ширина $width валила clamp: верхняя граница уходила ниже нижней',
+        reason:
+            'ширина $width валила clamp: верхняя граница уходила ниже нижней',
       );
       expect(leftFor(targetCenterX: width / 2, screenWidth: width), 12);
     }
   });
 
-  testWidgets('показ подсказки в узком окне не роняет экран',
-      (WidgetTester tester) async {
+  testWidgets('показ подсказки в узком окне не роняет экран', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(240, 640);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: SizedBox())),
+    );
     expect(tester.takeException(), isNull);
   });
 }

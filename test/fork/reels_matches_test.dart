@@ -238,7 +238,11 @@ void main() {
       ForkReelMatch.fromRecord(
         RecordModel.fromJson({
           'id': 'm1',
-          'state': {'clip': 'shorts:abcdefghijk', 'reaction': '🔥', 'at': 1760000000000},
+          'state': {
+            'clip': 'shorts:abcdefghijk',
+            'reaction': '🔥',
+            'at': 1760000000000,
+          },
         }),
       ),
     ];

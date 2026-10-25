@@ -54,7 +54,6 @@ const Map<String, String> smallBZh = {
   'watchVoiceMic': '麦克风',
   'watchVoiceSpeaker': '扬声器',
 
-
   // push_notifications
   'pushChannelName': '另一半的通知',
   'pushChannelDescription': '来自另一半的消息、心情和“想你”',

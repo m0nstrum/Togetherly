@@ -19,27 +19,33 @@ void main() {
   setUpAll(() => LocaleService.instance.setLanguage(AppLanguage.ru));
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  Future<void> render(WidgetTester tester, Widget child,
-      {double width = 320, double scale = 1.3}) async {
+  Future<void> render(
+    WidgetTester tester,
+    Widget child, {
+    double width = 320,
+    double scale = 1.3,
+  }) async {
     tester.view.physicalSize = Size(width * 3, 1400 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(
-          size: Size(width, 1400),
-          textScaler: TextScaler.linear(scale),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: Size(width, 1400),
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: Scaffold(body: child),
         ),
-        child: Scaffold(body: child),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
   group('с Плюсом', () {
-
-    testWidgets('строку зажали и перетащили — порядок поменялся',
-        (tester) async {
+    testWidgets('строку зажали и перетащили — порядок поменялся', (
+      tester,
+    ) async {
       HomeLayoutService.instance.debugSet(const HomeLayout());
       await render(
         tester,
@@ -67,8 +73,9 @@ void main() {
       expect(order.first, HomeBlock.mascot);
     });
 
-    testWidgets('вкладку за ручку перетащили — порядок поменялся',
-        (tester) async {
+    testWidgets('вкладку за ручку перетащили — порядок поменялся', (
+      tester,
+    ) async {
       HomeLayoutService.instance.debugSet(const HomeLayout());
       await render(
         tester,
@@ -80,13 +87,15 @@ void main() {
       // Ручка первой строки списка вкладок — «Главная»; тащим её вниз за
       // «Профиль».
       final handle = find.descendant(
-        of: find.ancestor(
-            of: find.text(s.home), matching: find.byType(Row)).first,
+        of: find
+            .ancestor(of: find.text(s.home), matching: find.byType(Row))
+            .first,
         matching: find.byIcon(Icons.drag_indicator_rounded),
       );
       final g = await tester.startGesture(tester.getCenter(handle));
       await tester.pump(const Duration(milliseconds: 50));
-      final dy = tester.getCenter(find.text(s.profile)).dy -
+      final dy =
+          tester.getCenter(find.text(s.profile)).dy -
           tester.getCenter(find.text(s.home)).dy +
           40;
       for (var i = 0; i < 20; i++) {
@@ -100,8 +109,9 @@ void main() {
       // У главной тумблера нет: спрятать её нельзя.
       expect(
         find.descendant(
-          of: find.ancestor(
-              of: find.text(s.home), matching: find.byType(Row)).first,
+          of: find
+              .ancestor(of: find.text(s.home), matching: find.byType(Row))
+              .first,
           matching: find.byType(Switch),
         ),
         findsNothing,
@@ -121,10 +131,13 @@ void main() {
         matching: find.byType(Row),
       );
       await tester.tap(
-          find.descendant(of: row.first, matching: find.byType(Switch)));
+        find.descendant(of: row.first, matching: find.byType(Switch)),
+      );
       await tester.pumpAndSettle();
-      expect(HomeLayoutService.instance.saved.showsBlock(HomeBlock.map),
-          isFalse);
+      expect(
+        HomeLayoutService.instance.saved.showsBlock(HomeBlock.map),
+        isFalse,
+      );
       expect(find.text('Вернуть как было'), findsOneWidget);
     });
 
@@ -145,35 +158,37 @@ void main() {
     {HomeAction.draw, HomeAction.calendar},
     {HomeAction.draw, HomeAction.mood, HomeAction.calendar},
   ]) {
-    testWidgets('ряд под таймером без ${hidden.map((a) => a.name).join(', ')}',
-        (tester) async {
-      var taps = 0;
-      await render(
-        tester,
-        Align(
-          alignment: Alignment.topCenter,
-          child: HomeActionButtons(
-            theme: AppThemes.byIndex(0),
-            isPaired: true,
-            myMoodImagePath: '',
-            onDraw: () => taps++,
-            onMood: () => taps++,
-            onCalendar: () => taps++,
-            onPost: () => taps++,
-            hidden: hidden,
+    testWidgets(
+      'ряд под таймером без ${hidden.map((a) => a.name).join(', ')}',
+      (tester) async {
+        var taps = 0;
+        await render(
+          tester,
+          Align(
+            alignment: Alignment.topCenter,
+            child: HomeActionButtons(
+              theme: AppThemes.byIndex(0),
+              isPaired: true,
+              myMoodImagePath: '',
+              onDraw: () => taps++,
+              onMood: () => taps++,
+              onCalendar: () => taps++,
+              onPost: () => taps++,
+              hidden: hidden,
+            ),
           ),
-        ),
-      );
-      expect(tester.takeException(), isNull);
-      final pills = find.byType(SvgPicture);
-      expect(pills, findsNWidgets(4 - hidden.length));
-      // Каждая оставшаяся кнопка нажимается и попадает в свой обработчик.
-      for (final e in pills.evaluate().toList()) {
-        await tester.tap(find.byWidget(e.widget));
-        await tester.pump(const Duration(milliseconds: 300));
-      }
-      expect(taps, 4 - hidden.length);
-    });
+        );
+        expect(tester.takeException(), isNull);
+        final pills = find.byType(SvgPicture);
+        expect(pills, findsNWidgets(4 - hidden.length));
+        // Каждая оставшаяся кнопка нажимается и попадает в свой обработчик.
+        for (final e in pills.evaluate().toList()) {
+          await tester.tap(find.byWidget(e.widget));
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+        expect(taps, 4 - hidden.length);
+      },
+    );
   }
 
   testWidgets('все кнопки ряда спрятаны — ряда нет', (tester) async {
@@ -211,16 +226,21 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     final items = find.byType(NavBarItem).evaluate().toList()
-      ..sort((a, b) => tester
-          .getCenter(find.byWidget(a.widget))
-          .dx
-          .compareTo(tester.getCenter(find.byWidget(b.widget)).dx));
-    expect([for (final e in items) (e.widget as NavBarItem).index],
-        [3, 0, 1, 4, 2]);
+      ..sort(
+        (a, b) => tester
+            .getCenter(find.byWidget(a.widget))
+            .dx
+            .compareTo(tester.getCenter(find.byWidget(b.widget)).dx),
+      );
+    expect(
+      [for (final e in items) (e.widget as NavBarItem).index],
+      [3, 0, 1, 4, 2],
+    );
   });
 
-  testWidgets('панель без «Виджетов» и «Смотрим» рисует три пункта',
-      (tester) async {
+  testWidgets('панель без «Виджетов» и «Смотрим» рисует три пункта', (
+    tester,
+  ) async {
     await render(
       tester,
       Align(

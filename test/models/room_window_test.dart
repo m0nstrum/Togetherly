@@ -33,7 +33,11 @@ void main() {
 
   group('корзина человека', () {
     test('одна и та же у одного человека и лежит в 0…99', () {
-      for (final uid in ['na8ivynvjpggisy', 'ufge0IwvR4RehZ9TgKijm5xc9C32', 'a']) {
+      for (final uid in [
+        'na8ivynvjpggisy',
+        'ufge0IwvR4RehZ9TgKijm5xc9C32',
+        'a',
+      ]) {
         final b = roomBucket(uid);
         expect(b, inInclusiveRange(0, 99));
         expect(roomBucket(uid), b);
@@ -59,8 +63,12 @@ void main() {
   });
 
   group('кому открывать нативное окно', () {
-    bool opens({bool ios = true, bool reels = false, int share = 100, String uid = 'na8ivynvjpggisy'}) =>
-        roomOpensNatively(ios: ios, reels: reels, share: share, uid: uid);
+    bool opens({
+      bool ios = true,
+      bool reels = false,
+      int share = 100,
+      String uid = 'na8ivynvjpggisy',
+    }) => roomOpensNatively(ios: ios, reels: reels, share: share, uid: uid);
 
     test('Android остаётся как был при любой доле', () {
       expect(opens(ios: false, share: 100), isFalse);
@@ -89,7 +97,11 @@ void main() {
       for (var i = 0; i < 500; i++) {
         final uid = 'user$i';
         if (roomOpensNatively(ios: true, reels: false, share: 20, uid: uid)) {
-          expect(roomOpensNatively(ios: true, reels: false, share: 50, uid: uid), isTrue, reason: uid);
+          expect(
+            roomOpensNatively(ios: true, reels: false, share: 50, uid: uid),
+            isTrue,
+            reason: uid,
+          );
         }
       }
     });
@@ -110,8 +122,16 @@ void main() {
     });
 
     test('без номера сборки метки нет', () {
-      expect(WatchRoomService.siteUrl('abcd2345'), 'https://togetherly.day/watch/room/#abcd2345');
-      expect(Uri.parse(WatchRoomService.siteUrl('abcd2345', build: 0)).queryParameters.containsKey('b'), isFalse);
+      expect(
+        WatchRoomService.siteUrl('abcd2345'),
+        'https://togetherly.day/watch/room/#abcd2345',
+      );
+      expect(
+        Uri.parse(
+          WatchRoomService.siteUrl('abcd2345', build: 0),
+        ).queryParameters.containsKey('b'),
+        isFalse,
+      );
     });
 
     test('нативное окно помечено, встроенное нет', () {

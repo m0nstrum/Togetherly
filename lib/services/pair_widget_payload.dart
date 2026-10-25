@@ -29,8 +29,9 @@ Map<String, String> pairWidgetPayload({
   final out = <String, String>{};
 
   if (my != null) {
-    out['my_name'] =
-        my.displayName.isNotEmpty ? my.displayName : myFallbackName;
+    out['my_name'] = my.displayName.isNotEmpty
+        ? my.displayName
+        : myFallbackName;
     out['my_mood'] = my.moodLabel;
     out['my_status'] = my.status;
     out['my_message'] = my.message;
@@ -126,13 +127,16 @@ PairWidgetMedia pairWidgetMedia({
   final bool clearTheirs = partner == null && pairChanged;
   return PairWidgetMedia(
     myPhoto: my == null ? (clearMine ? '' : null) : pairPhotoOf(my),
-    partnerPhoto:
-        partner == null ? (clearTheirs ? '' : null) : pairPhotoOf(partner),
+    partnerPhoto: partner == null
+        ? (clearTheirs ? '' : null)
+        : pairPhotoOf(partner),
     myAvatar: my?.avatarUrl ?? (clearMine ? '' : null),
     partnerAvatar: partner?.avatarUrl ?? (clearTheirs ? '' : null),
     myMoodEmoji: my?.moodEmoji ?? (clearMine ? '' : null),
     partnerMoodEmoji: partner?.moodEmoji ?? (clearTheirs ? '' : null),
-    myIosPhotos: my == null ? (clearMine ? const <String>[] : null) : iosPhotosOf(my),
+    myIosPhotos: my == null
+        ? (clearMine ? const <String>[] : null)
+        : iosPhotosOf(my),
     partnerIosPhotos: partner == null
         ? (clearTheirs ? const <String>[] : null)
         : iosPhotosOf(partner),
@@ -167,8 +171,10 @@ String pairWidgetKey(String groupId, String key) =>
     groupId.isEmpty ? key : 'love_${groupId}_$key';
 
 /// Тот же набор ключей, но принадлежащий паре.
-Map<String, String> pairWidgetKeysFor(String groupId, Map<String, String> keys) =>
-    {for (final e in keys.entries) pairWidgetKey(groupId, e.key): e.value};
+Map<String, String> pairWidgetKeysFor(
+  String groupId,
+  Map<String, String> keys,
+) => {for (final e in keys.entries) pairWidgetKey(groupId, e.key): e.value};
 
 /// Отметка «ключи этой пары в контейнере уже разложены».
 ///
@@ -253,33 +259,33 @@ const List<String> kPairWidgetFileKeys = [
 /// поэтому распад пары надо отрабатывать явно — иначе на рабочем столе остаются
 /// имя, настроение и фото бывшего партнёра, а на iPhone обновить их некому.
 Map<String, String> pairWidgetClearPayload() => {
-      for (final key in const [
-        'my_name',
-        'my_mood',
-        'my_status',
-        'my_message',
-        'my_music_title',
-        'my_music_artist',
-        'my_photo_url',
-        'my_avatar_url',
-        'partner_name',
-        'partner_mood',
-        'partner_status',
-        'partner_message',
-        'partner_music_title',
-        'partner_music_artist',
-        'partner_photo_url',
-        'partner_avatar_url',
-        'ios_partner_photo_author',
-        'ios_photo_day_path',
-        'ios_photo_day_author',
-        'ios_photo_catalog_self',
-        'ios_photo_catalog_partner',
-        'ios_photo_catalog_day',
-        ...kPairWidgetFileKeys,
-      ])
-        key: '',
-    };
+  for (final key in const [
+    'my_name',
+    'my_mood',
+    'my_status',
+    'my_message',
+    'my_music_title',
+    'my_music_artist',
+    'my_photo_url',
+    'my_avatar_url',
+    'partner_name',
+    'partner_mood',
+    'partner_status',
+    'partner_message',
+    'partner_music_title',
+    'partner_music_artist',
+    'partner_photo_url',
+    'partner_avatar_url',
+    'ios_partner_photo_author',
+    'ios_photo_day_path',
+    'ios_photo_day_author',
+    'ios_photo_catalog_self',
+    'ios_photo_catalog_partner',
+    'ios_photo_catalog_day',
+    ...kPairWidgetFileKeys,
+  ])
+    key: '',
+};
 
 /// Пора ли стирать виджет пары.
 ///
@@ -309,9 +315,8 @@ bool shouldClearPairWidget({required bool wasPaired, required bool isPaired}) =>
 Map<String, String> pairBindingPayload({
   required String groupId,
   required String partnerUid,
-}) =>
-    {
-      if (groupId.isNotEmpty) 'love_widget_group_id': groupId,
-      if (groupId.isNotEmpty && partnerUid.isNotEmpty)
-        'love_widget_partner_uid': partnerUid,
-    };
+}) => {
+  if (groupId.isNotEmpty) 'love_widget_group_id': groupId,
+  if (groupId.isNotEmpty && partnerUid.isNotEmpty)
+    'love_widget_partner_uid': partnerUid,
+};

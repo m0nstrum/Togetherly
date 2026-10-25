@@ -15,9 +15,7 @@ void main() {
   Future<void> pump(WidgetTester tester) => tester.pumpWidget(
     const MaterialApp(
       home: Scaffold(
-        body: Center(
-          child: SizedBox(height: 100, child: PairPreviewDivider()),
-        ),
+        body: Center(child: SizedBox(height: 100, child: PairPreviewDivider())),
       ),
     ),
   );
@@ -43,7 +41,9 @@ void main() {
     tester,
   ) async {
     await pump(tester);
-    final heartWidth = tester.getSize(find.byIcon(Icons.favorite_rounded)).width;
+    final heartWidth = tester
+        .getSize(find.byIcon(Icons.favorite_rounded))
+        .width;
     expect(heartWidth, lessThanOrEqualTo(PairPreviewDivider.width));
   });
 

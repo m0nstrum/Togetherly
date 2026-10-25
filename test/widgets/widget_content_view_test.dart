@@ -15,19 +15,21 @@ const _longMessage =
     'ужином — я купила нам мороженое.';
 
 Widget _host(void Function(BuildContext) onTap) => MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => onTap(context),
-            child: const Text('открыть'),
-          ),
-        ),
+  home: Scaffold(
+    body: Builder(
+      builder: (context) => TextButton(
+        onPressed: () => onTap(context),
+        child: const Text('открыть'),
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   testWidgets('письмо показывается целиком, без многоточия', (tester) async {
-    await tester.pumpWidget(_host((context) => showWidgetTextSheet(
+    await tester.pumpWidget(
+      _host(
+        (context) => showWidgetTextSheet(
           context,
           theme: AppThemes.pink,
           title: 'Сообщение',
@@ -35,21 +37,28 @@ void main() {
           authorUid: 'partner-uid',
           authorName: 'Ксюша',
           updatedAt: DateTime.now().subtract(const Duration(minutes: 12)),
-        )));
+        ),
+      ),
+    );
 
     await tester.tap(find.text('открыть'));
     await tester.pumpAndSettle();
 
     final letter = tester.widget<SelectableText>(
-      find.byWidgetPredicate((w) => w is SelectableText && w.data == _longMessage),
+      find.byWidgetPredicate(
+        (w) => w is SelectableText && w.data == _longMessage,
+      ),
     );
     expect(letter.maxLines, isNull, reason: 'текст не должен обрезаться');
     expect(find.text('Ксюша'), findsOneWidget);
   });
 
-  testWidgets('песня без обложки оставляет название и исполнителя',
-      (tester) async {
-    await tester.pumpWidget(_host((context) => showWidgetMusicSheet(
+  testWidgets('песня без обложки оставляет название и исполнителя', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        (context) => showWidgetMusicSheet(
           context,
           theme: AppThemes.pink,
           title: 'No. 1 Party Anthem',
@@ -57,7 +66,9 @@ void main() {
           coverUrl: null,
           authorUid: 'partner-uid',
           authorName: 'Ксюша',
-        )));
+        ),
+      ),
+    );
 
     await tester.tap(find.text('открыть'));
     await tester.pumpAndSettle();

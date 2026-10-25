@@ -87,14 +87,14 @@ class TogetherTrackCard extends StatelessWidget {
   }
 
   TextStyle _num(double px, Color color) => TextStyle(
-        fontFamily: 'Unbounded',
-        fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
-        fontSize: px,
-        height: 0.95,
-        letterSpacing: -px * 0.04,
-        color: color,
-      );
+    fontFamily: 'Unbounded',
+    fontWeight: FontWeight.w800,
+    fontVariations: const [FontVariation('wght', 800)],
+    fontSize: px,
+    height: 0.95,
+    letterSpacing: -px * 0.04,
+    color: color,
+  );
 
   TextStyle _text(double px, Color color, {FontWeight w = FontWeight.w600}) =>
       TextStyle(
@@ -107,7 +107,8 @@ class TogetherTrackCard extends StatelessWidget {
       );
 
   Widget _faces(double side) {
-    if (myAvatar == null && partnerAvatar == null) return const SizedBox.shrink();
+    if (myAvatar == null && partnerAvatar == null)
+      return const SizedBox.shrink();
     return SizedBox(
       width: side * 1.7,
       height: side,
@@ -125,22 +126,26 @@ class TogetherTrackCard extends StatelessWidget {
     );
   }
 
-  Widget _line(Color track, Color fill, Color ring,
-          {required bool midStop, double height = 24}) =>
-      SizedBox(
-        height: height,
-        child: CustomPaint(
-          painter: _TrackLinePainter(
-            percent: percent,
-            hasPrevious: _hasPrevious,
-            midStop: midStop,
-            track: track,
-            fill: fill,
-            ring: ring,
-          ),
-          size: Size.infinite,
-        ),
-      );
+  Widget _line(
+    Color track,
+    Color fill,
+    Color ring, {
+    required bool midStop,
+    double height = 24,
+  }) => SizedBox(
+    height: height,
+    child: CustomPaint(
+      painter: _TrackLinePainter(
+        percent: percent,
+        hasPrevious: _hasPrevious,
+        midStop: midStop,
+        track: track,
+        fill: fill,
+        ring: ring,
+      ),
+      size: Size.infinite,
+    ),
+  );
 
   Widget _small(ColorScheme cs) {
     final ink = _c('onPrimary', cs.onPrimary);
@@ -152,18 +157,30 @@ class TogetherTrackCard extends StatelessWidget {
         const SizedBox(height: 6),
         Text('$days', style: _num(40, ink), maxLines: 1),
         const SizedBox(height: 2),
-        Text(daysLabel, style: _text(11.5, soft), maxLines: 1,
-            overflow: TextOverflow.ellipsis),
+        Text(
+          daysLabel,
+          style: _text(11.5, soft),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         const Spacer(),
         // Подписи вех сюда не помещаются: 160 dp съедают лица, число и
         // подпись, а обрезанная строка читается поломкой. Что впереди,
         // человек смотрит на 4×2 — тут важнее сама дорожка.
-        Text(nextSub.isEmpty ? nextTitle : '$nextTitle · $nextSub',
-            style: _text(10.5, soft, w: FontWeight.w700),
-            maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          nextSub.isEmpty ? nextTitle : '$nextTitle · $nextSub',
+          style: _text(10.5, soft, w: FontWeight.w700),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         const SizedBox(height: 4),
-        _line(_c('blockOnPrimary', cs.primaryContainer), ink,
-            _c('primary', cs.primary), midStop: false, height: 20),
+        _line(
+          _c('blockOnPrimary', cs.primaryContainer),
+          ink,
+          _c('primary', cs.primary),
+          midStop: false,
+          height: 20,
+        ),
       ],
     );
   }
@@ -182,9 +199,12 @@ class TogetherTrackCard extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Text(daysLabel,
-                    style: _text(14, soft), maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  daysLabel,
+                  style: _text(14, soft),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             _faces(30),
@@ -192,20 +212,31 @@ class TogetherTrackCard extends StatelessWidget {
         ),
         if (startDate.isNotEmpty) ...[
           const SizedBox(height: 3),
-          Text(startDate, style: _text(11, soft), maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            startDate,
+            style: _text(11, soft),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
         const Spacer(),
-        _line(_c('blockOnPrimary', cs.primaryContainer), ink,
-            _c('primary', cs.primary), midStop: true),
+        _line(
+          _c('blockOnPrimary', cs.primaryContainer),
+          ink,
+          _c('primary', cs.primary),
+          midStop: true,
+        ),
         const SizedBox(height: 3),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Text(previousTitle,
-                  style: _text(11, soft, w: FontWeight.w700),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: Text(
+                previousTitle,
+                style: _text(11, soft, w: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             Expanded(
               flex: 2,
@@ -218,10 +249,13 @@ class TogetherTrackCard extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Text(anniversaryTitle,
-                  textAlign: TextAlign.end,
-                  style: _text(11, soft, w: FontWeight.w700),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: Text(
+                anniversaryTitle,
+                textAlign: TextAlign.end,
+                style: _text(11, soft, w: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -240,7 +274,7 @@ class TogetherTrackCard extends StatelessWidget {
       (
         title: anniversaryTitle,
         sub: anniversarySub,
-        subColor: _c('tertiary', cs.tertiary)
+        subColor: _c('tertiary', cs.tertiary),
       ),
     ];
 
@@ -250,9 +284,12 @@ class TogetherTrackCard extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(names,
-                  style: _text(12, soft, w: FontWeight.w700),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: Text(
+                names,
+                style: _text(12, soft, w: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             _faces(28),
           ],
@@ -270,12 +307,19 @@ class TogetherTrackCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(daysLabel, style: _text(14, soft), maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      daysLabel,
+                      style: _text(14, soft),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     if (startDate.isNotEmpty)
-                      Text(startDate,
-                          style: _text(11, _c('outline', cs.outline)),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        startDate,
+                        style: _text(11, _c('outline', cs.outline)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                   ],
                 ),
               ),
@@ -312,14 +356,19 @@ class TogetherTrackCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(r.title,
-                                  style: _text(14, ink, w: FontWeight.w700),
-                                  maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(
+                                r.title,
+                                style: _text(14, ink, w: FontWeight.w700),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               if (r.sub.isNotEmpty)
-                                Text(r.sub,
-                                    style: _text(11, r.subColor),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  r.sub,
+                                  style: _text(11, r.subColor),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                             ],
                           ),
                         ),
@@ -391,18 +440,33 @@ class _TrackLinePainter extends CustomPainter {
     canvas.drawLine(Offset(left, cy), Offset(here, cy), line..color = fill);
 
     final dot = Paint()..isAntiAlias = true;
-    canvas.drawCircle(Offset(left, cy), TogetherTrackSpec.stopRadius,
-        dot..color = hasPrevious ? fill : track);
+    canvas.drawCircle(
+      Offset(left, cy),
+      TogetherTrackSpec.stopRadius,
+      dot..color = hasPrevious ? fill : track,
+    );
     if (midStop) {
-      canvas.drawCircle(Offset((left + right) / 2, cy),
-          TogetherTrackSpec.stopRadius, dot..color = track);
+      canvas.drawCircle(
+        Offset((left + right) / 2, cy),
+        TogetherTrackSpec.stopRadius,
+        dot..color = track,
+      );
     }
     canvas.drawCircle(
-        Offset(right, cy), TogetherTrackSpec.stopRadius, dot..color = track);
+      Offset(right, cy),
+      TogetherTrackSpec.stopRadius,
+      dot..color = track,
+    );
     canvas.drawCircle(
-        Offset(here, cy), TogetherTrackSpec.todayRing, dot..color = ring);
+      Offset(here, cy),
+      TogetherTrackSpec.todayRing,
+      dot..color = ring,
+    );
     canvas.drawCircle(
-        Offset(here, cy), TogetherTrackSpec.todayRadius, dot..color = fill);
+      Offset(here, cy),
+      TogetherTrackSpec.todayRadius,
+      dot..color = fill,
+    );
   }
 
   @override
@@ -447,22 +511,37 @@ class _TrackColumnPainter extends CustomPainter {
     canvas.drawLine(Offset(cx, y(0)), Offset(cx, y(rows - 1)), line);
     if (current < rows) {
       canvas.drawLine(
-          Offset(cx, y(0)), Offset(cx, y(current)), line..color = fill);
+        Offset(cx, y(0)),
+        Offset(cx, y(current)),
+        line..color = fill,
+      );
     }
 
     final dot = Paint()..isAntiAlias = true;
     for (var i = 0; i < rows; i++) {
       if (i == current) {
         canvas.drawCircle(
-            Offset(cx, y(i)), TogetherTrackSpec.todayRing, dot..color = ring);
+          Offset(cx, y(i)),
+          TogetherTrackSpec.todayRing,
+          dot..color = ring,
+        );
         canvas.drawCircle(
-            Offset(cx, y(i)), TogetherTrackSpec.todayRadius, dot..color = fill);
+          Offset(cx, y(i)),
+          TogetherTrackSpec.todayRadius,
+          dot..color = fill,
+        );
       } else if (i == rows - 1) {
         canvas.drawCircle(
-            Offset(cx, y(i)), TogetherTrackSpec.todayRadius, dot..color = last);
+          Offset(cx, y(i)),
+          TogetherTrackSpec.todayRadius,
+          dot..color = last,
+        );
       } else {
-        canvas.drawCircle(Offset(cx, y(i)), TogetherTrackSpec.todayRadius,
-            dot..color = i < current ? fill : track);
+        canvas.drawCircle(
+          Offset(cx, y(i)),
+          TogetherTrackSpec.todayRadius,
+          dot..color = i < current ? fill : track,
+        );
       }
     }
   }

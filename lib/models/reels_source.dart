@@ -42,11 +42,13 @@ enum ReelsSource {
   /// в комнате, — площадка засчитывает просмотр и подстраивает рекомендации.
   /// Пусто — у площадки так не выходит, лента учится на своих показах.
   String watchUrl(String id) => switch (this) {
-        ReelsSource.shorts => 'https://m.youtube.com/shorts/$id',
-        ReelsSource.rutube => 'https://rutube.ru/shorts/$id/',
-        _ => '',
-      };
+    ReelsSource.shorts => 'https://m.youtube.com/shorts/$id',
+    ReelsSource.rutube => 'https://rutube.ru/shorts/$id/',
+    _ => '',
+  };
 
-  static ReelsSource byKey(String key) =>
-      ReelsSource.values.firstWhere((s) => s.key == key, orElse: () => ReelsSource.shorts);
+  static ReelsSource byKey(String key) => ReelsSource.values.firstWhere(
+    (s) => s.key == key,
+    orElse: () => ReelsSource.shorts,
+  );
 }

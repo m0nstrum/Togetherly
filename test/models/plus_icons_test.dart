@@ -15,8 +15,11 @@ void main() {
     });
 
     test('В каталоге есть хотя бы один наградной значок', () {
-      expect(ProfileIcon.all.any((i) => i.grantOnly), isTrue,
-          reason: 'иначе проверять разделение не на чем');
+      expect(
+        ProfileIcon.all.any((i) => i.grantOnly),
+        isTrue,
+        reason: 'иначе проверять разделение не на чем',
+      );
     });
 
     test('ById находит значок и отличает наградной от платного', () {

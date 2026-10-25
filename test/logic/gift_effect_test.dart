@@ -31,10 +31,20 @@ void main() {
 
   test('эффект активен, пока не вышло время', () {
     final now = DateTime(2026, 7, 22, 12);
-    expect(isEffectActive(now.add(const Duration(hours: 1)).millisecondsSinceEpoch, now),
-        isTrue);
-    expect(isEffectActive(now.subtract(const Duration(minutes: 1)).millisecondsSinceEpoch, now),
-        isFalse);
+    expect(
+      isEffectActive(
+        now.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+        now,
+      ),
+      isTrue,
+    );
+    expect(
+      isEffectActive(
+        now.subtract(const Duration(minutes: 1)).millisecondsSinceEpoch,
+        now,
+      ),
+      isFalse,
+    );
     expect(isEffectActive(0, now), isFalse);
     expect(isEffectActive(null, now), isFalse);
   });

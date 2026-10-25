@@ -36,16 +36,20 @@ class CoupleStatsService {
     if (token.isEmpty) throw const ForkFailureError(ForkFailure.session);
 
     try {
-      final res = await http.get(
-        Uri.parse(
-          '${PocketBaseService.baseUrl}/api/couple/stats?groupId=$groupId',
-        ),
-        headers: {'Authorization': token},
-      ).timeout(const Duration(seconds: 20));
+      final res = await http
+          .get(
+            Uri.parse(
+              '${PocketBaseService.baseUrl}/api/couple/stats?groupId=$groupId',
+            ),
+            headers: {'Authorization': token},
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (res.statusCode != 200) {
         debugPrint('CoupleStatsService: HTTP ${res.statusCode}');
-        throw ForkFailureError(res.statusCode == 401 ? ForkFailure.session : ForkFailure.network);
+        throw ForkFailureError(
+          res.statusCode == 401 ? ForkFailure.session : ForkFailure.network,
+        );
       }
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       await ForkE2E.patchCoupleStats(groupId, json); // fork: даты пары шифром
@@ -84,8 +88,15 @@ Future<void> _patchMoods(String groupId, Map<String, dynamic> json) async {
 /// Разбивка настроений в форме ответа сервера: `daily` — отметки за 90 дней
 /// по дням автора (новые сверху), `top` — самые частые у каждого.
 @visibleForTesting
-Map<String, dynamic> moodStatsJson(Map<String, List<MoodEntry>> byUid, DateTime now) {
-  final from = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 89));
+Map<String, dynamic> moodStatsJson(
+  Map<String, List<MoodEntry>> byUid,
+  DateTime now,
+) {
+  final from = DateTime(
+    now.year,
+    now.month,
+    now.day,
+  ).subtract(const Duration(days: 89));
   final daily = <(String, String, String), int>{};
   final top = <(String, String), int>{};
   String ymd(DateTime d) =>
@@ -102,11 +113,14 @@ Map<String, dynamic> moodStatsJson(Map<String, List<MoodEntry>> byUid, DateTime 
       daily[k] = (daily[k] ?? 0) + 1;
     }
   });
-  final dailyList = daily.entries.toList()..sort((a, b) => b.key.$1.compareTo(a.key.$1));
-  final topList = top.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+  final dailyList = daily.entries.toList()
+    ..sort((a, b) => b.key.$1.compareTo(a.key.$1));
+  final topList = top.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
   return {
     'daily': [
-      for (final e in dailyList) {'d': e.key.$1, 'uid': e.key.$2, 'id': e.key.$3, 'c': e.value},
+      for (final e in dailyList)
+        {'d': e.key.$1, 'uid': e.key.$2, 'id': e.key.$3, 'c': e.value},
     ],
     'top': [
       for (final e in topList) {'uid': e.key.$1, 'id': e.key.$2, 'c': e.value},
@@ -267,7 +281,9 @@ class CoupleStats {
       // поворачиваем на пояс читателя, иначе у московской пары пик в 21:00
       // рисуется на 18:00.
       hourMessages: shiftHoursToLocal(
-          _slots(rhythm['hourMessages'], 'h', 24), DateTime.now().timeZoneOffset),
+        _slots(rhythm['hourMessages'], 'h', 24),
+        DateTime.now().timeZoneOffset,
+      ),
       moodDaily: [
         for (final p in (mood['daily'] as List? ?? const []))
           if (p is Map) MoodPoint.fromJson(p),
@@ -303,11 +319,11 @@ class MoodPoint {
   final int count;
 
   factory MoodPoint.fromJson(Map raw) => MoodPoint(
-        day: DateTime.tryParse('${raw['d'] ?? ''}'),
-        uid: '${raw['uid'] ?? ''}',
-        moodId: '${raw['id'] ?? ''}',
-        count: (raw['c'] as num?)?.toInt() ?? 0,
-      );
+    day: DateTime.tryParse('${raw['d'] ?? ''}'),
+    uid: '${raw['uid'] ?? ''}',
+    moodId: '${raw['id'] ?? ''}',
+    count: (raw['c'] as num?)?.toInt() ?? 0,
+  );
 }
 
 /// Гистограмму часов, посчитанную сервером в UTC, повернуть в часы читателя.

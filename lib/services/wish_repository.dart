@@ -49,8 +49,11 @@ class WishRepository {
 
       final fresh = recs.map(Wish.fromPb).toList();
       for (final w in fresh) {
-        await LocalStore.instance
-            .upsertRaw(_collection, w.id, w.toMap(groupId: groupId));
+        await LocalStore.instance.upsertRaw(
+          _collection,
+          w.id,
+          w.toMap(groupId: groupId),
+        );
       }
       return fresh;
     } catch (e) {
@@ -258,10 +261,7 @@ class WishRepository {
 
   /// Отмечает желание сбывшимся. Отметить может любой из пары — [Wish.doneBy]
   /// запоминает, кто именно.
-  Future<Wish?> markDone({
-    required String groupId,
-    required Wish wish,
-  }) async {
+  Future<Wish?> markDone({required String groupId, required Wish wish}) async {
     final uid = _uid;
     if (uid == null || uid.isEmpty || groupId.isEmpty) return null;
     final marked = wish.markDone(by: uid);
@@ -270,10 +270,7 @@ class WishRepository {
   }
 
   /// Снимает отметку — кнопка «Отменить» в снекбаре и повторный тап по галочке.
-  Future<Wish> undone({
-    required String groupId,
-    required Wish wish,
-  }) async {
+  Future<Wish> undone({required String groupId, required Wish wish}) async {
     final back = wish.undone();
     if (groupId.isNotEmpty) await _save(groupId, back);
     return back;
@@ -366,8 +363,11 @@ class WishRepository {
       final recs = await _data.loadWishReservations(groupId);
       final fresh = recs.map(WishReservation.fromPb).toList();
       for (final r in fresh) {
-        await LocalStore.instance
-            .upsertRaw(_reservations, r.id, r.toMap(groupId: groupId));
+        await LocalStore.instance.upsertRaw(
+          _reservations,
+          r.id,
+          r.toMap(groupId: groupId),
+        );
       }
       return fresh;
     } catch (e) {
@@ -426,8 +426,9 @@ class WishRepository {
   Future<void> release(String reservationId) async {
     if (reservationId.isEmpty) return;
     await LocalStore.instance.deleteRecord(_reservations, reservationId);
-    await OutboxService.instance
-        .enqueue('wishReserveDelete', {'id': reservationId});
+    await OutboxService.instance.enqueue('wishReserveDelete', {
+      'id': reservationId,
+    });
   }
 
   /// Кладёт запись местно и ставит задание в очередь.

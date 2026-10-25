@@ -16,10 +16,5 @@ Rect containRect({required Size source, required Size target}) {
       : target.height / source.height;
   final w = source.width * scale;
   final h = source.height * scale;
-  return Rect.fromLTWH(
-    (target.width - w) / 2,
-    (target.height - h) / 2,
-    w,
-    h,
-  );
+  return Rect.fromLTWH((target.width - w) / 2, (target.height - h) / 2, w, h);
 }

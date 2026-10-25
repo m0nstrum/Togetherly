@@ -143,13 +143,17 @@ class _MissYouScreenState extends State<MissYouScreen>
     );
     _pulseScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 0.92)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 1.0,
+          end: 0.92,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 18,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 0.92, end: 1.0)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween(
+          begin: 0.92,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 82,
       ),
     ]).animate(_pulse);
@@ -169,7 +173,10 @@ class _MissYouScreenState extends State<MissYouScreen>
         _scheduleStaleSweep();
         // Запись счётчика двинулась — значит, в истории новый импульс.
         _historyDebounce?.cancel();
-        _historyDebounce = Timer(const Duration(milliseconds: 500), _loadHistory);
+        _historyDebounce = Timer(
+          const Duration(milliseconds: 500),
+          _loadHistory,
+        );
       });
       _loadHistory();
     }
@@ -238,7 +245,9 @@ class _MissYouScreenState extends State<MissYouScreen>
       ok = await _repo.sendMissYou(widget.groupId, replyTo: replyTo);
     } catch (_) {
       ok = false;
-    } finally { _sending--; }
+    } finally {
+      _sending--;
+    }
     if (!ok && mounted) {
       setState(() => _mine = _mine.failed());
       // fork (M5): отказ не молчит, у сообщения есть «Повторить».
@@ -290,9 +299,12 @@ class _MissYouScreenState extends State<MissYouScreen>
   }
 
   Future<void> _removeWish(String text) async {
-    final ok = await AppDialog.confirm(context,
-      title: ruEn('Удалить фразу?', 'Delete phrase?'), message: text,
-      confirmLabel: _s.delete, destructive: true,
+    final ok = await AppDialog.confirm(
+      context,
+      title: ruEn('Удалить фразу?', 'Delete phrase?'),
+      message: text,
+      confirmLabel: _s.delete,
+      destructive: true,
     );
     if (!ok || !mounted) return;
     final next = await CustomWishesStore.remove(_wishes, text);
@@ -338,10 +350,7 @@ class _MissYouScreenState extends State<MissYouScreen>
   }
 
   void _spawnHearts({IconData icon = Icons.favorite_rounded}) {
-    const extra = [
-      Icons.favorite_border_rounded,
-      Icons.auto_awesome_rounded,
-    ];
+    const extra = [Icons.favorite_border_rounded, Icons.auto_awesome_rounded];
     for (var i = 0; i < 5; i++) {
       final heart = _Heart(
         icon: i == 0 ? icon : extra[_random.nextInt(extra.length)],
@@ -362,23 +371,39 @@ class _MissYouScreenState extends State<MissYouScreen>
   }
 
   Future<void> _resetCount() async {
-    final ok = await AppDialog.confirm(context,
-      title: _s.resetMissYouConfirmTitle, message: _s.resetMissYouConfirmBody,
-      confirmLabel: _s.reset, destructive: true,
+    final ok = await AppDialog.confirm(
+      context,
+      title: _s.resetMissYouConfirmTitle,
+      message: _s.resetMissYouConfirmBody,
+      confirmLabel: _s.reset,
+      destructive: true,
     );
     if (!ok || !mounted || _resetting) return;
     if (_sending > 0 || _mine.pending > 0) {
-      ForkNotice.info(context, ruEn('Дождитесь отправки импульсов и повторите', 'Wait for pending signals to send, then try again'));
+      ForkNotice.info(
+        context,
+        ruEn(
+          'Дождитесь отправки импульсов и повторите',
+          'Wait for pending signals to send, then try again',
+        ),
+      );
       return;
     }
     setState(() => _resetting = true);
     try {
-      final saved = await (widget.resetCount?.call() ??
-          PbDataService().setMissYouCount(widget.groupId, widget.myUid, 0));
+      final saved =
+          await (widget.resetCount?.call() ??
+              PbDataService().setMissYouCount(widget.groupId, widget.myUid, 0));
       if (!mounted) return;
-      if (!saved) { ForkNotice.failure(context, ForkFailure.network); return; }
+      if (!saved) {
+        ForkNotice.failure(context, ForkFailure.network);
+        return;
+      }
       setState(() => _mine = const OptimisticCount());
-      ForkNotice.info(context, ruEn('Ваш счётчик сброшен', 'Your counter was reset'));
+      ForkNotice.info(
+        context,
+        ruEn('Ваш счётчик сброшен', 'Your counter was reset'),
+      );
     } catch (e) {
       if (mounted) ForkNotice.error(context, e);
     } finally {
@@ -407,15 +432,25 @@ class _MissYouScreenState extends State<MissYouScreen>
               IconButton(
                 tooltip: ruEn('Прикосновение', 'Touch'),
                 icon: const Icon(Icons.touch_app_rounded),
-                onPressed: () => ForkTouchScreen.open(context, groupId: widget.groupId,
-                  myUid: widget.myUid, partnerUid: widget.partnerUid),
+                onPressed: () => ForkTouchScreen.open(
+                  context,
+                  groupId: widget.groupId,
+                  myUid: widget.myUid,
+                  partnerUid: widget.partnerUid,
+                ),
               ), // fork
-            if (widget.resetCount != null || (widget.groupId.isNotEmpty && widget.myUid.isNotEmpty))
+            if (widget.resetCount != null ||
+                (widget.groupId.isNotEmpty && widget.myUid.isNotEmpty))
               PopupMenuButton<String>(
                 tooltip: ruEn('Действия со счётчиком', 'Counter actions'),
                 enabled: !_resetting,
                 onSelected: (_) => _resetCount(),
-                itemBuilder: (_) => [PopupMenuItem(value: 'reset', child: Text(_s.resetMissYouCount))],
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'reset',
+                    child: Text(_s.resetMissYouCount),
+                  ),
+                ],
               ),
           ],
         ),
@@ -442,7 +477,8 @@ class _MissYouScreenState extends State<MissYouScreen>
                   ],
                 ),
               ),
-              if (_events == null && (_state.partner?.lastVibe.isNotEmpty ?? false)) ...[
+              if (_events == null &&
+                  (_state.partner?.lastVibe.isNotEmpty ?? false)) ...[
                 const SizedBox(height: 12),
                 _appear(2, _latest(cs)),
               ],
@@ -462,8 +498,11 @@ class _MissYouScreenState extends State<MissYouScreen>
     final start = (index * 0.12).clamp(0.0, 0.6);
     final anim = CurvedAnimation(
       parent: _intro,
-      curve: Interval(start, (start + 0.55).clamp(0.0, 1.0),
-          curve: const Cubic(0.05, 0.7, 0.1, 1)),
+      curve: Interval(
+        start,
+        (start + 0.55).clamp(0.0, 1.0),
+        curve: const Cubic(0.05, 0.7, 0.1, 1),
+      ),
     );
     return AnimatedBuilder(
       animation: anim,
@@ -498,7 +537,10 @@ class _MissYouScreenState extends State<MissYouScreen>
               Text(
                 _s.missYouTitle,
                 style: AppFonts.unbounded(
-                    size: 17, weight: 700, color: cs.onSurface),
+                  size: 17,
+                  weight: 700,
+                  color: cs.onSurface,
+                ),
               ),
               _presence(cs),
             ],
@@ -540,7 +582,10 @@ class _MissYouScreenState extends State<MissYouScreen>
             final label = lastSeenLabel(seenSnap.data, _s.yesterday);
             if (label.isEmpty) return const SizedBox.shrink();
             // Одна дата без подписи («23.09») не читалась как последний визит.
-            return Text(trKey('missYouSeenAt').replaceAll('{t}', label), style: _caption(cs));
+            return Text(
+              trKey('missYouSeenAt').replaceAll('{t}', label),
+              style: _caption(cs),
+            );
           },
         );
       },
@@ -548,11 +593,11 @@ class _MissYouScreenState extends State<MissYouScreen>
   }
 
   TextStyle _caption(ColorScheme cs) => TextStyle(
-        fontFamily: ProfileTheme.bodyFont,
-        fontSize: 11.5,
-        fontWeight: FontWeight.w600,
-        color: cs.onSurfaceVariant,
-      );
+    fontFamily: ProfileTheme.bodyFont,
+    fontSize: 11.5,
+    fontWeight: FontWeight.w600,
+    color: cs.onSurfaceVariant,
+  );
 
   // ── Герой: круг с сердцем и оба счёта ───────────────────────────────────────
 
@@ -570,7 +615,8 @@ class _MissYouScreenState extends State<MissYouScreen>
               child: HeartField(
                 key: _field,
                 color: _fill,
-                center: (size) => Offset(size.width / 2, _heroTop + _heartBox / 2),
+                center: (size) =>
+                    Offset(size.width / 2, _heroTop + _heartBox / 2),
               ),
             ),
             _heroBody(cs, myCount),
@@ -626,8 +672,11 @@ class _MissYouScreenState extends State<MissYouScreen>
           const SizedBox(height: 10),
           Text(
             _s.iMissYou,
-            style:
-                AppFonts.unbounded(size: 18, weight: 700, color: cs.onSurface),
+            style: AppFonts.unbounded(
+              size: 18,
+              weight: 700,
+              color: cs.onSurface,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -722,39 +771,39 @@ class _MissYouScreenState extends State<MissYouScreen>
 
   List<Widget> _chipList(ColorScheme cs) {
     return [
+      _VibeChip(
+        scheme: cs,
+        icon: Icons.cloud_rounded,
+        label: _s.thinkingOfYou,
+        mine: _vibeCount('thinking_of_you', mine: true),
+        partner: _vibeCount('thinking_of_you', mine: false),
+        onTap: () => _sendVibe('thinking_of_you'),
+      ),
+      _VibeChip(
+        scheme: cs,
+        icon: Icons.volunteer_activism_rounded,
+        label: _s.wantHug,
+        mine: _vibeCount('want_hug', mine: true),
+        partner: _vibeCount('want_hug', mine: false),
+        onTap: () => _sendVibe('want_hug'),
+      ),
+      for (final w in _wishes)
         _VibeChip(
           scheme: cs,
-          icon: Icons.cloud_rounded,
-          label: _s.thinkingOfYou,
-          mine: _vibeCount('thinking_of_you', mine: true),
-          partner: _vibeCount('thinking_of_you', mine: false),
-          onTap: () => _sendVibe('thinking_of_you'),
+          icon: Icons.edit_rounded,
+          label: w,
+          onTap: () => _sendVibe('custom', text: w),
+          onRemove: () => _removeWish(w),
         ),
-        _VibeChip(
-          scheme: cs,
-          icon: Icons.volunteer_activism_rounded,
-          label: _s.wantHug,
-          mine: _vibeCount('want_hug', mine: true),
-          partner: _vibeCount('want_hug', mine: false),
-          onTap: () => _sendVibe('want_hug'),
-        ),
-        for (final w in _wishes)
-          _VibeChip(
-            scheme: cs,
-            icon: Icons.edit_rounded,
-            label: w,
-            onTap: () => _sendVibe('custom', text: w),
-            onRemove: () => _removeWish(w),
-          ),
-        _VibeChip(
-          scheme: cs,
-          icon: Icons.add_rounded,
-          label: _s.customVibe,
-          accent: true,
-          accentFill: _fill,
-          accentInk: _onFill,
-          onTap: _addWish,
-        ),
+      _VibeChip(
+        scheme: cs,
+        icon: Icons.add_rounded,
+        label: _s.customVibe,
+        accent: true,
+        accentFill: _fill,
+        accentInk: _onFill,
+        onTap: _addWish,
+      ),
     ];
   }
 
@@ -762,8 +811,9 @@ class _MissYouScreenState extends State<MissYouScreen>
 
   Widget _latest(ColorScheme cs) {
     final e = _state.partner!;
-    final name =
-        widget.partnerName.isEmpty ? _s.missYouPartner : widget.partnerName;
+    final name = widget.partnerName.isEmpty
+        ? _s.missYouPartner
+        : widget.partnerName;
     final when = lastSeenLabel(
       e.updatedAt?.millisecondsSinceEpoch,
       _s.yesterday,
@@ -787,8 +837,11 @@ class _MissYouScreenState extends State<MissYouScreen>
               color: cs.secondaryContainer,
               shape: BoxShape.circle,
             ),
-            child: Icon(vibeIcon(e.lastVibe),
-                size: 21, color: cs.onSecondaryContainer),
+            child: Icon(
+              vibeIcon(e.lastVibe),
+              size: 21,
+              color: cs.onSecondaryContainer,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -807,7 +860,9 @@ class _MissYouScreenState extends State<MissYouScreen>
                   ),
                 ),
                 Text(
-                  when.isEmpty ? '$name · ${_s.missYouLatest}' : '$name · $when',
+                  when.isEmpty
+                      ? '$name · ${_s.missYouLatest}'
+                      : '$name · $when',
                   style: _caption(cs),
                 ),
               ],
@@ -824,7 +879,9 @@ class _MissYouScreenState extends State<MissYouScreen>
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 14),
               textStyle: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -846,8 +903,12 @@ class _MissYouScreenState extends State<MissYouScreen>
     final replied = {...missYouReplied(all, widget.myUid), ..._justReplied};
     final byId = {for (final e in all) e.id: e};
     final events = day.events;
-    final shown = _showAll || events.length <= _collapsed + 1 ? events : events.sublist(0, _collapsed);
-    final title = day.yesterday ? trKey('missYouYesterdayTitle') : trKey('missYouToday');
+    final shown = _showAll || events.length <= _collapsed + 1
+        ? events
+        : events.sublist(0, _collapsed);
+    final title = day.yesterday
+        ? trKey('missYouYesterdayTitle')
+        : trKey('missYouToday');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -857,10 +918,18 @@ class _MissYouScreenState extends State<MissYouScreen>
           if (events.isEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Text(trKey('missYouEmptyDay'), style: _caption(cs).copyWith(fontSize: 13, height: 1.35)),
+              child: Text(
+                trKey('missYouEmptyDay'),
+                style: _caption(cs).copyWith(fontSize: 13, height: 1.35),
+              ),
             ),
           for (final e in shown)
-            _eventRow(cs, e, replied: replied.contains(e.id), original: e.replyTo == null ? null : byId[e.replyTo]),
+            _eventRow(
+              cs,
+              e,
+              replied: replied.contains(e.id),
+              original: e.replyTo == null ? null : byId[e.replyTo],
+            ),
           if (shown.length < events.length)
             InkWell(
               onTap: () => setState(() => _showAll = true),
@@ -868,8 +937,15 @@ class _MissYouScreenState extends State<MissYouScreen>
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 child: Center(
                   child: Text(
-                    trKey('missYouShowMore').replaceAll('{n}', '${events.length - shown.length}'),
-                    style: TextStyle(fontFamily: ProfileTheme.bodyFont, fontSize: 13.5, fontWeight: FontWeight.w700, color: cs.primary),
+                    trKey(
+                      'missYouShowMore',
+                    ).replaceAll('{n}', '${events.length - shown.length}'),
+                    style: TextStyle(
+                      fontFamily: ProfileTheme.bodyFont,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: cs.primary,
+                    ),
                   ),
                 ),
               ),
@@ -904,7 +980,12 @@ class _MissYouScreenState extends State<MissYouScreen>
     );
   }
 
-  Widget _eventRow(ColorScheme cs, MissYouEvent e, {required bool replied, MissYouEvent? original}) {
+  Widget _eventRow(
+    ColorScheme cs,
+    MissYouEvent e, {
+    required bool replied,
+    MissYouEvent? original,
+  }) {
     final mine = e.uid == widget.myUid;
     final name = mine
         ? _s.missYouYou
@@ -912,7 +993,8 @@ class _MissYouScreenState extends State<MissYouScreen>
     final sub = original != null
         ? trKey('missYouInReplyTo').replaceAll('{x}', _eventLabel(original))
         : name;
-    final hh = '${e.at.hour.toString().padLeft(2, '0')}:${e.at.minute.toString().padLeft(2, '0')}';
+    final hh =
+        '${e.at.hour.toString().padLeft(2, '0')}:${e.at.minute.toString().padLeft(2, '0')}';
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 9, 10, 9),
       child: Row(
@@ -921,7 +1003,10 @@ class _MissYouScreenState extends State<MissYouScreen>
             width: 42,
             child: Text(
               hh,
-              style: _caption(cs).copyWith(fontSize: 12.5, fontFeatures: const [FontFeature.tabularFigures()]),
+              style: _caption(cs).copyWith(
+                fontSize: 12.5,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
           AvatarWidget(
@@ -938,7 +1023,9 @@ class _MissYouScreenState extends State<MissYouScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  e.count > 1 ? '${_eventLabel(e)} ×${e.count}' : _eventLabel(e),
+                  e.count > 1
+                      ? '${_eventLabel(e)} ×${e.count}'
+                      : _eventLabel(e),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -948,7 +1035,12 @@ class _MissYouScreenState extends State<MissYouScreen>
                     color: cs.onSurface,
                   ),
                 ),
-                Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: _caption(cs)),
+                Text(
+                  sub,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _caption(cs),
+                ),
               ],
             ),
           ),
@@ -959,13 +1051,20 @@ class _MissYouScreenState extends State<MissYouScreen>
                     message: trKey('missYouReplied'),
                     child: SizedBox.square(
                       dimension: 40,
-                      child: Icon(Icons.check_rounded, size: 20, color: cs.primary),
+                      child: Icon(
+                        Icons.check_rounded,
+                        size: 20,
+                        color: cs.primary,
+                      ),
                     ),
                   )
                 : IconButton.filled(
                     tooltip: trKey('missYouReplyTip'),
                     onPressed: () => _replyTo(e),
-                    style: IconButton.styleFrom(backgroundColor: _fill, foregroundColor: _onFill),
+                    style: IconButton.styleFrom(
+                      backgroundColor: _fill,
+                      foregroundColor: _onFill,
+                    ),
                     icon: const Icon(Icons.reply_rounded, size: 20),
                   ),
           ],
@@ -995,8 +1094,11 @@ class _MissYouScreenState extends State<MissYouScreen>
         children: [
           Text(
             _s.missYouWeekTitle,
-            style:
-                AppFonts.unbounded(size: 14, weight: 700, color: cs.onSurface),
+            style: AppFonts.unbounded(
+              size: 14,
+              weight: 700,
+              color: cs.onSurface,
+            ),
           ),
           const SizedBox(height: 12),
           if (empty)
@@ -1029,30 +1131,27 @@ class _MissYouScreenState extends State<MissYouScreen>
   }
 
   Widget _sectionLabel(ColorScheme cs, String text) => Padding(
-        padding: const EdgeInsets.only(left: 6),
-        child: Text(
-          text.toUpperCase(),
-          style: ProfileTheme.sectionLabel(cs),
-        ),
-      );
+    padding: const EdgeInsets.only(left: 6),
+    child: Text(text.toUpperCase(), style: ProfileTheme.sectionLabel(cs)),
+  );
 }
 
 // ── Мелкие части ──────────────────────────────────────────────────────────────
 
 /// Значок вайба. Тот же смысл, что нёс эмодзи, но красится ролью схемы.
 IconData vibeIcon(String vibeType) => switch (vibeType) {
-      'thinking_of_you' => Icons.cloud_rounded,
-      'want_hug' => Icons.volunteer_activism_rounded,
-      'custom' => Icons.edit_rounded,
-      _ => Icons.favorite_rounded,
-    };
+  'thinking_of_you' => Icons.cloud_rounded,
+  'want_hug' => Icons.volunteer_activism_rounded,
+  'custom' => Icons.edit_rounded,
+  _ => Icons.favorite_rounded,
+};
 
 String vibeLabel(String vibeType, AppStrings s) => switch (vibeType) {
-      'thinking_of_you' => s.thinkingOfYou,
-      'want_hug' => s.wantHug,
-      'custom' => s.customVibe,
-      _ => s.iMissYou,
-    };
+  'thinking_of_you' => s.thinkingOfYou,
+  'want_hug' => s.wantHug,
+  'custom' => s.customVibe,
+  _ => s.iMissYou,
+};
 
 /// «12:33» за сегодня, «вчера 22:10» и дата дальше. Пусто, если отметки нет:
 /// подпись «был давно» под пустым временем врала бы.
@@ -1062,7 +1161,8 @@ String lastSeenLabel(int? seenAtMs, String yesterdayWord) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final day = DateTime(seen.year, seen.month, seen.day);
-  final hhmm = '${seen.hour.toString().padLeft(2, '0')}:'
+  final hhmm =
+      '${seen.hour.toString().padLeft(2, '0')}:'
       '${seen.minute.toString().padLeft(2, '0')}';
   if (day == today) return hhmm;
   if (day == today.subtract(const Duration(days: 1))) {
@@ -1104,15 +1204,8 @@ class _HeartButtonState extends State<_HeartButton> {
         child: Container(
           width: 132,
           height: 132,
-          decoration: BoxDecoration(
-            color: widget.fill,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.favorite_rounded,
-            size: 58,
-            color: widget.onFill,
-          ),
+          decoration: BoxDecoration(color: widget.fill, shape: BoxShape.circle),
+          child: Icon(Icons.favorite_rounded, size: 58, color: widget.onFill),
         ),
       ),
     );
@@ -1151,12 +1244,15 @@ class _Tally extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = filled ? fill : scheme.surfaceContainerHigh;
     final ink = filled ? onFill : scheme.onSurface;
-    final muted =
-        filled ? onFill.withValues(alpha: 0.75) : scheme.onSurfaceVariant;
+    final muted = filled
+        ? onFill.withValues(alpha: 0.75)
+        : scheme.onSurfaceVariant;
 
     return Container(
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
@@ -1241,26 +1337,43 @@ class _VibeChip extends StatelessWidget {
     final bg = accent
         ? (accentFill ?? scheme.primary)
         : scheme.surfaceContainerHigh;
-    final ink =
-        accent ? (accentInk ?? scheme.onPrimary) : scheme.onSurface;
+    final ink = accent ? (accentInk ?? scheme.onPrimary) : scheme.onSurface;
 
     final chip = Material(
-      color: bg, shape: const StadiumBorder(), clipBehavior: Clip.antiAlias,
+      color: bg,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-            child: Row(
-              children: [
-                Icon(icon, size: 18, color: accent ? ink : scheme.primary),
-                const SizedBox(width: 7),
-              Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontFamily: ProfileTheme.bodyFont, fontSize: 13.5,
-                  fontWeight: FontWeight.w600, color: ink))),
-                if (mine > 0 || partner > 0) ...[
-                  const SizedBox(width: 8),
-                _VibeTally(mine: mine, partner: partner, ink: ink,
-                  muted: accent ? ink.withValues(alpha: .62) : scheme.onSurfaceVariant),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: accent ? ink : scheme.primary),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: ProfileTheme.bodyFont,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: ink,
+                  ),
+                ),
+              ),
+              if (mine > 0 || partner > 0) ...[
+                const SizedBox(width: 8),
+                _VibeTally(
+                  mine: mine,
+                  partner: partner,
+                  ink: ink,
+                  muted: accent
+                      ? ink.withValues(alpha: .62)
+                      : scheme.onSurfaceVariant,
+                ),
               ],
             ],
           ),
@@ -1269,16 +1382,22 @@ class _VibeChip extends StatelessWidget {
     );
     if (onRemove == null) return chip;
     // The menu is a separate 48dp target outside the sending surface.
-    return Row(children: [
-      Expanded(child: chip),
-      PopupMenuButton<String>(
-        tooltip: ruEn('Действия с фразой', 'Phrase actions'),
-        icon: const Icon(Icons.more_vert_rounded),
-        onSelected: (_) => onRemove!(),
-        itemBuilder: (_) => [PopupMenuItem(value: 'delete',
-          child: Text(ruEn('Удалить фразу', 'Delete phrase')))],
-      ),
-    ]);
+    return Row(
+      children: [
+        Expanded(child: chip),
+        PopupMenuButton<String>(
+          tooltip: ruEn('Действия с фразой', 'Phrase actions'),
+          icon: const Icon(Icons.more_vert_rounded),
+          onSelected: (_) => onRemove!(),
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'delete',
+              child: Text(ruEn('Удалить фразу', 'Delete phrase')),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -1300,11 +1419,11 @@ class _VibeTally extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TextStyle style(Color color) => TextStyle(
-          fontFamily: ProfileTheme.bodyFont,
-          fontSize: 12.5,
-          fontWeight: FontWeight.w700,
-          color: color,
-        );
+      fontFamily: ProfileTheme.bodyFont,
+      fontSize: 12.5,
+      fontWeight: FontWeight.w700,
+      color: color,
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1349,8 +1468,10 @@ class _WeekColumn extends StatelessWidget {
             children: [
               _bar(h(bar.mineFraction, bar.mine), fill, top: true),
               const SizedBox(height: 2),
-              _bar(h(bar.partnerFraction, bar.partner),
-                  scheme.secondaryContainer),
+              _bar(
+                h(bar.partnerFraction, bar.partner),
+                scheme.secondaryContainer,
+              ),
             ],
           ),
         ),

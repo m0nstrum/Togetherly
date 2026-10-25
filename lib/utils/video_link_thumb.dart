@@ -20,7 +20,8 @@ String videoLinkThumb(String url) {
 
   if (host == 'rutube.ru' || host.endsWith('.rutube.ru')) {
     final m = RegExp(r'/(?:video|shorts)/([0-9a-f]{32})').firstMatch(u.path);
-    if (m != null) return 'https://rutube.ru/api/video/${m.group(1)}/thumbnail/?redirect=1';
+    if (m != null)
+      return 'https://rutube.ru/api/video/${m.group(1)}/thumbnail/?redirect=1';
   }
   return '';
 }
@@ -46,7 +47,8 @@ bool isExpiringThumb(String url) {
     return false;
   }
   final host = u.host.toLowerCase();
-  return host.contains('tiktokcdn') || u.queryParameters.containsKey('x-expires');
+  return host.contains('tiktokcdn') ||
+      u.queryParameters.containsKey('x-expires');
 }
 
 final _ytIdShape = RegExp(r'^[A-Za-z0-9_-]{11}$');

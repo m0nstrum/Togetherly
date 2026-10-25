@@ -28,7 +28,10 @@ Future<FramePickResult?> showFramePicker(
   final ledger = SavedMediaLedger.instance;
   await ledger.load();
   if (!context.mounted) return null;
-  final saved = {for (final f in files) if (ledger.containsFile(f)) f.key};
+  final saved = {
+    for (final f in files)
+      if (ledger.containsFile(f)) f.key,
+  };
   return showAppSheet<FramePickResult>(
     context,
     expand: true,
@@ -107,7 +110,10 @@ class _FramePickerState extends State<FramePicker> {
     if (_width <= 0) return null;
     final y = local.dy + (_scroll.hasClients ? _scroll.offset : 0);
     final row = (y / (_tile + _gap)).floor();
-    final col = (local.dx / (_tile + _gap)).floor().clamp(0, widget.columns - 1);
+    final col = (local.dx / (_tile + _gap)).floor().clamp(
+      0,
+      widget.columns - 1,
+    );
     if (row < 0) return null;
     final i = row * widget.columns + col;
     return i < widget.files.length ? i : null;
@@ -148,7 +154,8 @@ class _FramePickerState extends State<FramePicker> {
     if (!_scroll.hasClients || _viewport <= 0) return;
     double delta = 0;
     if (local.dy < _edge) delta = -(_edge - local.dy) * 0.6;
-    if (local.dy > _viewport - _edge) delta = (local.dy - (_viewport - _edge)) * 0.6;
+    if (local.dy > _viewport - _edge)
+      delta = (local.dy - (_viewport - _edge)) * 0.6;
     if (delta == 0) return;
     final pos = _scroll.position;
     _scroll.jumpTo((pos.pixels + delta).clamp(0, pos.maxScrollExtent));
@@ -159,8 +166,10 @@ class _FramePickerState extends State<FramePicker> {
     setState(() => _sel = List<bool>.filled(widget.files.length, all));
   }
 
-  List<MediaFile> get _picked =>
-      [for (var i = 0; i < widget.files.length; i++) if (_sel[i]) widget.files[i]];
+  List<MediaFile> get _picked => [
+    for (var i = 0; i < widget.files.length; i++)
+      if (_sel[i]) widget.files[i],
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +188,7 @@ class _FramePickerState extends State<FramePicker> {
                   _count == 0
                       ? trKey('pickSelected').replaceAll('{n}', '0')
                       : '${trKey('pickSelected').replaceAll('{n}', '$_count')}'
-                          ' · ${trKey('saveApproxMb').replaceAll('{n}', '${summary.megabytes}')}',
+                            ' · ${trKey('saveApproxMb').replaceAll('{n}', '${summary.megabytes}')}',
                   key: FramePicker.counterKey,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -218,7 +227,11 @@ class _FramePickerState extends State<FramePicker> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.swipe_rounded, size: 16, color: cs.onTertiaryContainer),
+                  Icon(
+                    Icons.swipe_rounded,
+                    size: 16,
+                    color: cs.onTertiaryContainer,
+                  ),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
@@ -239,38 +252,40 @@ class _FramePickerState extends State<FramePicker> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LayoutBuilder(builder: (context, box) {
-              _width = box.maxWidth;
-              _viewport = box.maxHeight;
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onLongPressStart: (d) => _startRange(d.localPosition),
-                onLongPressMoveUpdate: (d) => _extendRange(d.localPosition),
-                onLongPressEnd: (_) => _endRange(),
-                onHorizontalDragStart: (d) => _startRange(d.localPosition),
-                onHorizontalDragUpdate: (d) => _extendRange(d.localPosition),
-                onHorizontalDragEnd: (_) => _endRange(),
-                onHorizontalDragCancel: _endRange,
-                child: GridView.builder(
-                  controller: _scroll,
-                  padding: EdgeInsets.zero,
-                  cacheExtent: 600,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: widget.columns,
-                    mainAxisSpacing: _gap,
-                    crossAxisSpacing: _gap,
+            child: LayoutBuilder(
+              builder: (context, box) {
+                _width = box.maxWidth;
+                _viewport = box.maxHeight;
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onLongPressStart: (d) => _startRange(d.localPosition),
+                  onLongPressMoveUpdate: (d) => _extendRange(d.localPosition),
+                  onLongPressEnd: (_) => _endRange(),
+                  onHorizontalDragStart: (d) => _startRange(d.localPosition),
+                  onHorizontalDragUpdate: (d) => _extendRange(d.localPosition),
+                  onHorizontalDragEnd: (_) => _endRange(),
+                  onHorizontalDragCancel: _endRange,
+                  child: GridView.builder(
+                    controller: _scroll,
+                    padding: EdgeInsets.zero,
+                    cacheExtent: 600,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: widget.columns,
+                      mainAxisSpacing: _gap,
+                      crossAxisSpacing: _gap,
+                    ),
+                    itemCount: widget.files.length,
+                    itemBuilder: (_, i) => _FrameTile(
+                      key: ValueKey('frame-$i'),
+                      file: widget.files[i],
+                      selected: _sel[i],
+                      saved: widget.savedKeys.contains(widget.files[i].key),
+                      onTap: () => _toggle(i),
+                    ),
                   ),
-                  itemCount: widget.files.length,
-                  itemBuilder: (_, i) => _FrameTile(
-                    key: ValueKey('frame-$i'),
-                    file: widget.files[i],
-                    selected: _sel[i],
-                    saved: widget.savedKeys.contains(widget.files[i].key),
-                    onTap: () => _toggle(i),
-                  ),
-                ),
-              );
-            }),
+                );
+              },
+            ),
           ),
         ),
         Padding(
@@ -281,7 +296,8 @@ class _FramePickerState extends State<FramePicker> {
                 key: FramePicker.shareKey,
                 onPressed: _count == 0
                     ? null
-                    : () => widget.onDone(FramePickResult(_picked, share: true)),
+                    : () =>
+                          widget.onDone(FramePickResult(_picked, share: true)),
                 icon: const Icon(Icons.ios_share_rounded, size: 20),
                 label: Text(trKey('pickShare')),
                 style: FilledButton.styleFrom(
@@ -350,7 +366,8 @@ class _FrameTile extends StatelessWidget {
                 imageUrl: thumb,
                 fit: BoxFit.cover,
                 memCacheWidth: 300,
-                placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHigh),
+                placeholder: (_, _) =>
+                    ColoredBox(color: cs.surfaceContainerHigh),
                 errorWidget: (_, _, _) => ColoredBox(
                   color: cs.surfaceContainerHigh,
                   child: Icon(Icons.image_rounded, color: cs.onSurfaceVariant),
@@ -378,7 +395,11 @@ class _FrameTile extends StatelessWidget {
               const Positioned(
                 left: 5,
                 bottom: 4,
-                child: Icon(Icons.play_circle_rounded, color: Colors.white, size: 20),
+                child: Icon(
+                  Icons.play_circle_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             if (saved)
               Positioned(
@@ -392,8 +413,11 @@ class _FrameTile extends StatelessWidget {
                     color: cs.inverseSurface.withValues(alpha: 0.72),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.download_done_rounded,
-                      size: 15, color: cs.onInverseSurface),
+                  child: Icon(
+                    Icons.download_done_rounded,
+                    size: 15,
+                    color: cs.onInverseSurface,
+                  ),
                 ),
               ),
             Positioned(
@@ -405,7 +429,9 @@ class _FrameTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected ? cs.primary : Colors.transparent,
                   shape: BoxShape.circle,
-                  border: selected ? null : Border.all(color: Colors.white, width: 2),
+                  border: selected
+                      ? null
+                      : Border.all(color: Colors.white, width: 2),
                 ),
                 child: selected
                     ? Icon(Icons.check_rounded, size: 17, color: cs.onPrimary)

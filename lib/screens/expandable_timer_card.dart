@@ -275,7 +275,9 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
       _ArcAction(icon: Icons.add_rounded, onTap: _showCreateDialog),
       // D7: переключатель вида — круг ↔ цифры.
       _ArcAction(
-        icon: TimerViewPref.digital.value ? Icons.donut_large_rounded : Icons.pin_outlined,
+        icon: TimerViewPref.digital.value
+            ? Icons.donut_large_rounded
+            : Icons.pin_outlined,
         onTap: TimerViewPref.toggle,
         tooltip: TimerViewPref.digital.value
             ? ruEn('Показать кругом', 'Show as a dial')
@@ -431,11 +433,7 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                       ),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(
-                          s.cancel,
-                          maxLines: 1,
-                          softWrap: false,
-                        ),
+                        child: Text(s.cancel, maxLines: 1, softWrap: false),
                       ),
                     ),
                   ),
@@ -507,8 +505,11 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                               borderRadius: BorderRadius.circular(18),
                             ),
                             alignment: Alignment.center,
-                            child: SymbolIcon(symbol,
-                                size: 27, color: cs.onPrimary),
+                            child: SymbolIcon(
+                              symbol,
+                              size: 27,
+                              color: cs.onPrimary,
+                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -524,8 +525,9 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontSize: 12.5,
-                                    color: cs.onPrimaryContainer
-                                        .withValues(alpha: 0.8),
+                                    color: cs.onPrimaryContainer.withValues(
+                                      alpha: 0.8,
+                                    ),
                                   ),
                                 ),
                                 Text(
@@ -571,8 +573,7 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
                         onTap: () async {
-                          final picked =
-                              await Navigator.of(ctx).push<DateTime>(
+                          final picked = await Navigator.of(ctx).push<DateTime>(
                             MaterialPageRoute<DateTime>(
                               builder: (_) => DateTimePickerScreen(
                                 title: isCountdown ? s.targetDate : s.startDate,
@@ -581,8 +582,9 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                                 firstYear: 1900,
                                 lastYear: 2100,
                               ),
-                              settings:
-                                  const RouteSettings(name: '/date_picker'),
+                              settings: const RouteSettings(
+                                name: '/date_picker',
+                              ),
                             ),
                           );
                           if (picked == null || !ctx.mounted) return;
@@ -594,8 +596,7 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                             children: [
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       isCountdown ? s.targetDate : s.startDate,
@@ -617,8 +618,11 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                                   ],
                                 ),
                               ),
-                              Icon(Icons.calendar_month_rounded,
-                                  color: cs.primary, size: 22),
+                              Icon(
+                                Icons.calendar_month_rounded,
+                                color: cs.primary,
+                                size: 22,
+                              ),
                             ],
                           ),
                         ),
@@ -629,14 +633,16 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                         padding: const EdgeInsets.only(top: 8),
                         child: Row(
                           children: [
-                            Icon(Icons.warning_amber_rounded,
-                                size: 16, color: cs.error),
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: 16,
+                              color: cs.error,
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 s.countdownPastDateWarning,
-                                style:
-                                    TextStyle(fontSize: 12, color: cs.error),
+                                style: TextStyle(fontSize: 12, color: cs.error),
                               ),
                             ),
                           ],
@@ -682,28 +688,34 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
                             onTap: () async {
-                              final picked =
-                                  await Navigator.of(ctx).push<String>(
-                                MaterialPageRoute<String>(
-                                  builder: (_) => SymbolPickerScreen(
-                                    theme: _t,
-                                    selected: symbol,
-                                  ),
-                                  settings: const RouteSettings(
-                                      name: '/symbol_picker'),
-                                ),
-                              );
+                              final picked = await Navigator.of(ctx)
+                                  .push<String>(
+                                    MaterialPageRoute<String>(
+                                      builder: (_) => SymbolPickerScreen(
+                                        theme: _t,
+                                        selected: symbol,
+                                      ),
+                                      settings: const RouteSettings(
+                                        name: '/symbol_picker',
+                                      ),
+                                    ),
+                                  );
                               if (picked == null || !ctx.mounted) return;
                               setSheet(() => symbol = picked);
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 13),
+                                horizontal: 12,
+                                vertical: 13,
+                              ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.grid_view_rounded,
-                                      size: 18, color: cs.onSurface),
+                                  Icon(
+                                    Icons.grid_view_rounded,
+                                    size: 18,
+                                    color: cs.onSurface,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     s.symbolPickerAll,
@@ -726,7 +738,9 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
                     // его не видно (Flutter ловит это ассертом).
                     Material(
                       color: cs.surfaceContainerHigh,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
                       clipBehavior: Clip.antiAlias,
                       child: Column(
                         children: [
@@ -818,8 +832,10 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
     final updatedTimers = widget.timerService.timers;
     if (updatedTimers.isEmpty) return;
     final sysIdx = updatedTimers.indexWhere((t) => t.isSystem);
-    final targetIdx =
-        (sysIdx >= 0 ? sysIdx : 0).clamp(0, updatedTimers.length - 1);
+    final targetIdx = (sysIdx >= 0 ? sysIdx : 0).clamp(
+      0,
+      updatedTimers.length - 1,
+    );
     setState(() => _currentIndex = targetIdx);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _pageController.hasClients) {
@@ -834,7 +850,6 @@ class _ExpandableTimerCardState extends State<ExpandableTimerCard> {
     return '$date  ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
 
-
   DateTime _normalizeTimerDate(DateTime date) => date;
 }
 
@@ -843,7 +858,12 @@ class _ArcAction {
   final VoidCallback onTap;
   final bool visible;
   final String? tooltip;
-  _ArcAction({required this.icon, required this.onTap, this.visible = true, this.tooltip});
+  _ArcAction({
+    required this.icon,
+    required this.onTap,
+    this.visible = true,
+    this.tooltip,
+  });
 }
 
 class _RadialButton extends StatefulWidget {

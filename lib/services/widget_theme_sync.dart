@@ -92,8 +92,11 @@ class WidgetThemeSync {
       'onPrimary': scheme.onPrimary,
       'onPrimarySoft': _blend(scheme.onPrimary, softShare, fill),
       'onPrimaryContainer': scheme.onPrimaryContainer,
-      'onContainerSoft':
-          _blend(scheme.onPrimaryContainer, 0.68, scheme.primaryContainer),
+      'onContainerSoft': _blend(
+        scheme.onPrimaryContainer,
+        0.68,
+        scheme.primaryContainer,
+      ),
       'onSurface': scheme.onSurface,
       'onSurfaceVariant': scheme.onSurfaceVariant,
       'onTertiary': scheme.onTertiary,

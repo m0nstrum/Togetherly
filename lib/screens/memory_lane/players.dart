@@ -80,20 +80,26 @@ class _MusicMomentCoverState extends State<_MusicMomentCover> {
     });
     try {
       final player = _player = AudioPlayer();
-      _subs.add(player.positionStream.listen((d) {
-        if (mounted) setState(() => _position = d);
-      }));
-      _subs.add(player.durationStream.listen((d) {
-        if (d != null && mounted) setState(() => _duration = d);
-      }));
-      _subs.add(player.playerStateStream.listen((s) {
-        if (!mounted) return;
-        setState(() => _playing = s.playing);
-        if (s.processingState == ProcessingState.completed) {
-          player.seek(Duration.zero);
-          player.pause();
-        }
-      }));
+      _subs.add(
+        player.positionStream.listen((d) {
+          if (mounted) setState(() => _position = d);
+        }),
+      );
+      _subs.add(
+        player.durationStream.listen((d) {
+          if (d != null && mounted) setState(() => _duration = d);
+        }),
+      );
+      _subs.add(
+        player.playerStateStream.listen((s) {
+          if (!mounted) return;
+          setState(() => _playing = s.playing);
+          if (s.processingState == ProcessingState.completed) {
+            player.seek(Duration.zero);
+            player.pause();
+          }
+        }),
+      );
       await _setAudioSource(player, url);
       if (mounted) setState(() => _loading = false);
       await player.play();
@@ -130,8 +136,10 @@ class _MusicMomentCoverState extends State<_MusicMomentCover> {
             imageUrl: m.musicCoverUrl!,
             fit: BoxFit.cover,
             memCacheWidth: 900,
-            errorWidget: (_, _, _) =>
-                MomentArtPlaceholder(scheme: cs, icon: Icons.music_note_rounded),
+            errorWidget: (_, _, _) => MomentArtPlaceholder(
+              scheme: cs,
+              icon: Icons.music_note_rounded,
+            ),
           )
         : MomentArtPlaceholder(scheme: cs, icon: Icons.music_note_rounded);
     final onFill = AppThemes.onColor(widget.fill, mode: cs.brightness);
@@ -166,7 +174,9 @@ class _MusicMomentCoverState extends State<_MusicMomentCover> {
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2.5, color: onFill),
+                                  strokeWidth: 2.5,
+                                  color: onFill,
+                                ),
                               )
                             : Icon(
                                 _playing
@@ -196,36 +206,51 @@ class _MusicMomentCoverState extends State<_MusicMomentCover> {
         ),
         if (source.external && source.name != null) ...[
           const SizedBox(height: 10),
-          MomentPills(children: [
-            MomentPill(
-              scheme: cs,
-              fill: widget.fill,
-              icon: Icons.headphones_rounded,
-              label: source.name!,
-            ),
-          ]),
+          MomentPills(
+            children: [
+              MomentPill(
+                scheme: cs,
+                fill: widget.fill,
+                icon: Icons.headphones_rounded,
+                label: source.name!,
+              ),
+            ],
+          ),
         ],
         if (local && _duration > Duration.zero) ...[
           const SizedBox(height: 12),
           WaveProgressBar(
-            value: (_position.inMilliseconds / _duration.inMilliseconds)
-                .clamp(0.0, 1.0),
+            value: (_position.inMilliseconds / _duration.inMilliseconds).clamp(
+              0.0,
+              1.0,
+            ),
             color: widget.fill,
             isPlaying: _playing,
-            onChanged: (v) => _player?.seek(Duration(
-                milliseconds: (v * _duration.inMilliseconds).toInt())),
+            onChanged: (v) => _player?.seek(
+              Duration(milliseconds: (v * _duration.inMilliseconds).toInt()),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_fmt(_position),
-                    style: AppFonts.onest(
-                        size: 12, weight: 600, color: cs.onSurfaceVariant)),
-                Text(_fmt(_duration),
-                    style: AppFonts.onest(
-                        size: 12, weight: 600, color: cs.onSurfaceVariant)),
+                Text(
+                  _fmt(_position),
+                  style: AppFonts.onest(
+                    size: 12,
+                    weight: 600,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  _fmt(_duration),
+                  style: AppFonts.onest(
+                    size: 12,
+                    weight: 600,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),
@@ -233,8 +258,10 @@ class _MusicMomentCoverState extends State<_MusicMomentCover> {
         if (_failed)
           Padding(
             padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
-            child: Text(trKey('momentPlayFailed'),
-                style: AppFonts.onest(size: 13, weight: 500, color: cs.error)),
+            child: Text(
+              trKey('momentPlayFailed'),
+              style: AppFonts.onest(size: 13, weight: 500, color: cs.error),
+            ),
           ),
       ],
     );
@@ -528,11 +555,17 @@ class _MusicPlayerWidgetState extends State<_MusicPlayerWidget> {
                 children: [
                   Text(
                     _formatDuration(_position),
-                    style: TextStyle(fontSize: 11, color: context.appTheme.textMuted),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.appTheme.textMuted,
+                    ),
                   ),
                   Text(
                     _formatDuration(_duration),
-                    style: TextStyle(fontSize: 11, color: context.appTheme.textMuted),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.appTheme.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -676,10 +709,7 @@ class _MusicPlayerWidgetState extends State<_MusicPlayerWidget> {
             },
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: p,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: p, shape: BoxShape.circle),
         child: _loading
             ? const SizedBox(
                 width: 20,
@@ -785,9 +815,7 @@ class _MiniMoviePoster extends StatelessWidget {
     return Container(
       width: w,
       height: h,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         fit: StackFit.expand,
@@ -1250,7 +1278,10 @@ class _MemoryMusicPlayerState extends State<MemoryMusicPlayer> {
                         decoration: BoxDecoration(
                           color: primary, // Music type color is primary
                           shape: BoxShape.circle,
-                          border: Border.all(color: widget.theme.cardSurface, width: 2),
+                          border: Border.all(
+                            color: widget.theme.cardSurface,
+                            width: 2,
+                          ),
                         ),
                         child: Center(
                           child: SvgPicture.asset(
@@ -1506,10 +1537,10 @@ class _MemoryMusicPlayerState extends State<MemoryMusicPlayer> {
             height: 24,
             onChanged: _duration > Duration.zero
                 ? (v) => _player?.seek(
-                      Duration(
-                        milliseconds: (v * _duration.inMilliseconds).toInt(),
-                      ),
-                    )
+                    Duration(
+                      milliseconds: (v * _duration.inMilliseconds).toInt(),
+                    ),
+                  )
                 : null,
           ),
           const SizedBox(height: 4),
@@ -1660,4 +1691,3 @@ class _MemoryMusicPlayerState extends State<MemoryMusicPlayer> {
 //  Extracted StatefulWidget — keyboard animation only
 //  rebuilds this isolated subtree, not the whole page.
 // ══════════════════════════════════════════════════════
-

@@ -14,8 +14,11 @@ void main() {
   group('CycleMath.starts — первые дни циклов', () {
     test('подряд идущие дни считаются одним циклом', () {
       final marks = [
-        d(2026, 1, 5), d(2026, 1, 6), d(2026, 1, 7),
-        d(2026, 2, 2), d(2026, 2, 3),
+        d(2026, 1, 5),
+        d(2026, 1, 6),
+        d(2026, 1, 7),
+        d(2026, 2, 2),
+        d(2026, 2, 3),
       ];
       expect(CycleMath.starts(marks), [d(2026, 1, 5), d(2026, 2, 2)]);
     });
@@ -26,7 +29,12 @@ void main() {
     });
 
     test('порядок отметок не важен', () {
-      final marks = [d(2026, 2, 3), d(2026, 1, 5), d(2026, 2, 2), d(2026, 1, 6)];
+      final marks = [
+        d(2026, 2, 3),
+        d(2026, 1, 5),
+        d(2026, 2, 2),
+        d(2026, 1, 6),
+      ];
       expect(CycleMath.starts(marks), [d(2026, 1, 5), d(2026, 2, 2)]);
     });
 
@@ -74,9 +82,16 @@ void main() {
   group('CycleMath.averagePeriodLength', () {
     test('среднее число подряд отмеченных дней', () {
       final marks = [
-        d(2026, 1, 5), d(2026, 1, 6), d(2026, 1, 7), d(2026, 1, 8),
-        d(2026, 2, 2), d(2026, 2, 3), d(2026, 2, 4), d(2026, 2, 5),
-        d(2026, 2, 6), d(2026, 2, 7),
+        d(2026, 1, 5),
+        d(2026, 1, 6),
+        d(2026, 1, 7),
+        d(2026, 1, 8),
+        d(2026, 2, 2),
+        d(2026, 2, 3),
+        d(2026, 2, 4),
+        d(2026, 2, 5),
+        d(2026, 2, 6),
+        d(2026, 2, 7),
       ];
       expect(CycleMath.averagePeriodLength(marks), 5); // (4 + 6) / 2
     });
@@ -121,7 +136,10 @@ void main() {
     test('нерегулярный цикл помечается как ненадёжный', () {
       // Разброс 24…35 дней — среднему верить нельзя.
       final marks = [
-        d(2026, 1, 1), d(2026, 1, 25), d(2026, 3, 1), d(2026, 3, 25),
+        d(2026, 1, 1),
+        d(2026, 1, 25),
+        d(2026, 3, 1),
+        d(2026, 3, 25),
       ];
       final p = CycleMath.predict(marks, today: d(2026, 3, 26));
       expect(p!.irregular, isTrue);
@@ -129,7 +147,10 @@ void main() {
 
     test('ровный цикл ненадёжным не считается', () {
       final marks = [
-        d(2026, 1, 1), d(2026, 1, 29), d(2026, 2, 26), d(2026, 3, 26),
+        d(2026, 1, 1),
+        d(2026, 1, 29),
+        d(2026, 2, 26),
+        d(2026, 3, 26),
       ];
       final p = CycleMath.predict(marks, today: d(2026, 3, 27));
       expect(p!.irregular, isFalse);
@@ -193,35 +214,48 @@ void main() {
     final marks = [d(2026, 1, 5), d(2026, 2, 2)];
 
     test('отмеченный день — месячные', () {
-      expect(CycleMath.phaseOn(marks, d(2026, 2, 2), today: d(2026, 2, 10)),
-          CyclePhase.period);
+      expect(
+        CycleMath.phaseOn(marks, d(2026, 2, 2), today: d(2026, 2, 10)),
+        CyclePhase.period,
+      );
     });
 
     test('день овуляции', () {
-      expect(CycleMath.phaseOn(marks, d(2026, 2, 16), today: d(2026, 2, 10)),
-          CyclePhase.ovulation);
+      expect(
+        CycleMath.phaseOn(marks, d(2026, 2, 16), today: d(2026, 2, 10)),
+        CyclePhase.ovulation,
+      );
     });
 
     test('день фертильного окна', () {
-      expect(CycleMath.phaseOn(marks, d(2026, 2, 13), today: d(2026, 2, 10)),
-          CyclePhase.fertile);
+      expect(
+        CycleMath.phaseOn(marks, d(2026, 2, 13), today: d(2026, 2, 10)),
+        CyclePhase.fertile,
+      );
     });
 
     test('ожидаемые месячные', () {
-      expect(CycleMath.phaseOn(marks, d(2026, 3, 2), today: d(2026, 2, 10)),
-          CyclePhase.predictedPeriod);
+      expect(
+        CycleMath.phaseOn(marks, d(2026, 3, 2), today: d(2026, 2, 10)),
+        CyclePhase.predictedPeriod,
+      );
     });
 
     test('обычный день ничем не помечен', () {
-      expect(CycleMath.phaseOn(marks, d(2026, 2, 22), today: d(2026, 2, 10)),
-          CyclePhase.none);
+      expect(
+        CycleMath.phaseOn(marks, d(2026, 2, 22), today: d(2026, 2, 10)),
+        CyclePhase.none,
+      );
     });
   });
 
   group('CycleMath.periodDayIndex — какой это день месячных', () {
     final marks = [
-      d(2026, 7, 22), d(2026, 7, 23), d(2026, 7, 24),
-      d(2026, 6, 24), d(2026, 6, 25),
+      d(2026, 7, 22),
+      d(2026, 7, 23),
+      d(2026, 7, 24),
+      d(2026, 6, 24),
+      d(2026, 6, 25),
     ];
 
     test('первый день серии — первый', () {
@@ -245,7 +279,10 @@ void main() {
     });
 
     test('время в отметке не мешает', () {
-      final withTime = [DateTime(2026, 7, 22, 13, 40), DateTime(2026, 7, 23, 9)];
+      final withTime = [
+        DateTime(2026, 7, 22, 13, 40),
+        DateTime(2026, 7, 23, 9),
+      ];
       expect(CycleMath.periodDayIndex(withTime, d(2026, 7, 23)), 2);
     });
   });

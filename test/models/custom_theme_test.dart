@@ -12,7 +12,8 @@ void main() {
   group('разбор поля', () {
     test('список приходит строкой с json внутри', () {
       final list = parseCustomThemes(
-          '[{"seed":4294934171,"name":"Наш"},{"seed":4283519138}]');
+        '[{"seed":4294934171,"name":"Наш"},{"seed":4283519138}]',
+      );
       expect(list, hasLength(2));
       expect(list.first.seed, const Color(0xFFFF7E9B));
       expect(list.first.name, 'Наш');
@@ -21,21 +22,29 @@ void main() {
 
     test('список приходит уже разобранным', () {
       final list = parseCustomThemes([
-        {'seed': 4294934171, 'name': 'Наш'}
+        {'seed': 4294934171, 'name': 'Наш'},
       ]);
       expect(list, hasLength(1));
       expect(list.first.seed, const Color(0xFFFF7E9B));
     });
 
     test('пустота и мусор дают пустой список, а не падение', () {
-      for (final raw in [null, '', '[]', 'не json', 42, {'seed': 1}]) {
+      for (final raw in [
+        null,
+        '',
+        '[]',
+        'не json',
+        42,
+        {'seed': 1},
+      ]) {
         expect(parseCustomThemes(raw), isEmpty, reason: '$raw');
       }
     });
 
     test('запись без цвета пропускается, соседи остаются', () {
       final list = parseCustomThemes(
-          '[{"name":"без цвета"},{"seed":4283519138,"name":"Океан"}]');
+        '[{"name":"без цвета"},{"seed":4283519138,"name":"Океан"}]',
+      );
       expect(list, hasLength(1));
       expect(list.single.name, 'Океан');
     });
@@ -48,7 +57,10 @@ void main() {
     });
 
     test('лишние записи сверх пяти отбрасываются при чтении', () {
-      final raw = List.generate(8, (i) => '{"seed":${4294934171 + i}}').join(',');
+      final raw = List.generate(
+        8,
+        (i) => '{"seed":${4294934171 + i}}',
+      ).join(',');
       expect(parseCustomThemes('[$raw]'), hasLength(kMaxCustomThemes));
     });
   });
@@ -59,7 +71,9 @@ void main() {
 
     test('шестая тема не влезает', () {
       final full = List.generate(
-          kMaxCustomThemes, (i) => CustomTheme(seed: Color(0xFF000010 + i)));
+        kMaxCustomThemes,
+        (i) => CustomTheme(seed: Color(0xFF000010 + i)),
+      );
       expect(addCustomTheme(full, a), hasLength(kMaxCustomThemes));
       expect(addCustomTheme(full, a).contains(a), isFalse);
     });
@@ -82,13 +96,17 @@ void main() {
     test('удаление темы левее выбранной сдвигает выбор за ней', () {
       // Выбран второй свой цвет (индекс 1001), удалили первый — тот же цвет
       // теперь лежит в нулевом слоте, и выбор обязан уехать вместе с ним.
-      expect(themeIdAfterRemoval(customPaletteIndex(1), 0),
-          customPaletteIndex(0));
+      expect(
+        themeIdAfterRemoval(customPaletteIndex(1), 0),
+        customPaletteIndex(0),
+      );
     });
 
     test('удаление темы правее выбранной оставляет выбор на месте', () {
-      expect(themeIdAfterRemoval(customPaletteIndex(1), 2),
-          customPaletteIndex(1));
+      expect(
+        themeIdAfterRemoval(customPaletteIndex(1), 2),
+        customPaletteIndex(1),
+      );
     });
 
     test('удаление выбранной темы возвращает на палитру по умолчанию', () {
@@ -118,11 +136,16 @@ void main() {
       // «Хэллоуин» продаётся рисунком: в конце ленты, за двадцатью пятью
       // кружками, его бы не нашли.
       final strip = paletteStripEntries(customCount: 0, plusVisible: false);
-      final art = [for (final p in kPalettes) if (p.badge != null) p.index];
+      final art = [
+        for (final p in kPalettes)
+          if (p.badge != null) p.index,
+      ];
       expect(art, isNotEmpty);
       expect(strip.take(art.length).map((e) => e.index), art);
-      expect(strip.skip(art.length).map((e) => e.index),
-          [for (final p in kPalettes) if (p.badge == null) p.index]);
+      expect(strip.skip(art.length).map((e) => e.index), [
+        for (final p in kPalettes)
+          if (p.badge == null) p.index,
+      ]);
     });
 
     test('сезонную тему не застал — её нет в ленте', () {
@@ -147,11 +170,8 @@ void main() {
 
     test('готовые палитры не теряются и не задваиваются', () {
       final strip = paletteStripEntries(customCount: 3, plusVisible: true);
-      final palettes = strip
-          .where((e) => e.isPalette)
-          .map((e) => e.index)
-          .toList()
-        ..sort();
+      final palettes =
+          strip.where((e) => e.isPalette).map((e) => e.index).toList()..sort();
       expect(palettes, List.generate(kPalettes.length, (i) => i));
     });
   });

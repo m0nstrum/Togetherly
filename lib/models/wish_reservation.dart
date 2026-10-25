@@ -34,17 +34,20 @@ class WishReservation {
   bool overdue(DateTime now) {
     final u = until;
     if (u == null) return false;
-    return DateTime(u.year, u.month, u.day)
-        .isBefore(DateTime(now.year, now.month, now.day));
+    return DateTime(
+      u.year,
+      u.month,
+      u.day,
+    ).isBefore(DateTime(now.year, now.month, now.day));
   }
 
   WishReservation withUntil(DateTime? at) => WishReservation(
-        id: id,
-        wishId: wishId,
-        uid: uid,
-        createdAt: createdAt,
-        until: at == null ? null : DateTime(at.year, at.month, at.day),
-      );
+    id: id,
+    wishId: wishId,
+    uid: uid,
+    createdAt: createdAt,
+    until: at == null ? null : DateTime(at.year, at.month, at.day),
+  );
 
   static String _day(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -56,34 +59,36 @@ class WishReservation {
   }
 
   factory WishReservation.fromPb(RecordModel rec) => WishReservation(
-        id: rec.id,
-        wishId: rec.getStringValue('wish_id'),
-        uid: rec.getStringValue('uid'),
-        createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
-        until: _date(rec.getStringValue('until')),
-      );
+    id: rec.id,
+    wishId: rec.getStringValue('wish_id'),
+    uid: rec.getStringValue('uid'),
+    createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
+    until: _date(rec.getStringValue('until')),
+  );
 
   factory WishReservation.fromMap(Map<String, dynamic> map) => WishReservation(
-        id: (map['id'] ?? '') as String,
-        wishId: (map['wish_id'] ?? '') as String,
-        uid: (map['uid'] ?? '') as String,
-        createdAt: _date(map['created']) ?? DateTime.now(),
-        until: _date(map['until']),
-      );
+    id: (map['id'] ?? '') as String,
+    wishId: (map['wish_id'] ?? '') as String,
+    uid: (map['uid'] ?? '') as String,
+    createdAt: _date(map['created']) ?? DateTime.now(),
+    until: _date(map['until']),
+  );
 
   Map<String, dynamic> toMap({required String groupId}) => {
-        'id': id,
-        'group_id': groupId,
-        'wish_id': wishId,
-        'uid': uid,
-        'created': createdAt.toUtc().toIso8601String(),
-        if (until != null) 'until': _day(until!),
-      };
+    'id': id,
+    'group_id': groupId,
+    'wish_id': wishId,
+    'uid': uid,
+    'created': createdAt.toUtc().toIso8601String(),
+    if (until != null) 'until': _day(until!),
+  };
 }
 
 /// Какие вещи из списка уже взяты на себя.
 ///
 /// Карточке нужен ответ на один вопрос, а не сами записи. Повторы схлопываются:
 /// двойное нажатие в офлайне кладёт в очередь две записи на одну вещь.
-Set<String> reservedWishIds(List<WishReservation> list) =>
-    {for (final r in list) if (r.wishId.isNotEmpty) r.wishId};
+Set<String> reservedWishIds(List<WishReservation> list) => {
+  for (final r in list)
+    if (r.wishId.isNotEmpty) r.wishId,
+};

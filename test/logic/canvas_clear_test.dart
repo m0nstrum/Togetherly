@@ -20,7 +20,10 @@ void main() {
   test('очистка при открытом экране стирает', () {
     expect(
       clearWipesCanvas(
-          metaSeen: true, seen: 1792316752772, incoming: 1792330000000),
+        metaSeen: true,
+        seen: 1792316752772,
+        incoming: 1792330000000,
+      ),
       isTrue,
     );
     expect(
@@ -33,7 +36,10 @@ void main() {
   test('прежняя метка и пустая мета не стирают', () {
     expect(
       clearWipesCanvas(
-          metaSeen: true, seen: 1792316752772, incoming: 1792316752772),
+        metaSeen: true,
+        seen: 1792316752772,
+        incoming: 1792316752772,
+      ),
       isFalse,
     );
     expect(

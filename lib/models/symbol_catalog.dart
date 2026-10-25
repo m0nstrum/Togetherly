@@ -48,8 +48,10 @@ abstract final class SymbolCatalog {
   /// Есть ли такой символ в каталоге.
   static bool has(String name) => _codes?.containsKey(name) ?? false;
 
-  static const IconData _fallbackIcon =
-      IconData(0xe87e, fontFamily: fontFamily); // favorite
+  static const IconData _fallbackIcon = IconData(
+    0xe87e,
+    fontFamily: fontFamily,
+  ); // favorite
 
   /// Что показываем в редакторе таймера без захода в полный список. Пять
   /// поводов, ради которых таймеры и заводят.

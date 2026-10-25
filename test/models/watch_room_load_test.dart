@@ -23,7 +23,8 @@ void main() {
       expect(
         watchRoomShouldRetry(code: '', attempt: watchRoomMaxAttempts),
         isFalse,
-        reason: 'бесконечный круг запросов — то, чем клиент валил сервер в августе',
+        reason:
+            'бесконечный круг запросов — то, чем клиент валил сервер в августе',
       );
     });
   });

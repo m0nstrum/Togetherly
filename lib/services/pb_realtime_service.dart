@@ -46,8 +46,7 @@ import 'pocketbase_service.dart';
 bool cacheAbsenceIsReal({
   required bool sawRecord,
   required bool serverSaysGone,
-}) =>
-    sawRecord || serverSaysGone;
+}) => sawRecord || serverSaysGone;
 
 class PbRealtimeService {
   PbRealtimeService._();
@@ -873,7 +872,10 @@ class PbRealtimeService {
   Stream<List<RecordModel>> watchWishComments(String groupId) => watchList(
     'wish_comments',
     filter: _pb.filter('group_id = {:g}', {'g': groupId}),
-    scope: RecordScope('wish_comments:g=$groupId', equals: {'group_id': groupId}),
+    scope: RecordScope(
+      'wish_comments:g=$groupId',
+      equals: {'group_id': groupId},
+    ),
     compare: (a, b) => _strAsc(a.data['created'], b.data['created']),
     rtChannel: 'pair:$groupId',
   );

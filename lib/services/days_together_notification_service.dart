@@ -74,10 +74,15 @@ class DaysTogetherNotificationService {
       android: androidSettings,
       iOS: iosSettings,
     );
-    await _plugin.initialize(settings: settings, onDidReceiveNotificationResponse: ForkNotifTap.onResponse); // fork
+    await _plugin.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
+    ); // fork
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
@@ -93,7 +98,8 @@ class DaysTogetherNotificationService {
     if (Platform.isIOS || Platform.isMacOS) {
       await _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: false, sound: false);
     }
 
@@ -182,8 +188,10 @@ class DaysTogetherNotificationService {
     if (start == null) return;
     await init();
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     // Android 13+ требует явного разрешения POST_NOTIFICATIONS.
     // Общий сериализатор: не падаем на параллельном запросе (permissionRequestInProgress).
     await requestNotificationPermissionSafely(androidPlugin);
@@ -264,8 +272,10 @@ class DaysTogetherNotificationService {
       var next = tz.TZDateTime(tz.local, now.year, now.month, now.day, 0, 10);
       if (!next.isAfter(now)) next = next.add(const Duration(days: 1));
       // Число на момент следующего срабатывания (по календарным суткам).
-      final daysAtNext =
-          _daysAt(start, DateTime(next.year, next.month, next.day));
+      final daysAtNext = _daysAt(
+        start,
+        DateTime(next.year, next.month, next.day),
+      );
 
       await _plugin.zonedSchedule(
         id: _notificationId,
@@ -278,35 +288,36 @@ class DaysTogetherNotificationService {
       );
     } catch (e) {
       debugPrint(
-          'DaysTogetherNotificationService._scheduleDailyRefresh failed: $e');
+        'DaysTogetherNotificationService._scheduleDailyRefresh failed: $e',
+      );
     }
   }
 
   NotificationDetails _details() => const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-          channelDescription: _channelDesc,
-          importance: Importance.low,
-          priority: Priority.low,
-          icon: '@drawable/ic_notification',
-          ongoing: true, // не смахивается случайно
-          autoCancel: false,
-          onlyAlertOnce: true, // без повторного звука/вибро при обновлении
-          showWhen: false,
-          silent: true,
-          playSound: false,
-          enableVibration: false,
-          channelShowBadge: false,
-          category: AndroidNotificationCategory.status,
-          visibility: NotificationVisibility.public,
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: false,
-          presentBadge: false,
-          presentSound: false,
-        ),
-      );
+    android: AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDesc,
+      importance: Importance.low,
+      priority: Priority.low,
+      icon: '@drawable/ic_notification',
+      ongoing: true, // не смахивается случайно
+      autoCancel: false,
+      onlyAlertOnce: true, // без повторного звука/вибро при обновлении
+      showWhen: false,
+      silent: true,
+      playSound: false,
+      enableVibration: false,
+      channelShowBadge: false,
+      category: AndroidNotificationCategory.status,
+      visibility: NotificationVisibility.public,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: false,
+      presentBadge: false,
+      presentSound: false,
+    ),
+  );
 
   Future<void> _cancel() async {
     await init();

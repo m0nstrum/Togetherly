@@ -125,13 +125,17 @@ class _MissYouButtonState extends State<MissYouButton>
     );
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 0.92)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 1.0,
+          end: 0.92,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 18,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 0.92, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOutBack)),
+        tween: Tween(
+          begin: 0.92,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 82,
       ),
     ]).animate(_scaleController);
@@ -153,34 +157,37 @@ class _MissYouButtonState extends State<MissYouButton>
     _countSub?.cancel();
     _listenRetryTimer?.cancel();
     if (widget.groupId.isEmpty) return;
-    _countSub = _missYou.watchCounts(widget.groupId).listen(
-      (counts) {
-        if (!mounted) return;
-        _listenRetryAttempt = 0;
-        final myUid = PocketBaseService().userId ?? '';
-        final newMyCount = counts[myUid] ?? 0;
-        final newPartnerCount = counts.entries
-            .where((e) => e.key != myUid)
-            .fold(0, (sum, e) => sum + e.value);
+    _countSub = _missYou
+        .watchCounts(widget.groupId)
+        .listen(
+          (counts) {
+            if (!mounted) return;
+            _listenRetryAttempt = 0;
+            final myUid = PocketBaseService().userId ?? '';
+            final newMyCount = counts[myUid] ?? 0;
+            final newPartnerCount = counts.entries
+                .where((e) => e.key != myUid)
+                .fold(0, (sum, e) => sum + e.value);
 
-        _mine = _mine.confirm(newMyCount, now: DateTime.now());
-        _partnerCount = newPartnerCount;
-        if (mounted) setState(() {});
-        _scheduleStaleSweep();
-      },
-      onError: (_) {
-        // SSE-подписка PB может отвалиться (сеть/перезапуск процесса) —
-        // переподнимаем с бэкоффом, иначе счётчик висит на нулях до рестарта.
-        if (!mounted) return;
-        final delay =
-            Duration(seconds: min(30, 2 << min(_listenRetryAttempt, 4)));
-        _listenRetryAttempt++;
-        _listenRetryTimer?.cancel();
-        _listenRetryTimer = Timer(delay, () {
-          if (mounted) _startListening();
-        });
-      },
-    );
+            _mine = _mine.confirm(newMyCount, now: DateTime.now());
+            _partnerCount = newPartnerCount;
+            if (mounted) setState(() {});
+            _scheduleStaleSweep();
+          },
+          onError: (_) {
+            // SSE-подписка PB может отвалиться (сеть/перезапуск процесса) —
+            // переподнимаем с бэкоффом, иначе счётчик висит на нулях до рестарта.
+            if (!mounted) return;
+            final delay = Duration(
+              seconds: min(30, 2 << min(_listenRetryAttempt, 4)),
+            );
+            _listenRetryAttempt++;
+            _listenRetryTimer?.cancel();
+            _listenRetryTimer = Timer(delay, () {
+              if (mounted) _startListening();
+            });
+          },
+        );
   }
 
   /// Убирает протухшие ожидания, когда живых событий больше не приходит.
@@ -208,33 +215,35 @@ class _MissYouButtonState extends State<MissYouButton>
     // стеклом приходит сезонный призрак (решение владельца 08.10.2026: на
     // самой главной сердце жмут редко, и призрака бы никто не увидел).
     var sentThere = false;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        // Имя маршрута — единственный способ попасть в статистику экранов:
-        // наблюдатель навигатора считает по `RouteSettings.name`, безымянные
-        // маршруты пропускает намеренно (нижних листов сотни).
-        settings: const RouteSettings(name: '/miss_you'),
-        builder: (_) => MissYouScreen(
-          theme: widget.theme,
-          groupId: widget.groupId,
-          myUid: PocketBaseService().userId ?? '',
-          myName: widget.senderName,
-          myAvatarUrl: widget.myAvatarUrl,
-          partnerUid: widget.partnerUid,
-          partnerName: widget.partnerName,
-          partnerAvatarUrl: widget.partnerAvatarUrl,
-          onSent: () => sentThere = true,
-        ),
-      ),
-    ).then((_) {
-      _refreshCounts();
-      // Даём экрану доехать обратно: призрак проступает уже на главной.
-      if (sentThere) {
-        Future<void>.delayed(const Duration(milliseconds: 350), () {
-          if (mounted) widget.onSent?.call();
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute<void>(
+            // Имя маршрута — единственный способ попасть в статистику экранов:
+            // наблюдатель навигатора считает по `RouteSettings.name`, безымянные
+            // маршруты пропускает намеренно (нижних листов сотни).
+            settings: const RouteSettings(name: '/miss_you'),
+            builder: (_) => MissYouScreen(
+              theme: widget.theme,
+              groupId: widget.groupId,
+              myUid: PocketBaseService().userId ?? '',
+              myName: widget.senderName,
+              myAvatarUrl: widget.myAvatarUrl,
+              partnerUid: widget.partnerUid,
+              partnerName: widget.partnerName,
+              partnerAvatarUrl: widget.partnerAvatarUrl,
+              onSent: () => sentThere = true,
+            ),
+          ),
+        )
+        .then((_) {
+          _refreshCounts();
+          // Даём экрану доехать обратно: призрак проступает уже на главной.
+          if (sentThere) {
+            Future<void>.delayed(const Duration(milliseconds: 350), () {
+              if (mounted) widget.onSent?.call();
+            });
+          }
         });
-      }
-    });
   }
 
   /// Перечитать счётчики после возвращения с экрана «Скучаю».
@@ -368,7 +377,8 @@ class _MissYouButtonState extends State<MissYouButton>
     super.didChangeAppLifecycleState(state);
     // Уходя в фон, отправляем всё: iOS выгружает процесс вместе с таймером
     // накопления, и `dispose` в этом случае не случится вовсе.
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _flushTimer?.cancel();
       _flushEverything();
     }
@@ -414,23 +424,25 @@ class _MissYouButtonState extends State<MissYouButton>
             excludeSemantics: true,
             onTap: _openScreen,
             child: GestureDetector(
-            onTap: _openScreen,
-            child: Container(
-              height: widget.height,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: fill, borderRadius: radius),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('$displayMy', style: _countStyle(onFill)),
-                  Text(' / ',
-                      style: _countStyle(onFill.withValues(alpha: 0.55))),
-                  Text('$_partnerCount', style: _countStyle(onFill)),
-                ],
+              onTap: _openScreen,
+              child: Container(
+                height: widget.height,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: fill, borderRadius: radius),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('$displayMy', style: _countStyle(onFill)),
+                    Text(
+                      ' / ',
+                      style: _countStyle(onFill.withValues(alpha: 0.55)),
+                    ),
+                    Text('$_partnerCount', style: _countStyle(onFill)),
+                  ],
+                ),
               ),
             ),
-          ),
           ), // fork
 
           const SizedBox(width: 4),
@@ -460,33 +472,31 @@ class _MissYouButtonState extends State<MissYouButton>
               ),
               AnimatedBuilder(
                 animation: _scaleAnimation,
-                builder: (_, child) => Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: child,
-                ),
+                builder: (_, child) =>
+                    Transform.scale(scale: _scaleAnimation.value, child: child),
                 child: Semantics(
                   button: true,
                   label: ruEn('Отправить «скучаю»', 'Send “miss you”'),
                   excludeSemantics: true,
                   onTap: _sendMissYou,
                   child: Tooltip(
-                  message: ruEn('Отправить «скучаю»', 'Send “miss you”'),
-                  child: GestureDetector(
-                  onTap: _sendMissYou,
-                  child: Container(
-                    width: widget.height,
-                    height: widget.height,
-                    decoration: BoxDecoration(
-                      color: fill,
-                      shape: BoxShape.circle,
+                    message: ruEn('Отправить «скучаю»', 'Send “miss you”'),
+                    child: GestureDetector(
+                      onTap: _sendMissYou,
+                      child: Container(
+                        width: widget.height,
+                        height: widget.height,
+                        decoration: BoxDecoration(
+                          color: fill,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.favorite_rounded,
+                          size: 16,
+                          color: onFill,
+                        ),
+                      ),
                     ),
-                    child: Icon(
-                      Icons.favorite_rounded,
-                      size: 16,
-                      color: onFill,
-                    ),
-                  ),
-                ),
                   ), // fork
                 ),
               ),
@@ -498,11 +508,11 @@ class _MissYouButtonState extends State<MissYouButton>
   }
 
   TextStyle _countStyle(Color color) => TextStyle(
-        fontFamily: 'Onest',
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        color: color,
-      );
+    fontFamily: 'Onest',
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    color: color,
+  );
 }
 
 // ─── Улетающее сердечко ───────────────────────────────────────────────────────

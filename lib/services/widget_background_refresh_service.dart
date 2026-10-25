@@ -70,7 +70,9 @@ class WidgetBackgroundRefreshService {
       await Workmanager().registerPeriodicTask(
         _taskUnique,
         _taskName,
-        frequency: const Duration(minutes: 15), // минимум, разрешённый WorkManager
+        frequency: const Duration(
+          minutes: 15,
+        ), // минимум, разрешённый WorkManager
         constraints: Constraints(networkType: NetworkType.connected),
         existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
         backoffPolicy: BackoffPolicy.linear,
@@ -117,7 +119,7 @@ void widgetRefreshDispatcher() {
           await HomeWidget.getWidgetData<String>('love_widget_group_id') ?? '';
       final partnerUid =
           await HomeWidget.getWidgetData<String>('love_widget_partner_uid') ??
-              '';
+          '';
       // fork: свой заряд — партнёру и при закрытом приложении (раз в 15 мин
       // максимум; пишет только при заметной смене).
       if (groupId.isNotEmpty) {

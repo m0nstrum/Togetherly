@@ -80,11 +80,12 @@ class CustomMoodService implements CustomMoodStore {
   Future<List<CustomMood>> load(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      final recs = await PocketBaseService().pb.collection(collection).getFullList(
-            filter: PocketBaseService().pb.filter(
-              'group_id = {:g}',
-              {'g': groupId},
-            ),
+      final recs = await PocketBaseService().pb
+          .collection(collection)
+          .getFullList(
+            filter: PocketBaseService().pb.filter('group_id = {:g}', {
+              'g': groupId,
+            }),
             sort: 'sort',
           );
       final list = [
@@ -113,20 +114,27 @@ class CustomMoodService implements CustomMoodStore {
     if (groupId.isEmpty || uid.isEmpty) return null;
     final moodId = CustomMood.newMoodId();
     try {
-      final rec = await PocketBaseService().pb.collection(collection).create(
-        body: {
-          'group_id': groupId,
-          'author_uid': uid,
-          'mood_id': moodId,
-          'label': label.trim(),
-          'emoji': emoji,
-          'score': CustomMood.clampScore(score),
-          'sort': _snapshot.length,
-        },
-        files: [
-          http.MultipartFile.fromBytes('image', png, filename: '$moodId.png'),
-        ],
-      ).timeout(const Duration(seconds: 60));
+      final rec = await PocketBaseService().pb
+          .collection(collection)
+          .create(
+            body: {
+              'group_id': groupId,
+              'author_uid': uid,
+              'mood_id': moodId,
+              'label': label.trim(),
+              'emoji': emoji,
+              'score': CustomMood.clampScore(score),
+              'sort': _snapshot.length,
+            },
+            files: [
+              http.MultipartFile.fromBytes(
+                'image',
+                png,
+                filename: '$moodId.png',
+              ),
+            ],
+          )
+          .timeout(const Duration(seconds: 60));
       return CustomMood.fromMap({...rec.data, 'id': rec.id}, fileUrl: _fileUrl);
     } catch (e) {
       debugPrint('CustomMoodService: настроение не завелось — $e');
@@ -143,10 +151,15 @@ class CustomMoodService implements CustomMoodStore {
     required int score,
   }) async {
     try {
-      await PocketBaseService().pb.collection(collection).update(recordId, body: {
-        'label': label.trim(),
-        'score': CustomMood.clampScore(score),
-      });
+      await PocketBaseService().pb
+          .collection(collection)
+          .update(
+            recordId,
+            body: {
+              'label': label.trim(),
+              'score': CustomMood.clampScore(score),
+            },
+          );
       return true;
     } catch (e) {
       debugPrint('CustomMoodService: правка не прошла — $e');

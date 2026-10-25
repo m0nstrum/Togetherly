@@ -21,30 +21,42 @@ void main() {
     final offenders = <String>[];
     for (final f in files) {
       final source = f.readAsStringSync();
-      for (final m in RegExp(r'GiftShopScreen\(([\s\S]*?)\n\s*\),')
-          .allMatches(source)) {
+      for (final m in RegExp(
+        r'GiftShopScreen\(([\s\S]*?)\n\s*\),',
+      ).allMatches(source)) {
         final args = m.group(1) ?? '';
         if (!args.contains('onCoins')) offenders.add(f.path);
       }
     }
 
-    expect(offenders, isEmpty,
-        reason: 'магазин подарков открыт без onCoins: ${offenders.join(", ")} — '
-            'списанные монеты не доедут до профиля');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'магазин подарков открыт без onCoins: ${offenders.join(", ")} — '
+          'списанные монеты не доедут до профиля',
+    );
   });
 
   test('колбэк доводит баланс до UserData, а не до одного экрана', () {
     final profile = File('lib/screens/profile_screen.dart').readAsStringSync();
-    final opened = RegExp(r'GiftShopScreen\(([\s\S]*?)\n\s*\),')
-        .firstMatch(profile);
+    final opened = RegExp(
+      r'GiftShopScreen\(([\s\S]*?)\n\s*\),',
+    ).firstMatch(profile);
     expect(opened, isNotNull, reason: 'магазин открывается из профиля');
-    expect(opened!.group(1), contains('applyServerCoins'),
-        reason: 'баланс уходит в UserData, иначе его увидит только магазин');
+    expect(
+      opened!.group(1),
+      contains('applyServerCoins'),
+      reason: 'баланс уходит в UserData, иначе его увидит только магазин',
+    );
   });
 
   test('UserData умеет принять серверный баланс', () {
     final user = File('lib/models/user_data.dart').readAsStringSync();
-    expect(user, contains('void applyServerCoins('),
-        reason: 'нужен публичный путь для баланса из чужих роутов');
+    expect(
+      user,
+      contains('void applyServerCoins('),
+      reason: 'нужен публичный путь для баланса из чужих роутов',
+    );
   });
 }

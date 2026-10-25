@@ -19,7 +19,8 @@ PasswordChangeProblem? passwordChangeProblem({
 }) {
   if (current.isEmpty) return PasswordChangeProblem.noCurrent;
   // fork (A15): минимум один на весь форк — тот же, что у ForkAccountPassword.
-  if (fresh.runes.length < PasswordPolicy.minLength) return PasswordChangeProblem.tooShort;
+  if (fresh.runes.length < PasswordPolicy.minLength)
+    return PasswordChangeProblem.tooShort;
   if (fresh != repeat) return PasswordChangeProblem.mismatch;
   // Пароль, равный прежнему, сервер примет молча — и человек решит, что смена
   // не сработала. Отвечаем сразу.

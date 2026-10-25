@@ -19,7 +19,13 @@ Uint8List _shot(int w, int h) {
     for (int x = 0; x < w; x++) {
       // Шум, а не заливка: однотонное поле жмётся в килобайты и ничего не
       // проверяет.
-      frame.setPixelRgb(x, y, (x * 7 + y * 13) % 255, (x * 3) % 255, (y * 5) % 255);
+      frame.setPixelRgb(
+        x,
+        y,
+        (x * 7 + y * 13) % 255,
+        (x * 3) % 255,
+        (y * 5) % 255,
+      );
     }
   }
   return Uint8List.fromList(img.encodeJpg(frame, quality: 95));
@@ -55,7 +61,10 @@ void main() {
   test('результат запасного пути проходит отбор payload', () {
     final raw = _shot(4000, 3000);
     final small = shrinkToJpeg(raw, 1200);
-    expect(widgetPhotoPayload(original: raw, compressed: small), isNotNull,
-        reason: 'иначе в контейнер не ляжет ничего и виджет останется пустым');
+    expect(
+      widgetPhotoPayload(original: raw, compressed: small),
+      isNotNull,
+      reason: 'иначе в контейнер не ляжет ничего и виджет останется пустым',
+    );
   });
 }

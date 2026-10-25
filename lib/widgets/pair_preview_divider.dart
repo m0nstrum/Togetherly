@@ -33,11 +33,7 @@ class PairPreviewDivider extends StatelessWidget {
         children: [
           const Expanded(child: _DividerLine()),
           const SizedBox(height: 2),
-          Icon(
-            Icons.favorite_rounded,
-            size: heartSize,
-            color: heartColor,
-          ),
+          Icon(Icons.favorite_rounded, size: heartSize, color: heartColor),
           const SizedBox(height: 2),
           const Expanded(child: _DividerLine()),
         ],

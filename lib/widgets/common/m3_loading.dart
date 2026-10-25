@@ -61,7 +61,8 @@ class M3Loading extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: containerColor ?? Theme.of(context).colorScheme.secondaryContainer,
+        color:
+            containerColor ?? Theme.of(context).colorScheme.secondaryContainer,
       ),
       child: SizedBox(width: size, height: size, child: indicator),
     );
@@ -83,10 +84,10 @@ class M3PageLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: M3Loading(
-          color: color,
-          contained: contained,
-          containerColor: containerColor,
-        ),
-      );
+    child: M3Loading(
+      color: color,
+      contained: contained,
+      containerColor: containerColor,
+    ),
+  );
 }

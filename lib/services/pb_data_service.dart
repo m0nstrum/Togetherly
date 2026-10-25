@@ -101,8 +101,8 @@ class PbDataService {
       final sec = v['_seconds'] ?? v['seconds'];
       if (sec is num) {
         final ns = v['_nanoseconds'] ?? v['nanoseconds'] ?? 0;
-        final ms = sec.toInt() * 1000 +
-            ((ns is num ? ns.toInt() : 0) ~/ 1000000);
+        final ms =
+            sec.toInt() * 1000 + ((ns is num ? ns.toInt() : 0) ~/ 1000000);
         return DateTime.fromMillisecondsSinceEpoch(ms);
       }
       return null;
@@ -128,6 +128,7 @@ class PbDataService {
   /// Где лежат записи, которые мы обновляем постоянно (гео, присутствие,
   /// «печатает», данные виджета). См. [UpsertIdCache].
   final UpsertIdCache _upsertIds = UpsertIdCache();
+
   /// Кому сейчас нельзя стучаться: запись, только что получившая отказ, ждёт.
   final UpsertBackoff _upsertQuiet = UpsertBackoff();
 
@@ -154,8 +155,8 @@ class PbDataService {
       try {
         await _pb
             .collection(col)
-            .create(body: {'id': id, ...body}).timeout(
-                const Duration(seconds: 15));
+            .create(body: {'id': id, ...body})
+            .timeout(const Duration(seconds: 15));
         return true;
       } on ClientException catch (e) {
         // Запись уже есть — значит это правка, а не создание.
@@ -187,8 +188,8 @@ class PbDataService {
         try {
           await _pb
               .collection(col)
-              .create(body: {'id': id, ...body}).timeout(
-                  const Duration(seconds: 15));
+              .create(body: {'id': id, ...body})
+              .timeout(const Duration(seconds: 15));
           return true;
         } catch (e2) {
           // «Value must be unique» по id означает, что запись всё-таки есть:
@@ -279,7 +280,7 @@ class PbDataService {
     }
   }
 
-  /// POST на серверный АТОМАРНЫЙ group-роут (pb_hooks/groups.pb.js). true =
+  /// POST на серверный АТОМАРНЫЙ group-роут (server/internal/handler/group.go). true =
   /// Зов партнёру: «зашёл на холст, порисуй со мной».
   ///
   /// Один запрос на вход в раскраску, всё остальное решает сервер
@@ -302,7 +303,9 @@ class PbDataService {
   /// ошибке/недоступности роута → вызывающий откатывается на локальный RMW, так
   /// что версия-скью клиент/сервер безопасна. Закрывает гонки DATA-5/6/7/8/9.
   Future<_GroupRouteResult> _callGroupRoute(
-      String path, Map<String, dynamic> body) async {
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final res = await _pb
           .send('/api/group/$path', method: 'POST', body: body)
@@ -316,12 +319,16 @@ class PbDataService {
       // 429/5xx/сеть(0) — сервер под нагрузкой. НЕ долбить локальным RMW: это
       // ровно то, что ломало backpressure сервера и раскручивало шторм.
       if (e.statusCode == 429 || e.statusCode == 0 || e.statusCode >= 500) {
-        debugPrint('PbData._callGroupRoute($path) backpressure ${e.statusCode}');
+        debugPrint(
+          'PbData._callGroupRoute($path) backpressure ${e.statusCode}',
+        );
         return _GroupRouteResult.backpressure;
       }
       // Прочие 4xx (400/403/422) — роут ответил отказом; локальный RMW не
       // поможет, но поведение сохраняем как раньше (фолбэк).
-      debugPrint('PbData._callGroupRoute($path) ${e.statusCode}: ${e.response}');
+      debugPrint(
+        'PbData._callGroupRoute($path) ${e.statusCode}: ${e.response}',
+      );
       return _GroupRouteResult.missing;
     } on TimeoutException {
       debugPrint('PbData._callGroupRoute($path) timeout → backpressure');
@@ -346,8 +353,9 @@ class PbDataService {
       'relationship_type': raw['relationshipType'] ?? 'couple',
       'custom_relationship_label': raw['customRelationshipLabel'],
       'custom_relationship_emoji': raw['customRelationshipEmoji'],
-      'custom_relationship_types':
-          _jsonSafe(raw['customRelationshipTypes'] ?? []),
+      'custom_relationship_types': _jsonSafe(
+        raw['customRelationshipTypes'] ?? [],
+      ),
       'start_date': _iso(raw['startDate']),
       'anniversary_date': _iso(raw['anniversaryDate']),
       'first_kiss_date': _iso(raw['firstKissDate']),
@@ -403,7 +411,7 @@ class PbDataService {
   /// Retry (до 3 попыток) спасает от ТРАНЗИЕНТНЫХ ошибок (сеть/5xx), но НЕ от
   /// lost-update: при настоящей гонке параллельная запись проходит УСПЕШНО (без
   /// исключения) и перетирает наше изменение, а ретрай срабатывает лишь на throw.
-  /// Полностью race-free только серверная транзакция (DATA-5, см. groups.pb.js —
+  /// Полностью race-free только серверная транзакция (DATA-5, см. handler.Group —
   /// TODO). Для редких правок member_* в паре из 2 человек риск низкий.
   Future<bool> _patchGroupMapField(
     String groupId,
@@ -412,8 +420,12 @@ class PbDataService {
     dynamic value,
   ) async {
     // DATA-5: сперва атомарный серверный роут; при недоступности — локальный RMW.
-    final r = await _callGroupRoute('patch-map',
-        {'groupId': groupId, 'field': col, 'uid': uid, 'value': value});
+    final r = await _callGroupRoute('patch-map', {
+      'groupId': groupId,
+      'field': col,
+      'uid': uid,
+      'value': value,
+    });
     if (r == _GroupRouteResult.ok) return true;
     // Под нагрузкой (429/timeout) НЕ откатываемся на локальный RMW — это усиливало шторм.
     if (r == _GroupRouteResult.backpressure) return false;
@@ -433,7 +445,9 @@ class PbDataService {
             .collection('groups')
             .getFirstListItem(_pb.filter('id = {:id}', {'id': groupId}));
         final cur = rec.data[col];
-        final map = cur is Map ? Map<String, dynamic>.from(cur) : <String, dynamic>{};
+        final map = cur is Map
+            ? Map<String, dynamic>.from(cur)
+            : <String, dynamic>{};
         if (value == null) {
           map.remove(uid);
         } else {
@@ -443,7 +457,9 @@ class PbDataService {
         return true;
       } catch (e) {
         if (attempt == maxAttempts - 1) {
-          debugPrint('PbData._patchGroupMapField($col,$uid) failed after ${attempt + 1} attempts: $e');
+          debugPrint(
+            'PbData._patchGroupMapField($col,$uid) failed after ${attempt + 1} attempts: $e',
+          );
           return false;
         }
         // Небольшая задержка перед повтором (ponential backoff).
@@ -473,9 +489,13 @@ class PbDataService {
   Future<RecordModel?> loadPairForUser(String uid) async {
     if (uid.isEmpty) return null;
     try {
-      final res = await _pb.collection('groups').getList(
+      final res = await _pb
+          .collection('groups')
+          .getList(
             perPage: 1,
-            filter: _pb.filter('members ~ {:u} && disbanded = false', {'u': uid}),
+            filter: _pb.filter('members ~ {:u} && disbanded = false', {
+              'u': uid,
+            }),
           );
       return res.items.isEmpty ? null : res.items.first;
     } catch (e) {
@@ -491,15 +511,21 @@ class PbDataService {
   /// (DATA-7, PB-hook/транзакция — TODO).
   Future<bool> incrementGroupCounter(String groupId, String col, int by) async {
     // DATA-7: атомарный серверный инкремент; при недоступности — локальный RMW.
-    final r = await _callGroupRoute(
-        'increment', {'groupId': groupId, 'field': col, 'by': by});
+    final r = await _callGroupRoute('increment', {
+      'groupId': groupId,
+      'field': col,
+      'by': by,
+    });
     if (r == _GroupRouteResult.ok) return true;
     if (r == _GroupRouteResult.backpressure) return false;
     return _incrementGroupCounterLocal(groupId, col, by);
   }
 
   Future<bool> _incrementGroupCounterLocal(
-      String groupId, String col, int by) async {
+    String groupId,
+    String col,
+    int by,
+  ) async {
     const maxAttempts = 3;
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -511,7 +537,9 @@ class PbDataService {
         return true;
       } catch (e) {
         if (attempt == maxAttempts - 1) {
-          debugPrint('PbData.incrementGroupCounter($col) failed after ${attempt + 1} attempts: $e');
+          debugPrint(
+            'PbData.incrementGroupCounter($col) failed after ${attempt + 1} attempts: $e',
+          );
           return false;
         }
         await Future<void>.delayed(Duration(milliseconds: 50 * (attempt + 1)));
@@ -537,7 +565,7 @@ class PbDataService {
     final data = rec.data;
     final rawMembers =
         (data['members'] as List?)?.map((e) => e.toString()).toList() ??
-            <String>[];
+        <String>[];
     final members = rawMembers.toSet().toList(); // дедуп на всякий
     final names = data['member_names'] is Map
         ? Map<String, dynamic>.from(data['member_names'] as Map)
@@ -552,7 +580,9 @@ class PbDataService {
     Map<String, dynamic> innerWithDate(dynamic raw) {
       if (raw is! Map) return <String, dynamic>{};
       return Map<String, dynamic>.from(raw).map((uid, v) {
-        final inner = v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{};
+        final inner = v is Map
+            ? Map<String, dynamic>.from(v)
+            : <String, dynamic>{};
         if (inner.containsKey('updatedAt')) {
           inner['updatedAt'] = _date(inner['updatedAt']);
         }
@@ -566,8 +596,9 @@ class PbDataService {
       // Читаем календарным днём: у старых записей внутри лежит время
       // сохранения, и число берётся из строки как есть — иначе у пары из
       // разных поясов одна и та же дата показывалась разными числами.
-      return Map<String, dynamic>.from(raw)
-          .map((k, v) => MapEntry(k, DateOnly.parse(v)));
+      return Map<String, dynamic>.from(
+        raw,
+      ).map((k, v) => MapEntry(k, DateOnly.parse(v)));
     }
 
     return {
@@ -578,11 +609,13 @@ class PbDataService {
       // пары (сервер её больше не проставляет).
       'startDate': _date(data['start_date']) ?? _date(data['created_at']),
       'members': members
-          .map((uid) => {
-                'uid': uid,
-                'name': names[uid] ?? '',
-                'avatar': avatars[uid] ?? '',
-              })
+          .map(
+            (uid) => {
+              'uid': uid,
+              'name': names[uid] ?? '',
+              'avatar': avatars[uid] ?? '',
+            },
+          )
           .toList(),
       'maxMembers': data['max_members'] ?? 2,
       'memberMoods': innerWithDate(data['member_moods']),
@@ -590,8 +623,9 @@ class PbDataService {
       'currentStatus': data['current_status'] is Map
           ? Map<String, dynamic>.from(data['current_status'] as Map)
           : null,
-      'customStatuses':
-          data['custom_statuses'] is List ? data['custom_statuses'] as List : null,
+      'customStatuses': data['custom_statuses'] is List
+          ? data['custom_statuses'] as List
+          : null,
       'relationshipType': data['relationship_type'] as String?,
       'customRelationshipLabel': data['custom_relationship_label'] as String?,
       'customRelationshipEmoji': data['custom_relationship_emoji'] as String?,
@@ -617,7 +651,7 @@ class PbDataService {
   // ══════════════════════════════════════════════ ПАРА С ПУСТЫМ МЕСТОМ
   // Второе место пары держит заглушка, пока человек в армии (на вахте, в
   // экспедиции). Всё делают серверные роуты `waiting.pb.js`: клиент не может ни
-  // выдать себе код, ни объявить место свободным — `groups_guard` эти поля
+  // выдать себе код, ни объявить место свободным — `bindGroupsGuard` эти поля
   // закрывает.
 
   /// Завести пару с пустым местом. Возвращает `{pairId, code}` или null.
@@ -630,9 +664,11 @@ class PbDataService {
     try {
       // fork (E2E): сервер видит только заглушку имени, настоящие имя, фото
       // и дату возвращения пишет ForkE2E.sealWaiting — шифром.
-      final res = await _pb.send('/api/waiting/create', method: 'POST', body: {
-        'name': ForkE2E.waitingNameOnServer,
-      });
+      final res = await _pb.send(
+        '/api/waiting/create',
+        method: 'POST',
+        body: {'name': ForkE2E.waitingNameOnServer},
+      );
       final map = res is Map
           ? Map<String, dynamic>.from(res)
           : <String, dynamic>{};
@@ -641,14 +677,13 @@ class PbDataService {
         return null;
       }
       final pairId = (map['pairId'] ?? '').toString();
-      await ForkE2E.sealWaiting(pairId, // fork
-          name: name,
-          avatar: avatar != null && avatar.isNotEmpty ? avatar : null,
-          returnDate: returnDate == null ? null : _iso(returnDate));
-      return {
-        'pairId': pairId,
-        'code': (map['code'] ?? '').toString(),
-      };
+      await ForkE2E.sealWaiting(
+        pairId, // fork
+        name: name,
+        avatar: avatar != null && avatar.isNotEmpty ? avatar : null,
+        returnDate: returnDate == null ? null : _iso(returnDate),
+      );
+      return {'pairId': pairId, 'code': (map['code'] ?? '').toString()};
     } on ClientException catch (e) {
       // Отказ роута приходит исключением, а причина — телом ответа. Без неё
       // человек видит «не получилось» и не знает, что делать.
@@ -671,12 +706,14 @@ class PbDataService {
   }) async {
     try {
       // fork (E2E): правка записи пары шифром вместо /api/waiting/update.
-      return await ForkE2E.sealWaiting(groupId,
-          name: name,
-          avatar: avatar,
-          returnDate: clearReturnDate
-              ? ''
-              : (returnDate == null ? null : _iso(returnDate)));
+      return await ForkE2E.sealWaiting(
+        groupId,
+        name: name,
+        avatar: avatar,
+        returnDate: clearReturnDate
+            ? ''
+            : (returnDate == null ? null : _iso(returnDate)),
+      );
     } catch (e) {
       debugPrint('PbData.waitingUpdate failed: $e');
       return false;
@@ -690,8 +727,11 @@ class PbDataService {
   Future<Map<String, dynamic>?> waitingClaim(String code) async {
     lastWaitingError = null;
     try {
-      final res = await _pb.send('/api/waiting/claim',
-          method: 'POST', body: {'code': code});
+      final res = await _pb.send(
+        '/api/waiting/claim',
+        method: 'POST',
+        body: {'code': code},
+      );
       final map = res is Map
           ? Map<String, dynamic>.from(res)
           : <String, dynamic>{};
@@ -713,8 +753,11 @@ class PbDataService {
   /// Подтвердить или отклонить заявку на второе место.
   Future<bool> waitingApprove(String groupId, {required bool approve}) async {
     try {
-      final res = await _pb.send('/api/waiting/approve',
-          method: 'POST', body: {'groupId': groupId, 'approve': approve});
+      final res = await _pb.send(
+        '/api/waiting/approve',
+        method: 'POST',
+        body: {'groupId': groupId, 'approve': approve},
+      );
       return res is Map && res['success'] == true;
     } catch (e) {
       debugPrint('PbData.waitingApprove failed: $e');
@@ -725,8 +768,11 @@ class PbDataService {
   /// Сбросить код второго места (расставание, код утёк). Возвращает новый код.
   Future<String?> waitingReset(String groupId) async {
     try {
-      final res = await _pb.send('/api/waiting/reset',
-          method: 'POST', body: {'groupId': groupId});
+      final res = await _pb.send(
+        '/api/waiting/reset',
+        method: 'POST',
+        body: {'groupId': groupId},
+      );
       final map = res is Map
           ? Map<String, dynamic>.from(res)
           : <String, dynamic>{};
@@ -745,10 +791,14 @@ class PbDataService {
   Future<bool> waitingCancel(String groupId) async {
     lastWaitingError = null;
     try {
-      final res = await _pb.send('/api/waiting/cancel',
-          method: 'POST', body: {'groupId': groupId});
-      final map =
-          res is Map ? Map<String, dynamic>.from(res) : <String, dynamic>{};
+      final res = await _pb.send(
+        '/api/waiting/cancel',
+        method: 'POST',
+        body: {'groupId': groupId},
+      );
+      final map = res is Map
+          ? Map<String, dynamic>.from(res)
+          : <String, dynamic>{};
       if (map['success'] != true) {
         lastWaitingError = (map['message'] ?? '').toString();
         return false;
@@ -812,9 +862,7 @@ class PbDataService {
   Future<Map<String, dynamic>> waitingState(String code) async {
     try {
       final res = await _pb.send('/api/waiting/state?code=$code');
-      return res is Map
-          ? Map<String, dynamic>.from(res)
-          : <String, dynamic>{};
+      return res is Map ? Map<String, dynamic>.from(res) : <String, dynamic>{};
     } catch (e) {
       debugPrint('PbData.waitingState failed: $e');
       return <String, dynamic>{};
@@ -840,9 +888,12 @@ class PbDataService {
   Future<List<String>> activeGroupIdsForUser(String uid) async {
     if (uid.isEmpty) return const [];
     try {
-      final res = await _pb.collection('groups').getFullList(
-            filter:
-                _pb.filter('members ~ {:u} && disbanded = false', {'u': uid}),
+      final res = await _pb
+          .collection('groups')
+          .getFullList(
+            filter: _pb.filter('members ~ {:u} && disbanded = false', {
+              'u': uid,
+            }),
           );
       return res.map((r) => r.id).toList();
     } catch (e) {
@@ -856,8 +907,7 @@ class PbDataService {
     String groupId,
     String uid,
     Map<String, dynamic> ail,
-  ) =>
-      _patchGroupMapField(groupId, 'member_ailments', uid, _jsonSafe(ail));
+  ) => _patchGroupMapField(groupId, 'member_ailments', uid, _jsonSafe(ail));
   Future<bool> clearMemberAilment(String groupId, String uid) =>
       _patchGroupMapField(groupId, 'member_ailments', uid, null);
 
@@ -867,13 +917,12 @@ class PbDataService {
     int maxMembers = 2,
     String customLabel = '',
     String customEmoji = '',
-  }) =>
-      updateGroupFields(groupId, {
-        'relationship_type': type,
-        'max_members': maxMembers,
-        'custom_relationship_label': customLabel,
-        'custom_relationship_emoji': customEmoji,
-      });
+  }) => updateGroupFields(groupId, {
+    'relationship_type': type,
+    'max_members': maxMembers,
+    'custom_relationship_label': customLabel,
+    'custom_relationship_emoji': customEmoji,
+  });
 
   Future<bool> setGroupStatus(String groupId, Map<String, dynamic> status) =>
       updateGroupFields(groupId, {'current_status': _jsonSafe(status)});
@@ -883,16 +932,14 @@ class PbDataService {
   Future<bool> addOrUpdateCustomStatus(
     String groupId,
     Map<String, dynamic> status,
-  ) =>
-      _patchGroupListById(groupId, 'custom_statuses', upsert: status);
+  ) => _patchGroupListById(groupId, 'custom_statuses', upsert: status);
   Future<bool> deleteCustomStatus(String groupId, String statusId) =>
       _patchGroupListById(groupId, 'custom_statuses', deleteId: statusId);
 
   Future<bool> addOrUpdateCustomRelationshipType(
     String groupId,
     Map<String, dynamic> entry,
-  ) =>
-      _patchGroupListById(groupId, 'custom_relationship_types', upsert: entry);
+  ) => _patchGroupListById(groupId, 'custom_relationship_types', upsert: entry);
   Future<bool> deleteCustomRelationshipType(String groupId, String id) =>
       _patchGroupListById(groupId, 'custom_relationship_types', deleteId: id);
 
@@ -921,7 +968,9 @@ class PbDataService {
           list.add(upsert);
         }
       }
-      await _pb.collection('groups').update(rec.id, body: {col: _jsonSafe(list)});
+      await _pb
+          .collection('groups')
+          .update(rec.id, body: {col: _jsonSafe(list)});
       return true;
     } catch (e) {
       debugPrint('PbData._patchGroupListById($col) failed: $e');
@@ -932,15 +981,15 @@ class PbDataService {
   // ── жизненный цикл пары ──────────────────────────────────────────────────
   /// Распустить группу для всех (soft-delete: disbanded=true, восстановимо).
   Future<bool> disbandGroup(String groupId) => updateGroupFields(groupId, {
-        'disbanded': true,
-        'disbanded_at': PairTime.write(DateTime.now()),
-      });
+    'disbanded': true,
+    'disbanded_at': PairTime.write(DateTime.now()),
+  });
 
   /// Убрать [uid] из группы (members + имена + аватары + настроения + недуги).
   /// Если участников не осталось — помечаем распущенной. Retry (до 3 попыток)
   /// закрывает транзиентные ошибки, но НЕ lost-update: при одновременном выходе
   /// обоих участников обе записи успешны, вторая перетирает первую → ушедший может
-  /// «воскреснуть» (DATA-6). Полный фикс — серверная транзакция (groups.pb.js,
+  /// «воскреснуть» (DATA-6). Полный фикс — серверная транзакция (handler.Group,
   /// TODO). Одновременный выход обоих — крайне редкий сценарий.
   Future<bool> leaveGroup(String groupId, String uid) async {
     if (groupId.isEmpty || uid.isEmpty) return false;
@@ -960,7 +1009,7 @@ class PbDataService {
             .getFirstListItem(_pb.filter('id = {:id}', {'id': groupId}));
         final members =
             (rec.data['members'] as List?)?.map((e) => e.toString()).toList() ??
-                <String>[];
+            <String>[];
         members.remove(uid);
         final names = rec.data['member_names'] is Map
             ? Map<String, dynamic>.from(rec.data['member_names'] as Map)
@@ -993,7 +1042,9 @@ class PbDataService {
         return true;
       } catch (e) {
         if (attempt == maxAttempts - 1) {
-          debugPrint('PbData.leaveGroup($groupId,$uid) failed after ${attempt + 1} attempts: $e');
+          debugPrint(
+            'PbData.leaveGroup($groupId,$uid) failed after ${attempt + 1} attempts: $e',
+          );
           return false;
         }
         await Future<void>.delayed(Duration(milliseconds: 50 * (attempt + 1)));
@@ -1012,7 +1063,7 @@ class PbDataService {
           .getFirstListItem(_pb.filter('id = {:id}', {'id': groupId}));
       final members =
           (rec.data['members'] as List?)?.map((e) => e.toString()).toList() ??
-              <String>[];
+          <String>[];
       if (members.length <= 2) return disbandGroup(groupId);
       return leaveGroup(groupId, uid);
     } catch (e) {
@@ -1025,9 +1076,12 @@ class PbDataService {
   Future<List<RecordModel>> activeGroupRecordsForUser(String uid) async {
     if (uid.isEmpty) return const [];
     try {
-      return await _pb.collection('groups').getFullList(
-            filter:
-                _pb.filter('members ~ {:u} && disbanded = false', {'u': uid}),
+      return await _pb
+          .collection('groups')
+          .getFullList(
+            filter: _pb.filter('members ~ {:u} && disbanded = false', {
+              'u': uid,
+            }),
           );
     } catch (e) {
       debugPrint('PbData.activeGroupRecordsForUser($uid) failed: $e');
@@ -1045,8 +1099,10 @@ class PbDataService {
 
   String _newCode() {
     final r = Random.secure();
-    return List.generate(6, (_) => _codeChars[r.nextInt(_codeChars.length)])
-        .join();
+    return List.generate(
+      6,
+      (_) => _codeChars[r.nextInt(_codeChars.length)],
+    ).join();
   }
 
   Future<RecordModel?> lookupInviteCode(String code) async {
@@ -1075,7 +1131,10 @@ class PbDataService {
   ///
   /// Ответ пишется в [ConfirmedInviteCodes]: экран раздаёт только те коды,
   /// что сервер подтвердил.
-  Future<bool?> inviteCodeIsMine(String code, {required String ownerUid}) async {
+  Future<bool?> inviteCodeIsMine(
+    String code, {
+    required String ownerUid,
+  }) async {
     if (code.isEmpty || ownerUid.isEmpty) return null;
     // С протухшим токеном PocketBase считает запрос гостевым и отдаёт по
     // правилу owner-only пустой список, а SDK превращает его в 404. Такой 404
@@ -1143,18 +1202,24 @@ class PbDataService {
       // create. На провал create (коллизия/гонка) пробуем следующий код.
       if (await lookupInviteCode(code) != null) continue;
       try {
-        await _pb.collection('invite_codes').create(body: {
-          'code': code,
-          'owner_uid': ownerUid,
-          if (groupId != null && groupId.isNotEmpty) 'group_id': groupId,
-        });
+        await _pb
+            .collection('invite_codes')
+            .create(
+              body: {
+                'code': code,
+                'owner_uid': ownerUid,
+                if (groupId != null && groupId.isNotEmpty) 'group_id': groupId,
+              },
+            );
         ConfirmedInviteCodes.confirm(code, ownerUid: ownerUid);
         if (oldCode != null && oldCode.isNotEmpty && oldCode != code) {
           await deleteInviteCode(oldCode);
         }
         return code;
       } catch (e) {
-        debugPrint('PbData.generateInviteCode attempt ${attempt + 1} failed: $e');
+        debugPrint(
+          'PbData.generateInviteCode attempt ${attempt + 1} failed: $e',
+        );
         // ЧАСТАЯ ПРИЧИНА (подтверждено логами: auth='' на сервере): токен протух/
         // не приложен → createRule `owner_uid = @request.auth.id` не проходит →
         // 400 «create rule failure». Освежаем сессию ОДИН раз и продолжаем — тогда
@@ -1211,11 +1276,8 @@ class PbDataService {
       };
     }
     try {
-      Future<dynamic> send() => _pb.send(
-            '/api/invite/accept',
-            method: 'POST',
-            body: {'code': code},
-          );
+      Future<dynamic> send() =>
+          _pb.send('/api/invite/accept', method: 'POST', body: {'code': code});
       dynamic resp;
       try {
         resp = await send();
@@ -1241,8 +1303,9 @@ class PbDataService {
         }
         resp = await send();
       }
-      final map =
-          resp is Map ? Map<String, dynamic>.from(resp) : <String, dynamic>{};
+      final map = resp is Map
+          ? Map<String, dynamic>.from(resp)
+          : <String, dynamic>{};
       if (map['success'] != true) {
         return {
           'success': false,
@@ -1281,14 +1344,22 @@ class PbDataService {
         };
       }
       if (e.statusCode == 0 || e.statusCode >= 500 || e.statusCode == 429) {
-        return {'success': false, 'message': ForkFailure.of(e).text, 'failure': ForkFailure.of(e)};
+        return {
+          'success': false,
+          'message': ForkFailure.of(e).text,
+          'failure': ForkFailure.of(e),
+        };
       }
       final msg = (e.response['message'] ?? ForkFailure.of(e).text).toString();
       debugPrint('PbData.acceptInviteCode hook ${e.statusCode}: $msg');
       return {'success': false, 'message': msg};
     } catch (e) {
       debugPrint('PbData.acceptInviteCode failed: $e');
-      return {'success': false, 'message': ForkFailure.of(e).text, 'failure': ForkFailure.of(e)};
+      return {
+        'success': false,
+        'message': ForkFailure.of(e).text,
+        'failure': ForkFailure.of(e),
+      };
     }
   }
 
@@ -1392,7 +1463,9 @@ class PbDataService {
         filter += ' && created_at < {:b}';
         params['b'] = beforeIso;
       }
-      final res = await _pb.collection('memories').getList(
+      final res = await _pb
+          .collection('memories')
+          .getList(
             perPage: limit,
             filter: _pb.filter(filter, params),
             sort: '-created_at',
@@ -1413,20 +1486,25 @@ class PbDataService {
   ) async {
     if (groupId.isEmpty) return null;
     try {
-      return await _pb.collection('memories').create(body: {
-        'group_id': groupId,
-        'type': data['type'],
-        'author_uid': data['authorUid'],
-        'author_name': data['authorName'],
-        'author_avatar': data['authorAvatar'],
-        'created_at': _iso(data['createdAt']),
-        'edited_at': _iso(data['editedAt']),
-        'tz': data['tz'] ?? PairTime.zoneNow(),
-        'added_at': _iso(data['addedAt']) ?? PairTime.write(DateTime.now()),
-        'is_pinned': data['isPinned'] ?? false,
-        'deleted': data['deleted'] ?? false,
-        'data': _jsonSafe(data),
-      });
+      return await _pb
+          .collection('memories')
+          .create(
+            body: {
+              'group_id': groupId,
+              'type': data['type'],
+              'author_uid': data['authorUid'],
+              'author_name': data['authorName'],
+              'author_avatar': data['authorAvatar'],
+              'created_at': _iso(data['createdAt']),
+              'edited_at': _iso(data['editedAt']),
+              'tz': data['tz'] ?? PairTime.zoneNow(),
+              'added_at':
+                  _iso(data['addedAt']) ?? PairTime.write(DateTime.now()),
+              'is_pinned': data['isPinned'] ?? false,
+              'deleted': data['deleted'] ?? false,
+              'data': _jsonSafe(data),
+            },
+          );
     } catch (e) {
       debugPrint('PbData.createMemory failed: $e');
       return null;
@@ -1442,14 +1520,17 @@ class PbDataService {
   /// отказом по сути (своих уже три, чужая наклейка, записи нет): повтор
   /// ничего не даст. Иначе null-запись значит «сеть не ответила».
   Future<({RecordModel? record, bool refused})> memoryStickerOp(
-      String memoryId, Map<String, dynamic> body) async {
+    String memoryId,
+    Map<String, dynamic> body,
+  ) async {
     if (memoryId.isEmpty) return (record: null, refused: true);
     try {
       final rec = await _pb.collection('memories').update(memoryId, body: body);
       return (record: rec, refused: false);
     } on ClientException catch (e) {
       final code = e.statusCode;
-      final refused = code >= 400 &&
+      final refused =
+          code >= 400 &&
           code < 500 &&
           code != 401 &&
           code != 408 &&
@@ -1465,7 +1546,9 @@ class PbDataService {
   Future<RecordModel?> loadMemoryById(String id) async {
     if (id.isEmpty) return null;
     try {
-      return await _pb.collection('memories').getFirstListItem(
+      return await _pb
+          .collection('memories')
+          .getFirstListItem(
             _pb.filter('id = {:id} && deleted = false', {'id': id}),
           );
     } catch (e) {
@@ -1483,15 +1566,21 @@ class PbDataService {
   ) async {
     final id = entry['id'] as String?;
     if (id == null || id.isEmpty) return false;
-    return _upsertById('mood_entries', id, {
-      'group_id': groupId,
-      'user_uid': uid,
-      'mood_id': entry['moodId'],
-      'image_path': entry['imagePath'],
-      'label': entry['label'],
-      'timestamp': _iso(entry['timestamp']) ?? PairTime.write(DateTime.now()),
-      'tz': entry['tz'] ?? PairTime.zoneNow(),
-    }, op: 'upsertMood', expectNew: true);
+    return _upsertById(
+      'mood_entries',
+      id,
+      {
+        'group_id': groupId,
+        'user_uid': uid,
+        'mood_id': entry['moodId'],
+        'image_path': entry['imagePath'],
+        'label': entry['label'],
+        'timestamp': _iso(entry['timestamp']) ?? PairTime.write(DateTime.now()),
+        'tz': entry['tz'] ?? PairTime.zoneNow(),
+      },
+      op: 'upsertMood',
+      expectNew: true,
+    );
   }
 
   /// Создаёт запись настроения (PB генерирует id, как [createMemory]). [entry] —
@@ -1504,16 +1593,20 @@ class PbDataService {
   ) async {
     if (groupId.isEmpty || uid.isEmpty) return null;
     try {
-      return await _pb.collection('mood_entries').create(body: {
-        'group_id': groupId,
-        'user_uid': uid,
-        'mood_id': entry['moodId'],
-        'image_path': entry['imagePath'],
-        'label': entry['label'],
-        'timestamp':
-            _iso(entry['timestamp']) ?? PairTime.write(DateTime.now()),
-        'tz': entry['tz'] ?? PairTime.zoneNow(),
-      });
+      return await _pb
+          .collection('mood_entries')
+          .create(
+            body: {
+              'group_id': groupId,
+              'user_uid': uid,
+              'mood_id': entry['moodId'],
+              'image_path': entry['imagePath'],
+              'label': entry['label'],
+              'timestamp':
+                  _iso(entry['timestamp']) ?? PairTime.write(DateTime.now()),
+              'tz': entry['tz'] ?? PairTime.zoneNow(),
+            },
+          );
     } catch (e) {
       debugPrint('PbData.createMood failed: $e');
       return null;
@@ -1535,9 +1628,13 @@ class PbDataService {
   Future<List<RecordModel>> loadMoods(String groupId, String uid) async {
     if (groupId.isEmpty) return const [];
     try {
-      final res = await _pb.collection('mood_entries').getFullList(
-            filter: _pb.filter('group_id = {:g} && user_uid = {:u}',
-                {'g': groupId, 'u': uid}),
+      final res = await _pb
+          .collection('mood_entries')
+          .getFullList(
+            filter: _pb.filter('group_id = {:g} && user_uid = {:u}', {
+              'g': groupId,
+              'u': uid,
+            }),
           );
       return res;
     } catch (e) {
@@ -1553,9 +1650,13 @@ class PbDataService {
   Future<List<RecordModel>> loadCycle(String groupId, String uid) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('cycle_entries').getFullList(
-            filter: _pb.filter('group_id = {:g} && user_uid = {:u}',
-                {'g': groupId, 'u': uid}),
+      return await _pb
+          .collection('cycle_entries')
+          .getFullList(
+            filter: _pb.filter('group_id = {:g} && user_uid = {:u}', {
+              'g': groupId,
+              'u': uid,
+            }),
             sort: 'day',
           );
     } catch (e) {
@@ -1601,9 +1702,13 @@ class PbDataService {
   Future<bool> setCycleShared(String groupId, String uid, bool shared) async {
     if (groupId.isEmpty || uid.isEmpty) return false;
     try {
-      final recs = await _pb.collection('cycle_entries').getFullList(
-            filter: _pb.filter('group_id = {:g} && user_uid = {:u}',
-                {'g': groupId, 'u': uid}),
+      final recs = await _pb
+          .collection('cycle_entries')
+          .getFullList(
+            filter: _pb.filter('group_id = {:g} && user_uid = {:u}', {
+              'g': groupId,
+              'u': uid,
+            }),
           );
       for (final rec in recs) {
         if (rec.getBoolValue('shared') == shared) continue;
@@ -1622,9 +1727,13 @@ class PbDataService {
   Future<bool> wipeCycle(String groupId, String uid) async {
     if (groupId.isEmpty || uid.isEmpty) return false;
     try {
-      final recs = await _pb.collection('cycle_entries').getFullList(
-            filter: _pb.filter('group_id = {:g} && user_uid = {:u}',
-                {'g': groupId, 'u': uid}),
+      final recs = await _pb
+          .collection('cycle_entries')
+          .getFullList(
+            filter: _pb.filter('group_id = {:g} && user_uid = {:u}', {
+              'g': groupId,
+              'u': uid,
+            }),
           );
       for (final rec in recs) {
         await _pb.collection('cycle_entries').delete(rec.id);
@@ -1647,9 +1756,9 @@ class PbDataService {
   Future<List<RecordModel>> loadLoveTests(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('love_tests').getFullList(
-            filter: _pb.filter('group_id = {:g}', {'g': groupId}),
-          );
+      return await _pb
+          .collection('love_tests')
+          .getFullList(filter: _pb.filter('group_id = {:g}', {'g': groupId}));
     } catch (e) {
       debugPrint('PbData.loadLoveTests($groupId) failed: $e');
       return const [];
@@ -1689,7 +1798,9 @@ class PbDataService {
   Future<List<RecordModel>> loadWishes(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('wishes').getFullList(
+      return await _pb
+          .collection('wishes')
+          .getFullList(
             filter: _pb.filter('group_id = {:g}', {'g': groupId}),
             sort: '-created',
           );
@@ -1704,8 +1815,12 @@ class PbDataService {
   Future<bool> upsertWish(String groupId, Map<String, dynamic> wish) async {
     final id = wish['id'] as String?;
     if (id == null || id.isEmpty || groupId.isEmpty) return false;
-    return _upsertById('wishes', id, wishUpsertBody(groupId, wish),
-        op: 'upsertWish');
+    return _upsertById(
+      'wishes',
+      id,
+      wishUpsertBody(groupId, wish),
+      op: 'upsertWish',
+    );
   }
 
   /// Тело записи желания.
@@ -1718,56 +1833,55 @@ class PbDataService {
   static Map<String, dynamic> wishUpsertBody(
     String groupId,
     Map<String, dynamic> wish,
-  ) =>
-      <String, dynamic>{
-        'group_id': groupId,
-        'author_uid': wish['author_uid'] ?? '',
-        'title': wish['title'] ?? '',
-        'note': wish['note'] ?? '',
-        'category': wish['category'] ?? 'other',
-        'symbol': wish['symbol'] ?? '',
-        'done': wish['done'] ?? false,
-        // Пустая строка стирает дату на сервере: отмена отметки должна убирать
-        // её целиком, иначе в архиве останется дата у вернувшегося желания.
-        'done_at': _iso(wish['done_at']) ?? '',
-        'done_by': wish['done_by'] ?? '',
-        'done_note': wish['done_note'] ?? '',
-        // Вещь: цена, ссылка, магазин, фотография. Пустое значение доезжает
-        // намеренно — иначе снятую ссылку или фото не убрать.
-        'kind': wish['kind'] ?? 'deed',
-        'price': wish['price'] ?? 0,
-        'currency': wish['currency'] ?? '',
-        'url': wish['url'] ?? '',
-        'image': wish['image'] ?? '',
-        'shop': wish['shop'] ?? '',
-        // «Когда», «я тоже хочу», порядок (docs/WISHLIST.md): пустое тоже
-        // доезжает — так срок снимают.
-        'due': wish['due'] ?? '',
-        'also': wish['also'] ?? '',
-        'pos': wish['pos'] ?? '',
-        'skip': wish['skip'] ?? '',
-        'place': wish['place'] ?? '',
-        'memory': wish['memory'] ?? '',
-      };
+  ) => <String, dynamic>{
+    'group_id': groupId,
+    'author_uid': wish['author_uid'] ?? '',
+    'title': wish['title'] ?? '',
+    'note': wish['note'] ?? '',
+    'category': wish['category'] ?? 'other',
+    'symbol': wish['symbol'] ?? '',
+    'done': wish['done'] ?? false,
+    // Пустая строка стирает дату на сервере: отмена отметки должна убирать
+    // её целиком, иначе в архиве останется дата у вернувшегося желания.
+    'done_at': _iso(wish['done_at']) ?? '',
+    'done_by': wish['done_by'] ?? '',
+    'done_note': wish['done_note'] ?? '',
+    // Вещь: цена, ссылка, магазин, фотография. Пустое значение доезжает
+    // намеренно — иначе снятую ссылку или фото не убрать.
+    'kind': wish['kind'] ?? 'deed',
+    'price': wish['price'] ?? 0,
+    'currency': wish['currency'] ?? '',
+    'url': wish['url'] ?? '',
+    'image': wish['image'] ?? '',
+    'shop': wish['shop'] ?? '',
+    // «Когда», «я тоже хочу», порядок (docs/WISHLIST.md): пустое тоже
+    // доезжает — так срок снимают.
+    'due': wish['due'] ?? '',
+    'also': wish['also'] ?? '',
+    'pos': wish['pos'] ?? '',
+    'skip': wish['skip'] ?? '',
+    'place': wish['place'] ?? '',
+    'memory': wish['memory'] ?? '',
+  };
 
   /// Тело правки чужого желания: только присланные общие поля. Задания
   /// прежних сборок несут все четыре поля отметки — они уходят как раньше.
   static Map<String, dynamic> wishMarkBody(Map<String, dynamic> fields) => {
-        if (fields.containsKey('done')) 'done': fields['done'] ?? false,
-        if (fields.containsKey('done_at'))
-          'done_at': _iso(fields['done_at']) ?? '',
-        if (fields.containsKey('done_by')) 'done_by': fields['done_by'] ?? '',
-        if (fields.containsKey('done_note'))
-          'done_note': fields['done_note'] ?? '',
-        if (fields.containsKey('also')) 'also': fields['also'] ?? '',
-        if (fields.containsKey('pos')) 'pos': fields['pos'] ?? '',
-        if (fields.containsKey('skip')) 'skip': fields['skip'] ?? '',
-        if (fields.containsKey('memory')) 'memory': fields['memory'] ?? '',
-      };
+    if (fields.containsKey('done')) 'done': fields['done'] ?? false,
+    if (fields.containsKey('done_at')) 'done_at': _iso(fields['done_at']) ?? '',
+    if (fields.containsKey('done_by')) 'done_by': fields['done_by'] ?? '',
+    if (fields.containsKey('done_note')) 'done_note': fields['done_note'] ?? '',
+    if (fields.containsKey('also')) 'also': fields['also'] ?? '',
+    if (fields.containsKey('pos')) 'pos': fields['pos'] ?? '',
+    if (fields.containsKey('skip')) 'skip': fields['skip'] ?? '',
+    if (fields.containsKey('memory')) 'memory': fields['memory'] ?? '',
+  };
 
   /// Комментарий к желанию (docs/WISHLIST.md).
   Future<bool> upsertWishComment(
-      String groupId, Map<String, dynamic> comment) async {
+    String groupId,
+    Map<String, dynamic> comment,
+  ) async {
     final id = comment['id'] as String?;
     if (id == null || id.isEmpty || groupId.isEmpty) return false;
     return _upsertById('wish_comments', id, {
@@ -1794,7 +1908,9 @@ class PbDataService {
   Future<List<RecordModel>> loadWishCategories(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('wish_categories').getFullList(
+      return await _pb
+          .collection('wish_categories')
+          .getFullList(
             filter: _pb.filter('group_id = {:g}', {'g': groupId}),
             sort: 'created',
           );
@@ -1805,7 +1921,9 @@ class PbDataService {
   }
 
   Future<bool> upsertWishCategory(
-      String groupId, Map<String, dynamic> kind) async {
+    String groupId,
+    Map<String, dynamic> kind,
+  ) async {
     final id = kind['id'] as String?;
     if (id == null || id.isEmpty || groupId.isEmpty) return false;
     return _upsertById('wish_categories', id, {
@@ -1839,7 +1957,9 @@ class PbDataService {
   Future<bool> markWish(String wishId, Map<String, dynamic> fields) async {
     if (wishId.isEmpty) return false;
     try {
-      await _pb.collection('wishes').update(wishId, body: wishMarkBody(fields))
+      await _pb
+          .collection('wishes')
+          .update(wishId, body: wishMarkBody(fields))
           .timeout(const Duration(seconds: 15));
       return true;
     } catch (e) {
@@ -1867,9 +1987,9 @@ class PbDataService {
   Future<List<RecordModel>> loadWishReservations(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('wish_reservations').getFullList(
-            filter: _pb.filter('group_id = {:g}', {'g': groupId}),
-          );
+      return await _pb
+          .collection('wish_reservations')
+          .getFullList(filter: _pb.filter('group_id = {:g}', {'g': groupId}));
     } catch (e) {
       debugPrint('PbData.loadWishReservations($groupId) failed: $e');
       return const [];
@@ -1878,7 +1998,9 @@ class PbDataService {
 
   /// Берёт вещь на себя. Запись создаётся своим id, повтор идемпотентен.
   Future<bool> upsertWishReservation(
-      String groupId, Map<String, dynamic> res) async {
+    String groupId,
+    Map<String, dynamic> res,
+  ) async {
     final id = res['id'] as String?;
     if (id == null || id.isEmpty || groupId.isEmpty) return false;
     return _upsertById('wish_reservations', id, {
@@ -1953,12 +2075,18 @@ class PbDataService {
   /// Флаг основного сводится по серверному списку: свой список целиком телефон
   /// больше не пишет, его старая копия затирала свежую дату (обращение 358).
   Future<bool> upsertGroupTimer(String groupId, Map<String, dynamic> timer) =>
-      _patchGroupTimers(groupId, (list) => upsertTimerJson(list, timer), op: 'upsertGroupTimer');
+      _patchGroupTimers(
+        groupId,
+        (list) => upsertTimerJson(list, timer),
+        op: 'upsertGroupTimer',
+      );
 
   Future<bool> deleteGroupTimer(String groupId, String timerId) =>
-      _patchGroupTimers(groupId,
-          (list) => list.where((e) => !(e is Map && e['id'] == timerId)).toList(),
-          op: 'deleteGroupTimer');
+      _patchGroupTimers(
+        groupId,
+        (list) => list.where((e) => !(e is Map && e['id'] == timerId)).toList(),
+        op: 'deleteGroupTimer',
+      );
 
   Future<bool> setDefaultGroupTimer(String groupId, String timerId) =>
       _patchGroupTimers(groupId, (list) {
@@ -1984,8 +2112,7 @@ class PbDataService {
   // Приглашение хранится json-полем `groups.active_session` (плеер co-watch —
   // отдельный RTDB-слой, мигрирует позже). Один write — партнёрский live-листенер
   // группы ловит его без доп. чтения.
-  Future<bool> setActiveSession(
-          String groupId, Map<String, dynamic> session) =>
+  Future<bool> setActiveSession(String groupId, Map<String, dynamic> session) =>
       updateGroupFields(groupId, {'active_session': _jsonSafe(session)});
 
   /// Снять активный сеанс (null в json-колонке).
@@ -2064,20 +2191,28 @@ class PbDataService {
   }
 
   Future<bool> touchSessionPresence(String pairId, String uid) =>
-      _upsertByFilter('live_session_presence',
-          'pair_id = {:p} && user_uid = {:u}', {'p': pairId, 'u': uid}, {
-        'pair_id': pairId,
-        'user_uid': uid,
-        'seen_at': DateTime.now().millisecondsSinceEpoch,
-      }, op: 'touchSessionPresence');
+      _upsertByFilter(
+        'live_session_presence',
+        'pair_id = {:p} && user_uid = {:u}',
+        {'p': pairId, 'u': uid},
+        {
+          'pair_id': pairId,
+          'user_uid': uid,
+          'seen_at': DateTime.now().millisecondsSinceEpoch,
+        },
+        op: 'touchSessionPresence',
+      );
 
   /// Презенс «онлайн» (общий heartbeat, НЕ co-watch): обновить seen_at своего uid.
   Future<bool> touchPresence(String uid) {
     if (uid.isEmpty) return Future.value(false);
-    return _upsertByFilter('user_presence', 'user_uid = {:u}', {'u': uid}, {
-      'user_uid': uid,
-      'seen_at': DateTime.now().millisecondsSinceEpoch,
-    }, op: 'touchPresence');
+    return _upsertByFilter(
+      'user_presence',
+      'user_uid = {:u}',
+      {'u': uid},
+      {'user_uid': uid, 'seen_at': DateTime.now().millisecondsSinceEpoch},
+      op: 'touchPresence',
+    );
   }
 
   /// «Я ушёл»: отметка присутствия сдвигается в прошлое при уходе в фон.
@@ -2089,18 +2224,26 @@ class PbDataService {
   /// импульс уходит пушем без задержки.
   Future<bool> clearPresence(String uid) {
     if (uid.isEmpty) return Future.value(false);
-    return _upsertByFilter('user_presence', 'user_uid = {:u}', {'u': uid}, {
-      'user_uid': uid,
-      'seen_at': 0,
-    }, op: 'clearPresence');
+    return _upsertByFilter(
+      'user_presence',
+      'user_uid = {:u}',
+      {'u': uid},
+      {'user_uid': uid, 'seen_at': 0},
+      op: 'clearPresence',
+    );
   }
 
   Future<bool> removeSessionPresence(String pairId, String uid) async {
     if (pairId.isEmpty || uid.isEmpty) return false;
     try {
-      final rec = await _pb.collection('live_session_presence').getFirstListItem(
-          _pb.filter('pair_id = {:p} && user_uid = {:u}',
-              {'p': pairId, 'u': uid}));
+      final rec = await _pb
+          .collection('live_session_presence')
+          .getFirstListItem(
+            _pb.filter('pair_id = {:p} && user_uid = {:u}', {
+              'p': pairId,
+              'u': uid,
+            }),
+          );
       await _pb.collection('live_session_presence').delete(rec.id);
       return true;
     } catch (e) {
@@ -2111,19 +2254,25 @@ class PbDataService {
   }
 
   Future<RecordModel?> sendSessionChat(
-      String pairId, Map<String, dynamic> msg) async {
+    String pairId,
+    Map<String, dynamic> msg,
+  ) async {
     if (pairId.isEmpty) return null;
     try {
-      return await _pb.collection('live_session_chat').create(body: {
-        'pair_id': pairId,
-        'uid': msg['uid'],
-        'name': msg['name'],
-        'text': msg['text'],
-        'ts': msg['ts'] ?? DateTime.now().millisecondsSinceEpoch,
-        'reply_to_id': msg['replyToId'],
-        'reply_to_name': msg['replyToName'],
-        'reply_to_text': msg['replyToText'],
-      }..removeWhere((k, v) => v == null));
+      return await _pb
+          .collection('live_session_chat')
+          .create(
+            body: {
+              'pair_id': pairId,
+              'uid': msg['uid'],
+              'name': msg['name'],
+              'text': msg['text'],
+              'ts': msg['ts'] ?? DateTime.now().millisecondsSinceEpoch,
+              'reply_to_id': msg['replyToId'],
+              'reply_to_name': msg['replyToName'],
+              'reply_to_text': msg['replyToText'],
+            }..removeWhere((k, v) => v == null),
+          );
     } catch (e) {
       debugPrint('PbData.sendSessionChat failed: $e');
       return null;
@@ -2132,12 +2281,17 @@ class PbDataService {
 
   /// Реакция на сообщение session-чата (RMW json reactions). id = id записи.
   Future<bool> setSessionChatReaction(
-      String messageId, String uid, String? emoji) async {
+    String messageId,
+    String uid,
+    String? emoji,
+  ) async {
     if (messageId.isEmpty || uid.isEmpty) return false;
     try {
       final rec = await _pb.collection('live_session_chat').getOne(messageId);
       final cur = rec.data['reactions'];
-      final r = cur is Map ? Map<String, dynamic>.from(cur) : <String, dynamic>{};
+      final r = cur is Map
+          ? Map<String, dynamic>.from(cur)
+          : <String, dynamic>{};
       if (emoji == null || emoji.isEmpty) {
         r.remove(uid);
       } else {
@@ -2159,10 +2313,15 @@ class PbDataService {
   Future<Map<String, dynamic>?> getLivePoint(String channel, String uid) async {
     if (channel.isEmpty || uid.isEmpty) return null;
     try {
-      final rec = await _pb.collection('live_location').getFirstListItem(
-            _pb.filter('channel = {:c} && user_uid = {:u}',
-                {'c': channel, 'u': uid}),
-          ).timeout(const Duration(seconds: 15));
+      final rec = await _pb
+          .collection('live_location')
+          .getFirstListItem(
+            _pb.filter('channel = {:c} && user_uid = {:u}', {
+              'c': channel,
+              'u': uid,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       final data = rec.data['data'];
       return data is Map ? Map<String, dynamic>.from(data) : null;
     } catch (e) {
@@ -2175,9 +2334,14 @@ class PbDataService {
   Future<bool> clearLivePoint(String channel, String uid) async {
     if (channel.isEmpty || uid.isEmpty) return false;
     try {
-      final rec = await _pb.collection('live_location').getFirstListItem(
-          _pb.filter('channel = {:c} && user_uid = {:u}',
-              {'c': channel, 'u': uid}));
+      final rec = await _pb
+          .collection('live_location')
+          .getFirstListItem(
+            _pb.filter('channel = {:c} && user_uid = {:u}', {
+              'c': channel,
+              'u': uid,
+            }),
+          );
       await _pb.collection('live_location').delete(rec.id);
       return true;
     } catch (e) {
@@ -2215,17 +2379,21 @@ class PbDataService {
   ) async {
     if (memoryId.isEmpty) return null;
     try {
-      return await _pb.collection('memory_comments').create(body: {
-        'group_id': groupId,
-        'memory_id': memoryId,
-        'author_uid': data['authorUid'],
-        'author_name': data['authorName'],
-        'author_avatar': data['authorAvatar'],
-        'text': data['text'],
-        'created_at':
-            _iso(data['createdAt']) ?? PairTime.write(DateTime.now()),
-        'tz': data['tz'] ?? PairTime.zoneNow(),
-      });
+      return await _pb
+          .collection('memory_comments')
+          .create(
+            body: {
+              'group_id': groupId,
+              'memory_id': memoryId,
+              'author_uid': data['authorUid'],
+              'author_name': data['authorName'],
+              'author_avatar': data['authorAvatar'],
+              'text': data['text'],
+              'created_at':
+                  _iso(data['createdAt']) ?? PairTime.write(DateTime.now()),
+              'tz': data['tz'] ?? PairTime.zoneNow(),
+            },
+          );
     } catch (e) {
       debugPrint('PbData.createComment failed: $e');
       return null;
@@ -2249,9 +2417,12 @@ class PbDataService {
   Future<List<RecordModel>> loadComments(String memoryId) async {
     if (memoryId.isEmpty) return const [];
     try {
-      return await _pb.collection('memory_comments').getFullList(
-            filter: _pb.filter(
-                'memory_id = {:m} && deleted = false', {'m': memoryId}),
+      return await _pb
+          .collection('memory_comments')
+          .getFullList(
+            filter: _pb.filter('memory_id = {:m} && deleted = false', {
+              'm': memoryId,
+            }),
             sort: 'created_at',
           );
     } catch (e) {
@@ -2277,29 +2448,28 @@ class PbDataService {
     String groupId,
     String uid,
     Map<String, dynamic> d,
-  ) =>
-      <String, dynamic>{
-        'group_id': groupId,
-        'user_uid': uid,
-        'display_name': d['displayName'],
-        'avatar_url': d['avatarUrl'],
-        'gender': d['gender'],
-        'status': d['status'],
-        'mood_emoji': d['moodEmoji'],
-        'mood_label': d['moodLabel'],
-        'message': d['message'],
-        'music_title': d['musicTitle'],
-        'music_artist': d['musicArtist'],
-        'music_url': d['musicUrl'],
-        'music_cover_url': d['musicCoverUrl'],
-        'photo_url': d['photoUrl'],
-        'photo_for_partner_url': d['photoForPartnerUrl'],
-        'photo_for_partner_urls': _jsonSafe(d['photoForPartnerUrls']),
-        'photo_grid_count': d['photoGridCount'],
-        'photo_grid_urls': _jsonSafe(d['photoGridUrls']),
-        'data': _jsonSafe(d['data']),
-        'updated_at': PairTime.write(DateTime.now()),
-      }..removeWhere((k, v) => v == null);
+  ) => <String, dynamic>{
+    'group_id': groupId,
+    'user_uid': uid,
+    'display_name': d['displayName'],
+    'avatar_url': d['avatarUrl'],
+    'gender': d['gender'],
+    'status': d['status'],
+    'mood_emoji': d['moodEmoji'],
+    'mood_label': d['moodLabel'],
+    'message': d['message'],
+    'music_title': d['musicTitle'],
+    'music_artist': d['musicArtist'],
+    'music_url': d['musicUrl'],
+    'music_cover_url': d['musicCoverUrl'],
+    'photo_url': d['photoUrl'],
+    'photo_for_partner_url': d['photoForPartnerUrl'],
+    'photo_for_partner_urls': _jsonSafe(d['photoForPartnerUrls']),
+    'photo_grid_count': d['photoGridCount'],
+    'photo_grid_urls': _jsonSafe(d['photoGridUrls']),
+    'data': _jsonSafe(d['data']),
+    'updated_at': PairTime.write(DateTime.now()),
+  }..removeWhere((k, v) => v == null);
 
   Future<bool> upsertWidget(
     String groupId,
@@ -2320,9 +2490,13 @@ class PbDataService {
   Future<RecordModel?> loadWidget(String groupId, String uid) async {
     if (groupId.isEmpty || uid.isEmpty) return null;
     try {
-      return await _pb.collection('widget_data').getFirstListItem(
-            _pb.filter('group_id = {:g} && user_uid = {:u}',
-                {'g': groupId, 'u': uid}),
+      return await _pb
+          .collection('widget_data')
+          .getFirstListItem(
+            _pb.filter('group_id = {:g} && user_uid = {:u}', {
+              'g': groupId,
+              'u': uid,
+            }),
           );
     } catch (e) {
       if (e is ClientException && e.statusCode == 404) return null;
@@ -2338,9 +2512,9 @@ class PbDataService {
   Future<List<RecordModel>> loadWidgetsForGroup(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('widget_data').getFullList(
-            filter: _pb.filter('group_id = {:g}', {'g': groupId}),
-          );
+      return await _pb
+          .collection('widget_data')
+          .getFullList(filter: _pb.filter('group_id = {:g}', {'g': groupId}));
     } catch (e) {
       debugPrint('PbData.loadWidgetsForGroup($groupId) failed: $e');
       return const [];
@@ -2373,12 +2547,16 @@ class PbDataService {
   ) async {
     if (groupId.isEmpty) return null;
     try {
-      return await _pb.collection('canvas_strokes').create(body: {
-        'group_id': groupId,
-        'canvas_id': canvasId,
-        'order_index': (data['orderIndex'] as num?)?.toInt() ?? 0,
-        'data': _jsonSafe(data),
-      });
+      return await _pb
+          .collection('canvas_strokes')
+          .create(
+            body: {
+              'group_id': groupId,
+              'canvas_id': canvasId,
+              'order_index': (data['orderIndex'] as num?)?.toInt() ?? 0,
+              'data': _jsonSafe(data),
+            },
+          );
     } catch (e) {
       debugPrint('PbData.createStroke failed: $e');
       return null;
@@ -2411,12 +2589,20 @@ class PbDataService {
 
   /// Убрать свой live-штрих при отрыве пальца.
   Future<bool> clearLiveStroke(
-      String groupId, String canvasId, String uid) async {
+    String groupId,
+    String canvasId,
+    String uid,
+  ) async {
     if (groupId.isEmpty || uid.isEmpty) return false;
     try {
-      final rec = await _pb.collection('canvas_live').getFirstListItem(
-          _pb.filter('group_id = {:g} && canvas_id = {:c} && user_uid = {:u}',
-              {'g': groupId, 'c': canvasId, 'u': uid}));
+      final rec = await _pb
+          .collection('canvas_live')
+          .getFirstListItem(
+            _pb.filter(
+              'group_id = {:g} && canvas_id = {:c} && user_uid = {:u}',
+              {'g': groupId, 'c': canvasId, 'u': uid},
+            ),
+          );
       await _pb.collection('canvas_live').delete(rec.id);
       return true;
     } catch (e) {
@@ -2435,9 +2621,12 @@ class PbDataService {
           .getFirstListItem(_pb.filter('id = {:id}', {'id': id}));
       final cur = rec.data['data'];
       final merged = cur is Map
-          ? (Map<String, dynamic>.from(cur)..addAll(_jsonSafe(updates) as Map<String, dynamic>))
+          ? (Map<String, dynamic>.from(cur)
+              ..addAll(_jsonSafe(updates) as Map<String, dynamic>))
           : _jsonSafe(updates);
-      await _pb.collection('canvas_strokes').update(rec.id, body: {'data': merged});
+      await _pb
+          .collection('canvas_strokes')
+          .update(rec.id, body: {'data': merged});
       return true;
     } catch (e) {
       debugPrint('PbData.patchStroke($id) failed: $e');
@@ -2457,13 +2646,21 @@ class PbDataService {
     }
   }
 
-  Future<bool> clearCanvas(String groupId, String canvasId, int version,
-      {int? bgColor}) async {
+  Future<bool> clearCanvas(
+    String groupId,
+    String canvasId,
+    int version, {
+    int? bgColor,
+  }) async {
     if (groupId.isEmpty) return false;
     try {
-      final strokes = await _pb.collection('canvas_strokes').getFullList(
-            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}',
-                {'g': groupId, 'c': canvasId}),
+      final strokes = await _pb
+          .collection('canvas_strokes')
+          .getFullList(
+            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}', {
+              'g': groupId,
+              'c': canvasId,
+            }),
           );
       for (final s in strokes) {
         // fork: D3 — штрих, которого уже нет (404), очистку не валит
@@ -2474,9 +2671,13 @@ class PbDataService {
         }
       }
       // Чистим и live-курсоры (паритет с Firebase clearDrawingCanvas).
-      final live = await _pb.collection('canvas_live').getFullList(
-            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}',
-                {'g': groupId, 'c': canvasId}),
+      final live = await _pb
+          .collection('canvas_live')
+          .getFullList(
+            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}', {
+              'g': groupId,
+              'c': canvasId,
+            }),
           );
       for (final l in live) {
         await _pb.collection('canvas_live').delete(l.id);
@@ -2488,23 +2689,30 @@ class PbDataService {
         'updated_at': PairTime.write(DateTime.now()),
       };
       if (bgColor != null) body['bg_color'] = bgColor;
-      return _upsertByFilter('canvas_meta',
-          'group_id = {:g} && canvas_id = {:c}', {'g': groupId, 'c': canvasId},
-          body, op: 'clearCanvas');
+      return _upsertByFilter(
+        'canvas_meta',
+        'group_id = {:g} && canvas_id = {:c}',
+        {'g': groupId, 'c': canvasId},
+        body,
+        op: 'clearCanvas',
+      );
     } catch (e) {
       debugPrint('PbData.clearCanvas($groupId/$canvasId) failed: $e');
       return false;
     }
   }
 
-  Future<bool> upsertCanvasMeta(String groupId, String canvasId,
-      {int? bgColor,
-      int? clearVersion,
-      String? coloringId,
-      String? coloringMode,
-      bool? coloringSwap,
-      Map<String, dynamic>? coloringDone,
-      String? coloringOutline}) async {
+  Future<bool> upsertCanvasMeta(
+    String groupId,
+    String canvasId, {
+    int? bgColor,
+    int? clearVersion,
+    String? coloringId,
+    String? coloringMode,
+    bool? coloringSwap,
+    Map<String, dynamic>? coloringDone,
+    String? coloringOutline,
+  }) async {
     if (groupId.isEmpty) return false;
     final body = <String, dynamic>{
       'group_id': groupId,
@@ -2522,13 +2730,20 @@ class PbDataService {
     if (coloringOutline != null) body['coloring_outline'] = coloringOutline;
     // Половины поменяны местами — общее решение пары, иначе стороны разъедутся.
     if (coloringSwap != null) body['coloring_swap'] = coloringSwap;
-    return _upsertByFilter('canvas_meta',
-        'group_id = {:g} && canvas_id = {:c}', {'g': groupId, 'c': canvasId},
-        body, op: 'upsertCanvasMeta');
+    return _upsertByFilter(
+      'canvas_meta',
+      'group_id = {:g} && canvas_id = {:c}',
+      {'g': groupId, 'c': canvasId},
+      body,
+      op: 'upsertCanvasMeta',
+    );
   }
 
   Future<bool> upsertCanvasCatalogue(
-      String groupId, String canvasId, Map<String, dynamic> data) async {
+    String groupId,
+    String canvasId,
+    Map<String, dynamic> data,
+  ) async {
     if (groupId.isEmpty || canvasId.isEmpty) return false;
     final body = <String, dynamic>{'group_id': groupId, 'canvas_id': canvasId};
     if (data.containsKey('name')) body['name'] = data['name'];
@@ -2537,18 +2752,28 @@ class PbDataService {
     if (data.containsKey('createdBy')) body['created_by'] = data['createdBy'];
     if (data.containsKey('pixelW')) body['pixel_w'] = data['pixelW'];
     if (data.containsKey('pixelH')) body['pixel_h'] = data['pixelH'];
-    if (data.containsKey('sheetRatio')) body['sheet_ratio'] = data['sheetRatio'];
-    return _upsertByFilter('canvas_catalogue',
-        'group_id = {:g} && canvas_id = {:c}', {'g': groupId, 'c': canvasId},
-        body, op: 'upsertCanvasCatalogue');
+    if (data.containsKey('sheetRatio'))
+      body['sheet_ratio'] = data['sheetRatio'];
+    return _upsertByFilter(
+      'canvas_catalogue',
+      'group_id = {:g} && canvas_id = {:c}',
+      {'g': groupId, 'c': canvasId},
+      body,
+      op: 'upsertCanvasCatalogue',
+    );
   }
 
   Future<bool> deleteCanvasCatalogue(String groupId, String canvasId) async {
     if (groupId.isEmpty || canvasId.isEmpty) return false;
     try {
-      final rec = await _pb.collection('canvas_catalogue').getFirstListItem(
-          _pb.filter('group_id = {:g} && canvas_id = {:c}',
-              {'g': groupId, 'c': canvasId}));
+      final rec = await _pb
+          .collection('canvas_catalogue')
+          .getFirstListItem(
+            _pb.filter('group_id = {:g} && canvas_id = {:c}', {
+              'g': groupId,
+              'c': canvasId,
+            }),
+          );
       await _pb.collection('canvas_catalogue').delete(rec.id);
       return true;
     } catch (e) {
@@ -2561,9 +2786,13 @@ class PbDataService {
   Future<List<RecordModel>> loadStrokes(String groupId, String canvasId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('canvas_strokes').getFullList(
-            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}',
-                {'g': groupId, 'c': canvasId}),
+      return await _pb
+          .collection('canvas_strokes')
+          .getFullList(
+            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}', {
+              'g': groupId,
+              'c': canvasId,
+            }),
             sort: 'order_index',
           );
     } catch (e) {
@@ -2584,11 +2813,15 @@ class PbDataService {
   }) async {
     if (groupId.isEmpty) return const [];
     try {
-      final page = await _pb.collection('canvas_strokes').getList(
+      final page = await _pb
+          .collection('canvas_strokes')
+          .getList(
             page: 1,
             perPage: limit,
-            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}',
-                {'g': groupId, 'c': canvasId}),
+            filter: _pb.filter('group_id = {:g} && canvas_id = {:c}', {
+              'g': groupId,
+              'c': canvasId,
+            }),
             sort: 'order_index',
           );
       return page.items;
@@ -2605,7 +2838,9 @@ class PbDataService {
   Future<List<Map<String, dynamic>>> loadCanvasMetaRows(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      final page = await _pb.collection('canvas_meta').getList(
+      final page = await _pb
+          .collection('canvas_meta')
+          .getList(
             page: 1,
             perPage: 100,
             filter: _pb.filter('group_id = {:g}', {'g': groupId}),
@@ -2621,8 +2856,9 @@ class PbDataService {
   Future<List<RecordModel>> loadCanvasCatalogue(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('canvas_catalogue').getFullList(
-          filter: _pb.filter('group_id = {:g}', {'g': groupId}));
+      return await _pb
+          .collection('canvas_catalogue')
+          .getFullList(filter: _pb.filter('group_id = {:g}', {'g': groupId}));
     } catch (e) {
       debugPrint('PbData.loadCanvasCatalogue failed: $e');
       return const [];
@@ -2631,26 +2867,32 @@ class PbDataService {
 
   // ══════════════════════════════════════════════ MASCOTS (составной group+mascot_id)
   Map<String, dynamic> _mascotBody(String groupId, Map<String, dynamic> m) => {
-        'group_id': groupId,
-        'mascot_id': m['id'], // SQL-поле id маскота → колонка mascot_id в PB
-        'name': m['name'],
-        'image_url': m['imageUrl'],
-        'default_asset': m['defaultAsset'],
-        'created_by': m['createdBy'],
-        'created_at': _iso(m['createdAt']),
-        'is_default': m['isDefault'] ?? false,
-      }..removeWhere((k, v) => v == null);
+    'group_id': groupId,
+    'mascot_id': m['id'], // SQL-поле id маскота → колонка mascot_id в PB
+    'name': m['name'],
+    'image_url': m['imageUrl'],
+    'default_asset': m['defaultAsset'],
+    'created_by': m['createdBy'],
+    'created_at': _iso(m['createdAt']),
+    'is_default': m['isDefault'] ?? false,
+  }..removeWhere((k, v) => v == null);
 
   Future<bool> upsertMascot(String groupId, Map<String, dynamic> m) async {
     final mid = (m['id'] ?? '').toString();
     if (groupId.isEmpty || mid.isEmpty) return false;
-    return _upsertByFilter('mascots',
-        'group_id = {:g} && mascot_id = {:m}', {'g': groupId, 'm': mid},
-        _mascotBody(groupId, m), op: 'upsertMascot');
+    return _upsertByFilter(
+      'mascots',
+      'group_id = {:g} && mascot_id = {:m}',
+      {'g': groupId, 'm': mid},
+      _mascotBody(groupId, m),
+      op: 'upsertMascot',
+    );
   }
 
   Future<bool> upsertMascotsBatch(
-      String groupId, List<Map<String, dynamic>> mascots) async {
+    String groupId,
+    List<Map<String, dynamic>> mascots,
+  ) async {
     if (groupId.isEmpty || mascots.isEmpty) return false;
     var ok = true;
     for (final m in mascots) {
@@ -2662,8 +2904,14 @@ class PbDataService {
   Future<bool> deleteMascot(String groupId, String mascotId) async {
     if (groupId.isEmpty || mascotId.isEmpty) return false;
     try {
-      final rec = await _pb.collection('mascots').getFirstListItem(_pb.filter(
-          'group_id = {:g} && mascot_id = {:m}', {'g': groupId, 'm': mascotId}));
+      final rec = await _pb
+          .collection('mascots')
+          .getFirstListItem(
+            _pb.filter('group_id = {:g} && mascot_id = {:m}', {
+              'g': groupId,
+              'm': mascotId,
+            }),
+          );
       await _pb.collection('mascots').delete(rec.id);
       return true;
     } catch (e) {
@@ -2674,11 +2922,20 @@ class PbDataService {
   }
 
   Future<bool> updateMascotFields(
-      String groupId, String mascotId, Map<String, dynamic> cols) async {
+    String groupId,
+    String mascotId,
+    Map<String, dynamic> cols,
+  ) async {
     if (groupId.isEmpty || mascotId.isEmpty || cols.isEmpty) return false;
     try {
-      final rec = await _pb.collection('mascots').getFirstListItem(_pb.filter(
-          'group_id = {:g} && mascot_id = {:m}', {'g': groupId, 'm': mascotId}));
+      final rec = await _pb
+          .collection('mascots')
+          .getFirstListItem(
+            _pb.filter('group_id = {:g} && mascot_id = {:m}', {
+              'g': groupId,
+              'm': mascotId,
+            }),
+          );
       await _pb.collection('mascots').update(rec.id, body: cols);
       return true;
     } catch (e) {
@@ -2690,8 +2947,9 @@ class PbDataService {
   Future<List<RecordModel>> loadMascots(String groupId) async {
     if (groupId.isEmpty) return const [];
     try {
-      return await _pb.collection('mascots').getFullList(
-          filter: _pb.filter('group_id = {:g}', {'g': groupId}));
+      return await _pb
+          .collection('mascots')
+          .getFullList(filter: _pb.filter('group_id = {:g}', {'g': groupId}));
     } catch (e) {
       debugPrint('PbData.loadMascots failed: $e');
       return const [];
@@ -2710,12 +2968,11 @@ class PbDataService {
     double x,
     double y,
     double scale,
-  ) =>
-      updateGroupFields(groupId, {
-        'mascot_position_x': x,
-        'mascot_position_y': y,
-        'mascot_scale': scale,
-      });
+  ) => updateGroupFields(groupId, {
+    'mascot_position_x': x,
+    'mascot_position_y': y,
+    'mascot_scale': scale,
+  });
 
   /// Отметить, что [uid] зашёл сегодня → ведение «огонька» пары. Порт логики
   /// Firebase.recordGroupActivity: серия растёт ТОЛЬКО когда за день зашли ОБА
@@ -2724,16 +2981,20 @@ class PbDataService {
   /// lost-update: если оба заходят одновременно, оба читают пустой
   /// streak_pending_*, оба пишут себя — вторая запись успешна и перетирает первую,
   /// день серии может потеряться (DATA-9). Полный фикс — серверная транзакция
-  /// (groups.pb.js, TODO). Точная одновременность первого захода обоих — редкость.
+  /// (handler.Group, TODO). Точная одновременность первого захода обоих — редкость.
   Future<void> recordGroupActivity(String groupId, String uid) async {
     if (groupId.isEmpty || uid.isEmpty) return;
     final now = DateTime.now();
-    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';
     // DATA-9: атомарный серверный учёт стрика; today = локальная дата клиента
     // (сохраняет семантику). При недоступности роута — локальный RMW.
-    final r = await _callGroupRoute('record-activity',
-        {'groupId': groupId, 'uid': uid, 'today': today});
+    final r = await _callGroupRoute('record-activity', {
+      'groupId': groupId,
+      'uid': uid,
+      'today': today,
+    });
     if (r == _GroupRouteResult.ok) return;
     // Под нагрузкой не долбим локальным RMW (стрик до-учтётся при следующем заходе).
     if (r == _GroupRouteResult.backpressure) return;
@@ -2747,14 +3008,17 @@ class PbDataService {
   Future<Map<String, dynamic>?> restoreGroupStreak(String groupId) async {
     if (groupId.isEmpty) return null;
     final now = DateTime.now();
-    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';
     try {
-      final res = await _pb.send('/api/group/record-activity',
-          method: 'POST',
-          body: {'groupId': groupId, 'today': today, 'restore': true}).timeout(
-        const Duration(seconds: 12),
-      );
+      final res = await _pb
+          .send(
+            '/api/group/record-activity',
+            method: 'POST',
+            body: {'groupId': groupId, 'today': today, 'restore': true},
+          )
+          .timeout(const Duration(seconds: 12));
       if (res is Map && res['ok'] == true) {
         return {
           'mascot_streaks': res['mascot_streaks'],
@@ -2773,7 +3037,8 @@ class PbDataService {
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         final now = DateTime.now();
-        final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+        final today =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-'
             '${now.day.toString().padLeft(2, '0')}';
         final rec = await _pb
             .collection('groups')
@@ -2802,8 +3067,8 @@ class PbDataService {
                 : null;
             return dt != null
                 ? todayDate
-                    .difference(DateTime(dt.year, dt.month, dt.day))
-                    .inDays
+                      .difference(DateTime(dt.year, dt.month, dt.day))
+                      .inDays
                 : 999;
           }
 
@@ -2818,31 +3083,42 @@ class PbDataService {
           // PER-MASCOT серия активного маскота (его собственная дата). Пропуск → 1.
           final activeMascotId = nz(d['active_mascot_id']);
           final raw = d['mascot_streaks'];
-          final streaks =
-              raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+          final streaks = raw is Map
+              ? Map<String, dynamic>.from(raw)
+              : <String, dynamic>{};
           int mStreak = 0;
           if (activeMascotId != null) {
             final prev = streaks[activeMascotId];
-            final prevS =
-                (prev is Map ? (prev['s'] as num?)?.toInt() : 0) ?? 0;
+            final prevS = (prev is Map ? (prev['s'] as num?)?.toInt() : 0) ?? 0;
             final prevD = prev is Map ? prev['d']?.toString() : null;
             mStreak = daysSince(prevD) == 1 ? prevS + 1 : 1;
             streaks[activeMascotId] = {'s': mStreak, 'd': today};
           }
 
-          await _pb.collection('groups').update(rec.id, body: {
-            'streak_days': newStreak,
-            'streak_last_opened_date': today,
-            'streak_pending_date': '',
-            'streak_pending_uid': '',
-            if (activeMascotId != null) 'mascot_streaks': streaks,
-          });
+          await _pb
+              .collection('groups')
+              .update(
+                rec.id,
+                body: {
+                  'streak_days': newStreak,
+                  'streak_last_opened_date': today,
+                  'streak_pending_date': '',
+                  'streak_pending_uid': '',
+                  if (activeMascotId != null) 'mascot_streaks': streaks,
+                },
+              );
           if (activeMascotId != null) {
             try {
-              final mascot = await _pb.collection('mascots').getFirstListItem(
-                  _pb.filter('group_id = {:g} && mascot_id = {:m}',
-                      {'g': groupId, 'm': activeMascotId}));
-              final record = (mascot.data['record_streak'] as num?)?.toInt() ?? 0;
+              final mascot = await _pb
+                  .collection('mascots')
+                  .getFirstListItem(
+                    _pb.filter('group_id = {:g} && mascot_id = {:m}', {
+                      'g': groupId,
+                      'm': activeMascotId,
+                    }),
+                  );
+              final record =
+                  (mascot.data['record_streak'] as num?)?.toInt() ?? 0;
               if (mStreak > record) {
                 await _pb
                     .collection('mascots')
@@ -2856,15 +3132,19 @@ class PbDataService {
         final pendingDate = nz(d['streak_pending_date']);
         final pendingUid = nz(d['streak_pending_uid']);
         if (pendingDate != today || pendingUid == null) {
-          await _pb.collection('groups').update(rec.id, body: {
-            'streak_pending_date': today,
-            'streak_pending_uid': uid,
-          });
+          await _pb
+              .collection('groups')
+              .update(
+                rec.id,
+                body: {'streak_pending_date': today, 'streak_pending_uid': uid},
+              );
         }
         return; // успех — выходим
       } catch (e) {
         if (attempt == maxAttempts - 1) {
-          debugPrint('PbData.recordGroupActivity failed after ${attempt + 1} attempts: $e');
+          debugPrint(
+            'PbData.recordGroupActivity failed after ${attempt + 1} attempts: $e',
+          );
           return;
         }
         await Future<void>.delayed(Duration(milliseconds: 50 * (attempt + 1)));
@@ -2907,11 +3187,18 @@ class PbDataService {
   /// История импульсов пары с [sinceMs] (сервер отдаёт не старше двух суток).
   /// Тот же маршрут, что и импульс, с флагом `history`: новый путь пришлось бы
   /// заводить в Caddy на обоих серверах. null — сервер не ответил или старый.
-  Future<List<MissYouEvent>?> missYouHistory(String groupId, int sinceMs) async {
+  Future<List<MissYouEvent>?> missYouHistory(
+    String groupId,
+    int sinceMs,
+  ) async {
     if (groupId.isEmpty) return null;
     try {
       final res = await _pb
-          .send('/api/group/miss-you', method: 'POST', body: {'groupId': groupId, 'history': true, 'since': sinceMs})
+          .send(
+            '/api/group/miss-you',
+            method: 'POST',
+            body: {'groupId': groupId, 'history': true, 'since': sinceMs},
+          )
           .timeout(const Duration(seconds: 12));
       if (res is Map && res['ok'] == true && res['events'] is List) {
         return MissYouEvent.parseList(res['events']);
@@ -2931,31 +3218,44 @@ class PbDataService {
     const maxAttempts = 3;
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        final f = _pb.filter('group_id = {:g} && user_uid = {:u}',
-            {'g': groupId, 'u': uid});
+        final f = _pb.filter('group_id = {:g} && user_uid = {:u}', {
+          'g': groupId,
+          'u': uid,
+        });
         final extra = {'last_vibe': vibe, 'last_vibe_text': text ?? ''};
         try {
           final rec = await _pb.collection('miss_you').getFirstListItem(f);
           final cur = (rec.data['count'] as num?)?.toInt() ?? 0;
-          await _pb.collection('miss_you').update(rec.id, body: {
-            'count': cur + 1,
-            'updated_at': PairTime.write(DateTime.now()),
-            ...extra,
-          });
+          await _pb
+              .collection('miss_you')
+              .update(
+                rec.id,
+                body: {
+                  'count': cur + 1,
+                  'updated_at': PairTime.write(DateTime.now()),
+                  ...extra,
+                },
+              );
         } on ClientException catch (e) {
           if (e.statusCode != 404) rethrow;
-          await _pb.collection('miss_you').create(body: {
-            'group_id': groupId,
-            'user_uid': uid,
-            'count': 1,
-            'updated_at': PairTime.write(DateTime.now()),
-            ...extra,
-          });
+          await _pb
+              .collection('miss_you')
+              .create(
+                body: {
+                  'group_id': groupId,
+                  'user_uid': uid,
+                  'count': 1,
+                  'updated_at': PairTime.write(DateTime.now()),
+                  ...extra,
+                },
+              );
         }
         return true;
       } catch (e) {
         if (attempt == maxAttempts - 1) {
-          debugPrint('PbData.incrementMissYou failed after ${attempt + 1} attempts: $e');
+          debugPrint(
+            'PbData.incrementMissYou failed after ${attempt + 1} attempts: $e',
+          );
           return false;
         }
         await Future<void>.delayed(Duration(milliseconds: 50 * (attempt + 1)));
@@ -2966,20 +3266,26 @@ class PbDataService {
 
   Future<bool> setMissYouCount(String groupId, String uid, int count) async {
     if (groupId.isEmpty || uid.isEmpty) return false;
-    return _upsertByFilter('miss_you',
-        'group_id = {:g} && user_uid = {:u}', {'g': groupId, 'u': uid}, {
-      'group_id': groupId,
-      'user_uid': uid,
-      'count': count,
-      'updated_at': PairTime.write(DateTime.now()),
-    }, op: 'setMissYouCount');
+    return _upsertByFilter(
+      'miss_you',
+      'group_id = {:g} && user_uid = {:u}',
+      {'g': groupId, 'u': uid},
+      {
+        'group_id': groupId,
+        'user_uid': uid,
+        'count': count,
+        'updated_at': PairTime.write(DateTime.now()),
+      },
+      op: 'setMissYouCount',
+    );
   }
 
   Future<Map<String, int>> getMissYouCounts(String groupId) async {
     if (groupId.isEmpty) return const {};
     try {
-      final rows = await _pb.collection('miss_you').getFullList(
-          filter: _pb.filter('group_id = {:g}', {'g': groupId}));
+      final rows = await _pb
+          .collection('miss_you')
+          .getFullList(filter: _pb.filter('group_id = {:g}', {'g': groupId}));
       return {
         for (final r in rows)
           (r.data['user_uid'] ?? '').toString():
@@ -2992,13 +3298,22 @@ class PbDataService {
   }
 
   // ══════════════════════════════════════════════ CHAT
-  Future<bool> chatSend(String groupId, String id, Map<String, dynamic> msg) async {
+  Future<bool> chatSend(
+    String groupId,
+    String id,
+    Map<String, dynamic> msg,
+  ) async {
     if (id.isEmpty) return false;
     if (await chatSendRecord(groupId, id, msg) != null) return true;
     // Повтор из очереди или сбой сети: дальше прежним, идемпотентным путём
     // (update → 404 → create). Записи оттуда не достать, и это не беда —
     // время в кэше поправит следующая загрузка списка.
-    return _upsertById('chat_messages', id, _withSentAt(chatBody(groupId, msg)), op: 'chatSend');
+    return _upsertById(
+      'chat_messages',
+      id,
+      _withSentAt(chatBody(groupId, msg)),
+      op: 'chatSend',
+    );
   }
 
   /// Тело сообщения с часами телефона в момент отправки (`sent_at`). Сервер
@@ -3006,8 +3321,10 @@ class PbDataService {
   /// написания. Без этого сообщение из офлайна вставало на время доставки:
   /// «окей», написанное в 11:27 и довезённое в 13:12, встало ответом на другое
   /// (обращение 409, 21.10.2026). Колонки под `sent_at` нет, сервер её не хранит.
-  Map<String, dynamic> _withSentAt(Map<String, dynamic> body) =>
-      {...body, 'sent_at': DateTime.now().millisecondsSinceEpoch};
+  Map<String, dynamic> _withSentAt(Map<String, dynamic> body) => {
+    ...body,
+    'sent_at': DateTime.now().millisecondsSinceEpoch,
+  };
 
   /// Создаёт сообщение и возвращает его таким, каким сохранил сервер. null —
   /// создать не вышло (запись уже есть, сеть молчит).
@@ -3020,7 +3337,10 @@ class PbDataService {
   /// (обращение №133, 06.09.2026). Живая дельта этого не чинит — поток
   /// отбрасывает события про записи, которые ещё числятся в очереди.
   Future<RecordModel?> chatSendRecord(
-      String groupId, String id, Map<String, dynamic> msg) async {
+    String groupId,
+    String id,
+    Map<String, dynamic> msg,
+  ) async {
     if (id.isEmpty) return null;
     try {
       final rec = await _pb
@@ -3114,19 +3434,29 @@ class PbDataService {
     bool missingIsDone = true,
   }) async {
     if (id.isEmpty) return false;
-    return _upsertById('chat_messages', id, Map.of(fields),
-        op: 'chatUpdate', ifMissing: missingIsDone);
+    return _upsertById(
+      'chat_messages',
+      id,
+      Map.of(fields),
+      op: 'chatUpdate',
+      ifMissing: missingIsDone,
+    );
   }
 
   Future<bool> chatRead(String groupId, String uid, int ts) async {
     if (groupId.isEmpty || uid.isEmpty) return false;
-    return _upsertByFilter('chat_reads',
-        'group_id = {:g} && user_uid = {:u}', {'g': groupId, 'u': uid}, {
-      'group_id': groupId,
-      'user_uid': uid,
-      'last_read_ts': ts,
-      'updated_at': PairTime.write(DateTime.now()),
-    }, op: 'chatRead');
+    return _upsertByFilter(
+      'chat_reads',
+      'group_id = {:g} && user_uid = {:u}',
+      {'g': groupId, 'u': uid},
+      {
+        'group_id': groupId,
+        'user_uid': uid,
+        'last_read_ts': ts,
+        'updated_at': PairTime.write(DateTime.now()),
+      },
+      op: 'chatRead',
+    );
   }
 
   /// Маркер «печатает…»: upsert по (group,uid). [typingAt] — epoch-ms текущего
@@ -3134,12 +3464,13 @@ class PbDataService {
   /// Замена RTDB typing с onDisconnect — маркер протухает по TTL (см. схему).
   Future<bool> setTyping(String groupId, String uid, int typingAt) async {
     if (groupId.isEmpty || uid.isEmpty) return false;
-    return _upsertByFilter('chat_typing',
-        'group_id = {:g} && user_uid = {:u}', {'g': groupId, 'u': uid}, {
-      'group_id': groupId,
-      'user_uid': uid,
-      'typing_at': typingAt,
-    }, op: 'setTyping');
+    return _upsertByFilter(
+      'chat_typing',
+      'group_id = {:g} && user_uid = {:u}',
+      {'g': groupId, 'u': uid},
+      {'group_id': groupId, 'user_uid': uid, 'typing_at': typingAt},
+      op: 'setTyping',
+    );
   }
 
   /// Ставит/снимает реакцию uid на сообщение (RMW по json-полю reactions).
@@ -3156,13 +3487,17 @@ class PbDataService {
           .collection('chat_messages')
           .getFirstListItem(_pb.filter('id = {:id}', {'id': id}));
       final cur = rec.data['reactions'];
-      final r = cur is Map ? Map<String, dynamic>.from(cur) : <String, dynamic>{};
+      final r = cur is Map
+          ? Map<String, dynamic>.from(cur)
+          : <String, dynamic>{};
       if (emoji == null || emoji.isEmpty) {
         r.remove(uid);
       } else {
         r[uid] = emoji;
       }
-      await _pb.collection('chat_messages').update(rec.id, body: {'reactions': r});
+      await _pb
+          .collection('chat_messages')
+          .update(rec.id, body: {'reactions': r});
       return true;
     } on ClientException catch (e) {
       if (e.statusCode == 404) {
@@ -3181,7 +3516,9 @@ class PbDataService {
   /// ответил сервер (экран скажет «нет связи», а не «ничего не нашлось»).
   Future<List<RecordModel>?> searchChat(String filter, {int limit = 40}) async {
     try {
-      final res = await _pb.collection('chat_messages').getList(
+      final res = await _pb
+          .collection('chat_messages')
+          .getList(
             perPage: limit,
             filter: filter,
             sort: '-ts',
@@ -3199,10 +3536,14 @@ class PbDataService {
   Future<int?> countChatSince(String groupId, int ts) async {
     if (groupId.isEmpty) return null;
     try {
-      final res = await _pb.collection('chat_messages').getList(
+      final res = await _pb
+          .collection('chat_messages')
+          .getList(
             perPage: 1,
-            filter: _pb.filter('group_id = {:g} && deleted != true && ts >= {:t}',
-                {'g': groupId, 't': ts}),
+            filter: _pb.filter(
+              'group_id = {:g} && deleted != true && ts >= {:t}',
+              {'g': groupId, 't': ts},
+            ),
           );
       return res.totalItems;
     } catch (e) {
@@ -3212,12 +3553,19 @@ class PbDataService {
   }
 
   /// Последние [limit] сообщений (новые сверху; разверни на стороне UI).
-  Future<List<RecordModel>> loadMessages(String groupId, {int limit = 100}) async {
+  Future<List<RecordModel>> loadMessages(
+    String groupId, {
+    int limit = 100,
+  }) async {
     if (groupId.isEmpty) return const [];
     try {
-      final res = await _pb.collection('chat_messages').getList(
+      final res = await _pb
+          .collection('chat_messages')
+          .getList(
             perPage: limit,
-            filter: _pb.filter('group_id = {:g} && deleted != true', {'g': groupId}),
+            filter: _pb.filter('group_id = {:g} && deleted != true', {
+              'g': groupId,
+            }),
             sort: '-ts',
           );
       return res.items;
@@ -3230,8 +3578,9 @@ class PbDataService {
   Future<Map<String, int>> loadChatReads(String groupId) async {
     if (groupId.isEmpty) return const {};
     try {
-      final rows = await _pb.collection('chat_reads').getFullList(
-          filter: _pb.filter('group_id = {:g}', {'g': groupId}));
+      final rows = await _pb
+          .collection('chat_reads')
+          .getFullList(filter: _pb.filter('group_id = {:g}', {'g': groupId}));
       return {
         for (final r in rows)
           (r.data['user_uid'] ?? '').toString():
@@ -3343,12 +3692,18 @@ class PbDataService {
   /// Пропагировать значение в map-поле всех групп пользователя (member_names/
   /// member_avatars[uid]=value) — чтобы партнёры увидели свежее имя/аватар.
   Future<void> updateMemberFieldInGroups(
-      String uid, String col, dynamic value) async {
+    String uid,
+    String col,
+    dynamic value,
+  ) async {
     if (uid.isEmpty) return;
     try {
-      final groups = await _pb.collection('groups').getFullList(
-            filter: _pb.filter(
-                'members ~ {:u} && disbanded = false', {'u': uid}),
+      final groups = await _pb
+          .collection('groups')
+          .getFullList(
+            filter: _pb.filter('members ~ {:u} && disbanded = false', {
+              'u': uid,
+            }),
           );
       for (final g in groups) {
         await _patchGroupMapField(g.id, col, uid, value);
@@ -3374,15 +3729,20 @@ class PbDataService {
   @visibleForTesting
   static Map<String, dynamic> userProfileRow(Map<String, dynamic> data) {
     final row = <String, dynamic>{};
-    void put(String key, String col,
-        {bool json = false, bool ts = false, bool day = false}) {
+    void put(
+      String key,
+      String col, {
+      bool json = false,
+      bool ts = false,
+      bool day = false,
+    }) {
       if (!data.containsKey(key)) return;
       final v = data[key];
       row[col] = day
           ? _calendarDay(v)
           : ts
-              ? _iso(v)
-              : (json ? _jsonSafe(v) : v);
+          ? _iso(v)
+          : (json ? _jsonSafe(v) : v);
     }
 
     put('displayName', 'display_name');
@@ -3397,7 +3757,7 @@ class PbDataService {
     // ЭКОНОМИКА НЕ ПИШЕТСЯ КЛИЕНТОМ: coins/owned_themes/owned_icons/
     // owned_features/granted_badges и кулдауны ведут ТОЛЬКО серверные коин-роуты
     // (pb_hooks/coins.pb.js через $app.save). Прямой клиентский PATCH этих полей
-    // отвергает pb_hooks/users_guard.pb.js. Клиент их только читает (см. UserData).
+    // отвергает серверный страж bindUsersGuard. Клиент их только читает (см. UserData).
     put('badge', 'badge'); // выбранный к показу значок (косметика, не владение)
     put('frame', 'frame'); // надетая рамка аватарки, тоже косметика
     put('pairId', 'pair_id');
@@ -3446,7 +3806,9 @@ class PbDataService {
   /// Каталог (mood-паки/маскоты): включённые записи нужного типа.
   Future<List<RecordModel>> loadCatalog(String kind) async {
     try {
-      return await _pb.collection('catalog_items').getFullList(
+      return await _pb
+          .collection('catalog_items')
+          .getFullList(
             filter: _pb.filter('kind = {:k} && enabled = true', {'k': kind}),
             sort: 'sort',
           );
@@ -3461,10 +3823,9 @@ class PbDataService {
   /// чтение `catalog_items` из Supabase в [CatalogService] на cutover.
   Future<List<RecordModel>> loadCatalogAll() async {
     try {
-      return await _pb.collection('catalog_items').getFullList(
-            filter: 'enabled = true',
-            sort: 'sort',
-          );
+      return await _pb
+          .collection('catalog_items')
+          .getFullList(filter: 'enabled = true', sort: 'sort');
     } catch (e) {
       debugPrint('PbData.loadCatalogAll failed: $e');
       return const [];
@@ -3508,11 +3869,9 @@ class PbDataService {
       final filter = groupId.isEmpty
           ? 'recipient_uid = "$uid"'
           : 'group_id = "$groupId" && recipient_uid = "$uid"';
-      final res = await _pb.collection('gifts').getList(
-            perPage: limit,
-            filter: filter,
-            sort: '-created',
-          );
+      final res = await _pb
+          .collection('gifts')
+          .getList(perPage: limit, filter: filter, sort: '-created');
       return res.items.map((r) => Map<String, dynamic>.from(r.data)).toList();
     } catch (e) {
       debugPrint('PbData.fetchGiftsFor failed: $e');
@@ -3527,11 +3886,9 @@ class PbDataService {
   Future<int> countGiftsFor({required String uid}) async {
     if (uid.isEmpty) return 0;
     try {
-      final res = await _pb.collection('gifts').getList(
-            page: 1,
-            perPage: 1,
-            filter: 'recipient_uid = "$uid"',
-          );
+      final res = await _pb
+          .collection('gifts')
+          .getList(page: 1, perPage: 1, filter: 'recipient_uid = "$uid"');
       return res.totalItems;
     } catch (e) {
       debugPrint('PbData.countGiftsFor failed: $e');
@@ -3546,10 +3903,13 @@ class PbDataService {
   }) async {
     if (groupId.isEmpty || uid.isEmpty) return const [];
     try {
-      final res = await _pb.collection('gifts').getList(
+      final res = await _pb
+          .collection('gifts')
+          .getList(
             perPage: 20,
             // deliver_at отсекает письмо, которое ещё летит, и завтрак до утра
-            filter: 'group_id = "$groupId" && recipient_uid = "$uid" && '
+            filter:
+                'group_id = "$groupId" && recipient_uid = "$uid" && '
                 'state = "sent" && deliver_at <= ${DateTime.now().millisecondsSinceEpoch}',
             sort: '-created',
           );
@@ -3569,9 +3929,9 @@ class PbDataService {
   }) async {
     if (groupId.isEmpty || uid.isEmpty) return null;
     try {
-      final rec = await _pb.collection('miss_you').getFirstListItem(
-            'group_id = "$groupId" && user_uid = "$uid"',
-          );
+      final rec = await _pb
+          .collection('miss_you')
+          .getFirstListItem('group_id = "$groupId" && user_uid = "$uid"');
       return Map<String, dynamic>.from(rec.data);
     } catch (e) {
       debugPrint('PbData.fetchMissYouFor failed: $e');
@@ -3648,13 +4008,15 @@ class PbDataService {
   Future<bool> fetchWidgetDiagEnabled() async {
     final prefs = await SharedPreferences.getInstance();
     final at = prefs.getInt(_diagFlagAtKey) ?? 0;
-    final fresh = DateTime.now().millisecondsSinceEpoch - at <
+    final fresh =
+        DateTime.now().millisecondsSinceEpoch - at <
         const Duration(hours: 24).inMilliseconds;
     if (fresh) return prefs.getBool(_diagFlagKey) ?? false;
     try {
       final res = await _pb.collection('app_config').getList(perPage: 1);
       final on =
-          res.items.isNotEmpty && res.items.first.data['widget_diag_enabled'] == true;
+          res.items.isNotEmpty &&
+          res.items.first.data['widget_diag_enabled'] == true;
       await prefs.setBool(_diagFlagKey, on);
       await prefs.setInt(_diagFlagAtKey, DateTime.now().millisecondsSinceEpoch);
       return on;

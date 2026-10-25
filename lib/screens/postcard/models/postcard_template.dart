@@ -45,7 +45,8 @@ class PostcardStats {
   final int missYou;
   final int streak;
 
-  bool get isEmpty => memories == 0 && drawings == 0 && missYou == 0 && streak == 0;
+  bool get isEmpty =>
+      memories == 0 && drawings == 0 && missYou == 0 && streak == 0;
 }
 
 class PostcardTemplate {
@@ -71,12 +72,11 @@ class PostcardTemplate {
     PostcardStats stats = const PostcardStats(),
   }) {
     final s = LocaleService.current;
-    final names =
-        myName.isNotEmpty && partnerName.isNotEmpty
-            ? '$myName & $partnerName'
-            : myName.isNotEmpty
-            ? myName
-            : s.pcNamesFallback;
+    final names = myName.isNotEmpty && partnerName.isNotEmpty
+        ? '$myName & $partnerName'
+        : myName.isNotEmpty
+        ? myName
+        : s.pcNamesFallback;
 
     return switch (templateId) {
       PostcardTemplateId.together => [
@@ -228,11 +228,7 @@ class PostcardTemplate {
       name: 'Polaroid',
       emoji: '📷',
     ),
-    PostcardTemplate(
-      id: PostcardTemplateId.bloom,
-      name: 'Bloom',
-      emoji: '🌸',
-    ),
+    PostcardTemplate(id: PostcardTemplateId.bloom, name: 'Bloom', emoji: '🌸'),
     PostcardTemplate(
       id: PostcardTemplateId.nightSky,
       name: 'Night Sky',
@@ -240,11 +236,7 @@ class PostcardTemplate {
     ),
     PostcardTemplate(id: PostcardTemplateId.ticket, name: '', emoji: '🎟'),
     PostcardTemplate(id: PostcardTemplateId.receipt, name: '', emoji: '🧾'),
-    PostcardTemplate(
-      id: PostcardTemplateId.telegram,
-      name: '',
-      emoji: '📨',
-    ),
+    PostcardTemplate(id: PostcardTemplateId.telegram, name: '', emoji: '📨'),
     PostcardTemplate(id: PostcardTemplateId.parcel, name: '', emoji: '📦'),
   ];
 }

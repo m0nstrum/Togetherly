@@ -145,7 +145,13 @@ class FloodFill {
   /// до неё не доходит. Лишние пиксели прячутся под самим контуром — он лежит
   /// поверх мазков, — поэтому расширять безопаснее, чем повышать допуск:
   /// допуск начинает просачиваться сквозь тонкие линии.
-  static void _bleed(Uint32List out, int width, int height, int fill, int steps) {
+  static void _bleed(
+    Uint32List out,
+    int width,
+    int height,
+    int fill,
+    int steps,
+  ) {
     if (steps <= 0) return;
     for (var pass = 0; pass < steps; pass++) {
       // Копия нужна, иначе расширение пойдёт лавиной внутри одного прохода.

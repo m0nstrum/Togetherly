@@ -11,6 +11,7 @@ class _MemoryDetailSheet extends StatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback? onSetLocation;
+
   /// Live-resolved author avatar URL (from group memberAvatars). If empty,
   /// AvatarWidget falls back to memory.authorAvatar.
   final String liveAuthorAvatar;
@@ -64,8 +65,9 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
 
   /// Реакции записи в состоянии экрана: запись пришла снимком, и без этого
   /// нажатие не давало отклика до перезахода.
-  late Map<String, String> _reactions =
-      Map<String, String>.from(widget.memory.reactions);
+  late Map<String, String> _reactions = Map<String, String>.from(
+    widget.memory.reactions,
+  );
 
   /// Поставить или снять свою реакцию — сразу на экране, потом на сервере.
   void _toggleReaction(String key) {
@@ -186,9 +188,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                         left: 0,
                         right: 0,
                         height: heroHeight + 26,
-                        child: RepaintBoundary(
-                          child: _buildHero(memory, cs),
-                        ),
+                        child: RepaintBoundary(child: _buildHero(memory, cs)),
                       ),
                     Positioned(
                       top: _hasHero ? heroHeight : 0,
@@ -248,12 +248,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
 
   // ── Кадр ──────────────────────────────────────────────────────────────────
 
-
   /// Каркас «как фото»: шапка с автором, крупная обложка, реакции,
   /// комментарии и тулбар. Кроме фото так открываются видео, видео по
   /// ссылке и заметка (07.10.2026); книге, музыке и фильму он не подходит.
-  bool get _isMoment => opensAsMoment(_memory.type,
-      hasPhotos: _momentPhotos.isNotEmpty);
+  bool get _isMoment =>
+      opensAsMoment(_memory.type, hasPhotos: _momentPhotos.isNotEmpty);
 
   /// Кадры записи в порядке показа.
   List<String> get _momentPhotos {
@@ -291,21 +290,23 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                         _momentCover(memory, cs)
                       else
                         UnfoldStagger(
-                            index: 0, child: _momentCover(memory, cs)),
+                          index: 0,
+                          child: _momentCover(memory, cs),
+                        ),
                       const SizedBox(height: 14),
-                      UnfoldStagger(
-                          index: 1, child: _momentTitle(memory, cs)),
+                      UnfoldStagger(index: 1, child: _momentTitle(memory, cs)),
                       if (memory.locationName?.isNotEmpty == true ||
                           memory.latitude != null) ...[
                         const SizedBox(height: 12),
-                        UnfoldStagger(
-                            index: 2, child: _placeBlock(memory, cs)),
+                        UnfoldStagger(index: 2, child: _placeBlock(memory, cs)),
                       ],
                       for (final action in _momentActions(memory, cs))
                         UnfoldStagger(index: 2, child: action),
                       const SizedBox(height: 12),
                       UnfoldStagger(
-                          index: 3, child: _momentReactions(memory, cs)),
+                        index: 3,
+                        child: _momentReactions(memory, cs),
+                      ),
                       const SizedBox(height: 14),
                       UnfoldStagger(
                         index: 4,
@@ -329,11 +330,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
           // идёт набор, тулбар уходит, иначе он закрывает поле комментария.
           if (!keyboardOpen(context))
             Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: UnfoldStagger(
-                    index: 5, child: _momentDock(memory, cs))),
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: UnfoldStagger(index: 5, child: _momentDock(memory, cs)),
+            ),
         ],
       ),
     );
@@ -348,10 +349,14 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     // приписка «· Заметка» обрезалась многоточием.
     final sub = momentCountsPhotos(memory.type)
         ? '${_fmtDate(memory.createdAt)} · '
-            '$total ${LocaleService.current.photosUnit(total)}'
+              '$total ${LocaleService.current.photosUnit(total)}'
         : _fmtDate(memory.createdAt);
-    Widget btn(IconData icon, VoidCallback onTap,
-        {BorderRadius? radius, String? tooltip}) {
+    Widget btn(
+      IconData icon,
+      VoidCallback onTap, {
+      BorderRadius? radius,
+      String? tooltip,
+    }) {
       final b = Material(
         color: cs.surfaceContainerHigh,
         borderRadius: radius ?? BorderRadius.circular(24),
@@ -359,7 +364,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
         child: InkWell(
           onTap: onTap,
           child: SizedBox(
-              width: 48, height: 48, child: Icon(icon, size: 22, color: cs.onSurface)),
+            width: 48,
+            height: 48,
+            child: Icon(icon, size: 22, color: cs.onSurface),
+          ),
         ),
       );
       return tooltip == null ? b : Tooltip(message: tooltip, child: b);
@@ -369,91 +377,99 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     return UnfoldStagger(
       index: 0,
       child: Padding(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-      child: Row(
-        children: [
-          btn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              height: 48,
-              padding: const EdgeInsets.only(left: 4, right: 14),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                children: [
-                  // Аватар и имя прилетают сюда из карточки ленты — метки те
-                  // же, что в её шапке (`_cardHeader`).
-                  UnfoldShared(
-                    tag: 'avatar',
-                    radius: 20,
-                    child: AvatarWidget(
-                      uid: memory.authorUid,
-                      liveUrl: widget.liveAuthorAvatar,
-                      fallbackUrl: memory.authorAvatar,
-                      name: memory.authorName,
-                      size: 40,
-                      primary: cs.primary,
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+        child: Row(
+          children: [
+            btn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.only(left: 4, right: 14),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  children: [
+                    // Аватар и имя прилетают сюда из карточки ленты — метки те
+                    // же, что в её шапке (`_cardHeader`).
+                    UnfoldShared(
+                      tag: 'avatar',
+                      radius: 20,
+                      child: AvatarWidget(
+                        uid: memory.authorUid,
+                        liveUrl: widget.liveAuthorAvatar,
+                        fallbackUrl: memory.authorAvatar,
+                        name: memory.authorName,
+                        size: 40,
+                        primary: cs.primary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        UnfoldShared(
-                          tag: 'name',
-                          fit: UnfoldFit.scale,
-                          child: Text(
-                            memory.authorName,
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          UnfoldShared(
+                            tag: 'name',
+                            fit: UnfoldFit.scale,
+                            child: Text(
+                              memory.authorName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.onest(
+                                size: 14,
+                                weight: 700,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            sub,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppFonts.onest(
-                                size: 14, weight: 700, color: cs.onSurface),
-                          ),
-                        ),
-                        Text(
-                          sub,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.onest(
                               size: 11.5,
                               weight: 500,
-                              color: cs.onSurfaceVariant),
-                        ),
-                      ],
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          if (canEdit) ...[
-            btn(
-              Icons.edit_outlined,
-              () {
-                Navigator.pop(context);
-                widget.onEdit();
-              },
-              radius: const BorderRadius.horizontal(
-                  left: Radius.circular(24), right: Radius.circular(8)),
-              tooltip: LocaleService.current.editMemory,
-            ),
-            const SizedBox(width: 2),
-            btn(
-              Icons.more_vert_rounded,
-              () => _showMoreMenu(memory, cs),
-              radius: const BorderRadius.horizontal(
-                  left: Radius.circular(8), right: Radius.circular(24)),
-            ),
-          ] else
-            btn(Icons.more_vert_rounded, () => _showMoreMenu(memory, cs)),
-        ],
-      ),
+            const SizedBox(width: 8),
+            if (canEdit) ...[
+              btn(
+                Icons.edit_outlined,
+                () {
+                  Navigator.pop(context);
+                  widget.onEdit();
+                },
+                radius: const BorderRadius.horizontal(
+                  left: Radius.circular(24),
+                  right: Radius.circular(8),
+                ),
+                tooltip: LocaleService.current.editMemory,
+              ),
+              const SizedBox(width: 2),
+              btn(
+                Icons.more_vert_rounded,
+                () => _showMoreMenu(memory, cs),
+                radius: const BorderRadius.horizontal(
+                  left: Radius.circular(8),
+                  right: Radius.circular(24),
+                ),
+              ),
+            ] else
+              btn(Icons.more_vert_rounded, () => _showMoreMenu(memory, cs)),
+          ],
+        ),
       ),
     );
   }
@@ -478,9 +494,13 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
         return _stickers(memory, _bareVideoCover(memory, cs));
       case MemoryType.music:
         return _stickers(
-            memory,
-            _MusicMomentCover(
-                memory: memory, scheme: cs, fill: context.appTheme.fillColor));
+          memory,
+          _MusicMomentCover(
+            memory: memory,
+            scheme: cs,
+            fill: context.appTheme.fillColor,
+          ),
+        );
       case MemoryType.book:
         return _stickers(memory, _bookCover(memory, cs));
       case MemoryType.movie:
@@ -499,8 +519,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       maxHeight: 460,
       overlay: hasVideo && idx == 0
           ? const Center(
-              child: Icon(Icons.play_circle_fill_rounded,
-                  color: Colors.white, size: 54),
+              child: Icon(
+                Icons.play_circle_fill_rounded,
+                color: Colors.white,
+                size: 54,
+              ),
             )
           : null,
     );
@@ -552,10 +575,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   /// Наклейки на обложке. Клеят их в ленте, здесь касание только говорит,
   /// чья наклейка.
   Widget _stickers(Memory memory, Widget child) => StickerAnchor(
-        stickers: memory.stickers,
-        onTap: (s, _) => _stickerInfo(memory, s),
-        child: child,
-      );
+    stickers: memory.stickers,
+    onTap: (s, _) => _stickerInfo(memory, s),
+    child: child,
+  );
 
   void _stickerInfo(Memory memory, MemorySticker s) {
     final String who;
@@ -564,7 +587,9 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     } else {
       var name = widget.nameOf?.call(s.uid) ?? '';
       if (name.isEmpty && s.uid == memory.authorUid) name = memory.authorName;
-      who = trKey('stickerFrom').replaceAll('{name}', name.isEmpty ? '…' : name);
+      who = trKey(
+        'stickerFrom',
+      ).replaceAll('{name}', name.isEmpty ? '…' : name);
     }
     showFloatingNote(context, who, icon: Icons.favorite_rounded);
   }
@@ -587,8 +612,8 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   /// Подпись пин не показывает: под ним она идёт целиком, а не в две строки.
   Widget _videoLinkCover(Memory memory, ColorScheme cs) {
     final url = memory.videoUrl ?? '';
-    final platformName = _MemoryLaneScreenState._detectVideoPlatform(url)['name']
-        as String;
+    final platformName =
+        _MemoryLaneScreenState._detectVideoPlatform(url)['name'] as String;
     if (platformName == 'YouTube') {
       return _YouTubeInlineCard(
         memory: memory,
@@ -628,13 +653,13 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       onTap: url.isEmpty
           ? null
           : () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      InAppVideoPlayerPage(url: url, title: memory.title),
-                  settings: const RouteSettings(name: '/video_player'),
-                ),
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    InAppVideoPlayerPage(url: url, title: memory.title),
+                settings: const RouteSettings(name: '/video_player'),
               ),
+            ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
         child: AspectRatio(
@@ -651,8 +676,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                   child: Icon(
                     Icons.play_arrow_rounded,
                     size: 36,
-                    color: AppThemes.onColor(fill,
-                        mode: context.appTheme.brightness),
+                    color: AppThemes.onColor(
+                      fill,
+                      mode: context.appTheme.brightness,
+                    ),
                   ),
                 ),
               ),
@@ -680,26 +707,27 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
 
   /// Оценка автора записи, если он её ставил.
   List<Widget> _momentRating(Memory memory, ColorScheme cs) => [
-        if (memory.rating != null) ...[
-          const SizedBox(height: 10),
-          MomentStars(
-            scheme: cs,
-            fill: context.appTheme.fillColor,
-            rating: memory.rating!,
-            who: memory.authorName,
-          ),
-        ],
-      ];
+    if (memory.rating != null) ...[
+      const SizedBox(height: 10),
+      MomentStars(
+        scheme: cs,
+        fill: context.appTheme.fillColor,
+        rating: memory.rating!,
+        who: memory.authorName,
+      ),
+    ],
+  ];
 
   Widget _bookCover(Memory memory, ColorScheme cs) {
     final fill = context.appTheme.fillColor;
     final pills = <Widget>[
       if (memory.bookYear?.trim().isNotEmpty == true)
         MomentPill(
-            scheme: cs,
-            fill: fill,
-            icon: Icons.calendar_month_rounded,
-            label: memory.bookYear!.trim()),
+          scheme: cs,
+          fill: fill,
+          icon: Icons.calendar_month_rounded,
+          label: memory.bookYear!.trim(),
+        ),
       if (memory.bookPublisher?.trim().isNotEmpty == true)
         MomentPill(scheme: cs, fill: fill, label: memory.bookPublisher!.trim()),
     ];
@@ -727,8 +755,9 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   Widget _movieCover(Memory memory, ColorScheme cs) {
     final s = LocaleService.current;
     final fill = context.appTheme.fillColor;
-    final title =
-        memory.title?.trim().isNotEmpty == true ? memory.title!.trim() : s.movies;
+    final title = memory.title?.trim().isNotEmpty == true
+        ? memory.title!.trim()
+        : s.movies;
     final original = memory.movieOriginalTitle?.trim() ?? '';
     final genres = (memory.movieGenres ?? '')
         .split(',')
@@ -737,17 +766,21 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     final pills = <Widget>[
       if (memory.movieRatingKp?.trim().isNotEmpty == true)
         MomentPill(
-            scheme: cs,
-            fill: fill,
-            strong: true,
-            icon: Icons.star_rounded,
-            label: s.kpRating(memory.movieRatingKp!.trim())),
+          scheme: cs,
+          fill: fill,
+          strong: true,
+          icon: Icons.star_rounded,
+          label: s.kpRating(memory.movieRatingKp!.trim()),
+        ),
       if (memory.movieKind?.isNotEmpty == true)
         MomentPill(
-            scheme: cs,
-            fill: fill,
-            label: movieKindLabel(memory.movieKind,
-                isRu: LocaleService.instance.isRussian)),
+          scheme: cs,
+          fill: fill,
+          label: movieKindLabel(
+            memory.movieKind,
+            isRu: LocaleService.instance.isRussian,
+          ),
+        ),
       if (memory.movieYear?.trim().isNotEmpty == true)
         MomentPill(scheme: cs, fill: fill, label: memory.movieYear!.trim()),
       if (memory.movieCountry?.trim().isNotEmpty == true)
@@ -790,39 +823,44 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
             backgroundColor: mapBackground(theme),
             initialCenter: at,
             initialZoom: 15,
-            interactionOptions:
-                const InteractionOptions(flags: InteractiveFlag.none),
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.none,
+            ),
           ),
           children: [
             ThemedMapLayer(theme: theme),
-            MarkerLayer(markers: [
-              Marker(
-                point: at,
-                width: 52,
-                height: 66,
-                alignment: Alignment.topCenter,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                          color: theme.fillColor, shape: BoxShape.circle),
-                      child: AvatarWidget(
-                        uid: memory.authorUid,
-                        liveUrl: widget.liveAuthorAvatar,
-                        fallbackUrl: memory.authorAvatar,
-                        name: memory.authorName,
-                        size: 46,
-                        primary: cs.primary,
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: at,
+                  width: 52,
+                  height: 66,
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: theme.fillColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: AvatarWidget(
+                          uid: memory.authorUid,
+                          liveUrl: widget.liveAuthorAvatar,
+                          fallbackUrl: memory.authorAvatar,
+                          name: memory.authorName,
+                          size: 46,
+                          primary: cs.primary,
+                        ),
                       ),
-                    ),
-                    Container(width: 3, height: 14, color: theme.fillColor),
-                  ],
+                      Container(width: 3, height: 14, color: theme.fillColor),
+                    ],
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ],
         ),
       ),
@@ -834,24 +872,33 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   List<Widget> _momentActions(Memory memory, ColorScheme cs) {
     final s = LocaleService.current;
     MomentAction? primary;
-    void open(String url) => safeLaunchUrl(Uri.parse(url),
-        mode: LaunchMode.externalApplication);
+    void open(String url) =>
+        safeLaunchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     switch (memory.type) {
       case MemoryType.music:
         final src = musicSourceOf(memory.musicUrl);
         if (src.external) {
-          primary = MomentAction(Icons.play_arrow_rounded,
-              s.openIn(src.name ?? s.audioFile), () => open(memory.musicUrl!));
+          primary = MomentAction(
+            Icons.play_arrow_rounded,
+            s.openIn(src.name ?? s.audioFile),
+            () => open(memory.musicUrl!),
+          );
         }
       case MemoryType.book:
         if (memory.bookInfoUrl?.isNotEmpty == true) {
-          primary = MomentAction(Icons.open_in_new_rounded, s.bookReadMore,
-              () => open(memory.bookInfoUrl!));
+          primary = MomentAction(
+            Icons.open_in_new_rounded,
+            s.bookReadMore,
+            () => open(memory.bookInfoUrl!),
+          );
         }
       case MemoryType.movie:
         if (memory.movieInfoUrl?.isNotEmpty == true) {
-          primary = MomentAction(Icons.open_in_new_rounded, s.movieReadMore,
-              () => open(memory.movieInfoUrl!));
+          primary = MomentAction(
+            Icons.open_in_new_rounded,
+            s.movieReadMore,
+            () => open(memory.movieInfoUrl!),
+          );
         }
       case MemoryType.location:
         if (memory.latitude != null && memory.longitude != null) {
@@ -872,7 +919,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     return [
       const SizedBox(height: 12),
       MomentButtons(
-          scheme: cs, fill: context.appTheme.fillColor, primary: primary),
+        scheme: cs,
+        fill: context.appTheme.fillColor,
+        primary: primary,
+      ),
     ];
   }
 
@@ -882,7 +932,8 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   /// подписью идёт текст записи или, если его нет, заголовок.
   Widget _momentTitle(Memory memory, ColorScheme cs) {
     if (memory.type == MemoryType.text) return const SizedBox.shrink();
-    final titleInCover = memory.type == MemoryType.videoLink ||
+    final titleInCover =
+        memory.type == MemoryType.videoLink ||
         memory.type == MemoryType.music ||
         memory.type == MemoryType.book ||
         memory.type == MemoryType.movie;
@@ -916,7 +967,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
               child: Text(
                 caption,
                 style: AppFonts.onest(
-                    size: 15.5, weight: 400, color: cs.onSurfaceVariant),
+                  size: 15.5,
+                  weight: 400,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ),
         ],
@@ -929,7 +983,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     final name = memory.locationName?.trim().isNotEmpty == true
         ? memory.locationName!.trim()
         : '${memory.latitude?.toStringAsFixed(2)}, '
-            '${memory.longitude?.toStringAsFixed(2)}';
+              '${memory.longitude?.toStringAsFixed(2)}';
     // У записи-места маршрут — большая кнопка ниже, круглая тут была бы
     // второй такой же. Под названием — сколько до места, если это известно.
     final isPlace = memory.type == MemoryType.location;
@@ -939,8 +993,14 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
         memory.longitude != null &&
         widget.userLat != null &&
         widget.userLng != null) {
-      under = LocaleService.current.distanceLabel(Geolocator.distanceBetween(
-          widget.userLat!, widget.userLng!, memory.latitude!, memory.longitude!));
+      under = LocaleService.current.distanceLabel(
+        Geolocator.distanceBetween(
+          widget.userLat!,
+          widget.userLng!,
+          memory.latitude!,
+          memory.longitude!,
+        ),
+      );
     }
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
@@ -956,16 +1016,24 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppFonts.onest(
-                        size: 15, weight: 700, color: cs.onInverseSurface)),
-                Text(under,
-                    style: AppFonts.onest(
-                        size: 12.5,
-                        weight: 500,
-                        color: cs.onInverseSurface.withValues(alpha: 0.85))),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.onest(
+                    size: 15,
+                    weight: 700,
+                    color: cs.onInverseSurface,
+                  ),
+                ),
+                Text(
+                  under,
+                  style: AppFonts.onest(
+                    size: 12.5,
+                    weight: 500,
+                    color: cs.onInverseSurface.withValues(alpha: 0.85),
+                  ),
+                ),
               ],
             ),
           ),
@@ -975,13 +1043,20 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
               shape: const CircleBorder(),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
-                onTap: () => _showMapsPickerSheet(context, memory.latitude!,
-                    memory.longitude!, memory.locationName),
+                onTap: () => _showMapsPickerSheet(
+                  context,
+                  memory.latitude!,
+                  memory.longitude!,
+                  memory.locationName,
+                ),
                 child: SizedBox(
                   width: 40,
                   height: 40,
-                  child: Icon(Icons.near_me_rounded,
-                      size: 20, color: cs.onInverseSurface),
+                  child: Icon(
+                    Icons.near_me_rounded,
+                    size: 20,
+                    color: cs.onInverseSurface,
+                  ),
                 ),
               ),
             ),
@@ -996,15 +1071,17 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     final uid = _myUidHere;
     final chips = <Widget>[];
     _reactions.forEach((who, key) {
-      chips.add(ReactionChip(
-        uid: who,
-        name: who == memory.authorUid ? memory.authorName : '',
-        avatarUrl: who == memory.authorUid ? (memory.authorAvatar) : '',
-        reactionKey: key,
-        theme: theme,
-        isMine: who == uid,
-        onTap: who == uid ? () => _toggleReaction(key) : null,
-      ));
+      chips.add(
+        ReactionChip(
+          uid: who,
+          name: who == memory.authorUid ? memory.authorName : '',
+          avatarUrl: who == memory.authorUid ? (memory.authorAvatar) : '',
+          reactionKey: key,
+          theme: theme,
+          isMine: who == uid,
+          onTap: who == uid ? () => _toggleReaction(key) : null,
+        ),
+      );
     });
     return Row(
       children: [
@@ -1020,8 +1097,13 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
           child: InkWell(
             onTap: () {
               final target = _commentsAnchor.currentContext;
-              if (target != null) Scrollable.ensureVisible(target,
-                duration: const Duration(milliseconds: 350), curve: Curves.easeOut, alignment: 0);
+              if (target != null)
+                Scrollable.ensureVisible(
+                  target,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOut,
+                  alignment: 0,
+                );
             },
             child: Container(
               height: 40,
@@ -1030,13 +1112,21 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.chat_bubble_outline_rounded,
-                      size: 18, color: theme.textSecondary),
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 18,
+                    color: theme.textSecondary,
+                  ),
                   if (memory.commentsCount > 0) ...[
                     const SizedBox(width: 6),
-                    Text('${memory.commentsCount}',
-                        style: AppFonts.onest(
-                            size: 14, weight: 700, color: theme.textPrimary)),
+                    Text(
+                      '${memory.commentsCount}',
+                      style: AppFonts.onest(
+                        size: 14,
+                        weight: 700,
+                        color: theme.textPrimary,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -1055,21 +1145,25 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     // Flexible: рядом с кнопкой сохранения четырём кнопкам по 52 точки на
     // 360 dp не хватало места, и тулбар вылезал полосой переполнения.
     Widget ib(IconData icon, VoidCallback onTap, {bool active = false}) =>
-        Flexible(child: Material(
-          color: active ? cs.secondaryContainer : Colors.transparent,
-          borderRadius: BorderRadius.circular(28),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: SizedBox(
-              width: 52,
-              height: 56,
-              child: Icon(icon,
+        Flexible(
+          child: Material(
+            color: active ? cs.secondaryContainer : Colors.transparent,
+            borderRadius: BorderRadius.circular(28),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: SizedBox(
+                width: 52,
+                height: 56,
+                child: Icon(
+                  icon,
                   size: 24,
-                  color: active ? cs.onSecondaryContainer : cs.onSurface),
+                  color: active ? cs.onSecondaryContainer : cs.onSurface,
+                ),
+              ),
             ),
           ),
-        ));
+        );
     final myReaction = _reactions[_myUidHere] ?? '';
     return Padding(
       padding: EdgeInsets.fromLTRB(12, 0, 12, 16 + bottom),
@@ -1091,7 +1185,8 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                         ? Icons.favorite_border_rounded
                         : reactionByKey(myReaction).icon,
                     () => _toggleReaction(
-                        myReaction.isEmpty ? 'heart' : myReaction),
+                      myReaction.isEmpty ? 'heart' : myReaction,
+                    ),
                     active: myReaction.isNotEmpty,
                   ),
                   ib(Icons.reply_rounded, () => _shareFiles(memory)),
@@ -1099,12 +1194,17 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                     saved
                         ? Icons.bookmark_rounded
                         : Icons.bookmark_border_rounded,
-                    () => MemoryRepository()
-                        .toggleSaved(groupId: widget.groupId, memoryId: memory.id),
+                    () => MemoryRepository().toggleSaved(
+                      groupId: widget.groupId,
+                      memoryId: memory.id,
+                    ),
                     active: saved,
                   ),
-                  ib(Icons.push_pin_outlined, _togglePinHere,
-                      active: memory.isPinned),
+                  ib(
+                    Icons.push_pin_outlined,
+                    _togglePinHere,
+                    active: memory.isPinned,
+                  ),
                 ],
               ),
             ),
@@ -1149,8 +1249,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       return ColoredBox(
         color: cs.surfaceContainerHigh,
         child: Center(
-          child: Icon(memoryTypeIcon(memory.type),
-              size: 44, color: cs.onSurfaceVariant),
+          child: Icon(
+            memoryTypeIcon(memory.type),
+            size: 44,
+            color: cs.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -1165,15 +1268,21 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
             placeholder: (_, __) => ColoredBox(color: cs.surfaceContainerHigh),
             errorWidget: (_, __, ___) => ColoredBox(
               color: cs.surfaceContainerHigh,
-              child: Icon(Icons.image_not_supported_rounded,
-                  size: 40, color: cs.onSurfaceVariant),
+              child: Icon(
+                Icons.image_not_supported_rounded,
+                size: 40,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ),
           if (memory.type == MemoryType.video ||
               memory.type == MemoryType.videoLink)
             const Center(
-              child: Icon(Icons.play_circle_filled_rounded,
-                  color: Colors.white, size: 60),
+              child: Icon(
+                Icons.play_circle_filled_rounded,
+                color: Colors.white,
+                size: 60,
+              ),
             ),
           // Счётчик кадров: сколько фотографий в записи.
           if ((memory.imageUrls?.length ?? 0) > 1)
@@ -1203,8 +1312,13 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       PhotoFlightRoute<String>(
         builder: (_) => FullscreenGallery(
           items: photos
-              .map((url) => GalleryItem(
-                  url: url, memoryId: memory.id, adult: memory.isAdult))
+              .map(
+                (url) => GalleryItem(
+                  url: url,
+                  memoryId: memory.id,
+                  adult: memory.isAdult,
+                ),
+              )
               .toList(),
           initialIndex: 0,
           memoryOf: (_) => memory,
@@ -1230,9 +1344,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
         child: SizedBox(
           width: 44,
           height: 44,
-          child: Icon(icon,
-              size: 22,
-              color: glass ? cs.onInverseSurface : cs.onSurface),
+          child: Icon(
+            icon,
+            size: 22,
+            color: glass ? cs.onInverseSurface : cs.onSurface,
+          ),
         ),
       ),
     );
@@ -1250,9 +1366,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(memoryTypeIcon(memory.type),
-              size: 16,
-              color: glass ? cs.onInverseSurface : cs.onSurfaceVariant),
+          Icon(
+            memoryTypeIcon(memory.type),
+            size: 16,
+            color: glass ? cs.onInverseSurface : cs.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
           Text(
             LocaleService.current.memoryTypeName(memory.type.name),
@@ -1268,20 +1386,20 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   }
 
   Widget _glassPill(ColorScheme cs, String text) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: cs.inverseSurface.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: cs.onInverseSurface,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+    decoration: BoxDecoration(
+      color: cs.inverseSurface.withValues(alpha: 0.55),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: cs.onInverseSurface,
+      ),
+    ),
+  );
 
   // ── Лист ──────────────────────────────────────────────────────────────────
 
@@ -1403,8 +1521,8 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     final place = (memory.locationName?.isNotEmpty ?? false)
         ? memory.locationName!
         : (memory.latitude != null && memory.longitude != null
-            ? '${memory.latitude!.toStringAsFixed(3)}, ${memory.longitude!.toStringAsFixed(3)}'
-            : null);
+              ? '${memory.latitude!.toStringAsFixed(3)}, ${memory.longitude!.toStringAsFixed(3)}'
+              : null);
     if (place == null && !memory.isPinned) return const SizedBox.shrink();
     // Расстояние до места жило отдельной строкой с цветной пилюлей; теперь оно
     // просто дописывается к чипу — строка ради одной цифры экран не стоила.
@@ -1415,8 +1533,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
         widget.userLat != null &&
         widget.userLng != null) {
       final meters = Geolocator.distanceBetween(
-        widget.userLat!, widget.userLng!,
-        memory.latitude!, memory.longitude!,
+        widget.userLat!,
+        widget.userLng!,
+        memory.latitude!,
+        memory.longitude!,
       );
       placeLabel = '$place · ${LocaleService.current.distanceLabel(meters)}';
     }
@@ -1500,65 +1620,69 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     return Container(
       decoration: BoxDecoration(color: cs.surfaceContainerLow),
       padding: EdgeInsets.fromLTRB(16, 12, 16, media.padding.bottom + 16),
-      child: LayoutBuilder(builder: (context, box) {
-        final roomForEdit = widget.isOwner && box.maxWidth >= 400;
-        return Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _togglePinHere();
-                },
-                icon: Icon(
-                  memory.isPinned
-                      ? Icons.push_pin_rounded
-                      : Icons.push_pin_outlined,
-                  size: 21,
-                ),
-                label: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final roomForEdit = widget.isOwner && box.maxWidth >= 400;
+          return Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _togglePinHere();
+                  },
+                  icon: Icon(
                     memory.isPinned
-                        ? LocaleService.current.unpinMemory
-                        : LocaleService.current.pinMemory,
-                    maxLines: 1,
+                        ? Icons.push_pin_rounded
+                        : Icons.push_pin_outlined,
+                    size: 21,
+                  ),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      memory.isPinned
+                          ? LocaleService.current.unpinMemory
+                          : LocaleService.current.pinMemory,
+                      maxLines: 1,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(54),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
                 ),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(54),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              if (_files.isNotEmpty) ...[
+                const SizedBox(width: 10),
+                _saveButton(memory),
+              ] else if (link != null) ...[
+                const SizedBox(width: 10),
+                _roundAction(
+                  cs,
+                  icon: Icons.open_in_new_rounded,
+                  tooltip: trKey('menuOpenLink'),
+                  onTap: () => safeLaunchUrl(
+                    Uri.parse(link),
+                    mode: LaunchMode.externalApplication,
+                  ),
                 ),
-              ),
-            ),
-            if (_files.isNotEmpty) ...[
-              const SizedBox(width: 10),
-              _saveButton(memory),
-            ] else if (link != null) ...[
-              const SizedBox(width: 10),
-              _roundAction(
-                cs,
-                icon: Icons.open_in_new_rounded,
-                tooltip: trKey('menuOpenLink'),
-                onTap: () => safeLaunchUrl(Uri.parse(link),
-                    mode: LaunchMode.externalApplication),
-              ),
+              ],
+              if (roomForEdit) ...[
+                const SizedBox(width: 10),
+                _roundAction(
+                  cs,
+                  icon: Icons.edit_rounded,
+                  tooltip: LocaleService.current.editMemory,
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onEdit();
+                  },
+                ),
+              ],
             ],
-            if (roomForEdit) ...[
-              const SizedBox(width: 10),
-              _roundAction(
-                cs,
-                icon: Icons.edit_rounded,
-                tooltip: LocaleService.current.editMemory,
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onEdit();
-                },
-              ),
-            ],
-          ],
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 
@@ -1613,15 +1737,21 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       case SaveChoice.all:
         await _saveFiles(memory, _files);
       case SaveChoice.photos:
-        await _saveFiles(
-            memory, [for (final f in _files) if (f.kind == SaveKind.photo) f]);
+        await _saveFiles(memory, [
+          for (final f in _files)
+            if (f.kind == SaveKind.photo) f,
+        ]);
       case SaveChoice.videos:
-        await _saveFiles(
-            memory, [for (final f in _files) if (f.kind == SaveKind.video) f]);
+        await _saveFiles(memory, [
+          for (final f in _files)
+            if (f.kind == SaveKind.video) f,
+        ]);
       case SaveChoice.cover:
         await _saveFiles(memory, [
-          _files.firstWhere((f) => f.kind == SaveKind.photo,
-              orElse: () => _files.first),
+          _files.firstWhere(
+            (f) => f.kind == SaveKind.photo,
+            orElse: () => _files.first,
+          ),
         ]);
       case SaveChoice.pick:
         await _pickFrames(memory);
@@ -1650,13 +1780,15 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       final text = memory.type == MemoryType.videoLink
           ? (memory.videoUrl ?? '')
           : [memory.title, memory.caption]
-              .where((s) => s?.trim().isNotEmpty == true)
-              .map((s) => s!.trim())
-              .toSet()
-              .join('\n\n');
+                .where((s) => s?.trim().isNotEmpty == true)
+                .map((s) => s!.trim())
+                .toSet()
+                .join('\n\n');
       if (text.isEmpty) return;
-      await Share.share(text,
-          sharePositionOrigin: shareOriginFromContext(context));
+      await Share.share(
+        text,
+        sharePositionOrigin: shareOriginFromContext(context),
+      );
       return;
     }
     if (_files.length > 10) {
@@ -1706,10 +1838,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   }
 
   List<MemoryMenuAction> _menuActions(Memory memory) => memoryMenuActions(
-        memory,
-        isOwner: widget.isOwner,
-        canSetPlace: _canSetPlace,
-      );
+    memory,
+    isOwner: widget.isOwner,
+    canSetPlace: _canSetPlace,
+  );
 
   /// Меню «три точки». До 19.09.2026 в нём было два пункта, и у чужой записи
   /// с отмеченным местом оно не открывалось вовсе — «декорация». Теперь пункты
@@ -1728,7 +1860,9 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       if (summary.total > 0)
         trKey('saveApproxMb').replaceAll('{n}', '${summary.megabytes}'),
     ].join(' · ');
-    final thumb = _files.isNotEmpty ? (_files.first.thumb ?? _files.first.ref) : null;
+    final thumb = _files.isNotEmpty
+        ? (_files.first.thumb ?? _files.first.ref)
+        : null;
 
     showAppSheet<void>(
       context,
@@ -1738,85 +1872,118 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
         Widget tile(MemoryMenuAction a) {
           switch (a) {
             case MemoryMenuAction.saveAll:
-              return _menuTile(cs,
-                  icon: Icons.download_rounded,
-                  title: trKey('menuSaveAll'),
-                  sub: counts,
-                  accent: true,
-                  trailing: '${_files.length}', onTap: () {
-                close();
-                _saveFiles(memory, _files);
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.download_rounded,
+                title: trKey('menuSaveAll'),
+                sub: counts,
+                accent: true,
+                trailing: '${_files.length}',
+                onTap: () {
+                  close();
+                  _saveFiles(memory, _files);
+                },
+              );
             case MemoryMenuAction.pick:
-              return _menuTile(cs,
-                  icon: Icons.checklist_rounded,
-                  title: trKey('saveOptPick'),
-                  sub: trKey('menuPickSub'), onTap: () {
-                close();
-                _pickFrames(memory);
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.checklist_rounded,
+                title: trKey('saveOptPick'),
+                sub: trKey('menuPickSub'),
+                onTap: () {
+                  close();
+                  _pickFrames(memory);
+                },
+              );
             case MemoryMenuAction.share:
-              return _menuTile(cs,
-                  icon: Icons.ios_share_rounded,
-                  title: trKey('menuShare'),
-                  sub: trKey('menuShareSub'), onTap: () {
-                close();
-                _shareFiles(memory);
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.ios_share_rounded,
+                title: trKey('menuShare'),
+                sub: trKey('menuShareSub'),
+                onTap: () {
+                  close();
+                  _shareFiles(memory);
+                },
+              );
             case MemoryMenuAction.openLink:
-              return _menuTile(cs,
-                  icon: Icons.open_in_new_rounded,
-                  title: trKey('menuOpenLink'), onTap: () {
-                close();
-                safeLaunchUrl(Uri.parse(memoryExternalLink(memory)!),
-                    mode: LaunchMode.externalApplication);
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.open_in_new_rounded,
+                title: trKey('menuOpenLink'),
+                onTap: () {
+                  close();
+                  safeLaunchUrl(
+                    Uri.parse(memoryExternalLink(memory)!),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+              );
             case MemoryMenuAction.copyCaption:
               final caption = memory.caption!.trim();
-              return _menuTile(cs,
-                  icon: Icons.content_copy_rounded,
-                  title: trKey('menuCopyCaption'),
-                  sub: caption.length > 40
-                      ? '«${caption.substring(0, 39)}…»'
-                      : '«$caption»', onTap: () {
-                close();
-                Clipboard.setData(ClipboardData(text: caption));
-                showFloatingNote(context, trKey('menuCaptionCopied'));
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.content_copy_rounded,
+                title: trKey('menuCopyCaption'),
+                sub: caption.length > 40
+                    ? '«${caption.substring(0, 39)}…»'
+                    : '«$caption»',
+                onTap: () {
+                  close();
+                  Clipboard.setData(ClipboardData(text: caption));
+                  showFloatingNote(context, trKey('menuCaptionCopied'));
+                },
+              );
             case MemoryMenuAction.openMap:
-              return _menuTile(cs,
-                  icon: Icons.map_rounded,
-                  title: trKey('menuOpenMap'),
-                  sub: memory.locationName ?? '', onTap: () {
-                close();
-                _showMapsPickerSheet(context, memory.latitude!,
-                    memory.longitude!, memory.locationName);
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.map_rounded,
+                title: trKey('menuOpenMap'),
+                sub: memory.locationName ?? '',
+                onTap: () {
+                  close();
+                  _showMapsPickerSheet(
+                    context,
+                    memory.latitude!,
+                    memory.longitude!,
+                    memory.locationName,
+                  );
+                },
+              );
             case MemoryMenuAction.setPlace:
-              return _menuTile(cs,
-                  icon: Icons.add_location_alt_rounded,
-                  title: LocaleService.current.selectLocation, onTap: () {
-                close();
-                Navigator.pop(context);
-                widget.onSetLocation!();
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.add_location_alt_rounded,
+                title: LocaleService.current.selectLocation,
+                onTap: () {
+                  close();
+                  Navigator.pop(context);
+                  widget.onSetLocation!();
+                },
+              );
             case MemoryMenuAction.edit:
-              return _menuTile(cs,
-                  icon: Icons.edit_rounded,
-                  title: LocaleService.current.editMemory, onTap: () {
-                close();
-                Navigator.pop(context);
-                widget.onEdit();
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.edit_rounded,
+                title: LocaleService.current.editMemory,
+                onTap: () {
+                  close();
+                  Navigator.pop(context);
+                  widget.onEdit();
+                },
+              );
             case MemoryMenuAction.delete:
-              return _menuTile(cs,
-                  icon: Icons.delete_outline_rounded,
-                  title: LocaleService.current.deleteMemory,
-                  danger: true, onTap: () {
-                close();
-                Navigator.pop(context);
-                widget.onDelete();
-              });
+              return _menuTile(
+                cs,
+                icon: Icons.delete_outline_rounded,
+                title: LocaleService.current.deleteMemory,
+                danger: true,
+                onTap: () {
+                  close();
+                  Navigator.pop(context);
+                  widget.onDelete();
+                },
+              );
           }
         }
 
@@ -1912,13 +2079,13 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     final chipBg = danger
         ? cs.errorContainer
         : accent
-            ? cs.primary
-            : cs.secondaryContainer;
+        ? cs.primary
+        : cs.secondaryContainer;
     final chipFg = danger
         ? cs.onErrorContainer
         : accent
-            ? cs.onPrimary
-            : cs.onSecondaryContainer;
+        ? cs.onPrimary
+        : cs.onSecondaryContainer;
     return Material(
       color: accent ? cs.primaryContainer : cs.surfaceContainerHigh,
       child: InkWell(
@@ -1930,7 +2097,10 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
               Container(
                 width: 38,
                 height: 38,
-                decoration: BoxDecoration(color: chipBg, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: chipBg,
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(icon, size: 20, color: chipFg),
               ),
               const SizedBox(width: 12),
@@ -2027,8 +2197,13 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     if (allPhotos.isEmpty) return _noImgBox(200);
     void openGallery(int i) {
       final galleryItems = allPhotos
-          .map((url) => GalleryItem(
-              url: url, memoryId: memory.id, adult: memory.isAdult))
+          .map(
+            (url) => GalleryItem(
+              url: url,
+              memoryId: memory.id,
+              adult: memory.isAdult,
+            ),
+          )
           .toList();
       Navigator.of(context).push<String>(
         PhotoFlightRoute<String>(
@@ -2096,8 +2271,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                   fadeInDuration: const Duration(milliseconds: 180),
                   errorWidget: (_, __, ___) => Container(
                     color: context.appTheme.surfaceMuted,
-                    child: Icon(Icons.image_not_supported_rounded,
-                        color: context.appTheme.textMuted, size: 28),
+                    child: Icon(
+                      Icons.image_not_supported_rounded,
+                      color: context.appTheme.textMuted,
+                      size: 28,
+                    ),
                   ),
                 ),
                 if (extraCount != null && extraCount > 0)
@@ -2196,10 +2374,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       );
     }
 
-    return ClipRRect(
-      borderRadius: outerR,
-      child: body,
-    );
+    return ClipRRect(borderRadius: outerR, child: body);
   }
 
   Widget _buildVideoMedia(Memory memory, Color p) {
@@ -2217,10 +2392,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
             )
           else
             Container(
-                height: 220,
-                color: context.appTheme.isDark
-                    ? context.appTheme.surfaceMuted
-                    : Colors.grey.shade900),
+              height: 220,
+              color: context.appTheme.isDark
+                  ? context.appTheme.surfaceMuted
+                  : Colors.grey.shade900,
+            ),
           Container(
             height: 220,
             decoration: BoxDecoration(
@@ -2245,10 +2421,8 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => InAppVideoPlayerPage(
-                          url: url,
-                          title: memory.title,
-                        ),
+                        builder: (_) =>
+                            InAppVideoPlayerPage(url: url, title: memory.title),
                         settings: const RouteSettings(name: '/video_player'),
                       ),
                     );
@@ -2923,7 +3097,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
               ),
               if (hasKp) ...[
                 const Spacer(),
-                Icon(Icons.star_rounded, size: 15, color: Colors.amber.shade600),
+                Icon(
+                  Icons.star_rounded,
+                  size: 15,
+                  color: Colors.amber.shade600,
+                ),
                 const SizedBox(width: 3),
                 Text(
                   LocaleService.current.kpRating(memory.movieRatingKp!),
@@ -3168,8 +3346,11 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                   padding: const EdgeInsets.only(bottom: 14),
                   child: Row(
                     children: [
-                      Icon(Icons.location_on_rounded,
-                          size: 16, color: t.textMuted),
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: t.textMuted,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -3186,12 +3367,14 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                     ],
                   ),
                 ),
-              ...apps.map((app) => _MapAppTile(
-                    name: app.name,
-                    icon: app.icon,
-                    color: app.color,
-                    url: app.url,
-                  )),
+              ...apps.map(
+                (app) => _MapAppTile(
+                  name: app.name,
+                  icon: app.icon,
+                  color: app.color,
+                  url: app.url,
+                ),
+              ),
             ],
           ),
         ),
@@ -3247,11 +3430,8 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
     if (diff == 1) return '${s.yesterday}, $hh:$mm';
     final months = s.shortMonths;
     final date = '${dt.day} ${months[dt.month - 1]}';
-    return dt.year == now.year
-        ? '$date, $hh:$mm'
-        : '$date ${dt.year}, $hh:$mm';
+    return dt.year == now.year ? '$date, $hh:$mm' : '$date ${dt.year}, $hh:$mm';
   }
-
 }
 
 // ══════════════════════════════════════════════════════
@@ -3330,19 +3510,30 @@ class _CommentsSectionState extends State<_CommentsSection> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.chat_bubble_outline_rounded,
-                      size: 20, color: t.textSecondary),
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 20,
+                    color: t.textSecondary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     LocaleService.current.comments,
                     style: AppFonts.unbounded(
-                        size: 16, weight: 600, color: t.textPrimary),
+                      size: 16,
+                      weight: 600,
+                      color: t.textPrimary,
+                    ),
                   ),
                   if (comments.isNotEmpty) ...[
                     const SizedBox(width: 6),
-                    Text('· ${comments.length}',
-                        style: AppFonts.onest(
-                            size: 14, weight: 700, color: t.textSecondary)),
+                    Text(
+                      '· ${comments.length}',
+                      style: AppFonts.onest(
+                        size: 14,
+                        weight: 700,
+                        color: t.textSecondary,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -3353,7 +3544,10 @@ class _CommentsSectionState extends State<_CommentsSection> {
                   child: Text(
                     LocaleService.current.noCommentsYet,
                     style: AppFonts.onest(
-                        size: 14.5, weight: 500, color: t.textSecondary),
+                      size: 14.5,
+                      weight: 500,
+                      color: t.textSecondary,
+                    ),
                   ),
                 )
               else
@@ -3378,16 +3572,24 @@ class _CommentsSectionState extends State<_CommentsSection> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       style: AppFonts.onest(
-                          size: 15, weight: 500, color: t.textPrimary),
+                        size: 15,
+                        weight: 500,
+                        color: t.textPrimary,
+                      ),
                       decoration: InputDecoration(
                         hintText: LocaleService.current.writeAComment,
                         hintStyle: AppFonts.onest(
-                            size: 15, weight: 500, color: t.textSecondary),
+                          size: 15,
+                          weight: 500,
+                          color: t.textSecondary,
+                        ),
                         filled: true,
                         fillColor: t.bgGradient[0],
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 16),
+                          horizontal: 18,
+                          vertical: 16,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(26),
                           borderSide: BorderSide.none,
@@ -3419,7 +3621,9 @@ class _CommentsSectionState extends State<_CommentsSection> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: onFill),
+                                    strokeWidth: 2,
+                                    color: onFill,
+                                  ),
                                 ),
                               )
                             : Icon(Icons.send_rounded, color: onFill, size: 22),
@@ -3469,13 +3673,19 @@ class _CommentsSectionState extends State<_CommentsSection> {
                       Text(
                         comment.authorName,
                         style: AppFonts.onest(
-                            size: 13, weight: 700, color: t.textPrimary),
+                          size: 13,
+                          weight: 700,
+                          color: t.textPrimary,
+                        ),
                       ),
                       const Spacer(),
                       Text(
                         _timeAgo(comment.createdAt),
                         style: AppFonts.onest(
-                            size: 11.5, weight: 500, color: t.textSecondary),
+                          size: 11.5,
+                          weight: 500,
+                          color: t.textSecondary,
+                        ),
                       ),
                       // fork (D11): удалить свой комментарий можно не только
                       // долгим нажатием — у него есть видимая кнопка.
@@ -3487,8 +3697,11 @@ class _CommentsSectionState extends State<_CommentsSection> {
                             padding: const EdgeInsets.only(left: 8),
                             child: Tooltip(
                               message: LocaleService.current.delete,
-                              child: Icon(Icons.delete_outline_rounded,
-                                  size: 18, color: t.textSecondary),
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                                color: t.textSecondary,
+                              ),
                             ),
                           ),
                         ),
@@ -3498,7 +3711,10 @@ class _CommentsSectionState extends State<_CommentsSection> {
                   Text(
                     comment.text,
                     style: AppFonts.onest(
-                        size: 14.5, weight: 400, color: t.textPrimary),
+                      size: 14.5,
+                      weight: 400,
+                      color: t.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -3536,7 +3752,7 @@ class _CommentsSectionState extends State<_CommentsSection> {
 //  GalleryItem — a single photo or video entry
 // ══════════════════════════════════════════════════════
 class GalleryItem {
-  final String url;       // photo URL or video thumbnail
+  final String url; // photo URL or video thumbnail
   final String? videoUrl; // non-null for video items
   final String memoryId;
   final String? caption;
@@ -3554,4 +3770,3 @@ class GalleryItem {
 
   bool get isVideo => videoUrl != null;
 }
-

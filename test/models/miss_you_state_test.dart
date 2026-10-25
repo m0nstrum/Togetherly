@@ -55,8 +55,11 @@ void main() {
 
     test('кривая карта импульсов не роняет разбор', () {
       for (final raw in ['', 'не json', '[]', 'null']) {
-        final e =
-            MissYouEntry.fromRow({'user_uid': 'u', 'count': 5, 'by_vibe': raw});
+        final e = MissYouEntry.fromRow({
+          'user_uid': 'u',
+          'count': 5,
+          'by_vibe': raw,
+        });
         expect(e.byVibe, {'miss_you': 5}, reason: raw);
       }
     });
@@ -104,8 +107,10 @@ void main() {
 
     test('пустые данные дают нулевые доли, а не деление на ноль', () {
       final bars = weekBars(const {}, const {});
-      expect(bars.every((b) => b.mineFraction == 0 && b.partnerFraction == 0),
-          isTrue);
+      expect(
+        bars.every((b) => b.mineFraction == 0 && b.partnerFraction == 0),
+        isTrue,
+      );
     });
 
     test('шкала общая на обоих: максимум забирает единицу', () {

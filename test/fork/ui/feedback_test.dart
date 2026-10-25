@@ -13,18 +13,36 @@ void main() {
     test('сеть', () {
       expect(ForkFailure.of(const SocketException('x')), ForkFailure.network);
       expect(ForkFailure.of(TimeoutException('x')), ForkFailure.network);
-      expect(ForkFailure.of(ClientException(statusCode: 0)), ForkFailure.network);
+      expect(
+        ForkFailure.of(ClientException(statusCode: 0)),
+        ForkFailure.network,
+      );
     });
     test('permission errors have a safe explanation', () {
-      final error = PlatformException(code: 'photo_access_denied', message: 'internal native details');
+      final error = PlatformException(
+        code: 'photo_access_denied',
+        message: 'internal native details',
+      );
       expect(ForkFailure.of(error), ForkFailure.mediaPermission);
       expect(ForkFailure.of(error).text, isNot(contains('internal')));
     });
     test('ответы сервера', () {
-      expect(ForkFailure.of(ClientException(statusCode: 401)), ForkFailure.session);
-      expect(ForkFailure.of(ClientException(statusCode: 413)), ForkFailure.tooLarge);
-      expect(ForkFailure.of(ClientException(statusCode: 403)), ForkFailure.denied);
-      expect(ForkFailure.of(ClientException(statusCode: 500)), ForkFailure.unknown);
+      expect(
+        ForkFailure.of(ClientException(statusCode: 401)),
+        ForkFailure.session,
+      );
+      expect(
+        ForkFailure.of(ClientException(statusCode: 413)),
+        ForkFailure.tooLarge,
+      );
+      expect(
+        ForkFailure.of(ClientException(statusCode: 403)),
+        ForkFailure.denied,
+      );
+      expect(
+        ForkFailure.of(ClientException(statusCode: 500)),
+        ForkFailure.unknown,
+      );
     });
     test('нет ключа и уже известная причина', () {
       expect(ForkFailure.of(E2ENoKeyError('chat_messages')), ForkFailure.noKey);

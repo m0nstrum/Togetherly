@@ -106,9 +106,10 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
     try {
       final bytes = await tiles(z, x, y);
       if (bytes != null && bytes.isNotEmpty) {
-        tile = vtr.TileFactory(theme, const vtr.Logger.noop())
-            .createTileData(vtr.VectorTileReader().read(bytes))
-            .toTile();
+        tile = vtr.TileFactory(
+          theme,
+          const vtr.Logger.noop(),
+        ).createTileData(vtr.VectorTileReader().read(bytes)).toTile();
       }
     } catch (e) {
       debugPrint('PairMapWidget: плитка $key не разобралась: $e');
@@ -117,15 +118,24 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
   }
 
   final me = input.me == null ? null : LatLng(input.me!.lat, input.me!.lng);
-  final her = input.partner == null ? null : LatLng(input.partner!.lat, input.partner!.lng);
+  final her = input.partner == null
+      ? null
+      : LatLng(input.partner!.lat, input.partner!.lng);
   final meters = (me != null && her != null) ? metersBetween(me, her) : 0.0;
   // fork (UX G8): «рядом» и точные метры — только по свежим точкам обоих.
-  final freshPair = input.partner != null &&
+  final freshPair =
+      input.partner != null &&
       input.me != null &&
       pointIsFresh(input.partner!.updatedAt, nowMs: input.nowMs) &&
       pointIsFresh(input.me!.updatedAt, nowMs: input.nowMs);
-  final distance = distanceLabel(meters,
-      fresh: freshPair, lang: lang, nearby: s.liveMapNearby, unitM: s.unitM, unitKm: s.unitKm);
+  final distance = distanceLabel(
+    meters,
+    fresh: freshPair,
+    lang: lang,
+    nearby: s.liveMapNearby,
+    unitM: s.unitM,
+    unitKm: s.unitKm,
+  );
 
   String ageText(LivePoint p) {
     final age = LivePointAge.of(p.updatedAt, nowMs: input.nowMs);
@@ -140,18 +150,30 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
   final partnerAge = input.partner == null
       ? null
       : LivePointAge.of(input.partner!.updatedAt, nowMs: input.nowMs);
-  final partnerStale = partnerAge != null &&
-      (partnerAge.unit == LivePointAgeUnit.hours || partnerAge.unit == LivePointAgeUnit.days);
-  String initial(String name) => name.trim().isEmpty ? '?' : name.trim().characters.first.toUpperCase();
+  final partnerStale =
+      partnerAge != null &&
+      (partnerAge.unit == LivePointAgeUnit.hours ||
+          partnerAge.unit == LivePointAgeUnit.days);
+  String initial(String name) =>
+      name.trim().isEmpty ? '?' : name.trim().characters.first.toUpperCase();
 
   final b0 = input.partnerBattery;
-  final battery = b0 != null && b0.fresh(DateTime.fromMillisecondsSinceEpoch(input.nowMs)) ? b0 : null; // fork
+  final battery =
+      b0 != null && b0.fresh(DateTime.fromMillisecondsSinceEpoch(input.nowMs))
+      ? b0
+      : null; // fork
 
   final out = <MapWidgetSize, Uint8List>{};
   for (final kind in MapWidgetSize.values) {
     final size = input.sizes[kind] ?? kind.size;
     final safe = kind.safeFor(size);
-    final mode = pairMapMode(paired: input.paired, me: me, partner: her, size: size, safe: safe);
+    final mode = pairMapMode(
+      paired: input.paired,
+      me: me,
+      partner: her,
+      size: size,
+      safe: safe,
+    );
 
     Offset? mePt, herPt;
     var placed = <(TilePlacement, vtr.Tile)>[];
@@ -161,7 +183,12 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
 
     Future<void> mapAround(LatLng center, double z) async {
       zoom = z;
-      final cam = MercatorCamera(centerLat: center.latitude, centerLon: center.longitude, zoom: z, size: size);
+      final cam = MercatorCamera(
+        centerLat: center.latitude,
+        centerLon: center.longitude,
+        zoom: z,
+        size: size,
+      );
       if (me != null) mePt = cam.screen(me.latitude, me.longitude);
       if (her != null) herPt = cam.screen(her.latitude, her.longitude);
       for (final t in tilesFor(center, z, size)) {
@@ -175,8 +202,15 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
         final fit = fitTwo(me!, her!, size, safe);
         await mapAround(fit.center, fit.zoom);
       case PairMapMode.near:
-        final fit = fitOne(LatLng((me!.latitude + her!.latitude) / 2, (me.longitude + her.longitude) / 2),
-            size, safe, zoom: 15);
+        final fit = fitOne(
+          LatLng(
+            (me!.latitude + her!.latitude) / 2,
+            (me.longitude + her.longitude) / 2,
+          ),
+          size,
+          safe,
+          zoom: 15,
+        );
         await mapAround(fit.center, fit.zoom);
       case PairMapMode.onlyMe:
       case PairMapMode.onlyPartner:
@@ -185,23 +219,34 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
       case PairMapMode.globe:
         frame = globeFrameFor(me!, her!, size, safe);
         final b = frame.basis;
-        Offset project(LatLng p) => b.project(Vec3.fromLatLng(p.latitude, p.longitude), frame!.radius, frame.center);
+        Offset project(LatLng p) => b.project(
+          Vec3.fromLatLng(p.latitude, p.longitude),
+          frame!.radius,
+          frame.center,
+        );
         mePt = project(me);
         herPt = project(her);
-        arcBase = [for (final p in greatCircle(me, her, segments: 48)) project(p)];
+        arcBase = [
+          for (final p in greatCircle(me, her, segments: 48)) project(p),
+        ];
       case PairMapMode.noPair:
       case PairMapMode.noPoints:
         break;
     }
 
     final String? caption = switch (mode) {
-      PairMapMode.onlyMe => kind == MapWidgetSize.s
-          ? s.mapWidgetWaitingShort.replaceAll('{name}', input.partnerName)
-          : s.mapWidgetPartnerHidden.replaceAll('{name}', input.partnerName),
-      PairMapMode.onlyPartner => kind == MapWidgetSize.s ? s.mapWidgetShareMineShort : s.mapWidgetShareMine,
-      PairMapMode.map || PairMapMode.globe || PairMapMode.near => kind == MapWidgetSize.s
-          ? (partnerStale ? ageText(input.partner!) : null)
-          : '${input.partnerName} · ${ageText(input.partner!)}',
+      PairMapMode.onlyMe =>
+        kind == MapWidgetSize.s
+            ? s.mapWidgetWaitingShort.replaceAll('{name}', input.partnerName)
+            : s.mapWidgetPartnerHidden.replaceAll('{name}', input.partnerName),
+      PairMapMode.onlyPartner =>
+        kind == MapWidgetSize.s
+            ? s.mapWidgetShareMineShort
+            : s.mapWidgetShareMine,
+      PairMapMode.map || PairMapMode.globe || PairMapMode.near =>
+        kind == MapWidgetSize.s
+            ? (partnerStale ? ageText(input.partner!) : null)
+            : '${input.partnerName} · ${ageText(input.partner!)}',
       _ => null,
     };
 
@@ -211,7 +256,10 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
             ? s.mapWidgetShareMineShort
             : s.mapWidgetPartnerHidden.replaceAll('{name}', '').trim();
       }
-      return [if (place != null && place.isNotEmpty) place, ageText(p)].join(' · ');
+      return [
+        if (place != null && place.isNotEmpty) place,
+        ageText(p),
+      ].join(' · ');
     }
 
     final art = PairMapWidgetArt(
@@ -245,14 +293,21 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
       partnerBattery: battery?.level,
       partnerCharging: battery?.charging ?? false,
       lowColor: cs.error,
-      distance: mode == PairMapMode.near && freshPair ? s.liveMapNearby : distance, // fork (G8)
+      distance: mode == PairMapMode.near && freshPair
+          ? s.liveMapNearby
+          : distance, // fork (G8)
       caption: caption,
       rows: [
         MapWidgetRow(
-            mine: false,
-            name: input.partnerName,
-            detail: detail(input.partnerPlace, input.partner, mine: false)),
-        MapWidgetRow(mine: true, name: input.myName, detail: detail(input.myPlace, input.me, mine: true)),
+          mine: false,
+          name: input.partnerName,
+          detail: detail(input.partnerPlace, input.partner, mine: false),
+        ),
+        MapWidgetRow(
+          mine: true,
+          name: input.myName,
+          detail: detail(input.myPlace, input.me, mine: true),
+        ),
       ],
       title: switch (mode) {
         PairMapMode.noPair => s.mapWidgetNoPairTitle,
@@ -266,7 +321,11 @@ Future<Map<MapWidgetSize, Uint8List>> renderPairMapWidgets(
       },
     );
 
-    final k = pixelScaleFor(size, dpr: input.pixelRatio, maxPixels: input.maxPixels);
+    final k = pixelScaleFor(
+      size,
+      dpr: input.pixelRatio,
+      maxPixels: input.maxPixels,
+    );
     final (pw, ph) = mapWidgetPixels(size, k);
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -370,16 +429,28 @@ class PairMapWidgetService {
           'partnerAvatar': partnerAvatarUrl,
         }),
       );
-      await prefs.setString(_schemeKey, jsonEncode(schemeToJson(ProfileTheme.themeFor(theme).colorScheme, theme.fillColor)));
+      await prefs.setString(
+        _schemeKey,
+        jsonEncode(
+          schemeToJson(
+            ProfileTheme.themeFor(theme).colorScheme,
+            theme.fillColor,
+          ),
+        ),
+      );
       if (Platform.isIOS) {
         final views = ui.PlatformDispatcher.instance.views;
         if (views.isNotEmpty) {
           final v = views.first;
-          await prefs.setDouble(_iosSizesKey, v.physicalSize.width / v.devicePixelRatio);
+          await prefs.setDouble(
+            _iosSizesKey,
+            v.physicalSize.width / v.devicePixelRatio,
+          );
         }
       }
       final views = ui.PlatformDispatcher.instance.views;
-      if (views.isNotEmpty) await prefs.setDouble(_dprKey, views.first.devicePixelRatio);
+      if (views.isNotEmpty)
+        await prefs.setDouble(_dprKey, views.first.devicePixelRatio);
     } catch (e) {
       debugPrint('PairMapWidget: не сохранились данные для фона: $e');
     }
@@ -392,30 +463,46 @@ class PairMapWidgetService {
     required String groupId,
     required String myUid,
     required String partnerUid,
-  }) =>
-      _refreshOnce(groupId: groupId, myUid: myUid, partnerUid: partnerUid);
+  }) => _refreshOnce(groupId: groupId, myUid: myUid, partnerUid: partnerUid);
 
-  Future<void> _refreshOnce({required String groupId, required String myUid, required String partnerUid}) {
+  Future<void> _refreshOnce({
+    required String groupId,
+    required String myUid,
+    required String partnerUid,
+  }) {
     // Два входа подряд (главная и фон) не рисуют одно и то же дважды.
-    return _running ??= _refresh(groupId: groupId, myUid: myUid, partnerUid: partnerUid)
-        .timeout(const Duration(seconds: 40), onTimeout: () {
-      debugPrint('PairMapWidget: не уложились в 40 с');
-    }).whenComplete(() => _running = null);
+    return _running ??=
+        _refresh(groupId: groupId, myUid: myUid, partnerUid: partnerUid)
+            .timeout(
+              const Duration(seconds: 40),
+              onTimeout: () {
+                debugPrint('PairMapWidget: не уложились в 40 с');
+              },
+            )
+            .whenComplete(() => _running = null);
   }
 
   Future<bool> _anyInstalled() async {
     try {
       final all = await HomeWidget.getInstalledWidgets();
-      return all.any((w) =>
-          w.iOSKind == iosKind ||
-          androidProviders.values.any((p) => (w.androidClassName ?? '').endsWith(p)));
+      return all.any(
+        (w) =>
+            w.iOSKind == iosKind ||
+            androidProviders.values.any(
+              (p) => (w.androidClassName ?? '').endsWith(p),
+            ),
+      );
     } catch (e) {
       // Спросить не вышло — рисуем: пустой виджет хуже лишней работы.
       return true;
     }
   }
 
-  Future<void> _refresh({required String groupId, required String myUid, required String partnerUid}) async {
+  Future<void> _refresh({
+    required String groupId,
+    required String myUid,
+    required String partnerUid,
+  }) async {
     if (!Platform.isAndroid && !Platform.isIOS) return;
     // Спрашиваем WidgetKit, стоит ли виджет, но верим ему только когда
     // картинки уже лежат в контейнере: на iPhone список приходит пустым и
@@ -429,7 +516,9 @@ class PairMapWidgetService {
     final (scheme, fill) = schemeFromJson(_json(prefs.getString(_schemeKey)));
 
     final paired = groupId.isNotEmpty && partnerUid.isNotEmpty;
-    final points = paired ? await _fetchPoints(pairMapChannel(groupId, myUid, partnerUid)) : null;
+    final points = paired
+        ? await _fetchPoints(pairMapChannel(groupId, myUid, partnerUid))
+        : null;
     final me = points?[myUid];
     final partner = points?[partnerUid];
     final sizes = await _sizes(prefs);
@@ -437,19 +526,39 @@ class PairMapWidgetService {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     final myPlace = me == null ? null : await _placeOf(prefs, me);
-    final partnerPlace = partner == null ? null : await _placeOf(prefs, partner);
+    final partnerPlace = partner == null
+        ? null
+        : await _placeOf(prefs, partner);
     // fork: заряд партнёра — значком у его шарика.
-    final battery = paired ? await ForkBattery.instance.latest(groupId, partnerUid) : null;
-    final batteryShown = battery != null && battery.fresh(DateTime.now()) ? battery : null;
+    final battery = paired
+        ? await ForkBattery.instance.latest(groupId, partnerUid)
+        : null;
+    final batteryShown = battery != null && battery.fresh(DateTime.now())
+        ? battery
+        : null;
 
     final sig = jsonEncode([
-      _renderVersion, dpr, groupId, paired, _pointSig(me), _pointSig(partner), myName, partnerName,
+      _renderVersion,
+      dpr,
+      groupId,
+      paired,
+      _pointSig(me),
+      _pointSig(partner),
+      myName,
+      partnerName,
       meta['myAvatar'], meta['partnerAvatar'], schemeToJson(scheme, fill),
-      [for (final e in sizes.entries) '${e.key.id}:${e.value.width.round()}x${e.value.height.round()}'],
+      [
+        for (final e in sizes.entries)
+          '${e.key.id}:${e.value.width.round()}x${e.value.height.round()}',
+      ],
       LocaleService.instance.language.code, myPlace, partnerPlace,
       // Подпись давности меняется со временем — её часть подписи.
-      partner == null ? '' : LivePointAge.of(partner.updatedAt, nowMs: now).unit.name,
-      partner == null ? 0 : LivePointAge.of(partner.updatedAt, nowMs: now).value,
+      partner == null
+          ? ''
+          : LivePointAge.of(partner.updatedAt, nowMs: now).unit.name,
+      partner == null
+          ? 0
+          : LivePointAge.of(partner.updatedAt, nowMs: now).value,
       batteryShown?.level, batteryShown?.charging, // fork
     ]);
     // Подписи мало: на iPhone путь в контейнер мог не записаться (мост App
@@ -458,8 +567,12 @@ class PairMapWidgetService {
     // Виджет при этом стоял с заглушкой, пока не переедешь в другой город.
     if (prefs.getString(_sigKey) == sig && await _imagesAlive()) return;
 
-    final myAvatar = sameGroup ? await _avatar(groupId, 'my', meta['myAvatar'] as String?) : null;
-    final partnerAvatar = sameGroup ? await _avatar(groupId, 'partner', meta['partnerAvatar'] as String?) : null;
+    final myAvatar = sameGroup
+        ? await _avatar(groupId, 'my', meta['myAvatar'] as String?)
+        : null;
+    final partnerAvatar = sameGroup
+        ? await _avatar(groupId, 'partner', meta['partnerAvatar'] as String?)
+        : null;
 
     final images = await renderPairMapWidgets(
       PairMapWidgetInput(
@@ -478,12 +591,17 @@ class PairMapWidgetService {
         partnerPlace: partnerPlace,
         partnerBattery: batteryShown, // fork
         pixelRatio: dpr,
-        maxPixels: Platform.isIOS ? kMapWidgetMaxPixelsIos : kMapWidgetMaxPixelsAndroid,
+        maxPixels: Platform.isIOS
+            ? kMapWidgetMaxPixelsIos
+            : kMapWidgetMaxPixelsAndroid,
       ),
       tiles: _loadTile,
     );
     if (images.isEmpty) return;
-    final published = await _publish(groupId.isEmpty ? 'solo' : groupId, images);
+    final published = await _publish(
+      groupId.isEmpty ? 'solo' : groupId,
+      images,
+    );
     // Не записалось — подпись не ставим, иначе следующий заход решит, что всё
     // уже нарисовано, и виджет останется пустым до смены координат.
     if (published) await prefs.setString(_sigKey, sig);
@@ -506,8 +624,9 @@ class PairMapWidgetService {
     }
   }
 
-  static String _pointSig(LivePoint? p) =>
-      p == null ? '' : '${p.lat.toStringAsFixed(5)},${p.lng.toStringAsFixed(5)}';
+  static String _pointSig(LivePoint? p) => p == null
+      ? ''
+      : '${p.lat.toStringAsFixed(5)},${p.lng.toStringAsFixed(5)}';
 
   static Map<String, dynamic> _json(String? raw) {
     if (raw == null || raw.isEmpty) return const {};
@@ -526,7 +645,10 @@ class PairMapWidgetService {
       final pb = PocketBaseService().pb;
       final res = await pb
           .collection('live_location')
-          .getList(perPage: 10, filter: pb.filter('channel = {:c}', {'c': channel}))
+          .getList(
+            perPage: 10,
+            filter: pb.filter('channel = {:c}', {'c': channel}),
+          )
           .timeout(const Duration(seconds: 10));
       final out = <String, LivePoint>{};
       for (final r in res.items) {
@@ -550,7 +672,9 @@ class PairMapWidgetService {
     }
     final out = <MapWidgetSize, Size>{};
     for (final kind in MapWidgetSize.values) {
-      final raw = await HomeWidget.getWidgetData<String>('mapw_dims_${kind.id}');
+      final raw = await HomeWidget.getWidgetData<String>(
+        'mapw_dims_${kind.id}',
+      );
       out[kind] = kind.sizeFrom(raw);
     }
     return out;
@@ -572,7 +696,10 @@ class PairMapWidgetService {
   Future<Uint8List?> _avatar(String groupId, String who, String? url) async {
     if (url == null || url.isEmpty) return null;
     try {
-      final path = await HomeWidgetService.instance.pairImagePath('mapw_${groupId}_${who}_avatar', url);
+      final path = await HomeWidgetService.instance.pairImagePath(
+        'mapw_${groupId}_${who}_avatar',
+        url,
+      );
       if (path == null || path.isEmpty) return null;
       final f = File(path);
       return f.existsSync() ? await f.readAsBytes() : null;
@@ -586,17 +713,23 @@ class PairMapWidgetService {
   /// (нет сети, прошивка без сервисов), поэтому район — украшение, а не
   /// условие: не нашёлся — в строке останется только время.
   Future<String?> _placeOf(SharedPreferences prefs, LivePoint p) async {
-    final key = '${p.lat.toStringAsFixed(3)},${p.lng.toStringAsFixed(3)}|${LocaleService.instance.language.code}';
+    final key =
+        '${p.lat.toStringAsFixed(3)},${p.lng.toStringAsFixed(3)}|${LocaleService.instance.language.code}';
     final cache = _json(prefs.getString(_placesKey));
     if (cache.containsKey(key)) return cache[key] as String?;
     String? place;
     try {
       await geo.setLocaleIdentifier(LocaleService.instance.language.code);
-      final marks = await geo.placemarkFromCoordinates(p.lat, p.lng).timeout(const Duration(seconds: 6));
+      final marks = await geo
+          .placemarkFromCoordinates(p.lat, p.lng)
+          .timeout(const Duration(seconds: 6));
       if (marks.isNotEmpty) {
         final m = marks.first;
         place = [m.subLocality, m.locality, m.subAdministrativeArea]
-            .firstWhere((x) => x != null && x.trim().isNotEmpty, orElse: () => null)
+            .firstWhere(
+              (x) => x != null && x.trim().isNotEmpty,
+              orElse: () => null,
+            )
             ?.trim();
       }
     } catch (e) {
@@ -613,16 +746,24 @@ class PairMapWidgetService {
   /// Плитка с диска, если свежая; иначе из сети. Сеть не ответила — старая
   /// плитка лучше пустой карты.
   Future<Uint8List?> _loadTile(int z, int x, int y) async {
-    final dir = Directory('${(await getApplicationSupportDirectory()).path}/map_tiles');
+    final dir = Directory(
+      '${(await getApplicationSupportDirectory()).path}/map_tiles',
+    );
     final file = File('${dir.path}/${z}_${x}_$y.pbf');
     if (file.existsSync() &&
-        DateTime.now().difference(file.lastModifiedSync()) < const Duration(days: 14)) {
+        DateTime.now().difference(file.lastModifiedSync()) <
+            const Duration(days: 14)) {
       return file.readAsBytes();
     }
     try {
       final template = await MapTiles.template();
-      final url = template.replaceAll('{z}', '$z').replaceAll('{x}', '$x').replaceAll('{y}', '$y');
-      final res = await http.get(Uri.parse(url), headers: MapTiles.headers).timeout(const Duration(seconds: 12));
+      final url = template
+          .replaceAll('{z}', '$z')
+          .replaceAll('{x}', '$x')
+          .replaceAll('{y}', '$y');
+      final res = await http
+          .get(Uri.parse(url), headers: MapTiles.headers)
+          .timeout(const Duration(seconds: 12));
       if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
         dir.createSync(recursive: true);
         await file.writeAsBytes(res.bodyBytes, flush: true);
@@ -636,7 +777,9 @@ class PairMapWidgetService {
 
   /// Кладёт картинки туда, где их видит виджет, и будит его.
   Future<bool> _publish(String g, Map<MapWidgetSize, Uint8List> images) async {
-    final dir = Directory('${(await getApplicationSupportDirectory()).path}/map_widget');
+    final dir = Directory(
+      '${(await getApplicationSupportDirectory()).path}/map_widget',
+    );
     dir.createSync(recursive: true);
     // Имя с номером: WidgetKit держит картинку по пути, и с прежним именем
     // показывал бы старую.
@@ -648,7 +791,8 @@ class PairMapWidgetService {
         } catch (_) {}
       }
     }
-    if (Platform.isIOS) await HomeWidgetService.instance.clearAppGroupMedia('mapw_');
+    if (Platform.isIOS)
+      await HomeWidgetService.instance.clearAppGroupMedia('mapw_');
     var ok = true;
     for (final e in images.entries) {
       final file = File('${dir.path}/map_${g}_${e.key.id}_$rev.png');
@@ -660,12 +804,17 @@ class PairMapWidgetService {
         if (path.isEmpty) path = await _toAppGroup(file, e.key, rev);
         if (path.isEmpty) {
           ok = false;
-          debugPrint('PairMapWidget: картинка ${e.key.id} не легла в контейнер');
+          debugPrint(
+            'PairMapWidget: картинка ${e.key.id} не легла в контейнер',
+          );
           continue; // старый путь в ключе лучше пустого
         }
         await HomeWidget.saveWidgetData<String>(iosKeys[e.key]!, path);
       } else {
-        await HomeWidget.saveWidgetData<String>('map_${g}_img_${e.key.id}', file.path);
+        await HomeWidget.saveWidgetData<String>(
+          'map_${g}_img_${e.key.id}',
+          file.path,
+        );
       }
     }
     await HomeWidget.saveWidgetData<String>('map_latest_group', g);
@@ -674,7 +823,11 @@ class PairMapWidgetService {
       return ok;
     }
     for (final p in androidProviders.values) {
-      await HomeWidget.updateWidget(name: p, androidName: p, qualifiedAndroidName: 'com.togetherly.love.$p');
+      await HomeWidget.updateWidget(
+        name: p,
+        androidName: p,
+        qualifiedAndroidName: 'com.togetherly.love.$p',
+      );
     }
     return ok;
   }
@@ -682,8 +835,10 @@ class PairMapWidgetService {
   /// Копия картинки в общий контейнер. Пустая строка — не получилось.
   Future<String> _toAppGroup(File file, MapWidgetSize size, int rev) async {
     try {
-      return await HomeWidgetService.instance
-          .appGroupReadablePath(file.path, 'mapw_${size.id}_$rev.png');
+      return await HomeWidgetService.instance.appGroupReadablePath(
+        file.path,
+        'mapw_${size.id}_$rev.png',
+      );
     } catch (e) {
       debugPrint('PairMapWidget: мост App Group молчит (${size.id}): $e');
       return '';
@@ -693,34 +848,34 @@ class PairMapWidgetService {
 
 /// Роли схемы, которые нужны картинке, — строкой для фона: там темы нет.
 Map<String, dynamic> schemeToJson(ColorScheme cs, Color fill) => {
-      'dark': cs.brightness == Brightness.dark,
-      'fill': fill.toARGB32(),
-      for (final e in _roles(cs).entries) e.key: e.value.toARGB32(),
-    };
+  'dark': cs.brightness == Brightness.dark,
+  'fill': fill.toARGB32(),
+  for (final e in _roles(cs).entries) e.key: e.value.toARGB32(),
+};
 
 Map<String, Color> _roles(ColorScheme cs) => {
-      'primary': cs.primary,
-      'onPrimary': cs.onPrimary,
-      'primaryContainer': cs.primaryContainer,
-      'secondary': cs.secondary,
-      'onSecondary': cs.onSecondary,
-      'secondaryContainer': cs.secondaryContainer,
-      'onSecondaryContainer': cs.onSecondaryContainer,
-      'tertiary': cs.tertiary,
-      'tertiaryContainer': cs.tertiaryContainer,
-      'onTertiaryContainer': cs.onTertiaryContainer,
-      'error': cs.error,
-      'onError': cs.onError,
-      'surface': cs.surface,
-      'onSurface': cs.onSurface,
-      'onSurfaceVariant': cs.onSurfaceVariant,
-      'surfaceContainerLowest': cs.surfaceContainerLowest,
-      'surfaceContainerLow': cs.surfaceContainerLow,
-      'surfaceContainer': cs.surfaceContainer,
-      'surfaceContainerHigh': cs.surfaceContainerHigh,
-      'surfaceContainerHighest': cs.surfaceContainerHighest,
-      'outlineVariant': cs.outlineVariant,
-    };
+  'primary': cs.primary,
+  'onPrimary': cs.onPrimary,
+  'primaryContainer': cs.primaryContainer,
+  'secondary': cs.secondary,
+  'onSecondary': cs.onSecondary,
+  'secondaryContainer': cs.secondaryContainer,
+  'onSecondaryContainer': cs.onSecondaryContainer,
+  'tertiary': cs.tertiary,
+  'tertiaryContainer': cs.tertiaryContainer,
+  'onTertiaryContainer': cs.onTertiaryContainer,
+  'error': cs.error,
+  'onError': cs.onError,
+  'surface': cs.surface,
+  'onSurface': cs.onSurface,
+  'onSurfaceVariant': cs.onSurfaceVariant,
+  'surfaceContainerLowest': cs.surfaceContainerLowest,
+  'surfaceContainerLow': cs.surfaceContainerLow,
+  'surfaceContainer': cs.surfaceContainer,
+  'surfaceContainerHigh': cs.surfaceContainerHigh,
+  'surfaceContainerHighest': cs.surfaceContainerHighest,
+  'outlineVariant': cs.outlineVariant,
+};
 
 /// Обратно в схему. Нет сохранённой — розовая тема по умолчанию.
 (ColorScheme, Color) schemeFromJson(Map<String, dynamic> j) {
@@ -728,7 +883,8 @@ Map<String, Color> _roles(ColorScheme cs) => {
     final t = buildAppTheme(kPalettes.first, Brightness.light);
     return (ProfileTheme.themeFor(t).colorScheme, t.fillColor);
   }
-  Color c(String k, Color fallback) => j[k] is int ? Color(j[k] as int) : fallback;
+  Color c(String k, Color fallback) =>
+      j[k] is int ? Color(j[k] as int) : fallback;
   final dark = j['dark'] == true;
   final base = dark ? const ColorScheme.dark() : const ColorScheme.light();
   final cs = base.copyWith(
@@ -747,11 +903,17 @@ Map<String, Color> _roles(ColorScheme cs) => {
     surface: c('surface', base.surface),
     onSurface: c('onSurface', base.onSurface),
     onSurfaceVariant: c('onSurfaceVariant', base.onSurfaceVariant),
-    surfaceContainerLowest: c('surfaceContainerLowest', base.surfaceContainerLowest),
+    surfaceContainerLowest: c(
+      'surfaceContainerLowest',
+      base.surfaceContainerLowest,
+    ),
     surfaceContainerLow: c('surfaceContainerLow', base.surfaceContainerLow),
     surfaceContainer: c('surfaceContainer', base.surfaceContainer),
     surfaceContainerHigh: c('surfaceContainerHigh', base.surfaceContainerHigh),
-    surfaceContainerHighest: c('surfaceContainerHighest', base.surfaceContainerHighest),
+    surfaceContainerHighest: c(
+      'surfaceContainerHighest',
+      base.surfaceContainerHighest,
+    ),
     outlineVariant: c('outlineVariant', base.outlineVariant),
   );
   return (cs, c('fill', cs.primary));

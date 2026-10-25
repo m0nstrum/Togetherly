@@ -25,8 +25,11 @@ void main() {
   group('фото виджета не качается заново', () {
     test('решение принимает общее правило кэша', () {
       expect(start, isPositive, reason: 'функция загрузки фото исчезла');
-      expect(body.contains('photoCacheDecision('), isTrue,
-          reason: 'перед сетью должна стоять проверка готового файла');
+      expect(
+        body.contains('photoCacheDecision('),
+        isTrue,
+        reason: 'перед сетью должна стоять проверка готового файла',
+      );
       expect(body.contains('PhotoCacheAction.useCached'), isTrue);
     });
 
@@ -34,8 +37,11 @@ void main() {
       final decision = body.indexOf('photoCacheDecision(');
       final network = body.indexOf('WidgetPhotoStore.instance.bytesFor(');
       expect(network, isPositive, reason: 'обращение на склад переименовали');
-      expect(decision < network, isTrue,
-          reason: 'сначала смотрим готовый файл, только потом идём на склад');
+      expect(
+        decision < network,
+        isTrue,
+        reason: 'сначала смотрим готовый файл, только потом идём на склад',
+      );
     });
 
     test('ссылка запоминается только после удачной записи', () {
@@ -47,34 +53,45 @@ void main() {
       final remember = tail.indexOf("prefs.setString('\${key}_src'");
       expect(remember, isPositive, reason: 'ссылку перестали запоминать');
       expect(write, isPositive, reason: 'файл перестали записывать');
-      expect(write < remember, isTrue,
-          reason: 'битая попытка не должна закрывать дорогу повторной загрузке');
+      expect(
+        write < remember,
+        isTrue,
+        reason: 'битая попытка не должна закрывать дорогу повторной загрузке',
+      );
     });
 
     test('сравнивается исходная ссылка, а не адрес с токеном', () {
       final decision = body.indexOf('photoCacheDecision(');
       final args = body.substring(decision, decision + 260);
-      expect(args.contains('url: url'), isTrue,
-          reason: 'file-токен меняется каждые пару минут; сверять его нельзя');
+      expect(
+        args.contains('url: url'),
+        isTrue,
+        reason: 'file-токен меняется каждые пару минут; сверять его нельзя',
+      );
       expect(args.contains('httpUrl'), isFalse);
     });
 
     test('один файл на все виджеты, а не по копии каждому', () {
       // Аватар партнёра просят days_, miss_ и together_ — под разными ключами.
       // Замер на эмуляторе: без склада 7 закачек одного файла за прогон.
-      expect(body.contains('widget_src_'), isTrue,
-          reason: 'общий склад по ссылке пропал');
+      expect(
+        body.contains('widget_src_'),
+        isTrue,
+        reason: 'общий склад по ссылке пропал',
+      );
       final sharedCheck = body.indexOf('shared.existsSync()');
       final network = body.indexOf('WidgetPhotoStore.instance.bytesFor(');
       expect(sharedCheck, isPositive);
-      expect(sharedCheck < network, isTrue,
-          reason: 'склад смотрим до сети');
+      expect(sharedCheck < network, isTrue, reason: 'склад смотрим до сети');
     });
 
     test('склад стирается вместе с данными виджетов', () {
       final wipe = src.substring(src.indexOf('Future<void> wipeWidgetData('));
-      expect(wipe.substring(0, 900).contains('widget_src_'), isTrue,
-          reason: 'при смене человека чужие лица должны уходить со склада');
+      expect(
+        wipe.substring(0, 900).contains('widget_src_'),
+        isTrue,
+        reason: 'при смене человека чужие лица должны уходить со склада',
+      );
     });
   });
 }

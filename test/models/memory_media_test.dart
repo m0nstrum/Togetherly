@@ -17,22 +17,21 @@ Memory _m({
   bool sealed = false,
   DateTime? openAt,
   bool isSecret = false,
-}) =>
-    Memory(
-      id: 'm1',
-      groupId: 'g1',
-      authorUid: 'u1',
-      authorName: 'Саша',
-      type: type,
-      createdAt: DateTime(2026, 9, 5, 13, 5),
-      imageUrl: imageUrl,
-      imageUrls: imageUrls,
-      videoUrl: videoUrl,
-      musicUrl: musicUrl,
-      sealed: sealed,
-      openAt: openAt,
-      isSecret: isSecret,
-    );
+}) => Memory(
+  id: 'm1',
+  groupId: 'g1',
+  authorUid: 'u1',
+  authorName: 'Саша',
+  type: type,
+  createdAt: DateTime(2026, 9, 5, 13, 5),
+  imageUrl: imageUrl,
+  imageUrls: imageUrls,
+  videoUrl: videoUrl,
+  musicUrl: musicUrl,
+  sealed: sealed,
+  openAt: openAt,
+  isSecret: isSecret,
+);
 
 void main() {
   group('memoryMediaFiles', () {
@@ -51,40 +50,54 @@ void main() {
     });
 
     test('смешанная запись отдаёт и кадры, и ролик', () {
-      final files = memoryMediaFiles(_m(
-        imageUrls: ['pb://media/a/1.webp', 'pb://media/a/2.webp'],
-        videoUrl: 'pb://media/v/clip.mp4',
-      ));
-      expect(files.map((f) => f.kind),
-          [SaveKind.photo, SaveKind.photo, SaveKind.video]);
+      final files = memoryMediaFiles(
+        _m(
+          imageUrls: ['pb://media/a/1.webp', 'pb://media/a/2.webp'],
+          videoUrl: 'pb://media/v/clip.mp4',
+        ),
+      );
+      expect(files.map((f) => f.kind), [
+        SaveKind.photo,
+        SaveKind.photo,
+        SaveKind.video,
+      ]);
     });
 
     test('у видео-записи обложка не считается отдельным кадром', () {
-      final files = memoryMediaFiles(_m(
-        type: MemoryType.video,
-        imageUrl: 'pb://media/t/thumb.jpg',
-        videoUrl: 'pb://media/v/clip.mp4',
-      ));
+      final files = memoryMediaFiles(
+        _m(
+          type: MemoryType.video,
+          imageUrl: 'pb://media/t/thumb.jpg',
+          videoUrl: 'pb://media/v/clip.mp4',
+        ),
+      );
       expect(files.single.kind, SaveKind.video);
       expect(files.single.thumb, 'pb://media/t/thumb.jpg');
     });
 
     test('ролик по ссылке на площадку не скачивается', () {
       expect(
-          memoryMediaFiles(_m(
+        memoryMediaFiles(
+          _m(
             type: MemoryType.videoLink,
             videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
-          )),
-          isEmpty);
+          ),
+        ),
+        isEmpty,
+      );
     });
 
     test('музыка: свой файл сохраняется, ссылка на площадку — нет', () {
       final own = memoryMediaFiles(
-          _m(type: MemoryType.music, musicUrl: 'pb://media/s/song.mp3'));
+        _m(type: MemoryType.music, musicUrl: 'pb://media/s/song.mp3'),
+      );
       expect(own.single.kind, SaveKind.audio);
-      final link = memoryMediaFiles(_m(
+      final link = memoryMediaFiles(
+        _m(
           type: MemoryType.music,
-          musicUrl: 'https://music.yandex.ru/album/1/track/2'));
+          musicUrl: 'https://music.yandex.ru/album/1/track/2',
+        ),
+      );
       expect(link, isEmpty);
     });
 
@@ -111,7 +124,8 @@ void main() {
 
     test('пустые строки в списке кадров пропускаются', () {
       final files = memoryMediaFiles(
-          _m(imageUrls: ['', 'pb://media/a/1.webp', ' ']));
+        _m(imageUrls: ['', 'pb://media/a/1.webp', ' ']),
+      );
       expect(files.single.ref, 'pb://media/a/1.webp');
       expect(files.single.index, 0);
     });
@@ -121,12 +135,15 @@ void main() {
     test('свои: pb://, адрес нашего сервера, ещё не отправленный файл', () {
       expect(isOwnMediaUrl('pb://media/a/b.jpg'), isTrue);
       expect(
-          isOwnMediaUrl('https://togetherly.day/api/files/media/a/b.jpg?token=x'),
-          isTrue);
+        isOwnMediaUrl('https://togetherly.day/api/files/media/a/b.jpg?token=x'),
+        isTrue,
+      );
       expect(isOwnMediaUrl('localfile:///data/user/0/x/f.jpg'), isTrue);
       expect(isOwnMediaUrl('https://youtu.be/xyz'), isFalse);
-      expect(isOwnMediaUrl('https://firebasestorage.googleapis.com/x.jpg'),
-          isFalse);
+      expect(
+        isOwnMediaUrl('https://firebasestorage.googleapis.com/x.jpg'),
+        isFalse,
+      );
     });
 
     test('ключ одинаков у pb:// и у готового адреса с токеном', () {
@@ -147,19 +164,24 @@ void main() {
 
   group('имя в галерее и сводка', () {
     test('имя: Togetherly, дата воспоминания, номер кадра', () {
-      final f = memoryMediaFiles(_m(imageUrls: [
-        'pb://media/a/1.webp',
-        'pb://media/a/2.webp',
-      ]))[1];
-      expect(galleryFileName(DateTime(2026, 9, 5, 13, 5, 7), f),
-          'Togetherly_20260905_130507_02.webp');
+      final f = memoryMediaFiles(
+        _m(imageUrls: ['pb://media/a/1.webp', 'pb://media/a/2.webp']),
+      )[1];
+      expect(
+        galleryFileName(DateTime(2026, 9, 5, 13, 5, 7), f),
+        'Togetherly_20260905_130507_02.webp',
+      );
     });
 
     test('сводка считает виды и примерный вес', () {
-      final s = summarizeMedia(memoryMediaFiles(_m(
-        imageUrls: [for (var i = 0; i < 93; i++) 'pb://media/r$i/f.webp'],
-        videoUrl: 'pb://media/v/clip.mp4',
-      )));
+      final s = summarizeMedia(
+        memoryMediaFiles(
+          _m(
+            imageUrls: [for (var i = 0; i < 93; i++) 'pb://media/r$i/f.webp'],
+            videoUrl: 'pb://media/v/clip.mp4',
+          ),
+        ),
+      );
       expect(s.photos, 93);
       expect(s.videos, 1);
       expect(s.total, 94);

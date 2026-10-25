@@ -72,10 +72,10 @@ class _DailyTasksCardState extends State<DailyTasksCard> {
     final hint = bonusDone || (all && bonus == null)
         ? trKey('tasks_all_done')
         : all
-            ? trKey('tasks_bonus_hint')
-            : trKey(widget.onOpenTask != null
-                ? 'tasks_tap_hint'
-                : 'tasks_add_hint');
+        ? trKey('tasks_bonus_hint')
+        : trKey(
+            widget.onOpenTask != null ? 'tasks_tap_hint' : 'tasks_add_hint',
+          );
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
@@ -93,15 +93,20 @@ class _DailyTasksCardState extends State<DailyTasksCard> {
                 child: Text(
                   trKey('tasks_title'),
                   style: AppFonts.unbounded(
-                      size: 17, weight: 600, color: cs.onSurface),
+                    size: 17,
+                    weight: 600,
+                    color: cs.onSurface,
+                  ),
                 ),
               ),
               // Счётчик таблеткой: сколько закрыто из трёх. Когда всё готово,
               // таблетка наливается — видно, не читая цифр.
               AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: all ? cs.primary : cs.secondaryContainer,
                   borderRadius: BorderRadius.circular(999),
@@ -224,8 +229,10 @@ class _TaskRow extends StatelessWidget {
                 if (bonusLabel != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: scheme.tertiaryContainer,
                       borderRadius: BorderRadius.circular(999),

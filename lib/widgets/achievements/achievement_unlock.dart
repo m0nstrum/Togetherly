@@ -222,9 +222,7 @@ class _AchievementIslandState extends State<_AchievementIsland>
         position: Tween<Offset>(
           begin: const Offset(0, -1.8),
           end: Offset.zero,
-        ).animate(
-          CurvedAnimation(parent: _slide, curve: Motion.emphasizedIn),
-        ),
+        ).animate(CurvedAnimation(parent: _slide, curve: Motion.emphasizedIn)),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),

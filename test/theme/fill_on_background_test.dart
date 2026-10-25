@@ -31,14 +31,19 @@ void main() {
         for (final bg in theme.bgGradient) {
           final ratio = contrastRatio(theme.fillColor, bg);
           if (ratio < minRatio) {
-            offenders.add('${palette.name} ${brightness.name}: '
-                '${ratio.toStringAsFixed(2)}');
+            offenders.add(
+              '${palette.name} ${brightness.name}: '
+              '${ratio.toStringAsFixed(2)}',
+            );
           }
         }
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'заливка сливается с фоном: ${offenders.join(', ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'заливка сливается с фоном: ${offenders.join(', ')}',
+    );
   });
 
   /// Правило чернил задано, а не вычислено (решение заказчика 11 августа

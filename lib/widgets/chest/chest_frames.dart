@@ -100,7 +100,9 @@ class ChestFrames extends StatefulWidget {
 
   static Future<void> _fetch(String url) async {
     try {
-      final f = await OfflineImageCacheManager.instance.getSingleFile(url).timeout(prefetchLimit);
+      final f = await OfflineImageCacheManager.instance
+          .getSingleFile(url)
+          .timeout(prefetchLimit);
       _bytes[url] = await f.readAsBytes();
     } catch (_) {}
   }
@@ -112,11 +114,18 @@ class ChestFrames extends StatefulWidget {
   /// после восьми секунд он прежде оставался картинкой навсегда (жалоба с
   /// 1.35.0+245: «обычный сундук без анимации — и на главной, и на экране»).
   static Future<void> _fetchPatiently(String url) async {
-    for (final pause in const [Duration.zero, Duration(seconds: 3), Duration(seconds: 10), Duration(seconds: 30)]) {
+    for (final pause in const [
+      Duration.zero,
+      Duration(seconds: 3),
+      Duration(seconds: 10),
+      Duration(seconds: 30),
+    ]) {
       if (_bytes.containsKey(url)) return;
       await Future<void>.delayed(pause);
       try {
-        final f = await OfflineImageCacheManager.instance.getSingleFile(url).timeout(const Duration(seconds: 60));
+        final f = await OfflineImageCacheManager.instance
+            .getSingleFile(url)
+            .timeout(const Duration(seconds: 60));
         _bytes[url] = await f.readAsBytes();
         return;
       } catch (_) {}
@@ -142,7 +151,8 @@ class ChestFrames extends StatefulWidget {
   State<ChestFrames> createState() => _ChestFramesState();
 }
 
-class _ChestFramesState extends State<ChestFrames> with SingleTickerProviderStateMixin {
+class _ChestFramesState extends State<ChestFrames>
+    with SingleTickerProviderStateMixin {
   // Создаётся в initState, а не лениво: иначе виджет, закрытый до загрузки
   // файла, создавал бы тикер впервые в dispose — на уже отцепленном элементе.
   late final Ticker _ticker;
@@ -216,7 +226,10 @@ class _ChestFramesState extends State<ChestFrames> with SingleTickerProviderStat
       final dpr = ui.PlatformDispatcher.instance.views.first.devicePixelRatio;
       // Предел ставится по ширине: у вытянутого кадра (занавес) пропорции
       // сохраняются, а у квадратного выходит прежний размер.
-      codec = await ui.instantiateImageCodec(bytes, targetWidth: (widget.side * dpr).round());
+      codec = await ui.instantiateImageCodec(
+        bytes,
+        targetWidth: (widget.side * dpr).round(),
+      );
     } catch (_) {
       codec = null;
     }
@@ -291,7 +304,9 @@ class _ChestFramesState extends State<ChestFrames> with SingleTickerProviderStat
     widget.onFrame?.call(i);
     widget.onPosition?.call(_pos);
     final last = i == codec.frameCount - 1;
-    final step = frame.duration == Duration.zero ? const Duration(milliseconds: 60) : frame.duration;
+    final step = frame.duration == Duration.zero
+        ? const Duration(milliseconds: 60)
+        : frame.duration;
     if (last && !widget.loop) {
       if (!widget.holdLast) {
         _stop();
@@ -331,11 +346,21 @@ class _ChestFramesState extends State<ChestFrames> with SingleTickerProviderStat
     final w = widget.side, h = widget.height ?? widget.side;
     if (image == null) {
       final still = widget.still;
-      if (still != null) return Image.asset(still, width: w, height: h, fit: widget.fit, gaplessPlayback: true);
+      if (still != null)
+        return Image.asset(
+          still,
+          width: w,
+          height: h,
+          fit: widget.fit,
+          gaplessPlayback: true,
+        );
       final stillUrl = widget.stillUrl;
       if (stillUrl != null) {
         return Image(
-          image: CachedNetworkImageProvider(stillUrl, cacheManager: OfflineImageCacheManager.instance),
+          image: CachedNetworkImageProvider(
+            stillUrl,
+            cacheManager: OfflineImageCacheManager.instance,
+          ),
           width: w,
           height: h,
           fit: widget.fit,
@@ -345,6 +370,12 @@ class _ChestFramesState extends State<ChestFrames> with SingleTickerProviderStat
       }
       return SizedBox(width: w, height: h);
     }
-    return RawImage(image: image, width: w, height: h, fit: widget.fit, filterQuality: FilterQuality.medium);
+    return RawImage(
+      image: image,
+      width: w,
+      height: h,
+      fit: widget.fit,
+      filterQuality: FilterQuality.medium,
+    );
   }
 }

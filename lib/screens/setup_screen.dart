@@ -29,7 +29,6 @@ import '../widgets/common/app_dialog.dart';
 import '../fork/config/endpoints.dart'; // fork
 import '../fork/e2e/account_password.dart'; // fork
 
-
 class SetupScreen extends StatefulWidget {
   final UserData userData;
   const SetupScreen({super.key, required this.userData});
@@ -56,7 +55,9 @@ class _SetupScreenState extends State<SetupScreen>
 
   // Ссылки на юридические документы (раздаются с нашего сервера, pb_public).
   static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
-  static final Uri _privacyUri = Uri.parse(Endpoints.current.privacyPolicyUrl); // fork
+  static final Uri _privacyUri = Uri.parse(
+    Endpoints.current.privacyPolicyUrl,
+  ); // fork
   final _termsRecognizer = TapGestureRecognizer();
   final _privacyRecognizer = TapGestureRecognizer();
 
@@ -124,9 +125,9 @@ class _SetupScreenState extends State<SetupScreen>
       final fix = await AppDialog.confirm(
         context,
         title: trKey('emailTypoTitle'),
-        message: trKey('emailTypoBody')
-            .replaceAll('{typed}', email)
-            .replaceAll('{fixed}', typoFix),
+        message: trKey(
+          'emailTypoBody',
+        ).replaceAll('{typed}', email).replaceAll('{fixed}', typoFix),
         confirmLabel: trKey('emailTypoFix'),
         cancelLabel: trKey('emailTypoKeep'),
         icon: Icons.alternate_email_rounded,
@@ -152,8 +153,11 @@ class _SetupScreenState extends State<SetupScreen>
         // Проверяем пароль только для ручной регистрации: 8 символов +
         // заглавная буква + спецсимвол (те же правила, что индикаторы под полем).
         // fork: правила пароля бэкапа ключей (lib/fork/e2e/account_password.dart).
-        final weak = await ForkAccountPassword.problems(password,
-            email: email, name: name);
+        final weak = await ForkAccountPassword.problems(
+          password,
+          email: email,
+          name: name,
+        );
         if (weak.isNotEmpty) {
           _showError(ForkAccountPassword.describe(weak));
           if (mounted) setState(() => _isLoading = false);
@@ -276,13 +280,23 @@ class _SetupScreenState extends State<SetupScreen>
     setState(() => _generatingPassword = true);
     try {
       final password = await ForkAccountPassword.generate(
-        email: _emailController.text.trim(), name: _nameController.text.trim());
+        email: _emailController.text.trim(),
+        name: _nameController.text.trim(),
+      );
       if (!mounted) return;
       setState(() => _passwordController.text = password);
-      ForkNotice.info(context, ruEn('Пароль создан — сохраните его в менеджере паролей',
-        'Password created — save it in your password manager'));
-    } catch (e) { if (mounted) ForkNotice.error(context, e); }
-    finally { if (mounted) setState(() => _generatingPassword = false); }
+      ForkNotice.info(
+        context,
+        ruEn(
+          'Пароль создан — сохраните его в менеджере паролей',
+          'Password created — save it in your password manager',
+        ),
+      );
+    } catch (e) {
+      if (mounted) ForkNotice.error(context, e);
+    } finally {
+      if (mounted) setState(() => _generatingPassword = false);
+    }
   }
 
   Future<void> _pickAvatar() async {
@@ -362,7 +376,8 @@ class _SetupScreenState extends State<SetupScreen>
           // Обоев больше нет: они лежали в Firebase Storage и отвечали 402,
           // экран всё равно рисовал этот цвет.
           ColoredBox(
-              color: theme.isDark ? theme.surfaceMuted : theme.bgGradient.first),
+            color: theme.isDark ? theme.surfaceMuted : theme.bgGradient.first,
+          ),
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnim,
@@ -407,9 +422,10 @@ class _SetupScreenState extends State<SetupScreen>
                       : Colors.white.withOpacity(0.7),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: theme.isDark
-                          ? theme.cardBorder
-                          : Colors.grey.shade200),
+                    color: theme.isDark
+                        ? theme.cardBorder
+                        : Colors.grey.shade200,
+                  ),
                 ),
                 child: Icon(
                   Icons.arrow_back_rounded,
@@ -460,8 +476,9 @@ class _SetupScreenState extends State<SetupScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _accent,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor:
-                      theme.isDark ? theme.divider : Colors.grey.shade300,
+                  disabledBackgroundColor: theme.isDark
+                      ? theme.divider
+                      : Colors.grey.shade300,
                   shape: const StadiumBorder(),
                   elevation: 0,
                 ),
@@ -534,10 +551,11 @@ class _SetupScreenState extends State<SetupScreen>
             ),
             child: Column(
               children: [
-                Icon(icon,
-                    size: 30,
-                    color:
-                        selected ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+                Icon(
+                  icon,
+                  size: 30,
+                  color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                ),
                 const SizedBox(height: 10),
                 Text(
                   label,
@@ -548,7 +566,7 @@ class _SetupScreenState extends State<SetupScreen>
                     fontFamily: 'Onest',
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                    fontVariations: const [FontVariation('wght', 700)],
                     height: 1.1,
                     color: selected ? cs.onPrimaryContainer : cs.onSurface,
                   ),
@@ -562,50 +580,54 @@ class _SetupScreenState extends State<SetupScreen>
 
     return Column(
       children: [
-        Row(children: [
-          tile(
-            icon: Icons.male_rounded,
-            label: LocaleService.current.boy,
-            selected: _selectedGender == Gender.male,
-            onTap: () => setState(() {
-              _selectedGender = Gender.male;
-              _customSelected = false;
-            }),
-          ),
-          const SizedBox(width: 12),
-          tile(
-            icon: Icons.female_rounded,
-            label: LocaleService.current.girl,
-            selected: _selectedGender == Gender.female,
-            onTap: () => setState(() {
-              _selectedGender = Gender.female;
-              _customSelected = false;
-            }),
-          ),
-        ]),
+        Row(
+          children: [
+            tile(
+              icon: Icons.male_rounded,
+              label: LocaleService.current.boy,
+              selected: _selectedGender == Gender.male,
+              onTap: () => setState(() {
+                _selectedGender = Gender.male;
+                _customSelected = false;
+              }),
+            ),
+            const SizedBox(width: 12),
+            tile(
+              icon: Icons.female_rounded,
+              label: LocaleService.current.girl,
+              selected: _selectedGender == Gender.female,
+              onTap: () => setState(() {
+                _selectedGender = Gender.female;
+                _customSelected = false;
+              }),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
-        Row(children: [
-          tile(
-            icon: Icons.do_not_disturb_on_rounded,
-            label: ruEn('Не хочу указывать', 'Prefer not to say'),
-            selected:
-                _selectedGender == Gender.unspecified && !_customSelected,
-            onTap: () => setState(() {
-              _selectedGender = Gender.unspecified;
-              _customSelected = false;
-            }),
-          ),
-          const SizedBox(width: 12),
-          tile(
-            icon: Icons.edit_rounded,
-            label: ruEn('Свой пол', 'Custom'),
-            selected: _customSelected,
-            onTap: () => setState(() {
-              _selectedGender = Gender.unspecified;
-              _customSelected = true;
-            }),
-          ),
-        ]),
+        Row(
+          children: [
+            tile(
+              icon: Icons.do_not_disturb_on_rounded,
+              label: ruEn('Не хочу указывать', 'Prefer not to say'),
+              selected:
+                  _selectedGender == Gender.unspecified && !_customSelected,
+              onTap: () => setState(() {
+                _selectedGender = Gender.unspecified;
+                _customSelected = false;
+              }),
+            ),
+            const SizedBox(width: 12),
+            tile(
+              icon: Icons.edit_rounded,
+              label: ruEn('Свой пол', 'Custom'),
+              selected: _customSelected,
+              onTap: () => setState(() {
+                _selectedGender = Gender.unspecified;
+                _customSelected = true;
+              }),
+            ),
+          ],
+        ),
         if (_customSelected) ...[
           const SizedBox(height: 12),
           AuthField(
@@ -645,13 +667,16 @@ class _SetupScreenState extends State<SetupScreen>
                       : Colors.white.withOpacity(0.75),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: t.isDark
-                          ? t.cardBorder
-                          : Colors.white.withOpacity(0.6)),
+                    color: t.isDark
+                        ? t.cardBorder
+                        : Colors.white.withOpacity(0.6),
+                  ),
                 ),
-                child: Icon(Icons.arrow_back_rounded,
-                    color: t.isDark ? t.textSecondary : Colors.grey.shade800,
-                    size: 20),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  color: t.isDark ? t.textSecondary : Colors.grey.shade800,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -663,7 +688,9 @@ class _SetupScreenState extends State<SetupScreen>
             width: double.infinity,
             decoration: BoxDecoration(
               color: t.cardSurface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(34),
+              ),
             ),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -713,15 +740,24 @@ class _SetupScreenState extends State<SetupScreen>
                     onChanged: (_) => setState(() {}),
                   ),
                   TextButton.icon(
-                    onPressed: _generatingPassword || _isLoading ? null : _generatePassword,
+                    onPressed: _generatingPassword || _isLoading
+                        ? null
+                        : _generatePassword,
                     icon: const Icon(Icons.password_rounded),
-                    label: Text(ruEn('Придумать пароль', 'Generate a password')),
+                    label: Text(
+                      ruEn('Придумать пароль', 'Generate a password'),
+                    ),
                   ),
-                  Text(ruEn('Длинный уникальный пароль сложнее подобрать. Сохраните его в менеджере паролей.',
-                    'A long, unique password is harder to guess. Save it in your password manager.'),
-                    style: TextStyle(fontSize: 12, color: t.textSecondary)),
+                  Text(
+                    ruEn(
+                      'Длинный уникальный пароль сложнее подобрать. Сохраните его в менеджере паролей.',
+                      'A long, unique password is harder to guess. Save it in your password manager.',
+                    ),
+                    style: TextStyle(fontSize: 12, color: t.textSecondary),
+                  ),
                   const SizedBox(height: 14),
-                  ForkPasswordChecks( // fork
+                  ForkPasswordChecks(
+                    // fork
                     password: _passwordController.text,
                     email: _emailController.text.trim(),
                     name: _nameController.text.trim(),
@@ -738,8 +774,7 @@ class _SetupScreenState extends State<SetupScreen>
                     children: [
                       Text(
                         '${s.alreadyHaveAccountLogin} ',
-                        style: TextStyle(
-                            fontSize: 14, color: t.textSecondary),
+                        style: TextStyle(fontSize: 14, color: t.textSecondary),
                       ),
                       GestureDetector(
                         onTap: _isLoading ? null : _goToLogin,
@@ -794,22 +829,22 @@ class _SetupScreenState extends State<SetupScreen>
                     ),
                   )
                 : _avatarUrl.isNotEmpty
-                    ? ClipOval(
-                        child: StorageImage(
-                          imageUrl: _avatarUrl,
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => Icon(
-                            Icons.person_rounded,
-                            color: _accent.withOpacity(0.5),
-                            size: 36,
-                          ),
-                        ),
-                      )
-                    : Icon(
+                ? ClipOval(
+                    child: StorageImage(
+                      imageUrl: _avatarUrl,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Icon(
                         Icons.person_rounded,
                         color: _accent.withOpacity(0.5),
                         size: 36,
                       ),
+                    ),
+                  )
+                : Icon(
+                    Icons.person_rounded,
+                    color: _accent.withOpacity(0.5),
+                    size: 36,
+                  ),
           ),
           Positioned(
             bottom: 0,
@@ -905,7 +940,9 @@ class _SetupScreenState extends State<SetupScreen>
       width: double.infinity,
       height: 58,
       child: FilledButton(
-        onPressed: (_isLoading || _generatingPassword || !_agreeToTerms) ? null : _completeSetup,
+        onPressed: (_isLoading || _generatingPassword || !_agreeToTerms)
+            ? null
+            : _completeSetup,
         style: FilledButton.styleFrom(
           backgroundColor: cs.primary,
           foregroundColor: cs.onPrimary,
@@ -925,7 +962,7 @@ class _SetupScreenState extends State<SetupScreen>
                   fontFamily: 'Onest',
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                  fontVariations: const [FontVariation('wght', 700)],
                 ),
               ),
       ),
@@ -955,5 +992,4 @@ class _SetupScreenState extends State<SetupScreen>
       ],
     );
   }
-
 }

@@ -41,7 +41,12 @@ class OwnMoodPicture extends StatelessWidget {
   /// Балл для подложки эмодзи. В листе правки он меняется вместе со шкалой.
   final int? score;
 
-  const OwnMoodPicture({super.key, required this.mood, required this.size, this.score});
+  const OwnMoodPicture({
+    super.key,
+    required this.mood,
+    required this.size,
+    this.score,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +56,9 @@ class OwnMoodPicture extends StatelessWidget {
       height: size,
       child: ClipPath(
         clipper: ShapeBorderClipper(
-          shape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(size * 0.34)),
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(size * 0.34),
+          ),
         ),
         child: ColoredBox(
           color: mood.onTintedTile
@@ -59,7 +66,12 @@ class OwnMoodPicture extends StatelessWidget {
               : cs.surfaceContainerHighest,
           child: mood.imageUrl.isEmpty
               ? const SizedBox.shrink()
-              : MoodImage(mood.imageUrl, fit: BoxFit.cover, width: size, height: size),
+              : MoodImage(
+                  mood.imageUrl,
+                  fit: BoxFit.cover,
+                  width: size,
+                  height: size,
+                ),
         ),
       ),
     );
@@ -76,7 +88,11 @@ class MoodNameField extends StatelessWidget {
   /// С какого знака показывать счётчик: раньше он только отвлекает.
   static const int counterFrom = 30;
 
-  const MoodNameField({super.key, required this.controller, required this.onChanged});
+  const MoodNameField({
+    super.key,
+    required this.controller,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -93,9 +109,15 @@ class MoodNameField extends StatelessWidget {
       maxLength: maxLength,
       textCapitalization: TextCapitalization.sentences,
       textInputAction: TextInputAction.done,
-      style: TextStyle(fontFamily: 'Onest', fontSize: 16, fontWeight: FontWeight.w500, color: cs.onSurface),
-      buildCounter: (context, {required currentLength, required isFocused, maxLength}) =>
-          currentLength >= counterFrom
+      style: TextStyle(
+        fontFamily: 'Onest',
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: cs.onSurface,
+      ),
+      buildCounter:
+          (context, {required currentLength, required isFocused, maxLength}) =>
+              currentLength >= counterFrom
               ? Text(
                   '$currentLength/${maxLength ?? MoodNameField.maxLength}',
                   style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
@@ -104,10 +126,16 @@ class MoodNameField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: s.customMoodLabelHint,
         hintText: trKey('customMoodLabelExample'),
-        floatingLabelStyle: TextStyle(color: cs.primary, fontWeight: FontWeight.w600),
+        floatingLabelStyle: TextStyle(
+          color: cs.primary,
+          fontWeight: FontWeight.w600,
+        ),
         filled: true,
         fillColor: cs.surfaceContainerHighest,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: shape,
         enabledBorder: shape,
         focusedBorder: shape,
@@ -124,13 +152,21 @@ class MoodScoreScale extends StatelessWidget {
   final int score;
   final ValueChanged<int> onChanged;
 
-  const MoodScoreScale({super.key, required this.score, required this.onChanged});
+  const MoodScoreScale({
+    super.key,
+    required this.score,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = ProfileTheme.schemeFor(context.appTheme);
     final s = LocaleService.current;
-    final hint = TextStyle(fontFamily: 'Onest', fontSize: 12.5, color: cs.onSurfaceVariant.withValues(alpha: 0.85));
+    final hint = TextStyle(
+      fontFamily: 'Onest',
+      fontSize: 12.5,
+      color: cs.onSurfaceVariant.withValues(alpha: 0.85),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -141,7 +177,12 @@ class MoodScoreScale extends StatelessWidget {
             children: [
               Text(
                 s.customMoodScoreTitle,
-                style: TextStyle(fontFamily: 'Onest', fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 2),
               Text(trKey('customMoodScoreHint'), style: hint),
@@ -154,7 +195,12 @@ class MoodScoreScale extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              for (var i = 1; i <= 5; i++) _ScoreDot(score: i, selected: score == i, onTap: () => onChanged(i)),
+              for (var i = 1; i <= 5; i++)
+                _ScoreDot(
+                  score: i,
+                  selected: score == i,
+                  onTap: () => onChanged(i),
+                ),
             ],
           ),
         ),
@@ -166,7 +212,14 @@ class MoodScoreScale extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Expanded(child: Text(trKey('customMoodScaleLow'), style: hint, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              Expanded(
+                child: Text(
+                  trKey('customMoodScaleLow'),
+                  style: hint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               Expanded(
                 child: Text(
                   moodScoreLabel(score),
@@ -174,7 +227,12 @@ class MoodScoreScale extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'Onest', fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface),
+                  style: TextStyle(
+                    fontFamily: 'Onest',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
                 ),
               ),
               Expanded(
@@ -199,14 +257,20 @@ class _ScoreDot extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _ScoreDot({required this.score, required this.selected, required this.onTap});
+  const _ScoreDot({
+    required this.score,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = ProfileTheme.schemeFor(context.appTheme);
     final color = CustomMood.colorOfScore(score);
     // Жёлтый «Светлого» слишком светлый для белой галочки.
-    final mark = color.computeLuminance() > 0.5 ? const Color(0xFF3B2C00) : Colors.white;
+    final mark = color.computeLuminance() > 0.5
+        ? const Color(0xFF3B2C00)
+        : Colors.white;
     return Semantics(
       button: true,
       selected: selected,
@@ -234,8 +298,15 @@ class _ScoreDot extends StatelessWidget {
                       ? M3ShapeClipper(MaterialShapes.cookie9Sided)
                       : const ShapeBorderClipper(shape: CircleBorder()),
                   child: ColoredBox(
-                    color: selected ? color : Color.alphaBlend(color.withValues(alpha: 0.38), cs.surfaceContainerHighest),
-                    child: selected ? Icon(Icons.check_rounded, size: 20, color: mark) : null,
+                    color: selected
+                        ? color
+                        : Color.alphaBlend(
+                            color.withValues(alpha: 0.38),
+                            cs.surfaceContainerHighest,
+                          ),
+                    child: selected
+                        ? Icon(Icons.check_rounded, size: 20, color: mark)
+                        : null,
                   ),
                 ),
               ),
@@ -254,7 +325,13 @@ class MoodSheetButton extends StatelessWidget {
   final bool busy;
   final IconData? icon;
 
-  const MoodSheetButton({super.key, required this.label, required this.onPressed, this.busy = false, this.icon});
+  const MoodSheetButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.busy = false,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -272,19 +349,35 @@ class MoodSheetButton extends StatelessWidget {
           disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.12),
           disabledForegroundColor: cs.onSurface.withValues(alpha: 0.38),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontFamily: 'Onest', fontSize: 16, fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(
+            fontFamily: 'Onest',
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         child: busy
             ? SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: cs.onSurface.withValues(alpha: 0.5)),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: cs.onSurface.withValues(alpha: 0.5),
+                ),
               )
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (icon != null) ...[Icon(icon, size: 22), const SizedBox(width: 8)],
-                  Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if (icon != null) ...[
+                    Icon(icon, size: 22),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
       ),

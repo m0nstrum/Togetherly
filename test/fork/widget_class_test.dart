@@ -20,7 +20,8 @@ void main() {
           continue;
         }
         final next = i + 1 < lines.length ? lines[i + 1] : '';
-        if (!next.contains('qualifiedAndroidName')) bad.add('${f.path}:${i + 1}');
+        if (!next.contains('qualifiedAndroidName'))
+          bad.add('${f.path}:${i + 1}');
       }
     }
     expect(bad, isEmpty);
@@ -30,14 +31,16 @@ void main() {
     final ns = RegExp(r'namespace = "([^"]+)"')
         .firstMatch(File('android/app/build.gradle.kts').readAsStringSync())!
         .group(1)!;
-    expect(ForkIdentity.widgetClass('LoveWidgetProvider'),
-        '$ns.LoveWidgetProvider');
+    expect(
+      ForkIdentity.widgetClass('LoveWidgetProvider'),
+      '$ns.LoveWidgetProvider',
+    );
   });
 
   test('алиасы иконок собираются от пакета Kotlin-кода', () {
     final src = File(
-            'android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt')
-        .readAsStringSync();
+      'android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt',
+    ).readAsStringSync();
     expect(src, isNot(contains(r'"$packageName$suffix"')));
   });
 
@@ -52,22 +55,30 @@ void main() {
   });
 
   test('канал комнаты шлёт вход и выход зрителей', () {
-    final cfg = jsonDecode(File('deploy/centrifugo/config.json').readAsStringSync());
+    final cfg = jsonDecode(
+      File('deploy/centrifugo/config.json').readAsStringSync(),
+    );
     final watch = (cfg['channel']['namespaces'] as List)
         .cast<Map<String, dynamic>>()
         .firstWhere((n) => n['name'] == 'watch');
     expect(watch['presence'], isTrue);
-    expect(watch['join_leave'], isTrue,
-        reason: 'без него страница не узнаёт, что партнёр вышел');
+    expect(
+      watch['join_leave'],
+      isTrue,
+      reason: 'без него страница не узнаёт, что партнёр вышел',
+    );
     expect(watch['force_push_join_leave'], isTrue);
   });
 
   test('вошедший по зову не зовёт в ответ', () {
-    final src =
-        File('lib/screens/together/watch_room_screen.dart').readAsStringSync();
+    final src = File(
+      'lib/screens/together/watch_room_screen.dart',
+    ).readAsStringSync();
     final i = src.indexOf('Future<void> _inviteUnlessJoining()');
     final body = src.substring(i, src.indexOf('\n  }\n', i));
-    expect(body.indexOf('ReelsInvite.active'),
-        lessThan(body.indexOf('ReelsInvite.send')));
+    expect(
+      body.indexOf('ReelsInvite.active'),
+      lessThan(body.indexOf('ReelsInvite.send')),
+    );
   });
 }

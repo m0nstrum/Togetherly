@@ -68,10 +68,7 @@ import 'l10n/zh/zh.dart';
 /// каждую запись (почему она лежит отдельно — см. `l10n/zh/zh.dart`).
 final Map<String, Map<String, String>> kStrings = {
   for (final e in _kSectionStrings.entries)
-    e.key: {
-      ...e.value,
-      if (kZhStrings[e.key] case final zh?) 'zh': zh,
-    },
+    e.key: {...e.value, if (kZhStrings[e.key] case final zh?) 'zh': zh},
 };
 
 /// Разделы `l10n/dict/`, разбивка по экранам нужна, чтобы правка одного
@@ -154,10 +151,10 @@ String trDict(String key, String code) {
 /// `{0}`, `{1}`… и подставляются обратно, поэтому «нужно 30, у вас 12»
 /// находит перевод так же, как строка без чисел.
 String ruEn(String ru, String en) => switch (LocaleService.instance.language) {
-      AppLanguage.ru => ru,
-      AppLanguage.zh => zhForEnglish(en),
-      _ => en,
-    };
+  AppLanguage.ru => ru,
+  AppLanguage.zh => zhForEnglish(en),
+  _ => en,
+};
 
 /// Английская строка из экрана на текущем языке: китайским переводится,
 /// остальным языкам отдаётся как есть.
@@ -1348,10 +1345,9 @@ abstract class DictStrings extends AppStrings {
   String get moodVesselMode => _t('moodVesselMode');
   String moodVesselCount(int filled, int total) => '$filled / $total';
   String get vesselHint => _t('vesselHint');
-  String moodVesselSummary(int both, int gaps) =>
-      _t('moodVesselSummary')
-          .replaceFirst('{both}', '$both')
-          .replaceFirst('{gaps}', '$gaps');
+  String moodVesselSummary(int both, int gaps) => _t(
+    'moodVesselSummary',
+  ).replaceFirst('{both}', '$both').replaceFirst('{gaps}', '$gaps');
   String get drawToolsTitle => _t('drawToolsTitle');
   String get drawToolsHint => _t('drawToolsHint');
   String get drawToolsReorder => _t('drawToolsReorder');
@@ -2649,11 +2645,13 @@ abstract class DictStrings extends AppStrings {
   @override
   String get mascotStageAdult => _t('mascotStageAdult');
   @override
-  String mascotWidgetToTeen(int days) =>
-      _t('mascotWidgetToTeen').replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
+  String mascotWidgetToTeen(int days) => _t(
+    'mascotWidgetToTeen',
+  ).replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
   @override
-  String mascotWidgetToAdult(int days) =>
-      _t('mascotWidgetToAdult').replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
+  String mascotWidgetToAdult(int days) => _t(
+    'mascotWidgetToAdult',
+  ).replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
   @override
   String get mascotWidgetGrown => _t('mascotWidgetGrown');
   @override
@@ -2666,8 +2664,9 @@ abstract class DictStrings extends AppStrings {
   String mascotWidgetSleepsUntil(String time) =>
       _t('mascotWidgetSleepsUntil').replaceAll('{time}', time);
   @override
-  String mascotWidgetRecord(int days) =>
-      _t('mascotWidgetRecord').replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
+  String mascotWidgetRecord(int days) => _t(
+    'mascotWidgetRecord',
+  ).replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
   @override
   String get mascotWidgetNoMascot => _t('mascotWidgetNoMascot');
 
@@ -2936,10 +2935,9 @@ abstract class DictStrings extends AppStrings {
   String plusGiftTitleFor(String name) =>
       _t('plusGiftTitleFor').replaceAll('{name}', name);
   @override
-  String timerTitleWithPartner(String label, String name) =>
-      _t('timerTitleWithPartner')
-          .replaceAll('{label}', label)
-          .replaceAll('{name}', name);
+  String timerTitleWithPartner(String label, String name) => _t(
+    'timerTitleWithPartner',
+  ).replaceAll('{label}', label).replaceAll('{name}', name);
   @override
   String get plusGiftBody => _t('plusGiftBody');
   @override
@@ -3471,8 +3469,9 @@ abstract class DictStrings extends AppStrings {
   String get reelsTogetherHint => _t('reelsTogetherHint');
   String get reelsSavedCaption => _t('reelsSavedCaption');
   @override
-  String reelsInvitedBy(String name, String feed) =>
-      _t('reelsInvitedBy').replaceAll('{name}', name).replaceAll('{feed}', feed);
+  String reelsInvitedBy(String name, String feed) => _t(
+    'reelsInvitedBy',
+  ).replaceAll('{name}', name).replaceAll('{feed}', feed);
   String get reelsJoin => _t('reelsJoin');
   String get reelsLater => _t('reelsLater');
   String get reelsAskPartnerTitle => _t('reelsAskPartnerTitle');

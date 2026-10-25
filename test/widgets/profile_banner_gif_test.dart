@@ -40,21 +40,24 @@ void main() {
   tearDown(() => dir.deleteSync(recursive: true));
 
   Future<void> pumpBanner(WidgetTester tester, {required bool animate}) =>
-      tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ProfileBanner(
-            bannerUrl: 'pb://media/rec1/profile.gif',
-            background: Colors.white,
-            animate: animate,
+      tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ProfileBanner(
+              bannerUrl: 'pb://media/rec1/profile.gif',
+              background: Colors.white,
+              animate: animate,
+            ),
           ),
         ),
-      ));
+      );
 
   /// Скачивание, диск и разбор кадров идут настоящим временем, смена кадров —
   /// по таймеру теста.
   Future<void> tick(WidgetTester tester) async {
     await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 40)));
+      () => Future<void>.delayed(const Duration(milliseconds: 40)),
+    );
     await tester.pump(const Duration(milliseconds: 60));
   }
 
@@ -92,7 +95,8 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 15));
     await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 100)));
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
   }
 
   testWidgets('с Плюсом GIF идёт по кругу', (tester) async {
@@ -101,15 +105,17 @@ void main() {
     await drainCache(tester);
   });
 
-  testWidgets('без Плюса виден первый кадр, и дальше он не листается',
-      (tester) async {
+  testWidgets('без Плюса виден первый кадр, и дальше он не листается', (
+    tester,
+  ) async {
     await pumpBanner(tester, animate: false);
     expect(await shownColors(tester), {'red'});
     await drainCache(tester);
   });
 
-  testWidgets('второй показ берёт баннер с диска, без скачивания',
-      (tester) async {
+  testWidgets('второй показ берёт баннер с диска, без скачивания', (
+    tester,
+  ) async {
     await pumpBanner(tester, animate: true);
     expect(await shownColors(tester), isNotEmpty);
     // Профиль закрыли и открыли снова.

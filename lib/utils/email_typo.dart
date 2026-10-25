@@ -35,7 +35,18 @@ const _ruServices = {'mail', 'yandex', 'list', 'bk', 'inbox', 'rambler', 'ya'};
 const _ruTypos = {'tu', 'ry', 'r', 'rj', 'eu'};
 
 /// Верхний уровень, которого не бывает: промах мимо `.com`.
-const _comTypos = {'con', 'cpm', 'vom', 'xom', 'cim', 'comm', 'coom', 'om', 'cm', 'c'};
+const _comTypos = {
+  'con',
+  'cpm',
+  'vom',
+  'xom',
+  'cim',
+  'comm',
+  'coom',
+  'om',
+  'cm',
+  'c',
+};
 
 /// Исправленный адрес, если в домене узнаётся опечатка, иначе `null`.
 String? emailTypoFix(String email) {

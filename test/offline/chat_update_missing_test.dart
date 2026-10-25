@@ -22,10 +22,10 @@ import 'package:love_app/services/pocketbase_service.dart';
 /// изменённые поля, без пары и автора, — сервер отвечал 400, и после пяти
 /// попыток операция падала в «отравленные».
 http.Response _json(Object body, int code) => http.Response.bytes(
-      utf8.encode(jsonEncode(body)),
-      code,
-      headers: {'content-type': 'application/json; charset=utf-8'},
-    );
+  utf8.encode(jsonEncode(body)),
+  code,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
 
 final _notFound = _json({
   'code': 404,
@@ -53,18 +53,25 @@ void main() {
   /// Сервер, на котором сообщения нет: правка — 404, создание — 400.
   void serverWithoutMessage() {
     calls = [];
-    PocketBaseService().debugUse(PocketBase(
-      'https://togetherly.day',
-      httpClientFactory: () => ForkOutboxHttpClient(MockClient((req) async {
-        calls.add('${req.method} ${req.url.path}');
-        if (req.method == 'POST') return _createRefused;
-        return _notFound;
-      })),
-    ));
+    PocketBaseService().debugUse(
+      PocketBase(
+        'https://togetherly.day',
+        httpClientFactory: () => ForkOutboxHttpClient(
+          MockClient((req) async {
+            calls.add('${req.method} ${req.url.path}');
+            if (req.method == 'POST') return _createRefused;
+            return _notFound;
+          }),
+        ),
+      ),
+    );
   }
 
   setUp(() async {
-    await LocalStore.instance.initWith(databaseFactoryMemory, 'chat_update_missing.db');
+    await LocalStore.instance.initWith(
+      databaseFactoryMemory,
+      'chat_update_missing.db',
+    );
     ob = OutboxService.instance;
     await ob.clear();
     serverWithoutMessage();
@@ -77,11 +84,18 @@ void main() {
     });
     await _waitDrained(ob);
 
-    expect(ob.pendingCount.value, 0,
-        reason: 'Править нечего — операция выполнена, а не ждёт повтора');
+    expect(
+      ob.pendingCount.value,
+      0,
+      reason: 'Править нечего — операция выполнена, а не ждёт повтора',
+    );
     expect(ob.poisonCount.value, 0);
-    expect(calls.where((c) => c.startsWith('POST')), isEmpty,
-        reason: 'Из полей правки сообщение не создать: в них нет ни пары, ни автора');
+    expect(
+      calls.where((c) => c.startsWith('POST')),
+      isEmpty,
+      reason:
+          'Из полей правки сообщение не создать: в них нет ни пары, ни автора',
+    );
   });
 
   test('реакция на пропавшее сообщение тоже не крутится в очереди', () async {
@@ -99,11 +113,9 @@ void main() {
   test('правка ждёт, пока своего повтора ждёт создание сообщения', () async {
     // Сообщение не доехало до сервера и лежит в «отравленных». Повтор вернёт
     // в очередь и создание, и правку, — правку нельзя терять раньше.
-    final ok = await PbDataService().chatUpdate(
-      'zuhg5864cftyb1u',
-      {'text': 'исправила'},
-      missingIsDone: false,
-    );
+    final ok = await PbDataService().chatUpdate('zuhg5864cftyb1u', {
+      'text': 'исправила',
+    }, missingIsDone: false);
 
     expect(ok, isFalse);
     expect(calls.where((c) => c.startsWith('POST')), isEmpty);
@@ -135,23 +147,32 @@ void main() {
     await ob.flush();
 
     expect(ob.poisonCount.value, 1);
-    expect(ob.pendingCount.value, 1,
-        reason: 'Правка ждёт повтора вместе с созданием, а не выброшена');
+    expect(
+      ob.pendingCount.value,
+      1,
+      reason: 'Правка ждёт повтора вместе с созданием, а не выброшена',
+    );
   });
 
   test('правка живого сообщения уходит как раньше', () async {
     calls = [];
-    PocketBaseService().debugUse(PocketBase(
-      'https://togetherly.day',
-      httpClientFactory: () => MockClient((req) async {
-        calls.add('${req.method} ${req.url.path}');
-        return _json({'id': 'abc123def456ghi', 'text': 'исправила'}, 200);
-      }),
-    ));
+    PocketBaseService().debugUse(
+      PocketBase(
+        'https://togetherly.day',
+        httpClientFactory: () => MockClient((req) async {
+          calls.add('${req.method} ${req.url.path}');
+          return _json({'id': 'abc123def456ghi', 'text': 'исправила'}, 200);
+        }),
+      ),
+    );
 
-    final ok = await PbDataService().chatUpdate('abc123def456ghi', {'text': 'исправила'});
+    final ok = await PbDataService().chatUpdate('abc123def456ghi', {
+      'text': 'исправила',
+    });
 
     expect(ok, isTrue);
-    expect(calls, ['PATCH /api/collections/chat_messages/records/abc123def456ghi']);
+    expect(calls, [
+      'PATCH /api/collections/chat_messages/records/abc123def456ghi',
+    ]);
   });
 }

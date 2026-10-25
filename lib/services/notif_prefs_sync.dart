@@ -56,8 +56,9 @@ const Map<String, String> notifPrefKeys = {
 /// не знает. Ноль в `notif_chest_off` значит «присылать».
 const String kNotifChestPref = 'notif_chest';
 
-Map<String, dynamic> chestPushBody(bool? stored) =>
-    {'notifChestOff': !(stored ?? true)};
+Map<String, dynamic> chestPushBody(bool? stored) => {
+  'notifChestOff': !(stored ?? true),
+};
 
 /// Тело запроса к профилю. Значения нет — значит человек тумблер не трогал, а
 /// приложение показывает его включённым; таким и отправляем.

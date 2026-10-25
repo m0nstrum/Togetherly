@@ -33,8 +33,14 @@ void main() {
     test('после неудачи ключ молчит, потом снова пробует', () {
       final b = UpsertBackoff();
       b.failed('widget_data|me', now: t0);
-      expect(b.allows('widget_data|me', now: t0.add(const Duration(seconds: 1))), isFalse);
-      expect(b.allows('widget_data|me', now: t0.add(const Duration(seconds: 3))), isTrue);
+      expect(
+        b.allows('widget_data|me', now: t0.add(const Duration(seconds: 1))),
+        isFalse,
+      );
+      expect(
+        b.allows('widget_data|me', now: t0.add(const Duration(seconds: 3))),
+        isTrue,
+      );
     });
 
     test('неудачи подряд удлиняют тишину', () {

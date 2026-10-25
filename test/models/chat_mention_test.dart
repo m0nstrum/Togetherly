@@ -19,11 +19,7 @@ Memory _m(String id, String title, [MemoryType type = MemoryType.photo]) =>
 
 void main() {
   group('отбор подсказок', () {
-    final pins = [
-      _m('1', 'Оазис'),
-      _m('2', 'Пейзажик'),
-      _m('3', 'Мда'),
-    ];
+    final pins = [_m('1', 'Оазис'), _m('2', 'Пейзажик'), _m('3', 'Мда')];
 
     test('пустой запрос показывает всё, что есть', () {
       expect(mentionMatches(pins, '').length, 3);
@@ -69,9 +65,12 @@ void main() {
   });
 
   group('когда панель на экране', () {
-    test('нажали «собачку» — панель обязана ответить, даже если записей нет', () {
-      expect(mentionPanelVisible(''), isTrue);
-    });
+    test(
+      'нажали «собачку» — панель обязана ответить, даже если записей нет',
+      () {
+        expect(mentionPanelVisible(''), isTrue);
+      },
+    );
 
     test('запрос ни с чем не совпал — панель остаётся и говорит об этом', () {
       expect(mentionPanelVisible('чего-то_такого_нет'), isTrue);

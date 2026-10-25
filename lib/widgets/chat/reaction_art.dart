@@ -13,7 +13,12 @@ import '../../services/offline/media_view_cache.dart';
 /// из сборки (`assets/images/reactions/<id>.webp`). Эмодзи без рисунка
 /// (поставлен старой сборкой или с клавиатуры) показывается как есть.
 class ReactionArt extends StatelessWidget {
-  const ReactionArt({super.key, required this.emoji, this.size = 20, this.animated = false});
+  const ReactionArt({
+    super.key,
+    required this.emoji,
+    this.size = 20,
+    this.animated = false,
+  });
 
   final String emoji;
   final double size;
@@ -27,7 +32,9 @@ class ReactionArt extends StatelessWidget {
     if (r == null) {
       return SizedBox.square(
         dimension: size,
-        child: Center(child: Text(emoji, style: TextStyle(fontSize: size * 0.8, height: 1))),
+        child: Center(
+          child: Text(emoji, style: TextStyle(fontSize: size * 0.8, height: 1)),
+        ),
       );
     }
     final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
@@ -38,7 +45,9 @@ class ReactionArt extends StatelessWidget {
       height: size,
       fit: BoxFit.contain,
       cacheWidth: decode,
-      errorBuilder: (_, _, _) => Center(child: Text(emoji, style: TextStyle(fontSize: size * 0.8))),
+      errorBuilder: (_, _, _) => Center(
+        child: Text(emoji, style: TextStyle(fontSize: size * 0.8)),
+      ),
     );
     if (!animated || (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
       return SizedBox.square(dimension: size, child: still);
@@ -48,7 +57,9 @@ class ReactionArt extends StatelessWidget {
       child: ListenableBuilder(
         listenable: CatalogService.instance,
         builder: (context, _) {
-          final url = CatalogService.instance.reactionArt(r.id)?.urlFor(size, animated: true);
+          final url = CatalogService.instance
+              .reactionArt(r.id)
+              ?.urlFor(size, animated: true);
           if (url == null) return still;
           return CachedNetworkImage(
             cacheManager: OfflineImageCacheManager.instance,
@@ -69,7 +80,12 @@ class ReactionArt extends StatelessWidget {
 
 /// Сетка всех реакций: [selected] подсвечена, касание отдаёт эмодзи.
 class ReactionGrid extends StatelessWidget {
-  const ReactionGrid({super.key, required this.onPick, this.selected, this.size = 40});
+  const ReactionGrid({
+    super.key,
+    required this.onPick,
+    this.selected,
+    this.size = 40,
+  });
 
   final ValueChanged<String> onPick;
   final String? selected;
@@ -85,7 +101,9 @@ class ReactionGrid extends StatelessWidget {
       children: [
         for (final r in kChatReactions)
           Material(
-            color: r.emoji == selected ? cs.secondaryContainer : Colors.transparent,
+            color: r.emoji == selected
+                ? cs.secondaryContainer
+                : Colors.transparent,
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: InkWell(

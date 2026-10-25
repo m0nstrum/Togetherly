@@ -64,16 +64,18 @@ void main() {
           hasPartner: false,
         ),
         isFalse,
-        reason: 'в одиночку эти шаги физически не закрыть — вместо списка '
+        reason:
+            'в одиночку эти шаги физически не закрыть — вместо списка '
             'человек видит приглашение',
       );
     });
 
     test('С парой список из трёх шагов', () {
-      expect(
-        OnboardingProgress.stepsFor(hasPartner: true),
-        [OnboardingStep.photo, OnboardingStep.mood, OnboardingStep.widget],
-      );
+      expect(OnboardingProgress.stepsFor(hasPartner: true), [
+        OnboardingStep.photo,
+        OnboardingStep.mood,
+        OnboardingStep.widget,
+      ]);
       expect(OnboardingProgress.totalFor(hasPartner: true), 3);
     });
   });
@@ -136,9 +138,10 @@ void main() {
         OnboardingStep.mood,
       );
       expect(
-        OnboardingProgress.nextStep(
-          const {OnboardingStep.photo, OnboardingStep.mood},
-        ),
+        OnboardingProgress.nextStep(const {
+          OnboardingStep.photo,
+          OnboardingStep.mood,
+        }),
         OnboardingStep.widget,
       );
     });
@@ -161,7 +164,8 @@ void main() {
       expect(
         OnboardingProgress.collapsed(done: const {OnboardingStep.photo}),
         isTrue,
-        reason: 'человек уже понял, что это, и дальше хватает строки — '
+        reason:
+            'человек уже понял, что это, и дальше хватает строки — '
             'главная у пары плотная',
       );
     });

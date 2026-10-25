@@ -41,8 +41,14 @@ void main() {
     final shown = <PairJar>[];
     PairJarService.instance.onDrop = shown.add;
     PairJarService.instance.applyDrop(const PairJar(drops: [true]));
-    expect(shown, isEmpty, reason: 'added = false: капля не упала (предел или частый ролик)');
-    PairJarService.instance.applyDrop(const PairJar(drops: [true, false], added: true));
+    expect(
+      shown,
+      isEmpty,
+      reason: 'added = false: капля не упала (предел или частый ролик)',
+    );
+    PairJarService.instance.applyDrop(
+      const PairJar(drops: [true, false], added: true),
+    );
     expect(shown.length, 1);
     expect(PairJarService.instance.jar?.count, 2);
     PairJarService.instance.onDrop = null;

@@ -43,7 +43,8 @@ Future<void> _loadFont(String family, String path) async {
 /// Снимок моря из настоящего скриншота профиля — тот же кадр, что в макете.
 Uint8List _beach() {
   final shot = img.decodeJpg(
-      File('docs/branding/raw/04-profile.jpg').readAsBytesSync())!;
+    File('docs/branding/raw/04-profile.jpg').readAsBytesSync(),
+  )!;
   final crop = img.copyCrop(shot, x: 312, y: 276, width: 624, height: 364);
   return Uint8List.fromList(img.encodePng(crop));
 }
@@ -58,23 +59,27 @@ class _Feed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget chip(Widget child, Color fill) => Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-              color: fill, borderRadius: BorderRadius.circular(20)),
-          alignment: Alignment.center,
-          child: child,
-        );
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      alignment: Alignment.center,
+      child: child,
+    );
 
     final card = UnfoldSource(
       fill: theme.cardSurface,
       radius: 28,
       builder: (context, source) => GestureDetector(
         key: const ValueKey('card'),
-        onTap: () => Navigator.of(context).push(UnfoldRoute<void>(
-          source: source,
-          builder: (_) => memoryDetailForPreview(memory),
-        )),
+        onTap: () => Navigator.of(context).push(
+          UnfoldRoute<void>(
+            source: source,
+            builder: (_) => memoryDetailForPreview(memory),
+          ),
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: theme.cardSurface,
@@ -94,29 +99,38 @@ class _Feed extends StatelessWidget {
                       child: CircleAvatar(
                         radius: 20,
                         backgroundColor: theme.primaryLight,
-                        child: Text('T',
-                            style: TextStyle(
-                                fontFamily: 'Unbounded',
-                                fontWeight: FontWeight.w800,
-                                color: theme.textPrimary)),
+                        child: Text(
+                          'T',
+                          style: TextStyle(
+                            fontFamily: 'Unbounded',
+                            fontWeight: FontWeight.w800,
+                            color: theme.textPrimary,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     UnfoldShared(
                       tag: 'name',
                       fit: UnfoldFit.scale,
-                      child: Text(memory.authorName,
-                          style: TextStyle(
-                              fontFamily: 'Onest',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: theme.textPrimary)),
-                    ),
-                    Text('  ·  3 августа',
+                      child: Text(
+                        memory.authorName,
                         style: TextStyle(
-                            fontFamily: 'Onest',
-                            fontSize: 12,
-                            color: theme.textMuted)),
+                          fontFamily: 'Onest',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: theme.textPrimary,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '  ·  3 августа',
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: 12,
+                        color: theme.textMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -125,18 +139,24 @@ class _Feed extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(memory.title!,
-                        style: TextStyle(
-                            fontFamily: 'Unbounded',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: theme.textPrimary)),
-                    Text(memory.caption!,
-                        style: TextStyle(
-                            fontFamily: 'Onest',
-                            fontSize: 15,
-                            height: 1.35,
-                            color: theme.textPrimary)),
+                    Text(
+                      memory.title!,
+                      style: TextStyle(
+                        fontFamily: 'Unbounded',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      memory.caption!,
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: 15,
+                        height: 1.35,
+                        color: theme.textPrimary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -148,10 +168,11 @@ class _Feed extends StatelessWidget {
                     tag: 'cover',
                     radius: 22,
                     child: AspectCover(
-                        url: _coverUrl,
-                        provider: photo,
-                        radius: 22,
-                        maxHeight: 420),
+                      url: _coverUrl,
+                      provider: photo,
+                      radius: 22,
+                      maxHeight: 420,
+                    ),
                   ),
                 ),
               ),
@@ -161,14 +182,22 @@ class _Feed extends StatelessWidget {
                 child: Row(
                   children: [
                     chip(
-                        Icon(Icons.add_reaction_outlined,
-                            size: 20, color: theme.textSecondary),
-                        theme.bgGradient[0]),
+                      Icon(
+                        Icons.add_reaction_outlined,
+                        size: 20,
+                        color: theme.textSecondary,
+                      ),
+                      theme.bgGradient[0],
+                    ),
                     const SizedBox(width: 6),
                     chip(
-                        Icon(Icons.chat_bubble_outline_rounded,
-                            size: 18, color: theme.textSecondary),
-                        theme.bgGradient[0]),
+                      Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 18,
+                        color: theme.textSecondary,
+                      ),
+                      theme.bgGradient[0],
+                    ),
                   ],
                 ),
               ),
@@ -212,14 +241,17 @@ void main() {
     await PocketBaseService().init();
     await _loadFont('Onest', 'assets/fonts/Onest.ttf');
     await _loadFont('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _loadFont('MaterialIcons',
-        '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _loadFont(
+      'MaterialIcons',
+      '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
     beach = _beach();
     MediaAspectCache.put(_coverUrl, 624 / 364);
   });
 
-  testWidgets('запись раскрывается из карточки и складывается обратно',
-      (tester) async {
+  testWidgets('запись раскрывается из карточки и складывается обратно', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(360 * 2, 780 * 2);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
@@ -239,16 +271,18 @@ void main() {
       imageUrl: _coverUrl,
     );
 
-    await tester.pumpWidget(RepaintBoundary(
-      key: root,
-      child: ThemeScope(
-        theme: theme,
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          home: _Feed(theme: theme, memory: memory, photo: photo),
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: root,
+        child: ThemeScope(
+          theme: theme,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: _Feed(theme: theme, memory: memory, photo: photo),
+          ),
         ),
       ),
-    ));
+    );
     // Картинка из памяти декодируется по-настоящему, не в поддельном времени.
     await tester.runAsync(() async {
       await precacheImage(photo, root.currentContext!);
@@ -264,8 +298,9 @@ void main() {
             root.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-        File('build/unfold/$name.png')
-            .writeAsBytesSync(bytes!.buffer.asUint8List());
+        File(
+          'build/unfold/$name.png',
+        ).writeAsBytesSync(bytes!.buffer.asUint8List());
       });
     }
 

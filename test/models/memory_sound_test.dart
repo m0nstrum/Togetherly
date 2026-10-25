@@ -19,19 +19,21 @@ const _song = SoundClip(
 );
 
 Memory _photo({SoundClip? sound, MemoryType type = MemoryType.photo}) => Memory(
-      id: 'm1',
-      groupId: 'g1',
-      authorUid: 'u1',
-      authorName: 'Аня',
-      type: type,
-      createdAt: DateTime(2026, 9, 12, 19, 40),
-      imageUrls: const [
-        'pb://media/aaaaaaaaaaaaaaa/a.webp',
-        'pb://media/bbbbbbbbbbbbbbb/b.webp',
-      ],
-      videoUrl: type == MemoryType.video ? 'pb://media/vvvvvvvvvvvvvvv/v.mp4' : null,
-      sound: sound,
-    );
+  id: 'm1',
+  groupId: 'g1',
+  authorUid: 'u1',
+  authorName: 'Аня',
+  type: type,
+  createdAt: DateTime(2026, 9, 12, 19, 40),
+  imageUrls: const [
+    'pb://media/aaaaaaaaaaaaaaa/a.webp',
+    'pb://media/bbbbbbbbbbbbbbb/b.webp',
+  ],
+  videoUrl: type == MemoryType.video
+      ? 'pb://media/vvvvvvvvvvvvvvv/v.mp4'
+      : null,
+  sound: sound,
+);
 
 void main() {
   test('звук переживает круг json записи', () {
@@ -56,7 +58,12 @@ void main() {
         'authorUid': 'u1',
         'createdAt': '2026-09-12T19:40:00.000Z',
         'imageUrls': ['pb://media/aaaaaaaaaaaaaaa/a.webp'],
-        'sound': {'url': 'pb://media/x/s.m4a', 'ms': 24000, 'kind': 'voice', 'peaks': ''},
+        'sound': {
+          'url': 'pb://media/x/s.m4a',
+          'ms': 24000,
+          'kind': 'voice',
+          'peaks': '',
+        },
       }),
     });
     final memory = Memory.fromPb(rec);
@@ -81,7 +88,9 @@ void main() {
   });
 
   test('у видео звук тоже сохраняется', () {
-    final files = memoryMediaFiles(_photo(sound: _song, type: MemoryType.video));
+    final files = memoryMediaFiles(
+      _photo(sound: _song, type: MemoryType.video),
+    );
     expect(files.any((f) => f.kind == SaveKind.audio), isTrue);
   });
 
@@ -94,8 +103,14 @@ void main() {
   test('после заливки без сети ссылка звука подменяется', () {
     final data = _photo(sound: _song.withUrl('localfile:///p/s.m4a')).toJson();
     final changed = MediaCache.deepReplaceRefs(
-        data, 'localfile:///p/s.m4a', 'pb://media/zzzzzzzzzzzzzzz/s.m4a');
+      data,
+      'localfile:///p/s.m4a',
+      'pb://media/zzzzzzzzzzzzzzz/s.m4a',
+    );
     expect(changed, isTrue);
-    expect(Memory.fromJson(data).sound!.url, 'pb://media/zzzzzzzzzzzzzzz/s.m4a');
+    expect(
+      Memory.fromJson(data).sound!.url,
+      'pb://media/zzzzzzzzzzzzzzz/s.m4a',
+    );
   });
 }

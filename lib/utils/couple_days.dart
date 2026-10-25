@@ -48,7 +48,8 @@ DateTime? coupleStartDate({
   DateTime? anniversary,
   DateTime? now,
 }) {
-  final edited = timerStart != null &&
+  final edited =
+      timerStart != null &&
       (groupStart == null || !_sameDay(timerStart, groupStart));
   if (edited && !_dayOf(timerStart).isAfter(_dayOf(now ?? DateTime.now()))) {
     return timerStart;

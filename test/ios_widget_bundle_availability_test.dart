@@ -28,8 +28,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final raw =
-      File('ios/TogetherlyWidget/TogetherlyWidgetBundle.swift').readAsStringSync();
+  final raw = File(
+    'ios/TogetherlyWidget/TogetherlyWidgetBundle.swift',
+  ).readAsStringSync();
   // Комментарии выкидываем до разбора: в них те же слова, что в коде.
   final source = raw
       .split('\n')
@@ -45,7 +46,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'ветка доступности в бандле роняет расширение с SIGTRAP внутри '
+      reason:
+          'ветка доступности в бандле роняет расширение с SIGTRAP внутри '
           'buildLimitedAvailability, и галерея пустеет целиком: '
           '${offenders.join(', ')}. Нужную версию задаёт '
           'IPHONEOS_DEPLOYMENT_TARGET расширения, а не `if #available`.',
@@ -56,14 +58,19 @@ void main() {
     // Без неё конфигурируемые фото (AppIntentConfiguration, iOS 17+) и
     // accessory экрана блокировки (iOS 16+) не объявить безусловно, и ветка
     // доступности вернётся в бандл.
-    final project =
-        File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+    final project = File(
+      'ios/Runner.xcodeproj/project.pbxproj',
+    ).readAsStringSync();
     final targets = RegExp(
       r'IPHONEOS_DEPLOYMENT_TARGET = (\d+)\.\d+;[\s\S]{0,400}?'
       r'PRODUCT_BUNDLE_IDENTIFIER = com\.togetherly\.love\.TogetherlyWidget;',
     ).allMatches(project);
 
-    expect(targets, isNotEmpty, reason: 'не нашёл настроек расширения — разбор сломан');
+    expect(
+      targets,
+      isNotEmpty,
+      reason: 'не нашёл настроек расширения — разбор сломан',
+    );
     for (final m in targets) {
       expect(
         int.parse(m.group(1)!),
@@ -76,7 +83,11 @@ void main() {
   test('виджеты экрана блокировки на месте', () {
     // Чинить падение выбрасыванием функции нельзя: их отсутствие — тоже
     // жалоба («виджетов на экране блокировки нет», 13.08.2026).
-    for (final widget in ['LockDaysWidget', 'LockMissWidget', 'LockMoodWidget']) {
+    for (final widget in [
+      'LockDaysWidget',
+      'LockMissWidget',
+      'LockMoodWidget',
+    ]) {
       expect(source, contains('$widget()'), reason: '$widget пропал из бандла');
     }
   });
@@ -95,7 +106,9 @@ void main() {
 /// Тела всех `@WidgetBundleBuilder`-свойств: имя → содержимое фигурных скобок.
 Map<String, String> _bundleBlocks(String source) {
   final blocks = <String, String>{};
-  final header = RegExp(r'@WidgetBundleBuilder\s+var\s+(\w+)\s*:\s*some Widget\s*\{');
+  final header = RegExp(
+    r'@WidgetBundleBuilder\s+var\s+(\w+)\s*:\s*some Widget\s*\{',
+  );
   for (final match in header.allMatches(source)) {
     final body = _bracedBody(source, match.end - 1);
     if (body != null) blocks[match.group(1)!] = body;

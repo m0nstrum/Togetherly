@@ -16,7 +16,16 @@ import 'draw_stroke.dart';
 /// тестами, а жесты остаются в экране рисования.
 
 /// За что человек тянет рамку выделения.
-enum StrokeHandle { left, right, top, bottom, topLeft, topRight, bottomLeft, bottomRight }
+enum StrokeHandle {
+  left,
+  right,
+  top,
+  bottom,
+  topLeft,
+  topRight,
+  bottomLeft,
+  bottomRight,
+}
 
 /// Самый мелкий габарит, до которого можно сжать штрих.
 ///
@@ -92,8 +101,12 @@ DrawStroke? strokeAtPoint(
 }
 
 /// Задевает ли палец в [point] штрих — с запасом [tolerance] точек.
-bool strokeHitAt(DrawStroke stroke, Offset point, Size canvas, {double tolerance = 18.0}) =>
-    stroke.points.isNotEmpty && _hits(stroke, point, canvas, tolerance);
+bool strokeHitAt(
+  DrawStroke stroke,
+  Offset point,
+  Size canvas, {
+  double tolerance = 18.0,
+}) => stroke.points.isNotEmpty && _hits(stroke, point, canvas, tolerance);
 
 bool _hits(DrawStroke stroke, Offset point, Size canvas, double tolerance) {
   final bounds = strokeBounds(stroke, canvas).inflate(tolerance);
@@ -285,24 +298,23 @@ DrawStroke copyImageStroke(
   double? h,
   double? rot,
   String? url,
-}) =>
-    DrawStroke(
-      id: s.id,
-      clientId: s.clientId,
-      userId: s.userId,
-      colorValue: s.colorValue,
-      strokeWidth: s.strokeWidth,
-      points: s.points,
-      isEraser: s.isEraser,
-      isFilledShape: s.isFilledShape,
-      shapeType: s.shapeType,
-      orderIndex: s.orderIndex,
-      layer: s.layer,
-      brush: s.brush,
-      imageUrl: url ?? s.imageUrl,
-      imageX: x ?? s.imageX,
-      imageY: y ?? s.imageY,
-      imageWidth: w ?? s.imageWidth,
-      imageHeight: h ?? s.imageHeight,
-      imageRotation: rot ?? s.imageRotation,
-    );
+}) => DrawStroke(
+  id: s.id,
+  clientId: s.clientId,
+  userId: s.userId,
+  colorValue: s.colorValue,
+  strokeWidth: s.strokeWidth,
+  points: s.points,
+  isEraser: s.isEraser,
+  isFilledShape: s.isFilledShape,
+  shapeType: s.shapeType,
+  orderIndex: s.orderIndex,
+  layer: s.layer,
+  brush: s.brush,
+  imageUrl: url ?? s.imageUrl,
+  imageX: x ?? s.imageX,
+  imageY: y ?? s.imageY,
+  imageWidth: w ?? s.imageWidth,
+  imageHeight: h ?? s.imageHeight,
+  imageRotation: rot ?? s.imageRotation,
+);

@@ -32,7 +32,8 @@ const Map<String, String> smallDZh = {
   'mascotSaveFailed': '萌宠保存失败，请检查网络。',
   'mascotLoadFailed': '加载失败，请检查网络。',
   'transparentBgTitle': '需要透明背景',
-  'transparentBgBody': '萌宠显示时没有背景，所以请上传带透明通道的 PNG 文件。\n\n请先把背景抠掉，比如用 remove.bg、Photoshop 或 Canva。',
+  'transparentBgBody':
+      '萌宠显示时没有背景，所以请上传带透明通道的 PNG 文件。\n\n请先把背景抠掉，比如用 remove.bg、Photoshop 或 Canva。',
   'mascotNameTitle': '萌宠的名字',
   'enterNameHint': '输入名字',
   'mascotLimitReached': '已达上限，请先从图库里删掉一个萌宠。',
@@ -54,7 +55,6 @@ const Map<String, String> smallDZh = {
   'streakNew': '新的连续记录',
   'streakNewHint': '每个吉祥物都有自己的连续记录。你们俩在同一天打开应用，这个记录就开始了',
   'fromUs': '官方出品',
-
 
   // login
   'welcomeBack': '欢迎回来！',

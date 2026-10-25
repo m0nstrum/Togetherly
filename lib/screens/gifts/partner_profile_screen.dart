@@ -6,7 +6,8 @@ import '../../theme/app_theme.dart';
 import '../../theme/profile_theme.dart';
 import '../profile/profile_hero.dart';
 import '../../fork/profile/partner_page.dart'; // fork: страница партнёра
-import '../../widgets/widget_content_view.dart' show openWidgetPhotoView; // fork
+import '../../widgets/widget_content_view.dart'
+    show openWidgetPhotoView; // fork
 
 /// Профиль партнёра в том же виде, что и наш: общая шапка [ProfileHero]
 /// (серверный баннер + аватар + имя/дни), только показ. Ниже — «Открытка»
@@ -71,8 +72,9 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
     final t = widget.theme;
     final cs = ProfileTheme.themeFor(t).colorScheme;
     final days = widget.daysTogether;
-    final subtitle =
-        days != null ? LocaleService.current.partnerDaysTogether(days) : '';
+    final subtitle = days != null
+        ? LocaleService.current.partnerDaysTogether(days)
+        : '';
     return Scaffold(
       backgroundColor: cs.surface,
       extendBodyBehindAppBar: true,
@@ -100,8 +102,11 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
               // fork: фото партнёра целиком — касанием по аватару.
               onTapAvatar: (widget.partnerAvatarUrl ?? '').isEmpty
                   ? null
-                  : () => openWidgetPhotoView(context,
-                      imageUrl: widget.partnerAvatarUrl!, authorName: widget.partnerName),
+                  : () => openWidgetPhotoView(
+                      context,
+                      imageUrl: widget.partnerAvatarUrl!,
+                      authorName: widget.partnerName,
+                    ),
             ),
             const SizedBox(height: 52),
             // fork: вместо одной полки подарков — что известно о партнёре.

@@ -9,19 +9,27 @@ import 'package:love_app/services/widget_service.dart';
 /// `photoForPartnerUrl` (поле отдельного виджета «Фото партнёра») и та ссылка
 /// перекрывала свежий `photoUrl`.
 WidgetData _data({String? photo, String? forPartner}) => WidgetData(
-      uid: 'u1',
-      displayName: 'Партнёр',
-      photoUrl: photo,
-      photoForPartnerUrl: forPartner,
-    );
+  uid: 'u1',
+  displayName: 'Партнёр',
+  photoUrl: photo,
+  photoForPartnerUrl: forPartner,
+);
 
 void main() {
   group('Половина партнёра', () {
-    test('показывает свежее фото парного виджета, а не фото «для партнёра»', () {
-      final d = _data(photo: 'pb://media/new/fresh.webp',
-                      forPartner: 'pb://media/old/june.webp');
-      expect(WidgetService.pairPhotoOfPartner(d), 'pb://media/new/fresh.webp');
-    });
+    test(
+      'показывает свежее фото парного виджета, а не фото «для партнёра»',
+      () {
+        final d = _data(
+          photo: 'pb://media/new/fresh.webp',
+          forPartner: 'pb://media/old/june.webp',
+        );
+        expect(
+          WidgetService.pairPhotoOfPartner(d),
+          'pb://media/new/fresh.webp',
+        );
+      },
+    );
 
     test('фото «для партнёра» в парный виджет не протекает', () {
       // Жалоба 2026-08-13: «отправил фото партнёру — оно само встало и в
@@ -45,8 +53,10 @@ void main() {
 
   group('Моя половина', () {
     test('показывает только фото парного виджета', () {
-      final d = _data(photo: 'pb://media/new/mine.webp',
-                      forPartner: 'pb://media/old/june.webp');
+      final d = _data(
+        photo: 'pb://media/new/mine.webp',
+        forPartner: 'pb://media/old/june.webp',
+      );
       expect(WidgetService.pairPhotoOfMine(d), 'pb://media/new/mine.webp');
     });
 

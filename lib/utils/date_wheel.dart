@@ -34,6 +34,5 @@ class DateWheel {
     required int day,
     int hour = 0,
     int minute = 0,
-  }) =>
-      DateTime(year, month, clampDay(day, year, month), hour, minute);
+  }) => DateTime(year, month, clampDay(day, year, month), hour, minute);
 }

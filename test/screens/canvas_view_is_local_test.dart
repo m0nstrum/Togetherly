@@ -27,7 +27,8 @@ void main() {
     for (final file in dartFiles) {
       final source = file.readAsStringSync();
       for (final match in sender.allMatches(source)) {
-        final line = '\n'.allMatches(source.substring(0, match.start)).length + 1;
+        final line =
+            '\n'.allMatches(source.substring(0, match.start)).length + 1;
         offenders.add('${file.path}:$line');
       }
     }
@@ -35,7 +36,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Поворот листа личный — писать его в canvas_meta нельзя: '
+      reason:
+          'Поворот листа личный — писать его в canvas_meta нельзя: '
           '${offenders.join(', ')}',
     );
   });
@@ -51,7 +53,8 @@ void main() {
         final lineStart = source.lastIndexOf('\n', match.start) + 1;
         final head = source.substring(lineStart, match.start).trimLeft();
         if (head.startsWith('//') || head.startsWith('///')) continue;
-        final line = '\n'.allMatches(source.substring(0, match.start)).length + 1;
+        final line =
+            '\n'.allMatches(source.substring(0, match.start)).length + 1;
         offenders.add('${file.path}:$line');
       }
     }
@@ -59,7 +62,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Поворот листа партнёра читать нельзя — лист развернётся у '
+      reason:
+          'Поворот листа партнёра читать нельзя — лист развернётся у '
           'человека посреди мазка: ${offenders.join(', ')}',
     );
   });

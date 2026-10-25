@@ -34,8 +34,7 @@ class _RedeemCodeSheetState extends State<RedeemCodeSheet> {
   void initState() {
     super.initState();
     _ctrl.addListener(() => setState(() {}));
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _focus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
   }
 
   @override
@@ -101,10 +100,7 @@ class _RedeemCodeSheetState extends State<RedeemCodeSheet> {
                     ),
                   ),
                 ),
-                GestureDetector(
-                  onTap: _focus.requestFocus,
-                  child: _cells(cs),
-                ),
+                GestureDetector(onTap: _focus.requestFocus, child: _cells(cs)),
               ],
             ),
             const SizedBox(height: 14),
@@ -135,16 +131,21 @@ class _RedeemCodeSheetState extends State<RedeemCodeSheet> {
       children: [
         for (var g = 0; g < groups.length; g++) ...[
           if (g > 0)
-            Text('–',
-                style: TextStyle(fontSize: 20, color: cs.onSurfaceVariant)),
+            Text(
+              '–',
+              style: TextStyle(fontSize: 20, color: cs.onSurfaceVariant),
+            ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final i in groups[g])
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: _cell(cs, i < v.length ? v[i] : null,
-                      active: i == v.length),
+                  child: _cell(
+                    cs,
+                    i < v.length ? v[i] : null,
+                    active: i == v.length,
+                  ),
                 ),
             ],
           ),

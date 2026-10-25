@@ -15,17 +15,16 @@ void main() {
     DateTime? createdAt,
     String categoryId = 'other',
     String symbol = '',
-  }) =>
-      Wish(
-        id: id,
-        title: 'Желание $id',
-        categoryId: categoryId,
-        symbol: symbol,
-        authorUid: 'u1',
-        done: done,
-        doneAt: doneAt,
-        createdAt: createdAt ?? DateTime(2026, 1, 1),
-      );
+  }) => Wish(
+    id: id,
+    title: 'Желание $id',
+    categoryId: categoryId,
+    symbol: symbol,
+    authorUid: 'u1',
+    done: done,
+    doneAt: doneAt,
+    createdAt: createdAt ?? DateTime(2026, 1, 1),
+  );
 
   group('Категории', () {
     test('У каждой встроенной свой значок из подшитого шрифта', () {
@@ -42,9 +41,16 @@ void main() {
 
     test('Своя категория находится среди заведённых парой', () {
       const mine = WishKind(
-          id: 'abc123', symbol: 'sports_tennis', titleRu: 'Спорт', custom: true);
+        id: 'abc123',
+        symbol: 'sports_tennis',
+        titleRu: 'Спорт',
+        custom: true,
+      );
       final kind = resolveWishKind(
-          categoryId: 'abc123', symbol: 'sports_tennis', custom: [mine]);
+        categoryId: 'abc123',
+        symbol: 'sports_tennis',
+        custom: [mine],
+      );
 
       expect(kind.id, 'abc123');
       expect(kind.title(true), 'Спорт');
@@ -53,21 +59,31 @@ void main() {
 
     test('Удалённая категория оставляет желанию его значок', () {
       final kind = resolveWishKind(
-          categoryId: 'снесли', symbol: 'sports_tennis', custom: const []);
+        categoryId: 'снесли',
+        symbol: 'sports_tennis',
+        custom: const [],
+      );
 
       expect(kind.symbol, 'sports_tennis');
       expect(kind.title(true), 'Своё');
     });
 
     test('Ни категории, ни значка — падаем на «Своё»', () {
-      final kind =
-          resolveWishKind(categoryId: 'снесли', symbol: '', custom: const []);
+      final kind = resolveWishKind(
+        categoryId: 'снесли',
+        symbol: '',
+        custom: const [],
+      );
       expect(kind.symbol, 'star');
     });
 
     test('Своя категория подписана одним названием на оба языка', () {
-      const mine =
-          WishKind(id: 'x', symbol: 'star', titleRu: 'Баня', custom: true);
+      const mine = WishKind(
+        id: 'x',
+        symbol: 'star',
+        titleRu: 'Баня',
+        custom: true,
+      );
       expect(mine.title(true), 'Баня');
       expect(mine.title(false), 'Баня');
     });
@@ -79,7 +95,10 @@ void main() {
     });
 
     test('Сохранённый значок сильнее категории', () {
-      expect(wish('w1', categoryId: 'movie', symbol: 'ramen').iconName, 'ramen');
+      expect(
+        wish('w1', categoryId: 'movie', symbol: 'ramen').iconName,
+        'ramen',
+      );
     });
   });
 
@@ -113,8 +132,11 @@ void main() {
     });
 
     test('Своя категория хранится своим id', () {
-      final map = wish('w1', categoryId: 'pb0987654321', symbol: 'pets')
-          .toMap(groupId: 'g1');
+      final map = wish(
+        'w1',
+        categoryId: 'pb0987654321',
+        symbol: 'pets',
+      ).toMap(groupId: 'g1');
       expect(map['category'], 'pb0987654321');
       expect(map['symbol'], 'pets');
     });
@@ -165,9 +187,11 @@ void main() {
     });
 
     test('Отмена возвращает желание в «мечтаем» и стирает след отметки', () {
-      final back = wish('w1', done: true, doneAt: DateTime(2026, 5, 9))
-          .markDone(by: 'u2', at: DateTime(2026, 5, 9))
-          .undone();
+      final back = wish(
+        'w1',
+        done: true,
+        doneAt: DateTime(2026, 5, 9),
+      ).markDone(by: 'u2', at: DateTime(2026, 5, 9)).undone();
 
       expect(back.done, isFalse);
       expect(back.doneAt, isNull);
@@ -180,8 +204,11 @@ void main() {
     // «Отмечается дата нажатия галочки, но галочку не всегда ставят сразу.
     // А неправильная дата смысла не имеет» (просьба от 01.09.2026).
     test('дата меняется, а отметка и автор остаются', () {
-      final marked = wish('w1', done: true, doneAt: DateTime(2026, 9, 1))
-          .copyWith(doneBy: 'u2');
+      final marked = wish(
+        'w1',
+        done: true,
+        doneAt: DateTime(2026, 9, 1),
+      ).copyWith(doneBy: 'u2');
       final moved = marked.copyWith(doneAt: DateTime(2026, 8, 22, 19, 30));
       expect(moved.doneAt, DateTime(2026, 8, 22, 19, 30));
       expect(moved.done, isTrue);

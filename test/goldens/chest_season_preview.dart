@@ -38,7 +38,8 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 void main() {
-  final dir = '${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_season/hw';
+  final dir =
+      '${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_season/hw';
 
   setUpAll(() async {
     await _loadFont('Onest', ['assets/fonts/Onest.ttf']);
@@ -53,10 +54,11 @@ void main() {
     if (!File('$dir/chest.json').existsSync()) return;
     // Кэш файлов и настройки звука просят папки и prefs; музыка в превью
     // не нужна — звук выключен.
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (_) async => Directory.systemTemp.path,
-    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (_) async => Directory.systemTemp.path,
+        );
     SharedPreferences.setMockInitialValues({'chest_sound': false});
     await tester.runAsync(() => ChestSound.instance.load());
     LocaleService.instance.setLanguage(AppLanguage.ru);
@@ -66,7 +68,9 @@ void main() {
 
     // Описание сундука — как его отдаст `/api/chest/state`: адреса файлов
     // заменены метками, байты кладутся в кэш проигрывателя напрямую.
-    final spec = jsonDecode(File('$dir/chest.json').readAsStringSync()) as Map<String, dynamic>;
+    final spec =
+        jsonDecode(File('$dir/chest.json').readAsStringSync())
+            as Map<String, dynamic>;
     final files = <String, String>{};
     for (final f in Directory(dir).listSync().whereType<File>()) {
       final name = f.uri.pathSegments.last;
@@ -78,7 +82,10 @@ void main() {
     final season = SeasonChest.fromJson({...spec, 'files': files})!;
 
     final key = GlobalKey();
-    final t = buildAppTheme(kPalettes.firstWhere((p) => p.name == 'Розовая'), Brightness.light);
+    final t = buildAppTheme(
+      kPalettes.firstWhere((p) => p.name == 'Розовая'),
+      Brightness.light,
+    );
     Widget phone(double w, Widget child, {double scale = 1}) => Container(
       width: w,
       height: 2200,
@@ -86,7 +93,10 @@ void main() {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
       child: MediaQuery(
-        data: MediaQueryData(size: Size(w, 2200), textScaler: TextScaler.linear(scale)),
+        data: MediaQueryData(
+          size: Size(w, 2200),
+          textScaler: TextScaler.linear(scale),
+        ),
         child: child,
       ),
     );
@@ -118,19 +128,26 @@ void main() {
         ),
       ),
     );
-    PairJarService.instance.apply(const PairJar(drops: [true, true, false], bonus: 0));
+    PairJarService.instance.apply(
+      const PairJar(drops: [true, true, false], bonus: 0),
+    );
     // Кадры раскодируются по-настоящему: даём движку время между шагами.
     for (var i = 0; i < 8; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 120)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 120)),
+      );
       await tester.pump(const Duration(milliseconds: 80));
     }
 
     await tester.runAsync(() async {
-      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final boundary =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 1);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final out = Directory('build/chest-season')..createSync(recursive: true);
-      File('${out.path}/season.png').writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${out.path}/season.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
     // Экраны держат таймеры и тикеры — снимаем дерево, пока тест жив.
     await tester.pumpWidget(const SizedBox());

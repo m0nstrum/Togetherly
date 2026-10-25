@@ -83,10 +83,13 @@ class _AspectCoverState extends State<AspectCover> {
 
   /// У локального файла своего колбэка нет — спрашиваем размер у провайдера.
   void _askProvider() {
-    widget.provider!.resolve(const ImageConfiguration()).addListener(
+    widget.provider!
+        .resolve(const ImageConfiguration())
+        .addListener(
           ImageStreamListener((info, _) {
-            _onSize(Size(
-                info.image.width.toDouble(), info.image.height.toDouble()));
+            _onSize(
+              Size(info.image.width.toDouble(), info.image.height.toDouble()),
+            );
           }, onError: (_, __) {}),
         );
   }
@@ -116,8 +119,11 @@ class _AspectCoverState extends State<AspectCover> {
             onSize: _onSize,
             errorWidget: (_, __, ___) => ColoredBox(
               color: cs.surfaceContainerHighest,
-              child: Icon(Icons.broken_image_rounded,
-                  color: cs.onSurfaceVariant, size: 26),
+              child: Icon(
+                Icons.broken_image_rounded,
+                color: cs.onSurfaceVariant,
+                size: 26,
+              ),
             ),
           );
     if (widget.overlay != null) {
@@ -217,10 +223,13 @@ class _FilmFrameState extends State<FilmFrame> {
   }
 
   void _askProvider() {
-    widget.provider!.resolve(const ImageConfiguration()).addListener(
+    widget.provider!
+        .resolve(const ImageConfiguration())
+        .addListener(
           ImageStreamListener((info, _) {
-            _onSize(Size(
-                info.image.width.toDouble(), info.image.height.toDouble()));
+            _onSize(
+              Size(info.image.width.toDouble(), info.image.height.toDouble()),
+            );
           }, onError: (_, __) {}),
         );
   }

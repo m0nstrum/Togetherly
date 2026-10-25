@@ -39,28 +39,33 @@ class GlobeScene {
   });
 
   factory GlobeScene.globe(GlobeFrame f) => GlobeScene._(
-        basis: f.basis,
-        sphereCenter: f.center,
-        radius: f.radius,
-        graticule: .7,
-      );
+    basis: f.basis,
+    sphereCenter: f.center,
+    radius: f.radius,
+    graticule: .7,
+  );
 
-  factory GlobeScene.unroll(GlobeTransition t, double alpha, {double landMix = 0}) => GlobeScene._(
-        basis: t.targetBasis,
-        sphereCenter: t.focus,
-        radius: t.target.radius,
-        graticule: .7 * (1 - alpha),
-        transition: t,
-        alpha: alpha,
-        landMix: landMix,
-      );
+  factory GlobeScene.unroll(
+    GlobeTransition t,
+    double alpha, {
+    double landMix = 0,
+  }) => GlobeScene._(
+    basis: t.targetBasis,
+    sphereCenter: t.focus,
+    radius: t.target.radius,
+    graticule: .7 * (1 - alpha),
+    transition: t,
+    alpha: alpha,
+    landMix: landMix,
+  );
 
   bool get unrolled => transition != null;
 
   bool visible(Vec3 v) => unrolled || basis.depth(v) >= 0;
 
   Offset project(Vec3 v) =>
-      transition?.screenAt(v, alpha: alpha) ?? basis.project(v, radius, sphereCenter);
+      transition?.screenAt(v, alpha: alpha) ??
+      basis.project(v, radius, sphereCenter);
 
   /// Ломаная: на шаре — только видимые куски, на развёртке — целиком.
   List<List<Offset>> lines(List<Vec3> line) {
@@ -90,17 +95,26 @@ class GlobeScene {
   List<Offset> arc(List<LatLng> gc) {
     final pts = [for (final p in gc) Vec3.fromLatLng(p.latitude, p.longitude)];
     final runs = lines(pts);
-    if (runs.length == 1 && runs.first.length == pts.length) return arcify(runs.first);
-    return runs.isEmpty ? const [] : runs.reduce((a, b) => a.length >= b.length ? a : b);
+    if (runs.length == 1 && runs.first.length == pts.length)
+      return arcify(runs.first);
+    return runs.isEmpty
+        ? const []
+        : runs.reduce((a, b) => a.length >= b.length ? a : b);
   }
 }
 
 /// Сетка шара через 30°: меридианы и параллели, заранее точками на сфере.
 final List<List<Vec3>> kGraticule = [
   for (var lon = -180; lon < 180; lon += 30)
-    [for (var lat = -80; lat <= 80; lat += 4) Vec3.fromLatLng(lat.toDouble(), lon.toDouble())],
+    [
+      for (var lat = -80; lat <= 80; lat += 4)
+        Vec3.fromLatLng(lat.toDouble(), lon.toDouble()),
+    ],
   for (var lat = -60; lat <= 60; lat += 30)
-    [for (var lon = -180; lon <= 180; lon += 4) Vec3.fromLatLng(lat.toDouble(), lon.toDouble())],
+    [
+      for (var lon = -180; lon <= 180; lon += 4)
+        Vec3.fromLatLng(lat.toDouble(), lon.toDouble()),
+    ],
 ];
 
 class GlobePainter extends CustomPainter {
@@ -124,7 +138,10 @@ class GlobePainter extends CustomPainter {
     canvas.drawCircle(scene.sphereCenter, scene.radius, water);
     if (scene.unrolled && scene.alpha > 0) {
       // Шар раскатывается в плоскость — вода растекается на весь экран.
-      canvas.drawRect(Offset.zero & size, Paint()..color = palette.water.withValues(alpha: scene.alpha));
+      canvas.drawRect(
+        Offset.zero & size,
+        Paint()..color = palette.water.withValues(alpha: scene.alpha),
+      );
     }
 
     final screen = (Offset.zero & size).inflate(40);
@@ -148,7 +165,11 @@ class GlobePainter extends CustomPainter {
       }
       path.close();
     }
-    canvas.drawPath(path, Paint()..color = Color.lerp(palette.globeLand, palette.land, scene.landMix)!);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Color.lerp(palette.globeLand, palette.land, scene.landMix)!,
+    );
 
     if (scene.graticule > .02) {
       final grat = Path();
@@ -171,13 +192,23 @@ class GlobePainter extends CustomPainter {
 
     paintDottedArc(canvas, arc, color: palette.thread, halo: palette.halo);
     final f = fly;
-    if (f != null) paintFlyingHeart(canvas, arc, f, color: palette.thread, halo: palette.halo);
+    if (f != null)
+      paintFlyingHeart(
+        canvas,
+        arc,
+        f,
+        color: palette.thread,
+        halo: palette.halo,
+      );
   }
 
   /// Кольцо хоть краем задевает экран — иначе в путь его не кладём: при
   /// большом приближении суша уходит за экран на миллионы точек.
   static bool _touches(List<Offset> pts, Rect screen) {
-    var l = double.infinity, t = double.infinity, r = -double.infinity, b = -double.infinity;
+    var l = double.infinity,
+        t = double.infinity,
+        r = -double.infinity,
+        b = -double.infinity;
     for (final p in pts) {
       if (p.dx < l) l = p.dx;
       if (p.dx > r) r = p.dx;

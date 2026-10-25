@@ -37,8 +37,11 @@ void main() {
 
     // Ждём заведомо дольше, чем нужно исправной цепочке.
     return Future<void>.delayed(const Duration(milliseconds: 200), () {
-      expect(done, isFalse,
-          reason: 'именно так задача и зависала: колбэк вернул её саму');
+      expect(
+        done,
+        isFalse,
+        reason: 'именно так задача и зависала: колбэк вернул её саму',
+      );
 
       // А с телом в фигурных скобках всё проходит.
       final ok = <String, Future<int>>{};
@@ -56,8 +59,9 @@ void main() {
   });
 
   test('в складе картинок стрелки с remove нет', () {
-    final source =
-        File('lib/services/widget_photo_store.dart').readAsStringSync();
+    final source = File(
+      'lib/services/widget_photo_store.dart',
+    ).readAsStringSync();
     expect(
       RegExp(r'whenComplete\(\(\)\s*=>').hasMatch(source),
       isFalse,

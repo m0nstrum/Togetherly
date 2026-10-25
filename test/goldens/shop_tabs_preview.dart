@@ -46,8 +46,28 @@ void main() {
     await LocaleService.instance.setLanguage(AppLanguage.ru);
   });
 
-  const keys = ['wreath', 'hearts', 'daisies', 'cloud', 'ribbon', 'lights', 'donut', 'clock', 'cat'];
-  const names = ['Венок', 'Сердечки', 'Ромашки', 'Облачко', 'Ленточка', 'Гирлянда', 'Пончик', 'Циферблат', 'Котик'];
+  const keys = [
+    'wreath',
+    'hearts',
+    'daisies',
+    'cloud',
+    'ribbon',
+    'lights',
+    'donut',
+    'clock',
+    'cat',
+  ];
+  const names = [
+    'Венок',
+    'Сердечки',
+    'Ромашки',
+    'Облачко',
+    'Ленточка',
+    'Гирлянда',
+    'Пончик',
+    'Циферблат',
+    'Котик',
+  ];
   final frames = [
     for (var i = 0; i < keys.length; i++)
       AvatarFrame(
@@ -68,46 +88,61 @@ void main() {
         tester.view.physicalSize = const Size(393 * 2, 1700);
         tester.view.devicePixelRatio = 2;
         addTearDown(tester.view.reset);
-        final theme = buildAppTheme(kPalettes[1], dark ? Brightness.dark : Brightness.light);
+        final theme = buildAppTheme(
+          kPalettes[1],
+          dark ? Brightness.dark : Brightness.light,
+        );
         final key = GlobalKey();
-        await tester.pumpWidget(RepaintBoundary(
-          key: key,
-          child: MaterialApp(
-            theme: ProfileTheme.data(ProfileTheme.schemeFor(theme)),
-            home: MediaQuery(
-              data: const MediaQueryData(size: Size(393, 850)),
-              child: GiftShopScreen(
-                theme: theme,
-                groupId: 'g',
-                coins: 1109,
-                onCoins: (_) {},
-                userData: ud,
-                initialTab: tab,
+        await tester.pumpWidget(
+          RepaintBoundary(
+            key: key,
+            child: MaterialApp(
+              theme: ProfileTheme.data(ProfileTheme.schemeFor(theme)),
+              home: MediaQuery(
+                data: const MediaQueryData(size: Size(393, 850)),
+                child: GiftShopScreen(
+                  theme: theme,
+                  groupId: 'g',
+                  coins: 1109,
+                  onCoins: (_) {},
+                  userData: ud,
+                  initialTab: tab,
+                ),
               ),
             ),
           ),
-        ));
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 600)));
+        );
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 600)),
+        );
         await tester.pump(const Duration(milliseconds: 500));
         if (tab == ShopTab.gifts) {
           // Чип «Из сундука» последний в ленте фильтров: листаем к нему.
           final chip = find.text('Из сундука');
-          await tester.scrollUntilVisible(chip, 80, scrollable: find.byType(Scrollable).first);
+          await tester.scrollUntilVisible(
+            chip,
+            80,
+            scrollable: find.byType(Scrollable).first,
+          );
           await tester.ensureVisible(chip.first);
           await tester.pumpAndSettle();
           await tester.tap(chip.first);
           await tester.pumpAndSettle();
-          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 600)));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 600)),
+          );
           await tester.pump(const Duration(milliseconds: 100));
         }
         expect(tester.takeException(), isNull);
         await tester.runAsync(() async {
-          final b = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          final b =
+              key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
           final img = await b.toImage(pixelRatio: 1);
           final data = await img.toByteData(format: ui.ImageByteFormat.png);
           Directory('build/shop-tabs').createSync(recursive: true);
-          File('build/shop-tabs/${tab.name}_${dark ? 'dark' : 'light'}.png')
-              .writeAsBytesSync(data!.buffer.asUint8List());
+          File(
+            'build/shop-tabs/${tab.name}_${dark ? 'dark' : 'light'}.png',
+          ).writeAsBytesSync(data!.buffer.asUint8List());
         });
       });
     }

@@ -55,21 +55,23 @@ class MemoryFormPrefill {
 }
 
 /// type авто-определяется: фото → photo, видео → video, без медиа → text.
-typedef MemoryPhotoSaveCallback = Future<void> Function({
-  required MemoryType type,
-  required String title,
-  required String caption,
-  List<String>? mediaPaths,
-  /// Кадры записи, которые остались после правки, в порядке показа.
-  /// Первый из них — обложка. Пусто у новой записи.
-  List<String>? keptUrls,
-  String? mediaPath,
-  String? locationName,
-  double? latitude,
-  double? longitude,
-  required bool isAdult,
-  DateTime? customDate,
-});
+typedef MemoryPhotoSaveCallback =
+    Future<void> Function({
+      required MemoryType type,
+      required String title,
+      required String caption,
+      List<String>? mediaPaths,
+
+      /// Кадры записи, которые остались после правки, в порядке показа.
+      /// Первый из них — обложка. Пусто у новой записи.
+      List<String>? keptUrls,
+      String? mediaPath,
+      String? locationName,
+      double? latitude,
+      double? longitude,
+      required bool isAdult,
+      DateTime? customDate,
+    });
 
 /// Full-page photo memory creation form.
 class MemoryPhotoFormScreen extends StatefulWidget {
@@ -208,9 +210,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
         // Про больший потолок рассказываем только там, где Togetherly+ можно
         // купить. На iOS его не существует — там просто потолок.
         final hintsPlus = !plus && PlusService.instance.visible;
-        _showError(hintsPlus
-            ? LocaleService.current.memoryFileTooBigPlusHint(limitMb)
-            : LocaleService.current.memoryFileTooBig(limitMb));
+        _showError(
+          hintsPlus
+              ? LocaleService.current.memoryFileTooBigPlusHint(limitMb)
+              : LocaleService.current.memoryFileTooBig(limitMb),
+        );
       }
       if (fits.isEmpty) return;
       picked
@@ -218,8 +222,10 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
         ..addAll(fits);
       setState(() => _media = [..._media, ...picked]);
       if (_lat == null) {
-        final firstPhoto =
-            picked.firstWhere((f) => !_isVideo(f), orElse: () => picked.first);
+        final firstPhoto = picked.firstWhere(
+          (f) => !_isVideo(f),
+          orElse: () => picked.first,
+        );
         if (!_isVideo(firstPhoto)) _tryExifGps(firstPhoto.path);
       }
       for (final f in picked) {
@@ -337,10 +343,10 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
   }
 
   void _clearLocation() => setState(() {
-        _lat = null;
-        _lng = null;
-        _locationCtrl.clear();
-      });
+    _lat = null;
+    _lng = null;
+    _locationCtrl.clear();
+  });
 
   // ── Save ────────────────────────────────────────────────────────────────────
 
@@ -356,8 +362,9 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
         type: _effectiveType,
         title: _titleCtrl.text.trim(),
         caption: _captionCtrl.text.trim(),
-        mediaPaths:
-            photos.isNotEmpty ? photos.map((f) => f.path).toList() : null,
+        mediaPaths: photos.isNotEmpty
+            ? photos.map((f) => f.path).toList()
+            : null,
         keptUrls: _kept.isEmpty ? null : List<String>.from(_kept),
         mediaPath: videos.isNotEmpty ? videos.first.path : null,
         locationName: _locationCtrl.text.trim().isEmpty
@@ -419,7 +426,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
-                        12, 6, 12, 108 + media.padding.bottom),
+                      12,
+                      6,
+                      12,
+                      108 + media.padding.bottom,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -441,21 +452,29 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
               child: Row(
                 children: [
                   // Галерея и камера — смежной парой, как у кнопки сохранения.
-                  Row(children: [
-                    _formRound(cs,
+                  Row(
+                    children: [
+                      _formRound(
+                        cs,
                         icon: Icons.add_photo_alternate_rounded,
                         onTap: _pickMedia,
                         radius: const BorderRadius.horizontal(
-                            left: Radius.circular(32),
-                            right: Radius.circular(10))),
-                    const SizedBox(width: 2),
-                    _formRound(cs,
+                          left: Radius.circular(32),
+                          right: Radius.circular(10),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      _formRound(
+                        cs,
                         icon: Icons.photo_camera_rounded,
                         onTap: _pickFromCamera,
                         radius: const BorderRadius.horizontal(
-                            left: Radius.circular(10),
-                            right: Radius.circular(32))),
-                  ]),
+                          left: Radius.circular(10),
+                          right: Radius.circular(32),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: FilledButton.icon(
@@ -482,11 +501,13 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
   }
 
   /// Круглая кнопка: 48 в шапке, 64 в нижней паре — как в макете.
-  Widget _formRound(ColorScheme cs,
-      {required IconData icon,
-      required VoidCallback onTap,
-      BorderRadius? radius,
-      double size = 64}) {
+  Widget _formRound(
+    ColorScheme cs, {
+    required IconData icon,
+    required VoidCallback onTap,
+    BorderRadius? radius,
+    double size = 64,
+  }) {
     return Material(
       color: cs.surfaceContainerHigh,
       borderRadius: radius ?? BorderRadius.circular(size / 2),
@@ -510,7 +531,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
     final label = total == 0
         ? LocaleService.current.newMemoryDraft
         : '${LocaleService.current.newMemoryDraft} · '
-            '$total ${LocaleService.current.photosUnit(total)}';
+              '$total ${LocaleService.current.photosUnit(total)}';
     return FormTopBar(
       scheme: cs,
       dot: widget.theme.fillColor,
@@ -535,12 +556,20 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_photo_alternate_rounded,
-                  size: 34, color: cs.primary),
+              Icon(
+                Icons.add_photo_alternate_rounded,
+                size: 34,
+                color: cs.primary,
+              ),
               const SizedBox(height: 8),
-              Text(LocaleService.current.addPhotoOrVideo,
-                  style: AppFonts.onest(
-                      size: 15, weight: 600, color: cs.onSurface)),
+              Text(
+                LocaleService.current.addPhotoOrVideo,
+                style: AppFonts.onest(
+                  size: 15,
+                  weight: 600,
+                  color: cs.onSurface,
+                ),
+              ),
             ],
           ),
         ),
@@ -568,14 +597,17 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
           borderRadius: BorderRadius.circular(cover ? 22 : 8),
           child: cover
               ? AspectRatio(
-                  aspectRatio: 4 / 3, child: _videoPreviewWidget(file.path))
+                  aspectRatio: 4 / 3,
+                  child: _videoPreviewWidget(file.path),
+                )
               : GestureDetector(
                   onTap: () => _makeCover(i),
                   onLongPress: () => _removeAt(i),
                   child: SizedBox(
-                      width: 92,
-                      height: height,
-                      child: _videoPreviewWidget(file.path)),
+                    width: 92,
+                    height: height,
+                    child: _videoPreviewWidget(file.path),
+                  ),
                 ),
         );
       }
@@ -619,9 +651,14 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                     children: [
                       Icon(Icons.star_rounded, size: 16, color: _onFill),
                       const SizedBox(width: 5),
-                      Text(LocaleService.current.coverLabel,
-                          style: AppFonts.onest(
-                              size: 12.5, weight: 700, color: _onFill)),
+                      Text(
+                        LocaleService.current.coverLabel,
+                        style: AppFonts.onest(
+                          size: 12.5,
+                          weight: 700,
+                          color: _onFill,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -638,8 +675,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                     child: SizedBox(
                       width: 36,
                       height: 36,
-                      child: Icon(Icons.close_rounded,
-                          size: 20, color: cs.onInverseSurface),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: cs.onInverseSurface,
+                      ),
                     ),
                   ),
                 ),
@@ -670,14 +710,20 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate_rounded,
-                              size: 28, color: cs.onSecondaryContainer),
+                          Icon(
+                            Icons.add_photo_alternate_rounded,
+                            size: 28,
+                            color: cs.onSecondaryContainer,
+                          ),
                           const SizedBox(height: 4),
-                          Text(LocaleService.current.addLabel,
-                              style: AppFonts.onest(
-                                  size: 11.5,
-                                  weight: 700,
-                                  color: cs.onSecondaryContainer)),
+                          Text(
+                            LocaleService.current.addLabel,
+                            style: AppFonts.onest(
+                              size: 11.5,
+                              weight: 700,
+                              color: cs.onSecondaryContainer,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -728,7 +774,10 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
             child: Text(
               LocaleService.current.formFramesHint,
               style: AppFonts.onest(
-                  size: 13, weight: 500, color: cs.onSurfaceVariant),
+                size: 13,
+                weight: 500,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -744,50 +793,63 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
         : _formatCustomDate(_customDate!);
     return Column(
       children: [
-        _formRow(cs,
-            icon: Icons.title_rounded,
-            label: LocaleService.current.titleOptional,
-            value: _titleCtrl.text,
-            placeholder: LocaleService.current.titleHintForm,
-            key0: true,
-            first: true,
-            onTap: () => _editText(_titleCtrl, LocaleService.current.titleOptional)),
+        _formRow(
+          cs,
+          icon: Icons.title_rounded,
+          label: LocaleService.current.titleOptional,
+          value: _titleCtrl.text,
+          placeholder: LocaleService.current.titleHintForm,
+          key0: true,
+          first: true,
+          onTap: () =>
+              _editText(_titleCtrl, LocaleService.current.titleOptional),
+        ),
         const SizedBox(height: 4),
-        _formRow(cs,
-            icon: Icons.edit_note_rounded,
-            label: LocaleService.current.descriptionOptional,
-            value: _captionCtrl.text,
-            placeholder: LocaleService.current.captionHintForm,
-            key0: true,
-            onTap: () => _editText(
-                _captionCtrl, LocaleService.current.descriptionOptional,
-                lines: 5)),
+        _formRow(
+          cs,
+          icon: Icons.edit_note_rounded,
+          label: LocaleService.current.descriptionOptional,
+          value: _captionCtrl.text,
+          placeholder: LocaleService.current.captionHintForm,
+          key0: true,
+          onTap: () => _editText(
+            _captionCtrl,
+            LocaleService.current.descriptionOptional,
+            lines: 5,
+          ),
+        ),
         const SizedBox(height: 4),
-        _formRow(cs,
-            icon: Icons.calendar_today_rounded,
-            label: LocaleService.current.memoryDateLabelForm,
-            value: dateLabel,
-            chevron: true,
-            onTap: _pickCustomDate),
+        _formRow(
+          cs,
+          icon: Icons.calendar_today_rounded,
+          label: LocaleService.current.memoryDateLabelForm,
+          value: dateLabel,
+          chevron: true,
+          onTap: _pickCustomDate,
+        ),
         const SizedBox(height: 4),
-        _formRow(cs,
-            icon: Icons.place_rounded,
-            label: LocaleService.current.placeLabelForm,
-            value: _locationCtrl.text.isEmpty
-                ? LocaleService.current.placeHintForm
-                : _locationCtrl.text,
-            chevron: true,
-            onTap: _showPlaceSheet),
+        _formRow(
+          cs,
+          icon: Icons.place_rounded,
+          label: LocaleService.current.placeLabelForm,
+          value: _locationCtrl.text.isEmpty
+              ? LocaleService.current.placeHintForm
+              : _locationCtrl.text,
+          chevron: true,
+          onTap: _showPlaceSheet,
+        ),
         const SizedBox(height: 4),
-        _formRow(cs,
-            icon: Icons.visibility_off_rounded,
-            label: LocaleService.current.adultContent,
-            value: _isAdult
-                ? LocaleService.current.onLabel
-                : LocaleService.current.offLabel,
-            last: true,
-            toggle: _isAdult,
-            onTap: () => setState(() => _isAdult = !_isAdult)),
+        _formRow(
+          cs,
+          icon: Icons.visibility_off_rounded,
+          label: LocaleService.current.adultContent,
+          value: _isAdult
+              ? LocaleService.current.onLabel
+              : LocaleService.current.offLabel,
+          last: true,
+          toggle: _isAdult,
+          onTap: () => setState(() => _isAdult = !_isAdult),
+        ),
       ],
     );
   }
@@ -835,17 +897,25 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                   color: key0 ? widget.theme.fillColor : cs.surface,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon,
-                    size: 22, color: key0 ? _onFill : cs.onSurface),
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: key0 ? _onFill : cs.onSurface,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label,
-                        style: AppFonts.onest(
-                            size: 12.5, weight: 600, color: sub)),
+                    Text(
+                      label,
+                      style: AppFonts.onest(
+                        size: 12.5,
+                        weight: 600,
+                        color: sub,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       text,
@@ -861,10 +931,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                 ),
               ),
               if (toggle != null)
-                Switch(
-                  value: toggle,
-                  onChanged: (_) => onTap(),
-                )
+                Switch(value: toggle, onChanged: (_) => onTap())
               else if (chevron)
                 Icon(Icons.chevron_right_rounded, color: sub),
             ],
@@ -876,8 +943,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
 
   /// Правка текстового поля отдельным листом — так строка остаётся строкой,
   /// а клавиатура не ломает раскладку экрана.
-  Future<void> _editText(TextEditingController ctrl, String title,
-      {int lines = 1}) async {
+  Future<void> _editText(
+    TextEditingController ctrl,
+    String title, {
+    int lines = 1,
+  }) async {
     final value = await showAppSheet<String>(
       context,
       builder: (ctx) => SheetScaffold(
@@ -938,8 +1008,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                   borderRadius: BorderRadius.circular(26),
                 ),
                 alignment: Alignment.center,
-                child: Icon(Icons.add_photo_alternate_rounded,
-                    size: 34, color: cs.onPrimaryContainer),
+                child: Icon(
+                  Icons.add_photo_alternate_rounded,
+                  size: 34,
+                  color: cs.onPrimaryContainer,
+                ),
               ),
               const SizedBox(height: 14),
               Text(
@@ -975,8 +1048,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
             Image.file(File(first.path), fit: BoxFit.cover),
           if (isFirstVideo)
             const Center(
-              child: Icon(Icons.play_circle_filled_rounded,
-                  color: Colors.white, size: 56),
+              child: Icon(
+                Icons.play_circle_filled_rounded,
+                color: Colors.white,
+                size: 56,
+              ),
             ),
         ],
       ),
@@ -985,8 +1061,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
 
   /// Кружок поверх фотографии. Полупрозрачная подложка нужна, чтобы крестик
   /// читался и на светлом кадре, и на тёмном.
-  Widget _glassButton(ColorScheme cs,
-      {required IconData icon, required VoidCallback onTap}) {
+  Widget _glassButton(
+    ColorScheme cs, {
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: cs.inverseSurface.withValues(alpha: 0.55),
       shape: const CircleBorder(),
@@ -1042,8 +1121,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
           ),
           Expanded(
             child: SingleChildScrollView(
-              keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.onDrag,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(
                 16,
                 14,
@@ -1104,8 +1182,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                 child: SizedBox(
                   width: 64,
                   height: 64,
-                  child: Icon(Icons.photo_library_rounded,
-                      size: 24, color: cs.onPrimaryContainer),
+                  child: Icon(
+                    Icons.photo_library_rounded,
+                    size: 24,
+                    color: cs.onPrimaryContainer,
+                  ),
                 ),
               ),
             );
@@ -1124,16 +1205,23 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                     borderRadius: BorderRadius.circular(18),
                     child: isVid
                         ? _videoPreviewWidget(item.path, width: 64, height: 64)
-                        : Image.file(File(item.path),
+                        : Image.file(
+                            File(item.path),
                             key: ValueKey(item.path),
-                            width: 64, height: 64, fit: BoxFit.cover),
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
                 if (isVid)
                   const Positioned.fill(
                     child: Center(
-                      child: Icon(Icons.play_circle_filled_rounded,
-                          color: Colors.white70, size: 22),
+                      child: Icon(
+                        Icons.play_circle_filled_rounded,
+                        color: Colors.white70,
+                        size: 22,
+                      ),
                     ),
                   ),
                 if (!isVid)
@@ -1152,8 +1240,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                             color: cs.inverseSurface,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.flip_rounded,
-                              size: 14, color: cs.onInverseSurface),
+                          child: Icon(
+                            Icons.flip_rounded,
+                            size: 14,
+                            color: cs.onInverseSurface,
+                          ),
                         ),
                       ),
                     ),
@@ -1170,8 +1261,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                         color: cs.inverseSurface,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.close_rounded,
-                          size: 14, color: cs.onInverseSurface),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: cs.onInverseSurface,
+                      ),
                     ),
                   ),
                 ),
@@ -1197,8 +1291,8 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
           icon: Icons.location_on_rounded,
           label: _hasPlace
               ? (_locationCtrl.text.isNotEmpty
-                  ? _locationCtrl.text
-                  : '${_lat!.toStringAsFixed(3)}, ${_lng!.toStringAsFixed(3)}')
+                    ? _locationCtrl.text
+                    : '${_lat!.toStringAsFixed(3)}, ${_lng!.toStringAsFixed(3)}')
               : s.location,
           filled: _hasPlace,
           accent: true,
@@ -1376,8 +1470,11 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right_rounded,
-                  size: 22, color: cs.onSurfaceVariant),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: cs.onSurfaceVariant,
+              ),
             ],
           ),
         ),
@@ -1429,7 +1526,10 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
     );
     return InputDecoration(
       labelText: label,
-      floatingLabelStyle: TextStyle(color: cs.primary, fontWeight: FontWeight.w600),
+      floatingLabelStyle: TextStyle(
+        color: cs.primary,
+        fontWeight: FontWeight.w600,
+      ),
       filled: true,
       fillColor: fill ?? cs.surfaceContainerHigh,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -1456,22 +1556,25 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
       maxLines: 4,
       minLines: 2,
       textCapitalization: TextCapitalization.sentences,
-      decoration: _fieldDeco(
-        s.descriptionOptional,
-        fill: _cs.surfaceContainer,
-      ),
+      decoration: _fieldDeco(s.descriptionOptional, fill: _cs.surfaceContainer),
     );
   }
 
   // Виджет превью видео: показывает кэшированный thumb или тёмный фон
-  Widget _videoPreviewWidget(String path,
-      {BoxFit fit = BoxFit.cover, double? width, double? height}) {
+  Widget _videoPreviewWidget(
+    String path, {
+    BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+  }) {
     final thumb = _videoThumbs[path];
     if (thumb != null) {
-      return Image.memory(thumb,
-          fit: fit,
-          width: width,
-          height: height ?? double.infinity);
+      return Image.memory(
+        thumb,
+        fit: fit,
+        width: width,
+        height: height ?? double.infinity,
+      );
     }
     return Container(
       width: width,
@@ -1482,7 +1585,9 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
           width: 18,
           height: 18,
           child: CircularProgressIndicator(
-              color: Colors.white70, strokeWidth: 2),
+            color: Colors.white70,
+            strokeWidth: 2,
+          ),
         ),
       ),
     );
@@ -1500,10 +1605,8 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
           !tags.containsKey('GPS GPSLongitude')) {
         return null;
       }
-      final latRef =
-          tags['GPS GPSLatitudeRef']?.printable.trim() ?? 'N';
-      final lngRef =
-          tags['GPS GPSLongitudeRef']?.printable.trim() ?? 'E';
+      final latRef = tags['GPS GPSLatitudeRef']?.printable.trim() ?? 'N';
+      final lngRef = tags['GPS GPSLongitudeRef']?.printable.trim() ?? 'E';
       double? toDeg(String raw) {
         final clean = raw.replaceAll(RegExp(r'[\[\]\s]'), '');
         final parts = clean.split(',');
@@ -1518,6 +1621,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
           }
           return double.tryParse(s) ?? 0;
         }
+
         return p(parts[0]) + p(parts[1]) / 60.0 + p(parts[2]) / 3600.0;
       }
 
@@ -1530,7 +1634,7 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
       }
       return (
         latRef == 'S' ? -latVal : latVal,
-        lngRef == 'W' ? -lngVal : lngVal
+        lngRef == 'W' ? -lngVal : lngVal,
       );
     } catch (_) {
       return null;
@@ -1573,8 +1677,9 @@ class _TextSheetBody extends StatefulWidget {
 }
 
 class _TextSheetBodyState extends State<_TextSheetBody> {
-  late final TextEditingController _ctrl =
-      TextEditingController(text: widget.initial);
+  late final TextEditingController _ctrl = TextEditingController(
+    text: widget.initial,
+  );
 
   @override
   void dispose() {
@@ -1601,16 +1706,16 @@ class _TextSheetBodyState extends State<_TextSheetBody> {
               borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide.none,
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
         const SizedBox(height: 12),
         FilledButton(
           onPressed: () => widget.onDone(_ctrl.text.trim()),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(56),
-          ),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
           child: Text(LocaleService.current.done),
         ),
       ],

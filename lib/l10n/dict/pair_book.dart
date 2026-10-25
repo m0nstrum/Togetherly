@@ -12,13 +12,20 @@ const Map<String, Map<String, String>> pairBookStrings = {
     'de': 'Euer Buch',
   },
   'bookLead': {
-    'ru': 'Воспоминания за выбранные даты — фотографии, подписи и даты одним файлом.',
-    'en': 'Memories from the dates you choose: photos, captions and dates in one file.',
-    'pt': 'Lembranças das datas escolhidas: fotos, legendas e datas num só ficheiro.',
-    'it': 'I ricordi delle date scelte: foto, didascalie e date in un solo file.',
-    'es': 'Los recuerdos de las fechas elegidas: fotos, textos y fechas en un archivo.',
-    'fr': 'Les souvenirs des dates choisies : photos, légendes et dates en un fichier.',
-    'de': 'Erinnerungen der gewählten Tage: Fotos, Unterschriften und Daten in einer Datei.',
+    'ru':
+        'Воспоминания за выбранные даты — фотографии, подписи и даты одним файлом.',
+    'en':
+        'Memories from the dates you choose: photos, captions and dates in one file.',
+    'pt':
+        'Lembranças das datas escolhidas: fotos, legendas e datas num só ficheiro.',
+    'it':
+        'I ricordi delle date scelte: foto, didascalie e date in un solo file.',
+    'es':
+        'Los recuerdos de las fechas elegidas: fotos, textos y fechas en un archivo.',
+    'fr':
+        'Les souvenirs des dates choisies : photos, légendes et dates en un fichier.',
+    'de':
+        'Erinnerungen der gewählten Tage: Fotos, Unterschriften und Daten in einer Datei.',
   },
   'bookPeriodAll': {
     'ru': 'За всё время',
@@ -102,13 +109,20 @@ const Map<String, Map<String, String>> pairBookStrings = {
     'de': 'Für diese Tage gibt es keine Erinnerungen',
   },
   'bookTooMany': {
-    'ru': 'Записей очень много — книга будет собираться долго и получится тяжёлой. Возьмите период поуже.',
-    'en': 'That is a lot of entries: the book will take a while and come out heavy. Narrow the dates.',
-    'pt': 'São muitos registos: o livro vai demorar e ficar pesado. Escolha um período menor.',
-    'it': 'Sono tante voci: il libro ci metterà molto e sarà pesante. Restringi il periodo.',
-    'es': 'Son muchas entradas: el libro tardará y saldrá pesado. Acorta el periodo.',
-    'fr': 'Beaucoup d’entrées : le livre sera long à créer et lourd. Réduis la période.',
-    'de': 'Sehr viele Einträge: das Buch dauert und wird schwer. Nimm einen kürzeren Zeitraum.',
+    'ru':
+        'Записей очень много — книга будет собираться долго и получится тяжёлой. Возьмите период поуже.',
+    'en':
+        'That is a lot of entries: the book will take a while and come out heavy. Narrow the dates.',
+    'pt':
+        'São muitos registos: o livro vai demorar e ficar pesado. Escolha um período menor.',
+    'it':
+        'Sono tante voci: il libro ci metterà molto e sarà pesante. Restringi il periodo.',
+    'es':
+        'Son muchas entradas: el libro tardará y saldrá pesado. Acorta el periodo.',
+    'fr':
+        'Beaucoup d’entrées : le livre sera long à créer et lourd. Réduis la période.',
+    'de':
+        'Sehr viele Einträge: das Buch dauert und wird schwer. Nimm einen kürzeren Zeitraum.',
   },
   'bookReady': {
     'ru': 'Книга готова',
@@ -131,10 +145,14 @@ const Map<String, Map<String, String>> pairBookStrings = {
   'bookSecretHint': {
     'ru': 'Секретные записи в книгу не попадут, пока закрыт замок.',
     'en': 'Secret entries stay out of the book while the lock is on.',
-    'pt': 'As entradas secretas ficam fora do livro enquanto o cadeado estiver fechado.',
-    'it': 'Le voci segrete restano fuori dal libro finché il lucchetto è chiuso.',
-    'es': 'Las entradas secretas no entran en el libro mientras el candado esté cerrado.',
-    'fr': 'Les entrées secrètes restent hors du livre tant que le cadenas est fermé.',
+    'pt':
+        'As entradas secretas ficam fora do livro enquanto o cadeado estiver fechado.',
+    'it':
+        'Le voci segrete restano fuori dal libro finché il lucchetto è chiuso.',
+    'es':
+        'Las entradas secretas no entran en el libro mientras el candado esté cerrado.',
+    'fr':
+        'Les entrées secrètes restent hors du livre tant que le cadenas est fermé.',
     'de': 'Geheime Einträge bleiben draußen, solange das Schloss zu ist.',
   },
   'bookAdultTitle': {

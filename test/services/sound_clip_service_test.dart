@@ -20,8 +20,9 @@ void main() {
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(
-        const MethodChannel('plugins.flutter.io/path_provider'),
-        (call) async => tmp.path);
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (call) async => tmp.path,
+    );
     messenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       return answer(call);
@@ -34,8 +35,11 @@ void main() {
       File('${tmp.path}/song.mp3')..writeAsBytesSync(List.filled(bytes, 1));
 
   test('проба отдаёт длительность и теги', () async {
-    answer = (_) =>
-        {'durationMs': 255000, 'title': 'Lovely Day', 'artist': 'Bill Withers'};
+    answer = (_) => {
+      'durationMs': 255000,
+      'title': 'Lovely Day',
+      'artist': 'Bill Withers',
+    };
     final file = song();
     final probe = await SoundClipService.instance.probe(file.path);
     expect(probe.duration, const Duration(seconds: 255));
@@ -53,8 +57,13 @@ void main() {
       ..closeSync();
     await expectLater(
       SoundClipService.instance.probe(big.path),
-      throwsA(isA<SoundClipException>()
-          .having((e) => e.reason, 'reason', SoundClipError.tooLarge)),
+      throwsA(
+        isA<SoundClipException>().having(
+          (e) => e.reason,
+          'reason',
+          SoundClipError.tooLarge,
+        ),
+      ),
     );
     expect(calls, isEmpty);
   });
@@ -62,8 +71,13 @@ void main() {
   test('пропавший файл — ошибка, а не падение', () async {
     await expectLater(
       SoundClipService.instance.probe('${tmp.path}/нет.mp3'),
-      throwsA(isA<SoundClipException>()
-          .having((e) => e.reason, 'reason', SoundClipError.failed)),
+      throwsA(
+        isA<SoundClipException>().having(
+          (e) => e.reason,
+          'reason',
+          SoundClipError.failed,
+        ),
+      ),
     );
   });
 
@@ -71,14 +85,22 @@ void main() {
     answer = (_) => throw PlatformException(code: 'unsupported');
     await expectLater(
       SoundClipService.instance.probe(song().path),
-      throwsA(isA<SoundClipException>()
-          .having((e) => e.reason, 'reason', SoundClipError.unsupported)),
+      throwsA(
+        isA<SoundClipException>().having(
+          (e) => e.reason,
+          'reason',
+          SoundClipError.unsupported,
+        ),
+      ),
     );
   });
 
   test('волна всегда нужной длины и в пределах 0..1', () async {
     answer = (_) => [0.2, 1.4, -0.3, 0.5];
-    final bars = await SoundClipService.instance.waveform(song().path, buckets: 8);
+    final bars = await SoundClipService.instance.waveform(
+      song().path,
+      buckets: 8,
+    );
     expect(bars, hasLength(8));
     expect(bars.every((v) => v >= 0 && v <= 1), isTrue);
     expect(calls.single.arguments, {'path': song().path, 'buckets': 8});
@@ -105,8 +127,10 @@ void main() {
     expect(args['startMs'], 72000);
     expect(args['endMs'], 102000);
     expect(args['fadeMs'], SoundLimits.fade.inMilliseconds);
-    expect((args['outPath'] as String).startsWith('${tmp.path}/sound_outbox/'),
-        isTrue);
+    expect(
+      (args['outPath'] as String).startsWith('${tmp.path}/sound_outbox/'),
+      isTrue,
+    );
     expect(clip.url, args['outPath']);
     expect(clip.kind, SoundKind.song);
     expect(clip.duration, const Duration(milliseconds: 29950));
@@ -117,10 +141,10 @@ void main() {
 
   test('кусок длиннее предела режется до предела', () async {
     answer = (call) => {
-          'path': (call.arguments as Map)['outPath'],
-          'durationMs': 30000,
-          'peaks': <double>[],
-        };
+      'path': (call.arguments as Map)['outPath'],
+      'durationMs': 30000,
+      'peaks': <double>[],
+    };
     await SoundClipService.instance.cut(
       song().path,
       start: const Duration(seconds: 10),
@@ -128,7 +152,10 @@ void main() {
       limit: SoundLimits.giftSong,
     );
     final args = calls.single.arguments as Map;
-    expect(args['endMs'] - args['startMs'], SoundLimits.giftSong.inMilliseconds);
+    expect(
+      args['endMs'] - args['startMs'],
+      SoundLimits.giftSong.inMilliseconds,
+    );
   });
 
   test('сбой вырезки стирает недописанный файл', () async {
@@ -139,8 +166,11 @@ void main() {
       throw PlatformException(code: 'failed', message: 'codec');
     };
     await expectLater(
-      SoundClipService.instance.cut(song().path,
-          start: Duration.zero, length: const Duration(seconds: 5)),
+      SoundClipService.instance.cut(
+        song().path,
+        start: Duration.zero,
+        length: const Duration(seconds: 5),
+      ),
       throwsA(isA<SoundClipException>()),
     );
     expect(File(out!).existsSync(), isFalse);

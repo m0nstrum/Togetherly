@@ -14,8 +14,11 @@ void main() {
       LocaleService.instance.setLanguage(lang);
       final names = [for (final p in kPalettes) paletteDisplayName(p.index)];
       expect(names.where((n) => n.trim().isEmpty), isEmpty, reason: lang.name);
-      expect(names.toSet().length, kPalettes.length,
-          reason: '${lang.name}: имена совпали — ${names.join(', ')}');
+      expect(
+        names.toSet().length,
+        kPalettes.length,
+        reason: '${lang.name}: имена совпали — ${names.join(', ')}',
+      );
     }
   });
 

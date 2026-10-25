@@ -31,15 +31,14 @@ class MapArcLayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final camera = MapCamera.of(context);
     final gc = greatCircle(from, to, segments: 64);
-    final pts = arcify(unwrapScreenX(
-      [for (final p in gc) camera.latLngToScreenOffset(p)],
-      camera.getWorldWidthAtZoom(),
-    ));
+    final pts = arcify(
+      unwrapScreenX([
+        for (final p in gc) camera.latLngToScreenOffset(p),
+      ], camera.getWorldWidthAtZoom()),
+    );
     return IgnorePointer(
       child: SizedBox.expand(
-        child: CustomPaint(
-          painter: _ArcPainter(pts, palette, fly),
-        ),
+        child: CustomPaint(painter: _ArcPainter(pts, palette, fly)),
       ),
     );
   }
@@ -56,9 +55,17 @@ class _ArcPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     paintDottedArc(canvas, pts, color: palette.thread, halo: palette.halo);
     final f = fly?.value;
-    if (f != null) paintFlyingHeart(canvas, pts, f, color: palette.thread, halo: palette.halo);
+    if (f != null)
+      paintFlyingHeart(
+        canvas,
+        pts,
+        f,
+        color: palette.thread,
+        halo: palette.halo,
+      );
   }
 
   @override
-  bool shouldRepaint(covariant _ArcPainter old) => old.pts != pts || old.palette != palette;
+  bool shouldRepaint(covariant _ArcPainter old) =>
+      old.pts != pts || old.palette != palette;
 }

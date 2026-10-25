@@ -53,18 +53,18 @@ class _DrawToolsSettingsScreenState extends State<DrawToolsSettingsScreen> {
   }
 
   String _label(AppStrings s, DrawQuickTool tool) => switch (tool) {
-        DrawQuickTool.brush => s.brush,
-        DrawQuickTool.eraser => s.eraser,
-        DrawQuickTool.fill => s.fillBg,
-        DrawQuickTool.shapes => s.drawShapes,
-        DrawQuickTool.layers => s.drawLayers,
-        DrawQuickTool.image => s.addPhoto,
-        DrawQuickTool.palm => s.palmTool,
-        DrawQuickTool.select => s.selectTool,
-        DrawQuickTool.background => s.drawBackgrounds,
-        DrawQuickTool.clear => s.clearCanvas,
-        DrawQuickTool.replay => s.drawReplay,
-      };
+    DrawQuickTool.brush => s.brush,
+    DrawQuickTool.eraser => s.eraser,
+    DrawQuickTool.fill => s.fillBg,
+    DrawQuickTool.shapes => s.drawShapes,
+    DrawQuickTool.layers => s.drawLayers,
+    DrawQuickTool.image => s.addPhoto,
+    DrawQuickTool.palm => s.palmTool,
+    DrawQuickTool.select => s.selectTool,
+    DrawQuickTool.background => s.drawBackgrounds,
+    DrawQuickTool.clear => s.clearCanvas,
+    DrawQuickTool.replay => s.drawReplay,
+  };
 
   static const Map<DrawQuickTool, IconData> _icons = {
     DrawQuickTool.brush: Icons.brush_rounded,
@@ -84,8 +84,9 @@ class _DrawToolsSettingsScreenState extends State<DrawToolsSettingsScreen> {
   Widget build(BuildContext context) {
     final s = LocaleService.current;
     final cs = ProfileTheme.schemeFor(widget.theme);
-    final hidden =
-        DrawQuickTool.values.where((t) => !_shown.contains(t)).toList();
+    final hidden = DrawQuickTool.values
+        .where((t) => !_shown.contains(t))
+        .toList();
     final full = _shown.length >= kMaxQuickTools;
 
     return Theme(

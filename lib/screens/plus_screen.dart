@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../dict_strings.dart' show ruEn;

@@ -22,14 +22,18 @@ void main() {
         RepaintBoundary(
           key: key,
           child: MaterialApp(
-            theme: ThemeData(colorSchemeSeed: const Color(0xFFFF7E9B), useMaterial3: true),
+            theme: ThemeData(
+              colorSchemeSeed: const Color(0xFFFF7E9B),
+              useMaterial3: true,
+            ),
             home: MediaQuery(
               data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
               child: Builder(
                 builder: (ctx) => Scaffold(
                   body: Center(
                     child: TextButton(
-                      onPressed: () async => picked = await showReelsStartSheet(ctx),
+                      onPressed: () async =>
+                          picked = await showReelsStartSheet(ctx),
                       child: const Text('open'),
                     ),
                   ),
@@ -49,11 +53,14 @@ void main() {
       await tester.pumpAndSettle();
       if (Platform.environment['REELS_PREVIEW'] == '1') {
         await tester.runAsync(() async {
-          final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          final boundary =
+              key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
           final image = await boundary.toImage(pixelRatio: 2);
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
           Directory('build/reels').createSync(recursive: true);
-          File('build/reels/start-sheet-${w.toInt()}.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+          File(
+            'build/reels/start-sheet-${w.toInt()}.png',
+          ).writeAsBytesSync(bytes!.buffer.asUint8List());
         });
       }
       await tester.tap(find.byType(FilledButton));

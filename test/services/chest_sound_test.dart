@@ -9,7 +9,10 @@ import 'package:love_app/services/chest_sound.dart';
 void main() {
   test('файл звука в сборке и объявлен в pubspec', () {
     expect(File(ChestSound.asset).existsSync(), isTrue);
-    expect(File('pubspec.yaml').readAsStringSync().contains('- assets/sounds/'), isTrue);
+    expect(
+      File('pubspec.yaml').readAsStringSync().contains('- assets/sounds/'),
+      isTrue,
+    );
   });
 
   test('замок щёлкает раньше, чем выпадает приз', () {

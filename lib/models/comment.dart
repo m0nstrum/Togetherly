@@ -30,7 +30,8 @@ class MemoryComment {
       authorName: (d['author_name'] ?? '').toString(),
       authorAvatar: (d['author_avatar'] ?? '').toString(),
       text: (d['text'] ?? '').toString(),
-      createdAt: PairTime.read(d['created_at'], (d['tz'] ?? '').toString()) ??
+      createdAt:
+          PairTime.read(d['created_at'], (d['tz'] ?? '').toString()) ??
           DateTime.now(),
     );
   }

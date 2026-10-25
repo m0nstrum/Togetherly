@@ -43,7 +43,8 @@ class AvatarFrameImage extends StatelessWidget {
         final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
         final decode = (side * dpr).round();
         final frame = AvatarFrame.byKey(frameKey);
-        final still = !animated ||
+        final still =
+            !animated ||
             avatarSize < _minAnimated ||
             (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
         final url = frame?.urlFor(side, animated: !still);

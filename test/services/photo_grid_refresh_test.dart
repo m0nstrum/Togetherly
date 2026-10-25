@@ -14,17 +14,24 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('сетку зовут из общей синхронизации и из фона', () {
     final service = File('lib/services/widget_service.dart').readAsStringSync();
-    final home =
-        File('lib/services/home_widget_service.dart').readAsStringSync();
+    final home = File(
+      'lib/services/home_widget_service.dart',
+    ).readAsStringSync();
 
-    expect(service.contains('refreshPhotoGrid'), isTrue,
-        reason: 'служба обязана обновлять сетку своим проходом');
+    expect(
+      service.contains('refreshPhotoGrid'),
+      isTrue,
+      reason: 'служба обязана обновлять сетку своим проходом',
+    );
 
     // В фоне — внутри refreshLoveWidgetFromServer, а не только на экране.
     final bg = home.indexOf('Future<void> refreshLoveWidgetFromServer');
     expect(bg, greaterThan(-1));
     final bgBody = home.substring(bg, bg + 8000);
-    expect(bgBody.contains('refreshPhotoGrid'), isTrue,
-        reason: 'фоновое обновление тоже должно наполнять сетку');
+    expect(
+      bgBody.contains('refreshPhotoGrid'),
+      isTrue,
+      reason: 'фоновое обновление тоже должно наполнять сетку',
+    );
   });
 }

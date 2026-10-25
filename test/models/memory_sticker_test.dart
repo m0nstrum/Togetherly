@@ -4,18 +4,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/memory.dart';
 import 'package:love_app/models/memory_sticker.dart';
 
-MemorySticker _s(String id, String uid,
-        {double x = .5, double y = .5, int at = 0}) =>
-    MemorySticker(
-      id: id,
-      uid: uid,
-      image: 'assets/images/mood_packs/bunny/love.webp',
-      pack: 'bunny',
-      mood: 'love',
-      x: x,
-      y: y,
-      at: at,
-    );
+MemorySticker _s(
+  String id,
+  String uid, {
+  double x = .5,
+  double y = .5,
+  int at = 0,
+}) => MemorySticker(
+  id: id,
+  uid: uid,
+  image: 'assets/images/mood_packs/bunny/love.webp',
+  pack: 'bunny',
+  mood: 'love',
+  x: x,
+  y: y,
+  at: at,
+);
 
 void main() {
   group('разбор', () {
@@ -33,7 +37,8 @@ void main() {
       final s = MemorySticker(
         id: 'k1',
         uid: 'u1',
-        image: 'https://togetherly.day/api/files/catalog_items/dog/love_l1f07p337t.webp',
+        image:
+            'https://togetherly.day/api/files/catalog_items/dog/love_l1f07p337t.webp',
         pack: 'dog',
         mood: 'love',
         x: .25,
@@ -56,7 +61,10 @@ void main() {
       final list = parseStickers({
         'ok': _s('ok', 'u1').toJson(),
         'no-uid': {..._s('no-uid', '').toJson()},
-        'bad-img': {..._s('bad-img', 'u1').toJson(), 'img': 'file:///etc/passwd'},
+        'bad-img': {
+          ..._s('bad-img', 'u1').toJson(),
+          'img': 'file:///etc/passwd',
+        },
         'junk': 'строка вместо карты',
       });
       expect(list.map((s) => s.id), ['ok']);
@@ -87,15 +95,22 @@ void main() {
 
   group('картинка', () {
     test('берутся ассеты сборки и картинки каталога', () {
-      expect(stickerImageAllowed('assets/images/new emodji/Счастье.webp'), isTrue);
       expect(
-          stickerImageAllowed(
-              'https://togetherly.day/api/files/catalog_items/moti/love_uethoqf2ox.webp'),
-          isTrue);
+        stickerImageAllowed('assets/images/new emodji/Счастье.webp'),
+        isTrue,
+      );
       expect(
-          stickerImageAllowed(
-              'https://togetherly.duckdns.org/api/files/catalog_items/dog/love_l1f07p337t.webp'),
-          isTrue);
+        stickerImageAllowed(
+          'https://togetherly.day/api/files/catalog_items/moti/love_uethoqf2ox.webp',
+        ),
+        isTrue,
+      );
+      expect(
+        stickerImageAllowed(
+          'https://togetherly.duckdns.org/api/files/catalog_items/dog/love_l1f07p337t.webp',
+        ),
+        isTrue,
+      );
     });
 
     test('чужие адреса и выход из папки не берутся', () {
@@ -103,8 +118,9 @@ void main() {
       expect(stickerImageAllowed('https://evil.example/a.webp'), isFalse);
       expect(stickerImageAllowed('assets/../secret'), isFalse);
       expect(
-          stickerImageAllowed('https://togetherly.day/api/files/media/x/y.webp'),
-          isFalse);
+        stickerImageAllowed('https://togetherly.day/api/files/media/x/y.webp'),
+        isFalse,
+      );
       expect(stickerImageAllowed('assets/images/${'a' * 400}'), isFalse);
     });
 
@@ -113,15 +129,22 @@ void main() {
           'https://togetherly.day/api/files/custom_moods/k3m9x2p7q1w5e8r/custom_ab12cd34_x9y8z7w6v5.png';
       expect(stickerImageAllowed(own), isTrue);
       expect(
-          stickerImageAllowed(
-              'https://togetherly.duckdns.org/api/files/custom_moods/k3m9x2p7q1w5e8r/a.png'),
-          isTrue);
+        stickerImageAllowed(
+          'https://togetherly.duckdns.org/api/files/custom_moods/k3m9x2p7q1w5e8r/a.png',
+        ),
+        isTrue,
+      );
       expect(isOwnMoodSticker(own), isTrue);
-      expect(isOwnMoodSticker('assets/images/mood_packs/bunny/love.webp'), isFalse);
       expect(
-          isOwnMoodSticker(
-              'https://togetherly.day/api/files/catalog_items/dog/love_l1f07p337t.webp'),
-          isFalse);
+        isOwnMoodSticker('assets/images/mood_packs/bunny/love.webp'),
+        isFalse,
+      );
+      expect(
+        isOwnMoodSticker(
+          'https://togetherly.day/api/files/catalog_items/dog/love_l1f07p337t.webp',
+        ),
+        isFalse,
+      );
     });
   });
 
@@ -140,15 +163,18 @@ void main() {
     });
 
     test('убрать можно свою, а на своём пине и чужую', () {
-      expect(canRemoveSticker(_s('1', 'me'), uid: 'me', authorUid: 'partner'),
-          isTrue);
       expect(
-          canRemoveSticker(_s('1', 'partner'), uid: 'me', authorUid: 'me'),
-          isTrue);
+        canRemoveSticker(_s('1', 'me'), uid: 'me', authorUid: 'partner'),
+        isTrue,
+      );
       expect(
-          canRemoveSticker(_s('1', 'partner'),
-              uid: 'me', authorUid: 'partner'),
-          isFalse);
+        canRemoveSticker(_s('1', 'partner'), uid: 'me', authorUid: 'me'),
+        isTrue,
+      );
+      expect(
+        canRemoveSticker(_s('1', 'partner'), uid: 'me', authorUid: 'partner'),
+        isFalse,
+      );
       expect(canRemoveSticker(_s('1', 'me'), uid: '', authorUid: ''), isFalse);
     });
   });

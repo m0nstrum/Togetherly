@@ -29,20 +29,40 @@ void main() {
       // Телефон 19.09.2026: 520 dpi, то есть 3,25 точки на dp, ячейка 4×4 —
       // 344×386 dp. Прежний бюджет в 950 КБ давал 1,89 и мыло.
       const cell = Size(344, 386);
-      expect(pixelScaleFor(cell, dpr: 3.25, maxPixels: kMapWidgetMaxPixelsAndroid), 3.25);
-      expect(pixelScaleFor(const Size(170, 170), dpr: 2.75, maxPixels: kMapWidgetMaxPixelsIos), 2.75);
+      expect(
+        pixelScaleFor(cell, dpr: 3.25, maxPixels: kMapWidgetMaxPixelsAndroid),
+        3.25,
+      );
+      expect(
+        pixelScaleFor(
+          const Size(170, 170),
+          dpr: 2.75,
+          maxPixels: kMapWidgetMaxPixelsIos,
+        ),
+        2.75,
+      );
     });
 
-    test('плотность безумного экрана и огромная ячейка упираются в предел точек', () {
-      for (final max in [kMapWidgetMaxPixelsAndroid, kMapWidgetMaxPixelsIos]) {
-        for (final size in [const Size(344, 386), const Size(600, 700), const Size(364, 382)]) {
-          final k = pixelScaleFor(size, dpr: 6, maxPixels: max);
-          expect(k, lessThanOrEqualTo(4));
-          final (w, h) = mapWidgetPixels(size, k);
-          expect(w * h, lessThanOrEqualTo(max));
+    test(
+      'плотность безумного экрана и огромная ячейка упираются в предел точек',
+      () {
+        for (final max in [
+          kMapWidgetMaxPixelsAndroid,
+          kMapWidgetMaxPixelsIos,
+        ]) {
+          for (final size in [
+            const Size(344, 386),
+            const Size(600, 700),
+            const Size(364, 382),
+          ]) {
+            final k = pixelScaleFor(size, dpr: 6, maxPixels: max);
+            expect(k, lessThanOrEqualTo(4));
+            final (w, h) = mapWidgetPixels(size, k);
+            expect(w * h, lessThanOrEqualTo(max));
+          }
         }
-      }
-    });
+      },
+    );
 
     test('размер в точках не округляется вверх за предел', () {
       // Регресс: (w·k).round() давал на пару точек больше бюджета, и натив
@@ -59,9 +79,18 @@ void main() {
 
     test('размер берётся из присланного лончером, иначе по умолчанию', () {
       expect(MapWidgetSize.m.sizeFrom('300,180'), const Size(300, 180));
-      expect(MapWidgetSize.m.sizeFrom(''), Size(MapWidgetSize.m.width, MapWidgetSize.m.height));
-      expect(MapWidgetSize.m.sizeFrom('мусор'), Size(MapWidgetSize.m.width, MapWidgetSize.m.height));
-      expect(MapWidgetSize.m.sizeFrom('0,0'), Size(MapWidgetSize.m.width, MapWidgetSize.m.height));
+      expect(
+        MapWidgetSize.m.sizeFrom(''),
+        Size(MapWidgetSize.m.width, MapWidgetSize.m.height),
+      );
+      expect(
+        MapWidgetSize.m.sizeFrom('мусор'),
+        Size(MapWidgetSize.m.width, MapWidgetSize.m.height),
+      );
+      expect(
+        MapWidgetSize.m.sizeFrom('0,0'),
+        Size(MapWidgetSize.m.width, MapWidgetSize.m.height),
+      );
     });
 
     test('размеры виджетов iPhone по ширине экрана', () {
@@ -73,7 +102,8 @@ void main() {
   });
 
   group('что показать', () {
-    PairMapMode mode({bool paired = true, LatLng? me, LatLng? her}) => pairMapMode(
+    PairMapMode mode({bool paired = true, LatLng? me, LatLng? her}) =>
+        pairMapMode(
           paired: paired,
           me: me,
           partner: her,
@@ -82,7 +112,10 @@ void main() {
         );
 
     test('без пары — приглашение', () {
-      expect(mode(paired: false, me: chisinau, her: botanica), PairMapMode.noPair);
+      expect(
+        mode(paired: false, me: chisinau, her: botanica),
+        PairMapMode.noPair,
+      );
     });
     test('ни у кого нет точки', () => expect(mode(), PairMapMode.noPoints));
     test('точка только у одного', () {
@@ -90,7 +123,10 @@ void main() {
       expect(mode(her: botanica), PairMapMode.onlyPartner);
     });
     test('ближе пятидесяти метров — рядом', () {
-      expect(mode(me: chisinau, her: const LatLng(47.02452, 28.83256)), PairMapMode.near);
+      expect(
+        mode(me: chisinau, her: const LatLng(47.02452, 28.83256)),
+        PairMapMode.near,
+      );
     });
     test('в одном городе — карта', () {
       expect(mode(me: chisinau, her: botanica), PairMapMode.map);
@@ -107,11 +143,18 @@ void main() {
         final size = Size(s.width, s.height);
         final fit = fitTwo(chisinau, botanica, size, s.safe);
         final cam = MercatorCamera(
-            centerLat: fit.center.latitude, centerLon: fit.center.longitude, zoom: fit.zoom, size: size);
+          centerLat: fit.center.latitude,
+          centerLon: fit.center.longitude,
+          zoom: fit.zoom,
+          size: size,
+        );
         final inner = s.safe.deflateRect(Offset.zero & size).inflate(0.5);
         for (final p in [chisinau, botanica]) {
-          expect(inner.contains(cam.screen(p.latitude, p.longitude)), isTrue,
-              reason: '${s.id}: $p вне безопасной зоны');
+          expect(
+            inner.contains(cam.screen(p.latitude, p.longitude)),
+            isTrue,
+            reason: '${s.id}: $p вне безопасной зоны',
+          );
         }
       }
     });
@@ -122,7 +165,11 @@ void main() {
         final fit = fitOne(chisinau, size, s.safe, zoom: 13.5);
         expect(fit.zoom, 13.5);
         final cam = MercatorCamera(
-            centerLat: fit.center.latitude, centerLon: fit.center.longitude, zoom: fit.zoom, size: size);
+          centerLat: fit.center.latitude,
+          centerLon: fit.center.longitude,
+          zoom: fit.zoom,
+          size: size,
+        );
         final at = cam.screen(chisinau.latitude, chisinau.longitude);
         final mid = s.safe.deflateRect(Offset.zero & size).center;
         expect((at - mid).distance, lessThan(1), reason: s.id);
@@ -130,7 +177,12 @@ void main() {
     });
 
     test('близкие точки не приближаются бесконечно', () {
-      final fit = fitTwo(chisinau, const LatLng(47.0247, 28.8328), const Size(364, 170), MapWidgetSize.m.safe);
+      final fit = fitTwo(
+        chisinau,
+        const LatLng(47.0247, 28.8328),
+        const Size(364, 170),
+        MapWidgetSize.m.safe,
+      );
       expect(fit.zoom, lessThanOrEqualTo(kMapWidgetMaxZoom));
     });
 
@@ -140,9 +192,14 @@ void main() {
       final tiles = tilesFor(fit.center, fit.zoom, size);
       expect(tiles, isNotEmpty);
       expect(tiles.every((t) => t.z <= 14), isTrue);
-      final covered = tiles.map((t) => t.rect).reduce((a, b) => a.expandToInclude(b));
+      final covered = tiles
+          .map((t) => t.rect)
+          .reduce((a, b) => a.expandToInclude(b));
       expect(covered.contains(Offset.zero), isTrue);
-      expect(covered.contains(Offset(size.width - 0.1, size.height - 0.1)), isTrue);
+      expect(
+        covered.contains(Offset(size.width - 0.1, size.height - 0.1)),
+        isTrue,
+      );
       // Лишнего не качаем: каждая плитка задевает картинку.
       expect(tiles.every((t) => t.rect.overlaps(Offset.zero & size)), isTrue);
     });
@@ -157,7 +214,11 @@ void main() {
   group('глобус', () {
     const sydney = LatLng(-33.87, 151.21);
     for (final s in MapWidgetSize.values) {
-      for (final (name, far) in [('Берлин', berlin), ('Нью-Йорк', newYork), ('Сидней', sydney)]) {
+      for (final (name, far) in [
+        ('Берлин', berlin),
+        ('Нью-Йорк', newYork),
+        ('Сидней', sydney),
+      ]) {
         test('${s.id}: Кишинёв и $name видны и стоят в безопасной зоне', () {
           final size = Size(s.width, s.height);
           final f = globeFrameFor(chisinau, far, size, s.safe);
@@ -166,19 +227,41 @@ void main() {
           for (final p in [chisinau, far]) {
             final v = Vec3.fromLatLng(p.latitude, p.longitude);
             expect(b.depth(v), greaterThan(0), reason: '$p за горизонтом');
-            expect(inner.contains(b.project(v, f.radius, f.center)), isTrue,
-                reason: '${s.id}: $p вне зоны');
+            expect(
+              inner.contains(b.project(v, f.radius, f.center)),
+              isTrue,
+              reason: '${s.id}: $p вне зоны',
+            );
           }
           // Верх шара — в верхней половине: горизонт читается, а не шар
           // болтается внизу маленьким кругом.
           expect(f.center.dy - f.radius, lessThanOrEqualTo(size.height * .5));
           // Двое не слипаются: между ними не меньше трети ширины зоны.
-          final pa0 = b.project(Vec3.fromLatLng(chisinau.latitude, chisinau.longitude), f.radius, f.center);
-          final pb0 = b.project(Vec3.fromLatLng(far.latitude, far.longitude), f.radius, f.center);
-          expect((pa0.dx - pb0.dx).abs(), greaterThanOrEqualTo(math.min(inner.width * .6, 150)));
+          final pa0 = b.project(
+            Vec3.fromLatLng(chisinau.latitude, chisinau.longitude),
+            f.radius,
+            f.center,
+          );
+          final pb0 = b.project(
+            Vec3.fromLatLng(far.latitude, far.longitude),
+            f.radius,
+            f.center,
+          );
+          expect(
+            (pa0.dx - pb0.dx).abs(),
+            greaterThanOrEqualTo(math.min(inner.width * .6, 150)),
+          );
           // Пара стоит по горизонтали.
-          final pa = b.project(Vec3.fromLatLng(chisinau.latitude, chisinau.longitude), f.radius, f.center);
-          final pb = b.project(Vec3.fromLatLng(far.latitude, far.longitude), f.radius, f.center);
+          final pa = b.project(
+            Vec3.fromLatLng(chisinau.latitude, chisinau.longitude),
+            f.radius,
+            f.center,
+          );
+          final pb = b.project(
+            Vec3.fromLatLng(far.latitude, far.longitude),
+            f.radius,
+            f.center,
+          );
           expect((pa.dy - pb.dy).abs(), lessThan(1));
         });
       }
@@ -211,7 +294,11 @@ void main() {
     });
 
     test('вершина дуги — середина по длине', () {
-      final pts = liftedArc(const Offset(0, 100), const Offset(200, 100), maxLift: 40);
+      final pts = liftedArc(
+        const Offset(0, 100),
+        const Offset(200, 100),
+        maxLift: 40,
+      );
       final apex = arcApex(pts);
       expect(apex.dx, closeTo(100, 4));
       expect(apex.dy, closeTo(60, 1));

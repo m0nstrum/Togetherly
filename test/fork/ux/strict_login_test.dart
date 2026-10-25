@@ -7,6 +7,9 @@ void main() {
   test('вход идёт только на введённую почту', () {
     final src = File('lib/screens/login_screen.dart').readAsStringSync();
     expect(src, isNot(contains('emailTypoVariants')));
-    expect(src, contains('auth.signInWithEmail(email: email, password: password)'));
+    expect(
+      src,
+      contains('auth.signInWithEmail(email: email, password: password)'),
+    );
   });
 }

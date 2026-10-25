@@ -74,7 +74,8 @@ const Map<String, Map<String, String>> photoCarouselEditorStrings = {
     'it': 'Salvataggio non riuscito. Controlla la connessione e riprova',
     'es': 'No se pudo guardar. Revisa la conexión e inténtalo de nuevo',
     'fr': 'Échec de l’enregistrement. Vérifiez la connexion et réessayez',
-    'de': 'Speichern fehlgeschlagen. Prüfe die Verbindung und versuche es erneut',
+    'de':
+        'Speichern fehlgeschlagen. Prüfe die Verbindung und versuche es erneut',
   },
   'fromFeed': {
     'ru': 'Из ленты',

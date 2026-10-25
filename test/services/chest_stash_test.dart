@@ -17,25 +17,43 @@ void main() {
   late Future<void> Function() original;
 
   void serverStash(List<Map<String, dynamic>> items) {
-    PocketBaseService().debugUse(PocketBase(
-      'https://togetherly.day',
-      httpClientFactory: () => MockClient((req) async => http.Response.bytes(
-            utf8.encode(jsonEncode({
-              'page': 1,
-              'perPage': 100,
-              'totalItems': items.length,
-              'totalPages': 1,
-              'items': [
-                for (final i in items) {'collectionId': 'c', 'collectionName': 'chest_opens', 'state': 'stash', ...i},
-              ],
-            })),
+    PocketBaseService().debugUse(
+      PocketBase(
+        'https://togetherly.day',
+        httpClientFactory: () => MockClient(
+          (req) async => http.Response.bytes(
+            utf8.encode(
+              jsonEncode({
+                'page': 1,
+                'perPage': 100,
+                'totalItems': items.length,
+                'totalPages': 1,
+                'items': [
+                  for (final i in items)
+                    {
+                      'collectionId': 'c',
+                      'collectionName': 'chest_opens',
+                      'state': 'stash',
+                      ...i,
+                    },
+                ],
+              }),
+            ),
             200,
             headers: {'content-type': 'application/json; charset=utf-8'},
-          )),
-    ));
+          ),
+        ),
+      ),
+    );
   }
 
-  const cocoa = Gift(key: 'cocoa', price: 0, engine: GiftEngine.response, titleRu: 'Какао', titleEn: 'Cocoa');
+  const cocoa = Gift(
+    key: 'cocoa',
+    price: 0,
+    engine: GiftEngine.response,
+    titleRu: 'Какао',
+    titleEn: 'Cocoa',
+  );
 
   setUp(() {
     original = ChestService.catalogRefresh;
@@ -92,7 +110,11 @@ void main() {
 
   test('подарка нет и в свежем каталоге — пропускаем только его', () async {
     serverStash([
-      {'id': 'aaaaaaaaaaaaaa1', 'prize': 'gift_from_next_year', 'day': '2026-10-20'},
+      {
+        'id': 'aaaaaaaaaaaaaa1',
+        'prize': 'gift_from_next_year',
+        'day': '2026-10-20',
+      },
       {'id': 'aaaaaaaaaaaaaa2', 'prize': 'rose', 'day': '2026-10-21'},
     ]);
     ChestService.catalogRefresh = () async {};

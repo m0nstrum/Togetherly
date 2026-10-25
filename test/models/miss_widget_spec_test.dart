@@ -25,8 +25,10 @@ void main() {
     });
 
     test('кегль растёт вместе с базой большого размера', () {
-      expect(missCountSize(1000, base: 44),
-          greaterThan(missCountSize(1000, base: 30)));
+      expect(
+        missCountSize(1000, base: 44),
+        greaterThan(missCountSize(1000, base: 30)),
+      );
     });
 
     test('отрицательного счёта не бывает, но он не ломает расчёт', () {

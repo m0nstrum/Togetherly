@@ -80,29 +80,34 @@ List<OnThisDayShelf> onThisDay(
   int maxYears = 15,
 }) {
   final today = DateTime(now.year, now.month, now.day);
-  final visible = memories
-      .where((m) => !m.isSecret && !m.isAdult && !m.sealedNow(now))
-      .toList()
-    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  final visible =
+      memories
+          .where((m) => !m.isSecret && !m.isAdult && !m.sealedNow(now))
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   if (visible.isEmpty) return const [];
 
-  List<Memory> on(DateTime day) =>
-      [for (final m in visible) if (_sameDay(m.createdAt, day)) m];
+  List<Memory> on(DateTime day) => [
+    for (final m in visible)
+      if (_sameDay(m.createdAt, day)) m,
+  ];
 
   final out = <OnThisDayShelf>[];
   final monthDay = sameDayMonthsBack(today, 1);
   final month = on(monthDay);
   if (month.isNotEmpty) {
-    out.add(OnThisDayShelf(
-        day: monthDay, monthsAgo: 1, yearsAgo: 0, memories: month));
+    out.add(
+      OnThisDayShelf(day: monthDay, monthsAgo: 1, yearsAgo: 0, memories: month),
+    );
   }
   final oldest = visible.last.createdAt.year;
   for (var y = 1; y <= maxYears && today.year - y >= oldest; y++) {
     final day = sameDayMonthsBack(today, 12 * y);
     final list = on(day);
     if (list.isNotEmpty) {
-      out.add(OnThisDayShelf(
-          day: day, monthsAgo: 0, yearsAgo: y, memories: list));
+      out.add(
+        OnThisDayShelf(day: day, monthsAgo: 0, yearsAgo: y, memories: list),
+      );
     }
   }
   return out;

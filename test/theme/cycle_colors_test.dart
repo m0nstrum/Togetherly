@@ -30,11 +30,16 @@ void main() {
     test('в тёмной теме оба цвета светлее, чем в светлой', () {
       for (final partner in [false, true]) {
         final light = HSLColor.fromColor(
-            CycleColors.period(Brightness.light, partner: partner));
+          CycleColors.period(Brightness.light, partner: partner),
+        );
         final dark = HSLColor.fromColor(
-            CycleColors.period(Brightness.dark, partner: partner));
-        expect(dark.lightness, greaterThan(light.lightness),
-            reason: partner ? 'партнёрский' : 'свой');
+          CycleColors.period(Brightness.dark, partner: partner),
+        );
+        expect(
+          dark.lightness,
+          greaterThan(light.lightness),
+          reason: partner ? 'партнёрский' : 'свой',
+        );
       }
     });
 
@@ -42,13 +47,18 @@ void main() {
       // Разная яркость одного тона при цветовой слепоте сливается. Тона должны
       // отличаться заметно — иначе метка снова становится неразличимой.
       for (final brightness in Brightness.values) {
-        final mine =
-            HSLColor.fromColor(CycleColors.period(brightness, partner: false));
-        final hers =
-            HSLColor.fromColor(CycleColors.period(brightness, partner: true));
+        final mine = HSLColor.fromColor(
+          CycleColors.period(brightness, partner: false),
+        );
+        final hers = HSLColor.fromColor(
+          CycleColors.period(brightness, partner: true),
+        );
         final gap = (mine.hue - hers.hue).abs();
-        expect(gap > 60 && gap < 300, isTrue,
-            reason: 'тема ${brightness.name}: разница тона $gap°');
+        expect(
+          gap > 60 && gap < 300,
+          isTrue,
+          reason: 'тема ${brightness.name}: разница тона $gap°',
+        );
       }
     });
   });

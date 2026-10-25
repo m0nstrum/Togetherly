@@ -12,13 +12,27 @@ void main() {
 
     test('короткая ссылка YouTube', () {
       expect(videoLinkThumb('https://youtu.be/ro0KqgvlS4Y'), yt);
-      expect(videoLinkThumb('https://youtu.be/ro0KqgvlS4Y?si=63ToTj-Jgj_an5CT'), yt);
+      expect(
+        videoLinkThumb('https://youtu.be/ro0KqgvlS4Y?si=63ToTj-Jgj_an5CT'),
+        yt,
+      );
     });
 
     test('полная ссылка, Shorts, встраивание и эфир YouTube', () {
-      expect(videoLinkThumb('https://www.youtube.com/watch?v=ro0KqgvlS4Y&t=12'), yt);
-      expect(videoLinkThumb('https://m.youtube.com/watch?feature=share&v=ro0KqgvlS4Y'), yt);
-      expect(videoLinkThumb('https://youtube.com/shorts/ro0KqgvlS4Y?feature=share'), yt);
+      expect(
+        videoLinkThumb('https://www.youtube.com/watch?v=ro0KqgvlS4Y&t=12'),
+        yt,
+      );
+      expect(
+        videoLinkThumb(
+          'https://m.youtube.com/watch?feature=share&v=ro0KqgvlS4Y',
+        ),
+        yt,
+      );
+      expect(
+        videoLinkThumb('https://youtube.com/shorts/ro0KqgvlS4Y?feature=share'),
+        yt,
+      );
       expect(videoLinkThumb('https://www.youtube.com/embed/ro0KqgvlS4Y'), yt);
       expect(videoLinkThumb('https://www.youtube.com/live/ro0KqgvlS4Y'), yt);
     });
@@ -32,7 +46,10 @@ void main() {
 
     test('площадки без открытой обложки и не ссылки — пусто', () {
       expect(videoLinkThumb('https://vk.com/video-220754053_456239310'), '');
-      expect(videoLinkThumb('pb://media/ugq8nbu7sf4a9pl/1786453555756_v5zdc99cy'), '');
+      expect(
+        videoLinkThumb('pb://media/ugq8nbu7sf4a9pl/1786453555756_v5zdc99cy'),
+        '',
+      );
       expect(videoLinkThumb(''), '');
       expect(videoLinkThumb('не ссылка'), '');
     });
@@ -50,7 +67,9 @@ void main() {
     });
 
     test('ссылка без обложки получает обложку площадки', () {
-      final v = WatchVideosService.fromMemoryData('m2', {'videoUrl': 'https://youtu.be/ro0KqgvlS4Y'})!;
+      final v = WatchVideosService.fromMemoryData('m2', {
+        'videoUrl': 'https://youtu.be/ro0KqgvlS4Y',
+      })!;
       expect(v.thumbUrl, 'https://i.ytimg.com/vi/ro0KqgvlS4Y/hqdefault.jpg');
     });
 
@@ -64,15 +83,22 @@ void main() {
     });
 
     test('запись без ролика в «Наши видео» не попадает', () {
-      expect(WatchVideosService.fromMemoryData('m4', {'imageUrl': 'x'}), isNull);
+      expect(
+        WatchVideosService.fromMemoryData('m4', {'imageUrl': 'x'}),
+        isNull,
+      );
     });
   });
 
   group('B6: истекающие обложки', () {
-    const cdn = 'https://p16-sign-va.tiktokcdn.com/obj/x.jpeg?x-expires=1729000000&x-signature=abc';
+    const cdn =
+        'https://p16-sign-va.tiktokcdn.com/obj/x.jpeg?x-expires=1729000000&x-signature=abc';
     test('подписанная обложка TikTok не считается своей', () {
       expect(isExpiringThumb(cdn), isTrue);
-      expect(isExpiringThumb('https://i.ytimg.com/vi/ro0KqgvlS4Y/hqdefault.jpg'), isFalse);
+      expect(
+        isExpiringThumb('https://i.ytimg.com/vi/ro0KqgvlS4Y/hqdefault.jpg'),
+        isFalse,
+      );
       expect(videoThumbFor(cdn, 'https://www.tiktok.com/@/video/1'), '');
     });
 
@@ -81,7 +107,13 @@ void main() {
         videoThumbFor(cdn, 'https://youtu.be/ro0KqgvlS4Y'),
         'https://i.ytimg.com/vi/ro0KqgvlS4Y/hqdefault.jpg',
       );
-      expect(videoThumbFor('https://example.org/a.jpg', 'https://youtu.be/ro0KqgvlS4Y'), 'https://example.org/a.jpg');
+      expect(
+        videoThumbFor(
+          'https://example.org/a.jpg',
+          'https://youtu.be/ro0KqgvlS4Y',
+        ),
+        'https://example.org/a.jpg',
+      );
     });
 
     test('«Наши видео» тоже не берут истёкшую обложку', () {

@@ -287,18 +287,20 @@ class _GiftShopScreenState extends State<GiftShopScreen> {
       scheme: ProfileTheme.schemeFor(widget.theme),
       art: GiftImage(gift.key, side: 140),
       title: trKey('giftSentTitle'),
-      subtitle: name.isEmpty ? trKey('giftSentWhereAnon') : trKey('giftSentWhere').replaceAll('{name}', name),
+      subtitle: name.isEmpty
+          ? trKey('giftSentWhereAnon')
+          : trKey('giftSentWhere').replaceAll('{name}', name),
       footnote: byAd ? trKey('giftSentByAd') : null,
     );
   }
 
   /// Записка внутрь коробки, печенья или письма. null = отменил отправку.
   Future<String?> _askNote(Gift gift) => showGiftNoteSheet(
-        context,
-        cs: ProfileTheme.schemeFor(widget.theme),
-        giftKey: gift.key,
-        title: gift.title,
-      );
+    context,
+    cs: ProfileTheme.schemeFor(widget.theme),
+    giftKey: gift.key,
+    title: gift.title,
+  );
 
   void _pickFilter(int? tier) {
     if (_filter == tier) return;
@@ -1091,9 +1093,12 @@ class GiftPaySheet extends StatelessWidget {
           ],
           const SizedBox(height: 22),
           if (onlyFree)
-            FilledButton.icon(onPressed: onAd,
+            FilledButton.icon(
+              onPressed: onAd,
               style: FilledButton.styleFrom(minimumSize: minSize),
-              icon: const Icon(Icons.card_giftcard_rounded), label: Text(ruEn('Подарить', 'Give gift')))
+              icon: const Icon(Icons.card_giftcard_rounded),
+              label: Text(ruEn('Подарить', 'Give gift')),
+            )
           else if (adFirst) ...[
             adButton,
             const SizedBox(height: 10),

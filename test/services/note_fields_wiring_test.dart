@@ -51,7 +51,9 @@ void main() {
     // Тело собирает chatBody: и прямая отправка, и повтор из очереди берут
     // поля оттуда. Раньше тест смотрел внутрь chatSend и после рефакторинга
     // стерёг пустое место.
-    final body = src.split('Map<String, dynamic> chatBody(')[1].split('return body;')[0];
+    final body = src
+        .split('Map<String, dynamic> chatBody(')[1]
+        .split('return body;')[0];
     for (final f in ['note_url', 'note_ms', 'note_shape', 'note_thumb']) {
       expect(body, contains("'$f'"), reason: 'chatSend не шлёт $f');
     }
@@ -59,7 +61,9 @@ void main() {
 
   test('смотрящему открыты только отметка просмотра и сердечки', () {
     final src = File('pocketbase/hotpath/hotpath.py').readAsStringSync();
-    final guard = src.split('if meta["guard"] == "chat":')[1].split('return _err(403')[0];
+    final guard = src
+        .split('if meta["guard"] == "chat":')[1]
+        .split('return _err(403')[0];
     expect(guard, contains('note_seen_at'));
     expect(guard, contains('note_hearts'));
     // Ссылку на файл и форму чужой правит только автор.
@@ -68,19 +72,24 @@ void main() {
   });
 
   test('сохранение в галерею ходит в роут, который объявлен на сервере', () {
-    final client = File('lib/services/note_export_service.dart').readAsStringSync();
+    final client = File(
+      'lib/services/note_export_service.dart',
+    ).readAsStringSync();
     final server = File('pocketbase/hotpath/hotpath.py').readAsStringSync();
     expect(client, contains('/api/note/export'));
     expect(server, contains('@app.get("/api/note/export")'));
     // Сервер отдаёт файл только участнику пары — проверка обязана остаться.
-    final route = server.split('async def note_export(')[1].split('@app.get')[0];
+    final route = server
+        .split('async def note_export(')[1]
+        .split('@app.get')[0];
     expect(route, contains('not your message'));
     expect(route, contains('groups'));
   });
 
   test('форма для экспорта берётся из того же профиля, что и в приложении', () {
-    final shapes = jsonDecode(File('tools/note_shapes.json').readAsStringSync())
-        as Map<String, dynamic>;
+    final shapes =
+        jsonDecode(File('tools/note_shapes.json').readAsStringSync())
+            as Map<String, dynamic>;
     final dart = File('lib/widgets/chat/note_shapes.dart').readAsStringSync();
     for (final id in shapes.keys) {
       expect(dart, contains("id: '$id'"), reason: 'формы разошлись: $id');

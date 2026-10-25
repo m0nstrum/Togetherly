@@ -7,14 +7,14 @@ import 'package:love_app/models/memory_media.dart';
 import 'package:love_app/widgets/memory_save/frame_picker.dart';
 
 List<MediaFile> _files(int n) => [
-      for (var i = 0; i < n; i++)
-        MediaFile(
-          // Пустая заглушка: StorageImage в тесте не ходит в сеть.
-          ref: 'localfile:///nope/$i.jpg',
-          kind: i == 3 ? SaveKind.video : SaveKind.photo,
-          index: i,
-        ),
-    ];
+  for (var i = 0; i < n; i++)
+    MediaFile(
+      // Пустая заглушка: StorageImage в тесте не ходит в сеть.
+      ref: 'localfile:///nope/$i.jpg',
+      kind: i == 3 ? SaveKind.video : SaveKind.photo,
+      index: i,
+    ),
+];
 
 Future<FramePickResult?> _pump(
   WidgetTester t, {
@@ -26,19 +26,23 @@ Future<FramePickResult?> _pump(
   FramePickResult? out;
   await t.binding.setSurfaceSize(Size(width, 760));
   addTearDown(() => t.binding.setSurfaceSize(null));
-  await t.pumpWidget(MaterialApp(
-    home: MediaQuery(
-      data: MediaQueryData(
-          size: Size(width, 760), textScaler: TextScaler.linear(scale)),
-      child: Scaffold(
-        body: FramePicker(
-          files: _files(n),
-          savedKeys: saved,
-          onDone: (r) => out = r,
+  await t.pumpWidget(
+    MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: Size(width, 760),
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: Scaffold(
+          body: FramePicker(
+            files: _files(n),
+            savedKeys: saved,
+            onDone: (r) => out = r,
+          ),
         ),
       ),
     ),
-  ));
+  );
   await t.pump();
   return out;
 }
@@ -73,8 +77,9 @@ void main() {
     expect(_counter(t), contains('9'));
   });
 
-  testWidgets('протягивание назад снимает то, что протянули лишнего',
-      (t) async {
+  testWidgets('протягивание назад снимает то, что протянули лишнего', (
+    t,
+  ) async {
     await _pump(t);
     final g = await t.startGesture(t.getCenter(_tile(0)));
     await t.pump(const Duration(milliseconds: 700));
@@ -110,15 +115,17 @@ void main() {
     FramePickResult? result;
     await t.binding.setSurfaceSize(const Size(360, 760));
     addTearDown(() => t.binding.setSurfaceSize(null));
-    await t.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: FramePicker(
-          files: _files(12),
-          savedKeys: const {},
-          onDone: (r) => result = r,
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FramePicker(
+            files: _files(12),
+            savedKeys: const {},
+            onDone: (r) => result = r,
+          ),
         ),
       ),
-    ));
+    );
     await t.tap(_tile(5));
     await t.tap(_tile(1));
     await t.pump();

@@ -21,8 +21,9 @@ void main() {
     });
 
     test('регистр не плодит копий', () {
-      expect(withWish(const ['Мой ангелочек'], 'мой ангелочек'),
-          ['мой ангелочек']);
+      expect(withWish(const ['Мой ангелочек'], 'мой ангелочек'), [
+        'мой ангелочек',
+      ]);
     });
 
     test('дальше трёх не растёт', () {
@@ -50,17 +51,16 @@ void main() {
 
     test('на сервере пусто, а у нас есть — не стираем', () {
       // Пожелание могли завести без сети: оно ещё не уехало на аккаунт.
-      expect(
-        mergeCustomWishes(local: const ['своё'], remote: const []),
-        ['своё'],
-      );
+      expect(mergeCustomWishes(local: const ['своё'], remote: const []), [
+        'своё',
+      ]);
     });
 
     test('своего нет — берём серверное', () {
-      expect(
-        mergeCustomWishes(local: const [], remote: const ['а', 'б']),
-        ['а', 'б'],
-      );
+      expect(mergeCustomWishes(local: const [], remote: const ['а', 'б']), [
+        'а',
+        'б',
+      ]);
     });
 
     test('лишнее с сервера обрезается до потолка', () {

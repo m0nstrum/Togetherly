@@ -11,6 +11,7 @@ class HomeBottomNav extends StatelessWidget {
   final AppTheme theme;
   final bool isPaired;
   final ValueChanged<int> onTap;
+
   /// Круглая боковая кнопка справа от навбара. Тап — [onCreatePin]; null прячет
   /// кнопку. На главной морфится в стрелку → (открыть Ленту) либо плюс +
   /// (создать пин) — управляется [sideIsArrow]. В Ленте всегда плюс.
@@ -107,49 +108,51 @@ class HomeBottomNav extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-        decoration: BoxDecoration(
-          color: theme.cardSurface,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: narrow ? 6 : 10, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Порядок задаёт [order] (раскладка главной с Плюсом),
-                // спрятанные вкладки пропускаются.
-                for (final i in order)
-                  if ((i != 1 || showWidgets) && (i != 4 || showWatch))
-                    Expanded(
-                      child: NavBarItem(
-                      svgIcon: switch (i) {
-                        0 => _homeIcon,
-                        1 => _widgetsIcon,
-                        4 => _watchIcon,
-                        2 => _invitesIcon,
-                        _ => _profileIcon,
-                      },
-                      index: i,
-                      label: switch (i) {
-                        0 => s.home,
-                        1 => s.widgets,
-                        4 => s.watchTogether,
-                        2 => s.connect,
-                        _ => s.profile,
-                      },
-                      isActive: selectedIndex == i,
-                      activeColor: activeColor,
-                      activeBg: activeBg,
-                      inactiveColor: inactiveColor,
-                      badgeColor: primary,
-                      showBadge: i == 2 && !isPaired,
-                      onTap: () => onTap(i),
-                      ),
-                    ),
-              ],
-            ),
-          ),
+              decoration: BoxDecoration(
+                color: theme.cardSurface,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: narrow ? 6 : 10,
+                  vertical: 10,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    // Порядок задаёт [order] (раскладка главной с Плюсом),
+                    // спрятанные вкладки пропускаются.
+                    for (final i in order)
+                      if ((i != 1 || showWidgets) && (i != 4 || showWatch))
+                        Expanded(
+                          child: NavBarItem(
+                            svgIcon: switch (i) {
+                              0 => _homeIcon,
+                              1 => _widgetsIcon,
+                              4 => _watchIcon,
+                              2 => _invitesIcon,
+                              _ => _profileIcon,
+                            },
+                            index: i,
+                            label: switch (i) {
+                              0 => s.home,
+                              1 => s.widgets,
+                              4 => s.watchTogether,
+                              2 => s.connect,
+                              _ => s.profile,
+                            },
+                            isActive: selectedIndex == i,
+                            activeColor: activeColor,
+                            activeBg: activeBg,
+                            inactiveColor: inactiveColor,
+                            badgeColor: primary,
+                            showBadge: i == 2 && !isPaired,
+                            onTap: () => onTap(i),
+                          ),
+                        ),
+                  ],
+                ),
+              ),
             ),
           ),
           if (onCreatePin != null) ...[
@@ -185,10 +188,15 @@ class HomeBottomNav extends StatelessWidget {
                     color: theme.fillColor,
                     isArrow: sideIsArrow,
                     // fork (N11): подпись кнопки и подсказка про долгое нажатие.
-                    label: sideIsArrow ? s.sideActionOpenFeed : s.sideActionCreatePin,
+                    label: sideIsArrow
+                        ? s.sideActionOpenFeed
+                        : s.sideActionCreatePin,
                     longPressHint: onSideLongPress == null
                         ? null
-                        : ruEn('Переключить стрелку и плюс', 'Switch arrow and plus'),
+                        : ruEn(
+                            'Переключить стрелку и плюс',
+                            'Switch arrow and plus',
+                          ),
                     onTap: onCreatePin!,
                     onLongPress: onSideLongPress,
                   ),

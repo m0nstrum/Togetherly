@@ -112,7 +112,7 @@ MilestoneTrack milestoneTrack({
   }
   final todayIsAnniversary =
       _daysBetween(_anniversaryOf(anniversaryBase, years), today) == 0 &&
-          years >= 1;
+      years >= 1;
   final nextYears = todayIsAnniversary ? years : years + 1;
   final nextAnniversaryDate = _anniversaryOf(anniversaryBase, nextYears);
   final nextAnniversary = Milestone(

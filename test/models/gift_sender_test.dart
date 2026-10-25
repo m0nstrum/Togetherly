@@ -44,10 +44,7 @@ void main() {
     });
 
     test('без владельца полки тоже не гадаем', () {
-      expect(
-        giftSenderOf(senderUid: partner, myUid: ''),
-        GiftSender.unknown,
-      );
+      expect(giftSenderOf(senderUid: partner, myUid: ''), GiftSender.unknown);
     });
   });
 

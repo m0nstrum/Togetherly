@@ -76,7 +76,8 @@ class ChestService {
   /// Как дотянуть каталог, когда выпал подарок, которого приложение ещё не
   /// знает. Тест подменяет, чтобы не ходить в сеть.
   @visibleForTesting
-  static Future<void> Function() catalogRefresh = () => CatalogService.instance.refresh();
+  static Future<void> Function() catalogRefresh = () =>
+      CatalogService.instance.refresh();
 
   int get _tz => DateTime.now().timeZoneOffset.inMinutes;
   String get _platform => Platform.isIOS ? 'ios' : 'android';
@@ -95,7 +96,9 @@ class ChestService {
           'chest': ?chest,
         },
       );
-      final st = ChestState.fromJson(res is Map ? Map<String, dynamic>.from(res) : null);
+      final st = ChestState.fromJson(
+        res is Map ? Map<String, dynamic>.from(res) : null,
+      );
       PairJarService.instance.apply(st?.jar);
       return st;
     } catch (_) {
@@ -118,11 +121,31 @@ class ChestService {
     String? chest,
     bool noAd = false,
   }) async {
-    var res = await _openOnce(openId: openId, groupId: groupId, fromJar: fromJar, chest: chest, noAd: noAd);
-    for (var attempt = 2; attempt <= openAttempts && _retryable(res.error); attempt++) {
-      ChestTelemetry.step(openId, 'open:retry', data: {'attempt': attempt, 'after': res.error});
+    var res = await _openOnce(
+      openId: openId,
+      groupId: groupId,
+      fromJar: fromJar,
+      chest: chest,
+      noAd: noAd,
+    );
+    for (
+      var attempt = 2;
+      attempt <= openAttempts && _retryable(res.error);
+      attempt++
+    ) {
+      ChestTelemetry.step(
+        openId,
+        'open:retry',
+        data: {'attempt': attempt, 'after': res.error},
+      );
       await Future<void>.delayed(const Duration(milliseconds: 1500));
-      res = await _openOnce(openId: openId, groupId: groupId, fromJar: fromJar, chest: chest, noAd: noAd);
+      res = await _openOnce(
+        openId: openId,
+        groupId: groupId,
+        fromJar: fromJar,
+        chest: chest,
+        noAd: noAd,
+      );
     }
     return res;
   }
@@ -130,7 +153,8 @@ class ChestService {
   /// Сколько раз пробуем открыть, прежде чем сказать человеку «не открылся».
   static const int openAttempts = 2;
 
-  static bool _retryable(String? error) => error == 'network' || error == 'timeout';
+  static bool _retryable(String? error) =>
+      error == 'network' || error == 'timeout';
 
   Future<ChestOpenResult> _openOnce({
     required String openId,
@@ -141,44 +165,65 @@ class ChestService {
   }) async {
     Map<String, dynamic>? body;
     final watch = Stopwatch()..start();
-    ChestTelemetry.step(openId, 'open:send', data: {'jar': fromJar, 'chest': ?chest});
+    ChestTelemetry.step(
+      openId,
+      'open:send',
+      data: {'jar': fromJar, 'chest': ?chest},
+    );
     try {
-      final res = await PocketBaseService().pb.send(
-        '/api/chest/open',
-        method: 'POST',
-        // `frames` — эта сборка умеет показать рамку аватарки: без флага сервер
-        // рамки не разыгрывает, их доля остаётся в монетах.
-        body: {
-          'openId': openId,
-          'groupId': groupId,
-          'tz': _tz,
-          'platform': _platform,
-          'frames': true,
-          if (fromJar) 'bonus': true,
-          if (noAd) 'noAd': true,
-          'chest': ?chest,
-        },
-        // Без предела ответ, потерянный по дороге, держал кнопку на
-        // «Открываем…» навсегда. Повтор идёт тем же openId, а сервер
-        // отвечает на него прежним призом, поэтому второй раз не разыграет.
-      ).timeout(openLimit);
+      final res = await PocketBaseService().pb
+          .send(
+            '/api/chest/open',
+            method: 'POST',
+            // `frames` — эта сборка умеет показать рамку аватарки: без флага сервер
+            // рамки не разыгрывает, их доля остаётся в монетах.
+            body: {
+              'openId': openId,
+              'groupId': groupId,
+              'tz': _tz,
+              'platform': _platform,
+              'frames': true,
+              if (fromJar) 'bonus': true,
+              if (noAd) 'noAd': true,
+              'chest': ?chest,
+            },
+            // Без предела ответ, потерянный по дороге, держал кнопку на
+            // «Открываем…» навсегда. Повтор идёт тем же openId, а сервер
+            // отвечает на него прежним призом, поэтому второй раз не разыграет.
+          )
+          .timeout(openLimit);
       body = res is Map ? Map<String, dynamic>.from(res) : null;
     } on TimeoutException {
-      ChestTelemetry.step(openId, 'open:timeout', data: {'ms': watch.elapsedMilliseconds});
+      ChestTelemetry.step(
+        openId,
+        'open:timeout',
+        data: {'ms': watch.elapsedMilliseconds},
+      );
       return const ChestOpenResult(ok: false, error: 'timeout');
     } on ClientException catch (e) {
       // Отказ сервера (лимит, чужая пара) приходит исключением с телом ответа.
       if (e.response.isEmpty) {
-        ChestTelemetry.step(openId, 'open:network', data: {
-          'ms': watch.elapsedMilliseconds,
-          'status': e.statusCode,
-          'cause': '${e.originalError}'.split('\n').first,
-        });
+        ChestTelemetry.step(
+          openId,
+          'open:network',
+          data: {
+            'ms': watch.elapsedMilliseconds,
+            'status': e.statusCode,
+            'cause': '${e.originalError}'.split('\n').first,
+          },
+        );
         return const ChestOpenResult(ok: false, error: 'network');
       }
       body = Map<String, dynamic>.from(e.response);
     } catch (e) {
-      ChestTelemetry.step(openId, 'open:network', data: {'ms': watch.elapsedMilliseconds, 'cause': '$e'.split('\n').first});
+      ChestTelemetry.step(
+        openId,
+        'open:network',
+        data: {
+          'ms': watch.elapsedMilliseconds,
+          'cause': '$e'.split('\n').first,
+        },
+      );
       return const ChestOpenResult(ok: false, error: 'network');
     }
     var res = parseChestOpen(body);
@@ -191,17 +236,19 @@ class ChestService {
       } catch (_) {}
       res = parseChestOpen(body);
     }
-    ChestTelemetry.step(openId, res.ok ? 'open:ok' : 'open:refused', data: {
-      'ms': watch.elapsedMilliseconds,
-      if (!res.ok) 'error': res.error,
-    });
+    ChestTelemetry.step(
+      openId,
+      res.ok ? 'open:ok' : 'open:refused',
+      data: {'ms': watch.elapsedMilliseconds, if (!res.ok) 'error': res.error},
+    );
     PairJarService.instance.apply(res.jar);
     if (res.jarBonus != null) PairJarService.instance.setBonus(res.jarBonus!);
     return res;
   }
 
   /// Подарок из запаса — себе на полку.
-  Future<bool> keep(String openId) => _choice('/api/chest/keep', {'openId': openId});
+  Future<bool> keep(String openId) =>
+      _choice('/api/chest/keep', {'openId': openId});
 
   /// Подарок из запаса — партнёру, бесплатно. Записку сервер кладёт в подарок
   /// так же, как у купленного; пустую не шлём, старый сервер её не ждёт.
@@ -215,9 +262,11 @@ class ChestService {
   /// Подарок из запаса — продать за монеты. null — сеть или отказ сервера.
   Future<ChestSale?> sell(String openId) async {
     try {
-      final res = await PocketBaseService()
-          .pb
-          .send('/api/chest/sell', method: 'POST', body: {'openId': openId});
+      final res = await PocketBaseService().pb.send(
+        '/api/chest/sell',
+        method: 'POST',
+        body: {'openId': openId},
+      );
       return parseChestSale(res);
     } catch (_) {
       return null;
@@ -226,7 +275,11 @@ class ChestService {
 
   Future<bool> _choice(String path, Map<String, dynamic> body) async {
     try {
-      final res = await PocketBaseService().pb.send(path, method: 'POST', body: body);
+      final res = await PocketBaseService().pb.send(
+        path,
+        method: 'POST',
+        body: body,
+      );
       return res is Map && res['ok'] == true;
     } catch (_) {
       return false;
@@ -252,14 +305,16 @@ class ChestService {
       Outcome.guard(() => _loadStash(strict: true));
 
   Future<List<ChestStashItem>> _loadStash({required bool strict}) async {
-    final res = await PocketBaseService().pb.collection('chest_opens').getList(
-          perPage: 100,
-          filter: 'state = "stash"',
-          sort: 'created',
-        );
+    final res = await PocketBaseService().pb
+        .collection('chest_opens')
+        .getList(perPage: 100, filter: 'state = "stash"', sort: 'created');
     final rows = [
       for (final r in res.items)
-        (id: r.id, prize: r.getStringValue('prize'), day: r.getStringValue('day')),
+        (
+          id: r.id,
+          prize: r.getStringValue('prize'),
+          day: r.getStringValue('day'),
+        ),
     ];
     if (rows.any((r) => GiftCatalog.byKey(r.prize) == null)) {
       try {
@@ -274,7 +329,11 @@ class ChestService {
     return [
       for (final r in rows)
         if (GiftCatalog.byKey(r.prize) != null)
-          ChestStashItem(openId: r.id, giftKey: r.prize, chest: chestKeyOfDay(r.day)),
+          ChestStashItem(
+            openId: r.id,
+            giftKey: r.prize,
+            chest: chestKeyOfDay(r.day),
+          ),
     ];
   }
 }
@@ -291,7 +350,11 @@ String? chestKeyOfDay(String day) {
 
 /// Подарок из сундука, который ждёт решения: подарить или оставить.
 class ChestStashItem {
-  const ChestStashItem({required this.openId, required this.giftKey, this.chest});
+  const ChestStashItem({
+    required this.openId,
+    required this.giftKey,
+    this.chest,
+  });
 
   final String openId;
   final String giftKey;
@@ -302,7 +365,11 @@ class ChestStashItem {
 
 /// Продажа подарка из запаса: сколько дали и сколько стало на счету.
 class ChestSale {
-  const ChestSale({required this.price, required this.coins, this.repeated = false});
+  const ChestSale({
+    required this.price,
+    required this.coins,
+    this.repeated = false,
+  });
 
   final int price;
   final int coins;
@@ -332,18 +399,28 @@ List<(String, List<String>)> groupChestStash(List<ChestStashItem> items) {
 ChestOpenResult parseChestOpen(Map<String, dynamic>? j) {
   if (j == null) return const ChestOpenResult(ok: false, error: 'network');
   if (j['ok'] != true) {
-    return ChestOpenResult(ok: false, error: (j['error'] ?? 'internal').toString(), left: (j['left'] as num?)?.toInt());
+    return ChestOpenResult(
+      ok: false,
+      error: (j['error'] ?? 'internal').toString(),
+      left: (j['left'] as num?)?.toInt(),
+    );
   }
   final raw = j['prize'];
-  final prize = raw is Map ? ChestPrize.fromJson({...Map<String, dynamic>.from(raw), 'weight': 0}) : null;
+  final prize = raw is Map
+      ? ChestPrize.fromJson({...Map<String, dynamic>.from(raw), 'weight': 0})
+      : null;
   return ChestOpenResult(
     ok: prize != null,
     prize: prize,
     left: (j['left'] as num?)?.toInt(),
     coins: (j['coins'] as num?)?.toInt(),
     plus: j['plus'] == true,
-    ownedFeatures: j['ownedFeatures'] is List ? [for (final f in j['ownedFeatures'] as List) '$f'] : null,
-    ownedIcons: j['ownedIcons'] is List ? [for (final f in j['ownedIcons'] as List) '$f'] : null,
+    ownedFeatures: j['ownedFeatures'] is List
+        ? [for (final f in j['ownedFeatures'] as List) '$f']
+        : null,
+    ownedIcons: j['ownedIcons'] is List
+        ? [for (final f in j['ownedIcons'] as List) '$f']
+        : null,
     plusTrialUntil: (j['plusTrialUntil'] as num?)?.toInt(),
     untilRare: (j['untilRare'] as num?)?.toInt(),
     jarBonus: (j['jarBonus'] as num?)?.toInt(),

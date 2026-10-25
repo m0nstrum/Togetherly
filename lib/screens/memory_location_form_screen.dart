@@ -12,13 +12,14 @@ import 'map_picker_screen.dart';
 import '../services/map/map_tiles.dart';
 
 /// Сохранение воспоминания-локации.
-typedef MemoryLocationSaveCallback = Future<void> Function({
-  required String locationName,
-  double? latitude,
-  double? longitude,
-  String caption,
-  DateTime? customDate,
-});
+typedef MemoryLocationSaveCallback =
+    Future<void> Function({
+      required String locationName,
+      double? latitude,
+      double? longitude,
+      String caption,
+      DateTime? customDate,
+    });
 
 /// Полноэкранная форма создания локации.
 ///
@@ -127,9 +128,9 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
   }
 
   void _clearLocation() => setState(() {
-        _lat = null;
-        _lng = null;
-      });
+    _lat = null;
+    _lng = null;
+  });
 
   Future<void> _save() async {
     if (!_canSave) return;
@@ -198,7 +199,9 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
         tooltip: ruEn('Закрыть', 'Close'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded, size: 22),
-        style: IconButton.styleFrom(foregroundColor: widget.theme.textSecondary),
+        style: IconButton.styleFrom(
+          foregroundColor: widget.theme.textSecondary,
+        ),
       ),
       title: Text(
         s.location,
@@ -221,10 +224,14 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
                 backgroundColor: _primary,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                textStyle:
-                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
               child: Text(s.addMemoryBtn),
             ),
@@ -244,9 +251,7 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
         child: Container(
           height: 240,
           width: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(22)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(22),
             child: _hasLocation ? _buildMapPreview(s) : _buildEmptyMap(s),
@@ -268,12 +273,11 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
             backgroundColor: mapBackground(widget.theme),
             initialCenter: center,
             initialZoom: 15,
-            interactionOptions:
-                const InteractionOptions(flags: InteractiveFlag.none),
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.none,
+            ),
           ),
-          children: [
-            ThemedMapLayer(theme: widget.theme),
-          ],
+          children: [ThemedMapLayer(theme: widget.theme)],
         ),
         // Центральный маркер (остриё указывает в центр карты).
         Center(
@@ -362,8 +366,11 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
                 color: _accent.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add_location_alt_rounded,
-                  size: 34, color: _accent),
+              child: const Icon(
+                Icons.add_location_alt_rounded,
+                size: 34,
+                color: _accent,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -393,14 +400,13 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2.5),
           ),
-          child: const Icon(Icons.location_on_rounded,
-              color: Colors.white, size: 20),
+          child: const Icon(
+            Icons.location_on_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
-        Container(
-          width: 2,
-          height: 10,
-          color: _accent,
-        ),
+        Container(width: 2, height: 10, color: _accent),
       ],
     );
   }
@@ -440,21 +446,28 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
       decoration: InputDecoration(
         hintText: s.locationNameHint,
-        hintStyle:
-            TextStyle(fontWeight: FontWeight.w400, color: widget.theme.textMuted),
+        hintStyle: TextStyle(
+          fontWeight: FontWeight.w400,
+          color: widget.theme.textMuted,
+        ),
         prefixIcon: const Icon(Icons.location_on_rounded, color: _accent),
         suffixIcon: _hasLocation
             ? IconButton(
-                icon: Icon(Icons.close_rounded,
-                    size: 18, color: widget.theme.textMuted),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 18,
+                  color: widget.theme.textMuted,
+                ),
                 tooltip: s.pickOnMap,
                 onPressed: _clearLocation,
               )
             : null,
         filled: true,
         fillColor: widget.theme.surfaceMuted,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: widget.theme.divider),
@@ -519,7 +532,9 @@ class _MemoryLocationFormScreenState extends State<MemoryLocationFormScreen> {
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               )
             else if (icon != null)
               Icon(icon, size: 16, color: Colors.white),

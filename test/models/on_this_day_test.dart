@@ -2,18 +2,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/memory.dart';
 import 'package:love_app/models/on_this_day.dart';
 
-Memory _m(String id, DateTime at, {bool secret = false, String? title, String? img}) =>
-    Memory(
-      id: id,
-      groupId: 'g',
-      authorUid: 'a',
-      authorName: 'a',
-      type: MemoryType.photo,
-      createdAt: at,
-      imageUrl: img,
-      title: title,
-      isSecret: secret,
-    );
+Memory _m(
+  String id,
+  DateTime at, {
+  bool secret = false,
+  String? title,
+  String? img,
+}) => Memory(
+  id: id,
+  groupId: 'g',
+  authorUid: 'a',
+  authorName: 'a',
+  type: MemoryType.photo,
+  createdAt: at,
+  imageUrl: img,
+  title: title,
+  isSecret: secret,
+);
 
 void main() {
   final now = DateTime(2026, 9, 28, 15);
@@ -25,8 +30,11 @@ void main() {
       _m('y3', DateTime(2023, 9, 28, 12)),
       _m('other', DateTime(2025, 9, 27)),
     ], now: now);
-    expect(shelf.map((s) => s.monthsAgo == 1 ? 'm' : '${s.yearsAgo}y'),
-        ['m', '1y', '3y']);
+    expect(shelf.map((s) => s.monthsAgo == 1 ? 'm' : '${s.yearsAgo}y'), [
+      'm',
+      '1y',
+      '3y',
+    ]);
     expect(shelf[1].memories.single.id, 'y1');
   });
 
@@ -39,8 +47,10 @@ void main() {
     final capsule = _m('c', DateTime(2025, 9, 28))
       ..sealed = true
       ..openAt = DateTime(2027, 1, 1);
-    final shelf = onThisDay(
-        [_m('s', DateTime(2025, 9, 28), secret: true), capsule], now: now);
+    final shelf = onThisDay([
+      _m('s', DateTime(2025, 9, 28), secret: true),
+      capsule,
+    ], now: now);
     expect(shelf, isEmpty);
   });
 
@@ -73,7 +83,16 @@ void main() {
   });
 
   test('форма слова «год»', () {
-    expect([2, 3, 4, 5, 11, 12, 21, 22, 25].map(yearsAgoForm).toList(),
-        ['few', 'few', 'few', 'many', 'many', 'many', 'one', 'few', 'many']);
+    expect([2, 3, 4, 5, 11, 12, 21, 22, 25].map(yearsAgoForm).toList(), [
+      'few',
+      'few',
+      'few',
+      'many',
+      'many',
+      'many',
+      'one',
+      'few',
+      'many',
+    ]);
   });
 }

@@ -36,7 +36,11 @@ void main() {
   group('открытие', () {
     test('начинается ровно на карточке и под её заливкой', () {
       final frame = unfoldOpenFrame(
-          ms: 0, source: card, full: full, sourceRadius: 28);
+        ms: 0,
+        source: card,
+        full: full,
+        sourceRadius: 28,
+      );
       expect(frame.rect, card);
       expect(frame.radius, 28);
       expect(frame.tint, 1);
@@ -46,7 +50,11 @@ void main() {
 
     test('кончается полным экраном без заливки и призрака', () {
       final frame = unfoldOpenFrame(
-          ms: UnfoldTiming.openMs, source: card, full: full, sourceRadius: 28);
+        ms: UnfoldTiming.openMs,
+        source: card,
+        full: full,
+        sourceRadius: 28,
+      );
       expect(frame.rect.left, closeTo(0, 0.5));
       expect(frame.rect.width, closeTo(360, 0.5));
       expect(frame.rect.height, closeTo(760, 0.5));
@@ -57,7 +65,11 @@ void main() {
 
     test('содержимое карточки гаснет раньше, чем сойдёт заливка', () {
       final frame = unfoldOpenFrame(
-          ms: 120, source: card, full: full, sourceRadius: 28);
+        ms: 120,
+        source: card,
+        full: full,
+        sourceRadius: 28,
+      );
       expect(frame.ghost, 0);
       expect(frame.tint, greaterThan(0));
     });
@@ -71,9 +83,14 @@ void main() {
     });
 
     test('каждый следующий блок отстаёт на тридцать миллисекунд', () {
-      expect(unfoldItemIn(165, 3).opacity,
-          closeTo(unfoldItemIn(165 - 90, 0).opacity, 1e-9));
-      expect(unfoldItemIn(200, 5).opacity, lessThan(unfoldItemIn(200, 0).opacity));
+      expect(
+        unfoldItemIn(165, 3).opacity,
+        closeTo(unfoldItemIn(165 - 90, 0).opacity, 1e-9),
+      );
+      expect(
+        unfoldItemIn(200, 5).opacity,
+        lessThan(unfoldItemIn(200, 0).opacity),
+      );
     });
 
     test('блок приезжает снизу и встаёт на место', () {
@@ -92,7 +109,12 @@ void main() {
   group('закрытие', () {
     test('с полного экрана начинается полным экраном', () {
       final frame = unfoldCloseFrame(
-          ms: 0, source: card, from: full, sourceRadius: 28, fromRadius: 0);
+        ms: 0,
+        source: card,
+        from: full,
+        sourceRadius: 28,
+        fromRadius: 0,
+      );
       expect(frame.rect, full);
       expect(frame.radius, 0);
       expect(frame.tint, 0);
@@ -102,11 +124,12 @@ void main() {
 
     test('кончается карточкой с её содержимым', () {
       final frame = unfoldCloseFrame(
-          ms: UnfoldTiming.closeMs,
-          source: card,
-          from: full,
-          sourceRadius: 28,
-          fromRadius: 0);
+        ms: UnfoldTiming.closeMs,
+        source: card,
+        from: full,
+        sourceRadius: 28,
+        fromRadius: 0,
+      );
       expect(frame.rect.left, closeTo(card.left, 0.5));
       expect(frame.rect.top, closeTo(card.top, 1.0));
       expect(frame.rect.width, closeTo(card.width, 0.5));
@@ -118,7 +141,12 @@ void main() {
     test('из-под пальца стартует с того места, где карточку отпустили', () {
       const dropped = Rect.fromLTWH(120, 180, 200, 420);
       final frame = unfoldCloseFrame(
-          ms: 0, source: card, from: dropped, sourceRadius: 28, fromRadius: 40);
+        ms: 0,
+        source: card,
+        from: dropped,
+        sourceRadius: 28,
+        fromRadius: 40,
+      );
       expect(frame.rect, dropped);
       expect(frame.radius, 40);
     });
@@ -130,12 +158,23 @@ void main() {
       const gear = Rect.fromLTWH(296, 112, 34, 34);
       for (var ms = 0.0; ms <= UnfoldTiming.closeMs; ms += 5) {
         final rect = unfoldCloseFrame(
-                ms: ms, source: gear, from: full, sourceRadius: 17, fromRadius: 0)
-            .rect;
-        expect(rect.contains(gear.center), isTrue, reason: 'на $ms мс окно ушло от кнопки');
+          ms: ms,
+          source: gear,
+          from: full,
+          sourceRadius: 17,
+          fromRadius: 0,
+        ).rect;
+        expect(
+          rect.contains(gear.center),
+          isTrue,
+          reason: 'на $ms мс окно ушло от кнопки',
+        );
         if (rect.width * rect.height > gear.width * gear.height * 6) continue;
-        expect(rect.height / rect.width, inInclusiveRange(0.75, 1.35),
-            reason: 'на $ms мс окно ${rect.size} вытянуто, а кнопка круглая');
+        expect(
+          rect.height / rect.width,
+          inInclusiveRange(0.75, 1.35),
+          reason: 'на $ms мс окно ${rect.size} вытянуто, а кнопка круглая',
+        );
       }
     });
   });
@@ -145,12 +184,22 @@ void main() {
       const chat = Rect.fromLTWH(306, 640, 40, 40);
       for (var ms = 0.0; ms <= UnfoldTiming.openMs; ms += 5) {
         final rect = unfoldOpenFrame(
-                ms: ms, source: chat, full: full, sourceRadius: 20)
-            .rect;
-        expect(rect.contains(chat.center), isTrue, reason: 'на $ms мс окно ушло от кнопки');
+          ms: ms,
+          source: chat,
+          full: full,
+          sourceRadius: 20,
+        ).rect;
+        expect(
+          rect.contains(chat.center),
+          isTrue,
+          reason: 'на $ms мс окно ушло от кнопки',
+        );
         if (rect.width * rect.height > chat.width * chat.height * 6) continue;
-        expect(rect.height / rect.width, inInclusiveRange(0.75, 1.35),
-            reason: 'на $ms мс окно ${rect.size} вытянуто, а кнопка круглая');
+        expect(
+          rect.height / rect.width,
+          inInclusiveRange(0.75, 1.35),
+          reason: 'на $ms мс окно ${rect.size} вытянуто, а кнопка круглая',
+        );
       }
     });
   });
@@ -164,7 +213,10 @@ void main() {
     });
 
     test('на полном ходу сжимается до 56% и скругляется', () {
-      final frame = unfoldDragFrame(delta: const Offset(210, 0), screen: screen);
+      final frame = unfoldDragFrame(
+        delta: const Offset(210, 0),
+        screen: screen,
+      );
       expect(frame.progress, 1);
       expect(frame.rect.width, closeTo(360 * 0.56, 0.01));
       expect(frame.rect.height, closeTo(760 * 0.56, 0.01));
@@ -180,8 +232,7 @@ void main() {
 
     test('по высоте за экран не выходит', () {
       for (final dy in [-900.0, -200.0, 0.0, 300.0, 900.0]) {
-        final frame =
-            unfoldDragFrame(delta: Offset(140, dy), screen: screen);
+        final frame = unfoldDragFrame(delta: Offset(140, dy), screen: screen);
         expect(frame.rect.top, greaterThanOrEqualTo(0));
         expect(frame.rect.bottom, lessThanOrEqualTo(760 + 1e-6));
       }
@@ -189,14 +240,19 @@ void main() {
 
     test('от правого края зеркалится', () {
       final frame = unfoldDragFrame(
-          delta: const Offset(-100, 0), screen: screen, fromRight: true);
+        delta: const Offset(-100, 0),
+        screen: screen,
+        fromRight: true,
+      );
       expect(frame.progress, closeTo(100 / 210, 1e-9));
       expect(frame.rect.right, closeTo(360 - 100 * 0.62, 0.01));
     });
 
     test('движение назад к краю не считается жестом', () {
-      final frame =
-          unfoldDragFrame(delta: const Offset(-80, 0), screen: screen);
+      final frame = unfoldDragFrame(
+        delta: const Offset(-80, 0),
+        screen: screen,
+      );
       expect(frame.progress, 0);
       expect(frame.rect, full);
     });
@@ -213,8 +269,10 @@ void main() {
       expect(photoOpenFrame(0).backdrop, 0);
       expect(photoOpenFrame(110).backdrop, closeTo(0.5, 1e-9));
       expect(photoOpenFrame(220).backdrop, 1);
-      expect(photoOpenFrame(180).flight,
-          closeTo(unfoldSpring(180, omega: 18, zeta: 0.82), 1e-12));
+      expect(
+        photoOpenFrame(180).flight,
+        closeTo(unfoldSpring(180, omega: 18, zeta: 0.82), 1e-12),
+      );
       expect(photoOpenFrame(620).flight, closeTo(1, 0.002));
     });
 
@@ -243,8 +301,10 @@ void main() {
 
     test('закрытие из-под пальца начинает с того фона, что был', () {
       expect(photoCloseFrame(0, backdropFrom: 0.4).backdrop, 0.4);
-      expect(photoCloseFrame(120, backdropFrom: 0.4).backdrop,
-          closeTo(0.2, 1e-9));
+      expect(
+        photoCloseFrame(120, backdropFrom: 0.4).backdrop,
+        closeTo(0.2, 1e-9),
+      );
       expect(photoChromeOut(0, from: 0), 0);
     });
 
@@ -281,11 +341,15 @@ void main() {
     test('цель полёта — картинка, вписанная в сцену целиком', () {
       const stage = Rect.fromLTWH(0, 60, 360, 560);
       // Горизонтальный кадр упирается в ширину.
-      expect(photoFit(const Size(1600, 900), stage),
-          Rect.fromCenter(center: stage.center, width: 360, height: 202.5));
+      expect(
+        photoFit(const Size(1600, 900), stage),
+        Rect.fromCenter(center: stage.center, width: 360, height: 202.5),
+      );
       // Вертикальный — в высоту.
-      expect(photoFit(const Size(900, 1600), stage),
-          Rect.fromCenter(center: stage.center, width: 315, height: 560));
+      expect(
+        photoFit(const Size(900, 1600), stage),
+        Rect.fromCenter(center: stage.center, width: 315, height: 560),
+      );
       // Пустую картинку вписать нельзя: сцена целиком.
       expect(photoFit(Size.zero, stage), stage);
     });

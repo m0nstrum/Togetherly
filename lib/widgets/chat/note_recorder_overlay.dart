@@ -148,8 +148,8 @@ class NoteRecorderOverlay extends StatelessWidget {
     final hint = cancelling
         ? s.noteReleaseToCancel
         : recording
-            ? (locked ? s.noteTapToSend : s.noteHandsFreeHint)
-            : s.noteHoldToRecord;
+        ? (locked ? s.noteTapToSend : s.noteHandsFreeHint)
+        : s.noteHoldToRecord;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Row(
@@ -199,8 +199,8 @@ class NoteRecorderOverlay extends StatelessWidget {
           ringListenable: elapsed,
           ringValue: () => recording
               ? (elapsed.value.inMilliseconds /
-                      NoteRecorderService.maxDuration.inMilliseconds)
-                  .clamp(0.0, 1.0)
+                        NoteRecorderService.maxDuration.inMilliseconds)
+                    .clamp(0.0, 1.0)
               : 0.0,
           child: _preview(cs),
         ),
@@ -252,7 +252,9 @@ class NoteRecorderOverlay extends StatelessWidget {
           if (canTorch) ...[
             const SizedBox(height: 10),
             _RoundTool(
-              tooltip: torchOn ? ruEn('Выключить вспышку', 'Turn flash off') : ruEn('Включить вспышку', 'Turn flash on'),
+              tooltip: torchOn
+                  ? ruEn('Выключить вспышку', 'Turn flash off')
+                  : ruEn('Включить вспышку', 'Turn flash on'),
               icon: torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
               active: torchOn,
               onTap: onTorch,
@@ -276,7 +278,9 @@ class NoteRecorderOverlay extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: _RoundTool(
-        tooltip: paused ? ruEn('Продолжить запись', 'Resume recording') : ruEn('Приостановить запись', 'Pause recording'),
+        tooltip: paused
+            ? ruEn('Продолжить запись', 'Resume recording')
+            : ruEn('Приостановить запись', 'Pause recording'),
         icon: paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
         onTap: recording ? onPauseToggle : null,
         cs: cs,
@@ -284,12 +288,8 @@ class NoteRecorderOverlay extends StatelessWidget {
     );
   }
 
-  Widget _shapeStrip(ColorScheme cs) => _ShapePicker(
-        shape: shape,
-        plusGate: plusGate,
-        onShape: onShape,
-        cs: cs,
-      );
+  Widget _shapeStrip(ColorScheme cs) =>
+      _ShapePicker(shape: shape, plusGate: plusGate, onShape: onShape, cs: cs);
 
   Widget _bottomBar(BuildContext context, ColorScheme cs, AppStrings s) {
     return Padding(
@@ -321,10 +321,12 @@ class NoteRecorderOverlay extends StatelessWidget {
                         // иначе съёмка обрывалась посреди фразы без
                         // предупреждения (каждый десятый упирался в предел).
                         final left = NoteRecorderService.maxDuration - value;
-                        final ending = recording &&
-                            left <= const Duration(seconds: 5);
+                        final ending =
+                            recording && left <= const Duration(seconds: 5);
                         return Text(
-                          ending ? '−${_fmt(left + const Duration(milliseconds: 999))}' : _fmt(value),
+                          ending
+                              ? '−${_fmt(left + const Duration(milliseconds: 999))}'
+                              : _fmt(value),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -332,8 +334,8 @@ class NoteRecorderOverlay extends StatelessWidget {
                             color: cancelling
                                 ? cs.onErrorContainer
                                 : ending
-                                    ? cs.error
-                                    : cs.onSurface,
+                                ? cs.error
+                                : cs.onSurface,
                           ),
                         );
                       },
@@ -433,8 +435,9 @@ class _RoundTool extends StatelessWidget {
       onPressed: onTap,
       icon: Icon(icon, size: 20),
       style: IconButton.styleFrom(
-        backgroundColor:
-            active ? cs.secondaryContainer : cs.surfaceContainerHigh,
+        backgroundColor: active
+            ? cs.secondaryContainer
+            : cs.surfaceContainerHigh,
         foregroundColor: active
             ? cs.onSecondaryContainer
             : (enabled ? cs.onSurfaceVariant : cs.outlineVariant),
@@ -485,14 +488,13 @@ class _RecDotState extends State<_RecDot> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: Tween<double>(begin: 1, end: 0.25).animate(_c),
-        child: Container(
-          width: 10,
-          height: 10,
-          decoration:
-              BoxDecoration(color: widget.color, shape: BoxShape.circle),
-        ),
-      );
+    opacity: Tween<double>(begin: 1, end: 0.25).animate(_c),
+    child: Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+    ),
+  );
 }
 
 /// Выбор формы. По умолчанию свёрнут в одну кнопку с текущей формой: 99%
@@ -556,7 +558,10 @@ class _ShapePickerState extends State<_ShapePicker> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   NoteShapeGlyph(
-                      shape: shape, size: 22, color: cs.onSurfaceVariant),
+                    shape: shape,
+                    size: 22,
+                    color: cs.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     trKey('noteShapeLabel'),
@@ -568,8 +573,11 @@ class _ShapePickerState extends State<_ShapePicker> {
                     ),
                   ),
                   const SizedBox(width: 2),
-                  Icon(Icons.expand_less_rounded,
-                      size: 20, color: cs.onSurfaceVariant),
+                  Icon(
+                    Icons.expand_less_rounded,
+                    size: 20,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ],
               ),
             ),
@@ -590,8 +598,7 @@ class _ShapePickerState extends State<_ShapePicker> {
         itemBuilder: (context, i) {
           final item = kNoteShapes[i];
           final active = item.id == shape.id;
-          final locked =
-              !PlusAccess.ownsNoteShape(id: item.id, gate: plusGate);
+          final locked = !PlusAccess.ownsNoteShape(id: item.id, gate: plusGate);
           return GestureDetector(
             // Тап по запертой форме тоже уходит наверх: экран покажет витрину
             // Togetherly+. Молчаливая кнопка читалась бы как поломка.
@@ -620,15 +627,19 @@ class _ShapePickerState extends State<_ShapePicker> {
                       size: 28,
                       color: active
                           ? cs.onSecondaryContainer
-                          : cs.onSurfaceVariant
-                              .withValues(alpha: locked ? 0.45 : 1),
+                          : cs.onSurfaceVariant.withValues(
+                              alpha: locked ? 0.45 : 1,
+                            ),
                     ),
                     if (locked)
                       Positioned(
                         right: -3,
                         bottom: -3,
-                        child: Icon(Icons.lock_rounded,
-                            size: 13, color: cs.onSurfaceVariant),
+                        child: Icon(
+                          Icons.lock_rounded,
+                          size: 13,
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),

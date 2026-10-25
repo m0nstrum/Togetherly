@@ -10,11 +10,7 @@
 const int kCycleConsentVersion = 1;
 
 class CycleConsent {
-  const CycleConsent({
-    this.grantedAt,
-    this.withdrawnAt,
-    this.version = 0,
-  });
+  const CycleConsent({this.grantedAt, this.withdrawnAt, this.version = 0});
 
   /// Согласия не спрашивали ни разу.
   const CycleConsent.absent() : this();
@@ -44,14 +40,14 @@ class CycleConsent {
   }
 
   factory CycleConsent.fromMap(Map<String, dynamic> map) => CycleConsent(
-        grantedAt: _date(map['granted_at']),
-        withdrawnAt: _date(map['withdrawn_at']),
-        version: (map['version'] as num?)?.toInt() ?? 0,
-      );
+    grantedAt: _date(map['granted_at']),
+    withdrawnAt: _date(map['withdrawn_at']),
+    version: (map['version'] as num?)?.toInt() ?? 0,
+  );
 
   Map<String, dynamic> toMap() => {
-        if (grantedAt != null) 'granted_at': grantedAt!.toIso8601String(),
-        if (withdrawnAt != null) 'withdrawn_at': withdrawnAt!.toIso8601String(),
-        'version': version,
-      };
+    if (grantedAt != null) 'granted_at': grantedAt!.toIso8601String(),
+    if (withdrawnAt != null) 'withdrawn_at': withdrawnAt!.toIso8601String(),
+    'version': version,
+  };
 }

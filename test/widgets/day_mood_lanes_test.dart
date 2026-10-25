@@ -14,12 +14,12 @@ import 'package:love_app/services/locale_service.dart';
 import 'package:love_app/widgets/mood/day_mood_lanes.dart';
 
 MoodEntry _e(String id, String mood, int h, int m, {int day = 29}) => MoodEntry(
-      id: id,
-      moodId: mood,
-      imagePath: '',
-      label: mood,
-      timestamp: DateTime(2026, 9, day, h, m),
-    );
+  id: id,
+  moodId: mood,
+  imagePath: '',
+  label: mood,
+  timestamp: DateTime(2026, 9, day, h, m),
+);
 
 void main() {
   setUp(() => LocaleService.instance.setLanguage(AppLanguage.ru));
@@ -36,49 +36,76 @@ void main() {
 
   test('сегодняшняя отметка больше не стирает прежние, статистика по дням', () {
     final src = File('lib/services/mood_service.dart').readAsStringSync();
-    final today = src.substring(src.indexOf('Future<void> setMoodForToday('),
-        src.indexOf('Future<void> setMoodForDate('));
+    final today = src.substring(
+      src.indexOf('Future<void> setMoodForToday('),
+      src.indexOf('Future<void> setMoodForDate('),
+    );
     expect(today, isNot(contains('_repo.delete')));
     expect(src, isNot(contains('_allowMultiplePerDay')));
     expect(src, contains('MoodEntry.latestPerDay(_myEntries)'));
     expect(src, contains('MoodEntry.latestPerDay(_partnerEntries[uid]'));
 
-    final cal = File('lib/screens/mood_calendar_screen.dart').readAsStringSync();
-    expect(cal, contains('_buildAnalytics(scheme, MoodEntry.latestPerDay(entries))'));
+    final cal = File(
+      'lib/screens/mood_calendar_screen.dart',
+    ).readAsStringSync();
+    expect(
+      cal,
+      contains('_buildAnalytics(scheme, MoodEntry.latestPerDay(entries))'),
+    );
     expect(cal, contains('_showDayLanes(day, moods)'));
-    expect(File('lib/screens/home/widgets/day_log_sheet.dart').readAsStringSync(),
-        contains('DayMoodLanes('));
+    expect(
+      File('lib/screens/home/widgets/day_log_sheet.dart').readAsStringSync(),
+      contains('DayMoodLanes('),
+    );
   });
 
-  Future<void> pump(WidgetTester tester, List<MoodEntry> mine,
-      List<MoodEntry> theirs,
-      {Size size = const Size(390, 844), double scale = 1}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    List<MoodEntry> mine,
+    List<MoodEntry> theirs, {
+    Size size = const Size(390, 844),
+    double scale = 1,
+  }) async {
     tester.view.devicePixelRatio = 3;
     tester.view.physicalSize = size * 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(size: size, textScaler: TextScaler.linear(scale)),
-        child: Scaffold(
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: DayMoodLanes(
-              mine: mine,
-              theirs: theirs,
-              myName: 'Саша',
-              partnerName: 'Аня',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: size,
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: DayMoodLanes(
+                mine: mine,
+                theirs: theirs,
+                myName: 'Саша',
+                partnerName: 'Аня',
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
   }
 
-  final mine = [_e('a', 'sad', 8, 40), _e('c', 'laugh', 13, 2), _e('f', 'kiss', 22, 48)];
-  final theirs = [_e('b', 'happy', 9, 15), _e('d', 'anxiety', 17, 30), _e('e', 'love', 19, 5)];
+  final mine = [
+    _e('a', 'sad', 8, 40),
+    _e('c', 'laugh', 13, 2),
+    _e('f', 'kiss', 22, 48),
+  ];
+  final theirs = [
+    _e('b', 'happy', 9, 15),
+    _e('d', 'anxiety', 17, 30),
+    _e('e', 'love', 19, 5),
+  ];
 
-  testWidgets('отметки идут по времени: свои слева, партнёра справа',
-      (tester) async {
+  testWidgets('отметки идут по времени: свои слева, партнёра справа', (
+    tester,
+  ) async {
     await pump(tester, mine, theirs);
     final times = ['08:40', '09:15', '13:02', '17:30', '19:05', '22:48'];
     final ys = [for (final t in times) tester.getCenter(find.text(t)).dy];

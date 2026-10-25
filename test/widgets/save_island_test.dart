@@ -31,22 +31,32 @@ class _Gallery implements GalleryTarget {
 }
 
 List<SaveItem> _items(int n) => [
-      for (var i = 0; i < n; i++)
-        SaveItem(
-          memoryId: 'm1',
-          takenAt: DateTime(2026, 9, 5),
-          file: MediaFile(
-              ref: 'pb://media/m/f$i.webp', kind: SaveKind.photo, index: i),
-        ),
-    ];
+  for (var i = 0; i < n; i++)
+    SaveItem(
+      memoryId: 'm1',
+      takenAt: DateTime(2026, 9, 5),
+      file: MediaFile(
+        ref: 'pb://media/m/f$i.webp',
+        kind: SaveKind.photo,
+        index: i,
+      ),
+    ),
+];
 
 Widget _host(MediaSaveQueue q) => MaterialApp(
-      home: Scaffold(
-        body: Stack(children: [
-          Positioned(left: 14, right: 14, bottom: 18, child: SaveIsland(queue: q)),
-        ]),
-      ),
-    );
+  home: Scaffold(
+    body: Stack(
+      children: [
+        Positioned(
+          left: 14,
+          right: 14,
+          bottom: 18,
+          child: SaveIsland(queue: q),
+        ),
+      ],
+    ),
+  ),
+);
 
 void main() {
   late SavedMediaLedger ledger;
@@ -59,7 +69,11 @@ void main() {
   testWidgets('пока идёт — название и счётчик, крестик отменяет', (t) async {
     final f = _Fetcher()..gate = Completer<void>();
     final q = MediaSaveQueue(
-        fetcher: f, target: _Gallery(), ledger: ledger, retryDelays: const []);
+      fetcher: f,
+      target: _Gallery(),
+      ledger: ledger,
+      retryDelays: const [],
+    );
     await t.pumpWidget(_host(q));
     await t.runAsync(() => q.enqueue('Лето на Днестре', _items(5)));
     await t.pump();
@@ -69,14 +83,19 @@ void main() {
     await t.pump();
     expect(q.current, isNull);
     f.gate!.complete();
-    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
     await t.pump(const Duration(seconds: 7));
   });
 
   testWidgets('готово — «Открыть», потом островок уходит сам', (t) async {
     final q = MediaSaveQueue(
-        fetcher: _Fetcher(), target: _Gallery(), ledger: ledger,
-        retryDelays: const []);
+      fetcher: _Fetcher(),
+      target: _Gallery(),
+      ledger: ledger,
+      retryDelays: const [],
+    );
     await t.pumpWidget(_host(q));
     await t.runAsync(() async {
       await q.enqueue('Лето', _items(3));
@@ -94,10 +113,11 @@ void main() {
 
   testWidgets('неудача — «Повторить» и островок не уходит сам', (t) async {
     final q = MediaSaveQueue(
-        fetcher: _Fetcher(fail: {'pb://media/m/f1.webp'}),
-        target: _Gallery(),
-        ledger: ledger,
-        retryDelays: const []);
+      fetcher: _Fetcher(fail: {'pb://media/m/f1.webp'}),
+      target: _Gallery(),
+      ledger: ledger,
+      retryDelays: const [],
+    );
     await t.pumpWidget(_host(q));
     await t.runAsync(() async {
       await q.enqueue('Лето', _items(3));

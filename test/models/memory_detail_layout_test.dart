@@ -36,8 +36,11 @@ void main() {
 
   test('подпись шапки считает кадры только у фото', () {
     expect(momentCountsPhotos(MemoryType.photo), isTrue);
-    expect(momentCountsPhotos(MemoryType.video), isFalse,
-        reason: 'обложка видео — не фото, «1 фото» у ролика врёт');
+    expect(
+      momentCountsPhotos(MemoryType.video),
+      isFalse,
+      reason: 'обложка видео — не фото, «1 фото» у ролика врёт',
+    );
     expect(momentCountsPhotos(MemoryType.text), isFalse);
     expect(momentCountsPhotos(MemoryType.videoLink), isFalse);
   });

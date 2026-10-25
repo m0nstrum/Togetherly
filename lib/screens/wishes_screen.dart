@@ -126,8 +126,9 @@ class _WishesScreenState extends State<WishesScreen> {
     _customSub = _repo.watchCategories(widget.groupId).listen((list) {
       if (mounted) setState(() => _custom = list);
     });
-    _memoriesSub =
-        MemoryRepository.instance.watch(widget.groupId).listen((list) {
+    _memoriesSub = MemoryRepository.instance.watch(widget.groupId).listen((
+      list,
+    ) {
       if (mounted) setState(() => _memories = {for (final m in list) m.id: m});
     });
     _commentsSub = _repo.watchComments(widget.groupId).listen((list) {
@@ -191,8 +192,10 @@ class _WishesScreenState extends State<WishesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         content: Text(
-          _tr('Дарите вы — партнёр не узнает',
-              "You're gifting it — your partner won't know"),
+          _tr(
+            'Дарите вы — партнёр не узнает',
+            "You're gifting it — your partner won't know",
+          ),
           style: AppFonts.onest(size: 14, color: _cs.onInverseSurface),
         ),
         action: SnackBarAction(
@@ -217,11 +220,15 @@ class _WishesScreenState extends State<WishesScreen> {
       firstDate: today,
       lastDate: DateTime(now.year + 5, 12, 31),
       helpText: _tr('Подарить до', 'Gift by'),
-      builder: (ctx, child) => Theme(data: ProfileTheme.data(_cs), child: child!),
+      builder: (ctx, child) =>
+          Theme(data: ProfileTheme.data(_cs), child: child!),
     );
     if (picked == null || !mounted) return;
     final next = await _repo.setReserveUntil(
-        groupId: widget.groupId, res: res, until: picked);
+      groupId: widget.groupId,
+      res: res,
+      until: picked,
+    );
     if (!mounted) return;
     setState(() => _reservations = {..._reservations, next.wishId: next});
     WishReminders.instance.schedule();
@@ -239,18 +246,28 @@ class _WishesScreenState extends State<WishesScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(wish.title,
-                  style: AppFonts.onest(size: 16, weight: 700)),
-              subtitle: Text(_tr('Дарите вы — партнёр не знает',
-                  "You're gifting it — your partner doesn't know")),
+              title: Text(
+                wish.title,
+                style: AppFonts.onest(size: 16, weight: 700),
+              ),
+              subtitle: Text(
+                _tr(
+                  'Дарите вы — партнёр не знает',
+                  "You're gifting it — your partner doesn't know",
+                ),
+              ),
             ),
             ListTile(
               key: const Key('wish-reserve-until'),
-              leading: Icon(Icons.event_rounded,
-                  color: res.overdue(DateTime.now()) ? _cs.error : _cs.primary),
-              title: Text(until == null
-                  ? _tr('Поставить срок', 'Set a deadline')
-                  : '${_tr('Срок', 'Deadline')}: ${s.dayLogDate(until)}'),
+              leading: Icon(
+                Icons.event_rounded,
+                color: res.overdue(DateTime.now()) ? _cs.error : _cs.primary,
+              ),
+              title: Text(
+                until == null
+                    ? _tr('Поставить срок', 'Set a deadline')
+                    : '${_tr('Срок', 'Deadline')}: ${s.dayLogDate(until)}',
+              ),
               onTap: () => Navigator.of(ctx).pop('until'),
             ),
             if (until != null)
@@ -275,7 +292,10 @@ class _WishesScreenState extends State<WishesScreen> {
         await _pickReserveUntil(res);
       case 'clear':
         final next = await _repo.setReserveUntil(
-            groupId: widget.groupId, res: res, until: null);
+          groupId: widget.groupId,
+          res: res,
+          until: null,
+        );
         if (!mounted) return;
         setState(() => _reservations = {..._reservations, next.wishId: next});
         WishReminders.instance.schedule();
@@ -322,10 +342,10 @@ class _WishesScreenState extends State<WishesScreen> {
 
   /// Попросили другое желание недели: это до конца недели не выпадает.
   Future<void> _anotherWeekly(Wish wish) => _repo.skipWeek(
-        groupId: widget.groupId,
-        wish: wish,
-        weekKey: isoWeekKey(DateTime.now()),
-      );
+    groupId: widget.groupId,
+    wish: wish,
+    weekKey: isoWeekKey(DateTime.now()),
+  );
 
   void _openReminderSettings() {
     Navigator.of(context).push(
@@ -445,8 +465,11 @@ class _WishesScreenState extends State<WishesScreen> {
   }
 
   Future<void> _editCategory(WishKind kind) async {
-    final draft =
-        await showWishCategorySheet(context, theme: widget.theme, existing: kind);
+    final draft = await showWishCategorySheet(
+      context,
+      theme: widget.theme,
+      existing: kind,
+    );
     if (draft == null) return;
     await _repo.editCategory(
       groupId: widget.groupId,
@@ -468,16 +491,16 @@ class _WishesScreenState extends State<WishesScreen> {
   }
 
   Future<void> _openComments(Wish wish) => showWishCommentsSheet(
-        context,
-        theme: widget.theme,
-        wish: wish,
-        myUid: widget.myUid,
-        comments: _repo.watchComments(widget.groupId),
-        nameOf: _nameOf,
-        onSend: (text) => _repo.addComment(
-            groupId: widget.groupId, wishId: wish.id, text: text),
-        onDelete: (c) => _repo.removeComment(c.id),
-      );
+    context,
+    theme: widget.theme,
+    wish: wish,
+    myUid: widget.myUid,
+    comments: _repo.watchComments(widget.groupId),
+    nameOf: _nameOf,
+    onSend: (text) =>
+        _repo.addComment(groupId: widget.groupId, wishId: wish.id, text: text),
+    onDelete: (c) => _repo.removeComment(c.id),
+  );
 
   /// Перетащили карточку в «мечтаем»: новое место пишет любой из пары.
   Future<void> _reorder(List<Wish> shown, int from, int to) async {
@@ -513,9 +536,7 @@ class _WishesScreenState extends State<WishesScreen> {
       SnackBar(
         behavior: SnackBarBehavior.floating,
         backgroundColor: _cs.inverseSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         duration: const Duration(seconds: 5),
         content: Text(
@@ -548,7 +569,8 @@ class _WishesScreenState extends State<WishesScreen> {
       firstDate: DateTime(2000),
       lastDate: now,
       helpText: _tr('Когда сбылось', 'When it happened'),
-      builder: (ctx, child) => Theme(data: ProfileTheme.data(_cs), child: child!),
+      builder: (ctx, child) =>
+          Theme(data: ProfileTheme.data(_cs), child: child!),
     );
     if (picked == null) return;
     // Час оставляем прежний: человек правит день, а не минуту, а порядок в
@@ -556,8 +578,14 @@ class _WishesScreenState extends State<WishesScreen> {
     await _repo.setDoneAt(
       groupId: widget.groupId,
       wish: wish,
-      at: DateTime(picked.year, picked.month, picked.day, base.hour,
-          base.minute, base.second),
+      at: DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        base.hour,
+        base.minute,
+        base.second,
+      ),
     );
   }
 
@@ -573,11 +601,7 @@ class _WishesScreenState extends State<WishesScreen> {
       maxLines: 3,
     );
     if (text == null) return;
-    await _repo.setDoneNote(
-      groupId: widget.groupId,
-      wish: wish,
-      note: text,
-    );
+    await _repo.setDoneNote(groupId: widget.groupId, wish: wish, note: text);
   }
 
   Future<void> _remove(Wish wish) async {
@@ -610,7 +634,11 @@ class _WishesScreenState extends State<WishesScreen> {
         foregroundColor: _cs.onSurface,
         title: Text(
           _tr('Хочу с тобой', 'Want with you'),
-          style: AppFonts.unbounded(size: 17, weight: 600, color: _cs.onSurface),
+          style: AppFonts.unbounded(
+            size: 17,
+            weight: 600,
+            color: _cs.onSurface,
+          ),
         ),
         actions: [
           IconButton(
@@ -661,50 +689,48 @@ class _WishesScreenState extends State<WishesScreen> {
                   child: all.isEmpty
                       ? _empty()
                       : shown.isEmpty
-                          ? _emptyTab()
-                          : _fulfilledTab
-                              ? ListView.separated(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 2, 16, 8),
-                                  itemCount: shown.length + 1,
-                                  separatorBuilder: (_, _) =>
-                                      const SizedBox(height: 10),
-                                  // Сверху — вход на стену «Сбылось».
-                                  itemBuilder: (_, i) => i == 0
-                                      ? Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: FilledButton.tonalIcon(
-                                            key: const Key('wish-wall'),
-                                            onPressed: () => _openWall(shown),
-                                            icon: const Icon(
-                                                Icons.grid_view_rounded),
-                                            label: Text(wishWallButtonLabel(
-                                                shown.length)),
-                                          ),
-                                        )
-                                      : _tile(shown[i - 1]),
-                                )
-                              // Мечты двигают долгим нажатием; порядок общий
-                              // для пары (docs/WISHLIST.md).
-                              : ReorderableListView.builder(
-                                  key: const Key('wishes-reorder'),
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 2, 16, 8),
-                                  buildDefaultDragHandles: false,
-                                  header: _weeklyCard(dreaming),
-                                  itemCount: shown.length,
-                                  onReorderItem: (from, to) => _reorder(shown, from, to),
-                                  itemBuilder: (_, i) =>
-                                      ReorderableDelayedDragStartListener(
-                                    key: ValueKey(shown[i].id),
-                                    index: i,
-                                    child: Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 10),
-                                      child: _tile(shown[i], draggable: true),
+                      ? _emptyTab()
+                      : _fulfilledTab
+                      ? ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                          itemCount: shown.length + 1,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 10),
+                          // Сверху — вход на стену «Сбылось».
+                          itemBuilder: (_, i) => i == 0
+                              ? Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: FilledButton.tonalIcon(
+                                    key: const Key('wish-wall'),
+                                    onPressed: () => _openWall(shown),
+                                    icon: const Icon(Icons.grid_view_rounded),
+                                    label: Text(
+                                      wishWallButtonLabel(shown.length),
                                     ),
                                   ),
+                                )
+                              : _tile(shown[i - 1]),
+                        )
+                      // Мечты двигают долгим нажатием; порядок общий
+                      // для пары (docs/WISHLIST.md).
+                      : ReorderableListView.builder(
+                          key: const Key('wishes-reorder'),
+                          padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                          buildDefaultDragHandles: false,
+                          header: _weeklyCard(dreaming),
+                          itemCount: shown.length,
+                          onReorderItem: (from, to) =>
+                              _reorder(shown, from, to),
+                          itemBuilder: (_, i) =>
+                              ReorderableDelayedDragStartListener(
+                                key: ValueKey(shown[i].id),
+                                index: i,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: _tile(shown[i], draggable: true),
                                 ),
+                              ),
+                        ),
                 ),
                 _addButton(),
               ],
@@ -731,8 +757,7 @@ class _WishesScreenState extends State<WishesScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
           child: Row(
             children: [
-              Icon(Icons.auto_awesome_rounded,
-                  color: _cs.onTertiaryContainer),
+              Icon(Icons.auto_awesome_rounded, color: _cs.onTertiaryContainer),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -741,9 +766,10 @@ class _WishesScreenState extends State<WishesScreen> {
                     Text(
                       _tr('Желание недели', 'Wish of the week'),
                       style: AppFonts.onest(
-                          size: 12,
-                          weight: 700,
-                          color: _cs.onTertiaryContainer),
+                        size: 12,
+                        weight: 700,
+                        color: _cs.onTertiaryContainer,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -751,9 +777,10 @@ class _WishesScreenState extends State<WishesScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.unbounded(
-                          size: 15,
-                          weight: 600,
-                          color: _cs.onTertiaryContainer),
+                        size: 15,
+                        weight: 600,
+                        color: _cs.onTertiaryContainer,
+                      ),
                     ),
                   ],
                 ),
@@ -762,7 +789,8 @@ class _WishesScreenState extends State<WishesScreen> {
                 key: const Key('wish-weekly-another'),
                 onPressed: () => _anotherWeekly(w),
                 style: TextButton.styleFrom(
-                    foregroundColor: _cs.onTertiaryContainer),
+                  foregroundColor: _cs.onTertiaryContainer,
+                ),
                 child: Text(_tr('Другое', 'Another')),
               ),
             ],
@@ -788,29 +816,29 @@ class _WishesScreenState extends State<WishesScreen> {
       onTap: wish.done
           ? () => _editDoneNote(wish)
           : mine
-              ? () => _edit(wish)
-              : () => showWishDetailsSheet(
-                    context,
-                    theme: widget.theme,
-                    wish: wish,
-                    authorName: _nameOf(wish.authorUid),
-                    alsoMine: wish.also.contains(widget.myUid),
-                    onAlso: () => _toggleAlso(wish),
-                  ),
+          ? () => _edit(wish)
+          : () => showWishDetailsSheet(
+              context,
+              theme: widget.theme,
+              wish: wish,
+              authorName: _nameOf(wish.authorUid),
+              alsoMine: wish.also.contains(widget.myUid),
+              onAlso: () => _toggleAlso(wish),
+            ),
       onLongPress: mine && !draggable ? () => _remove(wish) : null,
       // fork (D11): то же удаление — видимой кнопкой.
       onDelete: mine ? () => _remove(wish) : null,
       onEditDate: wish.done ? () => _editDoneDate(wish) : null,
       onReserve: mine ? null : () => _toggleReserve(wish),
       reserved: _reserved.contains(wish.id),
-      reserveOverdue:
-          _reservations[wish.id]?.overdue(DateTime.now()) ?? false,
+      reserveOverdue: _reservations[wish.id]?.overdue(DateTime.now()) ?? false,
       onAlso: mine || wish.done ? null : () => _toggleAlso(wish),
       alsoMine: wish.also.contains(widget.myUid),
       comments: _commentCounts[wish.id] ?? 0,
       onComments: () => _openComments(wish),
       onLinkMemory: wish.done ? () => _linkMemory(wish) : null,
-      onOpenMemory: wish.memoryId.isNotEmpty &&
+      onOpenMemory:
+          wish.memoryId.isNotEmpty &&
               widget.onOpenMemory != null &&
               _memories.containsKey(wish.memoryId)
           ? () => widget.onOpenMemory!(wish.memoryId)
@@ -818,11 +846,17 @@ class _WishesScreenState extends State<WishesScreen> {
       onUnlinkMemory: wish.memoryId.isEmpty
           ? null
           : () => _repo.linkMemory(
-              groupId: widget.groupId, wish: wish, memoryId: ''),
+              groupId: widget.groupId,
+              wish: wish,
+              memoryId: '',
+            ),
       onShowPlace: wish.place == null
           ? null
-          : () => WishPlacePicker.show(context,
-              theme: widget.theme, place: wish.place!),
+          : () => WishPlacePicker.show(
+              context,
+              theme: widget.theme,
+              place: wish.place!,
+            ),
     );
   }
 
@@ -864,14 +898,20 @@ class _WishesScreenState extends State<WishesScreen> {
                 color: _cs.primaryContainer,
               ),
               alignment: Alignment.center,
-              child: SymbolIcon('auto_awesome',
-                  size: 40, color: _cs.onPrimaryContainer),
+              child: SymbolIcon(
+                'auto_awesome',
+                size: 40,
+                color: _cs.onPrimaryContainer,
+              ),
             ),
             const SizedBox(height: 14),
             Text(
               _tr('Пока пусто', 'Nothing yet'),
               style: AppFonts.unbounded(
-                  size: 20, weight: 700, color: _cs.onSurface),
+                size: 20,
+                weight: 700,
+                color: _cs.onSurface,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
@@ -884,7 +924,10 @@ class _WishesScreenState extends State<WishesScreen> {
               ),
               textAlign: TextAlign.center,
               style: AppFonts.onest(
-                  size: 14, height: 1.5, color: _cs.onSurfaceVariant),
+                size: 14,
+                height: 1.5,
+                color: _cs.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -898,14 +941,22 @@ class _WishesScreenState extends State<WishesScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Text(
           _fulfilledTab
-              ? _tr('Сбывшегося пока нет. Отметьте желание галочкой, когда оно '
-                  'случится.', 'Nothing has come true yet. Tick a wish off when '
-                  'it happens.')
-              : _tr('Все желания сбылись. Самое время придумать новое.',
-                  'Every wish came true. Time to think of a new one.'),
+              ? _tr(
+                  'Сбывшегося пока нет. Отметьте желание галочкой, когда оно '
+                      'случится.',
+                  'Nothing has come true yet. Tick a wish off when '
+                      'it happens.',
+                )
+              : _tr(
+                  'Все желания сбылись. Самое время придумать новое.',
+                  'Every wish came true. Time to think of a new one.',
+                ),
           textAlign: TextAlign.center,
           style: AppFonts.onest(
-              size: 14, height: 1.5, color: _cs.onSurfaceVariant),
+            size: 14,
+            height: 1.5,
+            color: _cs.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -1049,12 +1100,15 @@ class _WishTile extends StatelessWidget {
 
     // Сбывшееся садится на контейнер ниже — тем же приёмом гаснут выполненные
     // шаги онбординга.
-    final background =
-        done ? scheme.surfaceContainerLow : scheme.surfaceContainerHigh;
-    final leadBackground =
-        done ? scheme.surfaceContainerHighest : scheme.primaryContainer;
-    final leadColor =
-        done ? scheme.onSurfaceVariant : scheme.onPrimaryContainer;
+    final background = done
+        ? scheme.surfaceContainerLow
+        : scheme.surfaceContainerHigh;
+    final leadBackground = done
+        ? scheme.surfaceContainerHighest
+        : scheme.primaryContainer;
+    final leadColor = done
+        ? scheme.onSurfaceVariant
+        : scheme.onPrimaryContainer;
 
     final subtitle = <String>[
       if (authorName.isNotEmpty) authorName,
@@ -1072,8 +1126,16 @@ class _WishTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         border: both ? Border.all(color: scheme.primary, width: 1.6) : null,
       ),
-      child: _card(context, background, leadBackground, leadColor, subtitle,
-          both, due, duePast),
+      child: _card(
+        context,
+        background,
+        leadBackground,
+        leadColor,
+        subtitle,
+        both,
+        due,
+        duePast,
+      ),
     );
   }
 
@@ -1123,8 +1185,11 @@ class _WishTile extends StatelessWidget {
                           height: 56,
                           color: leadBackground,
                           alignment: Alignment.center,
-                          child: SymbolIcon(wish.iconName,
-                              size: 24, color: leadColor),
+                          child: SymbolIcon(
+                            wish.iconName,
+                            size: 24,
+                            color: leadColor,
+                          ),
                         ),
                       ),
                     )
@@ -1136,8 +1201,11 @@ class _WishTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       alignment: Alignment.center,
-                      child:
-                          SymbolIcon(wish.iconName, size: 24, color: leadColor),
+                      child: SymbolIcon(
+                        wish.iconName,
+                        size: 24,
+                        color: leadColor,
+                      ),
                     ),
               const SizedBox(width: 14),
               Expanded(
@@ -1149,7 +1217,9 @@ class _WishTile extends StatelessWidget {
                       style: AppFonts.unbounded(
                         size: 17,
                         weight: done ? 500 : 600,
-                        color: done ? scheme.onSurfaceVariant : scheme.onSurface,
+                        color: done
+                            ? scheme.onSurfaceVariant
+                            : scheme.onSurface,
                       ),
                     ),
                     if (due.isNotEmpty ||
@@ -1201,7 +1271,9 @@ class _WishTile extends StatelessWidget {
                             if (wish.hasPrice)
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: done
                                       ? scheme.surfaceContainerHighest
@@ -1227,8 +1299,9 @@ class _WishTile extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppFonts.onest(
-                                      size: 12,
-                                      color: scheme.onSurfaceVariant),
+                                    size: 12,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1244,21 +1317,26 @@ class _WishTile extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 2),
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     s.dayLogDate(wish.doneAt!),
                                     style: AppFonts.onest(
-                                        size: 12.5,
-                                        color: scheme.onSurfaceVariant),
+                                      size: 12.5,
+                                      color: scheme.onSurfaceVariant,
+                                    ),
                                   ),
                                   if (onEditDate != null) ...[
                                     const SizedBox(width: 5),
-                                    Icon(Icons.edit_calendar_rounded,
-                                        size: 14,
-                                        color: scheme.onSurfaceVariant),
+                                    Icon(
+                                      Icons.edit_calendar_rounded,
+                                      size: 14,
+                                      color: scheme.onSurfaceVariant,
+                                    ),
                                   ],
                                 ],
                               ),
@@ -1269,7 +1347,9 @@ class _WishTile extends StatelessWidget {
                         Container(
                           margin: const EdgeInsets.only(top: 6),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: scheme.surfaceContainer,
                             borderRadius: BorderRadius.circular(12),
@@ -1277,9 +1357,10 @@ class _WishTile extends StatelessWidget {
                           child: Text(
                             wish.doneNote,
                             style: AppFonts.onest(
-                                size: 12.5,
-                                height: 1.45,
-                                color: scheme.onSurfaceVariant),
+                              size: 12.5,
+                              height: 1.45,
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       // Воспоминание: привязать (не обязательно) или открыть.
@@ -1292,8 +1373,10 @@ class _WishTile extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             foregroundColor: scheme.onSurfaceVariant,
                           ),
-                          icon: const Icon(Icons.add_photo_alternate_outlined,
-                              size: 16),
+                          icon: const Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 16,
+                          ),
                           label: Text(
                             ru ? 'Привязать воспоминание' : 'Link a memory',
                             style: AppFonts.onest(size: 12.5, weight: 600),
@@ -1307,8 +1390,10 @@ class _WishTile extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             foregroundColor: scheme.primary,
                           ),
-                          icon: const Icon(Icons.photo_library_outlined,
-                              size: 16),
+                          icon: const Icon(
+                            Icons.photo_library_outlined,
+                            size: 16,
+                          ),
                           label: Text(
                             ru ? 'Воспоминание' : 'Memory',
                             style: AppFonts.onest(size: 12.5, weight: 600),
@@ -1338,8 +1423,9 @@ class _WishTile extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppFonts.onest(
-                                    size: 12.5,
-                                    color: scheme.onSurfaceVariant),
+                                  size: 12.5,
+                                  color: scheme.onSurfaceVariant,
+                                ),
                               ),
                             ),
                           ],
@@ -1380,8 +1466,8 @@ class _WishTile extends StatelessWidget {
                     color: reserveOverdue
                         ? scheme.error
                         : reserved
-                            ? scheme.primary
-                            : scheme.onSurfaceVariant,
+                        ? scheme.primary
+                        : scheme.onSurfaceVariant,
                   ),
                 ),
               if (wish.url.isNotEmpty || onDelete != null || onComments != null)
@@ -1389,41 +1475,82 @@ class _WishTile extends StatelessWidget {
                   key: Key('wish-menu-${wish.id}'),
                   tooltip: ru ? 'Действия с желанием' : 'Wish actions',
                   onSelected: (action) async {
-                    if (action == 'delete') { onDelete?.call(); return; }
-                    if (action == 'comments') { onComments?.call(); return; }
-                    if (action == 'map') { onShowPlace?.call(); return; }
-                    if (action == 'link') { onLinkMemory?.call(); return; }
-                    if (action == 'unlink') { onUnlinkMemory?.call(); return; }
+                    if (action == 'delete') {
+                      onDelete?.call();
+                      return;
+                    }
+                    if (action == 'comments') {
+                      onComments?.call();
+                      return;
+                    }
+                    if (action == 'map') {
+                      onShowPlace?.call();
+                      return;
+                    }
+                    if (action == 'link') {
+                      onLinkMemory?.call();
+                      return;
+                    }
+                    if (action == 'unlink') {
+                      onUnlinkMemory?.call();
+                      return;
+                    }
                     final uri = Uri.tryParse(wish.url);
-                    if (uri != null) await safeLaunchUrl(uri, mode: LaunchMode.externalApplication);
+                    if (uri != null)
+                      await safeLaunchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                   },
                   itemBuilder: (_) => [
                     if (onLinkMemory != null)
                       PopupMenuItem(
                         value: 'link',
-                        child: Text(wish.memoryId.isEmpty
-                            ? (ru ? 'Привязать воспоминание' : 'Link a memory')
-                            : (ru ? 'Другое воспоминание' : 'Another memory')),
+                        child: Text(
+                          wish.memoryId.isEmpty
+                              ? (ru
+                                    ? 'Привязать воспоминание'
+                                    : 'Link a memory')
+                              : (ru ? 'Другое воспоминание' : 'Another memory'),
+                        ),
                       ),
                     if (onUnlinkMemory != null)
                       PopupMenuItem(
                         value: 'unlink',
-                        child: Text(ru ? 'Отвязать воспоминание' : 'Unlink the memory'),
+                        child: Text(
+                          ru ? 'Отвязать воспоминание' : 'Unlink the memory',
+                        ),
                       ),
                     if (onShowPlace != null)
                       PopupMenuItem(
                         value: 'map',
-                        child: Text(ru ? 'Показать на карте' : 'Show on the map'),
+                        child: Text(
+                          ru ? 'Показать на карте' : 'Show on the map',
+                        ),
                       ),
                     if (onComments != null)
                       PopupMenuItem(
                         value: 'comments',
-                        child: Text(ru
-                            ? (comments > 0 ? 'Комментарии · $comments' : 'Комментировать')
-                            : (comments > 0 ? 'Comments · $comments' : 'Comment')),
+                        child: Text(
+                          ru
+                              ? (comments > 0
+                                    ? 'Комментарии · $comments'
+                                    : 'Комментировать')
+                              : (comments > 0
+                                    ? 'Comments · $comments'
+                                    : 'Comment'),
+                        ),
                       ),
-                    if (wish.url.isNotEmpty) PopupMenuItem(value: 'open', child: Text(ru ? 'Открыть ссылку' : 'Open link')),
-                    if (onDelete != null) PopupMenuItem(value: 'delete', child: Text(ru ? 'Удалить' : 'Delete')),
+                    if (wish.url.isNotEmpty)
+                      PopupMenuItem(
+                        value: 'open',
+                        child: Text(ru ? 'Открыть ссылку' : 'Open link'),
+                      ),
+                    if (onDelete != null)
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(ru ? 'Удалить' : 'Delete'),
+                      ),
                   ],
                 ),
             ],

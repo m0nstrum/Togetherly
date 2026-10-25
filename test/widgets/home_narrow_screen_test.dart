@@ -17,21 +17,29 @@ void main() {
 
   final theme = AppThemes.byIndex(0);
 
-  Future<void> render(WidgetTester tester, Widget child,
-      {double width = 320, double scale = 1.3}) async {
+  Future<void> render(
+    WidgetTester tester,
+    Widget child, {
+    double width = 320,
+    double scale = 1.3,
+  }) async {
     tester.view.physicalSize = Size(width * 3, 640 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(
-          size: Size(width, 640),
-          textScaler: TextScaler.linear(scale),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: Size(width, 640),
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: Scaffold(
+            body: Align(alignment: Alignment.bottomCenter, child: child),
+          ),
         ),
-        child: Scaffold(body: Align(alignment: Alignment.bottomCenter, child: child)),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -87,8 +95,9 @@ void main() {
   // На главной ряд живёт внутри отступов 24 с двух сторон, поэтому на
   // экране 320 dp ему достаётся 272 — это и есть самый тесный случай.
   for (final width in [272.0, 320.0, 345.0]) {
-    testWidgets('ряд из четырёх помещается в ${width.toInt()} dp',
-        (tester) async {
+    testWidgets('ряд из четырёх помещается в ${width.toInt()} dp', (
+      tester,
+    ) async {
       var tapped = false;
       await render(
         tester,

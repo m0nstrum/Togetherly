@@ -79,14 +79,15 @@ class ForkPartnerFacts {
   final DateTime? startDate;
   final DateTime? anniversary;
 
-  bool get hasNow => mood != null || status.isNotEmpty || note.isNotEmpty || music.isNotEmpty;
+  bool get hasNow =>
+      mood != null || status.isNotEmpty || note.isNotEmpty || music.isNotEmpty;
 
   /// «у неё», «у него» — по полу из карточки.
   String get theirs => switch (gender) {
-        'female' => ruEn('у неё', 'their'),
-        'male' => ruEn('у него', 'their'),
-        _ => ruEn('у партнёра', 'their'),
-      };
+    'female' => ruEn('у неё', 'their'),
+    'male' => ruEn('у него', 'their'),
+    _ => ruEn('у партнёра', 'their'),
+  };
 
   /// Местное время партнёра, если пояс отличается от нашего; иначе null.
   DateTime? localTime(DateTime now) {
@@ -100,7 +101,8 @@ class ForkPartnerFacts {
     if (birth == null) return null;
     final today = DateTime(now.year, now.month, now.day);
     var next = DateTime(now.year, birth.month, birth.day);
-    if (next.isBefore(today)) next = DateTime(now.year + 1, birth.month, birth.day);
+    if (next.isBefore(today))
+      next = DateTime(now.year + 1, birth.month, birth.day);
     return next.difference(today).inDays;
   }
 
@@ -138,7 +140,8 @@ class ForkPartnerFacts {
     if (rec != null) w = await safe(() async => WidgetData.fromPb(rec));
 
     final now = DateTime.now();
-    final sorted = [...moods]..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final sorted = [...moods]
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
     MoodEntry? today;
     for (final m in sorted) {
       final d = m.authorDate;
@@ -152,9 +155,10 @@ class ForkPartnerFacts {
       zone = PairTime.zoneToDuration(m.zone);
       if (zone != null) break;
     }
-    final music = [w?.musicTitle ?? '', w?.musicArtist ?? '']
-        .where((x) => x.trim().isNotEmpty)
-        .join(' — ');
+    final music = [
+      w?.musicTitle ?? '',
+      w?.musicArtist ?? '',
+    ].where((x) => x.trim().isNotEmpty).join(' — ');
     return ForkPartnerFacts(
       mood: today,
       zone: zone,
@@ -223,15 +227,22 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
   void didUpdateWidget(ForkPartnerPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Карточка с датой рождения приезжает позже — перечитаем.
-    if (oldWidget.card != widget.card && widget.facts == null) unawaited(reload());
+    if (oldWidget.card != widget.card && widget.facts == null)
+      unawaited(reload());
   }
 
   Future<void> reload() async {
-    final f = await ForkPartnerFacts.load(groupId: widget.groupId, uid: widget.partnerUid, card: widget.card);
+    final f = await ForkPartnerFacts.load(
+      groupId: widget.groupId,
+      uid: widget.partnerUid,
+      card: widget.card,
+    );
     if (mounted) setState(() => _facts = f);
   }
 
-  String get _name => widget.partnerName.trim().isEmpty ? ruEn('Партнёр', 'Partner') : widget.partnerName.trim();
+  String get _name => widget.partnerName.trim().isEmpty
+      ? ruEn('Партнёр', 'Partner')
+      : widget.partnerName.trim();
   String get _myUid => PocketBaseService().userId ?? '';
 
   Future<void> _miss() async {
@@ -239,10 +250,19 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
     final ok = await MissYouRepository().sendMissYou(widget.groupId);
     if (!mounted) return;
     setState(() => _missSent = ok);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      behavior: SnackBarBehavior.floating,
-      content: Text(ok ? ruEn('$_name узнает, что вы скучаете', '$_name will know you miss them') : LocaleService.current.error),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          ok
+              ? ruEn(
+                  '$_name узнает, что вы скучаете',
+                  '$_name will know you miss them',
+                )
+              : LocaleService.current.error,
+        ),
+      ),
+    );
   }
 
   void _call() {
@@ -252,53 +272,62 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
 
   void _map() {
     final me = PbAuthService().currentProfile() ?? const <String, dynamic>{};
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => LiveMapScreen(
-        pairId: widget.groupId,
-        partnerUid: widget.partnerUid,
-        partnerName: widget.partnerName,
-        partnerAvatarUrl: widget.partnerAvatarUrl ?? '',
-        myAvatarUrl: (me['avatarUrl'] as String?) ?? '',
-        theme: widget.theme,
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LiveMapScreen(
+          pairId: widget.groupId,
+          partnerUid: widget.partnerUid,
+          partnerName: widget.partnerName,
+          partnerAvatarUrl: widget.partnerAvatarUrl ?? '',
+          myAvatarUrl: (me['avatarUrl'] as String?) ?? '',
+          theme: widget.theme,
+        ),
+        settings: const RouteSettings(name: '/live_map'),
       ),
-      settings: const RouteSettings(name: '/live_map'),
-    ));
+    );
   }
 
   void _wishes() {
     final me = PbAuthService().currentProfile() ?? const <String, dynamic>{};
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => WishesScreen(
-        theme: widget.theme,
-        groupId: widget.groupId,
-        myUid: _myUid,
-        myName: PocketBaseService().userName,
-        partnerUid: widget.partnerUid,
-        partnerName: widget.partnerName,
-        myAvatarUrl: me['avatarUrl'] as String?,
-        partnerAvatarUrl: widget.partnerAvatarUrl,
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => WishesScreen(
+          theme: widget.theme,
+          groupId: widget.groupId,
+          myUid: _myUid,
+          myName: PocketBaseService().userName,
+          partnerUid: widget.partnerUid,
+          partnerName: widget.partnerName,
+          myAvatarUrl: me['avatarUrl'] as String?,
+          partnerAvatarUrl: widget.partnerAvatarUrl,
+        ),
+        settings: const RouteSettings(name: '/wishes'),
       ),
-      settings: const RouteSettings(name: '/wishes'),
-    ));
+    );
   }
 
   void _chatSearch() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => ChatSearchScreen(groupId: widget.groupId, myUid: _myUid),
-      settings: const RouteSettings(name: '/chat_search'),
-    ));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ChatSearchScreen(groupId: widget.groupId, myUid: _myUid),
+        settings: const RouteSettings(name: '/chat_search'),
+      ),
+    );
   }
 
   void _stats() {
     final f = _facts;
-    unawaited(openCoupleStats(
-      context,
-      theme: widget.theme,
-      groupId: widget.groupId,
-      myUid: _myUid,
-      startDate: f?.startDate,
-      anniversaryDate: f?.anniversary,
-    ));
+    unawaited(
+      openCoupleStats(
+        context,
+        theme: widget.theme,
+        groupId: widget.groupId,
+        myUid: _myUid,
+        startDate: f?.startDate,
+        anniversaryDate: f?.anniversary,
+      ),
+    );
   }
 
   @override
@@ -351,11 +380,18 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
         builder: (context, seen) {
           final online = on.data == true;
           final parts = <String>[
-            online ? ruEn('в сети', 'online') : forkLastSeen(seen.data, gender: f?.gender ?? ''),
+            online
+                ? ruEn('в сети', 'online')
+                : forkLastSeen(seen.data, gender: f?.gender ?? ''),
           ];
           final local = f?.localTime(DateTime.now());
           if (local != null) {
-            parts.add(ruEn('${f!.theirs} сейчас ${_hhmm(local)}', '${_hhmm(local)} for them'));
+            parts.add(
+              ruEn(
+                '${f!.theirs} сейчас ${_hhmm(local)}',
+                '${_hhmm(local)} for them',
+              ),
+            );
           }
           final text = parts.where((x) => x.isNotEmpty).join(' · ');
           if (text.isEmpty) return const SizedBox.shrink();
@@ -372,10 +408,12 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
               ),
               const SizedBox(width: 6),
               Flexible(
-                child: Text(text,
-                    key: const ValueKey('fork-partner-presence'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: cs.onSurfaceVariant)),
+                child: Text(
+                  text,
+                  key: const ValueKey('fork-partner-presence'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
               ),
             ],
           );
@@ -384,11 +422,17 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
     );
   }
 
-  static String _hhmm(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  static String _hhmm(DateTime t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   Widget _actions(ColorScheme cs) {
     final items = <(IconData, String, VoidCallback, Key)>[
-      (Icons.call_rounded, ruEn('Позвонить', 'Call'), _call, const ValueKey('fork-partner-call')),
+      (
+        Icons.call_rounded,
+        ruEn('Позвонить', 'Call'),
+        _call,
+        const ValueKey('fork-partner-call'),
+      ),
       (
         _missSent ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         ruEn('Скучаю', 'Miss you'),
@@ -401,7 +445,12 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
         () => unawaited(TogetherLauncher.open(context, pairId: widget.groupId)),
         const ValueKey('fork-partner-watch'),
       ),
-      (Icons.place_rounded, ruEn('Где ты', 'Where'), _map, const ValueKey('fork-partner-map')),
+      (
+        Icons.place_rounded,
+        ruEn('Где ты', 'Where'),
+        _map,
+        const ValueKey('fork-partner-map'),
+      ),
     ];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -419,14 +468,19 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
                     Container(
                       width: 52,
                       height: 52,
-                      decoration: BoxDecoration(color: cs.primaryContainer, shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
                       child: Icon(icon, color: cs.onPrimaryContainer),
                     ),
                     const SizedBox(height: 6),
-                    Text(label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12.5, color: cs.onSurface)),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12.5, color: cs.onSurface),
+                    ),
                   ],
                 ),
               ),
@@ -440,19 +494,41 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
     final rows = <Widget>[
       if (f.mood != null)
         _Row(
-          lead: SizedBox(width: 28, height: 28, child: MoodImage(f.mood!.imagePath, quietError: true)),
+          lead: SizedBox(
+            width: 28,
+            height: 28,
+            child: MoodImage(f.mood!.imagePath, quietError: true),
+          ),
           title: f.mood!.labelFor(f.gender),
           sub: ruEn('настроение сегодня', 'mood today'),
         ),
-      if (f.status.isNotEmpty) _Row(icon: Icons.chat_bubble_outline_rounded, title: f.status, sub: ruEn('статус', 'status')),
-      if (f.note.isNotEmpty) _Row(icon: Icons.sticky_note_2_outlined, title: f.note, sub: ruEn('записка на виджете', 'widget note')),
-      if (f.music.isNotEmpty) _Row(icon: Icons.music_note_rounded, title: f.music, sub: ruEn('слушает', 'listening to')),
+      if (f.status.isNotEmpty)
+        _Row(
+          icon: Icons.chat_bubble_outline_rounded,
+          title: f.status,
+          sub: ruEn('статус', 'status'),
+        ),
+      if (f.note.isNotEmpty)
+        _Row(
+          icon: Icons.sticky_note_2_outlined,
+          title: f.note,
+          sub: ruEn('записка на виджете', 'widget note'),
+        ),
+      if (f.music.isNotEmpty)
+        _Row(
+          icon: Icons.music_note_rounded,
+          title: f.music,
+          sub: ruEn('слушает', 'listening to'),
+        ),
       if (widget.live)
         ForkBatteryWatch(
           groupId: widget.groupId,
           uid: widget.partnerUid,
           builder: (context, b) => _Row(
-            lead: Icon(forkBatteryIcon(b), color: b.low ? cs.error : cs.primary),
+            lead: Icon(
+              forkBatteryIcon(b),
+              color: b.low ? cs.error : cs.primary,
+            ),
             title: '${b.level}%',
             sub: forkBatteryNote(b, DateTime.now()),
           ),
@@ -474,7 +550,10 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
         builder: (context, me) {
           final a = them.data, b = me.data;
           if (a == null || b == null) return const SizedBox.shrink();
-          final m = LiveLocationService.distanceMeters(LatLng(a.lat, a.lng), LatLng(b.lat, b.lng));
+          final m = LiveLocationService.distanceMeters(
+            LatLng(a.lat, a.lng),
+            LatLng(b.lat, b.lng),
+          );
           return _Row(
             icon: Icons.near_me_rounded,
             title: LocaleService.current.distanceLabel(m),
@@ -494,15 +573,20 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
       if (b != null && left != null)
         _Row(
           icon: Icons.cake_outlined,
-          title: '${b.day.toString().padLeft(2, '0')}.${b.month.toString().padLeft(2, '0')}',
+          title:
+              '${b.day.toString().padLeft(2, '0')}.${b.month.toString().padLeft(2, '0')}',
           sub: left == 0
               ? ruEn('день рождения сегодня!', 'birthday today!')
-              : ruEn('день рождения через $left ${forkDaysWord(left)}', 'birthday in $left ${forkDaysWord(left)}'),
+              : ruEn(
+                  'день рождения через $left ${forkDaysWord(left)}',
+                  'birthday in $left ${forkDaysWord(left)}',
+                ),
         ),
       if (f.anniversary != null)
         _Row(
           icon: Icons.favorite_outline_rounded,
-          title: '${f.anniversary!.day.toString().padLeft(2, '0')}.${f.anniversary!.month.toString().padLeft(2, '0')}.${f.anniversary!.year}',
+          title:
+              '${f.anniversary!.day.toString().padLeft(2, '0')}.${f.anniversary!.month.toString().padLeft(2, '0')}.${f.anniversary!.year}',
           sub: ruEn('годовщина', 'anniversary'),
         ),
     ];
@@ -512,7 +596,11 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
   /// Пара в цифрах — плитками; касание ведёт в статистику.
   Widget _together(ColorScheme cs, ForkPartnerFacts f) {
     final tiles = <(String, String)>[
-      if ((widget.daysTogether ?? 0) > 0) ('${widget.daysTogether}', '${forkDaysWord(widget.daysTogether!)} ${ruEn('вместе', 'together')}'),
+      if ((widget.daysTogether ?? 0) > 0)
+        (
+          '${widget.daysTogether}',
+          '${forkDaysWord(widget.daysTogether!)} ${ruEn('вместе', 'together')}',
+        ),
       if (f.memories > 0) ('${f.memories}', forkMemoriesWord(f.memories)),
       if (f.messages > 0) ('${f.messages}', forkMessagesWord(f.messages)),
     ];
@@ -534,11 +622,20 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
                   Expanded(
                     child: Column(
                       children: [
-                        Text(n, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-                        Text(label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                        Text(
+                          n,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -551,27 +648,30 @@ class ForkPartnerPageState extends State<ForkPartnerPage> {
   }
 
   Widget _shared(ColorScheme cs, ForkPartnerFacts f) => _Section(
-        title: ruEn('Общее', 'Shared'),
-        children: [
-          _Row(
-            icon: Icons.card_giftcard_rounded,
-            title: ruEn('Желания $_name', '$_name’s wishes'),
-            trailing: f.wishes > 0 ? '${f.wishes}' : null,
-            onTap: _wishes,
-          ),
-          _Row(
-            icon: Icons.manage_search_rounded,
-            title: ruEn('Голосовые, кружочки и ссылки', 'Voice, video notes and links'),
-            sub: ruEn('поиск по переписке', 'search the chat'),
-            onTap: _chatSearch,
-          ),
-          _Row(
-            icon: Icons.insights_rounded,
-            title: ruEn('Статистика пары', 'Couple stats'),
-            onTap: _stats,
-          ),
-        ],
-      );
+    title: ruEn('Общее', 'Shared'),
+    children: [
+      _Row(
+        icon: Icons.card_giftcard_rounded,
+        title: ruEn('Желания $_name', '$_name’s wishes'),
+        trailing: f.wishes > 0 ? '${f.wishes}' : null,
+        onTap: _wishes,
+      ),
+      _Row(
+        icon: Icons.manage_search_rounded,
+        title: ruEn(
+          'Голосовые, кружочки и ссылки',
+          'Voice, video notes and links',
+        ),
+        sub: ruEn('поиск по переписке', 'search the chat'),
+        onTap: _chatSearch,
+      ),
+      _Row(
+        icon: Icons.insights_rounded,
+        title: ruEn('Статистика пары', 'Couple stats'),
+        onTap: _stats,
+      ),
+    ],
+  );
 }
 
 class _Head extends StatelessWidget {
@@ -580,9 +680,14 @@ class _Head extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 24, 4, 8),
-        child: Text(text, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-      );
+    padding: const EdgeInsets.fromLTRB(4, 24, 4, 8),
+    child: Text(
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    ),
+  );
 }
 
 /// Блок со строками; без строк — не рисуется.
@@ -611,7 +716,14 @@ class _Section extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.title, this.icon, this.lead, this.sub, this.trailing, this.onTap});
+  const _Row({
+    required this.title,
+    this.icon,
+    this.lead,
+    this.sub,
+    this.trailing,
+    this.onTap,
+  });
 
   final IconData? icon;
   final Widget? lead;
@@ -629,10 +741,16 @@ class _Row extends StatelessWidget {
       title: Text(title, maxLines: 3, overflow: TextOverflow.ellipsis),
       subtitle: sub == null ? null : Text(sub!),
       trailing: trailing != null
-          ? Text(trailing!, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600))
+          ? Text(
+              trailing!,
+              style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            )
           : onTap != null
-              ? Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant)
-              : null,
+          ? Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant)
+          : null,
     );
   }
 }

@@ -25,11 +25,32 @@ Map<String, dynamic> _hw() => {
     'frameMs': 60,
     'wonAtMs': 2000,
     'lockAtMs': 900,
-    'frames': [null, null, [0.4, 0.4, 0.15], [0.3, 0.2, 0.36]],
+    'frames': [
+      null,
+      null,
+      [0.4, 0.4, 0.15],
+      [0.3, 0.2, 0.36],
+    ],
   },
   'curtain': {
-    'night': {'sheet': 'curtain_night_sheet', 'inMs': 620, 'holdMs': 380, 'outMs': 760, 'from': -1.4, 'mid': 0, 'to': 0.8},
-    'day': {'sheet': 'curtain_day_sheet', 'inMs': 620, 'holdMs': 0, 'outMs': 760, 'from': 0.8, 'mid': -0.26, 'to': -1.4},
+    'night': {
+      'sheet': 'curtain_night_sheet',
+      'inMs': 620,
+      'holdMs': 380,
+      'outMs': 760,
+      'from': -1.4,
+      'mid': 0,
+      'to': 0.8,
+    },
+    'day': {
+      'sheet': 'curtain_day_sheet',
+      'inMs': 620,
+      'holdMs': 0,
+      'outMs': 760,
+      'from': 0.8,
+      'mid': -0.26,
+      'to': -1.4,
+    },
   },
   'files': {
     'idle': 'u/idle.webp',
@@ -67,7 +88,12 @@ void main() {
     final s = SeasonChest.fromJson({
       ..._hw(),
       'music': {
-        'playlist': ['music_theremin', 'music_musicbox', 'нет_файла', 'music_mountain'],
+        'playlist': [
+          'music_theremin',
+          'music_musicbox',
+          'нет_файла',
+          'music_mountain',
+        ],
         'fadeMs': 3500,
       },
       'files': {
@@ -78,7 +104,11 @@ void main() {
         'music_mountain': 'u/m.m4a',
       },
     })!;
-    expect(s.musicUrls, ['u/t.m4a', 'u/b.m4a', 'u/m.m4a'], reason: 'файла нет — мелодия пропускается');
+    expect(s.musicUrls, [
+      'u/t.m4a',
+      'u/b.m4a',
+      'u/m.m4a',
+    ], reason: 'файла нет — мелодия пропускается');
     expect(s.musicFadeMs, 3500);
   });
 
@@ -95,12 +125,26 @@ void main() {
     expect(n.offsetAt(1760), 0.8, reason: 'ушёл вниз');
     expect(n.totalMs, 1760);
     // лист без файла — занавеса нет, страница сменится сразу
-    expect(SeasonCurtain.fromJson({'sheet': 'нет', 'from': 0, 'mid': 0, 'to': 1}, const {}), isNull);
+    expect(
+      SeasonCurtain.fromJson({
+        'sheet': 'нет',
+        'from': 0,
+        'mid': 0,
+        'to': 1,
+      }, const {}),
+      isNull,
+    );
   });
 
   test('без описания сбоя кнопка честная', () {
     expect(SeasonChest.fromJson({..._hw()}..remove('glitch'))!.glitch, isNull);
-    expect(SeasonChest.fromJson({..._hw(), 'glitch': {'mid': '13/13'}})!.glitch, isNull);
+    expect(
+      SeasonChest.fromJson({
+        ..._hw(),
+        'glitch': {'mid': '13/13'},
+      })!.glitch,
+      isNull,
+    );
   });
 
   test('язык: свой, иначе английский, иначе русский', () {
@@ -113,14 +157,20 @@ void main() {
 
   test('кривая запись не роняет список', () {
     final bad = {..._hw()}..remove('set');
-    final noFiles = {..._hw(), 'files': {'idle': 'x'}};
+    final noFiles = {
+      ..._hw(),
+      'files': {'idle': 'x'},
+    };
     final list = SeasonChest.listFromJson([_hw(), bad, noFiles, 'мусор', null]);
     expect(list.map((s) => s.key), ['hw']);
     expect(SeasonChest.listFromJson(null), isEmpty);
   });
 
   test('без палитры страница остаётся в теме пары', () {
-    final s = SeasonChest.fromJson({..._hw(), 'palette': {'page': 'чёрный'}})!;
+    final s = SeasonChest.fromJson({
+      ..._hw(),
+      'palette': {'page': 'чёрный'},
+    })!;
     expect(s.palette, isNull);
   });
 
@@ -130,7 +180,13 @@ void main() {
       'left': 2,
       'perDay': 3,
       'odds': [
-        {'key': 'coins5', 'kind': 'coins', 'amount': 5, 'tier': 'common', 'weight': 1000},
+        {
+          'key': 'coins5',
+          'kind': 'coins',
+          'amount': 5,
+          'tier': 'common',
+          'weight': 1000,
+        },
       ],
       'seasons': [_hw()],
     });
@@ -143,19 +199,38 @@ void main() {
     final main = ChestState.fromJson({
       'ok': true,
       'odds': [
-        {'key': 'coins5', 'kind': 'coins', 'amount': 5, 'tier': 'common', 'weight': 1000},
+        {
+          'key': 'coins5',
+          'kind': 'coins',
+          'amount': 5,
+          'tier': 'common',
+          'weight': 1000,
+        },
       ],
-      'seasons': [_hw(), {..._hw(), 'key': 'ny', 'home': true}],
+      'seasons': [
+        _hw(),
+        {..._hw(), 'key': 'ny', 'home': true},
+      ],
     })!;
     expect(main.homeSeason?.key, 'ny');
     final none = ChestState.fromJson({
       'ok': true,
       'odds': [
-        {'key': 'coins5', 'kind': 'coins', 'amount': 5, 'tier': 'common', 'weight': 1000},
+        {
+          'key': 'coins5',
+          'kind': 'coins',
+          'amount': 5,
+          'tier': 'common',
+          'weight': 1000,
+        },
       ],
       'seasons': [_hw()],
     })!;
-    expect(none.homeSeason, isNull, reason: 'без флага на главной обычный сундук');
+    expect(
+      none.homeSeason,
+      isNull,
+      reason: 'без флага на главной обычный сундук',
+    );
     expect(SeasonChest.fromJson({..._hw(), 'home': true})!.home, isTrue);
   });
 }

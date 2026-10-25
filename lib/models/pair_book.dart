@@ -24,8 +24,10 @@ BookRange bookRangeOf(BookPeriod period, {DateTime? now}) {
   return switch (period) {
     BookPeriod.allTime => const BookRange(),
     BookPeriod.thisYear => BookRange(from: DateTime(day.year, 1, 1), to: day),
-    BookPeriod.thisMonth =>
-      BookRange(from: DateTime(day.year, day.month, 1), to: day),
+    BookPeriod.thisMonth => BookRange(
+      from: DateTime(day.year, day.month, 1),
+      to: day,
+    ),
     BookPeriod.custom => BookRange(from: null, to: day),
   };
 }

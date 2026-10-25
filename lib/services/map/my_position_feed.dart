@@ -18,8 +18,8 @@ class MyPositionFeed {
     Future<Position> Function()? currentPosition,
     Stream<Position> Function()? positionStream,
     this.sharedFix,
-  })  : _currentPosition = currentPosition ?? _firstFix,
-        _positionStream = positionStream ?? _stream;
+  }) : _currentPosition = currentPosition ?? _firstFix,
+       _positionStream = positionStream ?? _stream;
 
   final void Function(Position position) onPosition;
   final Future<Position> Function() _currentPosition;
@@ -32,18 +32,18 @@ class MyPositionFeed {
   bool _closed = false;
 
   static Future<Position> _firstFix() => Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 15),
-        ),
-      );
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      timeLimit: Duration(seconds: 15),
+    ),
+  );
 
   static Stream<Position> _stream() => Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 5,
-        ),
-      );
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 5,
+    ),
+  );
 
   Future<void> start() async {
     final shared = sharedFix;

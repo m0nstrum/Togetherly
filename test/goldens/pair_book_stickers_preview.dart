@@ -23,12 +23,20 @@ void main() {
 
     final path = Platform.environment['BOOK_PHOTO'] ?? '';
     final photo = path.isNotEmpty && File(path).existsSync()
-        ? Uint8List.fromList(img.encodeJpg(img.copyResize(
-            img.decodeImage(File(path).readAsBytesSync())!,
-            width: 1400,
-          )))
-        : Uint8List.fromList(img.encodeJpg(
-            img.Image(width: 472, height: 352)..clear(img.ColorRgb8(196, 176, 160))));
+        ? Uint8List.fromList(
+            img.encodeJpg(
+              img.copyResize(
+                img.decodeImage(File(path).readAsBytesSync())!,
+                width: 1400,
+              ),
+            ),
+          )
+        : Uint8List.fromList(
+            img.encodeJpg(
+              img.Image(width: 472, height: 352)
+                ..clear(img.ColorRgb8(196, 176, 160)),
+            ),
+          );
 
     final bunny = await png('assets/images/mood_packs/bunny/cool.webp');
     final pink = await png('assets/images/mood_packs/pink/love.webp');
@@ -36,7 +44,11 @@ void main() {
     final pride = await png('assets/images/mood_packs/bunny/pride.webp');
 
     final bytes = await buildPairBookPdf(
-      cover: const BookPdfCover(title: 'THET1ME и JB SHARAN', subtitle: 'Октябрь 2026', footer: ''),
+      cover: const BookPdfCover(
+        title: 'THET1ME и JB SHARAN',
+        subtitle: 'Октябрь 2026',
+        footer: '',
+      ),
       days: [
         BookPdfDay(
           date: DateTime(2026, 10, 12),
@@ -48,9 +60,28 @@ void main() {
               author: 'THET1ME',
               photos: [photo, photo],
               stickers: [
-                BookPdfSticker(image: bunny, x: .92, y: .06, size: .34, angle: .16),
-                BookPdfSticker(image: pink, x: .04, y: .82, size: .29, angle: -.19),
-                BookPdfSticker(image: pug, x: .55, y: .6, size: .3, angle: .12, rounded: true),
+                BookPdfSticker(
+                  image: bunny,
+                  x: .92,
+                  y: .06,
+                  size: .34,
+                  angle: .16,
+                ),
+                BookPdfSticker(
+                  image: pink,
+                  x: .04,
+                  y: .82,
+                  size: .29,
+                  angle: -.19,
+                ),
+                BookPdfSticker(
+                  image: pug,
+                  x: .55,
+                  y: .6,
+                  size: .3,
+                  angle: .12,
+                  rounded: true,
+                ),
               ],
             ),
             BookPdfEntry(
@@ -58,8 +89,21 @@ void main() {
               caption: 'Купила билеты на субботу, не планируй ничего',
               author: 'JB SHARAN',
               stickers: [
-                BookPdfSticker(image: pride, x: .88, y: .7, size: .26, angle: .12),
-                BookPdfSticker(image: pug, x: .5, y: .5, size: .3, angle: -.08, rounded: true),
+                BookPdfSticker(
+                  image: pride,
+                  x: .88,
+                  y: .7,
+                  size: .26,
+                  angle: .12,
+                ),
+                BookPdfSticker(
+                  image: pug,
+                  x: .5,
+                  y: .5,
+                  size: .3,
+                  angle: -.08,
+                  rounded: true,
+                ),
               ],
             ),
           ],

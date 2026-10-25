@@ -7,8 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// или поля — пуш придёт, а касание по нему ничего не откроет, молча.
 void main() {
   final dart = File('lib/services/reels/reels_invite.dart').readAsStringSync();
-  final kotlin = File('android/app/src/main/kotlin/com/togetherly/love/ReelsInviteBridge.kt').readAsStringSync();
-  final activity = File('android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt').readAsStringSync();
+  final kotlin = File(
+    'android/app/src/main/kotlin/com/togetherly/love/ReelsInviteBridge.kt',
+  ).readAsStringSync();
+  final activity = File(
+    'android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt',
+  ).readAsStringSync();
   // fork: FcmService.kt удалён — FCM в форке нет (TOUCHPOINTS.md).
   final swift = File('ios/Runner/AppDelegate.swift').readAsStringSync();
   final hook = File('server/pb_hooks/reels_invite.pb.js').readAsStringSync();
@@ -37,17 +41,30 @@ void main() {
   });
 
   test('в данных пуша нет служебного ключа Firebase from', () {
-    expect(RegExp(r'data:\s*\{[^}]*\bfrom:').hasMatch(hook), isFalse,
-        reason: 'с ключом from FCM отвечает INVALID_ARGUMENT, и релей стирает живой токен');
+    expect(
+      RegExp(r'data:\s*\{[^}]*\bfrom:').hasMatch(hook),
+      isFalse,
+      reason:
+          'с ключом from FCM отвечает INVALID_ARGUMENT, и релей стирает живой токен',
+    );
   });
 
   test('Android подключает мост и ловит пуш на переднем плане', () {
     expect(activity.contains('ReelsInviteBridge.attach'), isTrue);
-    expect(activity.contains('ReelsInviteBridge.fromIntent(intent, warm = false)'), isTrue);
-    expect(activity.contains('ReelsInviteBridge.fromIntent(intent, warm = true)'), isTrue);
+    expect(
+      activity.contains('ReelsInviteBridge.fromIntent(intent, warm = false)'),
+      isTrue,
+    );
+    expect(
+      activity.contains('ReelsInviteBridge.fromIntent(intent, warm = true)'),
+      isTrue,
+    );
   });
 
   test('iPhone поднимает канал вместе с движком', () {
-    expect(swift.contains('setupReelsInviteChannel(engineBridge.pluginRegistry)'), isTrue);
+    expect(
+      swift.contains('setupReelsInviteChannel(engineBridge.pluginRegistry)'),
+      isTrue,
+    );
   });
 }

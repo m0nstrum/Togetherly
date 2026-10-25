@@ -42,7 +42,8 @@ class _Print {
   final Duration born;
 }
 
-class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTickerProviderStateMixin {
+class SeasonBackdropLayerState extends State<SeasonBackdropLayer>
+    with SingleTickerProviderStateMixin {
   static const _printMs = 3600;
   static const _handSide = 92.0;
 
@@ -53,7 +54,11 @@ class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTic
   bool _reduce = false;
 
   ImageProvider _img(String url) =>
-      widget.imageFor?.call(url) ?? CachedNetworkImageProvider(url, cacheManager: OfflineImageCacheManager.instance);
+      widget.imageFor?.call(url) ??
+      CachedNetworkImageProvider(
+        url,
+        cacheManager: OfflineImageCacheManager.instance,
+      );
 
   @override
   void didChangeDependencies() {
@@ -68,7 +73,8 @@ class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTic
   bool get _looping => !_reduce && !widget.backdrop.onMissYou;
 
   bool get _summoned =>
-      _summonAt != null && (_now - _summonAt!).inMilliseconds < widget.backdrop.onceDurationMs;
+      _summonAt != null &&
+      (_now - _summonAt!).inMilliseconds < widget.backdrop.onceDurationMs;
 
   void _syncTicker() {
     final need = _looping || _prints.isNotEmpty || _summonAt != null;
@@ -113,7 +119,9 @@ class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTic
   void press(Offset local) {
     if (widget.backdrop.handUrl == null) return;
     if (_prints.length >= 3) _prints.removeAt(0);
-    _prints.add(_Print(local, (-14 + _rnd.nextDouble() * 28) * math.pi / 180, _now));
+    _prints.add(
+      _Print(local, (-14 + _rnd.nextDouble() * 28) * math.pi / 180, _now),
+    );
     _syncTicker();
     setState(() {});
   }
@@ -162,10 +170,28 @@ class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTic
       final sharpness = b.blur <= 0 ? 1.0 : 1 - ph.blur / b.blur;
       if (b.blurUrl != null) {
         final seen = math.min(1.0, ph.opacity * 1.6);
-        layers.add(_mask(b.blurUrl!, 'backdrop-blur', tint.withValues(alpha: base * calm * seen * (1 - sharpness))));
-        layers.add(_mask(b.maskUrl, 'backdrop-sharp', tint.withValues(alpha: base * calm * ph.opacity * sharpness)));
+        layers.add(
+          _mask(
+            b.blurUrl!,
+            'backdrop-blur',
+            tint.withValues(alpha: base * calm * seen * (1 - sharpness)),
+          ),
+        );
+        layers.add(
+          _mask(
+            b.maskUrl,
+            'backdrop-sharp',
+            tint.withValues(alpha: base * calm * ph.opacity * sharpness),
+          ),
+        );
       } else {
-        layers.add(_mask(b.maskUrl, 'backdrop-sharp', tint.withValues(alpha: base * calm * ph.opacity)));
+        layers.add(
+          _mask(
+            b.maskUrl,
+            'backdrop-sharp',
+            tint.withValues(alpha: base * calm * ph.opacity),
+          ),
+        );
       }
     }
 
@@ -182,22 +208,26 @@ class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTic
             ? 1 - .33 * (k - .55) / .27
             : .67 * (1 - (k - .82) / .18);
         final slide = k > .55 ? 12 * math.min(1.0, (k - .55) / .27) : 0.0;
-        hands.add(Positioned(
-          left: p.at.dx - _handSide * .44,
-          top: p.at.dy - _handSide * .55 + slide,
-          width: _handSide,
-          height: _handSide,
-          child: Transform.rotate(
-            angle: p.rot,
-            child: Image(
-              key: const ValueKey('backdrop-hand'),
-              image: _img(hand),
-              color: tint.withValues(alpha: (base * 1.15).clamp(0.0, 1.0) * a),
-              colorBlendMode: BlendMode.srcIn,
-              gaplessPlayback: true,
+        hands.add(
+          Positioned(
+            left: p.at.dx - _handSide * .44,
+            top: p.at.dy - _handSide * .55 + slide,
+            width: _handSide,
+            height: _handSide,
+            child: Transform.rotate(
+              angle: p.rot,
+              child: Image(
+                key: const ValueKey('backdrop-hand'),
+                image: _img(hand),
+                color: tint.withValues(
+                  alpha: (base * 1.15).clamp(0.0, 1.0) * a,
+                ),
+                colorBlendMode: BlendMode.srcIn,
+                gaplessPlayback: true,
+              ),
             ),
           ),
-        ));
+        );
       }
     }
 
@@ -206,7 +236,11 @@ class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTic
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (layers.isNotEmpty) Transform.scale(scale: ph.scale, child: Stack(fit: StackFit.expand, children: layers)),
+            if (layers.isNotEmpty)
+              Transform.scale(
+                scale: ph.scale,
+                child: Stack(fit: StackFit.expand, children: layers),
+              ),
             ...hands,
           ],
         ),
@@ -224,7 +258,11 @@ class SeasonBackdropLayerState extends State<SeasonBackdropLayer> with SingleTic
 /// распознавателя): появись обёртка только на время сезона, Flutter
 /// пересоздал бы всё содержимое главной.
 class BackdropTapCatcher extends StatelessWidget {
-  const BackdropTapCatcher({super.key, required this.onEmptyTap, required this.child});
+  const BackdropTapCatcher({
+    super.key,
+    required this.onEmptyTap,
+    required this.child,
+  });
 
   final ValueChanged<Offset>? onEmptyTap;
   final Widget child;

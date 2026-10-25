@@ -84,11 +84,18 @@ class ChestSound extends ChangeNotifier {
     if (!_enabled) return;
     final late = Stopwatch()..start();
     try {
-      if (!kIsWeb && Platform.isIOS && await AVAudioSession().isOtherAudioPlaying) return;
+      if (!kIsWeb &&
+          Platform.isIOS &&
+          await AVAudioSession().isOtherAudioPlaying)
+        return;
       final p = await _prepare();
       if (p == null) return;
       // Пока готовился плеер, анимация ушла вперёд — догоняем её.
-      await p.seek(Duration(milliseconds: frame * kChestFrameMs + late.elapsedMilliseconds));
+      await p.seek(
+        Duration(
+          milliseconds: frame * kChestFrameMs + late.elapsedMilliseconds,
+        ),
+      );
       unawaited(p.play());
     } catch (e) {
       debugPrint('ChestSound: $e');
@@ -98,7 +105,8 @@ class ChestSound extends ChangeNotifier {
   /// Отдача на ключевых кадрах: щелчок замка — лёгкая, приз — посильнее.
   void haptic(int from, int to) {
     if (from < lockFrame && to >= lockFrame) HapticFeedback.lightImpact();
-    if (from < kChestWonFrame && to >= kChestWonFrame) HapticFeedback.mediumImpact();
+    if (from < kChestWonFrame && to >= kChestWonFrame)
+      HapticFeedback.mediumImpact();
   }
 
   Future<void> stop() async {

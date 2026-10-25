@@ -29,52 +29,52 @@ import 'settings_scaffold.dart';
 /// ([PlusService.visible] false и не куплен), секции нет вовсе.
 
 String homeBlockName(HomeBlock b) => trKey(switch (b) {
-      HomeBlock.chest => 'homeBlockChest',
-      HomeBlock.mascot => 'homeBlockMascot',
-      HomeBlock.map => 'homeBlockMap',
-      HomeBlock.tasks => 'homeBlockTasks',
-      HomeBlock.wishes => 'homeBlockWishes',
-      HomeBlock.lane => 'homeBlockLane',
-    });
+  HomeBlock.chest => 'homeBlockChest',
+  HomeBlock.mascot => 'homeBlockMascot',
+  HomeBlock.map => 'homeBlockMap',
+  HomeBlock.tasks => 'homeBlockTasks',
+  HomeBlock.wishes => 'homeBlockWishes',
+  HomeBlock.lane => 'homeBlockLane',
+});
 
 IconData homeBlockIcon(HomeBlock b) => switch (b) {
-      HomeBlock.chest => Icons.redeem_rounded,
-      HomeBlock.mascot => Icons.pets_rounded,
-      HomeBlock.map => Icons.map_rounded,
-      HomeBlock.tasks => Icons.task_alt_rounded,
-      HomeBlock.wishes => Icons.favorite_border_rounded,
-      HomeBlock.lane => Icons.photo_library_rounded,
-    };
+  HomeBlock.chest => Icons.redeem_rounded,
+  HomeBlock.mascot => Icons.pets_rounded,
+  HomeBlock.map => Icons.map_rounded,
+  HomeBlock.tasks => Icons.task_alt_rounded,
+  HomeBlock.wishes => Icons.favorite_border_rounded,
+  HomeBlock.lane => Icons.photo_library_rounded,
+};
 
 String homeTabName(HomeTab t) => switch (t) {
-      HomeTab.home => LocaleService.current.home,
-      HomeTab.widgets => LocaleService.current.widgets,
-      HomeTab.watch => LocaleService.current.watchTogether,
-      HomeTab.connect => LocaleService.current.connect,
-      HomeTab.profile => LocaleService.current.profile,
-    };
+  HomeTab.home => LocaleService.current.home,
+  HomeTab.widgets => LocaleService.current.widgets,
+  HomeTab.watch => LocaleService.current.watchTogether,
+  HomeTab.connect => LocaleService.current.connect,
+  HomeTab.profile => LocaleService.current.profile,
+};
 
 IconData homeTabIcon(HomeTab t) => switch (t) {
-      HomeTab.home => Icons.home_rounded,
-      HomeTab.widgets => Icons.widgets_rounded,
-      HomeTab.watch => Icons.live_tv_rounded,
-      HomeTab.connect => Icons.forum_rounded,
-      HomeTab.profile => Icons.person_rounded,
-    };
+  HomeTab.home => Icons.home_rounded,
+  HomeTab.widgets => Icons.widgets_rounded,
+  HomeTab.watch => Icons.live_tv_rounded,
+  HomeTab.connect => Icons.forum_rounded,
+  HomeTab.profile => Icons.person_rounded,
+};
 
 String homeActionName(HomeAction a) => trKey(switch (a) {
-      HomeAction.draw => 'homeActionDraw',
-      HomeAction.mood => 'homeActionMood',
-      HomeAction.calendar => 'homeActionCalendar',
-      HomeAction.post => 'homeActionPost',
-    });
+  HomeAction.draw => 'homeActionDraw',
+  HomeAction.mood => 'homeActionMood',
+  HomeAction.calendar => 'homeActionCalendar',
+  HomeAction.post => 'homeActionPost',
+});
 
 IconData homeActionIcon(HomeAction a) => switch (a) {
-      HomeAction.draw => Icons.edit_square,
-      HomeAction.mood => Icons.sentiment_satisfied_alt_rounded,
-      HomeAction.calendar => Icons.calendar_month_rounded,
-      HomeAction.post => Icons.photo_camera_rounded,
-    };
+  HomeAction.draw => Icons.edit_square,
+  HomeAction.mood => Icons.sentiment_satisfied_alt_rounded,
+  HomeAction.calendar => Icons.calendar_month_rounded,
+  HomeAction.post => Icons.photo_camera_rounded,
+};
 
 /// Можно ли вообще показывать раскладку на этой платформе.
 bool get homeLayoutAvailable =>
@@ -82,9 +82,9 @@ bool get homeLayoutAvailable =>
 
 Future<void> _openPlus(BuildContext context) {
   final cs = Theme.of(context).colorScheme;
-  return Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => PlusScreen(scheme: cs)),
-  );
+  return Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => PlusScreen(scheme: cs)));
 }
 
 final Listenable _layoutAndPlus = Listenable.merge([
@@ -119,9 +119,9 @@ class _HomeLayoutEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-        listenable: _layoutAndPlus,
-        builder: (context, _) => _build(context),
-      );
+    listenable: _layoutAndPlus,
+    builder: (context, _) => _build(context),
+  );
 
   Widget _build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -132,9 +132,9 @@ class _HomeLayoutEditor extends StatelessWidget {
     const outer = Radius.circular(SettingsGroup.outerRadius);
     const inner = Radius.circular(SettingsGroup.innerRadius);
     BorderRadius shape(int i, int n) => BorderRadius.vertical(
-          top: i == 0 ? outer : inner,
-          bottom: i == n - 1 ? outer : inner,
-        );
+      top: i == 0 ? outer : inner,
+      bottom: i == n - 1 ? outer : inner,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -176,24 +176,27 @@ class _HomeLayoutEditor extends StatelessWidget {
             color: cs.surfaceContainerHigh,
             borderRadius: shape(i, actions.length),
             clipBehavior: Clip.antiAlias,
-            child: Builder(builder: (context) {
-              final a = actions[i];
-              return SettingsRow(
-                icon: homeActionIcon(a),
-                title: homeActionName(a),
-                subtitle: trKey('homeLayoutActionsSub'),
-                trailing: Switch(
-                  value: layout.showsAction(a),
-                  onChanged: plus
-                      ? (v) => svc.update(layout.withAction(a, shown: v))
+            child: Builder(
+              builder: (context) {
+                final a = actions[i];
+                return SettingsRow(
+                  icon: homeActionIcon(a),
+                  title: homeActionName(a),
+                  subtitle: trKey('homeLayoutActionsSub'),
+                  trailing: Switch(
+                    value: layout.showsAction(a),
+                    onChanged: plus
+                        ? (v) => svc.update(layout.withAction(a, shown: v))
+                        : null,
+                  ),
+                  onTap: plus
+                      ? () => svc.update(
+                          layout.withAction(a, shown: !layout.showsAction(a)),
+                        )
                       : null,
-                ),
-                onTap: plus
-                    ? () => svc.update(
-                        layout.withAction(a, shown: !layout.showsAction(a)))
-                    : null,
-              );
-            }),
+                );
+              },
+            ),
           ),
         ],
         _caption(cs, trKey('homeLayoutBlocksHint')),
@@ -210,7 +213,8 @@ class _HomeLayoutEditor extends StatelessWidget {
           onReorder: (from, to) =>
               svc.update(layout.moved(from, to > from ? to - 1 : to)),
         ),
-        if (plus && !ForkHome.isDefault(layout)) ...[ // fork
+        if (plus && !ForkHome.isDefault(layout)) ...[
+          // fork
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () => svc.update(ForkHome.layout), // fork
@@ -226,17 +230,17 @@ class _HomeLayoutEditor extends StatelessWidget {
   }
 
   Widget _caption(ColorScheme cs, String text, {double top = 16}) => Padding(
-        padding: EdgeInsets.fromLTRB(8, top, 8, 10),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontFamily: 'Onest',
-            fontSize: 13,
-            height: 1.35,
-            color: cs.onSurfaceVariant,
-          ),
-        ),
-      );
+    padding: EdgeInsets.fromLTRB(8, top, 8, 10),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontFamily: 'Onest',
+        fontSize: 13,
+        height: 1.35,
+        color: cs.onSurfaceVariant,
+      ),
+    ),
+  );
 
   /// Строки, которые переставляют пальцем: строку зажимают и тащат, ручка
   /// справа берёт сразу, без ожидания; тумблер (где прятать можно) прячет.

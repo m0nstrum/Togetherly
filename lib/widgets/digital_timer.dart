@@ -90,7 +90,11 @@ class _DigitalTimerState extends State<DigitalTimer> {
   Widget build(BuildContext context) {
     final t = widget.theme;
     final now = (widget.now ?? DateTime.now)();
-    final p = TimerParts.of(widget.startDate, now, countdown: widget.isCountdown);
+    final p = TimerParts.of(
+      widget.startDate,
+      now,
+      countdown: widget.isCountdown,
+    );
     final ink = readableTextOn(t.timerDialBackground);
     final l = LocaleService.current;
 
@@ -102,10 +106,20 @@ class _DigitalTimerState extends State<DigitalTimer> {
           children: [
             Text(
               '$value',
-              style: AppFonts.unbounded(size: 22, weight: 700, color: ink)
-                  .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+              style: AppFonts.unbounded(
+                size: 22,
+                weight: 700,
+                color: ink,
+              ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
             ),
-            Text(label, style: AppFonts.onest(size: 12, weight: 600, color: ink.withValues(alpha: 0.75))),
+            Text(
+              label,
+              style: AppFonts.onest(
+                size: 12,
+                weight: 600,
+                color: ink.withValues(alpha: 0.75),
+              ),
+            ),
           ],
         ),
       );
@@ -120,7 +134,10 @@ class _DigitalTimerState extends State<DigitalTimer> {
             HapticFeedback.lightImpact();
             tap(label);
           },
-          child: ConstrainedBox(constraints: const BoxConstraints(minWidth: 48, minHeight: 48), child: child),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: child,
+          ),
         ),
       );
     }
@@ -139,21 +156,44 @@ class _DigitalTimerState extends State<DigitalTimer> {
             Semantics(
               liveRegion: false,
               label: widget.isCountdown
-                  ? ruEn('Осталось ${p.totalDays} ${forkDaysWord(p.totalDays)}', '${p.totalDays} ${forkDaysWord(p.totalDays)} left')
-                  : ruEn('Вместе ${p.totalDays} ${forkDaysWord(p.totalDays)}', 'Together ${p.totalDays} ${forkDaysWord(p.totalDays)}'),
+                  ? ruEn(
+                      'Осталось ${p.totalDays} ${forkDaysWord(p.totalDays)}',
+                      '${p.totalDays} ${forkDaysWord(p.totalDays)} left',
+                    )
+                  : ruEn(
+                      'Вместе ${p.totalDays} ${forkDaysWord(p.totalDays)}',
+                      'Together ${p.totalDays} ${forkDaysWord(p.totalDays)}',
+                    ),
               excludeSemantics: true,
               child: Column(
                 children: [
                   Text(
                     _grouped(p.totalDays),
-                    style: AppFonts.unbounded(size: 56, weight: 800, color: ink, height: 1.05)
-                        .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                    style:
+                        AppFonts.unbounded(
+                          size: 56,
+                          weight: 800,
+                          color: ink,
+                          height: 1.05,
+                        ).copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
                   ),
                   Text(
                     widget.isCountdown
-                        ? ruEn('${forkDaysWord(p.totalDays)} осталось', '${forkDaysWord(p.totalDays)} left')
-                        : ruEn('${forkDaysWord(p.totalDays)} вместе', '${forkDaysWord(p.totalDays)} together'),
-                    style: AppFonts.onest(size: 15, weight: 600, color: ink.withValues(alpha: 0.8)),
+                        ? ruEn(
+                            '${forkDaysWord(p.totalDays)} осталось',
+                            '${forkDaysWord(p.totalDays)} left',
+                          )
+                        : ruEn(
+                            '${forkDaysWord(p.totalDays)} вместе',
+                            '${forkDaysWord(p.totalDays)} together',
+                          ),
+                    style: AppFonts.onest(
+                      size: 15,
+                      weight: 600,
+                      color: ink.withValues(alpha: 0.8),
+                    ),
                   ),
                 ],
               ),
@@ -170,8 +210,11 @@ class _DigitalTimerState extends State<DigitalTimer> {
             const SizedBox(height: 8),
             Text(
               p.clock,
-              style: AppFonts.unbounded(size: 30, weight: 600, color: ink)
-                  .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+              style: AppFonts.unbounded(
+                size: 30,
+                weight: 600,
+                color: ink,
+              ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
             ),
           ],
         ),

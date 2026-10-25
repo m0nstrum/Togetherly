@@ -140,29 +140,46 @@ const Map<String, Map<String, String>> shopStrings = {
   'shopFrameHint': {
     'ru': 'Рамку видишь ты и партнёр везде, где есть твоя аватарка.',
     'en': 'You and your partner see the frame everywhere your avatar appears.',
-    'pt': 'Tu e o teu par veem a moldura em todo o lado onde aparece o teu avatar.',
+    'pt':
+        'Tu e o teu par veem a moldura em todo o lado onde aparece o teu avatar.',
     'it': 'Tu e il partner vedete la cornice ovunque ci sia il tuo avatar.',
-    'es': 'Tú y tu pareja veis el marco en todas partes donde aparece tu avatar.',
-    'fr': 'Toi et ton partenaire voyez le cadre partout où apparaît ton avatar.',
+    'es':
+        'Tú y tu pareja veis el marco en todas partes donde aparece tu avatar.',
+    'fr':
+        'Toi et ton partenaire voyez le cadre partout où apparaît ton avatar.',
     'de': 'Du und dein Partner seht den Rahmen überall, wo dein Avatar ist.',
   },
   'shopFrameChestHint': {
-    'ru': 'Рамки не продаются: они выпадают из сундука недели, а выпавшую можно подарить партнёру.',
-    'en': 'Frames aren’t sold: they drop from the weekly chest, and you can give one to your partner.',
-    'pt': 'As molduras não se vendem: saem do baú da semana, e podes oferecer uma ao teu par.',
-    'it': 'Le cornici non si comprano: escono dal forziere della settimana e puoi regalarne una al partner.',
-    'es': 'Los marcos no se venden: salen del cofre de la semana y puedes regalarle uno a tu pareja.',
-    'fr': 'Les cadres ne s’achètent pas : ils sortent du coffre de la semaine, et tu peux en offrir un à ton partenaire.',
-    'de': 'Rahmen kann man nicht kaufen: Sie kommen aus der Wochentruhe, und du kannst einen deinem Partner schenken.',
+    'ru':
+        'Рамки не продаются: они выпадают из сундука недели, а выпавшую можно подарить партнёру.',
+    'en':
+        'Frames aren’t sold: they drop from the weekly chest, and you can give one to your partner.',
+    'pt':
+        'As molduras não se vendem: saem do baú da semana, e podes oferecer uma ao teu par.',
+    'it':
+        'Le cornici non si comprano: escono dal forziere della settimana e puoi regalarne una al partner.',
+    'es':
+        'Los marcos no se venden: salen del cofre de la semana y puedes regalarle uno a tu pareja.',
+    'fr':
+        'Les cadres ne s’achètent pas : ils sortent du coffre de la semaine, et tu peux en offrir un à ton partenaire.',
+    'de':
+        'Rahmen kann man nicht kaufen: Sie kommen aus der Wochentruhe, und du kannst einen deinem Partner schenken.',
   },
   'shopGiftChestHint': {
-    'ru': 'Этот подарок не продаётся, он выпадает из сундука недели. Выпавший можно подарить партнёру или оставить себе.',
-    'en': 'This gift isn’t sold, it drops from the weekly chest. Once you get it, give it to your partner or keep it.',
-    'pt': 'Este presente não se vende, sai do baú da semana. Quando sair, podes oferecê-lo ao teu par ou ficar com ele.',
-    'it': 'Questo regalo non si compra, esce dal forziere della settimana. Quando esce, puoi regalarlo al partner o tenerlo.',
-    'es': 'Este regalo no se vende, sale del cofre de la semana. Cuando te toque, regálaselo a tu pareja o quédatelo.',
-    'fr': 'Ce cadeau ne s’achète pas, il sort du coffre de la semaine. Une fois obtenu, offre-le à ton partenaire ou garde-le.',
-    'de': 'Dieses Geschenk gibt es nicht zu kaufen, es kommt aus der Wochentruhe. Dann verschenkst du es oder behältst es.',
+    'ru':
+        'Этот подарок не продаётся, он выпадает из сундука недели. Выпавший можно подарить партнёру или оставить себе.',
+    'en':
+        'This gift isn’t sold, it drops from the weekly chest. Once you get it, give it to your partner or keep it.',
+    'pt':
+        'Este presente não se vende, sai do baú da semana. Quando sair, podes oferecê-lo ao teu par ou ficar com ele.',
+    'it':
+        'Questo regalo non si compra, esce dal forziere della settimana. Quando esce, puoi regalarlo al partner o tenerlo.',
+    'es':
+        'Este regalo no se vende, sale del cofre de la semana. Cuando te toque, regálaselo a tu pareja o quédatelo.',
+    'fr':
+        'Ce cadeau ne s’achète pas, il sort du coffre de la semaine. Une fois obtenu, offre-le à ton partenaire ou garde-le.',
+    'de':
+        'Dieses Geschenk gibt es nicht zu kaufen, es kommt aus der Wochentruhe. Dann verschenkst du es oder behältst es.',
   },
   'shopOpenChest': {
     'ru': 'Открыть сундук',
@@ -297,7 +314,8 @@ const Map<String, Map<String, String>> shopStrings = {
     'it': 'Questo badge non si compra, esce dal forziere della settimana.',
     'es': 'Esta insignia no se vende, sale del cofre de la semana.',
     'fr': 'Ce badge ne s’achète pas, il sort du coffre de la semaine.',
-    'de': 'Dieses Abzeichen gibt es nicht zu kaufen, es kommt aus der Wochentruhe.',
+    'de':
+        'Dieses Abzeichen gibt es nicht zu kaufen, es kommt aus der Wochentruhe.',
   },
   'chestPlusTrialTitle': {
     'ru': 'Togetherly+ на 7 дней',
@@ -366,19 +384,29 @@ const Map<String, Map<String, String>> shopStrings = {
     'ru': 'Копилка пары: {k} из {n}. Полная откроет вам обоим по сундуку.',
     'en': 'Couple jar: {k} of {n}. A full jar opens a chest for each of you.',
     'pt': 'Cofrinho do casal: {k} de {n}. Cheio, abre um baú para cada um.',
-    'it': 'Salvadanaio di coppia: {k} su {n}. Pieno, apre un forziere a ciascuno.',
+    'it':
+        'Salvadanaio di coppia: {k} su {n}. Pieno, apre un forziere a ciascuno.',
     'es': 'Hucha de pareja: {k} de {n}. Llena, abre un cofre para cada uno.',
-    'fr': 'Tirelire du couple : {k} sur {n}. Pleine, elle ouvre un coffre à chacun.',
-    'de': 'Paar-Spardose: {k} von {n}. Voll öffnet sie jedem von euch eine Truhe.',
+    'fr':
+        'Tirelire du couple : {k} sur {n}. Pleine, elle ouvre un coffre à chacun.',
+    'de':
+        'Paar-Spardose: {k} von {n}. Voll öffnet sie jedem von euch eine Truhe.',
   },
   'jarHint': {
-    'ru': 'Каждый ролик любого из вас кладёт каплю. Десять капель: обоим по сундуку без рекламы.',
-    'en': 'Every video either of you watches adds a drop. Ten drops: a chest for each of you, no ads.',
-    'pt': 'Cada vídeo que qualquer um de vocês assiste adiciona uma gota. Dez gotas: um baú para cada um, sem anúncio.',
-    'it': 'Ogni video che uno di voi guarda aggiunge una goccia. Dieci gocce: un forziere a ciascuno, senza pubblicità.',
-    'es': 'Cada vídeo que cualquiera de los dos ve añade una gota. Diez gotas: un cofre para cada uno, sin anuncios.',
-    'fr': 'Chaque vidéo que l’un de vous regarde ajoute une goutte. Dix gouttes : un coffre à chacun, sans pub.',
-    'de': 'Jedes Video, das einer von euch schaut, bringt einen Tropfen. Zehn Tropfen: für jeden eine Truhe ohne Werbung.',
+    'ru':
+        'Каждый ролик любого из вас кладёт каплю. Десять капель: обоим по сундуку без рекламы.',
+    'en':
+        'Every video either of you watches adds a drop. Ten drops: a chest for each of you, no ads.',
+    'pt':
+        'Cada vídeo que qualquer um de vocês assiste adiciona uma gota. Dez gotas: um baú para cada um, sem anúncio.',
+    'it':
+        'Ogni video che uno di voi guarda aggiunge una goccia. Dieci gocce: un forziere a ciascuno, senza pubblicità.',
+    'es':
+        'Cada vídeo que cualquiera de los dos ve añade una gota. Diez gotas: un cofre para cada uno, sin anuncios.',
+    'fr':
+        'Chaque vidéo que l’un de vous regarde ajoute une goutte. Dix gouttes : un coffre à chacun, sans pub.',
+    'de':
+        'Jedes Video, das einer von euch schaut, bringt einen Tropfen. Zehn Tropfen: für jeden eine Truhe ohne Werbung.',
   },
   'jarCapped': {
     'ru': 'Копилка на сегодня наполнена дважды, завтра снова.',
@@ -386,7 +414,8 @@ const Map<String, Map<String, String>> shopStrings = {
     'pt': 'O cofrinho já encheu duas vezes hoje. Amanhã tem mais.',
     'it': 'Oggi il salvadanaio si è già riempito due volte. Domani di nuovo.',
     'es': 'La hucha ya se llenó dos veces hoy. Mañana, de nuevo.',
-    'fr': 'La tirelire s’est déjà remplie deux fois aujourd’hui. Demain, ça repart.',
+    'fr':
+        'La tirelire s’est déjà remplie deux fois aujourd’hui. Demain, ça repart.',
     'de': 'Die Spardose war heute schon zweimal voll. Morgen geht es weiter.',
   },
   'jarBonusChip': {
@@ -438,19 +467,25 @@ const Map<String, Map<String, String>> shopStrings = {
     'ru': '{name} увидит подарок на главной и сможет ответить.',
     'en': '{name} will see the gift on the home screen and can reply.',
     'pt': '{name} vai ver o presente na tela inicial e poderá responder.',
-    'it': '{name} vedrà il regalo nella schermata principale e potrà rispondere.',
+    'it':
+        '{name} vedrà il regalo nella schermata principale e potrà rispondere.',
     'es': '{name} verá el regalo en la pantalla principal y podrá responder.',
     'fr': '{name} verra le cadeau sur l’écran d’accueil et pourra répondre.',
-    'de': '{name} sieht das Geschenk auf dem Startbildschirm und kann antworten.',
+    'de':
+        '{name} sieht das Geschenk auf dem Startbildschirm und kann antworten.',
   },
   'giftSentWhereAnon': {
     'ru': 'Партнёр увидит подарок на главной и сможет ответить.',
     'en': 'Your partner will see the gift on the home screen and can reply.',
     'pt': 'Seu par vai ver o presente na tela inicial e poderá responder.',
-    'it': 'Il partner vedrà il regalo nella schermata principale e potrà rispondere.',
-    'es': 'Tu pareja verá el regalo en la pantalla principal y podrá responder.',
-    'fr': 'Ton partenaire verra le cadeau sur l’écran d’accueil et pourra répondre.',
-    'de': 'Dein Partner sieht das Geschenk auf dem Startbildschirm und kann antworten.',
+    'it':
+        'Il partner vedrà il regalo nella schermata principale e potrà rispondere.',
+    'es':
+        'Tu pareja verá el regalo en la pantalla principal y podrá responder.',
+    'fr':
+        'Ton partenaire verra le cadeau sur l’écran d’accueil et pourra répondre.',
+    'de':
+        'Dein Partner sieht das Geschenk auf dem Startbildschirm und kann antworten.',
   },
   'giftSentByAd': {
     'ru': 'Подарен за просмотр рекламы, монеты не списаны.',
@@ -477,7 +512,8 @@ const Map<String, Map<String, String>> shopStrings = {
     'it': 'Il video non è stato conteggiato, nessuna ricompensa. Riprova.',
     'es': 'El vídeo no contó, esta vez no hay recompensa. Inténtalo de nuevo.',
     'fr': 'La vidéo n’a pas compté, pas de récompense cette fois. Réessaie.',
-    'de': 'Das Video zählte nicht, diesmal keine Belohnung. Versuch es noch mal.',
+    'de':
+        'Das Video zählte nicht, diesmal keine Belohnung. Versuch es noch mal.',
   },
   'badgeObtainedTitle': {
     'ru': 'Значок «{name}» твой',
@@ -490,12 +526,16 @@ const Map<String, Map<String, String>> shopStrings = {
   },
   'badgeObtainedWorn': {
     'ru': 'Уже стоит у ника, партнёр его видит. Сменить можно в магазине.',
-    'en': 'It’s already next to your name, and your partner sees it. Change it in the shop.',
+    'en':
+        'It’s already next to your name, and your partner sees it. Change it in the shop.',
     'pt': 'Já está ao lado do seu nome, e seu par vê. Troque na loja.',
-    'it': 'È già accanto al tuo nome e il partner lo vede. Puoi cambiarlo nel negozio.',
+    'it':
+        'È già accanto al tuo nome e il partner lo vede. Puoi cambiarlo nel negozio.',
     'es': 'Ya está junto a tu nombre y tu pareja lo ve. Cámbiala en la tienda.',
-    'fr': 'Il est déjà à côté de ton pseudo, ton partenaire le voit. Change-le dans la boutique.',
-    'de': 'Es steht schon neben deinem Namen, dein Partner sieht es. Wechseln kannst du im Shop.',
+    'fr':
+        'Il est déjà à côté de ton pseudo, ton partenaire le voit. Change-le dans la boutique.',
+    'de':
+        'Es steht schon neben deinem Namen, dein Partner sieht es. Wechseln kannst du im Shop.',
   },
   'chestSoundOff': {
     'ru': 'Выключить звук сундука',

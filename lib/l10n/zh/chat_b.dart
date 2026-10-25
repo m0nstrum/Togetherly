@@ -29,7 +29,8 @@ const Map<String, String> chatBZh = {
   'plusThemesBody': '所有付费配色和资料徽章，一次全部解锁',
   'plusCycleTitle': '生理期日历',
   'plusReelsTitle': '一起刷',
-  'plusReelsBody': '和另一半一起刷 Shorts、TikTok、Rutube、VK 和 Dzen：两个人的推荐轮流播放，还能聊天和通话。一个人有 Togetherly+ 就够了',
+  'plusReelsBody':
+      '和另一半一起刷 Shorts、TikTok、Rutube、VK 和 Dzen：两个人的推荐轮流播放，还能聊天和通话。一个人有 Togetherly+ 就够了',
   'plusCycleBody': '记录、预测，还有带图表的统计',
   'plusWidgetsTitle': '新的小组件',
   'plusWidgetsBody': '“在一起”“想你”“心情”“距离见面”，多种尺寸',

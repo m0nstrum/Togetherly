@@ -142,7 +142,9 @@ class _TipsCardState extends State<TipsCard> {
                         style: FilledButton.styleFrom(
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 8),
+                            horizontal: 18,
+                            vertical: 8,
+                          ),
                         ),
                         child: Text(
                           _labelFor(tip.action!),
@@ -181,8 +183,11 @@ class _TipsCardState extends State<TipsCard> {
               color: cs.primaryContainer,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.lightbulb_rounded,
-                size: 22, color: cs.onPrimaryContainer),
+            child: Icon(
+              Icons.lightbulb_rounded,
+              size: 22,
+              color: cs.onPrimaryContainer,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -216,7 +221,9 @@ class _TipsCardState extends State<TipsCard> {
                     style: FilledButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                     ),
                     child: Text(
                       widget.unlockLabel,
@@ -237,13 +244,13 @@ class _TipsCardState extends State<TipsCard> {
   }
 
   IconData _iconFor(String? action) => switch (action) {
-        'chat' => Icons.chat_bubble_rounded,
-        'memory' => Icons.photo_library_rounded,
-        'gift' => Icons.card_giftcard_rounded,
-        'miss' => Icons.favorite_rounded,
-        'mood' => Icons.mood_rounded,
-        _ => Icons.lightbulb_rounded,
-      };
+    'chat' => Icons.chat_bubble_rounded,
+    'memory' => Icons.photo_library_rounded,
+    'gift' => Icons.card_giftcard_rounded,
+    'miss' => Icons.favorite_rounded,
+    'mood' => Icons.mood_rounded,
+    _ => Icons.lightbulb_rounded,
+  };
 
   String _labelFor(String action) => trKey(switch (action) {
     'chat' || 'memory' || 'gift' || 'miss' || 'mood' => 'tipAction.$action',

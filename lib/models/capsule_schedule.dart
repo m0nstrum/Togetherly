@@ -11,10 +11,10 @@ enum CapsulePreset { month, halfYear, year }
 const int kCapsuleOpenHour = 9;
 
 int _monthsOf(CapsulePreset p) => switch (p) {
-      CapsulePreset.month => 1,
-      CapsulePreset.halfYear => 6,
-      CapsulePreset.year => 12,
-    };
+  CapsulePreset.month => 1,
+  CapsulePreset.halfYear => 6,
+  CapsulePreset.year => 12,
+};
 
 /// Дата открытия быстрого срока: тот же день через месяц, полгода или год, в
 /// девять утра.
@@ -33,7 +33,9 @@ DateTime capsulePresetDate(DateTime now, CapsulePreset preset) {
 CapsulePreset? capsulePresetOf(DateTime openAt, DateTime now) {
   for (final p in CapsulePreset.values) {
     final d = capsulePresetDate(now, p);
-    if (d.year == openAt.year && d.month == openAt.month && d.day == openAt.day) {
+    if (d.year == openAt.year &&
+        d.month == openAt.month &&
+        d.day == openAt.day) {
       return p;
     }
   }

@@ -55,12 +55,15 @@ class _ChestShareScreenState extends State<ChestShareScreen> {
   /// Снимок карточки в её натуральном размере: масштаб предпросмотра на это
   /// не влияет, `toImage` снимает по локальным координатам границы.
   Future<File> _render() async {
-    final boundary = _shot.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final boundary =
+        _shot.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final image = await boundary.toImage(pixelRatio: 3);
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/togetherly_chest_${DateTime.now().millisecondsSinceEpoch}.png');
+    final file = File(
+      '${dir.path}/togetherly_chest_${DateTime.now().millisecondsSinceEpoch}.png',
+    );
     await file.writeAsBytes(data!.buffer.asUint8List());
     return file;
   }

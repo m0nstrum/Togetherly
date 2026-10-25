@@ -27,8 +27,17 @@ void paintShape(
   // сетки выглядит нарисованной в другом редакторе — круг с мягким краем на
   // холсте 32×40 клеток человек не принимает за свой.
   if (pixelCols != null && pixelRows != null) {
-    _paintPixelShape(canvas, points, colorValue, shapeType, size,
-        pixelCols, pixelRows, alpha: alpha, filled: isFilledShape);
+    _paintPixelShape(
+      canvas,
+      points,
+      colorValue,
+      shapeType,
+      size,
+      pixelCols,
+      pixelRows,
+      alpha: alpha,
+      filled: isFilledShape,
+    );
     return;
   }
   final c = Color(colorValue);
@@ -57,7 +66,6 @@ void paintShape(
       canvas.drawPath(path, paint);
   }
 }
-
 
 /// Фигура на пиксельном холсте: считаем клетки и красим их квадратами.
 void _paintPixelShape(
@@ -147,8 +155,14 @@ void paintPixelStroke(
         cells.add(y0 * cols + x0);
         if (x0 == cx && y0 == cy) break;
         final e2 = 2 * err;
-        if (e2 >= dy) { err += dy; x0 += sx; }
-        if (e2 <= dx) { err += dx; y0 += sy; }
+        if (e2 >= dy) {
+          err += dy;
+          x0 += sx;
+        }
+        if (e2 <= dx) {
+          err += dx;
+          y0 += sy;
+        }
       }
     }
     cells.add(cy * cols + cx);
@@ -181,13 +195,9 @@ void paintPixelStroke(
   for (final key in cells) {
     final x = key % cols;
     final y = key ~/ cols;
-    canvas.drawRect(
-      Rect.fromLTWH(x * cw, y * ch, cw + 0.5, ch + 0.5),
-      paint,
-    );
+    canvas.drawRect(Rect.fromLTWH(x * cw, y * ch, cw + 0.5, ch + 0.5), paint);
   }
 }
-
 
 void paintStroke(
   Canvas canvas,
@@ -206,17 +216,34 @@ void paintStroke(
   // Пиксельный холст: клетки вместо сглаженной кривой. Кисть там не
   // действует — клетка есть клетка.
   if (pixelCols != null && pixelRows != null) {
-    paintPixelStroke(canvas, points, colorValue, isEraser, size,
-        pixelCols, pixelRows,
-        alpha: alpha, brush: pixelBrushCells(strokeWidth));
+    paintPixelStroke(
+      canvas,
+      points,
+      colorValue,
+      isEraser,
+      size,
+      pixelCols,
+      pixelRows,
+      alpha: alpha,
+      brush: pixelBrushCells(strokeWidth),
+    );
     return;
   }
   // Ластик бывает только твёрдым (перо) и мягким (аэрограф).
   final drawsAsPen =
       brush == StrokeBrush.pen || (isEraser && brush != StrokeBrush.airbrush);
   if (!drawsAsPen) {
-    paintBrushStroke(canvas, points, colorValue, strokeWidth, isEraser, size,
-        brush: brush, alpha: alpha, seed: seed);
+    paintBrushStroke(
+      canvas,
+      points,
+      colorValue,
+      strokeWidth,
+      isEraser,
+      size,
+      brush: brush,
+      alpha: alpha,
+      seed: seed,
+    );
     return;
   }
   final paint = Paint()
@@ -249,9 +276,11 @@ void paintStroke(
     return;
   }
 
-  canvas.drawPath(strokeCurve(points, size), paint..style = PaintingStyle.stroke);
+  canvas.drawPath(
+    strokeCurve(points, size),
+    paint..style = PaintingStyle.stroke,
+  );
 }
-
 
 /// Картинка-штрих: заливка ведром и вставленное фото.
 ///
@@ -395,7 +424,10 @@ void paintLayers(
   final bounds = Offset.zero & size;
   final liveErasers = eraserLayers.toSet();
   for (final layer in layersOf(strokes, liveLayers)) {
-    final own = [for (final s in strokes) if (s.layer == layer) s];
+    final own = [
+      for (final s in strokes)
+        if (s.layer == layer) s,
+    ];
     final erases = liveErasers.contains(layer) || own.any((s) => s.isEraser);
     if (erases) canvas.saveLayer(bounds, Paint());
     final picture = pictureOf?.call(layer, own);

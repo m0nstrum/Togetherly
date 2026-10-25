@@ -32,35 +32,41 @@ class AdultVeil extends StatelessWidget {
     // без метки в полёт ушёл бы открытый снимок.
     return UnfoldVeiled(
       child: ClipRect(
-      child: Stack(
-        fit: StackFit.passthrough,
-        children: [
-          // `clamp` тянет крайние пиксели: без него размытие у краёв уходит в
-          // прозрачность, и по кромке плитки проступает резкий снимок.
-          ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(
-                sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.clamp),
-            child: child,
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: ColoredBox(
-                color: Colors.black.withValues(alpha: 0.18),
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.lock_rounded,
-                          color: Colors.white, size: iconSize),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            // `clamp` тянет крайние пиксели: без него размытие у краёв уходит в
+            // прозрачность, и по кромке плитки проступает резкий снимок.
+            ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(
+                sigmaX: sigma,
+                sigmaY: sigma,
+                tileMode: TileMode.clamp,
+              ),
+              child: child,
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ColoredBox(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.lock_rounded,
+                          color: Colors.white,
+                          size: iconSize,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }

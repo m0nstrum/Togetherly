@@ -69,7 +69,9 @@ Future<void> shareMemoryMedia(
   }
 
   try {
-    final dir = Directory('${(await getTemporaryDirectory()).path}/share_media');
+    final dir = Directory(
+      '${(await getTemporaryDirectory()).path}/share_media',
+    );
     if (await dir.exists()) await dir.delete(recursive: true);
     await dir.create(recursive: true);
     final out = <XFile>[];

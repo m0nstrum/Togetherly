@@ -24,7 +24,11 @@ import '../../services/pocketbase_service.dart';
 
 @immutable
 class ForkBatteryState {
-  const ForkBatteryState({required this.level, required this.charging, required this.at});
+  const ForkBatteryState({
+    required this.level,
+    required this.charging,
+    required this.at,
+  });
 
   final int level;
   final bool charging;
@@ -34,9 +38,14 @@ class ForkBatteryState {
   bool get low => level <= 20 && !charging;
 
   /// Старше шести часов заряд уже ничего не говорит — не показываем.
-  bool fresh(DateTime now, {Duration maxAge = const Duration(hours: 6)}) => now.difference(at) < maxAge;
+  bool fresh(DateTime now, {Duration maxAge = const Duration(hours: 6)}) =>
+      now.difference(at) < maxAge;
 
-  Map<String, dynamic> toJson() => {'l': level, 'c': charging, 'at': at.millisecondsSinceEpoch};
+  Map<String, dynamic> toJson() => {
+    'l': level,
+    'c': charging,
+    'at': at.millisecondsSinceEpoch,
+  };
 
   static ForkBatteryState? fromJson(Object? raw) {
     Object? v = raw;
@@ -125,7 +134,12 @@ class ForkBattery {
   ///
   /// [partnerUid] и [onPartner] — заряд партнёра сменился (виджет карты на
   /// рабочем столе перерисовывается сразу, а не через 15 минут фона).
-  Future<void> start(String groupId, String uid, {String partnerUid = '', VoidCallback? onPartner}) async {
+  Future<void> start(
+    String groupId,
+    String uid, {
+    String partnerUid = '',
+    VoidCallback? onPartner,
+  }) async {
     if (groupId.isEmpty || uid.isEmpty) return;
     if (groupId == _groupId && uid == _uid && _timer != null) return;
     stop();
@@ -145,9 +159,14 @@ class ForkBattery {
     }
     await _load();
     if (generation != _generation) return;
-    _timer = Timer.periodic(const Duration(minutes: 5), (_) => unawaited(report()));
+    _timer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => unawaited(report()),
+    );
     try {
-      _stateSub = Battery().onBatteryStateChanged.listen((_) => unawaited(report()));
+      _stateSub = Battery().onBatteryStateChanged.listen(
+        (_) => unawaited(report()),
+      );
     } catch (e) {
       debugPrint('ForkBattery: без событий зарядки: $e');
     }
@@ -171,14 +190,23 @@ class ForkBattery {
   StreamSubscription<ForkBatteryState?>? _partnerSub;
 
   /// Прочитать заряд и, если пора, записать.
-  Future<void> report({String? groupId, String? uid, bool force = false}) async {
+  Future<void> report({
+    String? groupId,
+    String? uid,
+    bool force = false,
+  }) async {
     final generation = _generation;
     final g = groupId ?? _groupId, u = uid ?? _uid;
     await _load();
-    if (generation != _generation || g.isEmpty || u.isEmpty || !sharing.value) return;
+    if (generation != _generation || g.isEmpty || u.isEmpty || !sharing.value)
+      return;
     final r = await read();
     if (r == null || generation != _generation) return;
-    final next = ForkBatteryState(level: r.$1, charging: r.$2, at: DateTime.now());
+    final next = ForkBatteryState(
+      level: r.$1,
+      charging: r.$2,
+      at: DateTime.now(),
+    );
     SharedPreferences? p;
     ForkBatteryState? last;
     try {
@@ -204,7 +232,10 @@ class ForkBattery {
   Future<RecordModel?> _find(String groupId, String uid) async {
     try {
       return await _col.getFirstListItem(
-        PocketBaseService().pb.filter('group_id = {:g} && user_uid = {:u}', {'g': groupId, 'u': uid}),
+        PocketBaseService().pb.filter('group_id = {:g} && user_uid = {:u}', {
+          'g': groupId,
+          'u': uid,
+        }),
       );
     } on ClientException catch (e) {
       if (e.statusCode != 404) debugPrint('ForkBattery: чтение не вышло: $e');
@@ -212,11 +243,17 @@ class ForkBattery {
     }
   }
 
-  Future<bool> _write(String groupId, String uid, ForkBatteryState s, int generation) async {
+  Future<bool> _write(
+    String groupId,
+    String uid,
+    ForkBatteryState s,
+    int generation,
+  ) async {
     try {
       final body = {'group_id': groupId, 'user_uid': uid, 'state': s.toJson()};
       final old = await _find(groupId, uid);
-      if (generation != _generation || PocketBaseService().userId != uid) return false;
+      if (generation != _generation || PocketBaseService().userId != uid)
+        return false;
       if (old == null) {
         await _col.create(body: body);
       } else {
@@ -271,7 +308,10 @@ class ForkBattery {
     RtUnsub? unsub;
     Future<void> fetch() async {
       final rec = await _find(groupId, uid);
-      if (!out.isClosed) out.add(rec == null ? null : ForkBatteryState.fromJson(rec.data['state']));
+      if (!out.isClosed)
+        out.add(
+          rec == null ? null : ForkBatteryState.fromJson(rec.data['state']),
+        );
     }
 
     out = StreamController<ForkBatteryState?>(
@@ -289,7 +329,9 @@ class ForkBattery {
             if (s != null) {
               if (!out.isClosed) out.add(s);
             } else {
-              unawaited(fetch()); // событие пришло нерасшифрованным — перечитаем
+              unawaited(
+                fetch(),
+              ); // событие пришло нерасшифрованным — перечитаем
             }
           },
           match: (r) => r.data['user_uid'] == uid,

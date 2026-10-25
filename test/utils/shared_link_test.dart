@@ -10,21 +10,30 @@ void main() {
     });
 
     test('берёт голую ссылку целиком', () {
-      expect(extractSharedUrl('https://www.wildberries.ru/catalog/1/detail.aspx'),
-          'https://www.wildberries.ru/catalog/1/detail.aspx');
+      expect(
+        extractSharedUrl('https://www.wildberries.ru/catalog/1/detail.aspx'),
+        'https://www.wildberries.ru/catalog/1/detail.aspx',
+      );
     });
 
     test('оставляет параметры запроса', () {
-      const text = 'смотри https://market.yandex.ru/product--x/123?sku=99&from=share';
-      expect(extractSharedUrl(text),
-          'https://market.yandex.ru/product--x/123?sku=99&from=share');
+      const text =
+          'смотри https://market.yandex.ru/product--x/123?sku=99&from=share';
+      expect(
+        extractSharedUrl(text),
+        'https://market.yandex.ru/product--x/123?sku=99&from=share',
+      );
     });
 
     test('срезает хвостовую пунктуацию', () {
-      expect(extractSharedUrl('вот это: https://ozon.ru/t/abc123.'),
-          'https://ozon.ru/t/abc123');
-      expect(extractSharedUrl('(https://ozon.ru/t/abc123)'),
-          'https://ozon.ru/t/abc123');
+      expect(
+        extractSharedUrl('вот это: https://ozon.ru/t/abc123.'),
+        'https://ozon.ru/t/abc123',
+      );
+      expect(
+        extractSharedUrl('(https://ozon.ru/t/abc123)'),
+        'https://ozon.ru/t/abc123',
+      );
     });
 
     test('берёт первую ссылку, когда их несколько', () {
@@ -33,7 +42,10 @@ void main() {
     });
 
     test('понимает http', () {
-      expect(extractSharedUrl('http://shop.local/item'), 'http://shop.local/item');
+      expect(
+        extractSharedUrl('http://shop.local/item'),
+        'http://shop.local/item',
+      );
     });
 
     test('пусто, когда ссылки нет', () {

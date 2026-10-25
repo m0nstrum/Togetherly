@@ -34,8 +34,9 @@ class AchievementService {
   Stream<PairAchievement> get unlocks => _unlockCtrl.stream;
 
   /// Живой снимок счётчиков пары (для экрана достижений — прогресс/статусы).
-  final ValueNotifier<AchievementStats> stats =
-      ValueNotifier<AchievementStats>(const AchievementStats());
+  final ValueNotifier<AchievementStats> stats = ValueNotifier<AchievementStats>(
+    const AchievementStats(),
+  );
 
   /// id уже обработанных (отпразднованных/бэкфилл) достижений текущей группы —
   /// дедуп, чтобы тост не повторялся при каждом апдейте группы и после рестарта.
@@ -68,7 +69,9 @@ class AchievementService {
     _seen
       ..clear()
       ..addAll(await _loadSeen());
-    _groupSub = _rt.watchGroup(groupId).listen(
+    _groupSub = _rt
+        .watchGroup(groupId)
+        .listen(
           _onGroup,
           onError: (e) => debugPrint('AchievementService watch error: $e'),
         );
@@ -101,8 +104,9 @@ class AchievementService {
     final snapshot = _statsFrom(rec.data);
     stats.value = snapshot;
 
-    final earned =
-        PairAchievement.all.where((a) => a.isUnlockedBy(snapshot)).toList();
+    final earned = PairAchievement.all
+        .where((a) => a.isUnlockedBy(snapshot))
+        .toList();
     final fresh = earned.where((a) => !_seen.contains(a.id)).toList();
     if (fresh.isEmpty) {
       _initialized = true;

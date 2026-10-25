@@ -147,7 +147,9 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // Политика и условия раздаёт наш сервер (server/public); адреса — из
   // конфига сборки.
-  static final Uri _privacyPolicyUri = Uri.parse(Endpoints.current.privacyPolicyUrl); // fork
+  static final Uri _privacyPolicyUri = Uri.parse(
+    Endpoints.current.privacyPolicyUrl,
+  ); // fork
   static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
 
   Color get _accent => widget.userData.themeAccent;
@@ -476,7 +478,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     await _openExternalUri(_termsUri);
   }
 
-
   /// Справка «Как сделать». Открывается из шапки профиля и из настроек.
   void _openHelp(BuildContext context) {
     Navigator.of(context).push(
@@ -694,8 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 value: '${widget.userData.coins}',
                 label: trKey('shopTitle'),
                 accent: true,
-                onTap: (tile) =>
-                    _openShop(context, ShopTab.gifts, from: tile),
+                onTap: (tile) => _openShop(context, ShopTab.gifts, from: tile),
               ),
             ),
             const SizedBox(width: 10),
@@ -1222,11 +1222,13 @@ class _ProfileScreenState extends State<ProfileScreen>
     final url = outcome.ref;
     if (url == null) {
       if (mounted) {
-        _showError(uploadFailureText(
-          outcome.failure ?? UploadFailure.other,
-          _s,
-          video: false,
-        ));
+        _showError(
+          uploadFailureText(
+            outcome.failure ?? UploadFailure.other,
+            _s,
+            video: false,
+          ),
+        );
       }
       return;
     }
@@ -1388,8 +1390,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                     Text(
-                      ruEn('Двадцать вопросов и одна фигура на двоих',
-                          'Twenty questions, one shape for two'),
+                      ruEn(
+                        'Двадцать вопросов и одна фигура на двоих',
+                        'Twenty questions, one shape for two',
+                      ),
                       style: TextStyle(
                         fontFamily: ProfileTheme.bodyFont,
                         fontSize: 12,
@@ -1732,10 +1736,13 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             // Заставка при запуске (20.10.2026): кадры рядом, как палитры.
             // Заставок на сервере нет и ничего не выбрано — ряда нет вовсе.
-            if (CatalogService.instance.splashesOn().isNotEmpty || LaunchSplashService.instance.selected.isNotEmpty) ...[
+            if (CatalogService.instance.splashesOn().isNotEmpty ||
+                LaunchSplashService.instance.selected.isNotEmpty) ...[
               const SizedBox(height: 18),
               caption(trKey('splashTitle')),
-              LaunchSplashPicker(splashes: CatalogService.instance.splashesOn()),
+              LaunchSplashPicker(
+                splashes: CatalogService.instance.splashesOn(),
+              ),
             ],
           ],
         ),
@@ -1911,14 +1918,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final ok = await AppDialog.confirm(context,
+                  final ok = await AppDialog.confirm(
+                    context,
                     title: _s.customThemeDelete,
-                    message: ruEn('Удалить эту тему вместе с её цветами и фоном?', 'Delete this theme with its colors and background?'),
-                    confirmLabel: _s.delete, destructive: true,
+                    message: ruEn(
+                      'Удалить эту тему вместе с её цветами и фоном?',
+                      'Delete this theme with its colors and background?',
+                    ),
+                    confirmLabel: _s.delete,
+                    destructive: true,
                   );
                   if (!ok || !context.mounted) return;
-                  try { await ud.removeCustomThemeAt(slot); }
-                  catch (e) { if (context.mounted) ForkNotice.error(context, e); return; }
+                  try {
+                    await ud.removeCustomThemeAt(slot);
+                  } catch (e) {
+                    if (context.mounted) ForkNotice.error(context, e);
+                    return;
+                  }
                   if (mounted) setState(() {});
                 },
               ),
@@ -1980,20 +1996,27 @@ class _ProfileScreenState extends State<ProfileScreen>
             onDrawTools: _openDrawTools,
             onHelp: () => _openHelp(ctx),
             onChangeEmail: () async {
-              final email = await showEmailChangeSheet(ctx,
-                  scheme: _cs,
-                  initialEmail: emailTypoFix(widget.userData.email) ?? '');
+              final email = await showEmailChangeSheet(
+                ctx,
+                scheme: _cs,
+                initialEmail: emailTypoFix(widget.userData.email) ?? '',
+              );
               if (email == null) return;
               await widget.userData.setEmail(email);
               setSheetState(() {});
               if (!ctx.mounted) return;
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(trKey('emailChangeDone')),
-                behavior: SnackBarBehavior.floating,
-              ));
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(
+                  content: Text(trKey('emailChangeDone')),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
             },
-            onAbout: () => showAboutDialog(context: ctx,
-              applicationName: ForkIdentity.appName, applicationVersion: version),
+            onAbout: () => showAboutDialog(
+              context: ctx,
+              applicationName: ForkIdentity.appName,
+              applicationVersion: version,
+            ),
             onChangePassword: () => _openChangePassword(ctx),
             onLogout: () => _showLogoutDialog(ctx),
             onDeleteAccount: () => _showDeleteAccountDialog(ctx),
@@ -2168,8 +2191,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     return entries;
   }
 
-  void _openPartnerProfile(BuildContext context, _PartnerEntry e,
-      {UnfoldSourceState? from}) {
+  void _openPartnerProfile(
+    BuildContext context,
+    _PartnerEntry e, {
+    UnfoldSourceState? from,
+  }) {
     final days = _daysTogetherOf(e.connection);
     Navigator.push(
       context,
@@ -2238,40 +2264,40 @@ class _ProfileScreenState extends State<ProfileScreen>
                   fill: _cs.surfaceContainerHigh,
                   radius: 22,
                   builder: (_, friend) => GestureDetector(
-                  onTap: () =>
-                      _openPartnerProfile(context, entries[i], from: friend),
-                  child: SizedBox(
-                    width: 62,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        UnfoldShared(
-                          tag: 'avatar',
-                          radius: 28,
-                          child: AvatarWidget(
-                            uid: m.uid,
-                            liveUrl: m.avatar,
-                            name: m.name,
-                            size: 56,
-                            primary: _cs.primary,
+                    onTap: () =>
+                        _openPartnerProfile(context, entries[i], from: friend),
+                    child: SizedBox(
+                      width: 62,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          UnfoldShared(
+                            tag: 'avatar',
+                            radius: 28,
+                            child: AvatarWidget(
+                              uid: m.uid,
+                              liveUrl: m.avatar,
+                              name: m.name,
+                              size: 56,
+                              primary: _cs.primary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          m.name.isEmpty ? '—' : m.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: ProfileTheme.bodyFont,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: _cs.onSurface,
+                          const SizedBox(height: 6),
+                          Text(
+                            m.name.isEmpty ? '—' : m.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: ProfileTheme.bodyFont,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: _cs.onSurface,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   ),
                 );
               },
@@ -2322,8 +2348,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   /// Магазин на нужной вкладке: плитка «Магазин» и строка в «Отношениях»
   /// ведут к подаркам, значок у ника — к значкам, аватарка — к рамкам.
-  void _openShop(BuildContext context, ShopTab tab,
-      {UnfoldSourceState? from}) {
+  void _openShop(BuildContext context, ShopTab tab, {UnfoldSourceState? from}) {
     final paired = widget.pairData.isPaired;
     Navigator.push(
       context,
@@ -2413,66 +2438,66 @@ class _ProfileScreenState extends State<ProfileScreen>
       fill: t.cardSurface,
       radius: 20,
       builder: (_, tile) => GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        unfoldFrom<void>(
-          tile,
-          (_) => PartnerProfileScreen(
-            theme: t,
-            groupId: widget.pairData.pairId,
-            partnerUid: widget.pairData.partnerUid,
-            partnerName: name,
-            partnerAvatarUrl: avatar,
-            daysTogether: days,
+        onTap: () => Navigator.push(
+          context,
+          unfoldFrom<void>(
+            tile,
+            (_) => PartnerProfileScreen(
+              theme: t,
+              groupId: widget.pairData.pairId,
+              partnerUid: widget.pairData.partnerUid,
+              partnerName: name,
+              partnerAvatarUrl: avatar,
+              daysTogether: days,
+            ),
+            settings: const RouteSettings(name: '/partner'),
           ),
-          settings: const RouteSettings(name: '/partner'),
         ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: t.cardSurface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: t.divider, width: 0.5),
-        ),
-        child: Row(
-          children: [
-            UnfoldShared(
-              tag: 'avatar',
-              radius: 22,
-              child: AvatarWidget(
-                uid: widget.pairData.partnerUid,
-                liveUrl: avatar,
-                name: name,
-                size: 44,
-                primary: t.primary,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: t.cardSurface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: t.divider, width: 0.5),
+          ),
+          child: Row(
+            children: [
+              UnfoldShared(
+                tag: 'avatar',
+                radius: 22,
+                child: AvatarWidget(
+                  uid: widget.pairData.partnerUid,
+                  liveUrl: avatar,
+                  name: name,
+                  size: 44,
+                  primary: t.primary,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name.isEmpty ? _s.partnerGiftsTitle : name,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: t.textPrimary,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isEmpty ? _s.partnerGiftsTitle : name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: t.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _s.openPartnerProfile,
-                    style: TextStyle(fontSize: 12.5, color: t.textSecondary),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      _s.openPartnerProfile,
+                      style: TextStyle(fontSize: 12.5, color: t.textSecondary),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: t.textMuted, size: 20),
-          ],
+              Icon(Icons.chevron_right, color: t.textMuted, size: 20),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -2897,7 +2922,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
-      if (mounted) ForkNotice.error(context, e, retry: () => _uploadAvatarFile(path));
+      if (mounted)
+        ForkNotice.error(context, e, retry: () => _uploadAvatarFile(path));
     }
   }
 
@@ -3964,7 +3990,8 @@ class _ProfileScreenState extends State<ProfileScreen>
               // Разделитель между строками, а не условие на саму строку:
               // раньше за ним пряталась первая строка списка, то есть
               // русский, и выбрать его было нельзя вовсе.
-              if (lang != LocaleService.availableLanguages.first) const SettingsDivider(),
+              if (lang != LocaleService.availableLanguages.first)
+                const SettingsDivider(),
               _languageRow(ctx, lang: lang),
             ],
           ]),
@@ -4168,28 +4195,28 @@ class _ProfileScreenState extends State<ProfileScreen>
       // Лист подписан на userData: начисления (ежедневный бонус, воспоминание)
       // идут через notifyListeners, и баланс в открытом листе обновляется сразу.
       builder: (sheetCtx) => ListenableBuilder(
-          listenable: widget.userData,
-          builder: (ctx, _) => Theme(
-            data: ProfileTheme.data(_cs),
-            child: SheetScaffold(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                    child: _coinBalanceHero(),
+        listenable: widget.userData,
+        builder: (ctx, _) => Theme(
+          data: ProfileTheme.data(_cs),
+          child: SheetScaffold(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                  child: _coinBalanceHero(),
+                ),
+                const SizedBox(height: 14),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                    children: _coinEarnTab(ctx),
                   ),
-                  const SizedBox(height: 14),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
-                      children: _coinEarnTab(ctx),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
       ),
     );
   }
@@ -4471,11 +4498,15 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// (327 падений в Bugsink на 1.16.3–1.17.0).
   /// Исходы листа: `buy` — куплено за монеты, `trial` — взята проба за
   /// рекламу, `preview` — просто посмотреть, `cancel` — отказ.
-  Future<String?> _confirmPurchaseTheme(BuildContext context, AppTheme t) async {
+  Future<String?> _confirmPurchaseTheme(
+    BuildContext context,
+    AppTheme t,
+  ) async {
     final canAfford = widget.userData.coins >= t.price;
     // Проба даётся не всем темам: открыть за рекламу все двадцать пять значит
     // заменить покупку. Список витринных живёт в kAdTrialThemes.
-    final trialOffered = kAdTrialThemes.contains(t.index) &&
+    final trialOffered =
+        kAdTrialThemes.contains(t.index) &&
         widget.userData.adGrants.canTake(AdGrantKind.theme, DateTime.now());
     final themeName = paletteDisplayName(t.index);
     final cs = ProfileTheme.themeFor(_t).colorScheme;
@@ -4596,7 +4627,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   height: 56,
                   child: FilledButton.tonalIcon(
                     onPressed: () => Navigator.pop(ctx, 'trial'),
-                    icon: const Icon(Icons.play_circle_outline_rounded, size: 20),
+                    icon: const Icon(
+                      Icons.play_circle_outline_rounded,
+                      size: 20,
+                    ),
                     label: Text(strings.adTrialTheme),
                     style: FilledButton.styleFrom(
                       backgroundColor: cs.tertiaryContainer,
@@ -4609,7 +4643,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
                 ),
-              ],              const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 8),
               SizedBox(
                 height: 56,
                 child: FilledButton.tonalIcon(
@@ -4683,27 +4718,38 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     }
 
-    final res = await widget.userData.takeAdGrant(AdGrantKind.theme, '$themeIndex');
+    final res = await widget.userData.takeAdGrant(
+      AdGrantKind.theme,
+      '$themeIndex',
+    );
     await untilAppVisible();
     if (!mounted) return res.kind == AdGrantOutcome.ok;
     switch (res.kind) {
       case AdGrantOutcome.ok:
-        messenger.showSnackBar(SnackBar(
-          content: Text(_s.adTrialTaken),
-          behavior: SnackBarBehavior.floating,
-        ));
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(_s.adTrialTaken),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         setState(() {});
         return true;
       case AdGrantOutcome.cooldown:
-        messenger.showSnackBar(SnackBar(
-          content: Text(_s.adTrialCooldown.replaceAll('{days}', '${res.days}')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              _s.adTrialCooldown.replaceAll('{days}', '${res.days}'),
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       case AdGrantOutcome.rateLimited:
-        messenger.showSnackBar(SnackBar(
-          content: Text(_s.adRewardLimitReached),
-          behavior: SnackBarBehavior.floating,
-        ));
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(_s.adRewardLimitReached),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       case AdGrantOutcome.failed:
         break;
     }
@@ -4725,9 +4771,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     final res = await showChangePasswordSheet(context, scheme: _cs);
     if (!context.mounted) return;
     if (res == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_s.passwordChanged)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_s.passwordChanged)));
       return;
     }
     if (res == 'mail') await _sendPasswordReset(context);
@@ -4736,9 +4782,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _sendPasswordReset(BuildContext context) async {
     final email = (PbAuthService().currentProfile()?['email'] ?? '').toString();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_s.passwordResetError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_s.passwordResetError)));
       return;
     }
     final ok = await AppDialog.confirm(
@@ -4760,9 +4806,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          content: Text(e is ClientException && e.statusCode == 429
-              ? _s.tooManyAttempts
-              : _s.passwordResetError),
+          content: Text(
+            e is ClientException && e.statusCode == 429
+                ? _s.tooManyAttempts
+                : _s.passwordResetError,
+          ),
         ),
       );
     }
@@ -4837,14 +4885,16 @@ class _ProfileScreenState extends State<ProfileScreen>
       debugPrint('deleteAccount error: $e');
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop(); // закрыть индикатор
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(
-        // fork: A14 — при 401 просим войти заново, а не общая ошибка
-        content: Text(ForkFailure.of(e) == ForkFailure.session
-            ? _s.deleteAccountReauth
-            : _s.deleteAccountError),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          // fork: A14 — при 401 просим войти заново, а не общая ошибка
+          content: Text(
+            ForkFailure.of(e) == ForkFailure.session
+                ? _s.deleteAccountReauth
+                : _s.deleteAccountError,
+          ),
+        ),
+      );
     }
   }
 }

@@ -103,7 +103,9 @@ class PushBackgroundService {
     try {
       await FcmService.instance.settled.timeout(const Duration(seconds: 12));
     } on TimeoutException {
-      debugPrint('PushBackgroundService: вердикт FCM не пришёл, поднимаем сокет');
+      debugPrint(
+        'PushBackgroundService: вердикт FCM не пришёл, поднимаем сокет',
+      );
     }
     final needed = socketServiceNeeded(
       hasGoogleServices: FcmService.instance.ready,
@@ -129,16 +131,22 @@ class PushBackgroundService {
       // (а раньше это роняло приложение). Ждём следующих суток.
       if (await _dailyBudgetExhausted()) {
         debugPrint(
-            'PushBackgroundService: суточный бюджет FGS исчерпан, старт отложен');
+          'PushBackgroundService: суточный бюджет FGS исчерпан, старт отложен',
+        );
         return;
       }
 
       // Контекст пары для изолята обработчика — он прочитает его в onStart.
       await FlutterForegroundTask.saveData(key: _kGroupId, value: groupId);
       await FlutterForegroundTask.saveData(key: _kMyUid, value: myUid);
-      await FlutterForegroundTask.saveData(key: _kPartnerUid, value: partnerUid);
       await FlutterForegroundTask.saveData(
-          key: _kPartnerName, value: partnerName);
+        key: _kPartnerUid,
+        value: partnerUid,
+      );
+      await FlutterForegroundTask.saveData(
+        key: _kPartnerName,
+        value: partnerName,
+      );
 
       if (await FlutterForegroundTask.isRunningService) return;
 
@@ -211,7 +219,8 @@ const String _kPartnerName = 'push_partner_name';
 // своего доступа к каналу платформы у него нет.
 const String _kFcmReady = 'push_fcm_ready';
 const String _kRunDay = 'push_run_day'; // YYYY-MM-DD последнего учтённого дня
-const String _kRunSeconds = 'push_run_seconds'; // накоплено секунд работы за день
+const String _kRunSeconds =
+    'push_run_seconds'; // накоплено секунд работы за день
 
 /// Android 14+ отводит foreground-сервису типа dataSync ~6ч суммарно за 24ч,
 /// после чего убивает его принудительно (ForegroundServiceDidNotStopInTime →
@@ -247,8 +256,9 @@ class _PushTaskHandler extends TaskHandler {
     // Система могла поднять сервис сама — после перезагрузки или обновления
     // приложения. Спросить `FcmService` здесь некому (изолят свежий, канала
     // платформы у него нет), поэтому решение оставил прошлый запуск.
-    final savedFcmReady =
-        await FlutterForegroundTask.getData<bool>(key: _kFcmReady);
+    final savedFcmReady = await FlutterForegroundTask.getData<bool>(
+      key: _kFcmReady,
+    );
     if (bootedServiceShouldStop(savedFcmReady)) {
       debugPrint('PushBackgroundService: пуши живы — сервис не нужен');
       await FlutterForegroundTask.stopService();
@@ -270,7 +280,7 @@ class _PushTaskHandler extends TaskHandler {
           await FlutterForegroundTask.getData<String>(key: _kPartnerUid) ?? '';
       final partnerName =
           await FlutterForegroundTask.getData<String>(key: _kPartnerName) ??
-              'Партнёр';
+          'Партнёр';
       if (groupId.isEmpty || partnerUid.isEmpty) return;
 
       // Изолят свежий — поднимаем клиент PB и восстанавливаем сессию из
@@ -300,7 +310,9 @@ class _PushTaskHandler extends TaskHandler {
       // без открытия приложения.
       await _startWidgetRefresh();
       _started = true;
-      debugPrint('PushBackgroundService: SSE-подписки подняты (group=$groupId)');
+      debugPrint(
+        'PushBackgroundService: SSE-подписки подняты (group=$groupId)',
+      );
     } catch (e) {
       debugPrint('PushBackgroundService bootstrap failed: $e');
     }
@@ -317,7 +329,9 @@ class _PushTaskHandler extends TaskHandler {
       // Первичная синхронизация: данные могли измениться, пока сокет был мёртв.
       unawaited(_refreshWidgets());
     } catch (e) {
-      debugPrint('PushBackgroundService: старт обновления виджетов не удался: $e');
+      debugPrint(
+        'PushBackgroundService: старт обновления виджетов не удался: $e',
+      );
     }
   }
 
@@ -325,8 +339,10 @@ class _PushTaskHandler extends TaskHandler {
   /// несколько дельт подряд схлопываем в один рефреш виджетов.
   void _scheduleWidgetRefresh() {
     _widgetDebounce?.cancel();
-    _widgetDebounce =
-        Timer(const Duration(milliseconds: 600), () => unawaited(_refreshWidgets()));
+    _widgetDebounce = Timer(
+      const Duration(milliseconds: 600),
+      () => unawaited(_refreshWidgets()),
+    );
   }
 
   Future<void> _refreshWidgets({bool refreshPhotos = true}) async {
@@ -393,8 +409,9 @@ class _PushTaskHandler extends TaskHandler {
   Future<void> _tickRuntimeBudget() async {
     try {
       final today = _pushDayKey();
-      final storedDay =
-          await FlutterForegroundTask.getData<String>(key: _kRunDay);
+      final storedDay = await FlutterForegroundTask.getData<String>(
+        key: _kRunDay,
+      );
       int seconds;
       if (storedDay == today) {
         seconds =
@@ -406,8 +423,10 @@ class _PushTaskHandler extends TaskHandler {
       seconds += 60; // период eventAction.repeat(60000)
       await FlutterForegroundTask.saveData(key: _kRunSeconds, value: seconds);
       if (seconds >= _kDailyBudgetSeconds) {
-        debugPrint('PushBackgroundService: суточный бюджет FGS исчерпан '
-            '($seconds c) — останавливаемся штатно');
+        debugPrint(
+          'PushBackgroundService: суточный бюджет FGS исчерпан '
+          '($seconds c) — останавливаемся штатно',
+        );
         await FlutterForegroundTask.stopService();
       }
     } catch (e) {

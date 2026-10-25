@@ -38,7 +38,11 @@ void main() {
       widgetMoodEmoji: known.imagePath,
       widgetMoodLabel: known.label,
     );
-    expect(half.score, known.score, reason: 'сердце должно залиться, как в приложении');
+    expect(
+      half.score,
+      known.score,
+      reason: 'сердце должно залиться, как в приложении',
+    );
     expect(half.label, isNotEmpty);
     expect(half.colorHex, startsWith('#'));
   });

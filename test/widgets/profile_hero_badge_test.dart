@@ -17,24 +17,29 @@ void main() {
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
       final cs = ColorScheme.fromSeed(seedColor: Colors.pink);
-      await tester.pumpWidget(MaterialApp(
-        home: MediaQuery(
-          data: MediaQueryData(size: Size(width, 900), textScaler: const TextScaler.linear(1.3)),
-          child: Scaffold(
-            body: ProfileHero(
-              cs: cs,
-              uid: 'u1',
-              avatarUrl: '',
-              name: 'THET1ME THET1ME THET1ME',
-              badge: 'Paw',
-              plus: true,
-              theme: AppThemes.byIndex(0),
-              bannerUrl: '',
-              onEdit: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: Size(width, 900),
+              textScaler: const TextScaler.linear(1.3),
+            ),
+            child: Scaffold(
+              body: ProfileHero(
+                cs: cs,
+                uid: 'u1',
+                avatarUrl: '',
+                name: 'THET1ME THET1ME THET1ME',
+                badge: 'Paw',
+                plus: true,
+                theme: AppThemes.byIndex(0),
+                bannerUrl: '',
+                onEdit: () {},
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       expect(tester.takeException(), isNull);
       final name = tester.getRect(find.text('THET1ME THET1ME THET1ME'));

@@ -50,7 +50,8 @@ void main() {
     expect(
       problems,
       isEmpty,
-      reason: 'поток создаётся в build (вынести в поле состояния):\n'
+      reason:
+          'поток создаётся в build (вынести в поле состояния):\n'
           '${problems.join('\n')}',
     );
   });

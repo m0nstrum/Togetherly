@@ -176,7 +176,7 @@ class CycleMath {
     final spread = gaps.isEmpty
         ? 0
         : gaps.reduce((a, b) => a > b ? a : b) -
-            gaps.reduce((a, b) => a < b ? a : b);
+              gaps.reduce((a, b) => a < b ? a : b);
 
     return CycleForecast(
       nextPeriod: next,
@@ -239,8 +239,7 @@ class CycleMath {
 
     // Ожидаемые месячные растягиваем на их обычную длительность.
     final len = periodLength ?? averagePeriodLength(marks) ?? 5;
-    final predictedEnd =
-        forecast.nextPeriod.add(Duration(days: len - 1));
+    final predictedEnd = forecast.nextPeriod.add(Duration(days: len - 1));
     if (!day.isBefore(forecast.nextPeriod) && !day.isAfter(predictedEnd)) {
       return CyclePhase.predictedPeriod;
     }

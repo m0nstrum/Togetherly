@@ -9,11 +9,16 @@ class Vec3 {
 
   factory Vec3.fromLatLng(double lat, double lon) {
     final la = lat * math.pi / 180, lo = lon * math.pi / 180;
-    return Vec3(math.cos(la) * math.cos(lo), math.cos(la) * math.sin(lo), math.sin(la));
+    return Vec3(
+      math.cos(la) * math.cos(lo),
+      math.cos(la) * math.sin(lo),
+      math.sin(la),
+    );
   }
 
   double dot(Vec3 o) => x * o.x + y * o.y + z * o.z;
-  Vec3 cross(Vec3 o) => Vec3(y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x);
+  Vec3 cross(Vec3 o) =>
+      Vec3(y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x);
   Vec3 operator +(Vec3 o) => Vec3(x + o.x, y + o.y, z + o.z);
   Vec3 operator -(Vec3 o) => Vec3(x - o.x, y - o.y, z - o.z);
   Vec3 operator *(double k) => Vec3(x * k, y * k, z * k);
@@ -43,9 +48,17 @@ class GlobeBasis {
   factory GlobeBasis(double lat, double lon) {
     final la = lat * math.pi / 180, lo = lon * math.pi / 180;
     return GlobeBasis._(
-      Vec3(math.cos(la) * math.cos(lo), math.cos(la) * math.sin(lo), math.sin(la)),
+      Vec3(
+        math.cos(la) * math.cos(lo),
+        math.cos(la) * math.sin(lo),
+        math.sin(la),
+      ),
       Vec3(-math.sin(lo), math.cos(lo), 0),
-      Vec3(-math.sin(la) * math.cos(lo), -math.sin(la) * math.sin(lo), math.cos(la)),
+      Vec3(
+        -math.sin(la) * math.cos(lo),
+        -math.sin(la) * math.sin(lo),
+        math.cos(la),
+      ),
     );
   }
 
@@ -98,7 +111,10 @@ List<Vec3> clipRingToCap(
     if (di >= 0) out.add(ring[i]);
     if ((di >= 0) == (dj >= 0)) continue;
     final t = di / (di - dj);
-    final p = b.toBoundary((ring[i] * (1 - t) + ring[j] * t).normalized, cosTheta);
+    final p = b.toBoundary(
+      (ring[i] * (1 - t) + ring[j] * t).normalized,
+      cosTheta,
+    );
     if (di >= 0) {
       out.add(p);
       exit = b.angleOf(p);
@@ -155,7 +171,8 @@ class MercatorCamera {
   }
 
   /// Точка на экране; долгота берётся ближайшей к центру.
-  Offset screen(double lat, double lon) => byDelta(lat, wrap180(lon - centerLon));
+  Offset screen(double lat, double lon) =>
+      byDelta(lat, wrap180(lon - centerLon));
 }
 
 double wrap180(double d) {
@@ -177,8 +194,12 @@ Offset mercatorScreen(
   required double centerLon,
   required double zoom,
   required Size size,
-}) =>
-    MercatorCamera(centerLat: centerLat, centerLon: centerLon, zoom: zoom, size: size).screen(lat, lon);
+}) => MercatorCamera(
+  centerLat: centerLat,
+  centerLon: centerLon,
+  zoom: zoom,
+  size: size,
+).screen(lat, lon);
 
 /// Радиус шара, при котором масштаб в центре совпадает с плоской картой:
 /// меркатор растягивает всё на 1/cos(широты).
@@ -192,7 +213,11 @@ class GlobeView {
 
 class GlobeTarget {
   final double lat, lon, radius;
-  const GlobeTarget({required this.lat, required this.lon, required this.radius});
+  const GlobeTarget({
+    required this.lat,
+    required this.lon,
+    required this.radius,
+  });
 }
 
 /// Кадр глобуса: центр проекции, радиус, где на экране центр шара и
@@ -254,7 +279,10 @@ class GlobeTransition {
     final e = _easeInOutCubic(p.clamp(0.0, 1.0));
     final lat = rest.lat + (target.lat - rest.lat) * e;
     final lon = rest.lon + wrap180(target.lon - rest.lon) * e;
-    final r = math.exp(math.log(rest.radius) + (math.log(target.radius) - math.log(rest.radius)) * e);
+    final r = math.exp(
+      math.log(rest.radius) +
+          (math.log(target.radius) - math.log(rest.radius)) * e,
+    );
     final s = (1 - horizonGap / r).clamp(0.0, .8) * (1 - e);
     final tilt = math.asin(s) * 180 / math.pi;
     return GlobeFrame(

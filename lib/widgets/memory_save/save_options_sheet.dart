@@ -39,10 +39,10 @@ Future<SaveChoice?> showSaveOptionsSheet(
   final saved = ledger.countSaved(files);
 
   String counts(MediaSummary s) => [
-        if (s.photos > 0) trKey('saveCountPhotos').replaceAll('{n}', '${s.photos}'),
-        if (s.videos > 0) trKey('saveCountVideos').replaceAll('{n}', '${s.videos}'),
-        if (s.audio > 0) trKey('saveCountAudio').replaceAll('{n}', '${s.audio}'),
-      ].join(' · ');
+    if (s.photos > 0) trKey('saveCountPhotos').replaceAll('{n}', '${s.photos}'),
+    if (s.videos > 0) trKey('saveCountVideos').replaceAll('{n}', '${s.videos}'),
+    if (s.audio > 0) trKey('saveCountAudio').replaceAll('{n}', '${s.audio}'),
+  ].join(' · ');
 
   return showAppSheet<SaveChoice>(
     context,
@@ -56,16 +56,15 @@ Future<SaveChoice?> showSaveOptionsSheet(
         String? count,
         bool accent = false,
         bool chevron = false,
-      }) =>
-          _OptionTile(
-            icon: icon,
-            label: label,
-            sub: sub,
-            count: count,
-            accent: accent,
-            chevron: chevron,
-            onTap: () => Navigator.of(ctx).pop(c),
-          );
+      }) => _OptionTile(
+        icon: icon,
+        label: label,
+        sub: sub,
+        count: count,
+        accent: accent,
+        chevron: chevron,
+        onTap: () => Navigator.of(ctx).pop(c),
+      );
 
       return Theme(
         data: ProfileTheme.data(scheme),
@@ -80,7 +79,8 @@ Future<SaveChoice?> showSaveOptionsSheet(
                   [
                     title,
                     trKey('saveApproxMb').replaceAll('{n}', '${all.megabytes}'),
-                    if (saved > 0) trKey('saveAlreadyIn').replaceAll('{n}', '$saved'),
+                    if (saved > 0)
+                      trKey('saveAlreadyIn').replaceAll('{n}', '$saved'),
                   ].where((e) => e.isNotEmpty).join(' · '),
                   style: TextStyle(
                     fontFamily: 'Onest',
@@ -89,45 +89,64 @@ Future<SaveChoice?> showSaveOptionsSheet(
                   ),
                 ),
                 const SizedBox(height: 10),
-                row(SaveChoice.all, Icons.done_all_rounded, trKey('saveOptAll'),
-                    counts(all),
-                    count: '${files.length}', accent: true),
+                row(
+                  SaveChoice.all,
+                  Icons.done_all_rounded,
+                  trKey('saveOptAll'),
+                  counts(all),
+                  count: '${files.length}',
+                  accent: true,
+                ),
                 if (photos.isNotEmpty && videos.isNotEmpty) ...[
                   row(
                     SaveChoice.photos,
                     Icons.photo_rounded,
                     trKey('saveOptPhotos'),
-                    trKey('saveApproxMb').replaceAll(
-                        '{n}', '${summarizeMedia(photos).megabytes}'),
+                    trKey(
+                      'saveApproxMb',
+                    ).replaceAll('{n}', '${summarizeMedia(photos).megabytes}'),
                     count: '${photos.length}',
                   ),
                   row(
                     SaveChoice.videos,
                     Icons.videocam_rounded,
                     trKey('saveOptVideos'),
-                    trKey('saveApproxMb').replaceAll(
-                        '{n}', '${summarizeMedia(videos).megabytes}'),
+                    trKey(
+                      'saveApproxMb',
+                    ).replaceAll('{n}', '${summarizeMedia(videos).megabytes}'),
                     count: '${videos.length}',
                   ),
                 ],
                 if (files.length > 1)
-                  row(SaveChoice.pick, Icons.checklist_rounded,
-                      trKey('saveOptPick'), trKey('saveOptPickSub'),
-                      chevron: true),
+                  row(
+                    SaveChoice.pick,
+                    Icons.checklist_rounded,
+                    trKey('saveOptPick'),
+                    trKey('saveOptPickSub'),
+                    chevron: true,
+                  ),
                 if (photos.length > 1)
-                  row(SaveChoice.cover, Icons.image_rounded,
-                      trKey('saveOptCover'), trKey('saveOptCoverSub'),
-                      count: '1'),
+                  row(
+                    SaveChoice.cover,
+                    Icons.image_rounded,
+                    trKey('saveOptCover'),
+                    trKey('saveOptCoverSub'),
+                    count: '1',
+                  ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.calendar_month_rounded,
-                        size: 18, color: scheme.onSurfaceVariant),
+                    Icon(
+                      Icons.calendar_month_rounded,
+                      size: 18,
+                      color: scheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        trKey('saveDateNote')
-                            .replaceAll('{date}', memoryDateLabel(takenAt)),
+                        trKey(
+                          'saveDateNote',
+                        ).replaceAll('{date}', memoryDateLabel(takenAt)),
                         style: TextStyle(
                           fontFamily: 'Onest',
                           fontSize: 13,
@@ -187,9 +206,11 @@ class _OptionTile extends StatelessWidget {
                     color: accent ? cs.primary : cs.secondaryContainer,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon,
-                      size: 20,
-                      color: accent ? cs.onPrimary : cs.onSecondaryContainer),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: accent ? cs.onPrimary : cs.onSecondaryContainer,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -272,7 +293,9 @@ Future<ViewerSaveChoice?> showViewerSaveSheet(
               Text(
                 [
                   title,
-                  trKey('saveApproxMb').replaceAll('{n}', '${memory.megabytes}'),
+                  trKey(
+                    'saveApproxMb',
+                  ).replaceAll('{n}', '${memory.megabytes}'),
                   if (saved > 0)
                     trKey('saveAlreadyIn').replaceAll('{n}', '$saved'),
                 ].where((e) => e.isNotEmpty).join(' · '),
@@ -318,13 +341,17 @@ Future<ViewerSaveChoice?> showViewerSaveSheet(
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Icon(Icons.calendar_month_rounded,
-                      size: 18, color: scheme.onSurfaceVariant),
+                  Icon(
+                    Icons.calendar_month_rounded,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      trKey('saveDateNote')
-                          .replaceAll('{date}', memoryDateLabel(takenAt)),
+                      trKey(
+                        'saveDateNote',
+                      ).replaceAll('{date}', memoryDateLabel(takenAt)),
                       style: TextStyle(
                         fontFamily: 'Onest',
                         fontSize: 13,

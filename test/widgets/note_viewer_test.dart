@@ -8,27 +8,31 @@ import '../support/fake_note_player.dart';
 /// Полноэкранный просмотр фигурки: перемотка пальцем по полосе и переход к
 /// соседней фигурке переписки свайпом.
 ChatMsg _note(String id) => ChatMsg(
-      id: id,
-      uid: 'her',
-      name: 'Аня',
-      text: '',
-      ts: DateTime(2026, 8, 21, 14, 31).millisecondsSinceEpoch,
-      noteUrl: '/tmp/$id.mp4',
-      noteMs: 10000,
-      noteShape: 'circle',
-    );
+  id: id,
+  uid: 'her',
+  name: 'Аня',
+  text: '',
+  ts: DateTime(2026, 8, 21, 14, 31).millisecondsSinceEpoch,
+  noteUrl: '/tmp/$id.mp4',
+  noteMs: 10000,
+  noteShape: 'circle',
+);
 
 Future<FakeNotePlayer> _pump(WidgetTester tester, {int index = 1}) async {
   final player = FakeNotePlayer();
-  await tester.pumpWidget(MaterialApp(
-    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink)),
-    home: NoteViewerScreen(
-      notes: [_note('a'), _note('b'), _note('c')],
-      index: index,
-      myUid: 'me',
-      player: player,
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
+      ),
+      home: NoteViewerScreen(
+        notes: [_note('a'), _note('b'), _note('c')],
+        index: index,
+        myUid: 'me',
+        player: player,
+      ),
     ),
-  ));
+  );
   await tester.pump(const Duration(milliseconds: 50));
   return player;
 }
@@ -59,7 +63,11 @@ void main() {
 
   testWidgets('свайп влево открывает следующую фигурку', (tester) async {
     final player = await _pump(tester);
-    await tester.fling(find.byType(NoteViewerScreen), const Offset(-300, 0), 900);
+    await tester.fling(
+      find.byType(NoteViewerScreen),
+      const Offset(-300, 0),
+      900,
+    );
     // pumpAndSettle тут не годится: обод крутит свой тикер постоянно, и
     // «успокоиться» дереву уже никогда не суждено.
     await tester.pump(const Duration(milliseconds: 300));
@@ -68,7 +76,11 @@ void main() {
 
   testWidgets('свайп вправо открывает предыдущую', (tester) async {
     final player = await _pump(tester);
-    await tester.fling(find.byType(NoteViewerScreen), const Offset(300, 0), 900);
+    await tester.fling(
+      find.byType(NoteViewerScreen),
+      const Offset(300, 0),
+      900,
+    );
     // pumpAndSettle тут не годится: обод крутит свой тикер постоянно, и
     // «успокоиться» дереву уже никогда не суждено.
     await tester.pump(const Duration(milliseconds: 300));
@@ -77,7 +89,11 @@ void main() {
 
   testWidgets('на краю переписки свайп никуда не ведёт', (tester) async {
     final player = await _pump(tester, index: 2);
-    await tester.fling(find.byType(NoteViewerScreen), const Offset(-300, 0), 900);
+    await tester.fling(
+      find.byType(NoteViewerScreen),
+      const Offset(-300, 0),
+      900,
+    );
     // pumpAndSettle тут не годится: обод крутит свой тикер постоянно, и
     // «успокоиться» дереву уже никогда не суждено.
     await tester.pump(const Duration(milliseconds: 300));

@@ -18,7 +18,10 @@ void main() {
     final fresh = v[0] > 5 || (v[0] == 5 && (v[1] > 0 || v[2] >= 2));
     expect(fresh, isTrue, reason: 'стоит ${v.join('.')}');
     // С 5.0.3 плагин требует Android Gradle Plugin 9, проект на 8.11.
-    expect(v, [5, 0, 2],
-        reason: 'выше 5.0.2 только вместе с переходом проекта на AGP 9');
+    expect(v, [
+      5,
+      0,
+      2,
+    ], reason: 'выше 5.0.2 только вместе с переходом проекта на AGP 9');
   });
 }

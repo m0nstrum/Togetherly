@@ -121,35 +121,51 @@ class GiftsService {
       final parsed = parseGiftResponse(
         res is Map ? Map<String, dynamic>.from(res) : null,
       );
-      GiftTelemetry.step(giftId, '$step:${parsed.ok ? 'ok' : 'refused'}', data: {
-        'error': parsed.error?.name,
-        'coins': parsed.coins,
-        'refund': parsed.refund,
-        'repeated': parsed.repeated,
-      });
+      GiftTelemetry.step(
+        giftId,
+        '$step:${parsed.ok ? 'ok' : 'refused'}',
+        data: {
+          'error': parsed.error?.name,
+          'coins': parsed.coins,
+          'refund': parsed.refund,
+          'repeated': parsed.repeated,
+        },
+      );
       return parsed;
     } on ClientException catch (e, st) {
       final parsed = parseGiftResponse(
         e.response.isEmpty ? null : Map<String, dynamic>.from(e.response),
       );
-      GiftTelemetry.step(giftId, '$step:refused',
-          data: {'error': parsed.error?.name, 'status': e.statusCode});
+      GiftTelemetry.step(
+        giftId,
+        '$step:refused',
+        data: {'error': parsed.error?.name, 'status': e.statusCode},
+      );
       // Нехватка монет и исчерпанные ролики — отказы, которые человек создаёт сам.
       // Всё остальное (не участник, нет подарка, молчание сервера) означает
       // поломку и обязано быть видно в панели: без этого отказ выглядит как
       // «просто не работает» и чинить нечего.
       if (parsed.error != GiftError.insufficient &&
           parsed.error != GiftError.adLimit) {
-        GiftTelemetry.failure(e, st,
-            giftId: giftId, giftKey: giftKey, step: step, code: parsed.error);
-      }
-      return parsed;
-    } catch (e, st) {
-      GiftTelemetry.failure(e, st,
+        GiftTelemetry.failure(
+          e,
+          st,
           giftId: giftId,
           giftKey: giftKey,
           step: step,
-          code: GiftError.network);
+          code: parsed.error,
+        );
+      }
+      return parsed;
+    } catch (e, st) {
+      GiftTelemetry.failure(
+        e,
+        st,
+        giftId: giftId,
+        giftKey: giftKey,
+        step: step,
+        code: GiftError.network,
+      );
       return const GiftResult(ok: false, error: GiftError.network);
     }
   }

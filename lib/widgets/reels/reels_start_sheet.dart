@@ -10,7 +10,10 @@ import '../../fork/reels/platform_account.dart'; // fork
 /// вдвоём». Значки — настоящие иконки приложений площадок
 /// (`assets/images/reels/`).
 Future<ReelsSource?> showReelsStartSheet(BuildContext context) {
-  return showAppSheet<ReelsSource>(context, builder: (_) => const _ReelsStartSheet());
+  return showAppSheet<ReelsSource>(
+    context,
+    builder: (_) => const _ReelsStartSheet(),
+  );
 }
 
 class _ReelsStartSheet extends StatefulWidget {
@@ -47,14 +50,25 @@ class _ReelsStartSheetState extends State<_ReelsStartSheet> {
               padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
               child: Text(
                 s.reelsTogetherHint,
-                style: TextStyle(fontFamily: 'Onest', fontSize: 14, height: 1.35, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontSize: 14,
+                  height: 1.35,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ),
             for (final src in ReelsSource.values) ...[
-              _SourceRow(source: src, picked: src == _picked, onTap: () => setState(() => _picked = src)),
+              _SourceRow(
+                source: src,
+                picked: src == _picked,
+                onTap: () => setState(() => _picked = src),
+              ),
               const SizedBox(height: 4),
             ],
-            ForkReelsAccountRow(source: _picked), // fork: вход в аккаунт площадки
+            ForkReelsAccountRow(
+              source: _picked,
+            ), // fork: вход в аккаунт площадки
           ],
         ),
       ),
@@ -63,7 +77,11 @@ class _ReelsStartSheetState extends State<_ReelsStartSheet> {
 }
 
 class _SourceRow extends StatelessWidget {
-  const _SourceRow({required this.source, required this.picked, required this.onTap});
+  const _SourceRow({
+    required this.source,
+    required this.picked,
+    required this.onTap,
+  });
 
   final ReelsSource source;
   final bool picked;
@@ -84,7 +102,12 @@ class _SourceRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              Image.asset(source.icon, width: 40, height: 40, filterQuality: FilterQuality.medium),
+              Image.asset(
+                source.icon,
+                width: 40,
+                height: 40,
+                filterQuality: FilterQuality.medium,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -92,11 +115,22 @@ class _SourceRow extends StatelessWidget {
                   children: [
                     Text(
                       source.title,
-                      style: TextStyle(fontFamily: 'Onest', fontSize: 15, fontWeight: FontWeight.w700, color: fg),
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: fg,
+                      ),
                     ),
                     Text(
-                      source == ReelsSource.tiktok ? s.reelsTiktokHint : s.reelsShortsHint,
-                      style: TextStyle(fontFamily: 'Onest', fontSize: 12.5, color: fg.withValues(alpha: .75)),
+                      source == ReelsSource.tiktok
+                          ? s.reelsTiktokHint
+                          : s.reelsShortsHint,
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: 12.5,
+                        color: fg.withValues(alpha: .75),
+                      ),
                     ),
                   ],
                 ),

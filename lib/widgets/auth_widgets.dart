@@ -71,14 +71,14 @@ class _AuthFieldState extends State<AuthField> {
           fontFamily: 'Onest',
           fontSize: 13,
           fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+          fontVariations: const [FontVariation('wght', 700)],
           color: cs.onSurfaceVariant,
         ),
         floatingLabelStyle: TextStyle(
           fontFamily: 'Onest',
           fontSize: 13,
           fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+          fontVariations: const [FontVariation('wght', 700)],
           color: cs.primary,
         ),
         hintText: widget.hint,
@@ -90,8 +90,10 @@ class _AuthFieldState extends State<AuthField> {
         filled: true,
         fillColor: cs.surfaceContainerHighest,
         isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 22,
+          vertical: 18,
+        ),
         suffixIcon: widget.isPassword
             ? GestureDetector(
                 onTap: () => setState(() => _obscure = !_obscure),

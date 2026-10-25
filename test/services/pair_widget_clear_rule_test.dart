@@ -16,8 +16,11 @@ void main() {
   });
 
   test('переключились на другую связь — не трогаем', () {
-    expect(shouldClearPairWidget(wasPaired: true, isPaired: true), isFalse,
-        reason: 'иначе виджет пустеет при каждой смене активной пары');
+    expect(
+      shouldClearPairWidget(wasPaired: true, isPaired: true),
+      isFalse,
+      reason: 'иначе виджет пустеет при каждой смене активной пары',
+    );
   });
 
   test('пара только собралась — не трогаем', () {

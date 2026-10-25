@@ -22,8 +22,8 @@ void main() {
                 return Stream<int>.value(1);
               },
               keys: const ['g1'],
-              builder: (_, snap) => Text('${snap.data}',
-                  textDirection: TextDirection.ltr),
+              builder: (_, snap) =>
+                  Text('${snap.data}', textDirection: TextDirection.ltr),
             );
           },
         ),
@@ -56,8 +56,8 @@ void main() {
                 return Stream<int>.value(1);
               },
               keys: [group],
-              builder: (_, snap) => Text('${snap.data}',
-                  textDirection: TextDirection.ltr),
+              builder: (_, snap) =>
+                  Text('${snap.data}', textDirection: TextDirection.ltr),
             );
           },
         ),

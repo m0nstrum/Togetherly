@@ -51,6 +51,7 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
 
   VideoPlayerController? _video;
   WatchChannel? _room;
+
   /// Голосовая связь в комнате: микрофон, звук, соединение между двумя.
   WatchVoiceService? _voice;
   Timer? _heartbeat;
@@ -87,10 +88,14 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
       await controller.dispose();
       if (!mounted) return;
       final f = ForkFailure.of(e);
-      setState(() => _error = f == ForkFailure.unknown
-          ? ruEn('Ролик не открылся. Возможно, формат не поддерживается или файл удалён.',
-              'Couldn’t open the video. The format may be unsupported or the file was removed.')
-          : f.text);
+      setState(
+        () => _error = f == ForkFailure.unknown
+            ? ruEn(
+                'Ролик не открылся. Возможно, формат не поддерживается или файл удалён.',
+                'Couldn’t open the video. The format may be unsupported or the file was removed.',
+              )
+            : f.text,
+      );
       return;
     }
     if (!mounted) {
@@ -123,8 +128,11 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
       // Отметку времени шлёт только ведущий. Обоюдный heartbeat и был
       // причиной рывков: каждый прыгал назад на дорогу чужого сообщения.
       if (!leadsSync(me: _me, peer: _peer)) return;
-      room.send('sync',
-          at: v.value.position.inMilliseconds / 1000, extra: {'playing': true});
+      room.send(
+        'sync',
+        at: v.value.position.inMilliseconds / 1000,
+        extra: {'playing': true},
+      );
     });
     _scheduleHide();
   }
@@ -191,13 +199,15 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
         break;
       case 'hello':
         // Пришедшему позже рассказываем, что смотрим и с какой секунды.
-        _room?.send('state',
-            at: v.value.position.inMilliseconds / 1000,
-            extra: {
-              'to': data['from'],
-              'url': widget.url,
-              'playing': v.value.isPlaying,
-            });
+        _room?.send(
+          'state',
+          at: v.value.position.inMilliseconds / 1000,
+          extra: {
+            'to': data['from'],
+            'url': widget.url,
+            'playing': v.value.isPlaying,
+          },
+        );
         break;
     }
   }
@@ -219,7 +229,10 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
       ForkNotice.failure(
         context,
         room.lastFailure ?? ForkFailure.network,
-        what: ruEn('Партнёр не получил команду', 'Your partner didn’t get that'),
+        what: ruEn(
+          'Партнёр не получил команду',
+          'Your partner didn’t get that',
+        ),
       );
     }
   }
@@ -298,13 +311,15 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
     final seconds = (_video?.value.position.inSeconds ?? 0);
     if (seconds > 5) {
       // Куда досмотрели — пригодится в «Недавнем».
-      unawaited(WatchHistoryService.remember(
-        groupId: widget.pairId,
-        url: widget.url,
-        kind: 'memory',
-        title: widget.title,
-        seconds: seconds,
-      ));
+      unawaited(
+        WatchHistoryService.remember(
+          groupId: widget.pairId,
+          url: widget.url,
+          kind: 'memory',
+          title: widget.title,
+          seconds: seconds,
+        ),
+      );
     }
     _video?.dispose();
     unawaited(_room?.dispose() ?? Future<void>.value());
@@ -329,12 +344,19 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline_rounded, color: Colors.white70, size: 40),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.white70,
+                        size: 40,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         _error,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 20),
                       Wrap(
@@ -345,7 +367,9 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
                             child: Text(ruEn('Повторить', 'Retry')),
                           ),
                           OutlinedButton(
-                            style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                            ),
                             onPressed: () => Navigator.of(context).maybePop(),
                             child: Text(ruEn('Закрыть', 'Close')),
                           ),
@@ -356,47 +380,50 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
                 ),
               )
             : !_ready || v == null
-                ? const Center(child: M3Loading(color: Colors.white))
-                : GestureDetector(
-                    onTap: _tapScreen,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Center(
-                          child: AspectRatio(
-                            aspectRatio: v.value.aspectRatio,
-                            child: VideoPlayer(v),
-                          ),
-                        ),
-                        // fork (UX V1, V11): партнёр ещё не в ролике / связь рвётся.
-                        if (_peer.isEmpty || _failedSend)
-                          Positioned(
-                            left: 12,
-                            right: 12,
-                            top: 56,
-                            child: ForkStatusBar(
-                              tone: ForkStatusTone.warning,
-                              text: _failedSend
-                                  ? ruEn('Нет связи: партнёр может не получать ваши команды.',
-                                      'No connection: your partner may not get your commands.')
-                                  : ruEn(
-                                      'Этот ролик из приложения у партнёра не включается сам. Попросите открыть его в «Смотрим» — тогда вы будете смотреть синхронно.',
-                                      'This video doesn’t start on your partner’s phone by itself. Ask them to open it in “Watch” to sync up.'),
-                            ),
-                          ),
-                        _Controls(
-                          visible: _controlsVisible,
-                          playing: v.value.isPlaying,
-                          position: v.value.position,
-                          duration: v.value.duration,
-                          title: widget.title,
-                          onPlayPause: _togglePlay,
-                          onSeek: _seekTo,
-                          onClose: () => Navigator.of(context).maybePop(),
-                        ),
-                      ],
+            ? const Center(child: M3Loading(color: Colors.white))
+            : GestureDetector(
+                onTap: _tapScreen,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: v.value.aspectRatio,
+                        child: VideoPlayer(v),
+                      ),
                     ),
-                  ),
+                    // fork (UX V1, V11): партнёр ещё не в ролике / связь рвётся.
+                    if (_peer.isEmpty || _failedSend)
+                      Positioned(
+                        left: 12,
+                        right: 12,
+                        top: 56,
+                        child: ForkStatusBar(
+                          tone: ForkStatusTone.warning,
+                          text: _failedSend
+                              ? ruEn(
+                                  'Нет связи: партнёр может не получать ваши команды.',
+                                  'No connection: your partner may not get your commands.',
+                                )
+                              : ruEn(
+                                  'Этот ролик из приложения у партнёра не включается сам. Попросите открыть его в «Смотрим» — тогда вы будете смотреть синхронно.',
+                                  'This video doesn’t start on your partner’s phone by itself. Ask them to open it in “Watch” to sync up.',
+                                ),
+                        ),
+                      ),
+                    _Controls(
+                      visible: _controlsVisible,
+                      playing: v.value.isPlaying,
+                      position: v.value.position,
+                      duration: v.value.duration,
+                      title: widget.title,
+                      onPlayPause: _togglePlay,
+                      onSeek: _seekTo,
+                      onClose: () => Navigator.of(context).maybePop(),
+                    ),
+                  ],
+                ),
+              ),
       ),
       // Голос стоит под кадром и не исчезает вместе со слоем управления: тот
       // прячется через несколько секунд, и вместе с ним пропадала кнопка
@@ -426,7 +453,6 @@ class _Controls extends StatelessWidget {
   final VoidCallback onPlayPause;
   final ValueChanged<Duration> onSeek;
   final VoidCallback onClose;
-
 
   const _Controls({
     required this.visible,
@@ -519,7 +545,9 @@ class _Controls extends StatelessWidget {
                           child: FadeTransition(opacity: anim, child: child),
                         ),
                         child: Icon(
-                          playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                          playing
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
                           key: ValueKey<bool>(playing),
                           color: cs.onPrimary,
                           size: 40,
@@ -540,7 +568,9 @@ class _Controls extends StatelessWidget {
                         activeTrackColor: cs.primary,
                         inactiveTrackColor: Colors.white24,
                         thumbColor: cs.primary,
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 18,
+                        ),
                       ),
                       child: Slider(
                         value: position.inMilliseconds
@@ -554,10 +584,18 @@ class _Controls extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_stamp(position),
-                            style: text.labelMedium?.copyWith(color: Colors.white)),
-                        Text(_stamp(duration),
-                            style: text.labelMedium?.copyWith(color: Colors.white70)),
+                        Text(
+                          _stamp(position),
+                          style: text.labelMedium?.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          _stamp(duration),
+                          style: text.labelMedium?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
                       ],
                     ),
                   ],

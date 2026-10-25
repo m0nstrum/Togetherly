@@ -23,11 +23,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// Тест идёт от каталога карт в коде: любая новая карта со своей схемой обязана
 /// быть объявлена во всех трёх местах, иначе её кнопка молча мертва.
 void main() {
-  final catalog = File('lib/screens/memory_lane/detail.dart').readAsStringSync();
-  final schemes = RegExp(r"url:\s*'([a-z][a-z0-9+.-]*)://")
-      .allMatches(catalog)
-      .map((m) => m.group(1)!)
-      .toSet();
+  final catalog = File(
+    'lib/screens/memory_lane/detail.dart',
+  ).readAsStringSync();
+  final schemes = RegExp(
+    r"url:\s*'([a-z][a-z0-9+.-]*)://",
+  ).allMatches(catalog).map((m) => m.group(1)!).toSet();
 
   test('каталог карт разобрался', () {
     expect(schemes, isNotEmpty, reason: 'не нашёл ни одной ссылки на карты');
@@ -35,11 +36,13 @@ void main() {
   });
 
   test('чужие схемы объявлены в <queries> манифеста Android', () {
-    final manifest =
-        File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
-    final queries = RegExp(r'<queries>(.*?)</queries>', dotAll: true)
-        .firstMatch(manifest)
-        ?.group(1);
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final queries = RegExp(
+      r'<queries>(.*?)</queries>',
+      dotAll: true,
+    ).firstMatch(manifest)?.group(1);
     expect(queries, isNotNull, reason: 'в манифесте нет блока <queries>');
 
     final missing = schemes
@@ -48,7 +51,8 @@ void main() {
     expect(
       missing,
       isEmpty,
-      reason: 'схемы не объявлены в <queries>, canLaunchUrl вернёт false: '
+      reason:
+          'схемы не объявлены в <queries>, canLaunchUrl вернёт false: '
           '${missing.join(", ")}',
     );
   });
@@ -59,28 +63,37 @@ void main() {
       r'<key>LSApplicationQueriesSchemes</key>\s*<array>(.*?)</array>',
       dotAll: true,
     ).firstMatch(plist)?.group(1);
-    expect(list, isNotNull,
-        reason: 'в Info.plist нет LSApplicationQueriesSchemes');
+    expect(
+      list,
+      isNotNull,
+      reason: 'в Info.plist нет LSApplicationQueriesSchemes',
+    );
 
     // http/https на iOS объявлять не требуется — canOpenURL их и так знает.
     final foreign = schemes.where((s) => s != 'http' && s != 'https');
-    final missing =
-        foreign.where((s) => !RegExp('<string>$s</string>').hasMatch(list!));
-    expect(missing, isEmpty,
-        reason: 'схемы не объявлены на iOS: ${missing.join(", ")}');
+    final missing = foreign.where(
+      (s) => !RegExp('<string>$s</string>').hasMatch(list!),
+    );
+    expect(
+      missing,
+      isEmpty,
+      reason: 'схемы не объявлены на iOS: ${missing.join(", ")}',
+    );
   });
 
   test('схемы карт проходят через safeLaunchUrl', () {
     final source = File('lib/utils/safe_launch.dart').readAsStringSync();
-    final known = RegExp(r'_knownSchemes\s*=\s*\{(.*?)\}', dotAll: true)
-        .firstMatch(source)!
-        .group(1)!;
+    final known = RegExp(
+      r'_knownSchemes\s*=\s*\{(.*?)\}',
+      dotAll: true,
+    ).firstMatch(source)!.group(1)!;
 
     final missing = schemes.where((s) => !known.contains("'$s'")).toList();
     expect(
       missing,
       isEmpty,
-      reason: 'safeLaunchUrl отсечёт эти схемы до системы: '
+      reason:
+          'safeLaunchUrl отсечёт эти схемы до системы: '
           '${missing.join(", ")}',
     );
   });

@@ -14,35 +14,39 @@ Future<void> _pump(WidgetTester tester, Size screen) async {
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(MaterialApp(
-    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink)),
-    home: Scaffold(
-      body: NoteRecorderOverlay(
-        controller: null,
-        shape: kNoteShapes.first,
-        onShape: (_) {},
-        elapsed: ValueNotifier<Duration>(Duration.zero),
-        recording: true,
-        paused: false,
-        locked: true,
-        cancelling: false,
-        mirrored: false,
-        torchOn: false,
-        canFlip: true,
-        canTorch: true,
-        plusGate: PlusGate.open,
-        error: null,
-        onRetry: () {},
-        onFlip: () {},
-        onTorch: () {},
-        onMirror: () {},
-        onPauseToggle: () {},
-        onCancel: () {},
-        onSend: () {},
-        onClose: () {},
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
+      ),
+      home: Scaffold(
+        body: NoteRecorderOverlay(
+          controller: null,
+          shape: kNoteShapes.first,
+          onShape: (_) {},
+          elapsed: ValueNotifier<Duration>(Duration.zero),
+          recording: true,
+          paused: false,
+          locked: true,
+          cancelling: false,
+          mirrored: false,
+          torchOn: false,
+          canFlip: true,
+          canTorch: true,
+          plusGate: PlusGate.open,
+          error: null,
+          onRetry: () {},
+          onFlip: () {},
+          onTorch: () {},
+          onMirror: () {},
+          onPauseToggle: () {},
+          onCancel: () {},
+          onSend: () {},
+          onClose: () {},
+        ),
       ),
     ),
-  ));
+  );
   await tester.pump(const Duration(milliseconds: 50));
 }
 
@@ -52,20 +56,30 @@ void main() {
     Size(320, 640), // самый узкий, который мы держим
     Size(412, 915),
   ]) {
-    testWidgets('кнопки помещаются на экране ${screen.width.toInt()} dp',
-        (tester) async {
+    testWidgets('кнопки помещаются на экране ${screen.width.toInt()} dp', (
+      tester,
+    ) async {
       await _pump(tester, screen);
 
-      expect(tester.takeException(), isNull,
-          reason: 'переполнение ряда роняет вёрстку в лог и режет кнопки');
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'переполнение ряда роняет вёрстку в лог и режет кнопки',
+      );
 
       final pause = tester.getRect(find.byIcon(Icons.pause_rounded));
-      expect(pause.right, lessThanOrEqualTo(screen.width),
-          reason: 'пауза уехала за правый край');
+      expect(
+        pause.right,
+        lessThanOrEqualTo(screen.width),
+        reason: 'пауза уехала за правый край',
+      );
 
       final flip = tester.getRect(find.byIcon(Icons.cameraswitch_rounded));
-      expect(flip.left, greaterThanOrEqualTo(0.0),
-          reason: 'переключение камеры уехало за левый край');
+      expect(
+        flip.left,
+        greaterThanOrEqualTo(0.0),
+        reason: 'переключение камеры уехало за левый край',
+      );
     });
   }
 }

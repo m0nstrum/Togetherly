@@ -44,15 +44,15 @@ String? normalizeMemoryCaption(String? caption) {
 /// сбой набора, а на цветном этаже сосуда линия из тонких штрихов теряется
 /// вовсе.
 IconData memoryTypeIcon(MemoryType type) => switch (type) {
-      MemoryType.photo => Icons.photo_camera_rounded,
-      MemoryType.video => Icons.movie_rounded,
-      MemoryType.location => Icons.location_on_rounded,
-      MemoryType.music => Icons.music_note_rounded,
-      MemoryType.text => Icons.sticky_note_2_rounded,
-      MemoryType.videoLink => Icons.smart_display_rounded,
-      MemoryType.book => Icons.book_rounded,
-      MemoryType.movie => Icons.local_movies_rounded,
-    };
+  MemoryType.photo => Icons.photo_camera_rounded,
+  MemoryType.video => Icons.movie_rounded,
+  MemoryType.location => Icons.location_on_rounded,
+  MemoryType.music => Icons.music_note_rounded,
+  MemoryType.text => Icons.sticky_note_2_rounded,
+  MemoryType.videoLink => Icons.smart_display_rounded,
+  MemoryType.book => Icons.book_rounded,
+  MemoryType.movie => Icons.local_movies_rounded,
+};
 
 /// A single memory entry in the shared Memory Lane
 class Memory {
@@ -62,6 +62,7 @@ class Memory {
   final String authorName;
   final String authorAvatar;
   final MemoryType type;
+
   /// Время создания в часах читателя. У записей до 13 августа 2026 тут часы
   /// автора: пояс тогда не сохранялся, см. [PairTime].
   final DateTime createdAt;
@@ -101,9 +102,11 @@ class Memory {
   // Movie / series fields (used for MemoryType.movie). Title reuses [title]
   // for the localized (Russian) name.
   String? movieOriginalTitle; // original / English name (alternativeName)
-  String? moviePosterUrl; // poster image URL from the movies API (TMDB/Kinopoisk)
+  String?
+  moviePosterUrl; // poster image URL from the movies API (TMDB/Kinopoisk)
   String? movieYear; // release year (or "2020–2024" for series)
-  String? movieKind; // raw kind: movie / tv-series / cartoon / anime / animated-series
+  String?
+  movieKind; // raw kind: movie / tv-series / cartoon / anime / animated-series
   String? movieGenres; // comma-joined genres ("драма, мелодрама")
   String? movieCountry; // primary country
   String? movieRatingKp; // external rating (e.g. Kinopoisk "7.5")
@@ -221,10 +224,10 @@ class Memory {
     Map<String, String>? reactions,
     List<MemorySticker>? stickers,
     int? commentsCount,
-  })  : savedBy = savedBy ?? <String>[],
-        reactions = reactions ?? <String, String>{},
-        stickers = stickers ?? <MemorySticker>[],
-        commentsCount = commentsCount ?? 0;
+  }) : savedBy = savedBy ?? <String>[],
+       reactions = reactions ?? <String, String>{},
+       stickers = stickers ?? <MemorySticker>[],
+       commentsCount = commentsCount ?? 0;
 
   /// Human-friendly type label
   String get typeLabel {
@@ -404,8 +407,8 @@ class Memory {
     final map = raw is Map
         ? Map<String, dynamic>.from(raw)
         : (raw is String && raw.isNotEmpty
-            ? Map<String, dynamic>.from(jsonDecode(raw) as Map)
-            : <String, dynamic>{});
+              ? Map<String, dynamic>.from(jsonDecode(raw) as Map)
+              : <String, dynamic>{});
     map['id'] = rec.id;
     // Автор живёт и в колонках: запись, заведённую сервером (салют из
     // подарков), без автора в json показывали от «?» и не давали удалить.

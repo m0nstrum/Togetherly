@@ -9,8 +9,10 @@
 /// карточку товара по ним всё равно не собрать.
 String extractSharedUrl(String text) {
   if (text.isEmpty) return '';
-  final match = RegExp(r'https?://[^\s<>"]+', caseSensitive: false)
-      .firstMatch(text);
+  final match = RegExp(
+    r'https?://[^\s<>"]+',
+    caseSensitive: false,
+  ).firstMatch(text);
   if (match == null) return '';
   var url = match.group(0)!;
   // Точка, запятая и скобка в конце — часть предложения, а не адреса.

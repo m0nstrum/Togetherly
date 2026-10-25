@@ -104,7 +104,9 @@ class MascotService extends ChangeNotifier {
       notifyListeners();
     }, onError: (e) => debugPrint('[MascotService] group state error: $e'));
 
-    _mascotsSub = _repo.watchGallery(groupId).listen(
+    _mascotsSub = _repo
+        .watchGallery(groupId)
+        .listen(
           _onMascotsUpdate,
           onError: (e) => debugPrint('[MascotService] mascots error: $e'),
         );
@@ -206,24 +208,26 @@ class MascotService extends ChangeNotifier {
     final record = mascot.recordStreak;
     final sleep = sleepResolver?.call(id) ?? SleepWindow.standard;
 
-    unawaited(MascotWidgetService.instance.publish(
-      groupId: _groupId,
-      mascot: mascot,
-      anim: anim,
-      force: force,
-      data: MascotWidgetData(
-        mascotId: id,
-        name: mascot.localizedName,
-        streakDays: streak,
-        recordStreak: record > streak ? record : streak,
-        // Серия оборвалась: вчерашняя отметка была последней, и персонаж
-        // грустит — ровно как на главной.
-        sad: streak == 0 && (_state.streakLastOpenedDate ?? '').isNotEmpty,
-        sleep: mascotSleepsInWidget(anim)
-            ? MascotSleepWindow(from: sleep.from, to: sleep.to)
-            : MascotSleepWindow.none,
+    unawaited(
+      MascotWidgetService.instance.publish(
+        groupId: _groupId,
+        mascot: mascot,
+        anim: anim,
+        force: force,
+        data: MascotWidgetData(
+          mascotId: id,
+          name: mascot.localizedName,
+          streakDays: streak,
+          recordStreak: record > streak ? record : streak,
+          // Серия оборвалась: вчерашняя отметка была последней, и персонаж
+          // грустит — ровно как на главной.
+          sad: streak == 0 && (_state.streakLastOpenedDate ?? '').isNotEmpty,
+          sleep: mascotSleepsInWidget(anim)
+              ? MascotSleepWindow(from: sleep.from, to: sleep.to)
+              : MascotSleepWindow.none,
+        ),
       ),
-    ));
+    );
   }
 
   /// Pushes the ACTIVE mascot's streak to the native «Огонёк» home widget

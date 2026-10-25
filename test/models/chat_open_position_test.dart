@@ -7,19 +7,20 @@ void main() {
     bool nearBottom = false,
     bool unread = false,
     bool newMessages = false,
-  }) =>
-      chatOpenPosition(
-        savedOffset: saved,
-        savedWasNearBottom: nearBottom,
-        hasUnread: unread,
-        newMessagesSinceExit: newMessages,
-      );
+  }) => chatOpenPosition(
+    savedOffset: saved,
+    savedWasNearBottom: nearBottom,
+    hasUnread: unread,
+    newMessagesSinceExit: newMessages,
+  );
 
   test('непрочитанные важнее всего', () {
     expect(call(unread: true), ChatOpenPosition.unreadMarker);
     expect(call(saved: 500, unread: true), ChatOpenPosition.unreadMarker);
-    expect(call(saved: 500, unread: true, newMessages: true),
-        ChatOpenPosition.unreadMarker);
+    expect(
+      call(saved: 500, unread: true, newMessages: true),
+      ChatOpenPosition.unreadMarker,
+    );
   });
 
   test('без сохранённой позиции открываем внизу', () {

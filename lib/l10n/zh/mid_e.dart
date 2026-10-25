@@ -66,7 +66,8 @@ const Map<String, String> midEZh = {
   'joinAction': '加入',
   'partnerEndedWatchTogether': '另一半结束了一起看',
   'videoCannotWatchTogether': '这段视频不能一起看',
-  'videoEmbedBlockedHint': '这段视频无法嵌入播放：作者禁止在 YouTube 以外播放，或者视频有年龄、地区限制。如果只有一部手机打不开，请在那部手机的 Google Play 里更新“Android System WebView”和 Chrome。你可以直接在 YouTube 上打开，或者换一段视频，大部分都能播放。',
+  'videoEmbedBlockedHint':
+      '这段视频无法嵌入播放：作者禁止在 YouTube 以外播放，或者视频有年龄、地区限制。如果只有一部手机打不开，请在那部手机的 Google Play 里更新“Android System WebView”和 Chrome。你可以直接在 YouTube 上打开，或者换一段视频，大部分都能播放。',
   'chooseAnother': '换一个',
   'openOnYoutube': '在 YouTube 上打开',
   'watchingTogether': '正在一起看',

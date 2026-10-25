@@ -43,13 +43,20 @@ void main() {
 
   group('серии', () {
     test('соседние дни с одной оценкой сливаются в пятно', () {
-      final cells = moodYearCells(year: 2026, scores: {
-        d(1, 5): 5, // понедельник
-        d(1, 6): 5,
-        d(1, 7): 5,
-      });
+      final cells = moodYearCells(
+        year: 2026,
+        scores: {
+          d(1, 5): 5, // понедельник
+          d(1, 6): 5,
+          d(1, 7): 5,
+        },
+      );
       final run = cells.firstWhere((c) => c.date == d(1, 5));
-      expect(run.startsRun, isTrue, reason: 'первый день серии скруглён сверху');
+      expect(
+        run.startsRun,
+        isTrue,
+        reason: 'первый день серии скруглён сверху',
+      );
       expect(run.endsRun, isFalse);
 
       final tail = cells.firstWhere((c) => c.date == d(1, 7));
@@ -58,34 +65,41 @@ void main() {
     });
 
     test('разные оценки подряд серией не считаются', () {
-      final cells = moodYearCells(year: 2026, scores: {
-        d(1, 5): 5,
-        d(1, 6): 3,
-      });
+      final cells = moodYearCells(year: 2026, scores: {d(1, 5): 5, d(1, 6): 3});
       for (final day in [d(1, 5), d(1, 6)]) {
         final c = cells.firstWhere((x) => x.date == day);
         expect(c.startsRun, isTrue);
-        expect(c.endsRun, isTrue, reason: 'одиночная клетка скруглена со всех сторон');
+        expect(
+          c.endsRun,
+          isTrue,
+          reason: 'одиночная клетка скруглена со всех сторон',
+        );
       }
     });
 
     test('серия не переходит из колонки в колонку', () {
       // Воскресенье и следующий понедельник стоят в разных столбцах, и
       // склеивать их нельзя: пятно уехало бы поперёк сетки.
-      final cells = moodYearCells(year: 2026, scores: {
-        d(1, 11): 4, // воскресенье
-        d(1, 12): 4, // понедельник следующей недели
-      });
+      final cells = moodYearCells(
+        year: 2026,
+        scores: {
+          d(1, 11): 4, // воскресенье
+          d(1, 12): 4, // понедельник следующей недели
+        },
+      );
       expect(cells.firstWhere((c) => c.date == d(1, 11)).endsRun, isTrue);
       expect(cells.firstWhere((c) => c.date == d(1, 12)).startsRun, isTrue);
     });
 
     test('пропуск разрывает серию', () {
-      final cells = moodYearCells(year: 2026, scores: {
-        d(1, 5): 5,
-        // 6 января без отметки
-        d(1, 7): 5,
-      });
+      final cells = moodYearCells(
+        year: 2026,
+        scores: {
+          d(1, 5): 5,
+          // 6 января без отметки
+          d(1, 7): 5,
+        },
+      );
       expect(cells.firstWhere((c) => c.date == d(1, 5)).endsRun, isTrue);
       expect(cells.firstWhere((c) => c.date == d(1, 7)).startsRun, isTrue);
     });
@@ -129,20 +143,14 @@ void main() {
     test('недели без единой отметки выпадают из сетки', () {
       // Год, где отмечались только в марте: показывать 53 строки, из которых
       // 48 пустые, — значит не поместиться в экран и ничего не сказать.
-      final cells = moodYearCells(year: 2026, scores: {
-        d(3, 3): 4,
-        d(3, 4): 4,
-      });
+      final cells = moodYearCells(year: 2026, scores: {d(3, 3): 4, d(3, 4): 4});
       final rows = visibleWeeks(cells);
       expect(rows.length, 1);
       expect(rows.first.any((c) => c.score != null), isTrue);
     });
 
     test('порядок недель сохраняется', () {
-      final cells = moodYearCells(year: 2026, scores: {
-        d(2, 3): 3,
-        d(9, 8): 5,
-      });
+      final cells = moodYearCells(year: 2026, scores: {d(2, 3): 3, d(9, 8): 5});
       final rows = visibleWeeks(cells);
       expect(rows.length, 2);
       expect(rows.first.first.date.isBefore(rows.last.first.date), isTrue);
@@ -156,7 +164,10 @@ void main() {
     });
 
     test('пустой год не показывает ничего', () {
-      expect(visibleWeeks(moodYearCells(year: 2026, scores: const {})), isEmpty);
+      expect(
+        visibleWeeks(moodYearCells(year: 2026, scores: const {})),
+        isEmpty,
+      );
     });
   });
 }

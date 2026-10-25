@@ -310,13 +310,20 @@ const Map<String, Map<String, String>> memoryLaneFeedStrings = {
     'de': 'Hinzufügen',
   },
   'formFramesHint': {
-    'ru': 'Плюс слева добавляет кадры, касание ставит обложкой, долгое — убирает из записи',
-    'en': 'Plus on the left adds frames, a tap makes the cover, a long press removes',
-    'pt': 'O mais à esquerda adiciona, um toque define a capa, toque longo remove',
-    'it': 'Il più a sinistra aggiunge, un tocco imposta la copertina, uno lungo rimuove',
-    'es': 'El más a la izquierda añade, un toque pone la portada, pulsación larga quita',
-    'fr': 'Le plus à gauche ajoute, un appui définit la couverture, un appui long retire',
-    'de': 'Plus links fügt hinzu, Tippen setzt das Titelbild, langes Tippen entfernt',
+    'ru':
+        'Плюс слева добавляет кадры, касание ставит обложкой, долгое — убирает из записи',
+    'en':
+        'Plus on the left adds frames, a tap makes the cover, a long press removes',
+    'pt':
+        'O mais à esquerda adiciona, um toque define a capa, toque longo remove',
+    'it':
+        'Il più a sinistra aggiunge, un tocco imposta la copertina, uno lungo rimuove',
+    'es':
+        'El más a la izquierda añade, un toque pone la portada, pulsación larga quita',
+    'fr':
+        'Le plus à gauche ajoute, un appui définit la couverture, un appui long retire',
+    'de':
+        'Plus links fügt hinzu, Tippen setzt das Titelbild, langes Tippen entfernt',
   },
   'titleHintForm': {
     'ru': 'Дай записи имя',

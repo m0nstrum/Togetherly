@@ -36,12 +36,24 @@ void main() {
 
     test('цвет берётся от балла, а не задаётся руками', () {
       const sad = CustomMood(
-        id: 'r', groupId: 'g', authorUid: 'u', moodId: 'custom_1',
-        label: 'Тоска', emoji: '', imageUrl: 'https://x/y.png', score: 1,
+        id: 'r',
+        groupId: 'g',
+        authorUid: 'u',
+        moodId: 'custom_1',
+        label: 'Тоска',
+        emoji: '',
+        imageUrl: 'https://x/y.png',
+        score: 1,
       );
       const glad = CustomMood(
-        id: 'r', groupId: 'g', authorUid: 'u', moodId: 'custom_2',
-        label: 'Радость', emoji: '', imageUrl: 'https://x/z.png', score: 5,
+        id: 'r',
+        groupId: 'g',
+        authorUid: 'u',
+        moodId: 'custom_2',
+        label: 'Радость',
+        emoji: '',
+        imageUrl: 'https://x/z.png',
+        score: 5,
       );
 
       expect(sad.toMoodOption().color, isNot(glad.toMoodOption().color));
@@ -65,15 +77,20 @@ void main() {
       );
 
       expect(mood.moodId, 'custom_zz99');
-      expect(mood.imageUrl, 'https://host/api/files/custom_moods/rec9/burger.png');
+      expect(
+        mood.imageUrl,
+        'https://host/api/files/custom_moods/rec9/burger.png',
+      );
       expect(mood.score, 4);
     });
 
     test('запись без картинки не роняет разбор', () {
-      final mood = CustomMood.fromMap(
-        {'id': 'r', 'group_id': 'g', 'mood_id': 'custom_1', 'label': 'Так себе'},
-        fileUrl: (id, file) => 'https://host/$id/$file',
-      );
+      final mood = CustomMood.fromMap({
+        'id': 'r',
+        'group_id': 'g',
+        'mood_id': 'custom_1',
+        'label': 'Так себе',
+      }, fileUrl: (id, file) => 'https://host/$id/$file');
 
       expect(mood.imageUrl, '');
       expect(mood.score, 3); // без балла настроение считается ровным

@@ -14,7 +14,12 @@ import '../../theme/profile_theme.dart';
 
 /// Название крупно, под ним автор, исполнитель или оригинальное название.
 class MomentHead extends StatelessWidget {
-  const MomentHead({super.key, required this.scheme, required this.title, this.sub});
+  const MomentHead({
+    super.key,
+    required this.scheme,
+    required this.title,
+    this.sub,
+  });
 
   final ColorScheme scheme;
   final String title;
@@ -44,7 +49,11 @@ class MomentHead extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 s,
-                style: AppFonts.onest(size: 15, weight: 500, color: scheme.onSurfaceVariant),
+                style: AppFonts.onest(
+                  size: 15,
+                  weight: 500,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
         ],
@@ -80,7 +89,10 @@ class MomentPill extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 32),
       padding: EdgeInsets.fromLTRB(icon == null ? 12 : 9, 6, 12, 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -145,7 +157,11 @@ class MomentStars extends StatelessWidget {
               who,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppFonts.onest(size: 13.5, weight: 600, color: scheme.onSurfaceVariant),
+              style: AppFonts.onest(
+                size: 13.5,
+                weight: 600,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -156,15 +172,19 @@ class MomentStars extends StatelessWidget {
               rating >= i * 2
                   ? Icons.star_rounded
                   : rating == i * 2 - 1
-                      ? Icons.star_half_rounded
-                      : Icons.star_rounded,
+                  ? Icons.star_half_rounded
+                  : Icons.star_rounded,
               size: 20,
               color: rating >= i * 2 - 1 ? fill : fill.withValues(alpha: 0.28),
             ),
           const SizedBox(width: 6),
           Text(
             '$rating/10',
-            style: AppFonts.onest(size: 13.5, weight: 700, color: scheme.onSurfaceVariant),
+            style: AppFonts.onest(
+              size: 13.5,
+              weight: 700,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -229,7 +249,11 @@ class MomentButtons extends StatelessWidget {
                         Text(
                           primary.label,
                           maxLines: 1,
-                          style: AppFonts.onest(size: 15, weight: 700, color: onFill),
+                          style: AppFonts.onest(
+                            size: 15,
+                            weight: 700,
+                            color: onFill,
+                          ),
                         ),
                       ],
                     ),
@@ -255,7 +279,11 @@ class MomentButtons extends StatelessWidget {
                 child: SizedBox(
                   width: 56,
                   height: _h,
-                  child: Icon(secondary!.icon, size: 22, color: scheme.onSecondaryContainer),
+                  child: Icon(
+                    secondary!.icon,
+                    size: 22,
+                    color: scheme.onSecondaryContainer,
+                  ),
                 ),
               ),
             ),
@@ -269,7 +297,11 @@ class MomentButtons extends StatelessWidget {
 /// Постер или обложка книги: портрет 2:3 по центру тонального поля — так
 /// он стоит на месте кадра и не растягивается во всю ширину на полэкрана.
 class MomentPosterFrame extends StatelessWidget {
-  const MomentPosterFrame({super.key, required this.scheme, required this.child});
+  const MomentPosterFrame({
+    super.key,
+    required this.scheme,
+    required this.child,
+  });
 
   final ColorScheme scheme;
   final Widget child;
@@ -294,16 +326,24 @@ class MomentPosterFrame extends StatelessWidget {
 
 /// Заглушка обложки, когда картинки нет: тональная заливка и значок типа.
 class MomentArtPlaceholder extends StatelessWidget {
-  const MomentArtPlaceholder({super.key, required this.scheme, required this.icon});
+  const MomentArtPlaceholder({
+    super.key,
+    required this.scheme,
+    required this.icon,
+  });
 
   final ColorScheme scheme;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-        color: scheme.surfaceContainerHighest,
-        child: Center(
-          child: Icon(icon, size: 56, color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
-        ),
-      );
+    color: scheme.surfaceContainerHighest,
+    child: Center(
+      child: Icon(
+        icon,
+        size: 56,
+        color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
+      ),
+    ),
+  );
 }

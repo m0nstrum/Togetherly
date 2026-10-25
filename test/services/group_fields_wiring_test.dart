@@ -10,8 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// писало `chat_background`, сервер отвечал успехом и забывал ссылку.
 void main() {
   final hotpath = File('pocketbase/hotpath/hotpath.py').readAsStringSync();
-  final groupsBlock =
-      hotpath.split('"groups": {')[1].split('"sortable"')[0];
+  final groupsBlock = hotpath.split('"groups": {')[1].split('"sortable"')[0];
 
   Set<String> keysWrittenToGroups() {
     final keys = <String>{};
@@ -30,17 +29,24 @@ void main() {
 
   test('каждое поле, которое приложение пишет в пару, знает hotpath', () {
     final keys = keysWrittenToGroups();
-    expect(keys, contains('chat_background'),
-        reason: 'сканер разучился находить вызовы updateGroupFields');
+    expect(
+      keys,
+      contains('chat_background'),
+      reason: 'сканер разучился находить вызовы updateGroupFields',
+    );
     for (final k in keys) {
-      expect(groupsBlock, contains('"$k"'),
-          reason: 'hotpath выбросит $k молча — добавь в COLLECTIONS и в Postgres');
+      expect(
+        groupsBlock,
+        contains('"$k"'),
+        reason: 'hotpath выбросит $k молча — добавь в COLLECTIONS и в Postgres',
+      );
     }
   });
 
   test('общий фон чата заведён миграцией Postgres', () {
-    final sql =
-        File('pocketbase/hotpath/chat_background.sql').readAsStringSync();
+    final sql = File(
+      'pocketbase/hotpath/chat_background.sql',
+    ).readAsStringSync();
     expect(sql, contains('chat_background'));
   });
 
@@ -60,8 +66,11 @@ void main() {
     final body = src
         .split('Future<bool> setSharedBackground(')[1]
         .split('\n  }\n')[0];
-    expect(body, contains('return await PbDataService().updateGroupFields'),
-        reason: 'отказ записи обязан дойти до экрана, а не стать «Фон поставлен»');
+    expect(
+      body,
+      contains('return await PbDataService().updateGroupFields'),
+      reason: 'отказ записи обязан дойти до экрана, а не стать «Фон поставлен»',
+    );
   });
 
   test('чат читает общий фон и без своего, и рисует pb:// с токеном', () {
@@ -74,12 +83,20 @@ void main() {
     expect(shared, greaterThan(-1));
     expect(load.substring(ifLocal).contains('} else if'), isTrue);
     // Общий фон не должен сидеть внутри ветки «свой файл есть».
-    final localBranch =
-        load.substring(ifLocal, load.indexOf('} else if', ifLocal));
-    expect(localBranch.contains('sharedBackground('), isFalse,
-        reason: 'без своего фона общий не загружался вовсе');
+    final localBranch = load.substring(
+      ifLocal,
+      load.indexOf('} else if', ifLocal),
+    );
+    expect(
+      localBranch.contains('sharedBackground('),
+      isFalse,
+      reason: 'без своего фона общий не загружался вовсе',
+    );
 
-    expect(src.contains(RegExp(r'Image\.network\(\s*_sharedBgUrl')), isFalse,
-        reason: 'ссылка pb:// в Image.network не открывается: экран чёрный');
+    expect(
+      src.contains(RegExp(r'Image\.network\(\s*_sharedBgUrl')),
+      isFalse,
+      reason: 'ссылка pb:// в Image.network не открывается: экран чёрный',
+    );
   });
 }

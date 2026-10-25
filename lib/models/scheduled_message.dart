@@ -11,7 +11,12 @@ bool isHeld(int? deliverAt, {DateTime? now}) =>
     (deliverAt ?? 0) > (now ?? DateTime.now()).millisecondsSinceEpoch;
 
 /// Момент из выбранных даты и времени; null — он уже прошёл.
-DateTime? scheduledMoment(DateTime date, int hour, int minute, {DateTime? now}) {
+DateTime? scheduledMoment(
+  DateTime date,
+  int hour,
+  int minute, {
+  DateTime? now,
+}) {
   final at = DateTime(date.year, date.month, date.day, hour, minute);
   return at.isAfter(now ?? DateTime.now()) ? at : null;
 }

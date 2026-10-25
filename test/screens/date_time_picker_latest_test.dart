@@ -9,30 +9,35 @@ import 'package:love_app/theme/app_theme.dart';
 /// принимает, поэтому и экран не даёт его выбрать, иначе выбранный день молча
 /// менялся бы на сегодняшний.
 void main() {
-  Future<DateTime?> pick(WidgetTester tester,
-      {required DateTime initial, DateTime? latest}) async {
+  Future<DateTime?> pick(
+    WidgetTester tester, {
+    required DateTime initial,
+    DateTime? latest,
+  }) async {
     DateTime? result;
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (context) => TextButton(
-          onPressed: () async {
-            result = await Navigator.of(context).push<DateTime>(
-              MaterialPageRoute(
-                builder: (_) => DateTimePickerScreen(
-                  title: 'Дата',
-                  theme: AppThemes.pink,
-                  initial: initial,
-                  firstYear: 2000,
-                  lastYear: 2026,
-                  latest: latest,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              result = await Navigator.of(context).push<DateTime>(
+                MaterialPageRoute(
+                  builder: (_) => DateTimePickerScreen(
+                    title: 'Дата',
+                    theme: AppThemes.pink,
+                    initial: initial,
+                    firstYear: 2000,
+                    lastYear: 2026,
+                    latest: latest,
+                  ),
                 ),
-              ),
-            );
-          },
-          child: const Text('открыть'),
+              );
+            },
+            child: const Text('открыть'),
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('открыть'));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(FilledButton));
@@ -42,15 +47,20 @@ void main() {
 
   testWidgets('день позже предела прижимается к пределу', (tester) async {
     final latest = DateTime(2026, 10, 14, 16, 30);
-    final got = await pick(tester,
-        initial: DateTime(2026, 10, 20, 18, 0), latest: latest);
+    final got = await pick(
+      tester,
+      initial: DateTime(2026, 10, 20, 18, 0),
+      latest: latest,
+    );
     expect(got, latest);
   });
 
   testWidgets('прошлое проходит как выбрано', (tester) async {
-    final got = await pick(tester,
-        initial: DateTime(2026, 9, 1, 12, 15),
-        latest: DateTime(2026, 10, 14, 16, 30));
+    final got = await pick(
+      tester,
+      initial: DateTime(2026, 9, 1, 12, 15),
+      latest: DateTime(2026, 10, 14, 16, 30),
+    );
     expect(got, DateTime(2026, 9, 1, 12, 15));
   });
 

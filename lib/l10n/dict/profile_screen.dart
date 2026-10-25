@@ -260,12 +260,17 @@ const Map<String, Map<String, String>> profileScreenStrings = {
   },
   'reelsTogetherHint': {
     'ru': 'Короткие ролики по очереди: из твоей ленты, потом из ленты партнёра',
-    'en': 'Short clips in turns: one from your feed, then one from your partner’s',
+    'en':
+        'Short clips in turns: one from your feed, then one from your partner’s',
     'pt': 'Vídeos curtos em turnos: um do seu feed, depois um do feed do par',
-    'it': 'Video brevi a turno: uno dal tuo feed, poi uno da quello del partner',
-    'es': 'Vídeos cortos por turnos: uno de tu feed y luego uno del de tu pareja',
-    'fr': 'Des vidéos courtes à tour de rôle : une de ton fil, puis une de celui de ton partenaire',
-    'de': 'Kurze Clips abwechselnd: einer aus deinem Feed, dann einer aus dem deines Partners',
+    'it':
+        'Video brevi a turno: uno dal tuo feed, poi uno da quello del partner',
+    'es':
+        'Vídeos cortos por turnos: uno de tu feed y luego uno del de tu pareja',
+    'fr':
+        'Des vidéos courtes à tour de rôle : une de ton fil, puis une de celui de ton partenaire',
+    'de':
+        'Kurze Clips abwechselnd: einer aus deinem Feed, dann einer aus dem deines Partners',
   },
   'watchReelsTileHint': {
     'ru': 'Ролики из обеих лент по очереди, чат и звонок',
@@ -331,13 +336,20 @@ const Map<String, Map<String, String>> profileScreenStrings = {
     'de': 'Den Feed startet dein Partner',
   },
   'reelsAskPartnerBody': {
-    'ru': 'Совместную ленту запускает тот, у кого Togetherly+. Когда партнёр её откроет, вам придёт приглашение, и вы войдёте без своего Плюса.',
-    'en': 'The shared feed is started by whoever has Togetherly+. When your partner opens it, you’ll get an invite and can join without your own Plus.',
-    'pt': 'O feed compartilhado é iniciado por quem tem Togetherly+. Quando seu par abrir, você recebe um convite e entra sem o seu próprio Plus.',
-    'it': 'Il feed condiviso lo avvia chi ha Togetherly+. Quando il partner lo apre, ti arriva un invito e puoi entrare senza il tuo Plus.',
-    'es': 'El feed compartido lo inicia quien tiene Togetherly+. Cuando tu pareja lo abra, te llegará una invitación y entrarás sin tu propio Plus.',
-    'fr': 'Le fil partagé est lancé par celui qui a Togetherly+. Quand ton partenaire l’ouvre, tu reçois une invitation et tu entres sans ton propre Plus.',
-    'de': 'Den gemeinsamen Feed startet, wer Togetherly+ hat. Sobald dein Partner ihn öffnet, bekommst du eine Einladung und kommst ohne eigenes Plus rein.',
+    'ru':
+        'Совместную ленту запускает тот, у кого Togetherly+. Когда партнёр её откроет, вам придёт приглашение, и вы войдёте без своего Плюса.',
+    'en':
+        'The shared feed is started by whoever has Togetherly+. When your partner opens it, you’ll get an invite and can join without your own Plus.',
+    'pt':
+        'O feed compartilhado é iniciado por quem tem Togetherly+. Quando seu par abrir, você recebe um convite e entra sem o seu próprio Plus.',
+    'it':
+        'Il feed condiviso lo avvia chi ha Togetherly+. Quando il partner lo apre, ti arriva un invito e puoi entrare senza il tuo Plus.',
+    'es':
+        'El feed compartido lo inicia quien tiene Togetherly+. Cuando tu pareja lo abra, te llegará una invitación y entrarás sin tu propio Plus.',
+    'fr':
+        'Le fil partagé est lancé par celui qui a Togetherly+. Quand ton partenaire l’ouvre, tu reçois une invitation et tu entres sans ton propre Plus.',
+    'de':
+        'Den gemeinsamen Feed startet, wer Togetherly+ hat. Sobald dein Partner ihn öffnet, bekommst du eine Einladung und kommst ohne eigenes Plus rein.',
   },
   'reelsSavedCaption': {
     'ru': 'Из совместной ленты',
@@ -840,7 +852,8 @@ const Map<String, Map<String, String>> profileScreenStrings = {
     'it': 'Tocca una foto per ritagliarla, l’icona nell’angolo la specchia',
     'es': 'Toca una foto para recortarla, el icono de la esquina la refleja',
     'fr': 'Touche une photo pour la recadrer, l’icône du coin la retourne',
-    'de': 'Tippe ein Foto an, um es zu beschneiden, das Symbol in der Ecke spiegelt es',
+    'de':
+        'Tippe ein Foto an, um es zu beschneiden, das Symbol in der Ecke spiegelt es',
   },
   'flipPhoto': {
     'ru': 'Отразить',

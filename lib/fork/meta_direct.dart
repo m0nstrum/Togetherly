@@ -147,7 +147,8 @@ abstract final class ForkLinkPreview {
     final lng = double.tryParse(
       _meta(html, ['place:location:longitude', 'og:longitude']),
     );
-    final hasPoint = lat != null &&
+    final hasPoint =
+        lat != null &&
         lng != null &&
         lat.abs() <= 90 &&
         lng.abs() <= 180 &&

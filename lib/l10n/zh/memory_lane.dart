@@ -120,7 +120,8 @@ const Map<String, String> memoryLaneZh = {
   'memoryDatePickTime': '时间',
   'memoryDateClear': '重置',
   'fetchData': '获取信息',
-  'supportedPlatformsHint': '支持：YouTube、Vimeo、Dailymotion、\nTikTok、Instagram、VK 等',
+  'supportedPlatformsHint':
+      '支持：YouTube、Vimeo、Dailymotion、\nTikTok、Instagram、VK 等',
   'supportedPlatforms': '支持的平台',
   'pasteLinkSupported': '粘贴任意支持平台的链接',
   'gotIt': '知道了',

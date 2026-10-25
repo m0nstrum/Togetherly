@@ -44,7 +44,8 @@ class LivePointAge {
 
   /// [updatedAtMs] — время точки (epoch ms, ставит телефон автора).
   static LivePointAge of(int updatedAtMs, {required int nowMs}) {
-    if (updatedAtMs <= 0) return const LivePointAge(LivePointAgeUnit.unknown, 0);
+    if (updatedAtMs <= 0)
+      return const LivePointAge(LivePointAgeUnit.unknown, 0);
     final diff = nowMs - updatedAtMs;
     // Часы на телефоне партнёра бывают убежавшими вперёд — на проде есть точки
     // с датой из будущего. Такую считаем свежей, а не «минус два дня назад».

@@ -13,9 +13,7 @@ import 'sticker_layer.dart';
 /// Что вернул редактор наклейки.
 class StickerEditResult {
   const StickerEditResult.placed(MemorySticker this.sticker) : removed = false;
-  const StickerEditResult.removed()
-      : sticker = null,
-        removed = true;
+  const StickerEditResult.removed() : sticker = null, removed = true;
 
   /// Наклейка на новом месте.
   final MemorySticker? sticker;
@@ -42,23 +40,25 @@ Future<StickerEditResult?> placeStickerOnCard(
   required bool isNew,
   List<MemorySticker> others = const [],
 }) {
-  return Navigator.of(context).push(PageRouteBuilder<StickerEditResult>(
-    opaque: false,
-    settings: const RouteSettings(name: '/sticker_place'),
-    transitionDuration: const Duration(milliseconds: 180),
-    reverseTransitionDuration: const Duration(milliseconds: 140),
-    pageBuilder: (_, _, _) => StickerEditor(
-      block: block,
-      card: card,
-      sticker: sticker,
-      isNew: isNew,
-      others: others,
+  return Navigator.of(context).push(
+    PageRouteBuilder<StickerEditResult>(
+      opaque: false,
+      settings: const RouteSettings(name: '/sticker_place'),
+      transitionDuration: const Duration(milliseconds: 180),
+      reverseTransitionDuration: const Duration(milliseconds: 140),
+      pageBuilder: (_, _, _) => StickerEditor(
+        block: block,
+        card: card,
+        sticker: sticker,
+        isNew: isNew,
+        others: others,
+      ),
+      transitionsBuilder: (_, animation, _, child) => FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        child: child,
+      ),
     ),
-    transitionsBuilder: (_, animation, _, child) => FadeTransition(
-      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-      child: child,
-    ),
-  ));
+  );
 }
 
 /// Экран наклеивания поверх ленты (см. [placeStickerOnCard]).
@@ -104,8 +104,10 @@ class _StickerEditorState extends State<StickerEditor> {
 
   Rect get _block => widget.block;
 
-  Offset get _center =>
-      Offset(_block.left + _s.x * _block.width, _block.top + _s.y * _block.height);
+  Offset get _center => Offset(
+    _block.left + _s.x * _block.width,
+    _block.top + _s.y * _block.height,
+  );
 
   double get _side => _s.size * _block.width;
 
@@ -134,12 +136,14 @@ class _StickerEditorState extends State<StickerEditor> {
     _lastScale = d.scale;
     _lastRotation = d.rotation;
     final two = d.pointerCount > 1;
-    _set(_s.copyWith(
-      x: _s.x + delta.dx / _block.width,
-      y: _s.y + delta.dy / _block.height,
-      size: two ? _s.size * ratio : null,
-      angle: two ? _s.angle + turn : null,
-    ));
+    _set(
+      _s.copyWith(
+        x: _s.x + delta.dx / _block.width,
+        y: _s.y + delta.dy / _block.height,
+        size: two ? _s.size * ratio : null,
+        angle: two ? _s.angle + turn : null,
+      ),
+    );
   }
 
   void _onGrabStart(DragStartDetails d) {
@@ -153,10 +157,12 @@ class _StickerEditorState extends State<StickerEditor> {
 
   void _onGrabUpdate(DragUpdateDetails d) {
     final v = d.globalPosition - _center;
-    _set(_s.copyWith(
-      size: _grabSize * v.distance / _grabDistance,
-      angle: _grabTurn + v.direction - _grabAngle,
-    ));
+    _set(
+      _s.copyWith(
+        size: _grabSize * v.distance / _grabDistance,
+        angle: _grabTurn + v.direction - _grabAngle,
+      ),
+    );
   }
 
   void _done() {
@@ -164,8 +170,9 @@ class _StickerEditorState extends State<StickerEditor> {
     Navigator.of(context).pop(StickerEditResult.placed(_s));
   }
 
-  void _cross() => Navigator.of(context).pop(
-      widget.isNew ? null : const StickerEditResult.removed());
+  void _cross() => Navigator.of(
+    context,
+  ).pop(widget.isNew ? null : const StickerEditResult.removed());
 
   @override
   Widget build(BuildContext context) {
@@ -192,32 +199,31 @@ class _StickerEditorState extends State<StickerEditor> {
       VoidCallback? onTap,
       GestureDragStartCallback? onStart,
       GestureDragUpdateCallback? onUpdate,
-    }) =>
-        Semantics(
-          button: true,
-          label: label,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            // Отсчёт от касания, а не от конца порога сдвига: иначе ручка
-            // отставала бы от пальца.
-            dragStartBehavior: DragStartBehavior.down,
-            onTap: onTap,
-            onPanStart: onStart,
-            onPanUpdate: onUpdate,
-            child: SizedBox(
-              width: hit,
-              height: hit,
-              child: Center(
-                child: Container(
-                  width: knob,
-                  height: knob,
-                  decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
-                  child: Icon(icon, size: 18, color: ink),
-                ),
-              ),
+    }) => Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        // Отсчёт от касания, а не от конца порога сдвига: иначе ручка
+        // отставала бы от пальца.
+        dragStartBehavior: DragStartBehavior.down,
+        onTap: onTap,
+        onPanStart: onStart,
+        onPanUpdate: onUpdate,
+        child: SizedBox(
+          width: hit,
+          height: hit,
+          child: Center(
+            child: Container(
+              width: knob,
+              height: knob,
+              decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
+              child: Icon(icon, size: 18, color: ink),
             ),
           ),
-        );
+        ),
+      ),
+    );
 
     return Material(
       type: MaterialType.transparency,
@@ -336,16 +342,16 @@ class _StickerEditorState extends State<StickerEditor> {
                     child: Center(
                       widthFactor: 1,
                       child: Text(
-                      trKey('stickerHint'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Onest',
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onInverseSurface,
+                        trKey('stickerHint'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Onest',
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onInverseSurface,
+                        ),
                       ),
-                    ),
                     ),
                   ),
                 ),

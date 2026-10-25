@@ -35,13 +35,18 @@ void main() {
       for (final m in RegExp(r'InAppWebViewSettings\(').allMatches(src)) {
         seen++;
         if (!call(src, m.start).contains('useOnRenderProcessGone: true')) {
-          missing.add('$path:${'\n'.allMatches(src.substring(0, m.start)).length + 1}');
+          missing.add(
+            '$path:${'\n'.allMatches(src.substring(0, m.start)).length + 1}',
+          );
         }
       }
     });
     expect(seen, greaterThan(0), reason: 'Сторож перестал находить браузеры');
-    expect(missing, isEmpty,
-        reason: 'Без флага гибель движка роняет всё приложение');
+    expect(
+      missing,
+      isEmpty,
+      reason: 'Без флага гибель движка роняет всё приложение',
+    );
   });
 
   test('каждый браузер поднимает себя заново после гибели движка', () {
@@ -51,12 +56,17 @@ void main() {
       for (final m in RegExp(r'\b(Headless)?InAppWebView\(').allMatches(src)) {
         seen++;
         if (!call(src, m.start).contains('onRenderProcessGone:')) {
-          missing.add('$path:${'\n'.allMatches(src.substring(0, m.start)).length + 1}');
+          missing.add(
+            '$path:${'\n'.allMatches(src.substring(0, m.start)).length + 1}',
+          );
         }
       }
     });
     expect(seen, greaterThan(1));
-    expect(missing, isEmpty,
-        reason: 'Мёртвая страница не оживёт сама: её надо создать заново');
+    expect(
+      missing,
+      isEmpty,
+      reason: 'Мёртвая страница не оживёт сама: её надо создать заново',
+    );
   });
 }

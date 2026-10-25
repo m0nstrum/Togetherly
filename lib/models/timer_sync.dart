@@ -12,7 +12,9 @@ import 'timer_item.dart';
 /// Вставить или заменить таймер в серверном списке по id. Основной таймер у
 /// пары один, поэтому новый основной снимает флаг с остальных.
 List<dynamic> upsertTimerJson(List<dynamic> list, Map<String, dynamic> timer) {
-  final out = [for (final e in list) e is Map ? Map<String, dynamic>.from(e) : e];
+  final out = [
+    for (final e in list) e is Map ? Map<String, dynamic>.from(e) : e,
+  ];
   final index = out.indexWhere((e) => e is Map && e['id'] == timer['id']);
   if (index >= 0) {
     out[index] = timer;
@@ -28,12 +30,20 @@ List<dynamic> upsertTimerJson(List<dynamic> list, Map<String, dynamic> timer) {
 }
 
 /// Таймеры с сервера, где неотправленные правки стоят поверх серверных.
-List<TimerItem> mergeWithPending(List<TimerItem> remote, Map<String, TimerItem> pending) {
-  final out = [for (final timer in remote) pending[timer.id]?.copyWith() ?? timer];
+List<TimerItem> mergeWithPending(
+  List<TimerItem> remote,
+  Map<String, TimerItem> pending,
+) {
+  final out = [
+    for (final timer in remote) pending[timer.id]?.copyWith() ?? timer,
+  ];
   for (final timer in pending.values) {
     if (!out.any((t) => t.id == timer.id)) out.add(timer.copyWith());
   }
-  final main = {for (final t in pending.values) if (t.isDefault) t.id};
+  final main = {
+    for (final t in pending.values)
+      if (t.isDefault) t.id,
+  };
   if (main.isNotEmpty) {
     for (final timer in out) {
       if (!main.contains(timer.id)) timer.isDefault = false;
@@ -44,10 +54,15 @@ List<TimerItem> mergeWithPending(List<TimerItem> remote, Map<String, TimerItem> 
 
 /// Правки, которых на сервере ещё нет. Сервер вернул то же значение — правка
 /// дошла и больше не ждёт.
-Map<String, TimerItem> stillPending(List<TimerItem> remote, Map<String, TimerItem> pending) {
+Map<String, TimerItem> stillPending(
+  List<TimerItem> remote,
+  Map<String, TimerItem> pending,
+) {
   final left = <String, TimerItem>{};
   pending.forEach((id, edit) {
-    final same = remote.any((timer) => timer.id == id && sameTimer(timer, edit));
+    final same = remote.any(
+      (timer) => timer.id == id && sameTimer(timer, edit),
+    );
     if (!same) left[id] = edit;
   });
   return left;

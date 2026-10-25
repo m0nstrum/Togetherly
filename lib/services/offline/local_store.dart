@@ -125,8 +125,11 @@ class LocalStore {
   /// это кэш, всё содержимое приедет с сервера заново.
   Future<Database> _open() async {
     try {
-      return await _factory!
-          .openDatabase(_path!, version: _dbVersion, codec: _codec);
+      return await _factory!.openDatabase(
+        _path!,
+        version: _dbVersion,
+        codec: _codec,
+      );
     } catch (e) {
       debugPrint('LocalStore: база не открылась ($e), пересоздаю');
       await _factory!.deleteDatabase(_path!);
@@ -149,9 +152,10 @@ class LocalStore {
       yield const [];
       return;
     }
-    yield* _col(collection).query().onSnapshots(db).map(
-          (snaps) => _materialize(snaps, scope, compare),
-        );
+    yield* _col(collection)
+        .query()
+        .onSnapshots(db)
+        .map((snaps) => _materialize(snaps, scope, compare));
   }
 
   /// Разовая выборка записей области из кэша.
@@ -175,7 +179,10 @@ class LocalStore {
       yield null;
       return;
     }
-    yield* _col(collection).record(id).onSnapshot(db).map(
+    yield* _col(collection)
+        .record(id)
+        .onSnapshot(db)
+        .map(
           (snap) =>
               snap == null ? null : RecordModel.fromJson(_copy(snap.value)),
         );

@@ -16,8 +16,16 @@ List<({String name, Uri uri})> iosMapApps(LatLng to) {
   return [
     (name: 'Apple Maps', uri: Uri.parse('https://maps.apple.com/?daddr=$ll')),
     (name: 'Google Maps', uri: Uri.parse('comgooglemaps://?daddr=$ll')),
-    (name: 'Яндекс Карты', uri: Uri.parse('yandexmaps://maps.yandex.ru/?rtext=~$ll')),
-    (name: '2GIS', uri: Uri.parse('dgis://2gis.ru/routeSearch/rsType/car/to/${to.longitude},${to.latitude}')),
+    (
+      name: 'Яндекс Карты',
+      uri: Uri.parse('yandexmaps://maps.yandex.ru/?rtext=~$ll'),
+    ),
+    (
+      name: '2GIS',
+      uri: Uri.parse(
+        'dgis://2gis.ru/routeSearch/rsType/car/to/${to.longitude},${to.latitude}',
+      ),
+    ),
   ];
 }
 
@@ -26,17 +34,25 @@ List<({String name, Uri uri})> iosMapApps(LatLng to) {
 /// приложение карт от текущего места.
 Uri androidGeoUri(LatLng to, String label) {
   final ll = '${to.latitude},${to.longitude}';
-  final name = label.trim().isEmpty ? '' : '(${Uri.encodeComponent(label.trim())})';
+  final name = label.trim().isEmpty
+      ? ''
+      : '(${Uri.encodeComponent(label.trim())})';
   return Uri.parse('geo:$ll?q=$ll$name');
 }
 
 /// «Как доехать» до последней точки партнёра.
-Future<void> openDirections(BuildContext context, LatLng to, String label) async {
+Future<void> openDirections(
+  BuildContext context,
+  LatLng to,
+  String label,
+) async {
   final s = LocaleService.current;
   if (!Platform.isIOS) {
     final ok = await safeLaunchUrl(androidGeoUri(to, label));
     if (!ok && context.mounted) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(s.liveMapRouteNoApp)));
+      ScaffoldMessenger.maybeOf(
+        context,
+      )?.showSnackBar(SnackBar(content: Text(s.liveMapRouteNoApp)));
     }
     return;
   }
@@ -71,7 +87,10 @@ Future<void> openDirections(BuildContext context, LatLng to, String label) async
                       safeLaunchUrl(app.uri);
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       child: Row(
                         children: [
                           Icon(Icons.map_rounded, color: cs.primary),
@@ -79,10 +98,17 @@ Future<void> openDirections(BuildContext context, LatLng to, String label) async
                           Expanded(
                             child: Text(
                               app.name,
-                              style: AppFonts.onest(size: 16, weight: 600, color: cs.onSurface),
+                              style: AppFonts.onest(
+                                size: 16,
+                                weight: 600,
+                                color: cs.onSurface,
+                              ),
                             ),
                           ),
-                          Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: cs.onSurfaceVariant,
+                          ),
                         ],
                       ),
                     ),

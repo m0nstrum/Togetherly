@@ -54,8 +54,10 @@ void main() {
 
   test('часы партнёра убежали вперёд — точка считается свежей', () {
     // На проде такие точки есть: время ставит телефон автора.
-    final age = LivePointAge.of(now + const Duration(hours: 5).inMilliseconds,
-        nowMs: now);
+    final age = LivePointAge.of(
+      now + const Duration(hours: 5).inMilliseconds,
+      nowMs: now,
+    );
     expect(age.unit, LivePointAgeUnit.fresh);
   });
 

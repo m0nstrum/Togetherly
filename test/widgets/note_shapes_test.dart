@@ -79,8 +79,11 @@ void main() {
       for (final t in const [0.0, 0.01, 0.5, 0.999, 1.0]) {
         final arc = noteShapeArc(s.pathIn(size), t);
         final b = arc.getBounds();
-        expect(b.left.isFinite && b.top.isFinite, isTrue,
-            reason: '${s.id} @$t');
+        expect(
+          b.left.isFinite && b.top.isFinite,
+          isTrue,
+          reason: '${s.id} @$t',
+        );
       }
     }
   });
@@ -136,12 +139,18 @@ void main() {
         centerX: a.centerX,
         centerY: a.centerY,
       );
-      expect(ruler.matches(a.profile, const Size(200, 200), a.centerX, a.centerY),
-          isTrue);
-      expect(ruler.matches(a.profile, const Size(220, 220), a.centerX, a.centerY),
-          isFalse);
-      expect(ruler.matches(b.profile, const Size(200, 200), b.centerX, b.centerY),
-          isFalse);
+      expect(
+        ruler.matches(a.profile, const Size(200, 200), a.centerX, a.centerY),
+        isTrue,
+      );
+      expect(
+        ruler.matches(a.profile, const Size(220, 220), a.centerX, a.centerY),
+        isFalse,
+      );
+      expect(
+        ruler.matches(b.profile, const Size(200, 200), b.centerX, b.centerY),
+        isFalse,
+      );
     });
   });
 

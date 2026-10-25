@@ -213,7 +213,9 @@ class _ForkAppLockSettingsState extends State<ForkAppLockSettings> {
               icon: Icons.timer_outlined,
               title: ruEn('Блокировать после фона', 'Lock after background'),
               subtitle: graceLabel(lock.grace),
-              onTap: lock.ready && !lock.busy ? () => _pickGrace(context) : null,
+              onTap: lock.ready && !lock.busy
+                  ? () => _pickGrace(context)
+                  : null,
             ),
           if (lock.problem != null)
             Padding(

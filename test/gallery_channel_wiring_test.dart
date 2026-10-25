@@ -11,18 +11,22 @@ String _read(String p) => File(p).readAsStringSync();
 
 void main() {
   final dart = _read('lib/services/gallery_writer.dart');
-  final kotlin =
-      _read('android/app/src/main/kotlin/com/togetherly/love/GallerySaver.kt');
-  final activity =
-      _read('android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt');
+  final kotlin = _read(
+    'android/app/src/main/kotlin/com/togetherly/love/GallerySaver.kt',
+  );
+  final activity = _read(
+    'android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt',
+  );
   final swift = _read('ios/Runner/AppDelegate.swift');
   final gradle = _read('android/app/build.gradle.kts');
   final executor = _read('lib/services/native_save_executor.dart');
   final queue = _read('lib/services/media_save_queue.dart');
   final engine = _read(
-      'android/app/src/main/kotlin/com/togetherly/love/MediaSaveEngine.kt');
+    'android/app/src/main/kotlin/com/togetherly/love/MediaSaveEngine.kt',
+  );
   final service = _read(
-      'android/app/src/main/kotlin/com/togetherly/love/MediaSaveService.kt');
+    'android/app/src/main/kotlin/com/togetherly/love/MediaSaveService.kt',
+  );
   final manifest = _read('android/app/src/main/AndroidManifest.xml');
 
   test('имя канала одно во всех трёх местах', () {
@@ -46,14 +50,23 @@ void main() {
   });
 
   test('каждый ключ аргумента, который шлёт Dart, читает натив', () {
-    final keys = RegExp(r"'(\w+)': r\.")
-        .allMatches(dart)
-        .map((m) => m.group(1)!)
-        .toSet();
-    expect(keys, containsAll(<String>[
-      'path', 'kind', 'takenAt', 'offsetMinutes', 'latitude', 'longitude',
-      'name', 'album', 'hidden',
-    ]));
+    final keys = RegExp(
+      r"'(\w+)': r\.",
+    ).allMatches(dart).map((m) => m.group(1)!).toSet();
+    expect(
+      keys,
+      containsAll(<String>[
+        'path',
+        'kind',
+        'takenAt',
+        'offsetMinutes',
+        'latitude',
+        'longitude',
+        'name',
+        'album',
+        'hidden',
+      ]),
+    );
     // Скрытие — только iPhone: на Android альбома «Скрытые» нет. Пояс —
     // только Android: он нужен EXIF, а PhotoKit принимает абсолютную дату.
     const iosOnly = {'hidden'};
@@ -74,8 +87,10 @@ void main() {
     expect(dart, contains("invokeMethod<bool>('hasAccess')"));
     expect(kotlin, contains('"hasAccess" ->'));
     expect(kotlin, contains('Build.VERSION_CODES.Q'));
-    expect(manifest,
-        contains('WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"'));
+    expect(
+      manifest,
+      contains('WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"'),
+    );
   });
 
   test('отказ в доступе называется одинаково', () {
@@ -113,7 +128,10 @@ void main() {
 
   test('методы фоновой записи понимают Dart, Kotlin и Swift', () {
     for (final m in [
-      'engineSubmit', 'engineStatus', 'engineAck', 'engineCancel',
+      'engineSubmit',
+      'engineStatus',
+      'engineAck',
+      'engineCancel',
     ]) {
       expect(executor, contains("'$m'"), reason: 'Dart не зовёт $m');
       expect(kotlin, contains('"$m" ->'), reason: 'Kotlin не знает $m');
@@ -127,10 +145,22 @@ void main() {
         .map((m) => m.group(1)!)
         .takeWhile((k) => k != 'saving')
         .toSet();
-    expect(keys, containsAll(<String>[
-      'key', 'kind', 'takenAt', 'offsetMinutes', 'latitude', 'longitude',
-      'name', 'album', 'hidden', 'title', 'labels',
-    ]));
+    expect(
+      keys,
+      containsAll(<String>[
+        'key',
+        'kind',
+        'takenAt',
+        'offsetMinutes',
+        'latitude',
+        'longitude',
+        'name',
+        'album',
+        'hidden',
+        'title',
+        'labels',
+      ]),
+    );
     const iosOnly = {'hidden'};
     const androidOnly = {'offsetMinutes'};
     for (final k in keys) {
@@ -138,8 +168,11 @@ void main() {
         expect(swift, contains('["$k"]'), reason: 'Swift не читает $k');
       }
       if (!iosOnly.contains(k)) {
-        expect(engine, matches(RegExp('\\b(a|args)\\["$k"\\]')),
-            reason: 'Kotlin не читает $k');
+        expect(
+          engine,
+          matches(RegExp('\\b(a|args)\\["$k"\\]')),
+          reason: 'Kotlin не читает $k',
+        );
       }
     }
     // Источник файла: путь или ссылка, и копию из кэша натив убирает сам.
@@ -169,20 +202,28 @@ void main() {
   test('Android: служба переднего плана dataSync с кнопкой «Остановить»', () {
     expect(manifest, contains('android:name=".MediaSaveService"'));
     final decl = manifest.substring(manifest.indexOf('.MediaSaveService'));
-    expect(decl.substring(0, decl.indexOf('/>')),
-        contains('android:foregroundServiceType="dataSync"'));
+    expect(
+      decl.substring(0, decl.indexOf('/>')),
+      contains('android:foregroundServiceType="dataSync"'),
+    );
     expect(manifest, contains('FOREGROUND_SERVICE_DATA_SYNC'));
     expect(manifest, contains('POST_NOTIFICATIONS'));
     expect(service, contains('FOREGROUND_SERVICE_TYPE_DATA_SYNC'));
     // Android 15 даёт dataSync шесть часов в сутки и зовёт onTimeout: без
     // него служба падает, а очередь теряет всё, что не успела.
-    expect(service, contains('override fun onTimeout(startId: Int, fgsType: Int)'));
+    expect(
+      service,
+      contains('override fun onTimeout(startId: Int, fgsType: Int)'),
+    );
     expect(service, contains('ACTION_STOP'));
     expect(engine, contains('MediaSaveService.ensureRunning'));
   });
 
   test('iPhone: фоновая сессия будит приложение и отдаёт события', () {
-    expect(swift, contains('URLSessionConfiguration.background(withIdentifier:'));
+    expect(
+      swift,
+      contains('URLSessionConfiguration.background(withIdentifier:'),
+    );
     expect(swift, contains('sessionSendsLaunchEvents = true'));
     expect(swift, contains('handleEventsForBackgroundURLSession identifier'));
     expect(swift, contains('func urlSessionDidFinishEvents'));
@@ -190,8 +231,10 @@ void main() {
     // Сессию надо поднять при каждом запуске, иначе события загрузок,
     // начатых до перезапуска, не придут.
     final setup = swift.substring(swift.indexOf('func setupGalleryChannel'));
-    expect(setup.substring(0, setup.indexOf('\n  }\n')),
-        contains('BackgroundSaveEngine.shared.reconnect()'));
+    expect(
+      setup.substring(0, setup.indexOf('\n  }\n')),
+      contains('BackgroundSaveEngine.shared.reconnect()'),
+    );
   });
 
   test('недоделанное продолжается при запуске, а не в ленте', () {

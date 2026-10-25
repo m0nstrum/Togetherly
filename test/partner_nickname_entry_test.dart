@@ -13,12 +13,16 @@ import 'package:flutter_test/flutter_test.dart';
 /// Поэтому проверяем не наличие кода, а наличие ПУТИ к нему: плитка с именем
 /// показывается на экране пары, и в ней должна быть кнопка подписи.
 void main() {
-  final source =
-      File('lib/screens/connect_partner_screen.dart').readAsStringSync();
+  final source = File(
+    'lib/screens/connect_partner_screen.dart',
+  ).readAsStringSync();
 
   test('плитка имени показывается на экране пары', () {
-    expect(source, contains('_nameTile(cs, title, partner?.uid)'),
-        reason: 'плитку переименовали или убрали — обновите сторожа');
+    expect(
+      source,
+      contains('_nameTile(cs, title, partner?.uid)'),
+      reason: 'плитку переименовали или убрали — обновите сторожа',
+    );
   });
 
   test('из плитки имени можно открыть подпись', () {
@@ -27,12 +31,18 @@ void main() {
     final end = source.indexOf('Widget _chipTile(', start);
     final tile = source.substring(start, end == -1 ? source.length : end);
 
-    expect(tile, contains('_renamePartnerByUid'),
-        reason: 'без кнопки подпись становится недостижимой');
+    expect(
+      tile,
+      contains('_renamePartnerByUid'),
+      reason: 'без кнопки подпись становится недостижимой',
+    );
   });
 
   test('диалог подписи сохраняет её человеку', () {
-    expect(source, contains('pair.setNickname('),
-        reason: 'подпись должна сохраняться, а не только показываться');
+    expect(
+      source,
+      contains('pair.setNickname('),
+      reason: 'подпись должна сохраняться, а не только показываться',
+    );
   });
 }

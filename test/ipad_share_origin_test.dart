@@ -15,15 +15,17 @@ void main() {
     final offenders = <String>[];
     final pattern = RegExp(r'Share\.(share|shareXFiles|shareUri)\s*\(');
 
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       final source = file.readAsStringSync();
       for (final match in pattern.allMatches(source)) {
         final args = _argumentsOf(source, match.end - 1);
         if (args == null || args.contains('sharePositionOrigin')) continue;
-        final line = '\n'.allMatches(source.substring(0, match.start)).length + 1;
+        final line =
+            '\n'.allMatches(source.substring(0, match.start)).length + 1;
         offenders.add('${file.path}:$line');
       }
     }
@@ -31,7 +33,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Без якоря лист «Поделиться» не открывается на iPad: '
+      reason:
+          'Без якоря лист «Поделиться» не открывается на iPad: '
           '${offenders.join(', ')}',
     );
   });

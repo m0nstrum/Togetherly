@@ -75,11 +75,13 @@ class LaunchSplash {
     if (files.containsKey('still')) yield 'still';
   }
 
-  String nameFor(String lang) => names[lang] ?? names['en'] ?? names['ru'] ?? key;
+  String nameFor(String lang) =>
+      names[lang] ?? names['en'] ?? names['ru'] ?? key;
 
   /// Идёт ли заставка в этот день по часам человека.
   bool isOn(DateTime now) {
-    final day = '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-'
+    final day =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';
     if (from.isNotEmpty && day.compareTo(from) < 0) return false;
     return until.isEmpty || day.compareTo(until) < 0;
@@ -88,7 +90,8 @@ class LaunchSplash {
   Map<String, dynamic> toJson() => {...raw, 'files': files};
 
   /// Та же заставка, но файлы лежат на диске.
-  LaunchSplash withFiles(Map<String, String> local) => LaunchSplash.fromJson({...raw, 'files': local})!;
+  LaunchSplash withFiles(Map<String, String> local) =>
+      LaunchSplash.fromJson({...raw, 'files': local})!;
 
   static LaunchSplash? fromCatalog(Map<String, dynamic> row) {
     if (row['kind'] != 'splash') return null;
@@ -146,7 +149,10 @@ class LaunchSplash {
       key: key,
       ms: ms,
       step: step,
-      design: Size(_num(d['w'])?.toDouble() ?? 360, _num(d['h'])?.toDouble() ?? 780),
+      design: Size(
+        _num(d['w'])?.toDouble() ?? 360,
+        _num(d['h'])?.toDouble() ?? 780,
+      ),
       night: _color(d['night']) ?? const Color(0xFF1E1729),
       sprites: sprites,
       layers: layers,
@@ -178,19 +184,31 @@ class SplashSprite {
     if (raw is! Map) return null;
     final frames = raw['frames'];
     final box = raw['box'];
-    if (frames is! List || frames.isEmpty || box is! List || box.length != 4) return null;
-    final names = [for (final f in frames) if (f is String && f.isNotEmpty) f];
+    if (frames is! List || frames.isEmpty || box is! List || box.length != 4)
+      return null;
+    final names = [
+      for (final f in frames)
+        if (f is String && f.isNotEmpty) f,
+    ];
     final nums = [for (final v in box) _num(v)?.toDouble()];
     if (names.length != frames.length || nums.contains(null)) return null;
     if (nums[2]! <= 0 || nums[3]! <= 0) return null;
-    return SplashSprite(frames: names, box: Rect.fromLTWH(nums[0]!, nums[1]!, nums[2]!, nums[3]!));
+    return SplashSprite(
+      frames: names,
+      box: Rect.fromLTWH(nums[0]!, nums[1]!, nums[2]!, nums[3]!),
+    );
   }
 }
 
 /// Слой сцены. [fill] — рисунок растянут на весь экран (дверь), [under] —
 /// слой лежит в ночи, и окно его прорезает; остальные идут поверх окна.
 class SplashLayer {
-  const SplashLayer({required this.sprite, this.fill = false, this.under = false, this.track = const []});
+  const SplashLayer({
+    required this.sprite,
+    this.fill = false,
+    this.under = false,
+    this.track = const [],
+  });
 
   final String sprite;
   final bool fill;
@@ -204,7 +222,12 @@ class SplashLayer {
     final fill = raw['fill'] == true;
     final track = _track(raw['track']);
     if (track == null || (!fill && track.isEmpty)) return null;
-    return SplashLayer(sprite: sprite, fill: fill, under: raw['under'] == true, track: track);
+    return SplashLayer(
+      sprite: sprite,
+      fill: fill,
+      under: raw['under'] == true,
+      track: track,
+    );
   }
 }
 
@@ -230,7 +253,9 @@ class SplashWindow {
     final track = _track(raw['track']);
     if (path == null || track == null || track.isEmpty) return null;
     final frame = raw['frame'];
-    double width(int i, double def) => frame is List && frame.length > i ? _num(frame[i])?.toDouble() ?? def : def;
+    double width(int i, double def) => frame is List && frame.length > i
+        ? _num(frame[i])?.toDouble() ?? def
+        : def;
     return SplashWindow(
       path: path,
       track: track,
@@ -244,7 +269,14 @@ class SplashWindow {
 /// Поза слоя: где его начало координат, масштаб, поворот в градусах,
 /// прозрачность и кадр дрожи.
 class SplashPose {
-  const SplashPose(this.x, this.y, this.scale, [this.rotation = 0, this.opacity = 1, this.frame = 0]);
+  const SplashPose(
+    this.x,
+    this.y,
+    this.scale, [
+    this.rotation = 0,
+    this.opacity = 1,
+    this.frame = 0,
+  ]);
 
   final double x, y, scale, rotation, opacity;
   final int frame;
@@ -274,7 +306,9 @@ SplashPose splashPoseAt(List<SplashPose> track, int step, double ms) {
 /// Путь из мастерской: команды `M`, `L`, `C`, `Q`, `Z` с абсолютными
 /// координатами (так пишет `cr()` в badges.js). Незнакомое — null.
 Path? parseSplashPath(String d) {
-  final tokens = RegExp(r'[MLCQZmlcqz]|-?\d*\.?\d+(?:[eE][-+]?\d+)?').allMatches(d).map((m) => m[0]!).toList();
+  final tokens = RegExp(
+    r'[MLCQZmlcqz]|-?\d*\.?\d+(?:[eE][-+]?\d+)?',
+  ).allMatches(d).map((m) => m[0]!).toList();
   if (tokens.isEmpty || tokens.first != 'M') return null;
   // В пути не должно быть ничего, кроме команд, чисел и разделителей.
   if (d.replaceAll(RegExp(r'[MLCQZ\d.,\s\-eE+]'), '').isNotEmpty) return null;
@@ -338,14 +372,16 @@ List<SplashPose>? _track(Object? raw) {
     if (row is! List || row.length < 3) return null;
     final v = [for (final x in row) _num(x)?.toDouble()];
     if (v.contains(null)) return null;
-    out.add(SplashPose(
-      v[0]!,
-      v[1]!,
-      v[2]!,
-      v.length > 3 ? v[3]! : 0,
-      v.length > 4 ? v[4]!.clamp(0.0, 1.0) : 1,
-      v.length > 5 ? v[5]!.toInt() : 0,
-    ));
+    out.add(
+      SplashPose(
+        v[0]!,
+        v[1]!,
+        v[2]!,
+        v.length > 3 ? v[3]! : 0,
+        v.length > 4 ? v[4]!.clamp(0.0, 1.0) : 1,
+        v.length > 5 ? v[5]!.toInt() : 0,
+      ),
+    );
   }
   return out;
 }

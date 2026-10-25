@@ -16,8 +16,14 @@ void main() {
     });
 
     test('«скучаю» и листик тоже с виджета', () {
-      expect(DeepLinkService.isWidgetAction(Uri.parse('loveapp://miss')), isTrue);
-      expect(DeepLinkService.isWidgetAction(Uri.parse('loveapp://note')), isTrue);
+      expect(
+        DeepLinkService.isWidgetAction(Uri.parse('loveapp://miss')),
+        isTrue,
+      );
+      expect(
+        DeepLinkService.isWidgetAction(Uri.parse('loveapp://note')),
+        isTrue,
+      );
     });
 
     test('приглашение виджетом не считается', () {

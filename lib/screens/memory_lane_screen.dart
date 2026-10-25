@@ -32,7 +32,8 @@ import 'package:http/http.dart' as http;
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 // PlayerState объявлен и в just_audio, и в плеере YouTube: разводим
 // импортом с префиксом, иначе сборка падает на неоднозначности.
-import 'package:youtube_player_iframe/youtube_player_iframe.dart' as ytp
+import 'package:youtube_player_iframe/youtube_player_iframe.dart'
+    as ytp
     show PlayerState;
 import 'package:video_compress/video_compress.dart';
 import 'package:video_player/video_player.dart';
@@ -190,6 +191,7 @@ class MemoryLaneScreen extends StatefulWidget {
   final AppTheme theme;
   final MemoryFilterMode filterMode;
   final UserData? userData;
+
   /// Авто-открыть лист создания пина сразу после входа (для кнопки «+» в навбаре).
   final bool openCreateOnStart;
 
@@ -275,12 +277,16 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         : Icons.playlist_add_rounded,
                     color: cs.primary,
                   ),
-                  title: Text(order == MemorySort.eventDate
-                      ? s.memorySortByEvent
-                      : s.memorySortByAdded),
-                  subtitle: Text(order == MemorySort.eventDate
-                      ? s.memorySortByEventHint
-                      : s.memorySortByAddedHint),
+                  title: Text(
+                    order == MemorySort.eventDate
+                        ? s.memorySortByEvent
+                        : s.memorySortByAdded,
+                  ),
+                  subtitle: Text(
+                    order == MemorySort.eventDate
+                        ? s.memorySortByEventHint
+                        : s.memorySortByAddedHint,
+                  ),
                   trailing: _sortOrder == order
                       ? Icon(Icons.check_rounded, color: cs.primary)
                       : null,
@@ -330,6 +336,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     }
     return memory.authorName;
   }
+
   List<Memory> _memories = [];
   bool _loading = true;
 
@@ -370,8 +377,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   bool _secretUnlocked = false;
 
   /// Категории, реально присутствующие в ленте (чтобы не показывать пустые теги).
-  List<FeedCategory> get _presentCategories =>
-      presentFeedCategories(_memories);
+  List<FeedCategory> get _presentCategories => presentFeedCategories(_memories);
 
   bool get _feedFiltered => _favoritesOnly || _categoryKey != null;
 
@@ -382,8 +388,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     if (_favoritesOnly && !m.isSavedBy(_myUid ?? '')) return false;
     if (!_matchesQuery(m)) return false;
     if (_categoryKey == null) return true;
-    final cat = kFeedCategories.firstWhere((c) => c.key == _categoryKey,
-        orElse: () => kFeedCategories.first);
+    final cat = kFeedCategories.firstWhere(
+      (c) => c.key == _categoryKey,
+      orElse: () => kFeedCategories.first,
+    );
     return cat.matches(m);
   }
 
@@ -477,7 +485,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     if (ud == null || !mounted) return;
     final amount = await ud.claimMemoryReward();
     if (amount <= 0 || !mounted) return;
-    CoinRewardToast.show(context, amount: amount, label: LocaleService.current.memoryRewardTitle);
+    CoinRewardToast.show(
+      context,
+      amount: amount,
+      label: LocaleService.current.memoryRewardTitle,
+    );
   }
 
   /// Живая подписка на ленту воспоминаний (PocketBase SSE). Заменяет
@@ -490,42 +502,49 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       return;
     }
     _memSub?.cancel();
-    _memSub = _memRepo.watch(_groupId).listen(
-      (memories) {
-        if (!mounted) return;
-        setState(() {
-          _memories = memories;
-          _loading = false;
-        });
-        if (_firstMemLoad) {
-          _firstMemLoad = false;
-          if (widget.initialMemoryId != null) {
-            _openInitialMemory();
-          } else {
-            // Человек пришёл по уведомлению «капсула открылась» — показываем
-            // именно ту капсулу, а не общий список.
-            unawaited(CapsuleNotificationService.instance
-                .takePending()
-                .then((id) {
-              if (id != null && id.isNotEmpty) _openInitialMemory(id);
-            }));
-          }
-        }
-        // Планируем «капсула открылась» на дату каждой ещё запечатанной капсулы
-        // (и у автора, и у партнёра — капсула прилетает через realtime). Сервис
-        // идемпотентен по id, так что повторные апдейты ленты безопасны.
-        for (final m in memories) {
-          if (m.sealedNow() && m.openAt != null) {
-            unawaited(CapsuleNotificationService.instance
-                .schedule(m.id, m.openAt!, capsuleTitle: m.title));
-          }
-        }
-      },
-      onError: (e) {
-        debugPrint('memory_lane: watch error: $e');
-        if (mounted) setState(() => _loading = false);
-      },
-    );
+    _memSub = _memRepo
+        .watch(_groupId)
+        .listen(
+          (memories) {
+            if (!mounted) return;
+            setState(() {
+              _memories = memories;
+              _loading = false;
+            });
+            if (_firstMemLoad) {
+              _firstMemLoad = false;
+              if (widget.initialMemoryId != null) {
+                _openInitialMemory();
+              } else {
+                // Человек пришёл по уведомлению «капсула открылась» — показываем
+                // именно ту капсулу, а не общий список.
+                unawaited(
+                  CapsuleNotificationService.instance.takePending().then((id) {
+                    if (id != null && id.isNotEmpty) _openInitialMemory(id);
+                  }),
+                );
+              }
+            }
+            // Планируем «капсула открылась» на дату каждой ещё запечатанной капсулы
+            // (и у автора, и у партнёра — капсула прилетает через realtime). Сервис
+            // идемпотентен по id, так что повторные апдейты ленты безопасны.
+            for (final m in memories) {
+              if (m.sealedNow() && m.openAt != null) {
+                unawaited(
+                  CapsuleNotificationService.instance.schedule(
+                    m.id,
+                    m.openAt!,
+                    capsuleTitle: m.title,
+                  ),
+                );
+              }
+            }
+          },
+          onError: (e) {
+            debugPrint('memory_lane: watch error: $e');
+            if (mounted) setState(() => _loading = false);
+          },
+        );
   }
 
   /// Бесконечная прокрутка больше не нужна (вся лента live). Оставлено как no-op,
@@ -597,9 +616,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
 
   List<Memory> get _pinnedMemories {
     if (widget.filterMode != MemoryFilterMode.none) return [];
-    return _memories
-        .where((m) => m.isPinned && _passesFeedFilter(m))
-        .toList();
+    return _memories.where((m) => m.isPinned && _passesFeedFilter(m)).toList();
   }
 
   /// Memories filtered by current day/month across all years, grouped by year
@@ -635,21 +652,21 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// дате»: фотография со свадьбы, занесённая сегодня, уезжала в конец ленты.
   List<Memory> get _nonPinnedSortedAll {
     if (widget.filterMode != MemoryFilterMode.none) return const [];
-    return _memories
-        .where((m) => !m.isPinned && _passesFeedFilter(m))
-        .toList()
+    return _memories.where((m) => !m.isPinned && _passesFeedFilter(m)).toList()
       // Срок капсулы передаём в сортировку: с днём открытия капсула
       // становится сегодняшним событием и поднимается наверх, иначе человек
       // получал уведомление и не находил её в ленте (жалоба 31.08.2026).
-      ..sort((a, b) => compareMemories(
-            _sortOrder,
-            aEvent: a.createdAt,
-            bEvent: b.createdAt,
-            aAdded: a.addedAt,
-            bAdded: b.addedAt,
-            aOpenAt: a.openAt,
-            bOpenAt: b.openAt,
-          ));
+      ..sort(
+        (a, b) => compareMemories(
+          _sortOrder,
+          aEvent: a.createdAt,
+          bEvent: b.createdAt,
+          aAdded: a.addedAt,
+          bAdded: b.addedAt,
+          aOpenAt: a.openAt,
+          bOpenAt: b.openAt,
+        ),
+      );
   }
 
   /// Есть ли воспоминания за пределами текущего окна (для подгрузки по скроллу).
@@ -723,9 +740,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   // ── Встроенный режим (превью на главном): настоящие карточки, лимит N ──
 
   List<Memory> _previewMemories(int n) {
-    final all = <Memory>[..._pinnedMemories, ..._nonPinnedSortedAll]
-        .where((m) => !m.isSecret || _secretUnlocked)
-        .toList();
+    final all = <Memory>[
+      ..._pinnedMemories,
+      ..._nonPinnedSortedAll,
+    ].where((m) => !m.isSecret || _secretUnlocked).toList();
     return all.length > n ? all.sublist(0, n) : all;
   }
 
@@ -824,8 +842,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.photo_album_outlined,
-                      size: 32, color: _cs.outline),
+                  Icon(
+                    Icons.photo_album_outlined,
+                    size: 32,
+                    color: _cs.outline,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     s.noMemoriesYet,
@@ -848,20 +869,14 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       } else {
         content = Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [for (final m in items) _memoryTile(m)],
-          ),
+          child: Column(children: [for (final m in items) _memoryTile(m)]),
         );
       }
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        header,
-        const SizedBox(height: 16),
-        content,
-      ],
+      children: [header, const SizedBox(height: 16), content],
     );
   }
 
@@ -877,19 +892,38 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         if (!didPop && _selecting) _exitSelecting();
       },
       child: Scaffold(
-      backgroundColor: widget.theme.bgGradient[0],
-      body: Stack(
-        children: [
-          // -- Background --
-          Positioned.fill(
-            child: RepaintBoundary(
-              child: widget.theme.bgImageUrl != null
-                  ? StorageImage(
-                      imageUrl: widget.theme.bgImageUrl!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      placeholder: (_, __) => DecoratedBox(
+        backgroundColor: widget.theme.bgGradient[0],
+        body: Stack(
+          children: [
+            // -- Background --
+            Positioned.fill(
+              child: RepaintBoundary(
+                child: widget.theme.bgImageUrl != null
+                    ? StorageImage(
+                        imageUrl: widget.theme.bgImageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        placeholder: (_, __) => DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: widget.theme.bgGradient,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (_, __, ___) => DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: widget.theme.bgGradient,
+                            ),
+                          ),
+                        ),
+                      )
+                    : DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
@@ -898,43 +932,25 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                           ),
                         ),
                       ),
-                      errorWidget: (_, __, ___) => DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: widget.theme.bgGradient,
-                          ),
-                        ),
-                      ),
-                    )
-                  : DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: widget.theme.bgGradient,
-                        ),
-                      ),
-                    ),
+              ),
             ),
-          ),
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            controller: _feedScroll,
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              controller: _feedScroll,
               slivers: [
                 _buildAppBar(),
                 if (_loading)
-                  SliverFillRemaining(child: M3PageLoading(color: widget.theme.primaryLight))
+                  SliverFillRemaining(
+                    child: M3PageLoading(color: widget.theme.primaryLight),
+                  )
                 else if (_memories.isEmpty)
                   _buildEmpty()
                 else if (_feedFiltered && !_hasVisibleMemories) ...[
                   const SliverToBoxAdapter(child: SizedBox(height: 6)),
                   _buildFilteredEmpty(),
-                ]
-                else ...[
+                ] else ...[
                   const SliverToBoxAdapter(child: SizedBox(height: 6)),
                   // «В этот день»: что было месяц и год назад. Только в обычной
                   // ленте — в фильтре и в режиме выбора она сбивала бы с толку.
@@ -942,7 +958,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       !_selecting &&
                       widget.filterMode == MemoryFilterMode.none &&
                       _onThisDay.isNotEmpty) ...[
-                    _sectionHeader(trKey('otdTitle'), icon: Icons.history_rounded),
+                    _sectionHeader(
+                      trKey('otdTitle'),
+                      icon: Icons.history_rounded,
+                    ),
                     SliverToBoxAdapter(
                       child: OnThisDayShelfRow(
                         items: _onThisDay,
@@ -952,8 +971,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   ],
                   // Pinned section (only in normal mode)
                   if (_pinnedMemories.isNotEmpty) ...[
-                    _sectionHeader(LocaleService.current.pinned,
-                        icon: Icons.push_pin_rounded),
+                    _sectionHeader(
+                      LocaleService.current.pinned,
+                      icon: Icons.push_pin_rounded,
+                    ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       sliver: SliverList(
@@ -992,7 +1013,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 8),
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
                         child: TextButton(
                           onPressed: _loadingMore ? null : _loadNextPage,
                           style: TextButton.styleFrom(
@@ -1004,21 +1027,25 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: primary),
+                                    strokeWidth: 2,
+                                    color: primary,
+                                  ),
                                 )
                               : Text(
                                   LocaleService.current.loadMore,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w600),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                         ),
                       ),
                     ),
                 ],
                 SliverToBoxAdapter(
-                    child: SizedBox(
-                        height: (widget.onNavTab != null ? 116 : 90) +
-                            bottomPad)),
+                  child: SizedBox(
+                    height: (widget.onNavTab != null ? 116 : 90) + bottomPad,
+                  ),
+                ),
               ],
             ),
             // Нижняя зона: общий навбар (вход из главной) либо пилюля «Добавить»
@@ -1044,60 +1071,64 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                 bottom: bottomPad + (widget.onNavTab != null ? 100 : 92),
                 child: const SaveIsland(),
               ),
-            if (widget.onNavTab != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: HomeBottomNav(
-                  // Лента — не одна из 4 вкладок: -1 = ни одна не подсвечена.
-                  selectedIndex: -1,
-                  theme: widget.theme,
-                  isPaired: pair.isPaired,
-                  onTap: (i) => widget.onNavTab!(i),
-                  // В Ленте боковая кнопка всегда «+» (создать пин).
-                  onCreatePin: _showAddMemorySheet,
-                ),
-              )
-            else
-              Positioned(
-                bottom: bottomPad + 24,
-                left: 24,
-                right: 24,
-                child: Center(
-                  child: GestureDetector(
-                    onTap: _showAddMemorySheet,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: primary,
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.add_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            LocaleService.current.addMemoryBtn,
-                            style: AppFonts.onest(size: 15, weight: 700, color: Colors.white),
-                          ),
-                        ],
+              if (widget.onNavTab != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: HomeBottomNav(
+                    // Лента — не одна из 4 вкладок: -1 = ни одна не подсвечена.
+                    selectedIndex: -1,
+                    theme: widget.theme,
+                    isPaired: pair.isPaired,
+                    onTap: (i) => widget.onNavTab!(i),
+                    // В Ленте боковая кнопка всегда «+» (создать пин).
+                    onCreatePin: _showAddMemorySheet,
+                  ),
+                )
+              else
+                Positioned(
+                  bottom: bottomPad + 24,
+                  left: 24,
+                  right: 24,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _showAddMemorySheet,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primary,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.add_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              LocaleService.current.addMemoryBtn,
+                              style: AppFonts.onest(
+                                size: 15,
+                                weight: 700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -1115,11 +1146,13 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       bottom: _filterBar(),
       leading: Padding(
         padding: const EdgeInsets.only(left: 10),
-        child: Center(child: _roundBarButton(
-          icon: Icons.arrow_back_rounded,
-          onTap: () => Navigator.pop(context),
-          tooltip: LocaleService.current.back,
-        )),
+        child: Center(
+          child: _roundBarButton(
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
+            tooltip: LocaleService.current.back,
+          ),
+        ),
       ),
       leadingWidth: 66,
       title: widget.filterMode == MemoryFilterMode.none
@@ -1130,17 +1163,22 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                 '${LocaleService.current.pinned} • '
                 '${widget.filterMode == MemoryFilterMode.day ? _fmtToday() : _fmtMonth()}',
                 style: AppFonts.onest(
-                    size: 17, weight: 700, color: t.textPrimary),
+                  size: 17,
+                  weight: 700,
+                  color: t.textPrimary,
+                ),
               ),
             ),
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 10, left: 8),
-          child: Center(child: _roundBarButton(
-            icon: Icons.more_vert_rounded,
-            onTap: _openLaneMenu,
-            tooltip: LocaleService.current.moreActions,
-          )),
+          child: Center(
+            child: _roundBarButton(
+              icon: Icons.more_vert_rounded,
+              onTap: _openLaneMenu,
+              tooltip: LocaleService.current.moreActions,
+            ),
+          ),
         ),
       ],
     );
@@ -1196,13 +1234,19 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                     textInputAction: TextInputAction.search,
                     onChanged: (v) => setState(() => _searchQuery = v),
                     style: AppFonts.onest(
-                        size: 15, weight: 500, color: t.textPrimary),
+                      size: 15,
+                      weight: 500,
+                      color: t.textPrimary,
+                    ),
                     decoration: InputDecoration(
                       isDense: true,
                       border: InputBorder.none,
                       hintText: LocaleService.current.memorySearchHint,
                       hintStyle: AppFonts.onest(
-                          size: 15, weight: 500, color: t.textSecondary),
+                        size: 15,
+                        weight: 500,
+                        color: t.textSecondary,
+                      ),
                     ),
                   )
                 : GestureDetector(
@@ -1215,7 +1259,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppFonts.onest(
-                            size: 14.5, weight: 500, color: t.textSecondary),
+                          size: 14.5,
+                          weight: 500,
+                          color: t.textSecondary,
+                        ),
                       ),
                     ),
                   ),
@@ -1307,15 +1354,23 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: AppFonts.onest(
-                              size: 16, weight: 600, color: t.textPrimary)),
+                      Text(
+                        title,
+                        style: AppFonts.onest(
+                          size: 16,
+                          weight: 600,
+                          color: t.textPrimary,
+                        ),
+                      ),
                       if (subtitle != null)
-                        Text(subtitle,
-                            style: AppFonts.onest(
-                                size: 12.5,
-                                weight: 500,
-                                color: t.textSecondary)),
+                        Text(
+                          subtitle,
+                          style: AppFonts.onest(
+                            size: 12.5,
+                            weight: 500,
+                            color: t.textSecondary,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -1355,9 +1410,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   MaterialPageRoute(
                     builder: (_) => MemoriesMapScreen(
                       memories: _memories
-                          .where((m) =>
-                              !m.sealedNow() &&
-                              !(m.isSecret && !_secretUnlocked))
+                          .where(
+                            (m) =>
+                                !m.sealedNow() &&
+                                !(m.isSecret && !_secretUnlocked),
+                          )
                           .toList(),
                       theme: widget.theme,
                       currentUserUid: _myUid,
@@ -1573,7 +1630,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// системы.
   SliverToBoxAdapter _sectionHeader(String title, {IconData? icon}) {
     final style = ProfileTheme.sectionLabel(
-        ProfileTheme.schemeFor(widget.theme));
+      ProfileTheme.schemeFor(widget.theme),
+    );
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
@@ -1605,7 +1663,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           sealedAt: memory.createdAt,
           openAt: memory.openAt!,
           onTapTooEarly: () => _secretSnack(
-            LocaleService.current.capsuleNotReady(memoryDateLabel(memory.openAt!)),
+            LocaleService.current.capsuleNotReady(
+              memoryDateLabel(memory.openAt!),
+            ),
           ),
           // Отправил по ошибке или пара распалась — до срока капсулу было
           // не убрать вовсе, писали в поддержку (письма 21 и 25.09.2026).
@@ -1651,7 +1711,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// самого задания читался бы поломкой.
   Widget? _dailyTaskNote(Memory memory) {
     final title = dailyTaskTitleOf(
-        memory.dailyTaskId, widget.pairData.partnerDisplayName);
+      memory.dailyTaskId,
+      widget.pairData.partnerDisplayName,
+    );
     if (title == null) return null;
     final s = LocaleService.current;
     return Padding(
@@ -1669,20 +1731,25 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             const SizedBox(width: 6),
             Expanded(
               child: Text.rich(
-                TextSpan(children: [
-                  TextSpan(
-                    text: s.memoryDailyTaskBadge,
-                    style: TextStyle(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: s.memoryDailyTaskBadge,
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: primary),
-                  ),
-                  TextSpan(
-                    text: '  $title',
-                    style: TextStyle(
-                        fontSize: 12, color: widget.theme.textMuted),
-                  ),
-                ]),
+                        color: primary,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '  $title',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: widget.theme.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1800,7 +1867,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: widget.theme.textMuted),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: widget.theme.textMuted,
+                    ),
                   ),
                 ],
               ],
@@ -1823,7 +1893,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     );
   }
 
-
   /// Бейдж типа воспоминания (напр. «❤️ Момент») справа в шапке. Плоский —
   /// без теней/бордера (требование), лёгкая подложка цветом темы.
   Widget _typeBadge(Memory memory) {
@@ -1834,7 +1903,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// Значок запечатанной капсулы: тип у неё записи (текст или фото), но
   /// показывать его до срока незачем.
   Widget _capsuleBadge() => _badgeChip(
-      LocaleService.current.memBadgeCapsule, Icons.hourglass_top_rounded);
+    LocaleService.current.memBadgeCapsule,
+    Icons.hourglass_top_rounded,
+  );
 
   Widget _badgeChip(String label, IconData icon) {
     return Container(
@@ -1871,9 +1942,15 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       case MemoryType.music:
         return (LocaleService.current.music, Icons.music_note_rounded);
       case MemoryType.videoLink:
-        return (LocaleService.current.memBadgeVideo, Icons.play_circle_fill_rounded);
+        return (
+          LocaleService.current.memBadgeVideo,
+          Icons.play_circle_fill_rounded,
+        );
       case MemoryType.text:
-        return (LocaleService.current.memBadgeNote, Icons.sticky_note_2_rounded);
+        return (
+          LocaleService.current.memBadgeNote,
+          Icons.sticky_note_2_rounded,
+        );
       case MemoryType.book:
         return (LocaleService.current.memBadgeBook, Icons.book_rounded);
       case MemoryType.movie:
@@ -1885,8 +1962,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   void _openCollage(Memory memory) async {
     final items = _allGalleryItems;
     final idx = items.indexWhere((it) => it.memoryId == memory.id);
-    final result =
-        await _openFullscreenGallery(context, items, idx >= 0 ? idx : 0);
+    final result = await _openFullscreenGallery(
+      context,
+      items,
+      idx >= 0 ? idx : 0,
+    );
     if (result != null && mounted) {
       final mem = _memories.firstWhere(
         (m) => m.id == result,
@@ -1907,18 +1987,23 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     final files = memoryMediaFiles(memory);
     final chips = <Widget>[];
     memory.reactions.forEach((who, key) {
-      chips.add(ReactionChip(
-        uid: who,
-        name: _nameOf(who),
-        avatarUrl: _avatarOf(who),
-        reactionKey: key,
-        theme: t,
-        isMine: who == uid,
-        onTap: who == uid
-            ? () => _memRepo.setReaction(
-                groupId: _groupId, memoryId: memory.id, reaction: key)
-            : null,
-      ));
+      chips.add(
+        ReactionChip(
+          uid: who,
+          name: _nameOf(who),
+          avatarUrl: _avatarOf(who),
+          reactionKey: key,
+          theme: t,
+          isMine: who == uid,
+          onTap: who == uid
+              ? () => _memRepo.setReaction(
+                  groupId: _groupId,
+                  memoryId: memory.id,
+                  reaction: key,
+                )
+              : null,
+        ),
+      );
     });
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -1929,7 +2014,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             AddReactionButton(
               theme: t,
               onPick: (key) => _memRepo.setReaction(
-                  groupId: _groupId, memoryId: memory.id, reaction: key),
+                groupId: _groupId,
+                memoryId: memory.id,
+                reaction: key,
+              ),
             ),
           const SizedBox(width: 6),
           _commentsChip(memory),
@@ -1952,8 +2040,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       // контекста под карточкой — от него ищется её источник.
       child: Builder(
         builder: (chipContext) => InkWell(
-          onTap: () => _showMemoryDetail(memory,
-              from: UnfoldSource.maybeOf(chipContext)),
+          onTap: () => _showMemoryDetail(
+            memory,
+            from: UnfoldSource.maybeOf(chipContext),
+          ),
           child: Container(
             height: 40,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1961,13 +2051,21 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.chat_bubble_outline_rounded,
-                    size: 18, color: t.textSecondary),
+                Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 18,
+                  color: t.textSecondary,
+                ),
                 if (memory.commentsCount > 0) ...[
                   const SizedBox(width: 6),
-                  Text('${memory.commentsCount}',
-                      style: AppFonts.onest(
-                          size: 14, weight: 700, color: t.textPrimary)),
+                  Text(
+                    '${memory.commentsCount}',
+                    style: AppFonts.onest(
+                      size: 14,
+                      weight: 700,
+                      color: t.textPrimary,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -2014,7 +2112,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
 
   /// Лист «Что сохранить» прямо из ленты — тот же, что в открытом пине.
   Future<void> _chooseWhatToSaveFromFeed(
-      Memory memory, List<MediaFile> files) async {
+    Memory memory,
+    List<MediaFile> files,
+  ) async {
     final scheme = Theme.of(context).colorScheme;
     Future<void> save(List<MediaFile> list) async {
       if (list.isEmpty) return;
@@ -2038,21 +2138,35 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       case SaveChoice.all:
         await save(files);
       case SaveChoice.photos:
-        await save([for (final f in files) if (f.kind == SaveKind.photo) f]);
+        await save([
+          for (final f in files)
+            if (f.kind == SaveKind.photo) f,
+        ]);
       case SaveChoice.videos:
-        await save([for (final f in files) if (f.kind == SaveKind.video) f]);
+        await save([
+          for (final f in files)
+            if (f.kind == SaveKind.video) f,
+        ]);
       case SaveChoice.cover:
         await save([
-          files.firstWhere((f) => f.kind == SaveKind.photo,
-              orElse: () => files.first),
+          files.firstWhere(
+            (f) => f.kind == SaveKind.photo,
+            orElse: () => files.first,
+          ),
         ]);
       case SaveChoice.pick:
-        final picked =
-            await showFramePicker(context, files: files, scheme: scheme);
+        final picked = await showFramePicker(
+          context,
+          files: files,
+          scheme: scheme,
+        );
         if (picked == null || picked.files.isEmpty || !mounted) return;
         if (picked.share) {
-          await shareMemoryMedia(context,
-              files: picked.files, takenAt: memory.createdAt);
+          await shareMemoryMedia(
+            context,
+            files: picked.files,
+            takenAt: memory.createdAt,
+          );
         } else {
           await save(picked.files);
         }
@@ -2115,7 +2229,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.unbounded(
-                          size: 16, weight: 600, color: t.textPrimary),
+                        size: 16,
+                        weight: 600,
+                        color: t.textPrimary,
+                      ),
                     ),
                   if (caption.isNotEmpty)
                     Padding(
@@ -2127,9 +2244,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         maxLines: 14,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            fontSize: 15,
-                            color: t.textPrimary,
-                            height: 1.35),
+                          fontSize: 15,
+                          color: t.textPrimary,
+                          height: 1.35,
+                        ),
                       ),
                     ),
                 ],
@@ -2178,8 +2296,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       maxHeight: 420,
       overlay: hasVideo
           ? const Center(
-              child: Icon(Icons.play_circle_fill_rounded,
-                  color: Colors.white, size: 46),
+              child: Icon(
+                Icons.play_circle_fill_rounded,
+                color: Colors.white,
+                size: 46,
+              ),
             )
           : null,
     );
@@ -2249,9 +2370,14 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         children: [
           Icon(Icons.photo_library_rounded, size: 16, color: t.textSecondary),
           const SizedBox(width: 5),
-          Text('$count',
-              style: AppFonts.onest(
-                  size: 12.5, weight: 700, color: t.textPrimary)),
+          Text(
+            '$count',
+            style: AppFonts.onest(
+              size: 12.5,
+              weight: 700,
+              color: t.textPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -2261,7 +2387,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   void _openFrameAt(Memory memory, int frameIndex) async {
     final items = _allGalleryItems;
     final first = items.indexWhere((it) => it.memoryId == memory.id);
-    final idx = first >= 0 ? (first + frameIndex).clamp(0, items.length - 1) : 0;
+    final idx = first >= 0
+        ? (first + frameIndex).clamp(0, items.length - 1)
+        : 0;
     final result = await _openFullscreenGallery(context, items, idx);
     if (result != null && mounted) {
       final mem = _memories.firstWhere(
@@ -2288,17 +2416,17 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           ? widget.theme.surfaceMuted
           : _cs.inverseSurface,
       child: const Center(
-        child: Icon(Icons.play_circle_fill_rounded,
-            color: Colors.white, size: 48),
+        child: Icon(
+          Icons.play_circle_fill_rounded,
+          color: Colors.white,
+          size: 48,
+        ),
       ),
     );
     if (memory.isAdult) cell = _BlurAfterTap(child: cell);
     return AspectRatio(
       aspectRatio: 4 / 3,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: cell,
-      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(14), child: cell),
     );
   }
 
@@ -2368,8 +2496,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                 backgroundColor: mapBackground(widget.theme),
                 initialCenter: center,
                 initialZoom: 15,
-                interactionOptions:
-                    const InteractionOptions(flags: InteractiveFlag.none),
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
                 onTap: (_, _) => _showMemoryDetail(memory),
               ),
               children: [
@@ -2421,9 +2550,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         : LocaleService.current.location;
     final thumbUrl = memory.imageUrl?.isNotEmpty == true
         ? memory.imageUrl!
-        : (memory.imageUrls?.isNotEmpty == true
-            ? memory.imageUrls!.first
-            : '');
+        : (memory.imageUrls?.isNotEmpty == true ? memory.imageUrls!.first : '');
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -2463,10 +2590,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               ),
             ),
           ),
-          if (hasCoords) ...[
-            const SizedBox(width: 8),
-            _routeChip(memory),
-          ],
+          if (hasCoords) ...[const SizedBox(width: 8), _routeChip(memory)],
         ],
       ),
     );
@@ -2510,7 +2634,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               Text(
                 dist,
                 style: AppFonts.onest(
-                    size: 13.5, weight: 600, color: t.textPrimary),
+                  size: 13.5,
+                  weight: 600,
+                  color: t.textPrimary,
+                ),
               ),
             ],
           ],
@@ -2571,9 +2698,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   Widget _textTile(Memory memory) {
     final hasTitle = memory.title?.isNotEmpty == true;
     final hasCaption = memory.caption?.isNotEmpty == true;
-    final body = hasCaption
-        ? memory.caption!
-        : (hasTitle ? memory.title! : '');
+    final body = hasCaption ? memory.caption! : (hasTitle ? memory.title! : '');
     return _baseTile(
       memory: memory,
       child: Column(
@@ -2620,8 +2745,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         : LocaleService.current.books;
     final author = memory.bookAuthor ?? '';
     final hasAuthor = author.isNotEmpty;
-    final hasYear =
-        memory.bookYear != null && memory.bookYear!.isNotEmpty;
+    final hasYear = memory.bookYear != null && memory.bookYear!.isNotEmpty;
     final hasPublisher =
         memory.bookPublisher != null && memory.bookPublisher!.isNotEmpty;
 
@@ -2635,90 +2759,96 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           // ── Book sub-card (3D cover + meta) ──
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: _stickerAnchor(memory, Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: widget.theme.surfaceMuted,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: widget.theme.divider, width: 1),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Mini 3D book cover (no tap — outer tile handles it) ──
-                  _MiniBookCover(
-                    accent: primary,
-                    coverUrl: memory.bookCoverUrl,
-                    title: title,
-                    author: author,
-                  ),
-                  const SizedBox(width: 12),
-                  // ── Text content ──
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: widget.theme.textPrimary,
-                                  height: 1.25,
+            child: _stickerAnchor(
+              memory,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.theme.surfaceMuted,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: widget.theme.divider, width: 1),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Mini 3D book cover (no tap — outer tile handles it) ──
+                    _MiniBookCover(
+                      accent: primary,
+                      coverUrl: memory.bookCoverUrl,
+                      title: title,
+                      author: author,
+                    ),
+                    const SizedBox(width: 12),
+                    // ── Text content ──
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: widget.theme.textPrimary,
+                                    height: 1.25,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 2,
+                              ),
+                              if (memory.rating != null) ...[
+                                const SizedBox(width: 8),
+                                RatingBadge(
+                                  rating: memory.rating!,
+                                  fontSize: 11,
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (hasAuthor)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 3),
+                              child: Text(
+                                author,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: widget.theme.textMuted,
+                                ),
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (memory.rating != null) ...[
-                              const SizedBox(width: 8),
-                              RatingBadge(rating: memory.rating!, fontSize: 11),
+                          const SizedBox(height: 6),
+                          // ── Meta chips ──
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (hasYear)
+                                _bookChip(
+                                  Icons.calendar_today_rounded,
+                                  memory.bookYear!,
+                                  primary,
+                                ),
+                              if (hasPublisher)
+                                _bookChip(
+                                  Icons.business_rounded,
+                                  memory.bookPublisher!,
+                                  primary,
+                                ),
                             ],
-                          ],
-                        ),
-                        if (hasAuthor)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 3),
-                            child: Text(
-                              author,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: widget.theme.textMuted,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
                           ),
-                        const SizedBox(height: 6),
-                        // ── Meta chips ──
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            if (hasYear)
-                              _bookChip(
-                                Icons.calendar_today_rounded,
-                                memory.bookYear!,
-                                primary,
-                              ),
-                            if (hasPublisher)
-                              _bookChip(
-                                Icons.business_rounded,
-                                memory.bookPublisher!,
-                                primary,
-                              ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
           ),
           if (memory.caption?.isNotEmpty == true)
             Padding(
@@ -2777,9 +2907,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   Widget _movieTile(Memory memory) {
     final s = LocaleService.current;
     final isRu = LocaleService.instance.isRussian;
-    final title = memory.title?.isNotEmpty == true
-        ? memory.title!
-        : s.movies;
+    final title = memory.title?.isNotEmpty == true ? memory.title! : s.movies;
     final original = memory.movieOriginalTitle ?? '';
     final hasOriginal = original.isNotEmpty && original != title;
     final hasYear = memory.movieYear?.isNotEmpty == true;
@@ -2795,89 +2923,95 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: _stickerAnchor(memory, Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: widget.theme.surfaceMuted,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: widget.theme.divider, width: 1),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _MiniMoviePoster(
-                    accent: primary,
-                    posterUrl: memory.moviePosterUrl,
-                    title: title,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: widget.theme.textPrimary,
-                                  height: 1.25,
+            child: _stickerAnchor(
+              memory,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.theme.surfaceMuted,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: widget.theme.divider, width: 1),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _MiniMoviePoster(
+                      accent: primary,
+                      posterUrl: memory.moviePosterUrl,
+                      title: title,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: widget.theme.textPrimary,
+                                    height: 1.25,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 2,
+                              ),
+                              if (memory.rating != null) ...[
+                                const SizedBox(width: 8),
+                                RatingBadge(
+                                  rating: memory.rating!,
+                                  fontSize: 11,
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (hasOriginal)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 3),
+                              child: Text(
+                                original,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: widget.theme.textMuted,
+                                ),
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (memory.rating != null) ...[
-                              const SizedBox(width: 8),
-                              RatingBadge(rating: memory.rating!, fontSize: 11),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              _movieKindChip(memory.movieKind, isRu),
+                              if (hasYear)
+                                _bookChip(
+                                  Icons.calendar_today_rounded,
+                                  memory.movieYear!,
+                                  primary,
+                                ),
+                              if (hasKp) _kpChip(memory.movieRatingKp!),
+                              if (hasGenres)
+                                _bookChip(
+                                  Icons.theaters_rounded,
+                                  memory.movieGenres!,
+                                  primary,
+                                ),
                             ],
-                          ],
-                        ),
-                        if (hasOriginal)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 3),
-                            child: Text(
-                              original,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: widget.theme.textMuted,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
                           ),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            _movieKindChip(memory.movieKind, isRu),
-                            if (hasYear)
-                              _bookChip(
-                                Icons.calendar_today_rounded,
-                                memory.movieYear!,
-                                primary,
-                              ),
-                            if (hasKp) _kpChip(memory.movieRatingKp!),
-                            if (hasGenres)
-                              _bookChip(
-                                Icons.theaters_rounded,
-                                memory.movieGenres!,
-                                primary,
-                              ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
           ),
           if (memory.caption?.isNotEmpty == true)
             Padding(
@@ -3199,77 +3333,87 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         builder: (_, source) => StickerCardScope(
           child: Builder(
             builder: (cardContext) => GestureDetector(
-          onTap: _selecting
-              ? () => _toggleSelected(memory)
-              : (enableTap
-                  ? () => _showMemoryDetail(memory, from: source)
-                  : null),
-          onLongPress: _selecting
-              ? () => _toggleSelected(memory)
-              : () => _showMemoryActions(memory,
-                  card: StickerCardScope.maybeOf(cardContext)),
-          child: Stack(
-            // Наклейка свисает за край карточки, как на макете: ни карточка,
-            // ни стопка её не обрезают. Всё содержимое карточки стоит с
-            // отступом и своими скруглениями, обрезка ему не нужна.
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                // Плоский стиль пинов: без тени, свечения и бордера
-                // (требование).
-                decoration: BoxDecoration(
-                  color: widget.theme.cardSurface,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                // В режиме выбора кнопки внутри карточки (плеер, ссылки)
-                // молчат: касание целиком отмечает запись.
-                child: AbsorbPointer(absorbing: _selecting, child: child),
+              onTap: _selecting
+                  ? () => _toggleSelected(memory)
+                  : (enableTap
+                        ? () => _showMemoryDetail(memory, from: source)
+                        : null),
+              onLongPress: _selecting
+                  ? () => _toggleSelected(memory)
+                  : () => _showMemoryActions(
+                      memory,
+                      card: StickerCardScope.maybeOf(cardContext),
+                    ),
+              child: Stack(
+                // Наклейка свисает за край карточки, как на макете: ни карточка,
+                // ни стопка её не обрезают. Всё содержимое карточки стоит с
+                // отступом и своими скруглениями, обрезка ему не нужна.
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    // Плоский стиль пинов: без тени, свечения и бордера
+                    // (требование).
+                    decoration: BoxDecoration(
+                      color: widget.theme.cardSurface,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    // В режиме выбора кнопки внутри карточки (плеер, ссылки)
+                    // молчат: касание целиком отмечает запись.
+                    child: AbsorbPointer(absorbing: _selecting, child: child),
+                  ),
+                  if (_selecting) ...[
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? primary.withValues(alpha: 0.10)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: selected
+                                ? Border.all(color: primary, width: 3)
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: IgnorePointer(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? primary
+                                : widget.theme.cardSurface,
+                            shape: BoxShape.circle,
+                            border: selected
+                                ? null
+                                : Border.all(
+                                    color: widget.theme.textMuted,
+                                    width: 2,
+                                  ),
+                          ),
+                          child: selected
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  size: 19,
+                                  color: AppThemes.onColor(
+                                    primary,
+                                    mode: widget.theme.brightness,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              if (_selecting) ...[
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? primary.withValues(alpha: 0.10)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                        border: selected
-                            ? Border.all(color: primary, width: 3)
-                            : null,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: IgnorePointer(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: selected ? primary : widget.theme.cardSurface,
-                        shape: BoxShape.circle,
-                        border: selected
-                            ? null
-                            : Border.all(
-                                color: widget.theme.textMuted, width: 2),
-                      ),
-                      child: selected
-                          ? Icon(Icons.check_rounded,
-                              size: 19,
-                              color: AppThemes.onColor(primary,
-                                  mode: widget.theme.brightness))
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
             ),
           ),
         ),
@@ -3304,7 +3448,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     // Фото, видео и заметка открываются ЭКРАНОМ, а не листом: у записи своя
     // шапка с автором, и лист оставлял сверху просвет ленты — две шапки
     // подряд. Решает то же правило, что и вёрстку экрана.
-    final hasPhotos = memory.imageUrls?.isNotEmpty == true ||
+    final hasPhotos =
+        memory.imageUrls?.isNotEmpty == true ||
         memory.imageUrl?.isNotEmpty == true;
     if (opensAsMoment(memory.type, hasPhotos: hasPhotos) ||
         memory.type == MemoryType.photo) {
@@ -3396,9 +3541,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       isSecret: makeSecret,
     );
     if (mounted) {
-      _secretSnack(makeSecret
-          ? LocaleService.current.markedSecret
-          : LocaleService.current.unmarkedSecret);
+      _secretSnack(
+        makeSecret
+            ? LocaleService.current.markedSecret
+            : LocaleService.current.unmarkedSecret,
+      );
     }
   }
 
@@ -3576,9 +3723,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             ),
             ListTile(
               leading: Icon(
-                memory.isSecret
-                    ? Icons.lock_open_rounded
-                    : Icons.lock_rounded,
+                memory.isSecret ? Icons.lock_open_rounded : Icons.lock_rounded,
                 color: primary,
               ),
               title: Text(
@@ -3591,9 +3736,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                 _toggleSecret(memory);
               },
             ),
-            if (memoryMediaFiles(memory,
-                    secretUnlocked: _secretUnlocked)
-                .isNotEmpty)
+            if (memoryMediaFiles(
+              memory,
+              secretUnlocked: _secretUnlocked,
+            ).isNotEmpty)
               ListTile(
                 leading: Icon(Icons.download_rounded, color: primary),
                 title: Text(LocaleService.current.saveToDevice),
@@ -3604,7 +3750,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               ),
             if (memory.authorUid == _myUid) ...[
               ListTile(
-                leading: Icon(Icons.edit_rounded, color: widget.theme.textSecondary),
+                leading: Icon(
+                  Icons.edit_rounded,
+                  color: widget.theme.textSecondary,
+                ),
                 title: Text(LocaleService.current.editMemory),
                 onTap: () {
                   Navigator.pop(context);
@@ -3635,10 +3784,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// Главный блок пина с наклейками: фото, лист заметки, обложка. Касание по
   /// наклейке говорит, чья она; свою можно переставить или убрать.
   Widget _stickerAnchor(Memory memory, Widget child) => StickerAnchor(
-        stickers: memory.stickers,
-        onTap: (s, anchor) => _onStickerTap(memory, s, anchor),
-        child: child,
-      );
+    stickers: memory.stickers,
+    onTap: (s, anchor) => _onStickerTap(memory, s, anchor),
+    child: child,
+  );
 
   /// Значок пункта меню — настоящая наклейка, как на макете: по нему пункт
   /// узнаётся сразу.
@@ -3655,12 +3804,18 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   Future<void> _addSticker(Memory memory, StickerCardScopeState card) async {
     final uid = _myUid ?? '';
     if (!canAddSticker(memory.stickers, uid)) {
-      showFloatingNote(context, trKey('stickerLimit'),
-          icon: Icons.info_outline_rounded);
+      showFloatingNote(
+        context,
+        trKey('stickerLimit'),
+        icon: Icons.info_outline_rounded,
+      );
       return;
     }
-    final choice = await showStickerPicker(context,
-        user: widget.userData, groupId: _groupId);
+    final choice = await showStickerPicker(
+      context,
+      user: widget.userData,
+      groupId: _groupId,
+    );
     if (choice == null || !mounted || !card.mounted) return;
     // Новая встаёт в середину блока с лёгким наклоном, как наклейку
     // прикладывают рукой.
@@ -3709,7 +3864,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       card: rect,
       sticker: sticker,
       isNew: isNew,
-      others: [for (final s in anchor.shown) if (s.id != sticker.id) s],
+      others: [
+        for (final s in anchor.shown)
+          if (s.id != sticker.id) s,
+      ],
     );
     if (result == null && anchor.mounted) anchor.hidden.value = null;
     return result;
@@ -3723,8 +3881,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     final uid = _myUid ?? '';
     final who = s.uid == uid ? trKey('stickerMine') : _stickerFrom(s.uid);
     final canMove = canMoveSticker(s, uid);
-    final canRemove =
-        canRemoveSticker(s, uid: uid, authorUid: memory.authorUid);
+    final canRemove = canRemoveSticker(
+      s,
+      uid: uid,
+      authorUid: memory.authorUid,
+    );
     if (!canMove && !canRemove) {
       showFloatingNote(context, who, icon: Icons.favorite_rounded);
       return;
@@ -3757,7 +3918,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                     child: Text(
                       who,
                       style: AppFonts.onest(
-                          size: 16, weight: 700, color: t.textPrimary),
+                        size: 16,
+                        weight: 700,
+                        color: t.textPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -3774,8 +3938,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               ListTile(
                 key: const Key('sticker-action-remove'),
                 leading: Icon(Icons.delete_outline_rounded, color: _cs.error),
-                title: Text(trKey('stickerRemove'),
-                    style: TextStyle(color: _cs.error)),
+                title: Text(
+                  trKey('stickerRemove'),
+                  style: TextStyle(color: _cs.error),
+                ),
                 onTap: () => Navigator.pop(ctx, 'remove'),
               ),
             const SizedBox(height: 8),
@@ -3857,16 +4023,21 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   }
 
   /// Записи ленты, которым есть что положить в галерею.
-  List<Memory> get _selectableMemories =>
-      [for (final m in _memories) if (_filesOf(m).isNotEmpty) m];
+  List<Memory> get _selectableMemories => [
+    for (final m in _memories)
+      if (_filesOf(m).isNotEmpty) m,
+  ];
 
-  List<Memory> get _selectedMemories =>
-      [for (final m in _memories) if (_selectedIds.contains(m.id)) m];
+  List<Memory> get _selectedMemories => [
+    for (final m in _memories)
+      if (_selectedIds.contains(m.id)) m,
+  ];
 
   Widget _selectionBar() {
     final cs = ProfileTheme.schemeFor(widget.theme);
     final selectable = _selectableMemories;
-    final allOn = selectable.isNotEmpty &&
+    final allOn =
+        selectable.isNotEmpty &&
         selectable.every((m) => _selectedIds.contains(m.id));
     return Material(
       color: cs.secondaryContainer,
@@ -3882,7 +4053,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             ),
             Expanded(
               child: Text(
-                trKey('feedSelected').replaceAll('{n}', '${_selectedIds.length}'),
+                trKey(
+                  'feedSelected',
+                ).replaceAll('{n}', '${_selectedIds.length}'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -3969,11 +4142,13 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     ];
     // Секретная запись под замком файлов не отдаёт — говорим, сколько
     // пропущено, иначе человек ищет их в галерее.
-    final skipped =
-        chosen.where((m) => m.isSecret && !_secretUnlocked).length;
+    final skipped = chosen.where((m) => m.isSecret && !_secretUnlocked).length;
     if (items.isEmpty) {
-      showFloatingNote(context, trKey('feedNothingToSave'),
-          icon: Icons.info_outline_rounded);
+      showFloatingNote(
+        context,
+        trKey('feedNothingToSave'),
+        icon: Icons.info_outline_rounded,
+      );
       return;
     }
     final job = await saveToGallery(
@@ -3987,8 +4162,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     if (!mounted) return;
     if (skipped > 0) {
       showFloatingNote(
-          context, trKey('secretSkipped').replaceAll('{n}', '$skipped'),
-          icon: Icons.lock_rounded);
+        context,
+        trKey('secretSkipped').replaceAll('{n}', '$skipped'),
+        icon: Icons.lock_rounded,
+      );
     }
     if (job != null) _exitSelecting();
   }
@@ -4026,10 +4203,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
 
     // Обновляем виджет, если удалили фото дня
     if (memory.type == MemoryType.photo) {
-      await HomeWidgetService.instance.handleMemoryDeleted(
-        _groupId,
-        memory.id,
-      );
+      await HomeWidgetService.instance.handleMemoryDeleted(_groupId, memory.id);
     }
   }
 
@@ -4062,179 +4236,46 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         builder: (context, setState) {
           return SingleChildScrollView(
             child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              24,
-              24,
-              24,
-              // Клавиатура + системная навигация снизу, чтобы кнопка
-              // сохранения и оценка не уходили под кнопки телефона.
-              MediaQuery.of(context).viewInsets.bottom +
-                  MediaQuery.of(context).padding.bottom +
-                  24,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: widget.theme.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  LocaleService.current.editMemoryTitle,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: widget.theme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: titleCtrl,
-                  maxLines: 1,
-                  decoration: InputDecoration(
-                    hintText: LocaleService.current.titleOptional,
-                    prefixIcon: const Icon(Icons.title_rounded, size: 20),
-                    filled: true,
-                    fillColor: widget.theme.surfaceMuted,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: widget.theme.divider),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: widget.theme.divider),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: captionCtrl,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: isRatable
-                        ? LocaleService.current.reviewHint
-                        : LocaleService.current.description,
-                    filled: true,
-                    fillColor: widget.theme.surfaceMuted,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: widget.theme.divider),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: widget.theme.divider),
-                    ),
-                  ),
-                ),
-                // Оценка 1–10 для книг/фильмов
-                if (isRatable) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: widget.theme.surfaceMuted,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: widget.theme.divider),
-                    ),
-                    child: RatingPicker(
-                      value: editRating,
-                      accent: primary,
-                      onChanged: (v) => setState(() => editRating = v),
-                    ),
-                  ),
-                ],
-                // Spoiler toolbar for text pins in edit form
-                if (memory.type == MemoryType.text) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          final sel = captionCtrl.selection;
-                          if (!sel.isValid) return;
-                          final text = captionCtrl.text;
-                          if (sel.isCollapsed) {
-                            final pos = sel.start;
-                            final newText =
-                                '${text.substring(0, pos)}||||${text.substring(pos)}';
-                            captionCtrl.value = TextEditingValue(
-                              text: newText,
-                              selection: TextSelection.collapsed(
-                                offset: pos + 2,
-                              ),
-                            );
-                          } else {
-                            final selected = text.substring(sel.start, sel.end);
-                            final newText = text.replaceRange(
-                              sel.start,
-                              sel.end,
-                              '||$selected||',
-                            );
-                            captionCtrl.value = TextEditingValue(
-                              text: newText,
-                              selection: TextSelection.collapsed(
-                                offset: sel.start + selected.length + 4,
-                              ),
-                            );
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: primary.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.visibility_off_rounded,
-                                size: 14,
-                                color: primary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                LocaleService.current.spoiler,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+              padding: EdgeInsets.fromLTRB(
+                24,
+                24,
+                24,
+                // Клавиатура + системная навигация снизу, чтобы кнопка
+                // сохранения и оценка не уходили под кнопки телефона.
+                MediaQuery.of(context).viewInsets.bottom +
+                    MediaQuery.of(context).padding.bottom +
+                    24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: widget.theme.divider,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        LocaleService.current.selectTextAndPress,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: widget.theme.textMuted,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                ],
-                if (memory.type == MemoryType.location) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
+                  Text(
+                    LocaleService.current.editMemoryTitle,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: widget.theme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   TextField(
-                    controller: locationCtrl,
+                    controller: titleCtrl,
+                    maxLines: 1,
                     decoration: InputDecoration(
-                      hintText: LocaleService.current.locationNameHint,
-                      prefixIcon: const Icon(Icons.location_on_rounded),
+                      hintText: LocaleService.current.titleOptional,
+                      prefixIcon: const Icon(Icons.title_rounded, size: 20),
                       filled: true,
                       fillColor: widget.theme.surfaceMuted,
                       border: OutlineInputBorder(
@@ -4247,104 +4288,243 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: captionCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: isRatable
+                          ? LocaleService.current.reviewHint
+                          : LocaleService.current.description,
+                      filled: true,
+                      fillColor: widget.theme.surfaceMuted,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: widget.theme.divider),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: widget.theme.divider),
+                      ),
+                    ),
+                  ),
+                  // Оценка 1–10 для книг/фильмов
+                  if (isRatable) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: widget.theme.surfaceMuted,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: widget.theme.divider),
+                      ),
+                      child: RatingPicker(
+                        value: editRating,
+                        accent: primary,
+                        onChanged: (v) => setState(() => editRating = v),
+                      ),
+                    ),
+                  ],
+                  // Spoiler toolbar for text pins in edit form
+                  if (memory.type == MemoryType.text) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            final sel = captionCtrl.selection;
+                            if (!sel.isValid) return;
+                            final text = captionCtrl.text;
+                            if (sel.isCollapsed) {
+                              final pos = sel.start;
+                              final newText =
+                                  '${text.substring(0, pos)}||||${text.substring(pos)}';
+                              captionCtrl.value = TextEditingValue(
+                                text: newText,
+                                selection: TextSelection.collapsed(
+                                  offset: pos + 2,
+                                ),
+                              );
+                            } else {
+                              final selected = text.substring(
+                                sel.start,
+                                sel.end,
+                              );
+                              final newText = text.replaceRange(
+                                sel.start,
+                                sel.end,
+                                '||$selected||',
+                              );
+                              captionCtrl.value = TextEditingValue(
+                                text: newText,
+                                selection: TextSelection.collapsed(
+                                  offset: sel.start + selected.length + 4,
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: primary.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.visibility_off_rounded,
+                                  size: 14,
+                                  color: primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  LocaleService.current.spoiler,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          LocaleService.current.selectTextAndPress,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: widget.theme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (memory.type == MemoryType.location) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: locationCtrl,
+                      decoration: InputDecoration(
+                        hintText: LocaleService.current.locationNameHint,
+                        prefixIcon: const Icon(Icons.location_on_rounded),
+                        filled: true,
+                        fillColor: widget.theme.surfaceMuted,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: widget.theme.divider),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: widget.theme.divider),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MapPickerScreen(
+                                initialLatitude: editLat,
+                                initialLongitude: editLng,
+                              ),
+                              settings: const RouteSettings(
+                                name: '/map_picker',
+                              ),
+                            ),
+                          );
+
+                          if (result != null && mounted) {
+                            setState(() {
+                              editLat = result['latitude'];
+                              editLng = result['longitude'];
+                              locationCtrl.text = result['address'] ?? '';
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.map_rounded),
+                        label: Text(
+                          editLat != null && editLng != null
+                              ? LocaleService.current.changeLocationOnMap
+                              : LocaleService.current.pickLocationOnMap,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF22C55E),
+                          side: const BorderSide(color: Color(0xFF22C55E)),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  // 18+ toggle for photo edits
+                  if (memory.type == MemoryType.photo) ...[
+                    _AdultToggle(
+                      value: isAdultEdit,
+                      scheme: _cs,
+                      onChanged: (v) => setState(() => isAdultEdit = v),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  MemoryDateField(
+                    value: editDate,
+                    onChanged: (d) =>
+                        setState(() => editDate = d ?? memory.createdAt),
+                    accent: primary,
+                    showReset: false,
+                  ),
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
+                    height: 50,
+                    child: ElevatedButton(
                       onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => MapPickerScreen(
-                              initialLatitude: editLat,
-                              initialLongitude: editLng,
-                            ),
-                            settings: const RouteSettings(name: '/map_picker'),
-                          ),
+                        Navigator.pop(context);
+                        await _memRepo.update(
+                          groupId: _groupId,
+                          memoryId: memory.id,
+                          title: titleCtrl.text.trim().isNotEmpty
+                              ? titleCtrl.text.trim()
+                              : '',
+                          caption: captionCtrl.text.trim(),
+                          locationName: memory.type == MemoryType.location
+                              ? locationCtrl.text.trim()
+                              : null,
+                          latitude: editLat,
+                          longitude: editLng,
+                          rating: isRatable ? (editRating ?? 0) : null,
+                          isAdult: memory.type == MemoryType.photo
+                              ? isAdultEdit
+                              : null,
+                          customDate: editDate,
                         );
-
-                        if (result != null && mounted) {
-                          setState(() {
-                            editLat = result['latitude'];
-                            editLng = result['longitude'];
-                            locationCtrl.text = result['address'] ?? '';
-                          });
-                        }
                       },
-                      icon: const Icon(Icons.map_rounded),
-                      label: Text(
-                        editLat != null && editLng != null
-                            ? LocaleService.current.changeLocationOnMap
-                            : LocaleService.current.pickLocationOnMap,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF22C55E),
-                        side: const BorderSide(color: Color(0xFF22C55E)),
+                      child: Text(
+                        LocaleService.current.saveChanges,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
-                // 18+ toggle for photo edits
-                if (memory.type == MemoryType.photo) ...[
-                  _AdultToggle(
-                    value: isAdultEdit,
-                    scheme: _cs,
-                    onChanged: (v) => setState(() => isAdultEdit = v),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                MemoryDateField(
-                  value: editDate,
-                  onChanged: (d) => setState(() => editDate = d ?? memory.createdAt),
-                  accent: primary,
-                  showReset: false,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await _memRepo.update(
-                        groupId: _groupId,
-                        memoryId: memory.id,
-                        title: titleCtrl.text.trim().isNotEmpty
-                            ? titleCtrl.text.trim()
-                            : '',
-                        caption: captionCtrl.text.trim(),
-                        locationName: memory.type == MemoryType.location
-                            ? locationCtrl.text.trim()
-                            : null,
-                        latitude: editLat,
-                        longitude: editLng,
-                        rating: isRatable ? (editRating ?? 0) : null,
-                        isAdult: memory.type == MemoryType.photo
-                            ? isAdultEdit
-                            : null,
-                        customDate: editDate,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      LocaleService.current.saveChanges,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
           );
         },
       ),
@@ -4360,8 +4540,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     // Без пары `_saveNewMemory` выходит первой строкой: форма закрывалась,
     // и запись пропадала молча (обращение 224, 02.10.2026). Говорим до формы.
     if (_groupId.isEmpty) {
-      showFloatingNote(context, LocaleService.current.needsPartnerHint,
-          icon: Icons.favorite_border_rounded);
+      showFloatingNote(
+        context,
+        LocaleService.current.needsPartnerHint,
+        icon: Icons.favorite_border_rounded,
+      );
       return;
     }
     final cs = ProfileTheme.themeFor(widget.theme).colorScheme;
@@ -4414,49 +4597,50 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             isAdult: memory.isAdult,
             date: memory.createdAt,
           ),
-          onSave: ({
-            required type,
-            required title,
-            required caption,
-            mediaPaths,
-            keptUrls,
-            mediaPath,
-            locationName,
-            latitude,
-            longitude,
-            required isAdult,
-            customDate,
-          }) async {
-            // Новые кадры сперва уезжают в хранилище, потом встают в конец
-            // списка — обложка при этом не меняется.
-            // fork: D6 — не залитые кадры не теряем молча: повтор или отказ
-            final added = await uploadPhotosConfirmed(
-              context,
-              mediaPaths ?? const <String>[],
-              (path, i) {
-                final timestamp = DateTime.now().millisecondsSinceEpoch;
-                final ext = path.split('.').last;
-                return MediaService().uploadFileWithReason(
-                  path,
-                  'memories/$_groupId/memory_${timestamp}_$i.$ext',
+          onSave:
+              ({
+                required type,
+                required title,
+                required caption,
+                mediaPaths,
+                keptUrls,
+                mediaPath,
+                locationName,
+                latitude,
+                longitude,
+                required isAdult,
+                customDate,
+              }) async {
+                // Новые кадры сперва уезжают в хранилище, потом встают в конец
+                // списка — обложка при этом не меняется.
+                // fork: D6 — не залитые кадры не теряем молча: повтор или отказ
+                final added = await uploadPhotosConfirmed(
+                  context,
+                  mediaPaths ?? const <String>[],
+                  (path, i) {
+                    final timestamp = DateTime.now().millisecondsSinceEpoch;
+                    final ext = path.split('.').last;
+                    return MediaService().uploadFileWithReason(
+                      path,
+                      'memories/$_groupId/memory_${timestamp}_$i.$ext',
+                    );
+                  },
+                );
+                if (added == null) throw const MemorySaveAborted();
+                final next = <String>[...(keptUrls ?? const []), ...added];
+                await _memRepo.update(
+                  groupId: _groupId,
+                  memoryId: memory.id,
+                  title: title,
+                  caption: caption,
+                  locationName: locationName,
+                  latitude: latitude,
+                  longitude: longitude,
+                  imageUrls: next.isEmpty ? null : next,
+                  isAdult: isAdult,
+                  customDate: customDate,
                 );
               },
-            );
-            if (added == null) throw const MemorySaveAborted();
-            final next = <String>[...(keptUrls ?? const []), ...added];
-            await _memRepo.update(
-              groupId: _groupId,
-              memoryId: memory.id,
-              title: title,
-              caption: caption,
-              locationName: locationName,
-              latitude: latitude,
-              longitude: longitude,
-              imageUrls: next.isEmpty ? null : next,
-              isAdult: isAdult,
-              customDate: customDate,
-            );
-          },
         ),
         settings: const RouteSettings(name: '/memory_photo_form'),
       ),
@@ -4469,25 +4653,29 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     List<XFile> initialMedia = const [],
   }) {
     if (_groupId.isEmpty) {
-      showFloatingNote(context, LocaleService.current.needsPartnerHint,
-          icon: Icons.favorite_border_rounded);
+      showFloatingNote(
+        context,
+        LocaleService.current.needsPartnerHint,
+        icon: Icons.favorite_border_rounded,
+      );
       return;
     }
     _formTaskId = taskId;
-        // Заметка живёт в той же форме, что фото: без выбранного медиа она сама
-        // сохраняет пин типом text (`_effectiveType`). Отдельной плитки в листе
-        // выбора у заметки нет, а задание дня приводит сюда напрямую. Своё
-        // видео снимается здесь же: с одним роликом форма сохраняет `video`.
-        if (type == MemoryType.photo ||
-            type == MemoryType.text ||
-            type == MemoryType.video) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MemoryPhotoFormScreen(
-                theme: widget.theme,
-                initialMedia: initialMedia,
-                onSave: ({
+    // Заметка живёт в той же форме, что фото: без выбранного медиа она сама
+    // сохраняет пин типом text (`_effectiveType`). Отдельной плитки в листе
+    // выбора у заметки нет, а задание дня приводит сюда напрямую. Своё
+    // видео снимается здесь же: с одним роликом форма сохраняет `video`.
+    if (type == MemoryType.photo ||
+        type == MemoryType.text ||
+        type == MemoryType.video) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MemoryPhotoFormScreen(
+            theme: widget.theme,
+            initialMedia: initialMedia,
+            onSave:
+                ({
                   required type,
                   required title,
                   required caption,
@@ -4515,18 +4703,19 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   );
                   if (!saved) throw const MemorySaveAborted();
                 },
-              ),
-              settings: const RouteSettings(name: '/memory_photo_form'),
-            ),
-          );
-        } else if (type == MemoryType.music) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MemoryMusicFormScreen(
-                theme: widget.theme,
-                onFetchMeta: _fetchMusicMeta,
-                onSave: ({
+          ),
+          settings: const RouteSettings(name: '/memory_photo_form'),
+        ),
+      );
+    } else if (type == MemoryType.music) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MemoryMusicFormScreen(
+            theme: widget.theme,
+            onFetchMeta: _fetchMusicMeta,
+            onSave:
+                ({
                   required musicTitle,
                   required musicArtist,
                   required musicUrl,
@@ -4534,8 +4723,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   musicPath,
                   caption = '',
                   customDate,
-                }) =>
-                    _saveNewMemory(
+                }) => _saveNewMemory(
                   type: MemoryType.music,
                   caption: caption,
                   musicTitle: musicTitle,
@@ -4545,24 +4733,24 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   musicPath: musicPath,
                   customDate: customDate,
                 ),
-              ),
-              settings: const RouteSettings(name: '/memory_music_form'),
-            ),
-          );
-        } else if (type == MemoryType.location) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MemoryLocationFormScreen(
-                theme: widget.theme,
-                onSave: ({
+          ),
+          settings: const RouteSettings(name: '/memory_music_form'),
+        ),
+      );
+    } else if (type == MemoryType.location) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MemoryLocationFormScreen(
+            theme: widget.theme,
+            onSave:
+                ({
                   required locationName,
                   latitude,
                   longitude,
                   caption = '',
                   customDate,
-                }) =>
-                    _saveNewMemory(
+                }) => _saveNewMemory(
                   type: MemoryType.location,
                   caption: caption,
                   locationName: locationName,
@@ -4570,17 +4758,18 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   longitude: longitude,
                   customDate: customDate,
                 ),
-              ),
-              settings: const RouteSettings(name: '/memory_location_form'),
-            ),
-          );
-        } else if (type == MemoryType.book) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MemoryBookFormScreen(
-                theme: widget.theme,
-                onSave: ({
+          ),
+          settings: const RouteSettings(name: '/memory_location_form'),
+        ),
+      );
+    } else if (type == MemoryType.book) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MemoryBookFormScreen(
+            theme: widget.theme,
+            onSave:
+                ({
                   required bookTitle,
                   required bookAuthor,
                   bookCoverUrl,
@@ -4590,8 +4779,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   rating,
                   required caption,
                   customDate,
-                }) =>
-                    _saveNewMemory(
+                }) => _saveNewMemory(
                   type: MemoryType.book,
                   title: bookTitle,
                   caption: caption,
@@ -4603,17 +4791,18 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   rating: rating,
                   customDate: customDate,
                 ),
-              ),
-              settings: const RouteSettings(name: '/memory_book_form'),
-            ),
-          );
-        } else if (type == MemoryType.movie) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MemoryMovieFormScreen(
-                theme: widget.theme,
-                onSave: ({
+          ),
+          settings: const RouteSettings(name: '/memory_book_form'),
+        ),
+      );
+    } else if (type == MemoryType.movie) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MemoryMovieFormScreen(
+            theme: widget.theme,
+            onSave:
+                ({
                   required movieTitle,
                   movieOriginalTitle,
                   moviePosterUrl,
@@ -4626,8 +4815,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   rating,
                   required caption,
                   customDate,
-                }) =>
-                    _saveNewMemory(
+                }) => _saveNewMemory(
                   type: MemoryType.movie,
                   title: movieTitle,
                   caption: caption,
@@ -4642,15 +4830,15 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   rating: rating,
                   customDate: customDate,
                 ),
-              ),
-              settings: const RouteSettings(name: '/memory_movie_form'),
-            ),
-          );
-        } else {
-          // Видео по ссылке (и прочие легаси-типы) — открываем форму сразу
-          // на вкладке «По ссылке».
-          _showCreateMemoryForm(type, startWithUrl: type == MemoryType.video);
-        }
+          ),
+          settings: const RouteSettings(name: '/memory_movie_form'),
+        ),
+      );
+    } else {
+      // Видео по ссылке (и прочие легаси-типы) — открываем форму сразу
+      // на вкладке «По ссылке».
+      _showCreateMemoryForm(type, startWithUrl: type == MemoryType.video);
+    }
   }
 
   /// Fetch track metadata from YouTube (stream-based) or Spotify (oEmbed).
@@ -4724,8 +4912,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       'icon': Icons.radio_rounded,
     },
   ];
-
-
 
   static const List<Map<String, dynamic>> _supportedVideoServices = [
     {
@@ -5156,7 +5342,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                               onTap: () async {
                                 try {
                                   final picker = ImagePicker();
-                                  final picked = await safePick(
+                                  final picked =
+                                      await safePick(
                                         () => picker.pickMultiImage(
                                           maxWidth: 1920,
                                           maxHeight: 1920,
@@ -5166,18 +5353,32 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                       const <XFile>[];
                                   if (picked.isNotEmpty) {
                                     if (!context.mounted) return;
-                                    setState(() => selectedPhotos.addAll(picked));
+                                    setState(
+                                      () => selectedPhotos.addAll(picked),
+                                    );
                                     if (lat == null) {
-                                      _extractExifGps(picked.first.path).then((coords) async {
+                                      _extractExifGps(picked.first.path).then((
+                                        coords,
+                                      ) async {
                                         if (coords == null) return;
                                         String addr = '';
                                         try {
-                                          final ps = await placemarkFromCoordinates(coords.$1, coords.$2);
+                                          final ps =
+                                              await placemarkFromCoordinates(
+                                                coords.$1,
+                                                coords.$2,
+                                              );
                                           if (ps.isNotEmpty) {
                                             final place = ps.first;
-                                            final name = place.name ?? place.subLocality ?? '';
-                                            final locality = place.locality ?? '';
-                                            addr = name.isNotEmpty ? '$name, $locality' : locality;
+                                            final name =
+                                                place.name ??
+                                                place.subLocality ??
+                                                '';
+                                            final locality =
+                                                place.locality ?? '';
+                                            addr = name.isNotEmpty
+                                                ? '$name, $locality'
+                                                : locality;
                                           }
                                         } catch (_) {}
                                         if (context.mounted) {
@@ -5257,7 +5458,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       onTap: () async {
                         try {
                           final picker = ImagePicker();
-                          final picked = await safePick(
+                          final picked =
+                              await safePick(
                                 () => picker.pickMultiImage(
                                   maxWidth: 1920,
                                   maxHeight: 1920,
@@ -5269,16 +5471,24 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                             if (!context.mounted) return;
                             setState(() => selectedPhotos = picked);
                             if (lat == null) {
-                              _extractExifGps(picked.first.path).then((coords) async {
+                              _extractExifGps(picked.first.path).then((
+                                coords,
+                              ) async {
                                 if (coords == null) return;
                                 String addr = '';
                                 try {
-                                  final ps = await placemarkFromCoordinates(coords.$1, coords.$2);
+                                  final ps = await placemarkFromCoordinates(
+                                    coords.$1,
+                                    coords.$2,
+                                  );
                                   if (ps.isNotEmpty) {
                                     final place = ps.first;
-                                    final name = place.name ?? place.subLocality ?? '';
+                                    final name =
+                                        place.name ?? place.subLocality ?? '';
                                     final locality = place.locality ?? '';
-                                    addr = name.isNotEmpty ? '$name, $locality' : locality;
+                                    addr = name.isNotEmpty
+                                        ? '$name, $locality'
+                                        : locality;
                                   }
                                 } catch (_) {}
                                 if (context.mounted) {
@@ -5350,7 +5560,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         locationCtrl.clear();
                       }),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF22C55E).withOpacity(0.07),
                           borderRadius: BorderRadius.circular(10),
@@ -5380,7 +5593,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Icon(Icons.close_rounded, size: 14, color: widget.theme.textMuted),
+                            Icon(
+                              Icons.close_rounded,
+                              size: 14,
+                              color: widget.theme.textMuted,
+                            ),
                           ],
                         ),
                       ),
@@ -5400,37 +5617,59 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                         if (context.mounted) {
                                           showFloatingNote(
                                             context,
-                                            LocaleService.current.locationServicesDisabled,
+                                            LocaleService
+                                                .current
+                                                .locationServicesDisabled,
                                             icon: Icons.location_off_rounded,
                                           );
                                         }
-                                        if (context.mounted) setState(() => isLoadingLocation = false);
+                                        if (context.mounted)
+                                          setState(
+                                            () => isLoadingLocation = false,
+                                          );
                                         return;
                                       }
-                                      LocationPermission perm = await Geolocator.checkPermission();
+                                      LocationPermission perm =
+                                          await Geolocator.checkPermission();
                                       if (perm == LocationPermission.denied) {
-                                        perm = await Geolocator.requestPermission();
+                                        perm =
+                                            await Geolocator.requestPermission();
                                       }
                                       if (perm == LocationPermission.denied ||
-                                          perm == LocationPermission.deniedForever) {
+                                          perm ==
+                                              LocationPermission
+                                                  .deniedForever) {
                                         if (context.mounted) {
                                           showFloatingNote(
                                             context,
-                                            LocaleService.current.locationPermissionDenied,
+                                            LocaleService
+                                                .current
+                                                .locationPermissionDenied,
                                             icon: Icons.location_off_rounded,
                                           );
                                         }
-                                        if (context.mounted) setState(() => isLoadingLocation = false);
+                                        if (context.mounted)
+                                          setState(
+                                            () => isLoadingLocation = false,
+                                          );
                                         return;
                                       }
-                                      final pos = await Geolocator.getCurrentPosition();
+                                      final pos =
+                                          await Geolocator.getCurrentPosition();
                                       lat = pos.latitude;
                                       lng = pos.longitude;
                                       try {
-                                        final ps = await placemarkFromCoordinates(lat!, lng!);
+                                        final ps =
+                                            await placemarkFromCoordinates(
+                                              lat!,
+                                              lng!,
+                                            );
                                         if (ps.isNotEmpty) {
                                           final place = ps.first;
-                                          final name = place.name ?? place.subLocality ?? '';
+                                          final name =
+                                              place.name ??
+                                              place.subLocality ??
+                                              '';
                                           final locality = place.locality ?? '';
                                           locationCtrl.text = name.isNotEmpty
                                               ? '$name, $locality'
@@ -5440,7 +5679,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                     } catch (e) {
                                       debugPrint('Get location error: $e');
                                     }
-                                    if (context.mounted) setState(() => isLoadingLocation = false);
+                                    if (context.mounted)
+                                      setState(() => isLoadingLocation = false);
                                   },
                             icon: isLoadingLocation
                                 ? SizedBox(
@@ -5470,21 +5710,25 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () async {
-                              final result = await Navigator.push<Map<String, dynamic>>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MapPickerScreen(
-                                    initialLatitude: lat,
-                                    initialLongitude: lng,
-                                  ),
-                                  settings: const RouteSettings(name: '/map_picker'),
-                                ),
-                              );
+                              final result =
+                                  await Navigator.push<Map<String, dynamic>>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MapPickerScreen(
+                                        initialLatitude: lat,
+                                        initialLongitude: lng,
+                                      ),
+                                      settings: const RouteSettings(
+                                        name: '/map_picker',
+                                      ),
+                                    ),
+                                  );
                               if (result != null && context.mounted) {
                                 setState(() {
                                   lat = result['latitude'] as double?;
                                   lng = result['longitude'] as double?;
-                                  locationCtrl.text = result['address'] as String? ?? '';
+                                  locationCtrl.text =
+                                      result['address'] as String? ?? '';
                                 });
                               }
                             },
@@ -5616,9 +5860,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         try {
                           final picker = ImagePicker();
                           final picked = await safePick(
-                            () => picker.pickVideo(
-                              source: ImageSource.gallery,
-                            ),
+                            () => picker.pickVideo(source: ImageSource.gallery),
                           );
                           if (picked != null) {
                             if (!context.mounted) return;
@@ -5630,10 +5872,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                             try {
                               final thumb =
                                   await VideoCompress.getByteThumbnail(
-                                picked.path,
-                                quality: 60,
-                                position: -1,
-                              );
+                                    picked.path,
+                                    quality: 60,
+                                    position: -1,
+                                  );
                               if (!context.mounted) return;
                               setState(() {
                                 videoThumbnailBytes = thumb;
@@ -5641,7 +5883,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                               });
                             } catch (e) {
                               debugPrint('Thumbnail preview failed: $e');
-                              if (context.mounted) setState(() => isGeneratingThumbnail = false);
+                              if (context.mounted)
+                                setState(() => isGeneratingThumbnail = false);
                             }
                           }
                         } catch (e) {
@@ -5662,8 +5905,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         decoration: BoxDecoration(
                           color: selectedMedia != null
                               ? (widget.theme.isDark
-                                  ? widget.theme.surfaceMuted
-                                  : _cs.inverseSurface)
+                                    ? widget.theme.surfaceMuted
+                                    : _cs.inverseSurface)
                               : widget.theme.surfaceMuted,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: widget.theme.divider),
@@ -5696,41 +5939,36 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                 ),
                               )
                             : isGeneratingThumbnail
-                                ? const Center(
-                                    child: M3Loading(
+                            ? const Center(
+                                child: M3Loading(color: Colors.white, size: 36),
+                              )
+                            : Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  if (videoThumbnailBytes != null)
+                                    Container(color: Colors.black38),
+                                  const Center(
+                                    child: Icon(
+                                      Icons.play_circle_filled_rounded,
                                       color: Colors.white,
-                                      size: 36,
+                                      size: 48,
                                     ),
-                                  )
-                                : Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      if (videoThumbnailBytes != null)
-                                        Container(
-                                          color: Colors.black38,
-                                        ),
-                                      const Center(
-                                        child: Icon(
-                                          Icons.play_circle_filled_rounded,
-                                          color: Colors.white,
-                                          size: 48,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: CircleAvatar(
-                                          backgroundColor: Colors.black54,
-                                          radius: 16,
-                                          child: const Icon(
-                                            Icons.check,
-                                            color: Colors.white,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
                                   ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: CircleAvatar(
+                                      backgroundColor: Colors.black54,
+                                      radius: 16,
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -6143,11 +6381,16 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                       if (context.mounted) {
                                         showFloatingNote(
                                           context,
-                                          LocaleService.current.locationServicesDisabled,
+                                          LocaleService
+                                              .current
+                                              .locationServicesDisabled,
                                           icon: Icons.location_off_rounded,
                                         );
                                       }
-                                      if (context.mounted) setState(() => isLoadingLocation = false);
+                                      if (context.mounted)
+                                        setState(
+                                          () => isLoadingLocation = false,
+                                        );
                                       return;
                                     }
 
@@ -6165,11 +6408,16 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                       if (context.mounted) {
                                         showFloatingNote(
                                           context,
-                                          LocaleService.current.locationPermissionDenied,
+                                          LocaleService
+                                              .current
+                                              .locationPermissionDenied,
                                           icon: Icons.location_off_rounded,
                                         );
                                       }
-                                      if (context.mounted) setState(() => isLoadingLocation = false);
+                                      if (context.mounted)
+                                        setState(
+                                          () => isLoadingLocation = false,
+                                        );
                                       return;
                                     }
 
@@ -6244,7 +6492,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                   initialLatitude: lat,
                                   initialLongitude: lng,
                                 ),
-                                settings: const RouteSettings(name: '/map_picker'),
+                                settings: const RouteSettings(
+                                  name: '/map_picker',
+                                ),
                               ),
                             );
 
@@ -6838,11 +7088,13 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       await RateLimiterService().checkMemory();
     } on RateLimitException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.message),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
       return false;
     }
@@ -6886,8 +7138,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               'memories/$_groupId/memory_${timestamp}_$i.$ext',
             );
           },
-          beforeAsk: () =>
-              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          beforeAsk: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
         );
         if (urls == null) {
           if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -6918,8 +7169,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           ).timeout(const Duration(seconds: 30), onTimeout: () => null);
           if (thumbBytes != null) {
             final tempDir = await getTemporaryDirectory();
-            final thumbFile =
-                File('${tempDir.path}/thumb_$timestamp.jpg');
+            final thumbFile = File('${tempDir.path}/thumb_$timestamp.jpg');
             await thumbFile.writeAsBytes(thumbBytes);
             final thumbUrl = await MediaService().uploadFile(
               thumbFile.path,
@@ -6931,15 +7181,23 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         } catch (e) {
           debugPrint('Video thumbnail upload failed: $e');
           unawaited(
-            Sentry.captureException(e, withScope: (s) {
-              s.setExtra('reason', 'video thumbnail generation/upload failed');
-              s.level = SentryLevel.warning;
-            }),
+            Sentry.captureException(
+              e,
+              withScope: (s) {
+                s.setExtra(
+                  'reason',
+                  'video thumbnail generation/upload failed',
+                );
+                s.level = SentryLevel.warning;
+              },
+            ),
           );
         }
 
-        final videoOutcome =
-            await MediaService().uploadFileWithReason(mediaPath, destination);
+        final videoOutcome = await MediaService().uploadFileWithReason(
+          mediaPath,
+          destination,
+        );
         final url = videoOutcome.ref;
         if (url != null) {
           uploadedVideoUrl = url;
@@ -6950,11 +7208,13 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(uploadFailureText(
-                  videoOutcome.failure ?? UploadFailure.other,
-                  LocaleService.current,
-                  video: true,
-                )),
+                content: Text(
+                  uploadFailureText(
+                    videoOutcome.failure ?? UploadFailure.other,
+                    LocaleService.current,
+                    video: true,
+                  ),
+                ),
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(seconds: 5),
               ),
@@ -6972,8 +7232,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         final destination = 'music/$_groupId/$fileName';
 
         // fork: D5 — не залилась музыка: говорим причину, запись без неё не сохраняем
-        final musicOutcome =
-            await MediaService().uploadFileWithReason(musicPath, destination);
+        final musicOutcome = await MediaService().uploadFileWithReason(
+          musicPath,
+          destination,
+        );
         uploadedMusicUrl = musicOutcome.ref;
         if (uploadedMusicUrl == null) {
           if (mounted) {
@@ -6981,8 +7243,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             showUploadFailure(
               context,
               musicOutcome.failure,
-              what: ruEn('Музыка не загрузилась, запись не сохранена',
-                  'The music didn’t upload, the memory wasn’t saved'),
+              what: ruEn(
+                'Музыка не загрузилась, запись не сохранена',
+                'The music didn’t upload, the memory wasn’t saved',
+              ),
             );
           }
           return false;
@@ -6995,17 +7259,21 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       if (sound != null && sound.isLocalFile) {
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final soundOutcome = await MediaService().uploadFileWithReason(
-            sound.url, 'memories/$_groupId/sound_$timestamp.m4a');
+          sound.url,
+          'memories/$_groupId/sound_$timestamp.m4a',
+        );
         if (soundOutcome.ref == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(uploadFailureText(
-                  soundOutcome.failure ?? UploadFailure.other,
-                  LocaleService.current,
-                  video: false,
-                )),
+                content: Text(
+                  uploadFailureText(
+                    soundOutcome.failure ?? UploadFailure.other,
+                    LocaleService.current,
+                    video: false,
+                  ),
+                ),
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(seconds: 5),
               ),
@@ -7091,8 +7359,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         ForkNotice.error(
           context,
           e,
-          what: ruEn('Не удалось сохранить воспоминание',
-              'Couldn’t save the memory'),
+          what: ruEn(
+            'Не удалось сохранить воспоминание',
+            'Couldn’t save the memory',
+          ),
         );
       }
       return false;
@@ -7111,7 +7381,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       final bytes = await File(imagePath).readAsBytes();
       final tags = await readExifFromBytes(bytes);
       if (!tags.containsKey('GPS GPSLatitude') ||
-          !tags.containsKey('GPS GPSLongitude')) return null;
+          !tags.containsKey('GPS GPSLongitude'))
+        return null;
       final latRef = tags['GPS GPSLatitudeRef']?.printable.trim() ?? 'N';
       final lngRef = tags['GPS GPSLongitudeRef']?.printable.trim() ?? 'E';
       double? toDeg(String raw) {
@@ -7128,14 +7399,21 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           }
           return double.tryParse(s) ?? 0;
         }
+
         return p(parts[0]) + p(parts[1]) / 60.0 + p(parts[2]) / 3600.0;
       }
+
       final latVal = toDeg(tags['GPS GPSLatitude']!.printable);
       final lngVal = toDeg(tags['GPS GPSLongitude']!.printable);
-      if (latVal == null || lngVal == null || (latVal == 0.0 && lngVal == 0.0)) {
+      if (latVal == null ||
+          lngVal == null ||
+          (latVal == 0.0 && lngVal == 0.0)) {
         return null;
       }
-      return (latRef == 'S' ? -latVal : latVal, lngRef == 'W' ? -lngVal : lngVal);
+      return (
+        latRef == 'S' ? -latVal : latVal,
+        lngRef == 'W' ? -lngVal : lngVal,
+      );
     } catch (e) {
       debugPrint('EXIF GPS extraction failed: $e');
       return null;
@@ -7151,7 +7429,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       }
       if (perm == LocationPermission.deniedForever) return;
       if (perm != LocationPermission.always &&
-          perm != LocationPermission.whileInUse) { return; }
+          perm != LocationPermission.whileInUse) {
+        return;
+      }
 
       // Use last known position instantly so pills show right away
       final last = await Geolocator.getLastKnownPosition();
@@ -7200,8 +7480,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     final name = memory.locationName?.trim() ?? '';
     if (!hasCoords && name.isEmpty) return const SizedBox.shrink();
 
-    final dist =
-        hasCoords ? _distanceKm(memory.latitude!, memory.longitude!) : '';
+    final dist = hasCoords
+        ? _distanceKm(memory.latitude!, memory.longitude!)
+        : '';
     final label = [
       if (name.isNotEmpty) name,
       if (dist.isNotEmpty) dist,
@@ -7231,7 +7512,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.onest(
-                      size: 13.5, weight: 600, color: t.textPrimary),
+                    size: 13.5,
+                    weight: 600,
+                    color: t.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -7288,29 +7572,38 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             m.imageUrl!,
         ];
         for (final url in urls) {
-          items.add(GalleryItem(
-              url: url, memoryId: m.id, caption: m.caption, adult: m.isAdult));
+          items.add(
+            GalleryItem(
+              url: url,
+              memoryId: m.id,
+              caption: m.caption,
+              adult: m.isAdult,
+            ),
+          );
         }
         // Смешанный пин: фото + видео — показываем видео отдельным
         // воспроизводимым элементом (превью = thumbnail видео в imageUrl).
         if (m.videoUrl?.isNotEmpty == true) {
-          items.add(GalleryItem(
+          items.add(
+            GalleryItem(
+              url: m.imageUrl?.isNotEmpty == true ? m.imageUrl! : m.videoUrl!,
+              videoUrl: m.videoUrl,
+              memoryId: m.id,
+              caption: m.caption,
+              adult: m.isAdult,
+            ),
+          );
+        }
+      } else if (m.type == MemoryType.video && m.videoUrl?.isNotEmpty == true) {
+        items.add(
+          GalleryItem(
             url: m.imageUrl?.isNotEmpty == true ? m.imageUrl! : m.videoUrl!,
             videoUrl: m.videoUrl,
             memoryId: m.id,
             caption: m.caption,
             adult: m.isAdult,
-          ));
-        }
-      } else if (m.type == MemoryType.video &&
-          m.videoUrl?.isNotEmpty == true) {
-        items.add(GalleryItem(
-          url: m.imageUrl?.isNotEmpty == true ? m.imageUrl! : m.videoUrl!,
-          videoUrl: m.videoUrl,
-          memoryId: m.id,
-          caption: m.caption,
-          adult: m.isAdult,
-        ));
+          ),
+        );
       }
     }
     return items;
@@ -7324,7 +7617,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     if (PlusService.instance.gate != PlusGate.open) {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => PlusScreen(scheme: ProfileTheme.schemeFor(widget.theme)),
+          builder: (_) =>
+              PlusScreen(scheme: ProfileTheme.schemeFor(widget.theme)),
         ),
       );
       return;
@@ -7501,7 +7795,11 @@ class _AdultToggle extends StatelessWidget {
                     ),
                     Text(
                       LocaleService.current.photoBlurred,
-                      style: TextStyle(fontFamily: 'Onest', fontSize: 12, color: ink),
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: 12,
+                        color: ink,
+                      ),
                     ),
                   ],
                 ),

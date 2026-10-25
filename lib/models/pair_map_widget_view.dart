@@ -53,7 +53,12 @@ enum MapWidgetSize {
   EdgeInsets safeFor(Size actual) {
     final kx = actual.width / width, ky = actual.height / height;
     final k = math.min(kx, ky).clamp(.75, 1.25);
-    return EdgeInsets.fromLTRB(safe.left * k, safe.top * k, safe.right * k, safe.bottom * k);
+    return EdgeInsets.fromLTRB(
+      safe.left * k,
+      safe.top * k,
+      safe.right * k,
+      safe.bottom * k,
+    );
   }
 }
 
@@ -149,9 +154,12 @@ PairMapMode pairMapMode({
   if (me == null && partner == null) return PairMapMode.noPoints;
   if (partner == null) return PairMapMode.onlyMe;
   if (me == null) return PairMapMode.onlyPartner;
-  if (metersBetween(me, partner) < kMapWidgetNearMeters) return PairMapMode.near;
+  if (metersBetween(me, partner) < kMapWidgetNearMeters)
+    return PairMapMode.near;
   final fit = fitTwo(me, partner, size, safe);
-  return fit.rawZoom < kMapWidgetGlobeBelowZoom ? PairMapMode.globe : PairMapMode.map;
+  return fit.rawZoom < kMapWidgetGlobeBelowZoom
+      ? PairMapMode.globe
+      : PairMapMode.map;
 }
 
 /// Центр и зум, при которых обе точки встают в безопасную зону.
@@ -194,7 +202,8 @@ MapFit fitTwo(LatLng a, LatLng b, Size size, EdgeInsets safe) {
   // Центр ставим так, чтобы середина пары пришлась на середину безопасной
   // зоны, а не всей картинки: сверху запас под шарики больше, чем снизу.
   final midX = (ax + bx) / 2 * ws, midY = (ay + by) / 2 * ws;
-  final shiftX = (safe.left - safe.right) / 2, shiftY = (safe.top - safe.bottom) / 2;
+  final shiftX = (safe.left - safe.right) / 2,
+      shiftY = (safe.top - safe.bottom) / 2;
   var cx = (midX - shiftX) / ws;
   cx = cx - cx.floorToDouble();
   final cy = ((midY - shiftY) / ws).clamp(0.0, 1.0);
@@ -205,7 +214,8 @@ MapFit fitTwo(LatLng a, LatLng b, Size size, EdgeInsets safe) {
 /// безопасной зоны, зум задан.
 MapFit fitOne(LatLng p, Size size, EdgeInsets safe, {required double zoom}) {
   final ws = worldSize(zoom);
-  final shiftX = (safe.left - safe.right) / 2, shiftY = (safe.top - safe.bottom) / 2;
+  final shiftX = (safe.left - safe.right) / 2,
+      shiftY = (safe.top - safe.bottom) / 2;
   var cx = (_mercX(p.longitude) * ws - shiftX) / ws;
   cx = cx - cx.floorToDouble();
   final cy = ((_mercY(p.latitude) * ws - shiftY) / ws).clamp(0.0, 1.0);
@@ -232,13 +242,19 @@ List<TilePlacement> tilesFor(LatLng center, double zoom, Size size) {
   final cx = _mercX(center.longitude) * worldPts;
   final cy = _mercY(center.latitude) * worldPts;
   final left = cx - size.width / 2, top = cy - size.height / 2;
-  final x0 = (left / tileSizePts).floor(), x1 = ((left + size.width) / tileSizePts).ceil() - 1;
+  final x0 = (left / tileSizePts).floor(),
+      x1 = ((left + size.width) / tileSizePts).ceil() - 1;
   final y0 = math.max(0, (top / tileSizePts).floor());
   final y1 = math.min(n - 1, ((top + size.height) / tileSizePts).ceil() - 1);
   final out = <TilePlacement>[];
   for (var ty = y0; ty <= y1; ty++) {
     for (var tx = x0; tx <= x1; tx++) {
-      final rect = Rect.fromLTWH(tx * tileSizePts - left, ty * tileSizePts - top, tileSizePts, tileSizePts);
+      final rect = Rect.fromLTWH(
+        tx * tileSizePts - left,
+        ty * tileSizePts - top,
+        tileSizePts,
+        tileSizePts,
+      );
       out.add(TilePlacement(zt, ((tx % n) + n) % n, ty, rect));
     }
   }
@@ -248,7 +264,12 @@ List<TilePlacement> tilesFor(LatLng center, double zoom, Size size) {
 /// Дуга между двумя людьми на картинке: подъём от хорды той же формулой, что
 /// на карте приложения (`arcHeight`), но не выше [maxLift] — у виджета над
 /// точками мало места, и вершина уходила бы за край.
-List<Offset> liftedArc(Offset a, Offset b, {required double maxLift, int segments = 48}) {
+List<Offset> liftedArc(
+  Offset a,
+  Offset b, {
+  required double maxLift,
+  int segments = 48,
+}) {
   final dx = b.dx - a.dx, dy = b.dy - a.dy;
   final len = math.sqrt(dx * dx + dy * dy);
   if (len < 1) return [a, b];
@@ -272,7 +293,11 @@ List<Offset> liftedArc(Offset a, Offset b, {required double maxLift, int segment
 
 /// Подъём любой ломаной от её хорды: так поднимается проекция дуги большого
 /// круга на глобусе. Концы остаются на месте, вершина не выше [maxLift].
-List<Offset> liftAlong(List<Offset> base, {required double maxLift, double minLift = 0}) {
+List<Offset> liftAlong(
+  List<Offset> base, {
+  required double maxLift,
+  double minLift = 0,
+}) {
   if (base.length < 2) return base;
   final a = base.first, b = base.last;
   final dx = b.dx - a.dx, dy = b.dy - a.dy;
@@ -284,7 +309,10 @@ List<Offset> liftAlong(List<Offset> base, {required double maxLift, double minLi
     ny = -ny;
   }
   final top = math.max(0.0, maxLift);
-  final lift = math.max(math.min(minLift, top), math.min((len * .3).clamp(18.0, 110.0), top));
+  final lift = math.max(
+    math.min(minLift, top),
+    math.min((len * .3).clamp(18.0, 110.0), top),
+  );
   final last = base.length - 1;
   return [
     for (var i = 0; i <= last; i++)
@@ -358,7 +386,11 @@ Offset arcApex(List<Offset> pts) {
   for (var i = 1; i < pts.length; i++) {
     final seg = (pts[i] - pts[i - 1]).distance;
     if (run + seg >= total / 2) {
-      return Offset.lerp(pts[i - 1], pts[i], seg == 0 ? 0 : (total / 2 - run) / seg)!;
+      return Offset.lerp(
+        pts[i - 1],
+        pts[i],
+        seg == 0 ? 0 : (total / 2 - run) / seg,
+      )!;
     }
     run += seg;
   }

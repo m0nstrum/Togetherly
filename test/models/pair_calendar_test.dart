@@ -30,15 +30,24 @@ void main() {
       birthdays: {'b': DateTime(1999, 10, 25)},
     );
     final march8 = events['2026-03-08']!;
-    expect(march8.map((e) => e.kind), [PairEventKind.capsule, PairEventKind.memory],
-        reason: 'праздник выше записи');
+    expect(march8.map((e) => e.kind), [
+      PairEventKind.capsule,
+      PairEventKind.memory,
+    ], reason: 'праздник выше записи');
     final feb28 = events['2026-02-28']!.single;
-    expect(feb28.kind, PairEventKind.anniversary, reason: '29.02 в невисокосный год — 28-го');
+    expect(
+      feb28.kind,
+      PairEventKind.anniversary,
+      reason: '29.02 в невисокосный год — 28-го',
+    );
     expect(feb28.years, 6);
     expect(events['2026-06-01']!.single.kind, PairEventKind.celebration);
     expect(events['2026-03-01']!.single.kind, PairEventKind.firstKiss);
     final bday = events['2026-10-25']!.single;
-    expect([bday.kind, bday.uid, bday.years], [PairEventKind.birthday, 'b', 27]);
+    expect(
+      [bday.kind, bday.uid, bday.years],
+      [PairEventKind.birthday, 'b', 27],
+    );
     expect(events.containsKey('2025-03-08'), isFalse, reason: 'вне диапазона');
   });
 

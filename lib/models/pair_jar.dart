@@ -51,5 +51,10 @@ class PairJar {
     );
   }
 
-  PairJar withBonus(int value) => PairJar(size: size, drops: drops, bonus: value < 0 ? 0 : value, capped: capped);
+  PairJar withBonus(int value) => PairJar(
+    size: size,
+    drops: drops,
+    bonus: value < 0 ? 0 : value,
+    capped: capped,
+  );
 }

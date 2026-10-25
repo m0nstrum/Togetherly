@@ -23,8 +23,13 @@ void main() {
     });
 
     test('тройка лидеров и хвост', () {
-      final s = MoodSummary.of(
-          const {'kiss': 5, 'happy': 4, 'sad': 3, 'anger': 2, 'fear': 1});
+      final s = MoodSummary.of(const {
+        'kiss': 5,
+        'happy': 4,
+        'sad': 3,
+        'anger': 2,
+        'fear': 1,
+      });
       expect(s.top.map((e) => e.id).toList(), ['kiss', 'happy', 'sad']);
       expect(s.restCount, 2);
     });

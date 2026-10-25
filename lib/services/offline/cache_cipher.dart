@@ -45,10 +45,8 @@ class CacheCipher {
   }
 
   /// Кодек sembast для этого ключа.
-  static SembastCodec codec(Uint8List key) => SembastCodec(
-        signature: _signature(key),
-        codec: _AesGcmCodec(key),
-      );
+  static SembastCodec codec(Uint8List key) =>
+      SembastCodec(signature: _signature(key), codec: _AesGcmCodec(key));
 
   /// Отпечаток ключа для подписи базы: по нему нельзя восстановить ключ, но
   /// подмена ключа ловится на открытии.
@@ -63,8 +61,8 @@ class CacheCipher {
 
 class _AesGcmCodec extends Codec<Object?, String> {
   _AesGcmCodec(Uint8List key)
-      : encoder = _AesGcmEncoder(key),
-        decoder = _AesGcmDecoder(key);
+    : encoder = _AesGcmEncoder(key),
+      decoder = _AesGcmDecoder(key);
 
   @override
   final Converter<Object?, String> encoder;
@@ -75,7 +73,7 @@ class _AesGcmCodec extends Codec<Object?, String> {
 
 class _AesGcmEncoder extends Converter<Object?, String> {
   _AesGcmEncoder(Uint8List key)
-      : _encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
+    : _encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
 
   final Encrypter _encrypter;
 
@@ -89,7 +87,7 @@ class _AesGcmEncoder extends Converter<Object?, String> {
 
 class _AesGcmDecoder extends Converter<String, Object?> {
   _AesGcmDecoder(Uint8List key)
-      : _encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
+    : _encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
 
   final Encrypter _encrypter;
 

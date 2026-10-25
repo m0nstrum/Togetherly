@@ -12,22 +12,36 @@ const Map<String, Map<String, String>> homeLayoutStrings = {
     'de': 'Startbildschirm',
   },
   'homeLayoutTabsHint': {
-    'ru': 'Вкладки внизу: зажми строку и перетащи. Главную, «Связь» и профиль спрятать нельзя.',
-    'en': 'Bottom tabs: press and hold a row to drag it. Home, Connect and Profile can’t be hidden.',
-    'pt': 'Separadores em baixo: mantém uma linha premida e arrasta. O início, a ligação e o perfil não se podem esconder.',
-    'it': 'Schede in basso: tieni premuta una riga e trascinala. Home, collegamento e profilo non si possono nascondere.',
-    'es': 'Pestañas inferiores: mantén pulsada una fila y arrástrala. Inicio, conexión y perfil no se pueden ocultar.',
-    'fr': 'Onglets du bas : garde le doigt sur une ligne et fais-la glisser. L’accueil, le lien et le profil ne se masquent pas.',
-    'de': 'Tabs unten: Halte eine Zeile gedrückt und zieh sie. Start, Verbindung und Profil lassen sich nicht ausblenden.',
+    'ru':
+        'Вкладки внизу: зажми строку и перетащи. Главную, «Связь» и профиль спрятать нельзя.',
+    'en':
+        'Bottom tabs: press and hold a row to drag it. Home, Connect and Profile can’t be hidden.',
+    'pt':
+        'Separadores em baixo: mantém uma linha premida e arrasta. O início, a ligação e o perfil não se podem esconder.',
+    'it':
+        'Schede in basso: tieni premuta una riga e trascinala. Home, collegamento e profilo non si possono nascondere.',
+    'es':
+        'Pestañas inferiores: mantén pulsada una fila y arrástrala. Inicio, conexión y perfil no se pueden ocultar.',
+    'fr':
+        'Onglets du bas : garde le doigt sur une ligne et fais-la glisser. L’accueil, le lien et le profil ne se masquent pas.',
+    'de':
+        'Tabs unten: Halte eine Zeile gedrückt und zieh sie. Start, Verbindung und Profil lassen sich nicht ausblenden.',
   },
   'homeLayoutBlocksHint': {
-    'ru': 'Блоки главной: зажми строку и перетащи, тумблер прячет блок. На самой главной блок тоже можно зажать и перетащить. Календарь, таймер и кнопки под ним стоят на месте.',
-    'en': 'Home blocks: press and hold a row to drag it, the switch hides the block. On the home screen you can also hold a block and drag it. The calendar, timer and buttons below it stay put.',
-    'pt': 'Blocos do início: mantém uma linha premida e arrasta, o interruptor esconde o bloco. No próprio ecrã inicial também podes manter um bloco premido e arrastá-lo. O calendário, o temporizador e os botões por baixo ficam no lugar.',
-    'it': 'Blocchi della home: tieni premuta una riga e trascinala, l’interruttore nasconde il blocco. Anche nella home puoi tenere premuto un blocco e trascinarlo. Calendario, timer e pulsanti sotto restano al loro posto.',
-    'es': 'Bloques de inicio: mantén pulsada una fila y arrástrala, el interruptor oculta el bloque. En la propia pantalla de inicio también puedes mantener pulsado un bloque y arrastrarlo. El calendario, el temporizador y los botones de debajo no se mueven.',
-    'fr': 'Blocs de l’accueil : garde le doigt sur une ligne et fais-la glisser, l’interrupteur masque le bloc. Sur l’accueil aussi, tu peux garder le doigt sur un bloc et le déplacer. Le calendrier, le minuteur et les boutons dessous restent en place.',
-    'de': 'Blöcke der Startseite: Halte eine Zeile gedrückt und zieh sie, der Schalter blendet den Block aus. Auch auf der Startseite selbst kannst du einen Block gedrückt halten und verschieben. Kalender, Timer und die Knöpfe darunter bleiben stehen.',
+    'ru':
+        'Блоки главной: зажми строку и перетащи, тумблер прячет блок. На самой главной блок тоже можно зажать и перетащить. Календарь, таймер и кнопки под ним стоят на месте.',
+    'en':
+        'Home blocks: press and hold a row to drag it, the switch hides the block. On the home screen you can also hold a block and drag it. The calendar, timer and buttons below it stay put.',
+    'pt':
+        'Blocos do início: mantém uma linha premida e arrasta, o interruptor esconde o bloco. No próprio ecrã inicial também podes manter um bloco premido e arrastá-lo. O calendário, o temporizador e os botões por baixo ficam no lugar.',
+    'it':
+        'Blocchi della home: tieni premuta una riga e trascinala, l’interruttore nasconde il blocco. Anche nella home puoi tenere premuto un blocco e trascinarlo. Calendario, timer e pulsanti sotto restano al loro posto.',
+    'es':
+        'Bloques de inicio: mantén pulsada una fila y arrástrala, el interruptor oculta el bloque. En la propia pantalla de inicio también puedes mantener pulsado un bloque y arrastrarlo. El calendario, el temporizador y los botones de debajo no se mueven.',
+    'fr':
+        'Blocs de l’accueil : garde le doigt sur une ligne et fais-la glisser, l’interrupteur masque le bloc. Sur l’accueil aussi, tu peux garder le doigt sur un bloc et le déplacer. Le calendrier, le minuteur et les boutons dessous restent en place.',
+    'de':
+        'Blöcke der Startseite: Halte eine Zeile gedrückt und zieh sie, der Schalter blendet den Block aus. Auch auf der Startseite selbst kannst du einen Block gedrückt halten und verschieben. Kalender, Timer und die Knöpfe darunter bleiben stehen.',
   },
   'homeLayoutPlusLock': {
     'ru': 'Скрывать и переставлять блоки можно с Togetherly+',

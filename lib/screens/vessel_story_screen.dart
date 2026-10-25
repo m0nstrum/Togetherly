@@ -146,16 +146,23 @@ class _VesselStoryScreenState extends State<VesselStoryScreen> {
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-                    _chip(_s.vesselLegendMood, Icons.emoji_emotions_rounded,
-                        {VesselFloor.mine, VesselFloor.partner}),
-                    _chip(_s.vesselLegendChat, Icons.chat_bubble_rounded,
-                        {VesselFloor.chat}),
-                    _chip(_s.vesselLegendMemory, Icons.photo_camera_rounded,
-                        {VesselFloor.memory}),
-                    _chip(_s.vesselLegendCycle, Icons.water_drop_rounded,
-                        {VesselFloor.cycle, VesselFloor.partnerCycle}),
-                    _chip(_s.cycleLegendIntimacy, Icons.favorite_rounded,
-                        {VesselFloor.intimacy}),
+                    _chip(_s.vesselLegendMood, Icons.emoji_emotions_rounded, {
+                      VesselFloor.mine,
+                      VesselFloor.partner,
+                    }),
+                    _chip(_s.vesselLegendChat, Icons.chat_bubble_rounded, {
+                      VesselFloor.chat,
+                    }),
+                    _chip(_s.vesselLegendMemory, Icons.photo_camera_rounded, {
+                      VesselFloor.memory,
+                    }),
+                    _chip(_s.vesselLegendCycle, Icons.water_drop_rounded, {
+                      VesselFloor.cycle,
+                      VesselFloor.partnerCycle,
+                    }),
+                    _chip(_s.cycleLegendIntimacy, Icons.favorite_rounded, {
+                      VesselFloor.intimacy,
+                    }),
                   ],
                 ),
               ),

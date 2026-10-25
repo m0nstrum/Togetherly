@@ -29,7 +29,11 @@ class _ProbeState extends State<_Probe> with RememberedTheme<_Probe> {
   @override
   Widget build(BuildContext context) {
     // Обращение к теме при живом экране запоминает её.
-    return SizedBox(width: 1, height: 1, child: Text('${rememberedTheme.brightness}'));
+    return SizedBox(
+      width: 1,
+      height: 1,
+      child: Text('${rememberedTheme.brightness}'),
+    );
   }
 }
 
@@ -39,9 +43,7 @@ void main() {
     await tester.pumpWidget(
       ThemeScope(
         theme: AppThemes.mint,
-        child: MaterialApp(
-          home: _Probe(onReady: (s) => state = s),
-        ),
+        child: MaterialApp(home: _Probe(onReady: (s) => state = s)),
       ),
     );
 
@@ -55,8 +57,9 @@ void main() {
     expect(state.rememberedTheme.name, AppThemes.mint.name);
   });
 
-  testWidgets('без единого обращения при жизни отдаётся тема по умолчанию',
-      (tester) async {
+  testWidgets('без единого обращения при жизни отдаётся тема по умолчанию', (
+    tester,
+  ) async {
     late _ProbeState state;
     await tester.pumpWidget(
       MaterialApp(home: _Probe(onReady: (s) => state = s)),

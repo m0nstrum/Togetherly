@@ -5,21 +5,21 @@ import 'package:love_app/models/cycle_entry.dart';
 import 'package:love_app/models/memory.dart';
 import 'package:love_app/models/mood_vessel.dart';
 
-VesselDay day(int d, {
+VesselDay day(
+  int d, {
   bool mine = false,
   bool partner = false,
   bool intimacy = false,
   bool period = false,
   bool partnerPeriod = false,
-}) =>
-    VesselDay(
-      date: DateTime(2026, 8, d),
-      mineMood: mine ? const Color(0xFFFF7E8B) : null,
-      partnerMood: partner ? const Color(0xFF3B82F6) : null,
-      intimacy: intimacy,
-      period: period,
-      partnerPeriod: partnerPeriod,
-    );
+}) => VesselDay(
+  date: DateTime(2026, 8, d),
+  mineMood: mine ? const Color(0xFFFF7E8B) : null,
+  partnerMood: partner ? const Color(0xFF3B82F6) : null,
+  intimacy: intimacy,
+  period: period,
+  partnerPeriod: partnerPeriod,
+);
 
 void main() {
   group('день сосуда', () {
@@ -61,8 +61,8 @@ void main() {
     test('блок падает в самый низкий столбец', () {
       final days = [
         day(1, mine: true, partner: true), // 2 этажа → столбец 0
-        day(2, mine: true),                // 1 этаж → столбец 1
-        day(3, mine: true),                // 1 этаж → столбец 2
+        day(2, mine: true), // 1 этаж → столбец 1
+        day(3, mine: true), // 1 этаж → столбец 2
       ];
       final blocks = layoutVessel(days, columns: 3);
       expect(blocks.map((b) => b.column), [0, 1, 2]);
@@ -86,10 +86,7 @@ void main() {
     });
 
     test('высота кладки — самый высокий столбец', () {
-      final days = [
-        day(1, mine: true, partner: true),
-        day(2, mine: true),
-      ];
+      final days = [day(1, mine: true, partner: true), day(2, mine: true)];
       expect(vesselHeight(layoutVessel(days, columns: 1)), 3);
     });
 
@@ -187,21 +184,24 @@ void main() {
       expect(months.length, 12);
       expect(months[2].date, DateTime(2026, 3));
       expect(months[2].floors, greaterThan(0), reason: 'март пуст');
-      expect(months[0].floors, 0, reason: 'январь без отметок должен быть пуст');
+      expect(
+        months[0].floors,
+        0,
+        reason: 'январь без отметок должен быть пуст',
+      );
     });
 
     test('в году высота месяца растёт с числом живых дней', () {
       List<VesselDay> yearWith(int days) => buildVesselYear(
-            year: 2026,
-            mineMoods: {
-              for (var d = 1; d <= days; d++)
-                '2026-03-${d.toString().padLeft(2, '0')}':
-                    const Color(0xFFFF0000),
-            },
-            partnerMoods: const {},
-            myCycle: const [],
-            partnerCycle: const [],
-          );
+        year: 2026,
+        mineMoods: {
+          for (var d = 1; d <= days; d++)
+            '2026-03-${d.toString().padLeft(2, '0')}': const Color(0xFFFF0000),
+        },
+        partnerMoods: const {},
+        myCycle: const [],
+        partnerCycle: const [],
+      );
       expect(yearWith(20)[2].floors, greaterThan(yearWith(5)[2].floors));
     });
   });
@@ -209,33 +209,40 @@ void main() {
   group('события дня, кроме настроения', () {
     test('воспоминание — свой этаж', () {
       final plain = VesselDay(date: _day);
-      final withMemory =
-          VesselDay(date: _day, memories: const [MemoryType.photo]);
+      final withMemory = VesselDay(
+        date: _day,
+        memories: const [MemoryType.photo],
+      );
       expect(withMemory.floors, plain.floors + 1);
     });
 
     test('каждый вид записи кладёт свой этаж со своим значком', () {
-      final day = VesselDay(date: _day, memories: const [
-        MemoryType.photo,
-        MemoryType.music,
-        MemoryType.text,
-      ]);
+      final day = VesselDay(
+        date: _day,
+        memories: const [MemoryType.photo, MemoryType.music, MemoryType.text],
+      );
       expect(day.floors, 3);
       expect(
         day.floorKinds.map((f) => f.memoryType).whereType<MemoryType>(),
-        containsAll(
-            const [MemoryType.photo, MemoryType.music, MemoryType.text]),
+        containsAll(const [
+          MemoryType.photo,
+          MemoryType.music,
+          MemoryType.text,
+        ]),
       );
     });
 
     test('пять снимков за день — один этаж: вид, а не штука', () {
-      final day = VesselDay(date: _day, memories: const [
-        MemoryType.photo,
-        MemoryType.photo,
-        MemoryType.photo,
-        MemoryType.photo,
-        MemoryType.photo,
-      ]);
+      final day = VesselDay(
+        date: _day,
+        memories: const [
+          MemoryType.photo,
+          MemoryType.photo,
+          MemoryType.photo,
+          MemoryType.photo,
+          MemoryType.photo,
+        ],
+      );
       expect(day.floors, 1);
     });
 

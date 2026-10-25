@@ -13,27 +13,32 @@ import '../helpers/achievement_harness.dart';
 
 const _stats = AchievementStats(messages: 130, streakDays: 7);
 
-Widget _app({required bool homeOnTop, required List<String> ids, VoidCallback? onSeeAll}) =>
-    achievementApp(Builder(
-      builder: (context) => Scaffold(
-        body: Center(
-          child: TextButton(
-            onPressed: () {
-              for (final id in ids) {
-                AchievementUnlock.show(
-                  context,
-                  PairAchievement.byId(id)!,
-                  homeOnTop: () => homeOnTop,
-                  stats: () => _stats,
-                  onSeeAll: onSeeAll,
-                );
-              }
-            },
-            child: const Text('получить'),
-          ),
+Widget _app({
+  required bool homeOnTop,
+  required List<String> ids,
+  VoidCallback? onSeeAll,
+}) => achievementApp(
+  Builder(
+    builder: (context) => Scaffold(
+      body: Center(
+        child: TextButton(
+          onPressed: () {
+            for (final id in ids) {
+              AchievementUnlock.show(
+                context,
+                PairAchievement.byId(id)!,
+                homeOnTop: () => homeOnTop,
+                stats: () => _stats,
+                onSeeAll: onSeeAll,
+              );
+            }
+          },
+          child: const Text('получить'),
         ),
       ),
-    ));
+    ),
+  ),
+);
 
 /// Полторы секунды кадрами: хватает на сбор пачки, выезд листа и пружину
 /// рисунка, и заведомо меньше времени, которое висит островок.
@@ -85,7 +90,9 @@ void main() {
   });
 
   testWidgets('два сразу идут по очереди и считаются', (tester) async {
-    await tester.pumpWidget(_app(homeOnTop: true, ids: ['messages_100', 'streak_7']));
+    await tester.pumpWidget(
+      _app(homeOnTop: true, ids: ['messages_100', 'streak_7']),
+    );
     await tester.tap(find.text('получить'));
     await _settle(tester);
     expect(find.byType(AchievementSheetBody), findsOneWidget);
@@ -104,7 +111,10 @@ void main() {
   });
 
   test('попап по центру и конфетти удалены из приложения', () {
-    expect(File('lib/widgets/achievement_unlock_overlay.dart').existsSync(), isFalse);
+    expect(
+      File('lib/widgets/achievement_unlock_overlay.dart').existsSync(),
+      isFalse,
+    );
     final home = File('lib/screens/home_screen.dart').readAsStringSync();
     expect(home.contains('AchievementUnlockOverlay'), isFalse);
     expect(home.contains('AchievementUnlock.show('), isTrue);

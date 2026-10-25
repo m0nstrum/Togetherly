@@ -17,17 +17,16 @@ void main() {
     String place = '',
     Object? date,
     String state = 'reacted',
-  }) =>
-      {
-        'gift_key': key,
-        'created': created,
-        'sender_uid': sender,
-        'note': note,
-        'reply': reply,
-        'place': place,
-        if (date != null) 'date': date,
-        'state': state,
-      };
+  }) => {
+    'gift_key': key,
+    'created': created,
+    'sender_uid': sender,
+    'note': note,
+    'reply': reply,
+    'place': place,
+    if (date != null) 'date': date,
+    'state': state,
+  };
 
   group('Отбор по подарку', () {
     final records = [
@@ -43,8 +42,10 @@ void main() {
     });
 
     test('Свежее сверху', () {
-      expect(memosOfKey(records, 'letter').map((m) => m.note),
-          ['Второе', 'Первое']);
+      expect(memosOfKey(records, 'letter').map((m) => m.note), [
+        'Второе',
+        'Первое',
+      ]);
     });
 
     test('Незнакомый подарок отдаёт пустой список, а не падает', () {
@@ -54,16 +55,9 @@ void main() {
 
   group('Разбор записи', () {
     test('Записка, ответ и место доезжают целиком', () {
-      final memo = memosOfKey(
-        [
-          rec(
-            note: 'Люблю тебя',
-            reply: 'И я',
-            place: 'Кофейня на углу',
-          )
-        ],
-        'letter',
-      ).single;
+      final memo = memosOfKey([
+        rec(note: 'Люблю тебя', reply: 'И я', place: 'Кофейня на углу'),
+      ], 'letter').single;
 
       expect(memo.note, 'Люблю тебя');
       expect(memo.reply, 'И я');
@@ -79,10 +73,12 @@ void main() {
     });
 
     test('Есть записка или ответ — значит, есть что перечитать', () {
-      expect(memosOfKey([rec(note: 'Привет')], 'letter').single.hasText, isTrue);
-      expect(memosOfKey([rec(reply: 'Ага')], 'letter').single.hasText, isTrue);
       expect(
-          memosOfKey([rec(place: 'Парк')], 'letter').single.hasText, isTrue);
+        memosOfKey([rec(note: 'Привет')], 'letter').single.hasText,
+        isTrue,
+      );
+      expect(memosOfKey([rec(reply: 'Ага')], 'letter').single.hasText, isTrue);
+      expect(memosOfKey([rec(place: 'Парк')], 'letter').single.hasText, isTrue);
     });
 
     test('Дата свидания приходит числом миллисекунд', () {
@@ -92,9 +88,9 @@ void main() {
     });
 
     test('Битая дата не роняет разбор', () {
-      final memo =
-          memosOfKey([rec(created: 'позавчера', date: 'завтра')], 'letter')
-              .single;
+      final memo = memosOfKey([
+        rec(created: 'позавчера', date: 'завтра'),
+      ], 'letter').single;
       expect(memo.date, isNull);
       expect(memo.sentAt, isNull);
     });
@@ -102,11 +98,7 @@ void main() {
 
   group('Сколько всего с текстом', () {
     test('Считаем записи, которые есть смысл открывать', () {
-      final records = [
-        rec(note: 'раз'),
-        rec(),
-        rec(key: 'star', reply: 'два'),
-      ];
+      final records = [rec(note: 'раз'), rec(), rec(key: 'star', reply: 'два')];
       expect(countWithText(records), 2);
     });
   });

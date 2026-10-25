@@ -72,8 +72,11 @@ class ProfileBanner extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: Colors.black.withValues(alpha: 0.30),
                   ),
-                  child: const Icon(Icons.photo_camera_rounded,
-                      size: 18, color: Colors.white),
+                  child: const Icon(
+                    Icons.photo_camera_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),

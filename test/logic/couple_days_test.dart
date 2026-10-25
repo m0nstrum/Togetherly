@@ -11,10 +11,7 @@ void main() {
 
   group('coupleStartDate', () {
     test('берёт более раннюю из двух дат', () {
-      expect(
-        coupleStartDate(timerStart: timer, groupStart: connect),
-        timer,
-      );
+      expect(coupleStartDate(timerStart: timer, groupStart: connect), timer);
     });
 
     test('таймер позже коннекта — считаем от таймера', () {
@@ -113,10 +110,7 @@ void main() {
     });
 
     test('дата в будущем даёт 0', () {
-      expect(
-        coupleDaysTogether(timerStart: DateTime(2026, 8, 1), now: now),
-        0,
-      );
+      expect(coupleDaysTogether(timerStart: DateTime(2026, 8, 1), now: now), 0);
     });
 
     test('дат нет — null', () {
@@ -134,20 +128,26 @@ void main() {
     final anniversary = DateTime(2025, 9, 3);
     final nowThen = DateTime(2026, 8, 24, 13, 3);
 
-    test('пара сошлась сегодня, а годовщина год назад — считаем от годовщины', () {
-      expect(
-        coupleDaysTogether(
-          groupStart: connectToday,
-          anniversary: anniversary,
-          now: nowThen,
-        ),
-        355,
-      );
-    });
+    test(
+      'пара сошлась сегодня, а годовщина год назад — считаем от годовщины',
+      () {
+        expect(
+          coupleDaysTogether(
+            groupStart: connectToday,
+            anniversary: anniversary,
+            now: nowThen,
+          ),
+          355,
+        );
+      },
+    );
 
     test('годовщина позже коннекта — она срок не укорачивает', () {
       expect(
-        coupleStartDate(groupStart: connect, anniversary: DateTime(2026, 6, 20)),
+        coupleStartDate(
+          groupStart: connect,
+          anniversary: DateTime(2026, 6, 20),
+        ),
         connect,
       );
     });

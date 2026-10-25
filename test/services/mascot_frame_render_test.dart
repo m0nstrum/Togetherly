@@ -17,33 +17,38 @@ Future<ui.Image> _stripedSheet({
   final canvas = Canvas(recorder);
   for (var r = 0; r < rows; r++) {
     canvas.drawRect(
-      Rect.fromLTWH(0, (r * frame).toDouble(), (cols * frame).toDouble(), frame.toDouble()),
+      Rect.fromLTWH(
+        0,
+        (r * frame).toDouble(),
+        (cols * frame).toDouble(),
+        frame.toDouble(),
+      ),
       Paint()..color = _rowColor(r),
     );
   }
   return recorder.endRecording().toImage(cols * frame, rows * frame);
 }
 
-Color _rowColor(int row) => Color.fromARGB(255, 10 + row * 20, 40 + row * 5, 200 - row * 15);
+Color _rowColor(int row) =>
+    Color.fromARGB(255, 10 + row * 20, 40 + row * 5, 200 - row * 15);
 
 MascotAnim _anim({
   required List<String> rows,
   String nightIdle = '',
   Map<int, int> levelOffsets = const {3: 0, 1: 9, 2: 18},
   int frame = 48,
-}) =>
-    MascotAnim(
-      id: 'test',
-      nameRu: 'Тест',
-      nameEn: 'Test',
-      sheetUrl: 'https://example.invalid/sheet.png',
-      frame: frame,
-      cols: 12,
-      fps: 9,
-      rows: rows,
-      levelOffsets: levelOffsets,
-      nightIdle: nightIdle,
-    );
+}) => MascotAnim(
+  id: 'test',
+  nameRu: 'Тест',
+  nameEn: 'Test',
+  sheetUrl: 'https://example.invalid/sheet.png',
+  frame: frame,
+  cols: 12,
+  fps: 9,
+  rows: rows,
+  levelOffsets: levelOffsets,
+  nightIdle: nightIdle,
+);
 
 Future<ui.Image> _decode(Uint8List png) async {
   final codec = await ui.instantiateImageCodec(png);
@@ -74,7 +79,17 @@ Future<Size> _size(Uint8List png) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const standardRows = ['live', 'grow', 'freeze', 'sad', 'happy', 'grab', 'drag', 'drop', 'resize'];
+  const standardRows = [
+    'live',
+    'grow',
+    'freeze',
+    'sad',
+    'happy',
+    'grab',
+    'drag',
+    'drop',
+    'resize',
+  ];
 
   test('день, ночь и грусть берутся из разных строк атласа', () async {
     final sheet = await _stripedSheet(frame: 48, cols: 12, rows: 27);

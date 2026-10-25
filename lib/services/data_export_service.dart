@@ -63,7 +63,8 @@ class DataExportService {
       final file = File('${dir.path}/togetherly-data-$stamp.json');
       // Отступ намеренный: архив открывают глазами, а не машиной.
       await file.writeAsString(
-          const JsonEncoder.withIndent('  ').convert(bundle));
+        const JsonEncoder.withIndent('  ').convert(bundle),
+      );
       return file.path;
     } catch (e) {
       debugPrint('DataExportService.buildArchive failed: $e');

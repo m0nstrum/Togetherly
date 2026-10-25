@@ -16,12 +16,24 @@ void main() {
   }
 
   test('живые пакеты несут слой мазка', () {
-    expect(body('LiveStrokeMeta _liveMeta() => LiveStrokeMeta('), contains('layer: _activeLayer'));
-    expect(body('Future<void> _pushLiveDone(DrawStroke stroke)'), contains('layer: stroke.layer'));
+    expect(
+      body('LiveStrokeMeta _liveMeta() => LiveStrokeMeta('),
+      contains('layer: _activeLayer'),
+    );
+    expect(
+      body('Future<void> _pushLiveDone(DrawStroke stroke)'),
+      contains('layer: stroke.layer'),
+    );
   });
 
   test('мазок партнёра без слоя встаёт в верхний слой, как раньше', () {
-    expect(source, contains('assembler.buildStroke(uid, fallbackLayer: _topLayer)'));
-    expect(source, contains('assembler.buildLive(uid, fallbackLayer: _topLayer)'));
+    expect(
+      source,
+      contains('assembler.buildStroke(uid, fallbackLayer: _topLayer)'),
+    );
+    expect(
+      source,
+      contains('assembler.buildLive(uid, fallbackLayer: _topLayer)'),
+    );
   });
 }

@@ -42,7 +42,8 @@ Future<void> _loadFont(String family, String path) async {
 /// Снимок моря из настоящего скриншота профиля — тот же кадр, что в макете.
 Uint8List _beach() {
   final shot = img.decodeJpg(
-      File('docs/branding/raw/04-profile.jpg').readAsBytesSync())!;
+    File('docs/branding/raw/04-profile.jpg').readAsBytesSync(),
+  )!;
   final crop = img.copyCrop(shot, x: 312, y: 276, width: 624, height: 364);
   return Uint8List.fromList(img.encodePng(crop));
 }
@@ -110,8 +111,11 @@ class _Home extends StatelessWidget {
                     child: const SizedBox(
                       width: 36,
                       height: 36,
-                      child: Icon(Icons.settings_rounded,
-                          color: Colors.white, size: 20),
+                      child: Icon(
+                        Icons.settings_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -127,12 +131,15 @@ class _Home extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Берег',
-                        style: TextStyle(
-                            fontFamily: 'Unbounded',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: scheme.onSurface)),
+                    Text(
+                      'Берег',
+                      style: TextStyle(
+                        fontFamily: 'Unbounded',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     GestureDetector(
                       key: const ValueKey('cover'),
@@ -141,9 +148,10 @@ class _Home extends StatelessWidget {
                           builder: (_) => const FullscreenGallery(
                             items: [
                               GalleryItem(
-                                  url: 'pb://media/abc/a.jpg',
-                                  memoryId: 'p1',
-                                  caption: 'Берег'),
+                                url: 'pb://media/abc/a.jpg',
+                                memoryId: 'p1',
+                                caption: 'Берег',
+                              ),
                             ],
                             initialIndex: 0,
                           ),
@@ -178,14 +186,17 @@ void main() {
     await PocketBaseService().init();
     await _loadFont('Onest', 'assets/fonts/Onest.ttf');
     await _loadFont('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _loadFont('MaterialIcons',
-        '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _loadFont(
+      'MaterialIcons',
+      '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
     beach = _beach();
     UnfoldTouch.install();
   });
 
-  testWidgets('настройки растут из шестерёнки, кадр летит в просмотр',
-      (tester) async {
+  testWidgets('настройки растут из шестерёнки, кадр летит в просмотр', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(360 * 2, 780 * 2);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
@@ -200,26 +211,28 @@ void main() {
     });
     addTearDown(() => photo.dispose());
 
-    await tester.pumpWidget(RepaintBoundary(
-      key: root,
-      child: ThemeScope(
-        theme: theme,
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ProfileTheme.data(scheme).copyWith(
-            pageTransitionsTheme: PageTransitionsTheme(
-              builders: {
-                TargetPlatform.android: UnfoldPageTransitionsBuilder(
-                  fallback: const PredictiveBackPageTransitionsBuilder(),
-                  fill: (context) => Theme.of(context).colorScheme.surface,
-                ),
-              },
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: root,
+        child: ThemeScope(
+          theme: theme,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ProfileTheme.data(scheme).copyWith(
+              pageTransitionsTheme: PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: UnfoldPageTransitionsBuilder(
+                    fallback: const PredictiveBackPageTransitionsBuilder(),
+                    fill: (context) => Theme.of(context).colorScheme.surface,
+                  ),
+                },
+              ),
             ),
+            home: _Home(theme: theme, scheme: scheme, photo: photo),
           ),
-          home: _Home(theme: theme, scheme: scheme, photo: photo),
         ),
       ),
-    ));
+    );
     await tester.pump(const Duration(milliseconds: 400));
 
     Directory('build/unfold-all').createSync(recursive: true);
@@ -229,8 +242,9 @@ void main() {
             root.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-        File('build/unfold-all/$name.png')
-            .writeAsBytesSync(bytes!.buffer.asUint8List());
+        File(
+          'build/unfold-all/$name.png',
+        ).writeAsBytesSync(bytes!.buffer.asUint8List());
       });
     }
 

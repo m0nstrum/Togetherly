@@ -35,8 +35,8 @@ class HelpItem {
   String get question => trKey('help.$id.q');
   String get path => fillHelpLabels(trKey('help.$id.path'));
   List<String> get steps => [
-        for (final n in [1, 2, 3]) fillHelpLabels(trKey('help.$id.s$n')),
-      ];
+    for (final n in [1, 2, 3]) fillHelpLabels(trKey('help.$id.s$n')),
+  ];
 }
 
 /// `{connect}` → подпись с экрана на текущем языке. Так шаг зовёт кнопку тем
@@ -48,35 +48,77 @@ String helpTopicLabel(HelpTopic t) => trKey('help.topic.${t.name}');
 
 /// Вопросы справки.
 List<HelpItem> helpItems() => [
-      const HelpItem('unpair', HelpTopic.pair, Icons.link_off_rounded,
-          HelpAction.tabConnect),
-      const HelpItem('startDate', HelpTopic.pair, Icons.event_rounded,
-          HelpAction.tabHome),
-      const HelpItem('draw', HelpTopic.together, Icons.brush_rounded,
-          HelpAction.tabHome),
-      const HelpItem('watch', HelpTopic.together, Icons.live_tv_rounded,
-          HelpAction.tabWatch),
-      const HelpItem('tasks', HelpTopic.together, Icons.task_alt_rounded,
-          HelpAction.tabHome),
-      const HelpItem('widgetPhoto', HelpTopic.widgets,
-          Icons.hide_image_rounded, HelpAction.tabWidgets),
-      const HelpItem('widgetStale', HelpTopic.widgets, Icons.widgets_rounded,
-          HelpAction.tabWidgets),
-      const HelpItem('password', HelpTopic.account, Icons.lock_rounded,
-          HelpAction.settings),
-      const HelpItem(
-          'resetMail', HelpTopic.account, Icons.mark_email_unread_rounded),
-      const HelpItem('email', HelpTopic.account, Icons.mark_email_read_rounded,
-          HelpAction.settings),
-      const HelpItem('gender', HelpTopic.account, Icons.transgender_rounded,
-          HelpAction.tabProfile),
-    ];
+  const HelpItem(
+    'unpair',
+    HelpTopic.pair,
+    Icons.link_off_rounded,
+    HelpAction.tabConnect,
+  ),
+  const HelpItem(
+    'startDate',
+    HelpTopic.pair,
+    Icons.event_rounded,
+    HelpAction.tabHome,
+  ),
+  const HelpItem(
+    'draw',
+    HelpTopic.together,
+    Icons.brush_rounded,
+    HelpAction.tabHome,
+  ),
+  const HelpItem(
+    'watch',
+    HelpTopic.together,
+    Icons.live_tv_rounded,
+    HelpAction.tabWatch,
+  ),
+  const HelpItem(
+    'tasks',
+    HelpTopic.together,
+    Icons.task_alt_rounded,
+    HelpAction.tabHome,
+  ),
+  const HelpItem(
+    'widgetPhoto',
+    HelpTopic.widgets,
+    Icons.hide_image_rounded,
+    HelpAction.tabWidgets,
+  ),
+  const HelpItem(
+    'widgetStale',
+    HelpTopic.widgets,
+    Icons.widgets_rounded,
+    HelpAction.tabWidgets,
+  ),
+  const HelpItem(
+    'password',
+    HelpTopic.account,
+    Icons.lock_rounded,
+    HelpAction.settings,
+  ),
+  const HelpItem(
+    'resetMail',
+    HelpTopic.account,
+    Icons.mark_email_unread_rounded,
+  ),
+  const HelpItem(
+    'email',
+    HelpTopic.account,
+    Icons.mark_email_read_rounded,
+    HelpAction.settings,
+  ),
+  const HelpItem(
+    'gender',
+    HelpTopic.account,
+    Icons.transgender_rounded,
+    HelpAction.tabProfile,
+  ),
+];
 
 /// Два вопроса крупными плитками наверху: о них спрашивают чаще всего.
 List<HelpItem> helpPopular(List<HelpItem> items) => [
-      for (final id in ['startDate', 'unpair'])
-        ...items.where((i) => i.id == id),
-    ].take(2).toList();
+  for (final id in ['startDate', 'unpair']) ...items.where((i) => i.id == id),
+].take(2).toList();
 
 /// Поиск по вопросу, пути и шагам, без учёта регистра и «ё».
 bool helpMatches(HelpItem item, String query) {

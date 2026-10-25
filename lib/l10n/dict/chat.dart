@@ -2038,13 +2038,20 @@ const Map<String, Map<String, String>> chatStrings = {
     'de': 'Gemeinsamer Feed',
   },
   'plusReelsBody': {
-    'ru': 'Shorts, TikTok, Rutube, ВК и Дзен вдвоём: ролики из обеих лент, чат и звонок. Хватает Плюса у одного из пары',
-    'en': 'Shorts, TikTok, Rutube, VK and Dzen together: clips from both feeds, chat and calls. One Plus covers the couple',
-    'pt': 'Shorts, TikTok, Rutube, VK e Dzen juntos: vídeos dos dois feeds, chat e chamada. Basta o Plus de um do casal',
-    'it': 'Shorts, TikTok, Rutube, VK e Dzen insieme: video da entrambi i feed, chat e chiamata. Basta il Plus di uno dei due',
-    'es': 'Shorts, TikTok, Rutube, VK y Dzen juntos: vídeos de ambos feeds, chat y llamada. Basta con el Plus de uno de la pareja',
-    'fr': 'Shorts, TikTok, Rutube, VK et Dzen à deux : les vidéos des deux fils, chat et appel. Le Plus d’un seul suffit au couple',
-    'de': 'Shorts, TikTok, Rutube, VK und Dzen zu zweit: Clips aus beiden Feeds, Chat und Anruf. Plus bei einem reicht für beide',
+    'ru':
+        'Shorts, TikTok, Rutube, ВК и Дзен вдвоём: ролики из обеих лент, чат и звонок. Хватает Плюса у одного из пары',
+    'en':
+        'Shorts, TikTok, Rutube, VK and Dzen together: clips from both feeds, chat and calls. One Plus covers the couple',
+    'pt':
+        'Shorts, TikTok, Rutube, VK e Dzen juntos: vídeos dos dois feeds, chat e chamada. Basta o Plus de um do casal',
+    'it':
+        'Shorts, TikTok, Rutube, VK e Dzen insieme: video da entrambi i feed, chat e chiamata. Basta il Plus di uno dei due',
+    'es':
+        'Shorts, TikTok, Rutube, VK y Dzen juntos: vídeos de ambos feeds, chat y llamada. Basta con el Plus de uno de la pareja',
+    'fr':
+        'Shorts, TikTok, Rutube, VK et Dzen à deux : les vidéos des deux fils, chat et appel. Le Plus d’un seul suffit au couple',
+    'de':
+        'Shorts, TikTok, Rutube, VK und Dzen zu zweit: Clips aus beiden Feeds, Chat und Anruf. Plus bei einem reicht für beide',
   },
   'plusCycleBody': {
     'ru': 'Отметки, прогноз и статистика с графиками',
@@ -2110,8 +2117,10 @@ const Map<String, Map<String, String>> chatStrings = {
     'en': 'A heart, a star and eight more shapes in chat; the circle is free',
     'pt': 'Coração, estrela e mais oito formas no chat; o círculo é grátis',
     'it': 'Cuore, stella e altre otto forme in chat; il cerchio è per tutti',
-    'es': 'Corazón, estrella y ocho formas más en el chat; el círculo es gratis',
-    'fr': 'Un cœur, une étoile et huit autres formes dans le chat ; le cercle est gratuit',
+    'es':
+        'Corazón, estrella y ocho formas más en el chat; el círculo es gratis',
+    'fr':
+        'Un cœur, une étoile et huit autres formes dans le chat ; le cercle est gratuit',
     'de': 'Herz, Stern und acht weitere Formen im Chat; der Kreis bleibt frei',
   },
   'plusVideoTitle': {
@@ -2289,10 +2298,12 @@ const Map<String, Map<String, String>> chatStrings = {
     'it': 'Paghi tu e Togetherly+ si apre per chi scegli.',
     'es': 'Pagas tú y Togetherly+ se abre para quien elijas.',
     'fr': 'Tu paies, et Togetherly+ s’ouvre pour la personne que tu choisis.',
-    'de': 'Du zahlst, und Togetherly+ öffnet sich für die Person, die du wählst.',
+    'de':
+        'Du zahlst, und Togetherly+ öffnet sich für die Person, die du wählst.',
   },
   'plusGiftSheetNote': {
-    'ru': 'Почту вводить не нужно — подставим сами. О подарке придёт уведомление.',
+    'ru':
+        'Почту вводить не нужно — подставим сами. О подарке придёт уведомление.',
     'en': 'No email to type, we fill it in. A notification announces the gift.',
     'pt':
         'Não precisa digitar e-mail, preenchemos sozinhos. Um aviso anuncia o presente.',
@@ -2300,8 +2311,7 @@ const Map<String, Map<String, String>> chatStrings = {
         'Non serve scrivere l’e-mail, la mettiamo noi. Del regalo arriva una notifica.',
     'es':
         'No hace falta escribir el correo, lo ponemos nosotros. Un aviso anuncia el regalo.',
-    'fr':
-        'Pas d’e-mail à saisir, on s’en occupe. Un avis annonce le cadeau.',
+    'fr': 'Pas d’e-mail à saisir, on s’en occupe. Un avis annonce le cadeau.',
     'de':
         'Keine E-Mail eintippen, das machen wir. Eine Mitteilung kündigt das Geschenk an.',
   },

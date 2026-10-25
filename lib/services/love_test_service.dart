@@ -26,8 +26,7 @@ class LoveTestPair {
   final Set<String> myLastRound;
 
   /// С чем сравнивать свежий результат.
-  LoveTestResult? get myPrevious =>
-      myHistory.isEmpty ? null : myHistory.last;
+  LoveTestResult? get myPrevious => myHistory.isEmpty ? null : myHistory.last;
 
   bool get partnerReady => theirs != null;
   bool get bothReady => mine != null && theirs != null;

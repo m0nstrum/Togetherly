@@ -69,9 +69,10 @@ class RateLimiterService {
     final now = DateTime.now();
     final cutoff = now.subtract(window);
 
-    final recent = _readTimestamps(prefs, key)
-        .where((t) => t.isAfter(cutoff))
-        .toList();
+    final recent = _readTimestamps(
+      prefs,
+      key,
+    ).where((t) => t.isAfter(cutoff)).toList();
 
     if (recent.length >= maxCount) {
       recent.sort();
@@ -84,18 +85,15 @@ class RateLimiterService {
     }
   }
 
-  Future<void> _record({
-    required String key,
-    required Duration window,
-  }) async {
+  Future<void> _record({required String key, required Duration window}) async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final cutoff = now.subtract(window);
 
-    final kept = _readTimestamps(prefs, key)
-        .where((t) => t.isAfter(cutoff))
-        .toList()
-      ..add(now);
+    final kept = _readTimestamps(
+      prefs,
+      key,
+    ).where((t) => t.isAfter(cutoff)).toList()..add(now);
 
     await prefs.setStringList(
       key,

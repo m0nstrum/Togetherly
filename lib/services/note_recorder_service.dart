@@ -165,8 +165,9 @@ class NoteRecorderService {
       throw const NoteRecordException(NoteRecordError.noCamera);
     }
     // Фигурку почти всегда снимают на себя, поэтому начинаем с фронтальной.
-    final front =
-        _cameras.indexWhere((c) => c.lensDirection == CameraLensDirection.front);
+    final front = _cameras.indexWhere(
+      (c) => c.lensDirection == CameraLensDirection.front,
+    );
     _cameraIndex = front >= 0 ? front : 0;
     return _open(_cameras[_cameraIndex]);
   }
@@ -177,7 +178,9 @@ class NoteRecorderService {
     if (old != null) {
       try {
         await old.dispose();
-      } catch (_) {/* уже мёртв */}
+      } catch (_) {
+        /* уже мёртв */
+      }
     }
     // 480p. Фигурка занимает на экране около 230 dp, а перед отправкой видео
     // всё равно жмётся до 540p — снимать 720p значит греть кодек впустую и

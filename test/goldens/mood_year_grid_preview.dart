@@ -97,7 +97,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/mood-year')..createSync(recursive: true);
-      File('${dir.path}/$name.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+      File(
+        '${dir.path}/$name.png',
+      ).writeAsBytesSync(bytes!.buffer.asUint8List());
       // ignore: avoid_print
       print('снимок: build/mood-year/$name.png');
     }

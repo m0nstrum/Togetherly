@@ -221,8 +221,10 @@ abstract final class AppDialog {
                       borderRadius: BorderRadius.circular(18),
                       borderSide: BorderSide(color: cs.primary, width: 2),
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 16,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -257,11 +259,11 @@ abstract final class AppDialog {
   // ── общие кусочки оформления ─────────────────────────────────────────────
 
   static TextStyle _titleStyle(ColorScheme cs) => AppFonts.unbounded(
-        size: 21,
-        weight: 700,
-        letterSpacing: -0.4,
-        color: cs.onSurface,
-      );
+    size: 21,
+    weight: 700,
+    letterSpacing: -0.4,
+    color: cs.onSurface,
+  );
 
   static Widget _iconChip(IconData icon, Color color, ColorScheme cs) =>
       Container(
@@ -278,39 +280,37 @@ abstract final class AppDialog {
     ColorScheme cs, {
     required String label,
     required VoidCallback onPressed,
-  }) =>
-      TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          shape: const StadiumBorder(),
-          foregroundColor: cs.onSurfaceVariant,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-        ),
-      );
+  }) => TextButton(
+    onPressed: onPressed,
+    style: TextButton.styleFrom(
+      shape: const StadiumBorder(),
+      foregroundColor: cs.onSurfaceVariant,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+    ),
+  );
 
   static Widget _filledButton({
     required String label,
     required Color background,
     required Color foreground,
     required VoidCallback onPressed,
-  }) =>
-      FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: background,
-          foregroundColor: foreground,
-          shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-        ),
-      );
+  }) => FilledButton(
+    onPressed: onPressed,
+    style: FilledButton.styleFrom(
+      backgroundColor: background,
+      foregroundColor: foreground,
+      shape: const StadiumBorder(),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+    ),
+  );
 }
 
 /// Снэкбары в едином стиле (форма/поведение — из `snackBarTheme`).
@@ -337,7 +337,9 @@ abstract final class AppSnack {
           children: [
             Icon(icon, color: iconColor, size: 20),
             const SizedBox(width: 12),
-            Expanded(child: Text(message, style: TextStyle(color: cs.onSurface))),
+            Expanded(
+              child: Text(message, style: TextStyle(color: cs.onSurface)),
+            ),
           ],
         ),
         action: (actionLabel != null && onAction != null)
@@ -353,15 +355,14 @@ abstract final class AppSnack {
     String message, {
     String? actionLabel,
     VoidCallback? onAction,
-  }) =>
-      _show(
-        context,
-        message: message,
-        icon: Icons.check_circle_rounded,
-        iconColor: Theme.of(context).colorScheme.primary,
-        actionLabel: actionLabel,
-        onAction: onAction,
-      );
+  }) => _show(
+    context,
+    message: message,
+    icon: Icons.check_circle_rounded,
+    iconColor: Theme.of(context).colorScheme.primary,
+    actionLabel: actionLabel,
+    onAction: onAction,
+  );
 
   /// Ошибка (красный крест).
   static void error(
@@ -369,15 +370,14 @@ abstract final class AppSnack {
     String message, {
     String? actionLabel,
     VoidCallback? onAction,
-  }) =>
-      _show(
-        context,
-        message: message,
-        icon: Icons.error_rounded,
-        iconColor: Theme.of(context).colorScheme.error,
-        actionLabel: actionLabel,
-        onAction: onAction,
-      );
+  }) => _show(
+    context,
+    message: message,
+    icon: Icons.error_rounded,
+    iconColor: Theme.of(context).colorScheme.error,
+    actionLabel: actionLabel,
+    onAction: onAction,
+  );
 
   /// Нейтральное сообщение (иконка в цвете активной темы).
   static void info(
@@ -385,13 +385,12 @@ abstract final class AppSnack {
     String message, {
     String? actionLabel,
     VoidCallback? onAction,
-  }) =>
-      _show(
-        context,
-        message: message,
-        icon: Icons.info_rounded,
-        iconColor: Theme.of(context).colorScheme.primary,
-        actionLabel: actionLabel,
-        onAction: onAction,
-      );
+  }) => _show(
+    context,
+    message: message,
+    icon: Icons.info_rounded,
+    iconColor: Theme.of(context).colorScheme.primary,
+    actionLabel: actionLabel,
+    onAction: onAction,
+  );
 }

@@ -54,7 +54,10 @@ void main() {
     addTearDown(tester.view.reset);
 
     final key = GlobalKey();
-    final t = buildAppTheme(kPalettes.firstWhere((p) => p.name == 'Кофе'), Brightness.light);
+    final t = buildAppTheme(
+      kPalettes.firstWhere((p) => p.name == 'Кофе'),
+      Brightness.light,
+    );
     final cs = t.scheme!;
 
     Widget phone(double w, double h, Widget child) => Container(
@@ -62,7 +65,10 @@ void main() {
       height: h,
       margin: const EdgeInsets.all(12),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(28)),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(28),
+      ),
       child: child,
     );
     Widget ph(String text) => Container(
@@ -72,9 +78,15 @@ void main() {
         border: Border.all(color: cs.outlineVariant),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: Text(text, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+      child: Text(
+        text,
+        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+      ),
     );
-    final tDark = buildAppTheme(kPalettes.firstWhere((p) => p.name == 'Кофе'), Brightness.dark);
+    final tDark = buildAppTheme(
+      kPalettes.firstWhere((p) => p.name == 'Кофе'),
+      Brightness.dark,
+    );
     Widget home(double w, {bool dark = false}) => Container(
       width: w,
       height: 440,
@@ -127,7 +139,10 @@ void main() {
                               ChestStashItem(openId: 'a', giftKey: 'throne'),
                               ChestStashItem(openId: 'b', giftKey: 'throne'),
                               ChestStashItem(openId: 'c', giftKey: 'rings'),
-                              ChestStashItem(openId: 'd', giftKey: 'cookieheart'),
+                              ChestStashItem(
+                                openId: 'd',
+                                giftKey: 'cookieheart',
+                              ),
                             ],
                           ),
                         ),
@@ -142,7 +157,10 @@ void main() {
                     theme: t,
                     groupId: 'g',
                     partnerName: 'Аня',
-                    debugChoice: const ChestStashItem(openId: 'x', giftKey: 'throne'),
+                    debugChoice: const ChestStashItem(
+                      openId: 'x',
+                      giftKey: 'throne',
+                    ),
                   ),
                 ),
                 Column(
@@ -152,7 +170,9 @@ void main() {
                       760,
                       ChestPrizeScreen(
                         theme: t,
-                        prize: fallbackChestOdds(withPlus: true).firstWhere((p) => p.key == 'coins25'),
+                        prize: fallbackChestOdds(
+                          withPlus: true,
+                        ).firstWhere((p) => p.key == 'coins25'),
                         title: '25 монет',
                         subtitle: 'Монеты на баланс',
                         tier: 'Редкие',
@@ -164,7 +184,9 @@ void main() {
                       600,
                       ChestPrizeScreen(
                         theme: t,
-                        prize: fallbackChestOdds(withPlus: true).firstWhere((p) => p.key == 'throne'),
+                        prize: fallbackChestOdds(
+                          withPlus: true,
+                        ).firstWhere((p) => p.key == 'throne'),
                         title: 'Подарок «Царский трон»',
                         subtitle: 'Подаришь или оставишь себе',
                         tier: 'Редкие',
@@ -181,7 +203,10 @@ void main() {
     );
     // Копилка пары: четыре мои капли, три партнёра, одно открытие ждёт.
     PairJarService.instance.apply(
-      const PairJar(drops: [true, true, true, true, false, false, false], bonus: 1),
+      const PairJar(
+        drops: [true, true, true, true, false, false, false],
+        bonus: 1,
+      ),
     );
     await tester.pump();
     await tester.runAsync(() async {
@@ -190,17 +215,23 @@ void main() {
       for (final g in [...GiftCatalog.chest.map((g) => g.key), 'chest_plus']) {
         await precacheImage(AssetImage('assets/images/gifts/$g.webp'), ctx);
       }
-      await precacheImage(const AssetImage('assets/images/icons/coin.webp'), ctx);
+      await precacheImage(
+        const AssetImage('assets/images/icons/coin.webp'),
+        ctx,
+      );
       await Future<void>.delayed(const Duration(milliseconds: 300));
     });
     await tester.pump(const Duration(milliseconds: 500));
 
     await tester.runAsync(() async {
-      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final boundary =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 1.5);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/chest.png').writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/chest.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }

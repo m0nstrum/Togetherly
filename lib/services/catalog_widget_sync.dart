@@ -31,15 +31,35 @@ class CatalogWidgetSync {
   CatalogWidgetSync._();
 
   static const _months = <String>[
-    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+    'января',
+    'февраля',
+    'марта',
+    'апреля',
+    'мая',
+    'июня',
+    'июля',
+    'августа',
+    'сентября',
+    'октября',
+    'ноября',
+    'декабря',
   ];
 
   static String _dayMonth(DateTime d) => '${d.day} ${_months[d.month - 1]}';
 
   static const _monthsEn = <String>[
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   /// Подпись даты на чипе «До встречи» — как в превью экрана «Виджеты».
@@ -73,8 +93,10 @@ class CatalogWidgetSync {
     TimerItem? systemTimer,
     TimerItem? defaultTimer,
     int memoriesCount = 0,
+
     /// Все таймеры пары: из обратных отсчётов собирается «До встречи».
     List<TimerItem> timers = const [],
+
     /// Тема приложения: картинка виджета «Где мы» рисуется её цветами.
     AppTheme? theme,
   }) async {
@@ -82,16 +104,18 @@ class CatalogWidgetSync {
     // рисовать: виджета нет или ничего не сдвинулось — не рисует. Не ждём её:
     // карта качает плитки, а остальным виджетам ждать незачем.
     if (theme != null) {
-      unawaited(PairMapWidgetService.instance.refreshFromApp(
-        groupId: pair.pairId,
-        myUid: myUid,
-        partnerUid: pair.partnerUid,
-        myName: myName,
-        partnerName: pair.partnerDisplayName,
-        myAvatarUrl: myAvatarUrl,
-        partnerAvatarUrl: pair.partnerAvatarUrl,
-        theme: theme,
-      ));
+      unawaited(
+        PairMapWidgetService.instance.refreshFromApp(
+          groupId: pair.pairId,
+          myUid: myUid,
+          partnerUid: pair.partnerUid,
+          myName: myName,
+          partnerName: pair.partnerDisplayName,
+          myAvatarUrl: myAvatarUrl,
+          partnerAvatarUrl: pair.partnerAvatarUrl,
+          theme: theme,
+        ),
+      );
     }
     try {
       final hws = HomeWidgetService.instance;
@@ -102,8 +126,10 @@ class CatalogWidgetSync {
           : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
 
       final partnerName = pair.partnerDisplayName.trim();
-      final names =
-          [myName.trim(), partnerName].where((n) => n.isNotEmpty).join(' + ');
+      final names = [
+        myName.trim(),
+        partnerName,
+      ].where((n) => n.isNotEmpty).join(' + ');
 
       await hws.syncTogether(
         groupId: pair.pairId,
@@ -123,7 +149,9 @@ class CatalogWidgetSync {
         groupId: pair.pairId,
         start: start,
         memoriesCount: memoriesCount,
-        startDateLabel: start == null ? '' : 'с ${_dayMonth(start)} ${start.year}',
+        startDateLabel: start == null
+            ? ''
+            : 'с ${_dayMonth(start)} ${start.year}',
       );
 
       // Пустой список — таймеры ещё не загрузились (системный есть всегда):
@@ -211,15 +239,17 @@ class CatalogWidgetSync {
       // Подпись по полу: «Устал» парню, «Устала» девушке.
       myLabel: myToday == null
           ? ''
-          : (MoodOption.byId(myToday.moodId)
-                  ?.localizedLabelFor(HomeWidgetService.instance.cachedMyGender) ??
-              ''),
+          : (MoodOption.byId(myToday.moodId)?.localizedLabelFor(
+                  HomeWidgetService.instance.cachedMyGender,
+                ) ??
+                ''),
       myMoodId: myToday?.moodId ?? '',
       partnerLabel: partnerToday == null
           ? ''
           : (MoodOption.byId(partnerToday.moodId)?.localizedLabelFor(
-                  HomeWidgetService.instance.cachedPartnerGender) ??
-              ''),
+                  HomeWidgetService.instance.cachedPartnerGender,
+                ) ??
+                ''),
       partnerName: pair.partnerDisplayName.trim(),
       week: week,
       matchedDays: matched,

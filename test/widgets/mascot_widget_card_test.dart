@@ -12,8 +12,9 @@ void main() {
   final kotlin = File(
     'android/app/src/main/kotlin/com/togetherly/love/MascotWidgetProvider.kt',
   ).readAsStringSync();
-  final manifest =
-      File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+  final manifest = File(
+    'android/app/src/main/AndroidManifest.xml',
+  ).readAsStringSync();
 
   test('каталог предлагает все четыре размера маскота', () {
     for (final provider in kMascotWidgetProviders) {
@@ -27,8 +28,16 @@ void main() {
 
   test('имена провайдеров совпадают у Dart, Kotlin и манифеста', () {
     for (final provider in kMascotWidgetProviders) {
-      expect(kotlin.contains('class $provider'), isTrue, reason: 'нет класса $provider');
-      expect(manifest.contains('.$provider'), isTrue, reason: 'нет приёмника $provider');
+      expect(
+        kotlin.contains('class $provider'),
+        isTrue,
+        reason: 'нет класса $provider',
+      );
+      expect(
+        manifest.contains('.$provider'),
+        isTrue,
+        reason: 'нет приёмника $provider',
+      );
     }
   });
 
@@ -50,7 +59,11 @@ void main() {
         'android/app/src/main/res/drawable-nodpi/tg_preview_mascot_$size.png',
       );
       expect(png.existsSync(), isTrue, reason: 'нет превью $size');
-      expect(png.lengthSync(), greaterThan(1000), reason: 'превью $size пустое');
+      expect(
+        png.lengthSync(),
+        greaterThan(1000),
+        reason: 'превью $size пустое',
+      );
     }
   });
 }

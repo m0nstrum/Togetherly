@@ -10,8 +10,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 // прежний: утреннее «Хочу обнять» к вечеру пропадало.
 void main() {
   final now = DateTime(2026, 9, 28, 22, 0);
-  MissYouEvent ev(String id, String uid, String vibe, DateTime at, {String? reply, int count = 1, String text = ''}) =>
-      MissYouEvent(id: id, uid: uid, vibe: vibe, at: at, replyTo: reply, count: count, text: text);
+  MissYouEvent ev(
+    String id,
+    String uid,
+    String vibe,
+    DateTime at, {
+    String? reply,
+    int count = 1,
+    String text = '',
+  }) => MissYouEvent(
+    id: id,
+    uid: uid,
+    vibe: vibe,
+    at: at,
+    replyTo: reply,
+    count: count,
+    text: text,
+  );
 
   test('разбор ответа сервера, новые первыми, битое пропускается', () {
     final list = MissYouEvent.parseList([
@@ -55,28 +70,33 @@ void main() {
     expect(missYouReplyVibe('miss_you'), 'miss_you');
   });
 
-  testWidgets('экран рисует день блоками и кнопку ответа только у партнёра', (t) async {
+  testWidgets('экран рисует день блоками и кнопку ответа только у партнёра', (
+    t,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     final today = DateTime.now();
-    DateTime at(int h, int m) => DateTime(today.year, today.month, today.day, h, m);
-    await t.pumpWidget(MediaQuery(
-      data: const MediaQueryData(size: Size(360, 1400)),
-      child: MaterialApp(
-        home: MissYouScreen(
-          theme: AppThemes.byIndex(7),
-          groupId: '',
-          myUid: 'me',
-          partnerUid: '',
-          partnerName: 'Аня',
-          debugEvents: [
-            ev('p3', 'p', 'miss_you', at(0, 30)),
-            ev('m1', 'me', 'thinking_of_you', at(0, 20)),
-            ev('p2', 'p', 'thinking_of_you', at(0, 10), reply: 'm1'),
-            ev('p1', 'p', 'want_hug', at(0, 5), count: 4),
-          ],
+    DateTime at(int h, int m) =>
+        DateTime(today.year, today.month, today.day, h, m);
+    await t.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(size: Size(360, 1400)),
+        child: MaterialApp(
+          home: MissYouScreen(
+            theme: AppThemes.byIndex(7),
+            groupId: '',
+            myUid: 'me',
+            partnerUid: '',
+            partnerName: 'Аня',
+            debugEvents: [
+              ev('p3', 'p', 'miss_you', at(0, 30)),
+              ev('m1', 'me', 'thinking_of_you', at(0, 20)),
+              ev('p2', 'p', 'thinking_of_you', at(0, 10), reply: 'm1'),
+              ev('p1', 'p', 'want_hug', at(0, 5), count: 4),
+            ],
+          ),
         ),
       ),
-    ));
+    );
     await t.pump(const Duration(seconds: 2));
     expect(find.textContaining('×4'), findsOneWidget);
     // Кнопка ответа у трёх импульсов партнёра, у моего — нет.

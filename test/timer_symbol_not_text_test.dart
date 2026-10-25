@@ -21,15 +21,17 @@ void main() {
     final timerSymbol = RegExp(r'\b\w*[Tt]imer\w*\.emoji\b|\bsys\.emoji\b');
     final textCall = RegExp(r'\bText\s*\(');
 
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       final source = file.readAsStringSync();
       for (final match in textCall.allMatches(source)) {
         final args = _argumentsOf(source, match.end - 1);
         if (args == null || !timerSymbol.hasMatch(args)) continue;
-        final line = '\n'.allMatches(source.substring(0, match.start)).length + 1;
+        final line =
+            '\n'.allMatches(source.substring(0, match.start)).length + 1;
         offenders.add('${file.path}:$line');
       }
     }
@@ -37,7 +39,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'В `timers.emoji` лежит имя значка, а не эмодзи — рисовать через '
+      reason:
+          'В `timers.emoji` лежит имя значка, а не эмодзи — рисовать через '
           'SymbolIcon: ${offenders.join(', ')}',
     );
   });

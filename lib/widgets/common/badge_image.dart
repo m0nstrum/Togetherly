@@ -16,7 +16,12 @@ import '../../services/offline/media_view_cache.dart';
 /// сам рисунок занимал [side], картинка рисуется на 176/144 крупнее и выходит
 /// за свои границы, раскладку это не трогает.
 class BadgeImage extends StatelessWidget {
-  const BadgeImage(this.badgeId, {super.key, required this.side, this.animated = true});
+  const BadgeImage(
+    this.badgeId, {
+    super.key,
+    required this.side,
+    this.animated = true,
+  });
 
   final String? badgeId;
 

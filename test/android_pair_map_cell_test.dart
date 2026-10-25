@@ -35,12 +35,18 @@ void main() {
     expect(provider, contains('displayMetrics.density'));
   });
 
-  test('картинка читается целиком, в ARGB, а отказ лончера — повтор вдвое меньше', () {
-    expect(provider, isNot(contains('RGB_565')));
-    expect(provider, isNot(contains('950_000')));
-    expect(provider, contains('ARGB_8888'));
-    expect(RegExp(r'try \{[^}]*updateAppWidget', dotAll: true).hasMatch(provider), isTrue,
-        reason: 'updateAppWidget с картинкой должен быть в try');
-    expect(provider, contains('sample = 2'));
-  });
+  test(
+    'картинка читается целиком, в ARGB, а отказ лончера — повтор вдвое меньше',
+    () {
+      expect(provider, isNot(contains('RGB_565')));
+      expect(provider, isNot(contains('950_000')));
+      expect(provider, contains('ARGB_8888'));
+      expect(
+        RegExp(r'try \{[^}]*updateAppWidget', dotAll: true).hasMatch(provider),
+        isTrue,
+        reason: 'updateAppWidget с картинкой должен быть в try',
+      );
+      expect(provider, contains('sample = 2'));
+    },
+  );
 }

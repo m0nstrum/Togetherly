@@ -55,12 +55,17 @@ Future<bool?> showCycleConsentSheet(
                 Uri.parse(Endpoints.current.privacyPolicyUrl), // fork
                 mode: LaunchMode.externalApplication,
               ),
-              icon: Icon(Icons.open_in_new_rounded,
-                  size: 17, color: scheme.onSurfaceVariant),
+              icon: Icon(
+                Icons.open_in_new_rounded,
+                size: 17,
+                color: scheme.onSurfaceVariant,
+              ),
               label: Text(
                 s.privacyPolicyLink,
                 style: AppFonts.onest(
-                    size: 13.5, color: scheme.onSurfaceVariant),
+                  size: 13.5,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(height: 6),
@@ -87,7 +92,10 @@ Future<bool?> showCycleConsentSheet(
                 child: Text(
                   s.cycleConsentLater,
                   style: AppFonts.onest(
-                      size: 14.5, weight: 600, color: scheme.onSurfaceVariant),
+                    size: 14.5,
+                    weight: 600,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),

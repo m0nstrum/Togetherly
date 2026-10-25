@@ -24,7 +24,8 @@ Future<OwnMoodAction?> showOwnMoodActions(
 }) {
   return showAppSheet<OwnMoodAction>(
     context,
-    builder: (_) => _OwnMoodActionsSheet(mood: mood, mine: mine, partnerName: partnerName),
+    builder: (_) =>
+        _OwnMoodActionsSheet(mood: mood, mine: mine, partnerName: partnerName),
   );
 }
 
@@ -33,7 +34,11 @@ class _OwnMoodActionsSheet extends StatelessWidget {
   final bool mine;
   final String partnerName;
 
-  const _OwnMoodActionsSheet({required this.mood, required this.mine, required this.partnerName});
+  const _OwnMoodActionsSheet({
+    required this.mood,
+    required this.mine,
+    required this.partnerName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -74,13 +79,21 @@ class _OwnMoodActionsSheet extends StatelessWidget {
                           Container(
                             width: 10,
                             height: 10,
-                            decoration: BoxDecoration(color: CustomMood.colorOfScore(mood.score), shape: BoxShape.circle),
+                            decoration: BoxDecoration(
+                              color: CustomMood.colorOfScore(mood.score),
+                              shape: BoxShape.circle,
+                            ),
                           ),
                           const SizedBox(width: 7),
                           Flexible(
                             child: Text(
                               moodScoreLabel(mood.score),
-                              style: TextStyle(fontFamily: 'Onest', fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant),
+                              style: TextStyle(
+                                fontFamily: 'Onest',
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w500,
+                                color: cs.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ],
@@ -111,14 +124,23 @@ class _OwnMoodActionsSheet extends StatelessWidget {
               Text(
                 s.customMoodDeleteHint,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Onest', fontSize: 12.5, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontSize: 12.5,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ] else ...[
               Text(
                 name.isEmpty
                     ? trKey('customMoodOnlyAuthorAnon')
                     : trKey('customMoodOnlyAuthor').replaceAll('{name}', name),
-                style: TextStyle(fontFamily: 'Onest', fontSize: 14.5, height: 1.45, color: cs.onSurface),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontSize: 14.5,
+                  height: 1.45,
+                  color: cs.onSurface,
+                ),
               ),
               const SizedBox(height: 16),
               _ActionButton(
@@ -160,13 +182,22 @@ class _ActionButton extends StatelessWidget {
           backgroundColor: background,
           foregroundColor: foreground,
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontFamily: 'Onest', fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: 'Onest',
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[Icon(icon, size: 22), const SizedBox(width: 8)],
-            Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            if (icon != null) ...[
+              Icon(icon, size: 22),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
       ),

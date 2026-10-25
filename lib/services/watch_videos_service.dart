@@ -222,7 +222,9 @@ class WatchVideosService {
     if (groupId.isEmpty) return const [];
     final own = await uploaded(groupId);
     // fork (UX V5): список целиком — лента воспоминаний не обязательна.
-    final lane = await fromMemoryLane(groupId).catchError((_) => <WatchVideo>[]);
+    final lane = await fromMemoryLane(
+      groupId,
+    ).catchError((_) => <WatchVideo>[]);
     return [...own, ...lane];
   }
 
@@ -409,7 +411,11 @@ class WatchVideosService {
       if (done == null) {
         // Запрос ещё летит: когда запись появится, убираем её.
         unawaited(
-          request.then((r) => _pb.collection(_col).delete(r.id)).catchError((_) {}), // тихо: отменили, а чистка не вышла — ролик сам уйдёт за 30 дней
+          request
+              .then((r) => _pb.collection(_col).delete(r.id))
+              .catchError(
+                (_) {},
+              ), // тихо: отменили, а чистка не вышла — ролик сам уйдёт за 30 дней
         );
         throw const ForkFailureError(ForkFailure.unknown, 'cancelled');
       }
@@ -432,13 +438,17 @@ class WatchVideosService {
   }) async {
     if (id.isEmpty) return false;
     try {
-      await _pb.collection(_col).update(
-        id,
-        body: {
-          'watching_by': watching ? me : '',
-          'watching_at': watching ? DateTime.now().millisecondsSinceEpoch : 0,
-        },
-      );
+      await _pb
+          .collection(_col)
+          .update(
+            id,
+            body: {
+              'watching_by': watching ? me : '',
+              'watching_at': watching
+                  ? DateTime.now().millisecondsSinceEpoch
+                  : 0,
+            },
+          );
       return true;
     } catch (e) {
       debugPrint('WatchVideos.markWatching failed: $e');

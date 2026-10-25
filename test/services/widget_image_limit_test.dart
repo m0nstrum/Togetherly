@@ -24,7 +24,10 @@ void main() {
     expect(widgetImageMaxSide('user_2_avatar_path'), 400);
   });
 
-  test('незнакомый ключ жмётся по общему правилу, а не остаётся оригиналом', () {
-    expect(widgetImageMaxSide('что_то_новое'), 1200);
-  });
+  test(
+    'незнакомый ключ жмётся по общему правилу, а не остаётся оригиналом',
+    () {
+      expect(widgetImageMaxSide('что_то_новое'), 1200);
+    },
+  );
 }

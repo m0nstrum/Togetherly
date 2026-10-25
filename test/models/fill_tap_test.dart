@@ -135,16 +135,25 @@ void main() {
       final down = source.indexOf('void _onPointerDown');
       final move = source.indexOf('void _onPointerMove');
       final onDown = source.substring(down, move);
-      expect(onDown.contains('_applyFill('), isFalse,
-          reason: 'На касании ещё не известно, тап это или начало щипка');
-      expect(source.contains('fillTapAccepted('), isTrue,
-          reason: 'Решение принимает правило под тестами');
+      expect(
+        onDown.contains('_applyFill('),
+        isFalse,
+        reason: 'На касании ещё не известно, тап это или начало щипка',
+      );
+      expect(
+        source.contains('fillTapAccepted('),
+        isTrue,
+        reason: 'Решение принимает правило под тестами',
+      );
     });
 
     test('судьбу штриха при втором пальце решает путь, а не число точек', () {
       expect(source.contains('strokeSurvivesSecondFinger('), isTrue);
-      expect(source.contains('_currentPoints.length > 1'), isFalse,
-          reason: 'За 20–80 мс щипка точек набегает сколько угодно');
+      expect(
+        source.contains('_currentPoints.length > 1'),
+        isFalse,
+        reason: 'За 20–80 мс щипка точек набегает сколько угодно',
+      );
     });
 
     test('снимок для заливки подробнее экрана', () {

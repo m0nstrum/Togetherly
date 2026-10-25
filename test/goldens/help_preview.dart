@@ -49,65 +49,64 @@ void main() {
     final item = helpItems().firstWhere((i) => i.id == 'widgetPhoto');
 
     Widget phone(double w, Widget child) => Container(
-          width: w,
-          height: 860,
-          margin: const EdgeInsets.all(12),
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-              color: cs.surface, borderRadius: BorderRadius.circular(28)),
-          child: child,
-        );
+      width: w,
+      height: 860,
+      margin: const EdgeInsets.all(12),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: child,
+    );
 
     // Лист ответа открываем в своём навигаторе внутри «телефона».
     Widget withAnswer(double w) => phone(
-          w,
-          Navigator(
-            onGenerateRoute: (_) => MaterialPageRoute<void>(
-              builder: (ctx) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  showHelpAnswer(ctx,
-                      item: item,
-                      scheme: cs,
-                      onAction: (_) {},
-                      onWriteUs: () {});
-                });
-                return HelpScreen(
-                    scheme: cs,
-                    onAction: (_) {},
-                    onWriteUs: () {});
-              },
-            ),
-          ),
-        );
+      w,
+      Navigator(
+        onGenerateRoute: (_) => MaterialPageRoute<void>(
+          builder: (ctx) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showHelpAnswer(
+                ctx,
+                item: item,
+                scheme: cs,
+                onAction: (_) {},
+                onWriteUs: () {},
+              );
+            });
+            return HelpScreen(scheme: cs, onAction: (_) {}, onWriteUs: () {});
+          },
+        ),
+      ),
+    );
 
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ProfileTheme.data(cs),
-      home: RepaintBoundary(
-        key: key,
-        child: ColoredBox(
-          color: const Color(0xFF171210),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              phone(
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ProfileTheme.data(cs),
+        home: RepaintBoundary(
+          key: key,
+          child: ColoredBox(
+            color: const Color(0xFF171210),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                phone(
                   393,
-                  HelpScreen(
-                      scheme: cs,
-                      onAction: (_) {},
-                      onWriteUs: () {})),
-              withAnswer(393),
-              phone(
+                  HelpScreen(scheme: cs, onAction: (_) {}, onWriteUs: () {}),
+                ),
+                withAnswer(393),
+                phone(
                   320,
-                  HelpScreen(
-                      scheme: cs,
-                      onAction: (_) {},
-                      onWriteUs: () {})),
-            ],
+                  HelpScreen(scheme: cs, onAction: (_) {}, onWriteUs: () {}),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     await tester.runAsync(() async {

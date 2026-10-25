@@ -14,16 +14,15 @@ void main() {
     String? preview,
     int? pixelW,
     int? pixelH,
-  }) =>
-      CanvasMeta(
-        id: id,
-        name: name,
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-        updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedMs),
-        previewBase64: preview,
-        pixelW: pixelW,
-        pixelH: pixelH,
-      );
+  }) => CanvasMeta(
+    id: id,
+    name: name,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+    updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedMs),
+    previewBase64: preview,
+    pixelW: pixelW,
+    pixelH: pixelH,
+  );
 
   group('Отпечаток холста', () {
     test('Одинаковые данные — одинаковый отпечаток', () {
@@ -31,8 +30,10 @@ void main() {
     });
 
     test('Новое превью меняет отпечаток', () {
-      expect(meta(preview: 'aaaa').fingerprint,
-          isNot(meta(preview: 'aaaabbbb').fingerprint));
+      expect(
+        meta(preview: 'aaaa').fingerprint,
+        isNot(meta(preview: 'aaaabbbb').fingerprint),
+      );
     });
 
     test('Появление превью у пустого холста заметно', () {
@@ -48,8 +49,10 @@ void main() {
     });
 
     test('Приехавшая от партнёра сетка пикселей заметна', () {
-      expect(meta().fingerprint,
-          isNot(meta(pixelW: 32, pixelH: 32).fingerprint));
+      expect(
+        meta().fingerprint,
+        isNot(meta(pixelW: 32, pixelH: 32).fingerprint),
+      );
     });
 
     test('Разные холсты не путаются', () {

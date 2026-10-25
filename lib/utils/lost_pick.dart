@@ -86,7 +86,8 @@ Future<LostPick?> recoverLostPick({
       debugPrint('recoverLostPick: ${response.exception!.code}');
       return null;
     }
-    final files = response.files ??
+    final files =
+        response.files ??
         (response.file != null ? <XFile>[response.file!] : const <XFile>[]);
     final prefs = await SharedPreferences.getInstance();
     final intent = prefs.getString(kLostPickIntentKey);

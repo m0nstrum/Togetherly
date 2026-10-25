@@ -12,8 +12,9 @@ void main() {
   });
 
   test('картинка не разжалась', () {
-    final rows =
-        parseWidgetRenderLog('1|small|photo-mine|decoded=0;reason=no-thumb');
+    final rows = parseWidgetRenderLog(
+      '1|small|photo-mine|decoded=0;reason=no-thumb',
+    );
     expect(widgetRenderVerdict(rows), 'small не разжал картинку (no-thumb)');
   });
 

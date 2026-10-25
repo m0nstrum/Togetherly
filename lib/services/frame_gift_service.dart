@@ -85,8 +85,8 @@ class FrameGiftService {
   /// Ключ рамки из `gift_key` записи `gifts` или null, если это не рамка.
   static String? frameKeyOf(String giftKey) =>
       giftKey.startsWith('frame_') && giftKey.length > 6
-          ? giftKey.substring(6)
-          : null;
+      ? giftKey.substring(6)
+      : null;
 
   Future<FrameGiftQuote?> quote({
     required String key,

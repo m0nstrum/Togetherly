@@ -22,10 +22,22 @@ Path fitPathToSize(Path raw, Size size) {
   final dy = (size.height - b.height * scale) / 2 - b.top * scale;
   // Аффинная матрица 4x4 (column-major): масштаб на диагонали, сдвиг в col3.
   final storage = Float64List.fromList(<double>[
-    scale, 0, 0, 0,
-    0, scale, 0, 0,
-    0, 0, 1, 0,
-    dx, dy, 0, 1,
+    scale,
+    0,
+    0,
+    0,
+    0,
+    scale,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    dx,
+    dy,
+    0,
+    1,
   ]);
   return raw.transform(storage);
 }
@@ -76,7 +88,7 @@ class CookieAvatar extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Unbounded',
               fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+              fontVariations: const [FontVariation('wght', 700)],
               fontSize: size * 0.4,
               color: onColor,
             ),
@@ -94,13 +106,13 @@ class CookieClip extends StatelessWidget {
   const CookieClip({super.key, required this.size, required this.child});
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: size,
-        height: size,
-        child: ClipPath(
-          clipper: M3ShapeClipper(MaterialShapes.cookie12Sided),
-          child: child,
-        ),
-      );
+    width: size,
+    height: size,
+    child: ClipPath(
+      clipper: M3ShapeClipper(MaterialShapes.cookie12Sided),
+      child: child,
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,7 +122,12 @@ class DashedRing extends StatelessWidget {
   final double size;
   final Color color;
   final Widget? child;
-  const DashedRing({super.key, required this.size, required this.color, this.child});
+  const DashedRing({
+    super.key,
+    required this.size,
+    required this.color,
+    this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +284,9 @@ class _AnimatedInviteCodeState extends State<AnimatedInviteCode> {
     super.didUpdateWidget(old);
     if (widget.loading && !old.loading) {
       _rescramble(); // пошла генерация → снова цикл
-    } else if (!widget.loading && _ready && (old.loading || widget.code != old.code)) {
+    } else if (!widget.loading &&
+        _ready &&
+        (old.loading || widget.code != old.code)) {
       _rescramble();
       _scheduleSettle(); // код готов/сменился → пересобрать и посадить по очереди
     }
@@ -316,7 +335,7 @@ class _AnimatedInviteCodeState extends State<AnimatedInviteCode> {
                   style: TextStyle(
                     fontFamily: 'Unbounded',
                     fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
+                    fontVariations: const [FontVariation('wght', 800)],
                     fontSize: fs,
                     height: 1.0,
                     color: widget.color,
@@ -340,8 +359,13 @@ class MarqueeText extends StatefulWidget {
   final TextStyle style;
   final double velocity; // px/сек
   final double gap; // разрыв между копиями
-  const MarqueeText(this.text,
-      {super.key, required this.style, this.velocity = 30, this.gap = 44});
+  const MarqueeText(
+    this.text, {
+    super.key,
+    required this.style,
+    this.velocity = 30,
+    this.gap = 44,
+  });
 
   @override
   State<MarqueeText> createState() => _MarqueeTextState();
@@ -368,8 +392,8 @@ class _MarqueeTextState extends State<MarqueeText>
     _textW = tp.width;
     final loopW = _textW + widget.gap;
     _ctrl.duration = Duration(
-        milliseconds:
-            (loopW / widget.velocity * 1000).round().clamp(1500, 20000));
+      milliseconds: (loopW / widget.velocity * 1000).round().clamp(1500, 20000),
+    );
   }
 
   @override
@@ -394,8 +418,12 @@ class _MarqueeTextState extends State<MarqueeText>
           if (_ctrl.isAnimating) _ctrl.stop();
           return Align(
             alignment: Alignment.center,
-            child: Text(widget.text,
-                maxLines: 1, softWrap: false, style: widget.style),
+            child: Text(
+              widget.text,
+              maxLines: 1,
+              softWrap: false,
+              style: widget.style,
+            ),
           );
         }
         if (!_ctrl.isAnimating) _ctrl.repeat();
@@ -412,11 +440,19 @@ class _MarqueeTextState extends State<MarqueeText>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(widget.text,
-                          maxLines: 1, softWrap: false, style: widget.style),
+                      Text(
+                        widget.text,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: widget.style,
+                      ),
                       SizedBox(width: widget.gap),
-                      Text(widget.text,
-                          maxLines: 1, softWrap: false, style: widget.style),
+                      Text(
+                        widget.text,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: widget.style,
+                      ),
                     ],
                   ),
                 ),
@@ -428,7 +464,6 @@ class _MarqueeTextState extends State<MarqueeText>
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Уникальная M3-форма на аватарку партнёра + морфинг при смене группы
@@ -497,7 +532,9 @@ class _MorphAvatarState extends State<MorphAvatar>
   void initState() {
     super.initState();
     _c = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 520));
+      vsync: this,
+      duration: const Duration(milliseconds: 520),
+    );
     _from = widget.shape;
     _to = widget.shape;
     _c.value = 1.0;

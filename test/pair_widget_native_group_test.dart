@@ -15,8 +15,9 @@ void main() {
   final kotlin = File(
     'android/app/src/main/kotlin/com/togetherly/love/LoveWidgetProvider.kt',
   ).readAsStringSync();
-  final swift =
-      File('ios/TogetherlyWidget/LoveWidget.swift').readAsStringSync();
+  final swift = File(
+    'ios/TogetherlyWidget/LoveWidget.swift',
+  ).readAsStringSync();
   final dart = Directory('lib')
       .listSync(recursive: true)
       .whereType<File>()
@@ -25,8 +26,11 @@ void main() {
       .join('\n');
 
   test('Android берёт пару экземпляра, а не последнюю синхронизацию', () {
-    expect(kotlin.contains('WidgetGroupHelper.getOrBind'), isTrue,
-        reason: 'иначе два виджета для двух связей покажут одну и ту же');
+    expect(
+      kotlin.contains('WidgetGroupHelper.getOrBind'),
+      isTrue,
+      reason: 'иначе два виджета для двух связей покажут одну и ту же',
+    );
     expect(kotlin.contains('"pair"'), isTrue);
   });
 
@@ -38,14 +42,20 @@ void main() {
       'my_mood_emoji_path',
       'partner_status',
     ]) {
-      expect(kotlin.contains('key("$k")'), isTrue,
-          reason: '$k читается мимо пары');
+      expect(
+        kotlin.contains('key("$k")'),
+        isTrue,
+        reason: '$k читается мимо пары',
+      );
     }
   });
 
   test('iPhone находит пару по указателю', () {
-    expect(swift.contains('latestGroup("love_latest_group")'), isTrue,
-        reason: 'привязки к экземпляру на iOS нет — только указатель');
+    expect(
+      swift.contains('latestGroup("love_latest_group")'),
+      isTrue,
+      reason: 'привязки к экземпляру на iOS нет — только указатель',
+    );
     expect(swift.contains(r'"love_\(group)_\(name)"'), isTrue);
   });
 
@@ -56,16 +66,22 @@ void main() {
       'my_mood_emoji_path',
       'partner_status',
     ]) {
-      expect(swift.contains('key("$k")'), isTrue,
-          reason: '$k читается мимо пары');
+      expect(
+        swift.contains('key("$k")'),
+        isTrue,
+        reason: '$k читается мимо пары',
+      );
     }
   });
 
   test('обе платформы ждут отметку готовности от приложения', () {
     expect(kotlin.contains('_ready'), isTrue);
     expect(swift.contains('_ready'), isTrue);
-    expect(dart.contains("'love_\${groupId}_ready'"), isTrue,
-        reason: 'без отметки виджет опустеет сразу после обновления сборки');
+    expect(
+      dart.contains("'love_\${groupId}_ready'"),
+      isTrue,
+      reason: 'без отметки виджет опустеет сразу после обновления сборки',
+    );
   });
 
   test('приложение пишет указатель на открытую пару', () {
@@ -80,7 +96,10 @@ void main() {
       'android/app/src/main/kotlin/com/togetherly/love/WidgetGroupHelper.kt',
     ).readAsStringSync();
     expect(helper.contains(r'"${widgetType}_next_bind_group"'), isTrue);
-    expect(dart.contains("'pair' => 'pair'"), isTrue,
-        reason: 'Kotlin читает pair_next_bind_group, а не love_next_bind_group');
+    expect(
+      dart.contains("'pair' => 'pair'"),
+      isTrue,
+      reason: 'Kotlin читает pair_next_bind_group, а не love_next_bind_group',
+    );
   });
 }

@@ -28,8 +28,11 @@ Future<void> _loadFont(String family, List<String> paths) async {
 
 List<VesselDay> _august() {
   const moods = [
-    Color(0xFFFF7E8B), Color(0xFFFFB05C), Color(0xFF7C6CF0),
-    Color(0xFF4CC38A), Color(0xFF3B82F6),
+    Color(0xFFFF7E8B),
+    Color(0xFFFFB05C),
+    Color(0xFF7C6CF0),
+    Color(0xFF4CC38A),
+    Color(0xFF3B82F6),
   ];
   final rnd = math.Random(7);
   return [
@@ -71,8 +74,9 @@ void main() {
     final days = vesselForSharing(_august(), show: kDefaultSharedFloors);
 
     {
-      await tester.binding
-          .setSurfaceSize(const Size(kStoryWidth, kStoryHeight));
+      await tester.binding.setSurfaceSize(
+        const Size(kStoryWidth, kStoryHeight),
+      );
       final theme = buildAppTheme(kPalettes[0], Brightness.light);
       final cs = theme.scheme!;
       final key = GlobalKey();
@@ -88,7 +92,8 @@ void main() {
               columns: 6,
               title: 'Август 2026',
               daysCaption: 'дней вместе в этом сосуде',
-              hint: 'Один блок — день, плашки внутри — что вы в этот день сделали',
+              hint:
+                  'Один блок — день, плашки внутри — что вы в этот день сделали',
               scheme: cs,
             ),
           ),
@@ -102,8 +107,9 @@ void main() {
         final image = await boundary.toImage(pixelRatio: 3);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
         image.dispose();
-        File('${dir.path}/story.png')
-            .writeAsBytesSync(bytes!.buffer.asUint8List());
+        File(
+          '${dir.path}/story.png',
+        ).writeAsBytesSync(bytes!.buffer.asUint8List());
       });
       stdout.writeln('снимок: build/vessel/story.png');
     }

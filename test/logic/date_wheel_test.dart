@@ -53,8 +53,13 @@ void main() {
     });
 
     test('Время переносится как есть', () {
-      final d =
-          DateWheel.build(year: 2026, month: 7, day: 26, hour: 14, minute: 5);
+      final d = DateWheel.build(
+        year: 2026,
+        month: 7,
+        day: 26,
+        hour: 14,
+        minute: 5,
+      );
       expect(d, DateTime(2026, 7, 26, 14, 5));
     });
   });

@@ -36,8 +36,8 @@ List<HalftoneDot> halftoneDots(Size size, {required bool dark}) {
       final fade = t <= 0.22
           ? 0.35
           : t >= 0.55
-              ? 1.0
-              : 0.35 + (t - 0.22) / (0.55 - 0.22) * 0.65;
+          ? 1.0
+          : 0.35 + (t - 0.22) / (0.55 - 0.22) * 0.65;
       dots.add(HalftoneDot(Offset(x, y), r, base * fade));
     }
   }

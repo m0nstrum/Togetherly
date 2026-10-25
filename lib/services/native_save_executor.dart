@@ -33,8 +33,8 @@ class NativeSaveExecutor implements SaveExecutor {
     MethodChannel? channel,
     this.pollEvery = const Duration(milliseconds: 800),
     Future<Map<String, Object?>> Function(MediaFile f)? sourceOf,
-  })  : channel = channel ?? const MethodChannel('love_app/gallery'),
-        _sourceOf = sourceOf ?? defaultSource;
+  }) : channel = channel ?? const MethodChannel('love_app/gallery'),
+       _sourceOf = sourceOf ?? defaultSource;
 
   static final NativeSaveExecutor instance = NativeSaveExecutor();
 
@@ -62,13 +62,16 @@ class NativeSaveExecutor implements SaveExecutor {
     }
     if (f.kind == SaveKind.photo) {
       try {
-        final info =
-            await OfflineImageCacheManager.instance.getFileFromCache('v2|$ref');
+        final info = await OfflineImageCacheManager.instance.getFileFromCache(
+          'v2|$ref',
+        );
         final file = info?.file;
         if (file != null && await file.exists() && await file.length() > 1024) {
           // Копия, а не сам файл кэша: кэш вправе вытеснить его раньше, чем
           // натив до него доберётся.
-          final copy = File('${file.parent.path}/save_${f.key.hashCode}.${f.ext}');
+          final copy = File(
+            '${file.parent.path}/save_${f.key.hashCode}.${f.ext}',
+          );
           await file.copy(copy.path);
           return {'path': copy.path, 'deleteAfter': true};
         }
@@ -79,15 +82,18 @@ class NativeSaveExecutor implements SaveExecutor {
   }
 
   static Map<String, String> get _labels => {
-        'saving': trKey('islandSaving'),
-        'done': trKey('islandDone'),
-        'failed': trKey('islandFailed'),
-        'stop': trKey('notifStop'),
-      };
+    'saving': trKey('islandSaving'),
+    'done': trKey('islandDone'),
+    'failed': trKey('islandFailed'),
+    'stop': trKey('notifStop'),
+  };
 
   @override
-  Future<String?> run(SaveItem item,
-      {required bool hidden, String title = ''}) async {
+  Future<String?> run(
+    SaveItem item, {
+    required bool hidden,
+    String title = '',
+  }) async {
     final key = item.file.key;
     final source = await _sourceOf(item.file);
     final c = _waiting.putIfAbsent(key, () => Completer<String?>());
@@ -123,8 +129,9 @@ class NativeSaveExecutor implements SaveExecutor {
     if (_ticking) return;
     _ticking = true;
     try {
-      final res =
-          await channel.invokeMapMethod<String, Object?>('engineStatus');
+      final res = await channel.invokeMapMethod<String, Object?>(
+        'engineStatus',
+      );
       final results = (res?['results'] as List?) ?? const [];
       final acks = <String>[];
       for (final raw in results) {
@@ -145,7 +152,8 @@ class NativeSaveExecutor implements SaveExecutor {
             c.completeError(const SaveCancelled());
           default:
             c.completeError(
-                Exception(raw['error'] as String? ?? 'не сохранилось'));
+              Exception(raw['error'] as String? ?? 'не сохранилось'),
+            );
         }
       }
       if (acks.isNotEmpty) {
@@ -179,8 +187,9 @@ class NativeSaveExecutor implements SaveExecutor {
   @override
   Future<List<String>> recover() async {
     try {
-      final res =
-          await channel.invokeMapMethod<String, Object?>('engineStatus');
+      final res = await channel.invokeMapMethod<String, Object?>(
+        'engineStatus',
+      );
       final results = (res?['results'] as List?) ?? const [];
       final done = <String>[];
       final all = <String>[];

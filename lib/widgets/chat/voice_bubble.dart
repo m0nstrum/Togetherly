@@ -130,7 +130,9 @@ class _VoiceBubbleState extends State<VoiceBubble> {
                         onTapDown: (d) {
                           if (!current) return;
                           _player.seekFraction(
-                              widget.msg.id, d.localPosition.dx / c.maxWidth);
+                            widget.msg.id,
+                            d.localPosition.dx / c.maxWidth,
+                          );
                         },
                         child: CustomPaint(
                           size: Size(c.maxWidth, 30),
@@ -159,9 +161,11 @@ class _VoiceBubbleState extends State<VoiceBubble> {
                       // точку «ещё не слушал».
                       if (widget.isMine && _heard) ...[
                         const SizedBox(width: 6),
-                        Icon(Icons.hearing_rounded,
-                            size: 13,
-                            color: widget.foreground.withValues(alpha: .8)),
+                        Icon(
+                          Icons.hearing_rounded,
+                          size: 13,
+                          color: widget.foreground.withValues(alpha: .8),
+                        ),
                       ] else if (!widget.isMine && !_heard) ...[
                         const SizedBox(width: 6),
                         Container(

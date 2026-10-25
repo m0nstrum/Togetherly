@@ -31,7 +31,8 @@ void main() {
           expect(
             (_hue(fill) - _hue(seed)).abs(),
             lessThan(2.0),
-            reason: 'цвет ${seed.toARGB32().toRadixString(16)}, '
+            reason:
+                'цвет ${seed.toARGB32().toRadixString(16)}, '
                 'режим ${brightness.name}',
           );
         }
@@ -47,8 +48,11 @@ void main() {
     test('чёрный и белый не рождают NaN', () {
       for (final seed in const [Color(0xFF000000), Color(0xFFFFFFFF)]) {
         final p = customPalette(seed, slot: 0);
-        expect(p.target.k.isFinite, isTrue,
-            reason: 'k у ${seed.toARGB32().toRadixString(16)}');
+        expect(
+          p.target.k.isFinite,
+          isTrue,
+          reason: 'k у ${seed.toARGB32().toRadixString(16)}',
+        );
         expect(p.target.k, inInclusiveRange(0.0, 1.0));
         for (final brightness in Brightness.values) {
           final fill = paletteFill(p, brightness);
@@ -97,13 +101,18 @@ void main() {
       // Кнопки красятся тоном цели. Чистый чёрный делает их чёрными, а белый
       // растворяет в фоне светлой темы — обе крайности бесполезны как тема.
       for (final seed in const [Color(0xFF000000), Color(0xFF101010)]) {
-        expect(customPalette(seed, slot: 0).target.tone,
-            greaterThanOrEqualTo(20.0),
-            reason: 'тёмный ${seed.toARGB32().toRadixString(16)}');
+        expect(
+          customPalette(seed, slot: 0).target.tone,
+          greaterThanOrEqualTo(20.0),
+          reason: 'тёмный ${seed.toARGB32().toRadixString(16)}',
+        );
       }
       for (final seed in const [Color(0xFFFFFFFF), Color(0xFFF7F7F7)]) {
-        expect(customPalette(seed, slot: 0).target.tone, lessThanOrEqualTo(88.0),
-            reason: 'светлый ${seed.toARGB32().toRadixString(16)}');
+        expect(
+          customPalette(seed, slot: 0).target.tone,
+          lessThanOrEqualTo(88.0),
+          reason: 'светлый ${seed.toARGB32().toRadixString(16)}',
+        );
       }
     });
 
@@ -129,8 +138,10 @@ void main() {
     });
 
     test('свой индекс разворачивает свой цвет', () {
-      expect(paletteFor(customPaletteIndex(1), mine).accent,
-          const Color(0xFFF0A81C));
+      expect(
+        paletteFor(customPaletteIndex(1), mine).accent,
+        const Color(0xFFF0A81C),
+      );
     });
 
     test('тема, удалённая на другом устройстве, откатывается к умолчанию', () {

@@ -10,14 +10,14 @@ import 'package:love_app/widgets/draw/canvas_preview.dart';
 /// рисунок».
 void main() {
   DrawStroke stroke(int order, {bool eraser = false}) => DrawStroke(
-        id: 's$order',
-        userId: 'u',
-        colorValue: 0xFF000000,
-        strokeWidth: 4,
-        points: const [DrawPoint(0.1, 0.1), DrawPoint(0.9, 0.9)],
-        isEraser: eraser,
-        orderIndex: order,
-      );
+    id: 's$order',
+    userId: 'u',
+    colorValue: 0xFF000000,
+    strokeWidth: 4,
+    points: const [DrawPoint(0.1, 0.1), DrawPoint(0.9, 0.9)],
+    isEraser: eraser,
+    orderIndex: order,
+  );
 
   final meta = CanvasMeta(
     id: 'c1',
@@ -46,8 +46,11 @@ void main() {
       ...List.generate(50, (i) => stroke(kPreviewStrokeLimit + 201 + i)),
     ];
     final slice = visible(all);
-    expect(slice.any((s) => s.isEraser), isTrue,
-        reason: 'без ластика стёртое остаётся на плитке');
+    expect(
+      slice.any((s) => s.isEraser),
+      isTrue,
+      reason: 'без ластика стёртое остаётся на плитке',
+    );
     expect(slice.length, kPreviewStrokeLimit + 201);
   });
 
@@ -66,8 +69,14 @@ void main() {
     final all = [
       ...List.generate(kPreviewEraserLimit + 5000, (i) => stroke(i)),
     ];
-    all[kPreviewEraserLimit + 4000] = stroke(kPreviewEraserLimit + 4000, eraser: true);
-    expect(visible(all).length, kPreviewStrokeLimit,
-        reason: 'ластик за потолком плитку не удлиняет');
+    all[kPreviewEraserLimit + 4000] = stroke(
+      kPreviewEraserLimit + 4000,
+      eraser: true,
+    );
+    expect(
+      visible(all).length,
+      kPreviewStrokeLimit,
+      reason: 'ластик за потолком плитку не удлиняет',
+    );
   });
 }

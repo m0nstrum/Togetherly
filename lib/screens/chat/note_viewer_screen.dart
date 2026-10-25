@@ -113,12 +113,14 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
       setState(() => _stuck = true);
     });
     // Открываем со звуком: сюда заходят смотреть, а не проматывать.
-    unawaited(_player.open(
-      messageId: _msg.id,
-      url: _note.url,
-      knownDuration: _note.duration,
-      sound: true,
-    ));
+    unawaited(
+      _player.open(
+        messageId: _msg.id,
+        url: _note.url,
+        knownDuration: _note.duration,
+        sound: true,
+      ),
+    );
   }
 
   /// Переход к соседней фигурке переписки. За краем ничего не делаем: пружины
@@ -159,12 +161,14 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
       if (_lastRetry == null ||
           now.difference(_lastRetry!) > const Duration(milliseconds: 1500)) {
         _lastRetry = now;
-        unawaited(_player.open(
-          messageId: _msg.id,
-          url: _note.url,
-          knownDuration: _note.duration,
-          sound: true,
-        ));
+        unawaited(
+          _player.open(
+            messageId: _msg.id,
+            url: _note.url,
+            knownDuration: _note.duration,
+            sound: true,
+          ),
+        );
       }
       return;
     }
@@ -217,7 +221,9 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
     final at = (_progress.value * total / 1000);
     setState(() {
       _hearts = [..._hearts, at]..sort();
-      _shown.add(_hearts.indexOf(at)); // своё всплывает сразу, второй раз не надо
+      _shown.add(
+        _hearts.indexOf(at),
+      ); // своё всплывает сразу, второй раз не надо
     });
     _pop(fromAuthor: false);
     unawaited(ChatService.instance.addNoteHeart(_msg.id, _hearts));
@@ -240,9 +246,10 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
       NoteExportResult.saved => s.noteSaved,
       NoteExportResult.noAccess => s.noteSaveNoAccess,
       NoteExportResult.serverFailed => '${s.noteSaveServerFailed}$code',
-      NoteExportResult.saveFailed => out.reason == null
-          ? s.noteSaveFailed
-          : '${s.noteSaveFailed} · ${out.reason}',
+      NoteExportResult.saveFailed =>
+        out.reason == null
+            ? s.noteSaveFailed
+            : '${s.noteSaveFailed} · ${out.reason}',
     });
   }
 
@@ -268,11 +275,13 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
     if (messenger == null) return;
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(text),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(text),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 
   @override
@@ -320,10 +329,8 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
             SafeArea(
               child: ValueListenableBuilder<double>(
                 valueListenable: _dragY,
-                builder: (context, dy, child) => Transform.translate(
-                  offset: Offset(0, dy),
-                  child: child,
-                ),
+                builder: (context, dy, child) =>
+                    Transform.translate(offset: Offset(0, dy), child: child),
                 child: Column(
                   children: [
                     _header(cs),
@@ -339,8 +346,9 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
                                 shape: shape,
                                 size: side,
                                 ringColor: cs.primary,
-                                trackColor:
-                                    cs.outlineVariant.withValues(alpha: 0.45),
+                                trackColor: cs.outlineVariant.withValues(
+                                  alpha: 0.45,
+                                ),
                                 ringWidth: 5,
                                 ringListenable: _progress,
                                 ringValue: () => _progress.value,
@@ -356,12 +364,14 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
                                   onPressed: () {
                                     setState(() => _stuck = false);
                                     _lastRetry = null;
-                                    unawaited(_player.open(
-                                      messageId: _msg.id,
-                                      url: _note.url,
-                                      knownDuration: _note.duration,
-                                      sound: true,
-                                    ));
+                                    unawaited(
+                                      _player.open(
+                                        messageId: _msg.id,
+                                        url: _note.url,
+                                        knownDuration: _note.duration,
+                                        sound: true,
+                                      ),
+                                    );
                                   },
                                   icon: const Icon(Icons.refresh_rounded),
                                   label: Text(s.retry),
@@ -375,7 +385,10 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
                     const SizedBox(height: 10),
                     Text(
                       s.noteViewerHint,
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -413,11 +426,15 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
           AnimatedBuilder(
             animation: _player,
             builder: (context, _) => IconButton(
-              tooltip: _player.state.muted ? ruEn('Включить звук', 'Unmute') : ruEn('Выключить звук', 'Mute'),
+              tooltip: _player.state.muted
+                  ? ruEn('Включить звук', 'Unmute')
+                  : ruEn('Выключить звук', 'Mute'),
               onPressed: () => _player.toggleSound(),
-              icon: Icon(_player.state.muted
-                  ? Icons.volume_off_rounded
-                  : Icons.volume_up_rounded),
+              icon: Icon(
+                _player.state.muted
+                    ? Icons.volume_off_rounded
+                    : Icons.volume_up_rounded,
+              ),
               style: IconButton.styleFrom(foregroundColor: cs.onSurfaceVariant),
             ),
           ),
@@ -523,66 +540,72 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
                   onHorizontalDragEnd: (_) => _commitScrub(),
                   onHorizontalDragCancel: _commitScrub,
                   child: SizedBox(
-                  height: 44,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 26,
-                        child: Container(
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: cs.outlineVariant,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      ValueListenableBuilder<double>(
-                        valueListenable: _progress,
-                        builder: (_, p, _) => Positioned(
+                    height: 44,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned(
                           left: 0,
+                          right: 0,
                           top: 26,
                           child: Container(
-                            width: c.maxWidth * p,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: cs.primary,
+                              color: cs.outlineVariant,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
                         ),
-                      ),
-                      // Ручка: без неё непонятно, что полосу можно тянуть.
-                      ValueListenableBuilder<double>(
-                        valueListenable: _progress,
-                        builder: (_, p, _) => Positioned(
-                          left: (c.maxWidth * p) - 6,
-                          top: 22,
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: cs.primary,
-                              shape: BoxShape.circle,
+                        ValueListenableBuilder<double>(
+                          valueListenable: _progress,
+                          builder: (_, p, _) => Positioned(
+                            left: 0,
+                            top: 26,
+                            child: Container(
+                              width: c.maxWidth * p,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: cs.primary,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      for (final h in _hearts)
-                        if (total.inMilliseconds > 0)
-                          Positioned(
-                            left: (c.maxWidth *
-                                    (h * 1000 / total.inMilliseconds)
-                                        .clamp(0.0, 1.0)) -
-                                7,
-                            top: 10,
-                            child: Icon(Icons.favorite_rounded,
-                                size: 14, color: cs.primary),
+                        // Ручка: без неё непонятно, что полосу можно тянуть.
+                        ValueListenableBuilder<double>(
+                          valueListenable: _progress,
+                          builder: (_, p, _) => Positioned(
+                            left: (c.maxWidth * p) - 6,
+                            top: 22,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: cs.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                           ),
-                    ],
-                  ),
+                        ),
+                        for (final h in _hearts)
+                          if (total.inMilliseconds > 0)
+                            Positioned(
+                              left:
+                                  (c.maxWidth *
+                                      (h * 1000 / total.inMilliseconds).clamp(
+                                        0.0,
+                                        1.0,
+                                      )) -
+                                  7,
+                              top: 10,
+                              child: Icon(
+                                Icons.favorite_rounded,
+                                size: 14,
+                                color: cs.primary,
+                              ),
+                            ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -594,7 +617,10 @@ class _NoteViewerScreenState extends State<NoteViewerScreen>
                     valueListenable: _progress,
                     builder: (_, p, _) => Text(
                       ShapeNote.formatDuration(total * p),
-                      style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   Text(

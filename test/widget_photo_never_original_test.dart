@@ -21,17 +21,26 @@ Uint8List bytes(int n) => Uint8List(n);
 
 void main() {
   test('ужатое в пределах — берём его', () {
-    final out = widgetPhotoPayload(original: bytes(9000000), compressed: bytes(180000));
+    final out = widgetPhotoPayload(
+      original: bytes(9000000),
+      compressed: bytes(180000),
+    );
     expect(out, isNotNull);
     expect(out!.length, 180000);
   });
 
   test('кодек молчит — оригинал не кладём', () {
-    expect(widgetPhotoPayload(original: bytes(9000000), compressed: null), isNull);
+    expect(
+      widgetPhotoPayload(original: bytes(9000000), compressed: null),
+      isNull,
+    );
   });
 
   test('кодек вернул пустоту — оригинал не кладём', () {
-    expect(widgetPhotoPayload(original: bytes(9000000), compressed: bytes(0)), isNull);
+    expect(
+      widgetPhotoPayload(original: bytes(9000000), compressed: bytes(0)),
+      isNull,
+    );
   });
 
   test('ужатое всё ещё огромное — не кладём', () {

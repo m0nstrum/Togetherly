@@ -78,12 +78,11 @@ class _NoteBubbleState extends State<NoteBubble> {
       : _player;
 
   NoteSendView get _sendView => noteSendView(
-        mine: widget.isMine,
-        pending: OutboxService.instance.isPending('chat_messages', widget.msg.id),
-        poisoned:
-            OutboxService.instance.isPoisoned('chat_messages', widget.msg.id),
-        active: NoteSendStatus.instance.of(widget.msg.id),
-      );
+    mine: widget.isMine,
+    pending: OutboxService.instance.isPending('chat_messages', widget.msg.id),
+    poisoned: OutboxService.instance.isPoisoned('chat_messages', widget.msg.id),
+    active: NoteSendStatus.instance.of(widget.msg.id),
+  );
 
   /// Фигурку уже смотрели. Отметка серверная (`note_seen_at`), ставит
   /// смотрящий — автору важно знать, что дошло до глаз.
@@ -145,12 +144,14 @@ class _NoteBubbleState extends State<NoteBubble> {
     if (!widget.autoplay) return;
     if (_visible >= 0.6 && was < 0.6 && !_player.isCurrent(widget.msg.id)) {
       _markSeen();
-      unawaited(_player.open(
-        messageId: widget.msg.id,
-        url: _note.url,
-        knownDuration: _note.duration,
-        auto: true,
-      ));
+      unawaited(
+        _player.open(
+          messageId: widget.msg.id,
+          url: _note.url,
+          knownDuration: _note.duration,
+          auto: true,
+        ),
+      );
     }
   }
 
@@ -192,9 +193,12 @@ class _NoteBubbleState extends State<NoteBubble> {
           // краю квадрата: у сердца низ сходится в острие, у звезды и клевера
           // края вырезаны, и привязанное к низу уезжало за контур.
           final shapeCenter = Alignment(
-              shape.centerX * 2 - 1, shape.centerY * 2 - 1);
+            shape.centerX * 2 - 1,
+            shape.centerY * 2 - 1,
+          );
           final hintRect = noteHintRect(shape, widget.size);
-          final sending = send == NoteSendView.compressing ||
+          final sending =
+              send == NoteSendView.compressing ||
               send == NoteSendView.uploading ||
               send == NoteSendView.waiting;
           // Кружок заиграл не от касания по нему (следующий после досмотренного,
@@ -208,7 +212,10 @@ class _NoteBubbleState extends State<NoteBubble> {
           // полный круг, на ней мы долю не знаем.
           final sendProgress = switch (send) {
             NoteSendView.compressing =>
-              0.08 + 0.72 * (NoteSendStatus.instance.of(widget.msg.id)?.progress ?? 0),
+              0.08 +
+                  0.72 *
+                      (NoteSendStatus.instance.of(widget.msg.id)?.progress ??
+                          0),
             NoteSendView.uploading => 0.9,
             NoteSendView.waiting => 0.08,
             NoteSendView.failed => 1.0,
@@ -239,8 +246,8 @@ class _NoteBubbleState extends State<NoteBubble> {
                       color: send == NoteSendView.failed
                           ? cs.error
                           : (unseen || sendProgress != null)
-                              ? cs.primary
-                              : cs.primary.withValues(alpha: 0.35),
+                          ? cs.primary
+                          : cs.primary.withValues(alpha: 0.35),
                       child: _content(current, cs),
                     ),
                     // Кнопки появляются, только когда кружок включён: на каждом
@@ -261,20 +268,23 @@ class _NoteBubbleState extends State<NoteBubble> {
                           // низ круга.
                           child: st.muted && playing
                               ? (hintRect.width < 96
-                                  // Узко даже для короткой подписи — один
-                                  // значок, мелкий текст никто не прочтёт.
-                                  ? const _Glyph(icon: Icons.volume_off_rounded)
-                                  : _SoundHint(maxWidth: hintRect.width))
+                                    // Узко даже для короткой подписи — один
+                                    // значок, мелкий текст никто не прочтёт.
+                                    ? const _Glyph(
+                                        icon: Icons.volume_off_rounded,
+                                      )
+                                    : _SoundHint(maxWidth: hintRect.width))
                               : widget.onOpenFull == null
-                                  ? const SizedBox.shrink()
-                                  : GestureDetector(
-                                      onTap: () {
-                                        _openedFull = true;
-                                        widget.onOpenFull!.call();
-                                      },
-                                      child: const _Glyph(
-                                          icon: Icons.open_in_full_rounded),
-                                    ),
+                              ? const SizedBox.shrink()
+                              : GestureDetector(
+                                  onTap: () {
+                                    _openedFull = true;
+                                    widget.onOpenFull!.call();
+                                  },
+                                  child: const _Glyph(
+                                    icon: Icons.open_in_full_rounded,
+                                  ),
+                                ),
                         ),
                       ),
                     if (current && st.loading)
@@ -291,8 +301,11 @@ class _NoteBubbleState extends State<NoteBubble> {
                           child: send == NoteSendView.waiting
                               ? _Badge(
                                   color: cs.surfaceContainerHigh,
-                                  child: Icon(Icons.schedule_rounded,
-                                      size: 22, color: cs.onSurfaceVariant),
+                                  child: Icon(
+                                    Icons.schedule_rounded,
+                                    size: 22,
+                                    color: cs.onSurfaceVariant,
+                                  ),
                                 )
                               : M3Loading(
                                   size: 34,
@@ -310,8 +323,11 @@ class _NoteBubbleState extends State<NoteBubble> {
                             onTap: _retry,
                             child: _Badge(
                               color: cs.errorContainer,
-                              child: Icon(Icons.refresh_rounded,
-                                  size: 24, color: cs.onErrorContainer),
+                              child: Icon(
+                                Icons.refresh_rounded,
+                                size: 24,
+                                color: cs.onErrorContainer,
+                              ),
                             ),
                           ),
                         ),
@@ -352,8 +368,11 @@ class _NoteBubbleState extends State<NoteBubble> {
       return ColoredBox(
         color: cs.surfaceContainerHighest,
         child: Center(
-          child: Icon(Icons.videocam_rounded,
-              size: widget.size * 0.22, color: cs.onSurfaceVariant),
+          child: Icon(
+            Icons.videocam_rounded,
+            size: widget.size * 0.22,
+            color: cs.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -368,8 +387,11 @@ class _NoteBubbleState extends State<NoteBubble> {
       return ColoredBox(
         color: cs.surfaceContainerHighest,
         child: Center(
-          child: Icon(Icons.videocam_rounded,
-              size: widget.size * 0.22, color: cs.onSurfaceVariant),
+          child: Icon(
+            Icons.videocam_rounded,
+            size: widget.size * 0.22,
+            color: cs.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -382,10 +404,16 @@ class _NoteBubbleState extends State<NoteBubble> {
   }
 
   void _retry() => unawaited(
-      OutboxService.instance.retryPoisonFor('chat_messages', widget.msg.id));
+    OutboxService.instance.retryPoisonFor('chat_messages', widget.msg.id),
+  );
 
-  Widget _meta(ColorScheme cs, bool current, NotePlayback st, bool unseen,
-      NoteSendView send) {
+  Widget _meta(
+    ColorScheme cs,
+    bool current,
+    NotePlayback st,
+    bool unseen,
+    NoteSendView send,
+  ) {
     final shown = current && st.position > Duration.zero
         ? st.duration - st.position
         : _note.duration;
@@ -397,8 +425,10 @@ class _NoteBubbleState extends State<NoteBubble> {
         children: [
           Icon(Icons.error_outline_rounded, size: 16, color: cs.error),
           const SizedBox(width: 4),
-          Text(trKey('noteSendFailed'),
-              style: style.copyWith(color: cs.error, fontWeight: FontWeight.w600)),
+          Text(
+            trKey('noteSendFailed'),
+            style: style.copyWith(color: cs.error, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(width: 4),
           TextButton(
             onPressed: _retry,
@@ -414,12 +444,14 @@ class _NoteBubbleState extends State<NoteBubble> {
     }
     final sendingLabel = switch (send) {
       NoteSendView.compressing => trKey('noteSendCompressing').replaceAll(
-          '{p}',
-          '${((NoteSendStatus.instance.of(widget.msg.id)?.progress ?? 0) * 100).round()}'),
+        '{p}',
+        '${((NoteSendStatus.instance.of(widget.msg.id)?.progress ?? 0) * 100).round()}',
+      ),
       NoteSendView.uploading => trKey('noteSendUploading'),
-      NoteSendView.waiting => ConnectivityService.instance.isOnline
-          ? trKey('noteSendQueued')
-          : trKey('noteSendOffline'),
+      NoteSendView.waiting =>
+        ConnectivityService.instance.isOnline
+            ? trKey('noteSendQueued')
+            : trKey('noteSendOffline'),
       _ => null,
     };
     if (sendingLabel != null) {
@@ -432,7 +464,10 @@ class _NoteBubbleState extends State<NoteBubble> {
           Container(
             width: 7,
             height: 7,
-            decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: cs.primary,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 6),
         ],
@@ -554,16 +589,15 @@ class _Glyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 32,
-        height: 32,
-        decoration: const BoxDecoration(
-          color: Color(0x66000000),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 18, color: Colors.white),
-      );
+    width: 32,
+    height: 32,
+    decoration: const BoxDecoration(
+      color: Color(0x66000000),
+      shape: BoxShape.circle,
+    ),
+    child: Icon(icon, size: 18, color: Colors.white),
+  );
 }
-
 
 /// Круглая подложка под значок посреди кружка.
 class _Badge extends StatelessWidget {
@@ -573,12 +607,12 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        alignment: Alignment.center,
-        child: child,
-      );
+    width: 52,
+    height: 52,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    alignment: Alignment.center,
+    child: child,
+  );
 }
 
 /// «Коснитесь — звук» поверх кружка, который играет молча.
@@ -588,37 +622,36 @@ class _SoundHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Container(
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: const Color(0x66000000),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.volume_off_rounded, size: 17, color: Colors.white),
-                const SizedBox(width: 5),
-                Text(
-                  trKey('noteTapForSound'),
-                  maxLines: 1,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+    constraints: BoxConstraints(maxWidth: maxWidth),
+    child: Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: const Color(0x66000000),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.volume_off_rounded, size: 17, color: Colors.white),
+            const SizedBox(width: 5),
+            Text(
+              trKey('noteTapForSound'),
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
-          ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
-
 
 /// Где на кружке стоят кнопки «звук» и «развернуть».
 ///
@@ -634,7 +667,9 @@ Rect noteHintRect(NoteShape shape, double size) {
     for (var i = 0; i < shape.profile.length; i++)
       c +
           Offset.fromDirection(
-              2 * math.pi * i / shape.profile.length, shape.profile[i] * unit),
+            2 * math.pi * i / shape.profile.length,
+            shape.profile[i] * unit,
+          ),
   ];
   // Полуширина формы на высоте y вокруг центра: ближайшие к центру
   // пересечения контура слева и справа.

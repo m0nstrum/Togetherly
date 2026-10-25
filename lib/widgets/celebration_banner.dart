@@ -47,91 +47,92 @@ class _CelebrationBannerState extends State<CelebrationBanner>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-        height: 80,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              widget.color,
-              widget.color.withValues(alpha: 0.75),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Stack(
-          clipBehavior: Clip.antiAlias,
-          children: [
-            // ── Конфетти-частицы ──
-            AnimatedBuilder(
-              animation: _ctrl,
-              builder: (_, __) => CustomPaint(
-                size: Size.infinite,
-                painter: _ConfettiPainter(
-                  progress: _ctrl.value,
-                  color: widget.color,
-                ),
-              ),
-            ),
-            // ── Контент ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Text(
-                    widget.emoji,
-                    style: const TextStyle(fontSize: 36),
-                  )
-                      .animate(onPlay: (c) => c.repeat())
-                      .scale(
-                        begin: const Offset(0.85, 0.85),
-                        end: const Offset(1.15, 1.15),
-                        duration: 800.ms,
-                        curve: Curves.easeInOut,
-                      )
-                      .then()
-                      .scale(
-                        begin: const Offset(1.15, 1.15),
-                        end: const Offset(0.85, 0.85),
-                        duration: 800.ms,
-                        curve: Curves.easeInOut,
-                      ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      widget.message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        height: 1.15,
-                      ),
-                    ),
+      child:
+          Container(
+                margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      widget.color,
+                      widget.color.withValues(alpha: 0.75),
+                    ],
                   ),
-                  // Стрелку-аффорданс показываем только когда баннер реально
-                  // кликабелен (задан onTap), иначе он вводит в заблуждение.
-                  if (widget.onTap != null)
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: Colors.white70,
-                      size: 22,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Stack(
+                  clipBehavior: Clip.antiAlias,
+                  children: [
+                    // ── Конфетти-частицы ──
+                    AnimatedBuilder(
+                      animation: _ctrl,
+                      builder: (_, __) => CustomPaint(
+                        size: Size.infinite,
+                        painter: _ConfettiPainter(
+                          progress: _ctrl.value,
+                          color: widget.color,
+                        ),
+                      ),
                     ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      )
-          .animate()
-          .slideY(
-            begin: -0.3,
-            end: 0,
-            duration: 500.ms,
-            curve: Curves.easeOutBack,
-          )
-          .fadeIn(duration: 400.ms),
+                    // ── Контент ──
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Text(
+                                widget.emoji,
+                                style: const TextStyle(fontSize: 36),
+                              )
+                              .animate(onPlay: (c) => c.repeat())
+                              .scale(
+                                begin: const Offset(0.85, 0.85),
+                                end: const Offset(1.15, 1.15),
+                                duration: 800.ms,
+                                curve: Curves.easeInOut,
+                              )
+                              .then()
+                              .scale(
+                                begin: const Offset(1.15, 1.15),
+                                end: const Offset(0.85, 0.85),
+                                duration: 800.ms,
+                                curve: Curves.easeInOut,
+                              ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              widget.message,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                height: 1.15,
+                              ),
+                            ),
+                          ),
+                          // Стрелку-аффорданс показываем только когда баннер реально
+                          // кликабелен (задан onTap), иначе он вводит в заблуждение.
+                          if (widget.onTap != null)
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: Colors.white70,
+                              size: 22,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              .animate()
+              .slideY(
+                begin: -0.3,
+                end: 0,
+                duration: 500.ms,
+                curve: Curves.easeOutBack,
+              )
+              .fadeIn(duration: 400.ms),
     );
   }
 }

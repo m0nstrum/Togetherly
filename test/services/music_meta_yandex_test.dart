@@ -26,9 +26,7 @@ void main() {
 
     test('ссылка на альбом целиком трека не даёт', () {
       expect(
-        MusicMetaService.yandexTrackId(
-          'https://music.yandex.ru/album/4809518',
-        ),
+        MusicMetaService.yandexTrackId('https://music.yandex.ru/album/4809518'),
         isNull,
       );
     });

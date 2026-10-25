@@ -28,25 +28,29 @@ void main() {
     });
 
     test('пустую группу не пишем: это стёрло бы живую привязку', () {
-      expect(pairBindingPayload(groupId: '', partnerUid: 'u456'), isEmpty,
-          reason: 'распад пары чистит clearPairWidgetData, а не синхронизация');
+      expect(
+        pairBindingPayload(groupId: '', partnerUid: 'u456'),
+        isEmpty,
+        reason: 'распад пары чистит clearPairWidgetData, а не синхронизация',
+      );
     });
 
     test('партнёр без uid оставляет прежнее значение ключа', () {
       final out = pairBindingPayload(groupId: 'g123', partnerUid: '');
-      expect(out, {'love_widget_group_id': 'g123'},
-          reason: 'подписка на партнёра поднимается позже привязки к группе');
+      expect(out, {
+        'love_widget_group_id': 'g123',
+      }, reason: 'подписка на партнёра поднимается позже привязки к группе');
     });
   });
 
   test('синхронизация виджета дописывает привязку', () {
-    final src =
-        File('lib/services/widget_service.dart').readAsStringSync();
+    final src = File('lib/services/widget_service.dart').readAsStringSync();
     final sync = src.substring(src.indexOf('_syncToNativeWidget() async'));
     expect(
       sync.contains('pairBindingPayload'),
       isTrue,
-      reason: 'иначе промах записи в bindToGroup останется навсегда: '
+      reason:
+          'иначе промах записи в bindToGroup останется навсегда: '
           'при той же группе она выходит первой строкой',
     );
   });

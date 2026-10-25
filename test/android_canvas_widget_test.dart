@@ -28,10 +28,13 @@ void main() {
 
   test('холст выбирается при добавлении и через «Настроить»', () {
     for (final size in ['2x2', '2x3', '4x4']) {
-      final info = File('android/app/src/main/res/xml/tg_canvas_${size}_info.xml')
-          .readAsStringSync();
+      final info = File(
+        'android/app/src/main/res/xml/tg_canvas_${size}_info.xml',
+      ).readAsStringSync();
       expect(
-        info.contains('android:configure="com.togetherly.love.CanvasPickActivity"'),
+        info.contains(
+          'android:configure="com.togetherly.love.CanvasPickActivity"',
+        ),
         isTrue,
         reason: 'у $size нет экрана выбора холста',
       );
@@ -43,7 +46,9 @@ void main() {
       );
     }
     expect(
-      manifest.readAsStringSync().contains('android.appwidget.action.APPWIDGET_CONFIGURE'),
+      manifest.readAsStringSync().contains(
+        'android.appwidget.action.APPWIDGET_CONFIGURE',
+      ),
       isTrue,
       reason: 'экран выбора не объявлен как configure-activity',
     );
@@ -51,7 +56,10 @@ void main() {
 
   test('выбор холста живёт у экземпляра, а не у пары', () {
     expect(pick.readAsStringSync().contains('widget_canvas_'), isTrue);
-    expect(provider.readAsStringSync().contains('CanvasPickActivity.canvasKey'), isTrue);
+    expect(
+      provider.readAsStringSync().contains('CanvasPickActivity.canvasKey'),
+      isTrue,
+    );
   });
 
   test('тап открывает этот холст в приложении', () {

@@ -12,10 +12,16 @@ void main() {
     for (final days in [7, 125, 1288, 12345]) {
       test('$days помещается во внутренний диаметр', () {
         final digits = '$days'.length;
-        final size =
-            YearRingSpec.numberSize(inner: inner, digits: digits, max: 36);
+        final size = YearRingSpec.numberSize(
+          inner: inner,
+          digits: digits,
+          max: 36,
+        );
         final width = digits * YearRingSpec.digitEm * size;
-        expect(width, lessThanOrEqualTo(inner * YearRingSpec.numberShare + 0.01));
+        expect(
+          width,
+          lessThanOrEqualTo(inner * YearRingSpec.numberShare + 0.01),
+        );
         expect(size, lessThanOrEqualTo(36));
       });
     }
@@ -45,8 +51,9 @@ void main() {
     final kotlin = File(
       'android/app/src/main/kotlin/com/togetherly/love/YearRingWidgetProvider.kt',
     ).readAsStringSync();
-    final swift =
-        File('ios/TogetherlyWidget/YearWidgets.swift').readAsStringSync();
+    final swift = File(
+      'ios/TogetherlyWidget/YearWidgets.swift',
+    ).readAsStringSync();
 
     for (final (name, src) in [('Android', kotlin), ('iPhone', swift)]) {
       test('$name: те же доли числа и букв', () {

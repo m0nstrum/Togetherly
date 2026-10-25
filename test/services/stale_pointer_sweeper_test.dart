@@ -11,35 +11,44 @@ void main() {
   var taps = 0;
 
   Widget app() => MaterialApp(
-        home: Scaffold(
-          body: ListView(
-            children: [
-              for (var i = 0; i < 30; i++)
-                SizedBox(
-                  height: 80,
-                  child: ElevatedButton(
-                    key: ValueKey(i),
-                    onPressed: () => taps++,
-                    child: Text('$i'),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      );
+    home: Scaffold(
+      body: ListView(
+        children: [
+          for (var i = 0; i < 30; i++)
+            SizedBox(
+              height: 80,
+              child: ElevatedButton(
+                key: ValueKey(i),
+                onPressed: () => taps++,
+                child: Text('$i'),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 
   // Касание, у которого не пришёл конец: прокрутило список и пропало.
   Future<void> loseADrag(WidgetTester tester) async {
     final lost = await tester.createGesture(pointer: 1);
     await lost.down(const Offset(200, 300), timeStamp: Duration.zero);
-    await lost.moveBy(const Offset(0, -60), timeStamp: const Duration(milliseconds: 50));
-    await lost.moveBy(const Offset(0, -60), timeStamp: const Duration(milliseconds: 100));
+    await lost.moveBy(
+      const Offset(0, -60),
+      timeStamp: const Duration(milliseconds: 50),
+    );
+    await lost.moveBy(
+      const Offset(0, -60),
+      timeStamp: const Duration(milliseconds: 100),
+    );
     await tester.pump();
   }
 
   Future<void> tapButton(WidgetTester tester, int pointer, Duration at) async {
     final g = await tester.createGesture(pointer: pointer);
-    await g.down(tester.getCenter(find.byKey(const ValueKey(5))), timeStamp: at);
+    await g.down(
+      tester.getCenter(find.byKey(const ValueKey(5))),
+      timeStamp: at,
+    );
     await g.up(timeStamp: at + const Duration(milliseconds: 60));
     await tester.pump();
   }
@@ -70,9 +79,16 @@ void main() {
     await tester.pumpWidget(app());
     final held = await tester.createGesture(pointer: 10);
     await held.down(const Offset(200, 300), timeStamp: Duration.zero);
-    await held.moveBy(const Offset(0, -2), timeStamp: const Duration(seconds: 3));
+    await held.moveBy(
+      const Offset(0, -2),
+      timeStamp: const Duration(seconds: 3),
+    );
     await tapButton(tester, 11, const Duration(seconds: 5));
-    expect(StalePointerSweeper.swept, before, reason: 'палец жив: двигался секунду назад');
+    expect(
+      StalePointerSweeper.swept,
+      before,
+      reason: 'палец жив: двигался секунду назад',
+    );
     await held.up(timeStamp: const Duration(seconds: 6));
   });
 }

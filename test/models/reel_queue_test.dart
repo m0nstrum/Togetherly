@@ -3,7 +3,8 @@ import 'package:love_app/models/reel_queue.dart';
 
 void main() {
   test('номера из ответа платформы — по порядку и без повторов', () {
-    const text = '{"a":{"videoId":"AAAAAAAAAAA"},"b":[{"videoId":"BBBBBBBBB-_"},{"videoId":"AAAAAAAAAAA"}],"c":"videoId"}';
+    const text =
+        '{"a":{"videoId":"AAAAAAAAAAA"},"b":[{"videoId":"BBBBBBBBB-_"},{"videoId":"AAAAAAAAAAA"}],"c":"videoId"}';
     expect(ReelQueue.idsIn(text), ['AAAAAAAAAAA', 'BBBBBBBBB-_']);
   });
 
@@ -18,8 +19,14 @@ void main() {
   test('номера всех площадок проходят', () {
     expect(ReelQueue.isId('xRvQVFXrS90'), isTrue); // Shorts
     expect(ReelQueue.isId('7654645616496168200'), isTrue); // TikTok
-    expect(ReelQueue.isId('1ee26921edb653d7c94c65f9281ad20e'), isTrue); // Rutube
-    expect(ReelQueue.isId('-232619944_456249468_c1df4e96a6eb1a50'), isTrue); // ВК
+    expect(
+      ReelQueue.isId('1ee26921edb653d7c94c65f9281ad20e'),
+      isTrue,
+    ); // Rutube
+    expect(
+      ReelQueue.isId('-232619944_456249468_c1df4e96a6eb1a50'),
+      isTrue,
+    ); // ВК
     expect(ReelQueue.isId('oo1uG6cEPAAA'), isTrue); // Дзен
     expect(ReelQueue.isId('https://evil'), isFalse);
   });

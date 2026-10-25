@@ -13,17 +13,24 @@ void main() {
     const half = 65.0;
 
     test('внутри экрана позиция не меняется', () {
-      expect(clampMascotPosition(const Offset(200, 400), screen, half),
-          const Offset(200, 400));
+      expect(
+        clampMascotPosition(const Offset(200, 400), screen, half),
+        const Offset(200, 400),
+      );
     });
 
     test('за левым краем прижимается к радиусу', () {
-      expect(clampMascotPosition(const Offset(-30, 400), screen, half).dx, half);
+      expect(
+        clampMascotPosition(const Offset(-30, 400), screen, half).dx,
+        half,
+      );
     });
 
     test('за нижним краем прижимается к радиусу', () {
-      expect(clampMascotPosition(const Offset(200, 5000), screen, half).dy,
-          screen.height - half);
+      expect(
+        clampMascotPosition(const Offset(200, 5000), screen, half).dy,
+        screen.height - half,
+      );
     });
 
     test('нулевой экран не роняет: позиция остаётся прежней', () {
@@ -46,40 +53,28 @@ void main() {
   group('mascotGestureIsTap', () {
     test('короткое касание почти без движения — тап', () {
       expect(
-        mascotGestureIsTap(
-          travel: 4,
-          held: const Duration(milliseconds: 120),
-        ),
+        mascotGestureIsTap(travel: 4, held: const Duration(milliseconds: 120)),
         isTrue,
       );
     });
 
     test('палец уехал — это перетаскивание', () {
       expect(
-        mascotGestureIsTap(
-          travel: 40,
-          held: const Duration(milliseconds: 120),
-        ),
+        mascotGestureIsTap(travel: 40, held: const Duration(milliseconds: 120)),
         isFalse,
       );
     });
 
     test('долгое удержание на месте тапом не считается', () {
       expect(
-        mascotGestureIsTap(
-          travel: 2,
-          held: const Duration(seconds: 1),
-        ),
+        mascotGestureIsTap(travel: 2, held: const Duration(seconds: 1)),
         isFalse,
       );
     });
 
     test('дрожание руки на пороге ещё тап', () {
       expect(
-        mascotGestureIsTap(
-          travel: 12,
-          held: const Duration(milliseconds: 200),
-        ),
+        mascotGestureIsTap(travel: 12, held: const Duration(milliseconds: 200)),
         isTrue,
       );
     });

@@ -34,9 +34,8 @@ Widget _sheetBody({required bool lift}) {
           const SizedBox(height: 900),
           const TextField(key: Key('comment')),
           Builder(
-            builder: (context) => SizedBox(
-              height: MediaQuery.viewInsetsOf(context).bottom + 24,
-            ),
+            builder: (context) =>
+                SizedBox(height: MediaQuery.viewInsetsOf(context).bottom + 24),
           ),
         ],
       ),
@@ -46,22 +45,24 @@ Widget _sheetBody({required bool lift}) {
 }
 
 Future<void> _showSheet(WidgetTester tester, {required bool lift}) async {
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(
-      body: Builder(
-        builder: (context) => Center(
-          child: ElevatedButton(
-            onPressed: () => showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => _sheetBody(lift: lift),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => Center(
+            child: ElevatedButton(
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => _sheetBody(lift: lift),
+              ),
+              child: const Text('open'),
             ),
-            child: const Text('open'),
           ),
         ),
       ),
     ),
-  ));
+  );
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
 }
@@ -89,22 +90,26 @@ void main() {
     _phone(tester);
     await _showSheet(tester, lift: true);
     await _typeInComment(tester);
-    expect(_fieldBottom(tester),
-        lessThanOrEqualTo(_screen.height - _keyboard));
+    expect(_fieldBottom(tester), lessThanOrEqualTo(_screen.height - _keyboard));
   });
 
-  testWidgets('подъём не удваивает отступ под клавиатуру внутри листа',
-      (tester) async {
+  testWidgets('подъём не удваивает отступ под клавиатуру внутри листа', (
+    tester,
+  ) async {
     _phone(tester);
     double? inner;
-    await tester.pumpWidget(MaterialApp(
-      home: LiftAboveKeyboard(
-        child: Builder(builder: (context) {
-          inner = MediaQuery.viewInsetsOf(context).bottom;
-          return const SizedBox.expand();
-        }),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LiftAboveKeyboard(
+          child: Builder(
+            builder: (context) {
+              inner = MediaQuery.viewInsetsOf(context).bottom;
+              return const SizedBox.expand();
+            },
+          ),
+        ),
       ),
-    ));
+    );
     _openKeyboard(tester);
     await tester.pump();
     expect(inner, 0);
@@ -123,10 +128,12 @@ void main() {
                     children: [
                       const SizedBox(height: 900),
                       const TextField(key: Key('comment')),
-                      Builder(builder: (inner) {
-                        inBody?.call(keyboardOpen(inner));
-                        return const SizedBox(height: 150);
-                      }),
+                      Builder(
+                        builder: (inner) {
+                          inBody?.call(keyboardOpen(inner));
+                          return const SizedBox(height: 150);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -143,38 +150,43 @@ void main() {
         ),
       );
 
-  testWidgets('тулбар поверх прокрутки закрывает поле при наборе',
-      (tester) async {
+  testWidgets('тулбар поверх прокрутки закрывает поле при наборе', (
+    tester,
+  ) async {
     // Механизм бага у фото и видео: поле уезжает к низу экрана, под тулбар.
     _phone(tester);
     await tester.pumpWidget(momentScreen(hideDock: false));
     await _typeInComment(tester);
-    expect(_fieldBottom(tester),
-        greaterThan(tester.getRect(find.byKey(dock)).top));
+    expect(
+      _fieldBottom(tester),
+      greaterThan(tester.getRect(find.byKey(dock)).top),
+    );
   });
 
-  testWidgets('тулбар уходит на время набора и возвращается после',
-      (tester) async {
+  testWidgets('тулбар уходит на время набора и возвращается после', (
+    tester,
+  ) async {
     _phone(tester);
     await tester.pumpWidget(momentScreen(hideDock: true));
     expect(find.byKey(dock), findsOneWidget);
 
     await _typeInComment(tester);
     expect(find.byKey(dock), findsNothing);
-    expect(_fieldBottom(tester),
-        lessThanOrEqualTo(_screen.height - _keyboard));
+    expect(_fieldBottom(tester), lessThanOrEqualTo(_screen.height - _keyboard));
 
     tester.view.resetViewInsets();
     await tester.pumpAndSettle();
     expect(find.byKey(dock), findsOneWidget);
   });
 
-  testWidgets('внутри Scaffold клавиатуры не видно — спрашивать снаружи',
-      (tester) async {
+  testWidgets('внутри Scaffold клавиатуры не видно — спрашивать снаружи', (
+    tester,
+  ) async {
     _phone(tester);
     bool? seenInBody;
     await tester.pumpWidget(
-        momentScreen(hideDock: true, inBody: (v) => seenInBody = v));
+      momentScreen(hideDock: true, inBody: (v) => seenInBody = v),
+    );
     await _typeInComment(tester);
     expect(find.byKey(dock), findsNothing);
     expect(seenInBody, isFalse);

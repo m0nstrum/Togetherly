@@ -36,11 +36,15 @@ Widget _header(
 void main() {
   final theme = AppThemes.pink;
 
-  testWidgets('relationship pill exposes a named TalkBack button', (tester) async {
+  testWidgets('relationship pill exposes a named TalkBack button', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     final tabs = <int>[];
     await tester.pumpWidget(_header(theme, paired: false, onOpenTab: tabs.add));
-    final finder = find.bySemanticsLabel(RegExp('Тип связи:|Relationship type:'));
+    final finder = find.bySemanticsLabel(
+      RegExp('Тип связи:|Relationship type:'),
+    );
     final node = tester.getSemantics(finder);
     expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
@@ -56,19 +60,25 @@ void main() {
     expect(tabs, [2]);
   });
 
-  testWidgets('N13: без обработчика пилюля остаётся неактивной', (tester) async {
+  testWidgets('N13: без обработчика пилюля остаётся неактивной', (
+    tester,
+  ) async {
     await tester.pumpWidget(_header(theme, paired: false));
     await tester.tap(find.text('Не в паре'));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('N5: тап по своему аватару (даже с заглушкой) открывает профиль',
-      (tester) async {
-    final tabs = <int>[];
-    await tester.pumpWidget(_header(theme, paired: false, onOpenTab: tabs.add));
-    await tester.tap(find.bySemanticsLabel(RegExp('Мой профиль|My profile')));
-    expect(tabs, [3]);
-  });
+  testWidgets(
+    'N5: тап по своему аватару (даже с заглушкой) открывает профиль',
+    (tester) async {
+      final tabs = <int>[];
+      await tester.pumpWidget(
+        _header(theme, paired: false, onOpenTab: tabs.add),
+      );
+      await tester.tap(find.bySemanticsLabel(RegExp('Мой профиль|My profile')));
+      expect(tabs, [3]);
+    },
+  );
 
   testWidgets('N5: у аватара партнёра есть подпись «Профиль»', (tester) async {
     await tester.pumpWidget(_header(theme, paired: true));

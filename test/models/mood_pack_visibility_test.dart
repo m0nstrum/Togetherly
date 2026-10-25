@@ -12,10 +12,7 @@ void main() {
 
     test('на iPhone открытый платный набор виден', () {
       // Купить могли на Android или на сайте — покупка общая на пару.
-      expect(
-        moodPackVisible(isIOS: true, isMoney: true, isOpen: true),
-        isTrue,
-      );
+      expect(moodPackVisible(isIOS: true, isMoney: true, isOpen: true), isTrue);
     });
 
     test('на Android закрытый платный набор виден: его можно купить', () {
@@ -26,8 +23,14 @@ void main() {
     });
 
     test('бесплатный набор виден везде', () {
-      expect(moodPackVisible(isIOS: true, isMoney: false, isOpen: false), isTrue);
-      expect(moodPackVisible(isIOS: false, isMoney: false, isOpen: false), isTrue);
+      expect(
+        moodPackVisible(isIOS: true, isMoney: false, isOpen: false),
+        isTrue,
+      );
+      expect(
+        moodPackVisible(isIOS: false, isMoney: false, isOpen: false),
+        isTrue,
+      );
     });
   });
 }

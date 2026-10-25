@@ -40,8 +40,7 @@ class _MorphLoaderState extends State<MorphLoader>
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: widget.period)
-      ..repeat();
+    _c = AnimationController(vsync: this, duration: widget.period)..repeat();
   }
 
   @override
@@ -124,7 +123,12 @@ class _MorphPainter extends CustomPainter {
     }
     path.close();
 
-    canvas.drawPath(path, Paint()..color = color..isAntiAlias = true);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..isAntiAlias = true,
+    );
   }
 
   /// Радиус скруглённого многоугольника в данном направлении, с переходом
@@ -145,6 +149,9 @@ class _MorphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MorphPainter old) =>
-      old.t != t || old.rotation != rotation || old.color != color ||
-      old.from != from || old.to != to;
+      old.t != t ||
+      old.rotation != rotation ||
+      old.color != color ||
+      old.from != from ||
+      old.to != to;
 }

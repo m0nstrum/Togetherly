@@ -69,11 +69,18 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    setState(() { _loading = true; _failure = null; });
+    setState(() {
+      _loading = true;
+      _failure = null;
+    });
     try {
-      final data = await (widget.loadStats?.call(force) ??
-          CoupleStatsService.load(widget.groupId, force: force));
-      if (mounted) setState(() { _stats = data; });
+      final data =
+          await (widget.loadStats?.call(force) ??
+              CoupleStatsService.load(widget.groupId, force: force));
+      if (mounted)
+        setState(() {
+          _stats = data;
+        });
     } catch (e) {
       if (mounted) setState(() => _failure = ForkFailure.of(e));
     } finally {
@@ -151,62 +158,75 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
       body: _loading
           ? M3PageLoading(color: _t.primaryLight)
           : _failure != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Padding(padding: const EdgeInsets.all(24), child: Text(_failure!.text, textAlign: TextAlign.center)),
-                  FilledButton(onPressed: () => _load(force: true), child: Text(_tr('Повторить', 'Retry'))),
-                ]))
-          : s == null
-              ? _empty()
-              : RefreshIndicator(
-                  onRefresh: () => _load(force: true),
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
-                    children: _sections(s),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(_failure!.text, textAlign: TextAlign.center),
                   ),
-                ),
+                  FilledButton(
+                    onPressed: () => _load(force: true),
+                    child: Text(_tr('Повторить', 'Retry')),
+                  ),
+                ],
+              ),
+            )
+          : s == null
+          ? _empty()
+          : RefreshIndicator(
+              onRefresh: () => _load(force: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
+                children: _sections(s),
+              ),
+            ),
     );
   }
 
   Widget _empty() => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text(
-            _tr('Пока нечего показать — данные появятся, когда вы начнёте вести дневник вдвоём.',
-                'Nothing to show yet — stats appear once you start together.'),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: ProfileTheme.bodyFont,
-              fontSize: 15,
-              color: _cs.onSurfaceVariant,
-            ),
-          ),
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Text(
+        _tr(
+          'Пока нечего показать — данные появятся, когда вы начнёте вести дневник вдвоём.',
+          'Nothing to show yet — stats appear once you start together.',
         ),
-      );
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: ProfileTheme.bodyFont,
+          fontSize: 15,
+          color: _cs.onSurfaceVariant,
+        ),
+      ),
+    ),
+  );
 
   List<Widget> _sections(CoupleStats s) => [
-        _hero(s),
-        const SizedBox(height: 16),
-        _totalsGrid(s),
-        const SizedBox(height: 16),
-        _yearChart(s),
-        const SizedBox(height: 16),
-        _versus(s),
-        const SizedBox(height: 16),
-        _weekRhythm(s),
-        const SizedBox(height: 16),
-        _dayRhythm(s),
-        const SizedBox(height: 16),
-        _moodTrend(s),
-        const SizedBox(height: 16),
-        _moodFavourites(s),
-        const SizedBox(height: 16),
-        _memoryTypes(s),
-        const SizedBox(height: 16),
-        _forecast(s),
-        const SizedBox(height: 16),
-        _tips(s),
-      ];
+    _hero(s),
+    const SizedBox(height: 16),
+    _totalsGrid(s),
+    const SizedBox(height: 16),
+    _yearChart(s),
+    const SizedBox(height: 16),
+    _versus(s),
+    const SizedBox(height: 16),
+    _weekRhythm(s),
+    const SizedBox(height: 16),
+    _dayRhythm(s),
+    const SizedBox(height: 16),
+    _moodTrend(s),
+    const SizedBox(height: 16),
+    _moodFavourites(s),
+    const SizedBox(height: 16),
+    _memoryTypes(s),
+    const SizedBox(height: 16),
+    _forecast(s),
+    const SizedBox(height: 16),
+    _tips(s),
+  ];
 
   // ── 11. Советы ────────────────────────────────────────────────────────────
 
@@ -216,19 +236,22 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
       if (p.day == null) continue;
       latest.putIfAbsent(p.uid, () => p.moodId);
     }
-    final tips = RelationshipTips.forToday(TipContext(
-      myMoodScore: latest[widget.myUid] == null
-          ? null
-          : _score(latest[widget.myUid]!),
-      partnerMoodScore:
-          latest[_partnerUid] == null ? null : _score(latest[_partnerUid]!),
-      daysTogether: coupleDaysTogether(
-        groupStart: widget.startDate ?? s.startDate,
-        anniversary: widget.anniversaryDate,
-        timerStart: null,
+    final tips = RelationshipTips.forToday(
+      TipContext(
+        myMoodScore: latest[widget.myUid] == null
+            ? null
+            : _score(latest[widget.myUid]!),
+        partnerMoodScore: latest[_partnerUid] == null
+            ? null
+            : _score(latest[_partnerUid]!),
+        daysTogether: coupleDaysTogether(
+          groupStart: widget.startDate ?? s.startDate,
+          anniversary: widget.anniversaryDate,
+          timerStart: null,
+        ),
+        daysToAnniversary: _daysToAnniversary(),
       ),
-      daysToAnniversary: _daysToAnniversary(),
-    ));
+    );
     if (tips.isEmpty) return const SizedBox.shrink();
 
     return _card(
@@ -291,95 +314,95 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
     String? subtitle,
     required Widget child,
     Widget? legend,
-  }) =>
-      Container(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-        decoration: BoxDecoration(
-          color: _cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(28),
+  }) => Container(
+    padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+    decoration: BoxDecoration(
+      color: _cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(28),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontFamily: ProfileTheme.displayFont,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: _cs.onSurface,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontFamily: ProfileTheme.displayFont,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: _cs.onSurface,
-              ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontFamily: ProfileTheme.bodyFont,
+              fontSize: 12.5,
+              color: _cs.onSurfaceVariant,
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontFamily: ProfileTheme.bodyFont,
-                  fontSize: 12.5,
-                  color: _cs.onSurfaceVariant,
-                ),
-              ),
-            ],
-            if (legend != null) ...[const SizedBox(height: 10), legend],
-            const SizedBox(height: 14),
-            child,
-          ],
-        ),
-      );
+          ),
+        ],
+        if (legend != null) ...[const SizedBox(height: 10), legend],
+        const SizedBox(height: 14),
+        child,
+      ],
+    ),
+  );
 
   Widget _legendRow(List<(String, Color)> items) => Wrap(
-        spacing: 14,
-        runSpacing: 6,
-        children: [
-          for (final (label, color) in items)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: ProfileTheme.bodyFont,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _cs.onSurfaceVariant,
-                  ),
-                ),
-              ],
+    spacing: 14,
+    runSpacing: 6,
+    children: [
+      for (final (label, color) in items)
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
-        ],
-      );
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: ProfileTheme.bodyFont,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _cs.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+    ],
+  );
 
   TextStyle get _axisStyle => TextStyle(
-        fontFamily: ProfileTheme.bodyFont,
-        fontSize: 10,
-        color: _cs.onSurfaceVariant,
-      );
+    fontFamily: ProfileTheme.bodyFont,
+    fontSize: 10,
+    color: _cs.onSurfaceVariant,
+  );
 
   FlGridData _grid(double interval) => FlGridData(
-        show: true,
-        drawVerticalLine: false,
-        horizontalInterval: interval <= 0 ? 1 : interval,
-        getDrawingHorizontalLine: (_) => FlLine(
-          color: _cs.outlineVariant,
-          strokeWidth: 1,
-          dashArray: const [5, 6],
-        ),
-      );
+    show: true,
+    drawVerticalLine: false,
+    horizontalInterval: interval <= 0 ? 1 : interval,
+    getDrawingHorizontalLine: (_) => FlLine(
+      color: _cs.outlineVariant,
+      strokeWidth: 1,
+      dashArray: const [5, 6],
+    ),
+  );
 
   // ── 1. Шапка ──────────────────────────────────────────────────────────────
 
   Widget _hero(CoupleStats s) {
-    final days = coupleDaysTogether(
+    final days =
+        coupleDaysTogether(
           groupStart: widget.startDate ?? s.startDate,
           anniversary: widget.anniversaryDate,
           timerStart: null,
@@ -387,39 +410,39 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
         0;
 
     Widget chip(IconData icon, String value, String label) => Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            decoration: BoxDecoration(
-              color: _cs.surface.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        decoration: BoxDecoration(
+          color: _cs.surface.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: _cs.onPrimaryContainer),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: ProfileTheme.displayFont,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                height: 1,
+                color: _cs.onPrimaryContainer,
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, size: 18, color: _cs.onPrimaryContainer),
-                const SizedBox(height: 6),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontFamily: ProfileTheme.displayFont,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    height: 1,
-                    color: _cs.onPrimaryContainer,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: ProfileTheme.bodyFont,
-                    fontSize: 11.5,
-                    color: _cs.onPrimaryContainer.withValues(alpha: 0.75),
-                  ),
-                ),
-              ],
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: ProfileTheme.bodyFont,
+                fontSize: 11.5,
+                color: _cs.onPrimaryContainer.withValues(alpha: 0.75),
+              ),
             ),
-          ),
-        );
+          ],
+        ),
+      ),
+    );
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -453,14 +476,23 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
           const SizedBox(height: 14),
           Row(
             children: [
-              chip(Icons.local_fire_department_rounded, '${s.streak}',
-                  _tr('Дней подряд', 'Day streak')),
+              chip(
+                Icons.local_fire_department_rounded,
+                '${s.streak}',
+                _tr('Дней подряд', 'Day streak'),
+              ),
               const SizedBox(width: 10),
-              chip(Icons.auto_awesome_rounded, '${s.xp}',
-                  _tr('Опыта пары', 'Couple XP')),
+              chip(
+                Icons.auto_awesome_rounded,
+                '${s.xp}',
+                _tr('Опыта пары', 'Couple XP'),
+              ),
               const SizedBox(width: 10),
-              chip(Icons.event_available_rounded, '${_daysToAnniversary()}',
-                  _tr('До годовщины', 'To anniversary')),
+              chip(
+                Icons.event_available_rounded,
+                '${_daysToAnniversary()}',
+                _tr('До годовщины', 'To anniversary'),
+              ),
             ],
           ),
         ],
@@ -469,12 +501,14 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
   }
 
   int _daysToAnniversary() {
-    final date = widget.anniversaryDate ?? widget.startDate ?? _stats?.startDate;
+    final date =
+        widget.anniversaryDate ?? widget.startDate ?? _stats?.startDate;
     if (date == null) return 0;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     var next = DateTime(now.year, date.month, date.day);
-    if (next.isBefore(today)) next = DateTime(now.year + 1, date.month, date.day);
+    if (next.isBefore(today))
+      next = DateTime(now.year + 1, date.month, date.day);
     return next.difference(today).inDays;
   }
 
@@ -482,17 +516,41 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
 
   Widget _totalsGrid(CoupleStats s) {
     final items = <(IconData, int, String)>[
-      (Icons.photo_library_rounded, s.total('memories'), _tr('Воспоминаний', 'Memories')),
+      (
+        Icons.photo_library_rounded,
+        s.total('memories'),
+        _tr('Воспоминаний', 'Memories'),
+      ),
       (Icons.image_rounded, s.total('photos'), _tr('Фотографий', 'Photos')),
       (Icons.videocam_rounded, s.total('videos'), _tr('Видео', 'Videos')),
       (Icons.forum_rounded, s.total('messages'), _tr('Сообщений', 'Messages')),
-      (Icons.mood_rounded, s.total('moods'), _tr('Отметок настроения', 'Mood marks')),
-      (Icons.favorite_rounded, s.total('missYou'), _tr('«Скучаю»', 'Miss-yous')),
-      (Icons.brush_rounded, s.total('strokes'), _tr('Штрихов на холсте', 'Brush strokes')),
-      (Icons.comment_rounded, s.total('comments'), _tr('Комментариев', 'Comments')),
+      (
+        Icons.mood_rounded,
+        s.total('moods'),
+        _tr('Отметок настроения', 'Mood marks'),
+      ),
+      (
+        Icons.favorite_rounded,
+        s.total('missYou'),
+        _tr('«Скучаю»', 'Miss-yous'),
+      ),
+      (
+        Icons.brush_rounded,
+        s.total('strokes'),
+        _tr('Штрихов на холсте', 'Brush strokes'),
+      ),
+      (
+        Icons.comment_rounded,
+        s.total('comments'),
+        _tr('Комментариев', 'Comments'),
+      ),
       (Icons.card_giftcard_rounded, s.total('gifts'), _tr('Подарков', 'Gifts')),
       (Icons.pets_rounded, s.total('mascots'), _tr('Маскотов', 'Mascots')),
-      (Icons.play_circle_rounded, s.total('watch'), _tr('Совместных включений', 'Watch sessions')),
+      (
+        Icons.play_circle_rounded,
+        s.total('watch'),
+        _tr('Совместных включений', 'Watch sessions'),
+      ),
       (Icons.palette_rounded, s.total('canvases'), _tr('Холстов', 'Canvases')),
     ];
 
@@ -569,8 +627,7 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
       ...s.timeline['memories']!.keys,
       ...s.timeline['messages']!.keys,
       ...s.timeline['moods']!.keys,
-    }.toList()
-      ..sort();
+    }.toList()..sort();
 
     if (months.isEmpty) {
       return _card(
@@ -591,16 +648,18 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
     final maxMood = math.max(1.0, maxOf('moods'));
 
     List<FlSpot> spots(String key, double norm) => [
-          for (var i = 0; i < months.length; i++)
-            FlSpot(i.toDouble(), (s.timeline[key]![months[i]] ?? 0) / norm * 100),
-        ];
+      for (var i = 0; i < months.length; i++)
+        FlSpot(i.toDouble(), (s.timeline[key]![months[i]] ?? 0) / norm * 100),
+    ];
 
     final colors = [_cs.primary, _cs.tertiary, _cs.secondary];
 
     return _card(
       title: _tr('Год вместе', 'The year together'),
-      subtitle: _tr('Доля от лучшего месяца по каждому ряду',
-          'Share of each series best month'),
+      subtitle: _tr(
+        'Доля от лучшего месяца по каждому ряду',
+        'Share of each series best month',
+      ),
       legend: _legendRow([
         (_tr('Воспоминания', 'Memories'), colors[0]),
         (_tr('Сообщения', 'Messages'), colors[1]),
@@ -617,8 +676,12 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
             gridData: _grid(25),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -635,7 +698,8 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
                   interval: math.max(1, (months.length / 5).floorToDouble()),
                   getTitlesWidget: (v, _) {
                     final i = v.toInt();
-                    if (i < 0 || i >= months.length) return const SizedBox.shrink();
+                    if (i < 0 || i >= months.length)
+                      return const SizedBox.shrink();
                     return Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(months[i].substring(5), style: _axisStyle),
@@ -705,16 +769,31 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
   Widget _versus(CoupleStats s) {
     final partner = _partnerUid;
     final rows = <(String, int, int)>[
-      (_tr('Воспоминания', 'Memories'),
-          s.forMember('memories', widget.myUid), s.forMember('memories', partner)),
-      (_tr('Сообщения', 'Messages'),
-          s.forMember('messages', widget.myUid), s.forMember('messages', partner)),
-      (_tr('Настроения', 'Moods'),
-          s.forMember('moods', widget.myUid), s.forMember('moods', partner)),
-      (_tr('«Скучаю»', 'Miss-yous'),
-          s.forMember('missYou', widget.myUid), s.forMember('missYou', partner)),
-      (_tr('Подарки', 'Gifts'),
-          s.forMember('gifts', widget.myUid), s.forMember('gifts', partner)),
+      (
+        _tr('Воспоминания', 'Memories'),
+        s.forMember('memories', widget.myUid),
+        s.forMember('memories', partner),
+      ),
+      (
+        _tr('Сообщения', 'Messages'),
+        s.forMember('messages', widget.myUid),
+        s.forMember('messages', partner),
+      ),
+      (
+        _tr('Настроения', 'Moods'),
+        s.forMember('moods', widget.myUid),
+        s.forMember('moods', partner),
+      ),
+      (
+        _tr('«Скучаю»', 'Miss-yous'),
+        s.forMember('missYou', widget.myUid),
+        s.forMember('missYou', partner),
+      ),
+      (
+        _tr('Подарки', 'Gifts'),
+        s.forMember('gifts', widget.myUid),
+        s.forMember('gifts', partner),
+      ),
     ];
 
     return _card(
@@ -814,7 +893,10 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
     final maxV = math.max(1, [...msg, ...mem].reduce(math.max));
 
     if (maxV <= 1 && msg.every((v) => v == 0) && mem.every((v) => v == 0)) {
-      return _card(title: _tr('Ритм недели', 'Weekly rhythm'), child: _noData());
+      return _card(
+        title: _tr('Ритм недели', 'Weekly rhythm'),
+        child: _noData(),
+      );
     }
 
     return _card(
@@ -849,8 +931,12 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
               ),
             ),
             titlesData: FlTitlesData(
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -866,7 +952,8 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
                   reservedSize: 24,
                   getTitlesWidget: (v, _) {
                     final i = v.toInt();
-                    if (i < 0 || i >= names.length) return const SizedBox.shrink();
+                    if (i < 0 || i >= names.length)
+                      return const SizedBox.shrink();
                     return Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(names[i], style: _axisStyle),
@@ -908,7 +995,10 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
     final hours = s.hourMessages;
     final maxV = math.max(1, hours.reduce(math.max));
     if (hours.every((v) => v == 0)) {
-      return _card(title: _tr('Часы суток', 'Hours of the day'), child: _noData());
+      return _card(
+        title: _tr('Часы суток', 'Hours of the day'),
+        child: _noData(),
+      );
     }
 
     final peak = hours.indexOf(maxV);
@@ -946,9 +1036,15 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
               ),
             ),
             titlesData: FlTitlesData(
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              leftTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -999,10 +1095,10 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
     final first = days.first;
 
     List<FlSpot> spots(Map<DateTime, double> src) => [
-          for (final d in days)
-            if (src[d] != null)
-              FlSpot(d.difference(first).inDays.toDouble(), src[d]!),
-        ];
+      for (final d in days)
+        if (src[d] != null)
+          FlSpot(d.difference(first).inDays.toDouble(), src[d]!),
+    ];
 
     final span = math.max(1, days.last.difference(first).inDays);
 
@@ -1026,8 +1122,12 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
             gridData: _grid(1),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -1086,9 +1186,7 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
       sum[d] = (sum[d] ?? 0) + _score(p.moodId) * p.count;
       count[d] = (count[d] ?? 0) + p.count;
     }
-    return {
-      for (final d in sum.keys) d: sum[d]! / math.max(1, count[d]!),
-    };
+    return {for (final d in sum.keys) d: sum[d]! / math.max(1, count[d]!)};
   }
 
   // ── 8. Любимые настроения ─────────────────────────────────────────────────
@@ -1109,10 +1207,14 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
     final mineTop = topFor(widget.myUid);
     final theirsTop = topFor(partner);
     if (mineTop.isEmpty && theirsTop.isEmpty) {
-      return _card(title: _tr('Любимые настроения', 'Favourite moods'), child: _noData());
+      return _card(
+        title: _tr('Любимые настроения', 'Favourite moods'),
+        child: _noData(),
+      );
     }
 
-    Widget column(String name, List<(String, int)> items, Color color) => Expanded(
+    Widget column(String name, List<(String, int)> items, Color color) =>
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1179,14 +1281,13 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
   // ── 9. Из чего собраны воспоминания ───────────────────────────────────────
 
   Widget _memoryTypes(CoupleStats s) {
-    final entries = s.memoryTypes.entries
-        .where((e) => e.value > 0)
-        .toList()
+    final entries = s.memoryTypes.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     if (entries.isEmpty) {
       return _card(
-          title: _tr('Из чего собраны воспоминания', 'What memories are made of'),
-          child: _noData());
+        title: _tr('Из чего собраны воспоминания', 'What memories are made of'),
+        child: _noData(),
+      );
     }
 
     final total = entries.fold<int>(0, (a, e) => a + e.value);
@@ -1275,8 +1376,10 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
       (
         Icons.trending_up_rounded,
         '$yearProjection',
-        _tr('Столько наберётся за год при этом темпе',
-            'Projected for a year at this pace'),
+        _tr(
+          'Столько наберётся за год при этом темпе',
+          'Projected for a year at this pace',
+        ),
       ),
       (
         Icons.calendar_month_rounded,
@@ -1287,10 +1390,10 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
         trend == null
             ? Icons.remove_rounded
             : trend >= 0.1
-                ? Icons.sentiment_satisfied_rounded
-                : trend <= -0.1
-                    ? Icons.sentiment_dissatisfied_rounded
-                    : Icons.sentiment_neutral_rounded,
+            ? Icons.sentiment_satisfied_rounded
+            : trend <= -0.1
+            ? Icons.sentiment_dissatisfied_rounded
+            : Icons.sentiment_neutral_rounded,
         trend == null
             ? '—'
             : '${trend > 0 ? '+' : ''}${trend.toStringAsFixed(1)}',
@@ -1300,8 +1403,10 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
 
     return _card(
       title: _tr('Что дальше', 'What is next'),
-      subtitle: _tr('Прогноз по темпу последних тридцати дней',
-          'Projection from the last thirty days'),
+      subtitle: _tr(
+        'Прогноз по темпу последних тридцати дней',
+        'Projection from the last thirty days',
+      ),
       child: Column(
         children: [
           for (final (icon, value, label) in items)
@@ -1387,17 +1492,17 @@ class _CoupleStatsScreenState extends State<CoupleStatsScreen> {
   }
 
   Widget _noData() => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        child: Text(
-          _tr('Пока пусто', 'Nothing yet'),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: ProfileTheme.bodyFont,
-            fontSize: 13,
-            color: _cs.onSurfaceVariant,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 18),
+    child: Text(
+      _tr('Пока пусто', 'Nothing yet'),
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontFamily: ProfileTheme.bodyFont,
+        fontSize: 13,
+        color: _cs.onSurfaceVariant,
+      ),
+    ),
+  );
 }
 
 /// Открывает полную статистику, если куплен Togetherly+, иначе ведёт на его

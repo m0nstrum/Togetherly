@@ -29,18 +29,32 @@ void main() {
     fill: const Color(0xFFF37094),
   );
 
-  List<LandRing> land(String name) =>
-      LandShapes.parse(ByteData.sublistView(File('assets/map/$name').readAsBytesSync()));
+  List<LandRing> land(String name) => LandShapes.parse(
+    ByteData.sublistView(File('assets/map/$name').readAsBytesSync()),
+  );
 
   final transition = GlobeTransition(
     rest: const GlobeView(lat: 55.5, lon: 25.5, radius: 520),
-    target: GlobeTarget(lat: 54.5, lon: 25.5, radius: matchRadius(zoom: 2.68, lat: 54.5)),
+    target: GlobeTarget(
+      lat: 54.5,
+      lon: 25.5,
+      radius: matchRadius(zoom: 2.68, lat: 54.5),
+    ),
     focus: const Offset(180, 330),
     horizonGap: 214,
-    camera: const MercatorCamera(centerLat: 53.5, centerLon: 25.5, zoom: 2.68, size: _size),
+    camera: const MercatorCamera(
+      centerLat: 53.5,
+      centerLon: 25.5,
+      zoom: 2.68,
+      size: _size,
+    ),
   );
 
-  Future<Uint8List> render(WidgetTester tester, GlobeScene scene, List<LandRing> rings) async {
+  Future<Uint8List> render(
+    WidgetTester tester,
+    GlobeScene scene,
+    List<LandRing> rings,
+  ) async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Offset.zero & _size);
     canvas.drawRect(Offset.zero & _size, Paint()..color = palette.halo);
@@ -51,18 +65,32 @@ void main() {
       arc: scene.arc(greatCircle(_msk, _ber)),
       fly: .5,
     ).paint(canvas, _size);
-    final image = await tester.runAsync(() => recorder.endRecording().toImage(360, 780));
-    final png = await tester.runAsync(() => image!.toByteData(format: ui.ImageByteFormat.png));
+    final image = await tester.runAsync(
+      () => recorder.endRecording().toImage(360, 780),
+    );
+    final png = await tester.runAsync(
+      () => image!.toByteData(format: ui.ImageByteFormat.png),
+    );
     return png!.buffer.asUint8List();
   }
 
-  for (final (name, p) in const [('rest', 0.0), ('zoom', .3), ('unroll', .7), ('flat', 1.0)]) {
+  for (final (name, p) in const [
+    ('rest', 0.0),
+    ('zoom', .3),
+    ('unroll', .7),
+    ('flat', 1.0),
+  ]) {
     testWidgets('кадр перехода «$name»', (tester) async {
       final scene = p <= .55
           ? GlobeScene.globe(transition.viewAt(p / .55))
-          : GlobeScene.unroll(transition, ((p - .55) / .3).clamp(0.0, 1.0),
-              landMix: ((p - .85) / .15).clamp(0.0, 1.0));
-      final rings = scene.radius > 700 ? land('land_50m.bin') : land('land_110m.bin');
+          : GlobeScene.unroll(
+              transition,
+              ((p - .55) / .3).clamp(0.0, 1.0),
+              landMix: ((p - .85) / .15).clamp(0.0, 1.0),
+            );
+      final rings = scene.radius > 700
+          ? land('land_50m.bin')
+          : land('land_110m.bin');
       final png = await render(tester, scene, rings);
       Directory('build/globe-frames').createSync(recursive: true);
       File('build/globe-frames/$name.png').writeAsBytesSync(png);
@@ -71,7 +99,9 @@ void main() {
       // перехода — цвет суши плоской карты, чтобы тайлы легли без вспышки.
       final at = scene.toScreen(const LatLng(55.0, 40.0))!;
       final raw = (await tester.runAsync(() async {
-        final img = await ui.instantiateImageCodec(png).then((c) => c.getNextFrame());
+        final img = await ui
+            .instantiateImageCodec(png)
+            .then((c) => c.getNextFrame());
         return img.image.toByteData(format: ui.ImageByteFormat.rawRgba);
       }))!;
       final i = (at.dy.round() * 360 + at.dx.round()) * 4;
@@ -79,8 +109,9 @@ void main() {
       // Цвет суши держится до последнего шага и только там уходит в цвет карты.
       final want = p >= 1 ? palette.land : palette.globeLand;
       {
-        expect(got, [for (final c in [want.r, want.g, want.b]) (c * 255).round()],
-            reason: 'кадр $name, точка $at');
+        expect(got, [
+          for (final c in [want.r, want.g, want.b]) (c * 255).round(),
+        ], reason: 'кадр $name, точка $at');
       }
       // Оба человека видны на кадре.
       expect(scene.toScreen(_msk), isNotNull);

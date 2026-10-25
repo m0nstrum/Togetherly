@@ -12,11 +12,12 @@ void main() {
   final hw = kPalettes.firstWhere((p) => p.name == 'Хэллоуин');
 
   Widget host(Widget child) => MaterialApp(
-        home: Scaffold(body: SizedBox(width: 360, height: 780, child: child)),
-      );
+    home: Scaffold(body: SizedBox(width: 360, height: 780, child: child)),
+  );
 
-  testWidgets('у «Хэллоуина» фон в узоре: плитка повторяется одним цветом',
-      (tester) async {
+  testWidgets('у «Хэллоуина» фон в узоре: плитка повторяется одним цветом', (
+    tester,
+  ) async {
     final t = buildAppTheme(hw, Brightness.dark);
     await tester.pumpWidget(host(ThemePatternLayer(theme: t)));
 
@@ -31,12 +32,17 @@ void main() {
     expect(provider.scale, 3.0);
     // Узор — фон: касания идут сквозь него, а читалка экрана его не видит.
     expect(
-      find.ancestor(of: find.byType(Image), matching: find.byType(IgnorePointer)),
+      find.ancestor(
+        of: find.byType(Image),
+        matching: find.byType(IgnorePointer),
+      ),
       findsWidgets,
     );
     expect(
       find.ancestor(
-          of: find.byType(Image), matching: find.byType(ExcludeSemantics)),
+        of: find.byType(Image),
+        matching: find.byType(ExcludeSemantics),
+      ),
       findsWidgets,
     );
   });
@@ -57,8 +63,9 @@ void main() {
     expect(pattern, lessThan(content));
   });
 
-  testWidgets('в кружке ленты у «Хэллоуина» тыква на ночи, а не квадранты',
-      (tester) async {
+  testWidgets('в кружке ленты у «Хэллоуина» тыква на ночи, а не квадранты', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(Center(child: SeedSwatch(palette: hw))));
     final img = tester.widget<Image>(find.byType(Image));
     expect((img.image as AssetImage).assetName, hw.badge!.asset);
@@ -71,8 +78,9 @@ void main() {
   });
 
   testWidgets('у обычной палитры в кружке квадранты схемы', (tester) async {
-    await tester
-        .pumpWidget(host(Center(child: SeedSwatch(palette: kPalettes[3]))));
+    await tester.pumpWidget(
+      host(Center(child: SeedSwatch(palette: kPalettes[3]))),
+    );
     expect(find.byType(Image), findsNothing);
   });
 }

@@ -26,7 +26,10 @@ void main() {
     await LocaleService.instance.init();
     await _font('Onest', 'assets/fonts/Onest.ttf');
     await _font('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _font('MaterialIcons', '${Platform.environment['FLUTTER_ROOT'] ?? '/home/alelx/flutter'}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _font(
+      'MaterialIcons',
+      '${Platform.environment['FLUTTER_ROOT'] ?? '/home/alelx/flutter'}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
   });
 
   for (final (name, palette, b, width, scale) in [
@@ -42,39 +45,53 @@ void main() {
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
       final key = GlobalKey();
-      await tester.pumpWidget(RepaintBoundary(
-        key: key,
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ProfileTheme.data(cs),
-          home: MediaQuery(
-            data: MediaQueryData(size: Size(width, 520), textScaler: TextScaler.linear(scale)),
-            child: Scaffold(
-              backgroundColor: cs.surface,
-              body: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainer,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                  ),
-                  child: SheetScaffold(
-                    child: AddMemorySheetBody(
-                      scheme: cs, fill: theme.fillColor, onType: (_) {}, onCapsule: () {}),
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ProfileTheme.data(cs),
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(width, 520),
+                textScaler: TextScaler.linear(scale),
+              ),
+              child: Scaffold(
+                backgroundColor: cs.surface,
+                body: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainer,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                    ),
+                    child: SheetScaffold(
+                      child: AddMemorySheetBody(
+                        scheme: cs,
+                        fill: theme.fillColor,
+                        onType: (_) {},
+                        onCapsule: () {},
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       await tester.runAsync(() async {
-        final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final boundary =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final img = await boundary.toImage(pixelRatio: 2);
         final png = await img.toByteData(format: ui.ImageByteFormat.png);
         Directory('build/add-sheet').createSync(recursive: true);
-        File('build/add-sheet/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
+        File(
+          'build/add-sheet/$name.png',
+        ).writeAsBytesSync(png!.buffer.asUint8List());
       });
       // ignore: avoid_print
       print('${kPalettes[palette].name}');

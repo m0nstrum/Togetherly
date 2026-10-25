@@ -18,68 +18,123 @@ void main() {
     ]) {
       expect(forkRoomPlayable(ok), isTrue, reason: ok);
     }
-    for (final bad in ['', 'привет', 'https://example.com/page', 'https://ivi.ru/watch/1']) {
+    for (final bad in [
+      '',
+      'привет',
+      'https://example.com/page',
+      'https://ivi.ru/watch/1',
+    ]) {
       expect(forkRoomPlayable(bad), isFalse, reason: bad);
     }
-    expect(forkRoomLinkOf('смотри https://youtu.be/abc вот'), 'https://youtu.be/abc');
+    expect(
+      forkRoomLinkOf('смотри https://youtu.be/abc вот'),
+      'https://youtu.be/abc',
+    );
   });
 
-  testWidgets('failed lists have independent errors and retry keeps the link', (t) async {
+  testWidgets('failed lists have independent errors and retry keeps the link', (
+    t,
+  ) async {
     var fail = true;
-    await t.pumpWidget(MaterialApp(home: Scaffold(body: ForkRoomPicker(
-      groupId: 'g', clipboard: () async => '',
-      recent: () async { if (fail) throw StateError('offline'); return []; },
-      uploaded: () async => throw StateError('offline'),
-    ))));
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ForkRoomPicker(
+            groupId: 'g',
+            clipboard: () async => '',
+            recent: () async {
+              if (fail) throw StateError('offline');
+              return [];
+            },
+            uploaded: () async => throw StateError('offline'),
+          ),
+        ),
+      ),
+    );
     await t.pumpAndSettle();
-    expect(find.textContaining(RegExp('Не удалось загрузить список|Could not load the list')), findsNWidgets(2));
+    expect(
+      find.textContaining(
+        RegExp('Не удалось загрузить список|Could not load the list'),
+      ),
+      findsNWidgets(2),
+    );
     await t.enterText(find.byType(TextField), 'https://youtu.be/kept');
     fail = false;
     await t.tap(find.textContaining(RegExp('Повторить|Retry')).first);
     await t.pumpAndSettle();
-    expect(find.textContaining(RegExp('Не удалось загрузить список|Could not load the list')), findsOneWidget);
+    expect(
+      find.textContaining(
+        RegExp('Не удалось загрузить список|Could not load the list'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('https://youtu.be/kept'), findsOneWidget);
   });
 
-  testWidgets('ссылка из буфера — одной кнопкой; плохая — объясняем', (tester) async {
+  testWidgets('ссылка из буфера — одной кнопкой; плохая — объясняем', (
+    tester,
+  ) async {
     ForkRoomPick? got;
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(
-        builder: (ctx) => Scaffold(
-          body: TextButton(
-            onPressed: () async {
-              got = await showModalBottomSheet<ForkRoomPick>(
-                context: ctx,
-                isScrollControlled: true,
-                builder: (_) => SizedBox(
-                  height: 600,
-                  child: ForkRoomPicker(
-                    groupId: 'g1',
-                    clipboard: () async => 'глянь https://youtu.be/xyz',
-                    recent: () async => [
-                      const WatchEntry(id: 'r1', url: 'https://youtu.be/old', kind: 'youtube', title: 'Старое', thumb: '', seconds: 0),
-                      const WatchEntry(id: 'r2', url: 'file://a.mp4', kind: 'file', title: 'Свой файл', thumb: '', seconds: 0),
-                    ],
-                    uploaded: () async => const <WatchVideo>[],
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (ctx) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                got = await showModalBottomSheet<ForkRoomPick>(
+                  context: ctx,
+                  isScrollControlled: true,
+                  builder: (_) => SizedBox(
+                    height: 600,
+                    child: ForkRoomPicker(
+                      groupId: 'g1',
+                      clipboard: () async => 'глянь https://youtu.be/xyz',
+                      recent: () async => [
+                        const WatchEntry(
+                          id: 'r1',
+                          url: 'https://youtu.be/old',
+                          kind: 'youtube',
+                          title: 'Старое',
+                          thumb: '',
+                          seconds: 0,
+                        ),
+                        const WatchEntry(
+                          id: 'r2',
+                          url: 'file://a.mp4',
+                          kind: 'file',
+                          title: 'Свой файл',
+                          thumb: '',
+                          seconds: 0,
+                        ),
+                      ],
+                      uploaded: () async => const <WatchVideo>[],
+                    ),
                   ),
-                ),
-              );
-            },
-            child: const Text('open'),
+                );
+              },
+              child: const Text('open'),
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(find.text('https://youtu.be/xyz'), findsOneWidget);
     expect(find.text('Старое'), findsOneWidget);
-    expect(find.text('Свой файл'), findsNothing, reason: 'свой файл ссылкой не открыть');
+    expect(
+      find.text('Свой файл'),
+      findsNothing,
+      reason: 'свой файл ссылкой не открыть',
+    );
 
     await tester.enterText(find.byType(TextField), 'просто текст');
     await tester.testTextInput.receiveAction(TextInputAction.go);
     await tester.pump();
-    expect(find.textContaining(RegExp('не откроет|can’t open')), findsOneWidget);
+    expect(
+      find.textContaining(RegExp('не откроет|can’t open')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('https://youtu.be/xyz'));
     await tester.pumpAndSettle();

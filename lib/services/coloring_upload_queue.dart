@@ -53,44 +53,50 @@ class ColoringUpload {
   bool get isReady => status == ColoringUploadStatus.ready;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'status': status.name,
-        'ratio': ratio,
-        'error': failure == null ? _error : '',
-        'failure': failure?.name,
-        'source': sourcePath,
-      };
+    'id': id,
+    'title': title,
+    'status': status.name,
+    'ratio': ratio,
+    'error': failure == null ? _error : '',
+    'failure': failure?.name,
+    'source': sourcePath,
+  };
 
   static ColoringUpload fromJson(Map<String, dynamic> j) => ColoringUpload(
-        id: (j['id'] ?? '').toString(),
-        title: (j['title'] ?? '').toString(),
-        status: ColoringUploadStatus.values.firstWhere(
-          (s) => s.name == j['status'],
-          orElse: () => ColoringUploadStatus.processing,
-        ),
-        ratio: (j['ratio'] as num?)?.toDouble() ?? 1.0,
-        error: (j['error'] ?? '').toString(),
-        failure: ForkFailure.values.where((f) => f.name == j['failure']).firstOrNull ??
-            (RegExp(r'Exception|Error:|https?://').hasMatch((j['error'] ?? '').toString()) ? ForkFailure.unknown : null),
-        sourcePath: (j['source'] ?? '').toString(),
-      );
+    id: (j['id'] ?? '').toString(),
+    title: (j['title'] ?? '').toString(),
+    status: ColoringUploadStatus.values.firstWhere(
+      (s) => s.name == j['status'],
+      orElse: () => ColoringUploadStatus.processing,
+    ),
+    ratio: (j['ratio'] as num?)?.toDouble() ?? 1.0,
+    error: (j['error'] ?? '').toString(),
+    failure:
+        ForkFailure.values.where((f) => f.name == j['failure']).firstOrNull ??
+        (RegExp(
+              r'Exception|Error:|https?://',
+            ).hasMatch((j['error'] ?? '').toString())
+            ? ForkFailure.unknown
+            : null),
+    sourcePath: (j['source'] ?? '').toString(),
+  );
 
   ColoringUpload copyWith({
     ColoringUploadStatus? status,
     double? ratio,
     String? error,
     ForkFailure? failure,
-  }) =>
-      ColoringUpload(
-        id: id,
-        title: title,
-        status: status ?? this.status,
-        ratio: ratio ?? this.ratio,
-        error: error ?? _error,
-        failure: (status ?? this.status) == ColoringUploadStatus.failed ? failure ?? this.failure : null,
-        sourcePath: sourcePath,
-      );
+  }) => ColoringUpload(
+    id: id,
+    title: title,
+    status: status ?? this.status,
+    ratio: ratio ?? this.ratio,
+    error: error ?? _error,
+    failure: (status ?? this.status) == ColoringUploadStatus.failed
+        ? failure ?? this.failure
+        : null,
+    sourcePath: sourcePath,
+  );
 }
 
 /// Очередь обработки своих раскрасок.
@@ -132,17 +138,22 @@ class ColoringUploadQueue extends ChangeNotifier {
     final raw = prefs.getStringList(_prefsKey) ?? const [];
     _items
       ..clear()
-      ..addAll(raw.map((s) {
-        try {
-          return ColoringUpload.fromJson(jsonDecode(s) as Map<String, dynamic>);
-        } catch (_) {
-          return null;
-        }
-      }).whereType<ColoringUpload>());
+      ..addAll(
+        raw.map((s) {
+          try {
+            return ColoringUpload.fromJson(
+              jsonDecode(s) as Map<String, dynamic>,
+            );
+          } catch (_) {
+            return null;
+          }
+        }).whereType<ColoringUpload>(),
+      );
     notifyListeners();
 
     for (final item in _items.where(
-        (i) => i.status == ColoringUploadStatus.processing)) {
+      (i) => i.status == ColoringUploadStatus.processing,
+    )) {
       unawaited(_process(item));
     }
   }
@@ -168,16 +179,23 @@ class ColoringUploadQueue extends ChangeNotifier {
   }
 
   Future<void> retry(String id) async {
-    final item = _items.where((i) => i.id == id && i.status == ColoringUploadStatus.failed).firstOrNull;
+    final item = _items
+        .where((i) => i.id == id && i.status == ColoringUploadStatus.failed)
+        .firstOrNull;
     if (item == null) return;
     await _update(id, status: ColoringUploadStatus.processing, error: '');
     unawaited(_process(item));
   }
 
   Future<void> remove(String id) async {
-    final item = _items.firstWhere((i) => i.id == id,
-        orElse: () => const ColoringUpload(
-            id: '', title: '', status: ColoringUploadStatus.failed));
+    final item = _items.firstWhere(
+      (i) => i.id == id,
+      orElse: () => const ColoringUpload(
+        id: '',
+        title: '',
+        status: ColoringUploadStatus.failed,
+      ),
+    );
     if (item.id.isEmpty) return;
     _items.removeWhere((i) => i.id == id);
     final dir = await _dir();
@@ -202,23 +220,30 @@ class ColoringUploadQueue extends ChangeNotifier {
     try {
       final src = File(item.sourcePath);
       if (!src.existsSync()) {
-        await _update(item.id,
-            status: ColoringUploadStatus.failed, error: 'Файл потерялся');
+        await _update(
+          item.id,
+          status: ColoringUploadStatus.failed,
+          error: 'Файл потерялся',
+        );
         return;
       }
       final bytes = await src.readAsBytes();
       final result = await compute(_prepareInIsolate, bytes);
 
       if (result == null) {
-        await _update(item.id,
-            status: ColoringUploadStatus.failed,
-            error: 'Это не картинка или её не удалось прочитать');
+        await _update(
+          item.id,
+          status: ColoringUploadStatus.failed,
+          error: 'Это не картинка или её не удалось прочитать',
+        );
         return;
       }
       if (result.leaks) {
-        await _update(item.id,
-            status: ColoringUploadStatus.failed,
-            error: 'Линии не замкнуты: заливка растечётся по всему листу');
+        await _update(
+          item.id,
+          status: ColoringUploadStatus.failed,
+          error: 'Линии не замкнуты: заливка растечётся по всему листу',
+        );
         return;
       }
 
@@ -228,30 +253,47 @@ class ColoringUploadQueue extends ChangeNotifier {
       try {
         src.deleteSync();
       } catch (_) {}
-      await _update(item.id,
-          status: ColoringUploadStatus.ready, ratio: result.ratio);
+      await _update(
+        item.id,
+        status: ColoringUploadStatus.ready,
+        ratio: result.ratio,
+      );
     } catch (e) {
-      await _update(item.id,
-          status: ColoringUploadStatus.failed, failure: ForkFailure.of(e));
+      await _update(
+        item.id,
+        status: ColoringUploadStatus.failed,
+        failure: ForkFailure.of(e),
+      );
     } finally {
       _busy = false;
       // Следующая в очереди, если она есть.
       final next = _items.firstWhere(
         (i) => i.status == ColoringUploadStatus.processing,
         orElse: () => const ColoringUpload(
-            id: '', title: '', status: ColoringUploadStatus.failed),
+          id: '',
+          title: '',
+          status: ColoringUploadStatus.failed,
+        ),
       );
       if (next.id.isNotEmpty) unawaited(_process(next));
     }
   }
 
-  Future<void> _update(String id,
-      {required ColoringUploadStatus status,
-      double? ratio,
-      String error = '', ForkFailure? failure}) async {
+  Future<void> _update(
+    String id, {
+    required ColoringUploadStatus status,
+    double? ratio,
+    String error = '',
+    ForkFailure? failure,
+  }) async {
     final idx = _items.indexWhere((i) => i.id == id);
     if (idx < 0) return;
-    _items[idx] = _items[idx].copyWith(status: status, ratio: ratio, error: error, failure: failure);
+    _items[idx] = _items[idx].copyWith(
+      status: status,
+      ratio: ratio,
+      error: error,
+      failure: failure,
+    );
     await _save();
     notifyListeners();
   }
@@ -259,7 +301,9 @@ class ColoringUploadQueue extends ChangeNotifier {
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-        _prefsKey, _items.map((i) => jsonEncode(i.toJson())).toList());
+      _prefsKey,
+      _items.map((i) => jsonEncode(i.toJson())).toList(),
+    );
   }
 }
 

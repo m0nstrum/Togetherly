@@ -69,11 +69,13 @@ class CanvasCreateFlow {
           // Без `coloring`: иначе рисовалка заново заведёт раскраску на листе
           // и сотрёт партнёру его «Готово» и режим. Картинку, режим и
           // половины экран подхватит из `canvas_meta` сам.
-          await _open(context,
-              userData: userData,
-              pairData: pairData,
-              theme: theme,
-              meta: started);
+          await _open(
+            context,
+            userData: userData,
+            pairData: pairData,
+            theme: theme,
+            meta: started,
+          );
           return true;
         }
       }
@@ -87,12 +89,14 @@ class CanvasCreateFlow {
         sheetRatio: 1.0,
       );
       if (!context.mounted) return false;
-      await _open(context,
-          userData: userData,
-          pairData: pairData,
-          theme: theme,
-          meta: meta,
-          coloring: choice);
+      await _open(
+        context,
+        userData: userData,
+        pairData: pairData,
+        theme: theme,
+        meta: meta,
+        coloring: choice,
+      );
       return true;
     }
 
@@ -117,8 +121,13 @@ class CanvasCreateFlow {
       pixelH: grid?.$2,
     );
     if (!context.mounted) return false;
-    await _open(context,
-        userData: userData, pairData: pairData, theme: theme, meta: meta);
+    await _open(
+      context,
+      userData: userData,
+      pairData: pairData,
+      theme: theme,
+      meta: meta,
+    );
     return true;
   }
 
@@ -153,8 +162,7 @@ class CanvasCreateFlow {
   }
 
   /// true — открыть начатый лист, false — завести новый, null — передумал.
-  static Future<bool?> _askJoin(
-      BuildContext context, AppTheme t, String name) {
+  static Future<bool?> _askJoin(BuildContext context, AppTheme t, String name) {
     final s = LocaleService.current;
     return showAppSheet<bool>(
       context,

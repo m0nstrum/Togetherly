@@ -76,8 +76,11 @@ void main() {
 
   testWidgets('без сжатия содержимое переполняет плитку', (tester) async {
     await tester.pumpWidget(tile(shrinkToFit: false));
-    expect(tester.takeException(), isNotNull,
-        reason: 'проверка бесполезна: макет и так помещается');
+    expect(
+      tester.takeException(),
+      isNotNull,
+      reason: 'проверка бесполезна: макет и так помещается',
+    );
   });
 
   testWidgets('со сжатием переполнения нет', (tester) async {

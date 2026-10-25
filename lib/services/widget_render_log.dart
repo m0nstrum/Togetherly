@@ -37,10 +37,7 @@ Map<String, String>? _parseLine(String line) {
   final parts = line.split('|');
   if (parts.length < 3) return null;
 
-  final row = <String, String>{
-    'размер': parts[1],
-    'виджет': parts[2],
-  };
+  final row = <String, String>{'размер': parts[1], 'виджет': parts[2]};
   if (parts.length < 4 || parts[3].isEmpty) return row;
 
   for (final pair in parts[3].split(';')) {
@@ -105,9 +102,7 @@ String widgetRenderVerdict(List<Map<String, String>> rows) {
         .any((r) => r['размер'] == size && r.containsKey('разжато'));
     if (!finished) {
       final mem = rows[i]['памяти оставалось'];
-      return mem == null
-          ? '$size оборвался'
-          : '$size оборвался (память $mem)';
+      return mem == null ? '$size оборвался' : '$size оборвался (память $mem)';
     }
   }
   return 'ок';

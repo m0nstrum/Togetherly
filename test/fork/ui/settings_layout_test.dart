@@ -45,18 +45,29 @@ double _y(WidgetTester tester, Pattern text) =>
     tester.getTopLeft(find.textContaining(text).first).dy;
 
 void main() {
-  testWidgets('coins belong to account, help to about, reset is not in settings', (tester) async {
-    _tall(tester);
-    await tester.pumpWidget(_app());
-    await tester.pump();
-    String group(IconData icon) => tester.widget<SettingsCollapsible>(
-      find.ancestor(of: find.byIcon(icon), matching: find.byType(SettingsCollapsible)),
-    ).prefsKey;
-    expect(group(Icons.monetization_on_rounded), 'account');
-    expect(group(Icons.help_rounded), 'about');
-    expect(find.textContaining(RegExp('Версия и лицензии|Version & licenses')), findsOneWidget);
-    expect(find.text(LocaleService.current.resetMissYouCount), findsNothing);
-  });
+  testWidgets(
+    'coins belong to account, help to about, reset is not in settings',
+    (tester) async {
+      _tall(tester);
+      await tester.pumpWidget(_app());
+      await tester.pump();
+      String group(IconData icon) => tester
+          .widget<SettingsCollapsible>(
+            find.ancestor(
+              of: find.byIcon(icon),
+              matching: find.byType(SettingsCollapsible),
+            ),
+          )
+          .prefsKey;
+      expect(group(Icons.monetization_on_rounded), 'account');
+      expect(group(Icons.help_rounded), 'about');
+      expect(
+        find.textContaining(RegExp('Версия и лицензии|Version & licenses')),
+        findsOneWidget,
+      );
+      expect(find.text(LocaleService.current.resetMissYouCount), findsNothing);
+    },
+  );
 
   testWidgets('N8: «Аккаунт» выше данных, удаление — последним и отдельно', (
     tester,
@@ -70,7 +81,11 @@ void main() {
     final about = _y(tester, RegExp('^(О ПРИЛОЖЕНИИ|ABOUT)'));
     final delete = _y(tester, RegExp('Удалить аккаунт|Delete account'));
     expect(account < data, isTrue, reason: 'аккаунт поднят');
-    expect(delete > about, isTrue, reason: 'удаление внизу, после «О приложении»');
+    expect(
+      delete > about,
+      isTrue,
+      reason: 'удаление внизу, после «О приложении»',
+    );
   });
 
   testWidgets('N10: заголовок секции не повторяет заголовок её строки', (
@@ -93,7 +108,10 @@ void main() {
     await tester.pump();
     final tools = _y(tester, RegExp('^(РИСОВАНИЕ И ГЛАВНАЯ|DRAWING & HOME)\$'));
     final draw = _y(tester, RegExp(r'^(Панель рисования|Drawing panel)$'));
-    final phone = _y(tester, RegExp('^(ТЕЛЕФОН И ЭКРАН БЛОКИРОВКИ|PHONE & LOCK)'));
+    final phone = _y(
+      tester,
+      RegExp('^(ТЕЛЕФОН И ЭКРАН БЛОКИРОВКИ|PHONE & LOCK)'),
+    );
     expect(draw > tools, isTrue);
     expect(tools > phone, isTrue);
   });

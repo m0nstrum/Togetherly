@@ -30,13 +30,18 @@ List<int> _bannerGif() {
     final f = img.Image(width: 320, height: 180);
     for (var y = 0; y < 180; y++) {
       final t = ((y + shift) % 180) / 180;
-      img.drawLine(f,
-          x1: 0,
-          y1: y,
-          x2: 319,
-          y2: y,
-          color: img.ColorRgb8(
-              (250 - 60 * t).round(), (140 + 60 * t).round(), (120 + 90 * t).round()));
+      img.drawLine(
+        f,
+        x1: 0,
+        y1: y,
+        x2: 319,
+        y2: y,
+        color: img.ColorRgb8(
+          (250 - 60 * t).round(),
+          (140 + 60 * t).round(),
+          (120 + 90 * t).round(),
+        ),
+      );
     }
     f.frameDuration = 120;
     return f;
@@ -55,17 +60,43 @@ void main() {
     await LocaleService.instance.init();
     await _font('Onest', 'assets/fonts/Onest.ttf');
     await _font('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _font('MaterialIcons',
-        '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _font(
+      'MaterialIcons',
+      '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
     final dir = Directory.systemTemp.createTempSync('banner_preview');
     gifPath = '${dir.path}/banner.gif';
     File(gifPath).writeAsBytesSync(_bannerGif());
   });
 
   for (final (name, palette, b, width, scale, lang, gate) in [
-    ('pink-light-393-locked', 0, Brightness.light, 393.0, 1.0, AppLanguage.ru, PlusGate.locked),
-    ('pink-light-393-open', 0, Brightness.light, 393.0, 1.0, AppLanguage.ru, PlusGate.open),
-    ('mint-dark-320-1.3-de-locked', 12, Brightness.dark, 320.0, 1.3, AppLanguage.de, PlusGate.locked),
+    (
+      'pink-light-393-locked',
+      0,
+      Brightness.light,
+      393.0,
+      1.0,
+      AppLanguage.ru,
+      PlusGate.locked,
+    ),
+    (
+      'pink-light-393-open',
+      0,
+      Brightness.light,
+      393.0,
+      1.0,
+      AppLanguage.ru,
+      PlusGate.open,
+    ),
+    (
+      'mint-dark-320-1.3-de-locked',
+      12,
+      Brightness.dark,
+      320.0,
+      1.3,
+      AppLanguage.de,
+      PlusGate.locked,
+    ),
   ]) {
     testWidgets(name, (tester) async {
       // Поток кадров файла живёт в общем кэше картинок: без чистки застывший
@@ -82,70 +113,77 @@ void main() {
       addTearDown(tester.view.reset);
       final key = GlobalKey();
       late BuildContext ctx;
-      await tester.pumpWidget(RepaintBoundary(
-        key: key,
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ProfileTheme.data(cs),
-          builder: (c, child) => MediaQuery(
-            data: MediaQuery.of(c)
-                .copyWith(textScaler: TextScaler.linear(scale)),
-            child: child!,
-          ),
-          home: Builder(builder: (c) {
-            ctx = c;
-            return Scaffold(
-              backgroundColor: cs.surface,
-              body: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  ProfileHero(
-                    cs: cs,
-                    uid: 'u1',
-                    avatarUrl: '',
-                    name: 'Саша',
-                    theme: theme,
-                    plus: gate == PlusGate.open,
-                    bannerUrl: '',
-                    localBannerPath: gifPath,
-                    bannerAnimated: gate == PlusGate.open,
-                    subtitle: 'вместе 688 дней',
-                    onEdit: () {},
-                    onPickBanner: () {},
-                    onTapAvatar: () {},
-                    onSettings: () {},
-                    onHelp: () {},
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ProfileTheme.data(cs),
+            builder: (c, child) => MediaQuery(
+              data: MediaQuery.of(
+                c,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
+            home: Builder(
+              builder: (c) {
+                ctx = c;
+                return Scaffold(
+                  backgroundColor: cs.surface,
+                  body: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      ProfileHero(
+                        cs: cs,
+                        uid: 'u1',
+                        avatarUrl: '',
+                        name: 'Саша',
+                        theme: theme,
+                        plus: gate == PlusGate.open,
+                        bannerUrl: '',
+                        localBannerPath: gifPath,
+                        bannerAnimated: gate == PlusGate.open,
+                        subtitle: 'вместе 688 дней',
+                        onEdit: () {},
+                        onPickBanner: () {},
+                        onTapAvatar: () {},
+                        onSettings: () {},
+                        onHelp: () {},
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }),
+                );
+              },
+            ),
+          ),
         ),
-      ));
+      );
       // Чтение файла и разбор кадра идут настоящим временем.
       for (var i = 0; i < 10; i++) {
         await tester.runAsync(
-            () => Future<void>.delayed(const Duration(milliseconds: 50)));
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
         await tester.pump(const Duration(milliseconds: 50));
       }
 
       Future<void> shot(String file) => tester.runAsync(() async {
-            final boundary = key.currentContext!.findRenderObject()!
-                as RenderRepaintBoundary;
-            final image = await boundary.toImage(pixelRatio: 2);
-            final png =
-                await image.toByteData(format: ui.ImageByteFormat.png);
-            Directory('build/banner-gif').createSync(recursive: true);
-            File('build/banner-gif/$file.png')
-                .writeAsBytesSync(png!.buffer.asUint8List());
-          });
+        final boundary =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = await boundary.toImage(pixelRatio: 2);
+        final png = await image.toByteData(format: ui.ImageByteFormat.png);
+        Directory('build/banner-gif').createSync(recursive: true);
+        File(
+          'build/banner-gif/$file.png',
+        ).writeAsBytesSync(png!.buffer.asUint8List());
+      });
 
       await shot('$name-hero');
       showBannerSourceSheet(ctx, cs: cs, gifGate: gate);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
       await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 200)));
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
       await tester.pump();
       await shot(name);
     });

@@ -61,8 +61,11 @@ void main() {
         DateTime(2005, 1, 1),
       ]) {
         final back = DateOnly.parse(DateOnly.store(day))!;
-        expect([back.year, back.month, back.day], [day.year, day.month, day.day],
-            reason: 'день $day не должен уезжать');
+        expect(
+          [back.year, back.month, back.day],
+          [day.year, day.month, day.day],
+          reason: 'день $day не должен уезжать',
+        );
       }
     });
 
@@ -104,8 +107,10 @@ void main() {
     });
 
     test('строка без пояса читается так же, как с ним', () {
-      expect(DateOnly.parse('2001-04-12T18:30:00.000'),
-          DateOnly.parse('2001-04-12T18:30:00.000Z'));
+      expect(
+        DateOnly.parse('2001-04-12T18:30:00.000'),
+        DateOnly.parse('2001-04-12T18:30:00.000Z'),
+      );
     });
 
     test('чистая дата по-прежнему читается как есть', () {

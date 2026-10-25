@@ -127,13 +127,15 @@ void showMoodPickerForDate({
   final todayNorm = DateTime(today.year, today.month, today.day);
   if (date.isAfter(todayNorm)) return;
 
-  final isToday = date.year == today.year &&
+  final isToday =
+      date.year == today.year &&
       date.month == today.month &&
       date.day == today.day;
 
   final existingEntries = moodService.myEntriesForDay(date);
-  final existingPath =
-      existingEntries.isNotEmpty ? existingEntries.first.imagePath : '';
+  final existingPath = existingEntries.isNotEmpty
+      ? existingEntries.first.imagePath
+      : '';
 
   final s = LocaleService.current;
   final months = s.shortMonths;
@@ -335,11 +337,11 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
   PlusGate get _gate => widget.plusGate ?? PlusService.instance.gate;
 
   OwnPackState get _ownState => ownPackState(
-        hasGroup: widget.groupId.isNotEmpty,
-        gate: _gate,
-        loaded: _customLoaded,
-        count: _custom.length,
-      );
+    hasGroup: widget.groupId.isNotEmpty,
+    gate: _gate,
+    loaded: _customLoaded,
+    count: _custom.length,
+  );
 
   @override
   void initState() {
@@ -351,7 +353,9 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
   }
 
   Future<void> _loadCustom() async {
-    final list = widget.groupId.isEmpty ? const <CustomMood>[] : await _store.load(widget.groupId);
+    final list = widget.groupId.isEmpty
+        ? const <CustomMood>[]
+        : await _store.load(widget.groupId);
     if (!mounted) return;
     setState(() {
       _custom = list;
@@ -360,9 +364,12 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
   }
 
   void _openPlus() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => PlusScreen(scheme: ProfileTheme.schemeFor(context.appTheme)),
-    ));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            PlusScreen(scheme: ProfileTheme.schemeFor(context.appTheme)),
+      ),
+    );
   }
 
   /// «Новое»: заводит своё настроение или ведёт на экран Плюса.
@@ -379,10 +386,19 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
     }
     if (ownPackFull(_custom.length)) {
       // Снекбар уехал бы под лист: плашка ложится поверх него.
-      showFloatingNote(context, s.customMoodLimitReached, icon: Icons.info_outline_rounded, duration: const Duration(milliseconds: 2600));
+      showFloatingNote(
+        context,
+        s.customMoodLimitReached,
+        icon: Icons.info_outline_rounded,
+        duration: const Duration(milliseconds: 2600),
+      );
       return;
     }
-    final made = await showCustomMoodSheet(context, widget.groupId, store: widget.store);
+    final made = await showCustomMoodSheet(
+      context,
+      widget.groupId,
+      store: widget.store,
+    );
     if (made == true) await _loadCustom();
   }
 
@@ -400,13 +416,21 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
     if (!mounted || action == null) return;
     switch (action) {
       case OwnMoodAction.edit:
-        final saved = await showEditCustomMoodSheet(context, mood, store: widget.store);
+        final saved = await showEditCustomMoodSheet(
+          context,
+          mood,
+          store: widget.store,
+        );
         if (saved == true) await _loadCustom();
       case OwnMoodAction.remove:
         final ok = await _store.remove(mood.id);
         if (!mounted) return;
         if (!ok) {
-          showFloatingNote(context, trKey('customMoodRemoveFailed'), icon: Icons.error_outline_rounded);
+          showFloatingNote(
+            context,
+            trKey('customMoodRemoveFailed'),
+            icon: Icons.error_outline_rounded,
+          );
         }
         await _loadCustom();
     }
@@ -427,7 +451,8 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
     final s = LocaleService.current;
     final t = context.appTheme;
     final cs = ProfileTheme.schemeFor(t);
-    final onAilment = widget.ailmentOnly || (widget.showAilmentTab && _tab == 1);
+    final onAilment =
+        widget.ailmentOnly || (widget.showAilmentTab && _tab == 1);
     return Container(
       decoration: BoxDecoration(
         color: t.cardSurface,
@@ -541,7 +566,10 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
 
   Widget _moodBody(ColorScheme cs) {
     return AnimatedBuilder(
-      animation: Listenable.merge([MoodPackService.instance, CatalogService.instance]),
+      animation: Listenable.merge([
+        MoodPackService.instance,
+        CatalogService.instance,
+      ]),
       builder: (context, _) {
         final own = _ownState;
         final shown = shownMoodPackId(
@@ -575,16 +603,21 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
                   // иначе кнопка секунду показывала бы цену из манифеста.
                   if (p.unlock.isMoney && kCatalogBuysInStore) {
                     final id = catalogProductId(
-                        Unlock.featureKey(kMoodPackFeatureKind, p.id));
-                    unawaited(sharedCoinStore.ensureProduct(id).then((known) {
-                      if (known && mounted) setState(() {});
-                    }));
+                      Unlock.featureKey(kMoodPackFeatureKind, p.id),
+                    );
+                    unawaited(
+                      sharedCoinStore.ensureProduct(id).then((known) {
+                        if (known && mounted) setState(() {});
+                      }),
+                    );
                   }
                 },
               ),
             ),
             Expanded(
-              child: shown == kOwnMoodPackId ? _ownList(cs, own) : _packList(cs),
+              child: shown == kOwnMoodPackId
+                  ? _ownList(cs, own)
+                  : _packList(cs),
             ),
           ],
         );
@@ -597,7 +630,9 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
     final first = _custom.isEmpty ? null : _custom.first;
     return OwnPackChip(
       preview: first?.imageUrl ?? '',
-      previewTint: first != null && first.onTintedTile ? moodScoreTint(first.score, cs, alpha: 0.30) : null,
+      previewTint: first != null && first.onTintedTile
+          ? moodScoreTint(first.score, cs, alpha: 0.30)
+          : null,
       locked: _gate == PlusGate.locked,
       onTap: _tapOwn,
     );
@@ -641,7 +676,10 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
           controller: widget.scrollController,
           padding: padding,
           children: [
-            OwnMoodsEmpty(title: trKey('customMoodTeaserTitle'), text: trKey('customMoodTeaserText')),
+            OwnMoodsEmpty(
+              title: trKey('customMoodTeaserTitle'),
+              text: trKey('customMoodTeaserText'),
+            ),
           ],
         );
       case OwnPackState.empty:
@@ -663,8 +701,8 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
         final meta = locked
             ? trKey('customMoodLockedMeta')
             : trKey('customMoodSetCount')
-                .replaceAll('{n}', '${_custom.length}')
-                .replaceAll('{max}', '$kOwnMoodLimit');
+                  .replaceAll('{n}', '${_custom.length}')
+                  .replaceAll('{max}', '$kOwnMoodLimit');
         return ListView.builder(
           controller: widget.scrollController,
           padding: padding,
@@ -750,23 +788,25 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
             ],
           ),
         ),
-        LayoutBuilder(builder: (context, box) {
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 5,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 8,
-              // Плитка + две строки подписи в 11 пунктов. Высота считается, а не
-              // берётся числом: при крупном системном шрифте подпись выше.
-              childAspectRatio: moodTileRatio(context, box.maxWidth),
-            ),
-            itemCount: itemCount,
-            itemBuilder: (_, i) => itemBuilder(i),
-          );
-        }),
+        LayoutBuilder(
+          builder: (context, box) {
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 8,
+                // Плитка + две строки подписи в 11 пунктов. Высота считается, а не
+                // берётся числом: при крупном системном шрифте подпись выше.
+                childAspectRatio: moodTileRatio(context, box.maxWidth),
+              ),
+              itemCount: itemCount,
+              itemBuilder: (_, i) => itemBuilder(i),
+            );
+          },
+        ),
       ],
     );
   }
@@ -899,8 +939,11 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
       // стране, и число из манифеста рядом с ними читалось бы как вторая цена.
       final price = catalogPriceLabel(
         storePrice: kCatalogBuysInStore
-            ? sharedCoinStore.priceLabel(catalogProductId(
-                Unlock.featureKey(kMoodPackFeatureKind, previewed.id)))
+            ? sharedCoinStore.priceLabel(
+                catalogProductId(
+                  Unlock.featureKey(kMoodPackFeatureKind, previewed.id),
+                ),
+              )
             : null,
         catalogPrice: previewed.unlock.priceLabel,
       );
@@ -931,8 +974,10 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
               const SizedBox(height: 8),
               Text(
                 author.isEmpty
-                    ? ruEn('Набор останется навсегда и появится у партнёра',
-                        'Yours forever, and your partner gets it too')
+                    ? ruEn(
+                        'Набор останется навсегда и появится у партнёра',
+                        'Yours forever, and your partner gets it too',
+                      )
                     : switch (LocaleService.instance.language) {
                         AppLanguage.ru =>
                           'Рисунки — $author · набор появится и у партнёра',
@@ -1013,11 +1058,16 @@ const double kMoodLabelMinSize = 8.5;
 /// Слово шире плитки Flutter рвёт посреди: «Подмигив/аю», «Скуча/ю». Своим
 /// настроениям пара сама даёт названия, и они длиннее встроенных, поэтому
 /// такое слово набирается мельче, но не ниже [kMoodLabelMinSize].
-double moodLabelSize(BuildContext context, String label, double width, {double base = 11}) {
+double moodLabelSize(
+  BuildContext context,
+  String label,
+  double width, {
+  double base = 11,
+}) {
   if (width <= 0) return base;
   final style = DefaultTextStyle.of(context).style.merge(
-        TextStyle(fontSize: base, fontWeight: FontWeight.w700, height: 1.2),
-      );
+    TextStyle(fontSize: base, fontWeight: FontWeight.w700, height: 1.2),
+  );
   final scaler = MediaQuery.textScalerOf(context);
   var widest = 0.0;
   for (final word in label.split(RegExp(r'\s+'))) {
@@ -1104,19 +1154,19 @@ class _MoodTile extends StatelessWidget {
                             child: mood.imagePath.isEmpty
                                 ? Container(color: mood.color)
                                 : sticker
-                                    ? Padding(
-                                        padding: EdgeInsets.all(size * 0.06),
-                                        child: MoodImage(
-                                          mood.imagePath,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      )
-                                    : MoodImage(
-                                        mood.imagePath,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                      ),
+                                ? Padding(
+                                    padding: EdgeInsets.all(size * 0.06),
+                                    child: MoodImage(
+                                      mood.imagePath,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  )
+                                : MoodImage(
+                                    mood.imagePath,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
                           ),
                         ),
                       ),

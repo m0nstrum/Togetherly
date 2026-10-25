@@ -8,7 +8,11 @@ void main() {
   Map<String, dynamic> g(String id, String key) => {'id': id, 'gift_key': key};
 
   test('незнакомый первым не прячет знакомые под ним', () {
-    final shown = shownIncomingGifts([g('n1', 'gift_from_next_year'), g('r1', 'rose'), g('h1', 'heart')]);
+    final shown = shownIncomingGifts([
+      g('n1', 'gift_from_next_year'),
+      g('r1', 'rose'),
+      g('h1', 'heart'),
+    ]);
     expect(shown.map((e) => e['id']), ['r1', 'h1']);
   });
 
@@ -18,7 +22,11 @@ void main() {
   });
 
   test('порядок прежний: новые первыми', () {
-    final shown = shownIncomingGifts([g('a', 'heart'), g('b', 'hug'), g('c', 'teddy')]);
+    final shown = shownIncomingGifts([
+      g('a', 'heart'),
+      g('b', 'hug'),
+      g('c', 'teddy'),
+    ]);
     expect(shown.map((e) => e['id']), ['a', 'b', 'c']);
   });
 

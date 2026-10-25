@@ -154,7 +154,11 @@ class _ForkE2ELinkShowScreenState extends State<ForkE2ELinkShowScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   color: Colors.white,
-                  child: QrImageView(key: ValueKey<String>(_qr!), data: _qr!, size: 240),
+                  child: QrImageView(
+                    key: ValueKey<String>(_qr!),
+                    data: _qr!,
+                    size: 240,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),

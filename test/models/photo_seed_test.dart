@@ -52,7 +52,9 @@ void main() {
 
     test('длинный ряд обрезается', () {
       final many = List.generate(
-          20, (i) => SeedCandidate(Color(0xFF000000 + i * 0x00121317), 100 - i));
+        20,
+        (i) => SeedCandidate(Color(0xFF000000 + i * 0x00121317), 100 - i),
+      );
       expect(pickSeedCandidates(many).length, lessThanOrEqualTo(6));
     });
 

@@ -57,9 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final build = info.buildNumber.trim();
       if (!mounted) return;
       setState(() {
-        _appVersion = build.isEmpty
-            ? info.version
-            : '${info.version} ($build)';
+        _appVersion = build.isEmpty ? info.version : '${info.version} ($build)';
       });
     } catch (_) {
       // Версию не достали — подписи просто не будет.
@@ -161,8 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthFailure.blockedConnection => s.connectionBlocked,
       AuthFailure.noConnection ||
       AuthFailure.timeout ||
-      AuthFailure.serverDown =>
-        s.serverNotResponding,
+      AuthFailure.serverDown => s.serverNotResponding,
       AuthFailure.tooManyAttempts => s.tooManyAttempts,
       // PB отвечает одинаково и на чужую почту, и на неверный пароль —
       // различить их нельзя, это защита от перебора адресов.
@@ -180,7 +177,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_isLoading || _resettingPassword) return;
     setState(() => _resettingPassword = true);
     try {
-      final email = await forkPasswordResetEmail(context, initial: _emailController.text.trim());
+      final email = await forkPasswordResetEmail(
+        context,
+        initial: _emailController.text.trim(),
+      );
       if (email == null || !mounted) return;
       await PbAuthService().sendPasswordReset(email);
       if (!mounted) return;
@@ -199,7 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         _showError(LocaleService.current.passwordResetError);
       }
-    } finally { if (mounted) setState(() => _resettingPassword = false); }
+    } finally {
+      if (mounted) setState(() => _resettingPassword = false);
+    }
   }
 
   void _showError(String msg, {VoidCallback? retry}) {
@@ -207,8 +209,12 @@ class _LoginScreenState extends State<LoginScreen> {
     // maybeOf + mounted: _showError зовётся из catch-блоков после async-гэпа,
     // когда экран мог быть снят с дерева → ScaffoldMessenger.of делает `!` по
     // null ("Null check operator used on a null value"). См. Bugsink TypeError.
-    AppSnack.error(context, msg,
-      actionLabel: retry == null ? null : LocaleService.current.retry, onAction: retry);
+    AppSnack.error(
+      context,
+      msg,
+      actionLabel: retry == null ? null : LocaleService.current.retry,
+      onAction: retry,
+    );
   }
 
   void _goToWelcome() {
@@ -264,8 +270,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: cs.surface,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(34)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(34),
+                    ),
                   ),
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -280,7 +287,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontFamily: 'Unbounded',
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
+                              fontVariations: const [
+                                FontVariation('wght', 800),
+                              ],
                               color: cs.onSurface,
                               letterSpacing: -1,
                             ),
@@ -295,7 +304,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           keyboardType: TextInputType.emailAddress,
                           inputFormatters: [
                             FilteringTextInputFormatter.deny(
-                                RegExp(r'[а-яёА-ЯЁ]')),
+                              RegExp(r'[а-яёА-ЯЁ]'),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 18),
@@ -316,18 +326,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             _rememberMeToggle(s),
                             const Spacer(),
-                            Flexible(child: TextButton(
-                              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                              onPressed: _isLoading || _resettingPassword ? null : _sendPasswordReset,
-                              child: Text(
-                                s.forgotPassword,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: _accent,
+                            Flexible(
+                              child: TextButton(
+                                style: TextButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
+                                ),
+                                onPressed: _isLoading || _resettingPassword
+                                    ? null
+                                    : _sendPasswordReset,
+                                child: Text(
+                                  s.forgotPassword,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: _accent,
+                                  ),
                                 ),
                               ),
-                            )),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -343,7 +359,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             Text(
                               '${s.noAccount} ',
                               style: TextStyle(
-                                  fontSize: 14, color: t.textSecondary),
+                                fontSize: 14,
+                                color: t.textSecondary,
+                              ),
                             ),
                             GestureDetector(
                               onTap: _isLoading ? null : _goToSetup,
@@ -366,10 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 18),
                           Text(
                             _appVersion,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: t.textMuted,
-                            ),
+                            style: TextStyle(fontSize: 12, color: t.textMuted),
                           ),
                         ],
                       ],
@@ -394,8 +409,11 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
         ),
-        child: Icon(Icons.arrow_back_rounded,
-            color: Colors.grey.shade800, size: 20),
+        child: Icon(
+          Icons.arrow_back_rounded,
+          color: Colors.grey.shade800,
+          size: 20,
+        ),
       ),
     );
   }
@@ -466,7 +484,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontFamily: 'Onest',
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                  fontVariations: const [FontVariation('wght', 700)],
                 ),
               ),
       ),

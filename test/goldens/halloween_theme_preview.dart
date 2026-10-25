@@ -45,71 +45,85 @@ void main() {
     final strip = paletteStripEntries(customCount: 0, plusVisible: false);
     final key = GlobalKey();
     TextStyle caption() => TextStyle(
-        fontFamily: 'Onest',
-        fontSize: 12.5,
-        fontWeight: FontWeight.w700,
-        color: cs.onSurfaceVariant);
+      fontFamily: 'Onest',
+      fontSize: 12.5,
+      fontWeight: FontWeight.w700,
+      color: cs.onSurfaceVariant,
+    );
 
-    await tester.pumpWidget(RepaintBoundary(
-      key: key,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ProfileTheme.data(cs),
-        home: Scaffold(
-          backgroundColor: t.bgGradient.first,
-          body: Stack(children: [
-            Positioned.fill(child: ThemePatternLayer(theme: t)),
-            Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ProfileTheme.data(cs),
+          home: Scaffold(
+            backgroundColor: t.bgGradient.first,
+            body: Stack(
               children: [
-                Container(
+                Positioned.fill(child: ThemePatternLayer(theme: t)),
+                Padding(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(28),
-                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Палитра', style: caption()),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 62,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: 6,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(width: 12),
-                          itemBuilder: (_, i) => SeedSwatch(
-                            palette: kPalettes[strip[i].index],
-                            selected: i == 0,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(28),
                         ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text('Режим', style: caption()),
-                      const SizedBox(height: 8),
-                      SegmentedButton<int>(
-                        showSelectedIcon: false,
-                        segments: const [
-                          ButtonSegment(
-                              value: 0, icon: Icon(Icons.light_mode_rounded)),
-                          ButtonSegment(
-                              value: 1, icon: Icon(Icons.dark_mode_rounded)),
-                          ButtonSegment(
-                              value: 2,
-                              icon: Icon(Icons.brightness_auto_rounded)),
-                        ],
-                        selected: const {0},
-                        onSelectionChanged: (_) {},
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, left: 2),
-                        child: Text('Эта тема бывает только тёмной',
-                            style: caption()
-                                .copyWith(fontWeight: FontWeight.w400)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Палитра', style: caption()),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 62,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 6,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(width: 12),
+                                itemBuilder: (_, i) => SeedSwatch(
+                                  palette: kPalettes[strip[i].index],
+                                  selected: i == 0,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Text('Режим', style: caption()),
+                            const SizedBox(height: 8),
+                            SegmentedButton<int>(
+                              showSelectedIcon: false,
+                              segments: const [
+                                ButtonSegment(
+                                  value: 0,
+                                  icon: Icon(Icons.light_mode_rounded),
+                                ),
+                                ButtonSegment(
+                                  value: 1,
+                                  icon: Icon(Icons.dark_mode_rounded),
+                                ),
+                                ButtonSegment(
+                                  value: 2,
+                                  icon: Icon(Icons.brightness_auto_rounded),
+                                ),
+                              ],
+                              selected: const {0},
+                              onSelectionChanged: (_) {},
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, left: 2),
+                              child: Text(
+                                'Эта тема бывает только тёмной',
+                                style: caption().copyWith(
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -117,10 +131,9 @@ void main() {
               ],
             ),
           ),
-          ]),
         ),
       ),
-    ));
+    );
     await tester.pump();
     await settleImages(tester);
 
@@ -130,8 +143,9 @@ void main() {
       final img = await boundary.toImage(pixelRatio: 2);
       final png = await img.toByteData(format: ui.ImageByteFormat.png);
       Directory('build/halloween-theme').createSync(recursive: true);
-      File('build/halloween-theme/strip.png')
-          .writeAsBytesSync(png!.buffer.asUint8List());
+      File(
+        'build/halloween-theme/strip.png',
+      ).writeAsBytesSync(png!.buffer.asUint8List());
     });
   });
 }

@@ -25,10 +25,16 @@ void main() {
 
   test('фон виджета зависит от режима отрисовки', () {
     final theme = read('WidgetTheme.swift');
-    expect(theme.contains(r'@Environment(\.widgetRenderingMode)'), isTrue,
-        reason: 'Общий фон обязан спрашивать режим отрисовки');
-    expect(theme.contains('containerBackground(.clear, for: .widget)'), isTrue,
-        reason: 'В тонированном режиме фон отдаём системе');
+    expect(
+      theme.contains(r'@Environment(\.widgetRenderingMode)'),
+      isTrue,
+      reason: 'Общий фон обязан спрашивать режим отрисовки',
+    );
+    expect(
+      theme.contains('containerBackground(.clear, for: .widget)'),
+      isTrue,
+      reason: 'В тонированном режиме фон отдаём системе',
+    );
   });
 
   test('никто не заливает фон мимо адаптивных хелперов', () {
@@ -49,14 +55,20 @@ void main() {
         offenders.add('$name:${i + 1}: $line');
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'Заливка мимо режима отрисовки:\n${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Заливка мимо режима отрисовки:\n${offenders.join('\n')}',
+    );
   });
 
   test('фотографии остаются цветными в тонированном режиме', () {
     final theme = read('WidgetTheme.swift');
-    expect(theme.contains('widgetAccentedRenderingMode(.fullColor)'), isTrue,
-        reason: 'Иначе фото партнёра превращается в силуэт');
+    expect(
+      theme.contains('widgetAccentedRenderingMode(.fullColor)'),
+      isTrue,
+      reason: 'Иначе фото партнёра превращается в силуэт',
+    );
     final photos = read('PhotoWidgets.swift');
     expect(photos.contains('tgFullColorImage()'), isTrue);
   });
@@ -81,9 +93,13 @@ void main() {
         offenders.add('$name:${i + 1}: ${lines[i].trim()}');
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'Картинка станет силуэтом на тонированной теме:\n'
-            '${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Картинка станет силуэтом на тонированной теме:\n'
+          '${offenders.join('\n')}',
+    );
   });
 
   test('пустой фото-виджет называет себя, а не соседа', () {
@@ -95,8 +111,11 @@ void main() {
       expect(photos.contains(kind), isTrue, reason: 'Нет вида $kind');
     }
     final hardcoded = RegExp(r'Text\("Фото дня"\)').allMatches(photos).length;
-    expect(hardcoded, 0,
-        reason: 'Подпись пустого состояния берётся из вида виджета');
+    expect(
+      hardcoded,
+      0,
+      reason: 'Подпись пустого состояния берётся из вида виджета',
+    );
   });
 
   test('сплошных подложек мимо адаптивных хелперов не осталось', () {
@@ -105,7 +124,11 @@ void main() {
     // подложка превращается в белый прямоугольник, а текст поверх — в такой
     // же белый. Снимки 19.08.2026: виджеты стоят пустыми формами, а на
     // обычной теме те же виджеты видны.
-    const palette = {'WidgetTheme.swift', 'SharedStore.swift', 'WidgetGraphics.swift'};
+    const palette = {
+      'WidgetTheme.swift',
+      'SharedStore.swift',
+      'WidgetGraphics.swift',
+    };
     final offenders = <String>[];
     for (final file in files) {
       final name = file.uri.pathSegments.last;
@@ -114,12 +137,14 @@ void main() {
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i].trim();
         if (line.startsWith('//')) continue;
-        final direct = RegExp(r'\.background\(\s*(Color|LinearGradient)')
-            .hasMatch(line);
+        final direct = RegExp(
+          r'\.background\(\s*(Color|LinearGradient)',
+        ).hasMatch(line);
         final layer = RegExp(r'^(Color|LinearGradient)\(').hasMatch(line);
         // Объявление темы (`var gradient: LinearGradient { … }`) — не подложка:
         // сам градиент дальше уходит в адаптивный хелпер.
-        final isDeclaration = i > 0 &&
+        final isDeclaration =
+            i > 0 &&
             lines
                 .sublist((i - 2).clamp(0, i), i)
                 .any((prev) => prev.contains(': LinearGradient {'));
@@ -128,9 +153,13 @@ void main() {
         }
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'Подложка съест собственный текст на тонированной теме:\n'
-            '${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Подложка съест собственный текст на тонированной теме:\n'
+          '${offenders.join('\n')}',
+    );
   });
 
   test('у главного содержимого каждого виджета есть пометка акцента', () {
@@ -161,7 +190,10 @@ void main() {
         missing.add(name);
       }
     }
-    expect(missing, isEmpty,
-        reason: 'Без пометки останутся выцветшими: ${missing.join(', ')}');
+    expect(
+      missing,
+      isEmpty,
+      reason: 'Без пометки останутся выцветшими: ${missing.join(', ')}',
+    );
   });
 }

@@ -25,7 +25,10 @@ class StreakRestoreOffer {
 /// в единицу — прежнее число сервер положил в `lost`. Пара ещё не вернулась —
 /// последний общий день позавчера или раньше, на экране 0, а в записи
 /// прежнее число.
-StreakRestoreOffer? streakRestoreOffer(Map<String, dynamic>? entry, DateTime now) {
+StreakRestoreOffer? streakRestoreOffer(
+  Map<String, dynamic>? entry,
+  DateTime now,
+) {
   if (entry == null) return null;
   final s = _int(entry['s']);
   final lost = _int(entry['lost']);

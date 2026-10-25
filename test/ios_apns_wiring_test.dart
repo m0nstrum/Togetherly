@@ -17,29 +17,47 @@ void main() {
   test('нативная сторона просит токен устройства и отдаёт его в канал', () {
     final source = File('ios/Runner/AppDelegate.swift').readAsStringSync();
 
-    expect(source, contains('registerForRemoteNotifications'),
-        reason: 'без регистрации Apple не выдаст токен');
-    expect(source, contains('didRegisterForRemoteNotificationsWithDeviceToken'),
-        reason: 'токен приходит именно в этот метод');
-    expect(source, contains("love_app/apns"),
-        reason: 'канал токена должен совпадать с ApnsService');
+    expect(
+      source,
+      contains('registerForRemoteNotifications'),
+      reason: 'без регистрации Apple не выдаст токен',
+    );
+    expect(
+      source,
+      contains('didRegisterForRemoteNotificationsWithDeviceToken'),
+      reason: 'токен приходит именно в этот метод',
+    );
+    expect(
+      source,
+      contains("love_app/apns"),
+      reason: 'канал токена должен совпадать с ApnsService',
+    );
   });
 
   test('Dart кладёт токен в профиль, откуда его читает сервер', () {
     final source = File('lib/services/apns_service.dart').readAsStringSync();
 
     expect(source, contains("MethodChannel('love_app/apns')"));
-    expect(source, contains('apns_token'),
-        reason: 'поле профиля читает серверный хук');
-    expect(source, contains('apns_sandbox'),
-        reason: 'сборки из Xcode ходят через песочницу Apple');
+    expect(
+      source,
+      contains('apns_token'),
+      reason: 'поле профиля читает серверный хук',
+    );
+    expect(
+      source,
+      contains('apns_sandbox'),
+      reason: 'сборки из Xcode ходят через песочницу Apple',
+    );
   });
 
   test('сервис поднимается на старте, за первым кадром', () {
     final source = File('lib/main.dart').readAsStringSync();
     final deferredAt = source.indexOf('_initDeferredStartup');
     expect(deferredAt, isNot(-1));
-    expect(source, contains('ApnsService.instance.start()'),
-        reason: 'без вызова токен никто не запросит');
+    expect(
+      source,
+      contains('ApnsService.instance.start()'),
+      reason: 'без вызова токен никто не запросит',
+    );
   });
 }

@@ -15,12 +15,14 @@ import 'package:love_app/utils/photo_orientation.dart';
 Uint8List shot({int orientation = 0, int width = 40, int height = 20}) {
   final im = img.Image(width: width, height: height);
   img.fill(im, color: img.ColorRgb8(255, 0, 0));
-  img.fillRect(im,
-      x1: width ~/ 2,
-      y1: 0,
-      x2: width - 1,
-      y2: height - 1,
-      color: img.ColorRgb8(0, 0, 255));
+  img.fillRect(
+    im,
+    x1: width ~/ 2,
+    y1: 0,
+    x2: width - 1,
+    y2: height - 1,
+    color: img.ColorRgb8(0, 0, 255),
+  );
   if (orientation > 0) im.exif.imageIfd.orientation = orientation;
   return img.encodeJpg(im);
 }
@@ -60,8 +62,9 @@ void main() {
   });
 
   test('в форме воспоминания у снимка есть кнопка «Отразить»', () {
-    final src =
-        File('lib/screens/memory_photo_form_screen.dart').readAsStringSync();
+    final src = File(
+      'lib/screens/memory_photo_form_screen.dart',
+    ).readAsStringSync();
     expect(src, contains('_flipAt('));
     expect(src, contains('flipPhotoFile('));
     expect(src, contains('Icons.flip_rounded'));

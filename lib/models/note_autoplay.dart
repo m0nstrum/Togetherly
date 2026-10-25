@@ -12,9 +12,12 @@ ChatMsg? nextUnseenNote(
   required String finishedId,
   required String myUid,
   Set<String> seenLocally = const {},
-}) =>
-    _nextAfter(messages, finishedId, myUid,
-        (m) => m.isNote && !m.noteSeen && !seenLocally.contains(m.id));
+}) => _nextAfter(
+  messages,
+  finishedId,
+  myUid,
+  (m) => m.isNote && !m.noteSeen && !seenLocally.contains(m.id),
+);
 
 /// То же для голосовых: следующее непрослушанное голосовое партнёра.
 ChatMsg? nextUnheardVoice(
@@ -22,9 +25,12 @@ ChatMsg? nextUnheardVoice(
   required String finishedId,
   required String myUid,
   Set<String> heardLocally = const {},
-}) =>
-    _nextAfter(messages, finishedId, myUid,
-        (m) => m.isVoice && !m.voiceHeard && !heardLocally.contains(m.id));
+}) => _nextAfter(
+  messages,
+  finishedId,
+  myUid,
+  (m) => m.isVoice && !m.voiceHeard && !heardLocally.contains(m.id),
+);
 
 ChatMsg? _nextAfter(
   List<ChatMsg> messages,

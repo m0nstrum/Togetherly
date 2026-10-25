@@ -46,8 +46,7 @@ class WidgetPhotoStore {
   /// стол уезжают одни тексты. Ни один шаг внутри не имеет права висеть дольше.
   static const Duration _loadBudget = Duration(seconds: 30);
 
-  Future<Uint8List?> bytesFor(
-      String url, Future<String?> Function() httpUrl) {
+  Future<Uint8List?> bytesFor(String url, Future<String?> Function() httpUrl) {
     final key = cacheKeyFor(url);
     final running = _inFlight[key];
     if (running != null) return running;
@@ -56,10 +55,15 @@ class WidgetPhotoStore {
     // `_inFlight` навсегда и раздавался бы всем следующим запросам той же
     // картинки — виджет не обновлялся до перезапуска приложения.
     final job = _load(key, httpUrl)
-        .timeout(_loadBudget, onTimeout: () {
-          debugPrint('WidgetPhotoStore: не уложились в ${_loadBudget.inSeconds}с — $key');
-          return null;
-        })
+        .timeout(
+          _loadBudget,
+          onTimeout: () {
+            debugPrint(
+              'WidgetPhotoStore: не уложились в ${_loadBudget.inSeconds}с — $key',
+            );
+            return null;
+          },
+        )
         // Тело в фигурных скобках — не стрелка. `Map.remove` отдаёт снятое
         // значение, а здесь это САМА текущая задача; стрелочный колбэк вернул
         // бы её наружу, и `whenComplete` стал бы ждать её завершения. Задача
@@ -74,7 +78,9 @@ class WidgetPhotoStore {
   }
 
   Future<Uint8List?> _load(
-      String key, Future<String?> Function() httpUrl) async {
+    String key,
+    Future<String?> Function() httpUrl,
+  ) async {
     // 1. Уже лежит на диске — сеть не нужна.
     //
     // База кэша живёт в sqflite и делится с экраном; когда её держит другой
@@ -97,8 +103,9 @@ class WidgetPhotoStore {
         // исключения — подготовка картинки стоит, а на рабочем столе остаётся
         // прежний снимок при свежих текстах (замер на эмуляторе 08.09.2026:
         // кэш отвечает за 40 мс, дальше тишина до самого общего предела).
-        final bytes =
-            await File(hit.file.path).readAsBytes().timeout(_diskStep);
+        final bytes = await File(
+          hit.file.path,
+        ).readAsBytes().timeout(_diskStep);
         return bytes;
       }
     } catch (e) {
@@ -132,12 +139,7 @@ class WidgetPhotoStore {
     // останавливала подготовку картинки целиком.
     try {
       await OfflineImageCacheManager.instance
-          .putFile(
-            address,
-            bytes,
-            key: key,
-            maxAge: const Duration(days: 3650),
-          )
+          .putFile(address, bytes, key: key, maxAge: const Duration(days: 3650))
           .timeout(_diskStep);
     } catch (e) {
       debugPrint('WidgetPhotoStore: на склад не легло — $e');

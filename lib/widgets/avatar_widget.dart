@@ -90,11 +90,8 @@ class AvatarWidget extends StatelessWidget {
     final picture = _framed(_picture(url));
     if (!tapToView || url.isEmpty) return picture;
     return GestureDetector(
-      onTap: () => openWidgetPhotoView(
-        context,
-        imageUrl: url,
-        authorName: name,
-      ),
+      onTap: () =>
+          openWidgetPhotoView(context, imageUrl: url, authorName: name),
       child: picture,
     );
   }

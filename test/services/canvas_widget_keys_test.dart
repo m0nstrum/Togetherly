@@ -24,7 +24,10 @@ void main() {
       activeId: 'canvas_1785057256005',
     );
 
-    expect(keys['canvas_grp1_canvas_1785057256005_path'], '/data/canvas_widget/c1.png');
+    expect(
+      keys['canvas_grp1_canvas_1785057256005_path'],
+      '/data/canvas_widget/c1.png',
+    );
     expect(keys['canvas_grp1_canvas_1785057256005_name'], 'Наш вечер');
     expect(keys['canvas_grp1_main_path'], '/data/canvas_widget/main.png');
     expect(keys['canvas_grp1_active'], 'canvas_1785057256005');

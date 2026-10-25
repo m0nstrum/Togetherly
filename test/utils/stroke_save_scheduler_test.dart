@@ -114,7 +114,11 @@ void main() {
       scheduler.schedule();
       async.elapse(const Duration(seconds: 2));
 
-      expect(saves, 2, reason: 'правка во время записи уходит следующим кругом');
+      expect(
+        saves,
+        2,
+        reason: 'правка во время записи уходит следующим кругом',
+      );
     });
   });
 }

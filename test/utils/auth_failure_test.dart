@@ -35,7 +35,8 @@ void main() {
     final e = ClientException(
       statusCode: 400,
       response: const {
-        'details': 'Get "https://oauth2.googleapis.com/token": context canceled',
+        'details':
+            'Get "https://oauth2.googleapis.com/token": context canceled',
       },
     );
     expect(AuthFailure.of(e), AuthFailure.providerUnreachable);
@@ -44,7 +45,10 @@ void main() {
   test('обычный отказ по паролю остаётся отказом по паролю', () {
     final e = ClientException(
       statusCode: 400,
-      response: const {'message': 'Failed to authenticate.', 'details': 'invalid login credentials'},
+      response: const {
+        'message': 'Failed to authenticate.',
+        'details': 'invalid login credentials',
+      },
     );
     expect(AuthFailure.of(e), AuthFailure.badCredentials);
   });
@@ -74,27 +78,36 @@ void main() {
     });
 
     test('такая почта уже занята', () {
-      final e = ClientException(statusCode: 400, response: const {
-        'data': {
-          'email': {'code': 'validation_not_unique'}
-        }
-      });
+      final e = ClientException(
+        statusCode: 400,
+        response: const {
+          'data': {
+            'email': {'code': 'validation_not_unique'},
+          },
+        },
+      );
       expect(AuthFailure.of(e), AuthFailure.emailTaken);
     });
 
     test('слишком часто', () {
-      expect(AuthFailure.of(ClientException(statusCode: 429)),
-          AuthFailure.tooManyAttempts);
+      expect(
+        AuthFailure.of(ClientException(statusCode: 429)),
+        AuthFailure.tooManyAttempts,
+      );
     });
 
     test('сервер прилёг', () {
-      expect(AuthFailure.of(ClientException(statusCode: 502)),
-          AuthFailure.serverDown);
+      expect(
+        AuthFailure.of(ClientException(statusCode: 502)),
+        AuthFailure.serverDown,
+      );
     });
 
     test('остальные 400 — про пароль, а не про сеть', () {
-      expect(AuthFailure.of(ClientException(statusCode: 400)),
-          AuthFailure.badCredentials);
+      expect(
+        AuthFailure.of(ClientException(statusCode: 400)),
+        AuthFailure.badCredentials,
+      );
     });
 
     test('незнакомое остаётся незнакомым', () {

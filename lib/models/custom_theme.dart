@@ -17,9 +17,9 @@ class CustomTheme {
   const CustomTheme({required this.seed, this.name = ''});
 
   Map<String, dynamic> toJson() => {
-        'seed': seed.toARGB32(),
-        if (name.isNotEmpty) 'name': name,
-      };
+    'seed': seed.toARGB32(),
+    if (name.isNotEmpty) 'name': name,
+  };
 
   /// Возвращает null, если цвета в записи нет: тема без цвета — не тема.
   static CustomTheme? fromJson(dynamic raw) {
@@ -30,10 +30,7 @@ class CustomTheme {
         : (seed is String ? int.tryParse(seed) : null);
     if (value == null) return null;
     final name = raw['name'];
-    return CustomTheme(
-      seed: Color(value),
-      name: name is String ? name : '',
-    );
+    return CustomTheme(seed: Color(value), name: name is String ? name : '');
   }
 
   @override
@@ -44,7 +41,8 @@ class CustomTheme {
   int get hashCode => Object.hash(seed, name);
 
   @override
-  String toString() => 'CustomTheme(${seed.toARGB32().toRadixString(16)}, $name)';
+  String toString() =>
+      'CustomTheme(${seed.toARGB32().toRadixString(16)}, $name)';
 }
 
 /// Разбор поля `users.custom_themes`.
@@ -78,12 +76,13 @@ String encodeCustomThemes(List<CustomTheme> themes) =>
 
 /// Добавляет тему, пока в наборе есть место. Полный набор возвращается как был.
 List<CustomTheme> addCustomTheme(List<CustomTheme> themes, CustomTheme theme) =>
-    themes.length >= kMaxCustomThemes
-        ? List.of(themes)
-        : [...themes, theme];
+    themes.length >= kMaxCustomThemes ? List.of(themes) : [...themes, theme];
 
 List<CustomTheme> replaceCustomTheme(
-    List<CustomTheme> themes, int index, CustomTheme theme) {
+  List<CustomTheme> themes,
+  int index,
+  CustomTheme theme,
+) {
   if (index < 0 || index >= themes.length) return List.of(themes);
   final out = List.of(themes);
   out[index] = theme;
@@ -118,8 +117,11 @@ Palette paletteFor(int themeId, List<CustomTheme> custom) {
   if (isCustomPaletteIndex(themeId)) {
     final slot = customPaletteSlot(themeId);
     if (slot < custom.length) {
-      return customPalette(custom[slot].seed,
-          slot: slot, name: custom[slot].name);
+      return customPalette(
+        custom[slot].seed,
+        slot: slot,
+        name: custom[slot].name,
+      );
     }
     return paletteByIndex(0);
   }
@@ -137,9 +139,7 @@ class StripEntry {
   /// Слот своей темы или номер готовой палитры; у кнопки «завести» это -1.
   final int index;
 
-  const StripEntry.add()
-      : kind = StripKind.add,
-        index = -1;
+  const StripEntry.add() : kind = StripKind.add, index = -1;
   const StripEntry.custom(this.index) : kind = StripKind.custom;
   const StripEntry.palette(this.index) : kind = StripKind.palette;
 

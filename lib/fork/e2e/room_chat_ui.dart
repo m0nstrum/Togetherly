@@ -157,13 +157,18 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
     final last = _chat?.messages.lastOrNull;
     final added = last != null && !identical(last, _observedMessage);
     _observedMessage = last;
-    final follow = added && (!_scroll.hasClients || _scroll.position.extentAfter < 72);
+    final follow =
+        added && (!_scroll.hasClients || _scroll.position.extentAfter < 72);
     final offset = _scroll.hasClients ? _scroll.offset : 0.0;
-    setState(() { if (_open) _seen = count; });
+    setState(() {
+      if (_open) _seen = count;
+    });
     if (follow && _open) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _scroll.hasClients &&
-            !_scroll.position.isScrollingNotifier.value && (_scroll.offset - offset).abs() < 8) {
+        if (mounted &&
+            _scroll.hasClients &&
+            !_scroll.position.isScrollingNotifier.value &&
+            (_scroll.offset - offset).abs() < 8) {
           _scroll.jumpTo(_scroll.position.maxScrollExtent);
         }
       });
@@ -171,9 +176,13 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
   }
 
   void _showChat() {
-    setState(() { _open = true; _seen = _chat?.messages.length ?? 0; });
+    setState(() {
+      _open = true;
+      _seen = _chat?.messages.length ?? 0;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _scroll.hasClients) _scroll.jumpTo(_scroll.position.maxScrollExtent);
+      if (mounted && _scroll.hasClients)
+        _scroll.jumpTo(_scroll.position.maxScrollExtent);
     });
   }
 
@@ -331,7 +340,10 @@ class _ForkRoomChatOverlayState extends State<ForkRoomChatOverlay> {
             ),
           Text(m.text),
           if (forkRoomMessageTime(m.at).isNotEmpty)
-            Text(forkRoomMessageTime(m.at), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            Text(
+              forkRoomMessageTime(m.at),
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+            ),
           if (m.pending)
             Text(
               _t('Отправляем…', 'Sending…'),

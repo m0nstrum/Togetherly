@@ -178,7 +178,12 @@ class _HeartColumn extends StatelessWidget {
       children: [
         Text(
           name,
-          style: AppFonts.onest(size: 11, weight: 700, letterSpacing: 0.3, color: t.textSecondary),
+          style: AppFonts.onest(
+            size: 11,
+            weight: 700,
+            letterSpacing: 0.3,
+            color: t.textSecondary,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -204,7 +209,15 @@ class _HeartColumn extends StatelessWidget {
         ],
         Text(
           lastEntry?.localizedLabel ?? LocaleService.current.noMoodRecorded,
-          style: AppFonts.onest(size: 11.5, color: lastEntry != null ? lastEntry.color : t.textMuted).copyWith(fontWeight: lastEntry != null ? FontWeight.w600 : FontWeight.w400),
+          style:
+              AppFonts.onest(
+                size: 11.5,
+                color: lastEntry != null ? lastEntry.color : t.textMuted,
+              ).copyWith(
+                fontWeight: lastEntry != null
+                    ? FontWeight.w600
+                    : FontWeight.w400,
+              ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

@@ -46,9 +46,16 @@ void main() {
         final t = buildAppTheme(p, legacy.brightness);
         expect(t.primary, legacy.primary, reason: 'акцент пересчитали');
         expect(t.bgGradient, legacy.bgGradient, reason: 'фон пересчитали');
-        expect(t.cardSurface, legacy.cardSurface, reason: 'карточки пересчитали');
-        expect(t.timerDialBackground, legacy.timerDialBackground,
-            reason: 'трек круга пересчитали');
+        expect(
+          t.cardSurface,
+          legacy.cardSurface,
+          reason: 'карточки пересчитали',
+        );
+        expect(
+          t.timerDialBackground,
+          legacy.timerDialBackground,
+          reason: 'трек круга пересчитали',
+        );
       });
     }
   });
@@ -64,9 +71,11 @@ void main() {
         // Оттенок обязан совпасть: тёмная вишнёвая — та же вишня, поднятая по
         // тону, а не отдельный цвет. Серые палитры оттенка не имеют вовсе.
         if (hct(legacy.primary).chroma >= 6) {
-          expect(hueGap(hct(t.fillColor).hue, hct(legacy.primary).hue),
-              lessThan(12),
-              reason: 'оттенок уехал от ручной темы');
+          expect(
+            hueGap(hct(t.fillColor).hue, hct(legacy.primary).hue),
+            lessThan(12),
+            reason: 'оттенок уехал от ручной темы',
+          );
         }
       });
     }
@@ -80,8 +89,10 @@ void main() {
           // 4.3, а не 4.5: у «Северного сияния» и «Нордика» ручная заливка
           // даёт 4.35 и 4.48. Разница с нормой в полутора сотых — цена того,
           // что цвет подобран руками; ронять из-за неё палитру не за что.
-          expect(contrast(AppThemes.onColor(t.fillColor), t.fillColor),
-              greaterThanOrEqualTo(4.3));
+          expect(
+            contrast(AppThemes.onColor(t.fillColor), t.fillColor),
+            greaterThanOrEqualTo(4.3),
+          );
         });
       }
     }
@@ -94,8 +105,11 @@ void main() {
           final t = buildAppTheme(p, b);
           // Акцент лежит на карточке, а не на фоне страницы: числа дней, значки
           // действий, подписи. Порог мягкий — он ловит провал, а не пастель.
-          expect(contrast(t.primary, t.cardSurface), greaterThan(2.0),
-              reason: 'акцент тонет в карточке');
+          expect(
+            contrast(t.primary, t.cardSurface),
+            greaterThan(2.0),
+            reason: 'акцент тонет в карточке',
+          );
         });
       }
     }
@@ -110,8 +124,11 @@ void main() {
               return contrast(t.primary, t.cardSurface);
             })
             .reduce(math.max);
-        expect(best, greaterThanOrEqualTo(3.0),
-            reason: 'ни одна сочность не даёт читаемый акцент');
+        expect(
+          best,
+          greaterThanOrEqualTo(3.0),
+          reason: 'ни одна сочность не даёт читаемый акцент',
+        );
       });
     }
   });
@@ -120,9 +137,11 @@ void main() {
     for (final p in kPalettes) {
       test(p.name, () {
         final soft = buildAppTheme(p, Brightness.light).primary;
-        final exact =
-            buildAppTheme(p, Brightness.light, flavor: SchemeFlavor.exact)
-                .primary;
+        final exact = buildAppTheme(
+          p,
+          Brightness.light,
+          flavor: SchemeFlavor.exact,
+        ).primary;
         if (hct(soft).chroma < 6) {
           // «Монохром» серый по замыслу: крутить у него нечего, и подкрутка
           // не должна тянуть его в цвет.
@@ -133,10 +152,14 @@ void main() {
           // насыщенности; одно число ловит оба пути, а по отдельности каждое
           // врёт на половине палитр.
           final a = hct(soft), b = hct(exact);
-          final d = math.sqrt(math.pow(a.chroma - b.chroma, 2) +
-              math.pow(a.tone - b.tone, 2));
-          expect(d, greaterThan(6),
-              reason: 'переключатель снова ничего не делает');
+          final d = math.sqrt(
+            math.pow(a.chroma - b.chroma, 2) + math.pow(a.tone - b.tone, 2),
+          );
+          expect(
+            d,
+            greaterThan(6),
+            reason: 'переключатель снова ничего не делает',
+          );
         }
       });
     }
@@ -151,9 +174,11 @@ void main() {
     for (var i = 0; i < fills.length; i++) {
       for (var j = i + 1; j < fills.length; j++) {
         final a = fills[i].$2, b = fills[j].$2;
-        final d = math.sqrt(math.pow(hueGap(a.hue, b.hue) * 0.45, 2) +
-            math.pow(a.chroma - b.chroma, 2) +
-            math.pow(a.tone - b.tone, 2));
+        final d = math.sqrt(
+          math.pow(hueGap(a.hue, b.hue) * 0.45, 2) +
+              math.pow(a.chroma - b.chroma, 2) +
+              math.pow(a.tone - b.tone, 2),
+        );
         // 6.5: ближе всех сходятся «Песочная» с «Кофе» (6.8) и «Шалфейная» с
         // «Тёмным лесом» (7.1) — это светлые версии тем, нарисованных
         // тёмными, и оттенок у них общий по замыслу. Спорят названия, а не
@@ -166,13 +191,20 @@ void main() {
 
   test('насыщенность и светлота разведены, а не выровнены', () {
     final f = [
-      for (final p in kPalettes) hct(buildAppTheme(p, Brightness.light).fillColor),
+      for (final p in kPalettes)
+        hct(buildAppTheme(p, Brightness.light).fillColor),
     ];
     final chromas = f.map((h) => h.chroma).toList()..sort();
     final tones = f.map((h) => h.tone).toList()..sort();
-    expect(chromas.last - chromas.first, greaterThan(40),
-        reason: 'все палитры снова одной насыщенности');
-    expect(tones.last - tones.first, greaterThan(35),
-        reason: 'все палитры снова одной светлоты');
+    expect(
+      chromas.last - chromas.first,
+      greaterThan(40),
+      reason: 'все палитры снова одной насыщенности',
+    );
+    expect(
+      tones.last - tones.first,
+      greaterThan(35),
+      reason: 'все палитры снова одной светлоты',
+    );
   });
 }

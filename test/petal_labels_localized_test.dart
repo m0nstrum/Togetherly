@@ -17,10 +17,12 @@ void main() {
   final kotlin = File(
     'android/app/src/main/kotlin/com/togetherly/love/PetalTimerWidgetProvider.kt',
   ).readAsStringSync();
-  final swiftGraphics =
-      File('ios/TogetherlyWidget/WidgetGraphics.swift').readAsStringSync();
-  final swiftTimer =
-      File('ios/TogetherlyWidget/TimerWidgets.swift').readAsStringSync();
+  final swiftGraphics = File(
+    'ios/TogetherlyWidget/WidgetGraphics.swift',
+  ).readAsStringSync();
+  final swiftTimer = File(
+    'ios/TogetherlyWidget/TimerWidgets.swift',
+  ).readAsStringSync();
 
   test('приложение отдаёт подписи лепестков', () {
     expect(dart, contains("timer_\${g}_petal_labels"));

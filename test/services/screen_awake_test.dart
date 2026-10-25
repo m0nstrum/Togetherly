@@ -67,9 +67,14 @@ void main() {
     // Новый видеоэкран без этой строки погаснет посреди ролика: система
     // считает человека бездействующим, пока он просто смотрит.
     String read(String path) => File(path).readAsStringSync();
-    expect(read('lib/screens/together/watch_room_screen.dart'),
-        allOf(contains('ScreenAwake.hold(this)'), contains('ScreenAwake.release(this)')),
-        reason: 'комната просмотра и ленты');
+    expect(
+      read('lib/screens/together/watch_room_screen.dart'),
+      allOf(
+        contains('ScreenAwake.hold(this)'),
+        contains('ScreenAwake.release(this)'),
+      ),
+      reason: 'комната просмотра и ленты',
+    );
     for (final path in [
       'lib/screens/together/watch_player_screen.dart',
       'lib/screens/memory_lane/media_widgets.dart',
@@ -80,9 +85,11 @@ void main() {
     }
     // В файле плееров ленты их два: свой ролик и встроенный YouTube.
     final players = read('lib/screens/memory_lane/media_widgets.dart');
-    expect('ScreenAwake.sync(this,'.allMatches(players).length +
-            'ScreenAwake.sync(\n'.allMatches(players).length,
-        2);
+    expect(
+      'ScreenAwake.sync(this,'.allMatches(players).length +
+          'ScreenAwake.sync(\n'.allMatches(players).length,
+      2,
+    );
     expect('ScreenAwake.release(this)'.allMatches(players).length, 2);
   });
 
@@ -92,14 +99,18 @@ void main() {
     String read(String path) => File(path).readAsStringSync();
     const name = 'love_app/screen_awake';
     expect(read('lib/services/screen_awake.dart'), contains("'$name'"));
-    final kotlin =
-        read('android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt');
+    final kotlin = read(
+      'android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt',
+    );
     expect(kotlin, contains('"$name"'));
     expect(kotlin, contains('FLAG_KEEP_SCREEN_ON'));
     expect(kotlin, contains('call.argument<Boolean>("on")'));
     final swift = read('ios/Runner/AppDelegate.swift');
     expect(swift, contains('"$name"'));
     expect(swift, contains('isIdleTimerDisabled = on'));
-    expect(swift, contains('setupScreenAwakeChannel(engineBridge.pluginRegistry)'));
+    expect(
+      swift,
+      contains('setupScreenAwakeChannel(engineBridge.pluginRegistry)'),
+    );
   });
 }

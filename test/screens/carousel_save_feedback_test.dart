@@ -19,9 +19,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   final screen = File('lib/screens/widget_screen.dart').readAsStringSync();
-  final editor =
-      File('lib/screens/home/widgets/photo_day_carousel_editor.dart')
-          .readAsStringSync();
+  final editor = File(
+    'lib/screens/home/widgets/photo_day_carousel_editor.dart',
+  ).readAsStringSync();
 
   String bodyOf(String source, String signature, String until) {
     final start = source.indexOf(signature);
@@ -37,19 +37,28 @@ void main() {
       'Future<void> _savePhotosForPartner(',
     );
     expect(body.contains('refreshPhotoOfDay'), isTrue);
-    expect(body.contains('.timeout('), isTrue,
-        reason: 'иначе лист держит человека, пока качаются все снимки');
+    expect(
+      body.contains('.timeout('),
+      isTrue,
+      reason: 'иначе лист держит человека, пока качаются все снимки',
+    );
   });
 
   test('отказ виден человеку, а не только в журнале', () {
     final body = bodyOf(editor, 'Future<void> _save(', 'Widget build(');
-    expect(body.contains('_saveError'), isTrue,
-        reason: 'спиннер гас, и человек оставался без объяснения');
+    expect(
+      body.contains('_saveError'),
+      isTrue,
+      reason: 'спиннер гас, и человек оставался без объяснения',
+    );
   });
 
   test('сообщение об отказе показано на листе', () {
     expect(editor.contains('_saveError'), isTrue);
-    expect(editor.contains('carouselSaveFailed'), isTrue,
-        reason: 'нужна строка на языке человека, а не текст исключения');
+    expect(
+      editor.contains('carouselSaveFailed'),
+      isTrue,
+      reason: 'нужна строка на языке человека, а не текст исключения',
+    );
   });
 }

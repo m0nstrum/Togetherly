@@ -9,8 +9,9 @@ import 'package:love_app/widgets/common/pin_entry_sheet.dart';
 void main() {
   Widget host(Widget child) => MaterialApp(home: Scaffold(body: child));
 
-  testWidgets('Показывает четыре пустые ячейки и свою клавиатуру',
-      (tester) async {
+  testWidgets('Показывает четыре пустые ячейки и свою клавиатуру', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(PinEntry(create: true, onDone: (_) {})));
     await tester.pump();
 
@@ -22,7 +23,9 @@ void main() {
 
   testWidgets('Набор из четырёх цифр отдаёт PIN', (tester) async {
     String? got;
-    await tester.pumpWidget(host(PinEntry(create: false, onDone: (v) => got = v)));
+    await tester.pumpWidget(
+      host(PinEntry(create: false, onDone: (v) => got = v)),
+    );
     await tester.pump();
 
     for (final d in ['1', '2', '3', '4']) {
@@ -34,7 +37,9 @@ void main() {
 
   testWidgets('Стирание убирает последнюю цифру', (tester) async {
     String? got;
-    await tester.pumpWidget(host(PinEntry(create: false, onDone: (v) => got = v)));
+    await tester.pumpWidget(
+      host(PinEntry(create: false, onDone: (v) => got = v)),
+    );
     await tester.pump();
 
     for (final d in ['1', '2', '3']) {
@@ -51,10 +56,13 @@ void main() {
     expect(got, '1299');
   });
 
-  testWidgets('Лишние нажатия после четвёртой цифры игнорируются',
-      (tester) async {
+  testWidgets('Лишние нажатия после четвёртой цифры игнорируются', (
+    tester,
+  ) async {
     var calls = 0;
-    await tester.pumpWidget(host(PinEntry(create: false, onDone: (_) => calls++)));
+    await tester.pumpWidget(
+      host(PinEntry(create: false, onDone: (_) => calls++)),
+    );
     await tester.pump();
 
     for (var i = 0; i < 6; i++) {

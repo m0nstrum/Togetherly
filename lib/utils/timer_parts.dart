@@ -34,7 +34,11 @@ class TimerParts {
   final int totalDays;
 
   /// От [start] до [now]; у обратного отсчёта — от [now] до [start].
-  factory TimerParts.of(DateTime start, DateTime now, {bool countdown = false}) {
+  factory TimerParts.of(
+    DateTime start,
+    DateTime now, {
+    bool countdown = false,
+  }) {
     final from = countdown ? now : start;
     final to = countdown ? start : now;
     if (!to.isAfter(from)) return zero;
@@ -46,9 +50,11 @@ class TimerParts {
     var anchor = _addMonths(from, total);
     if (anchor.isAfter(to)) anchor = _addMonths(from, --total);
     // Дни — по календарю, а не по 24 часам: перевод часов их не сдвигает.
-    var days = DateTime.utc(to.year, to.month, to.day)
-        .difference(DateTime.utc(anchor.year, anchor.month, anchor.day))
-        .inDays;
+    var days = DateTime.utc(
+      to.year,
+      to.month,
+      to.day,
+    ).difference(DateTime.utc(anchor.year, anchor.month, anchor.day)).inDays;
     if (_timeOfDay(to) < _timeOfDay(anchor)) days--;
     final years = total ~/ 12;
     final months = total % 12;
@@ -70,12 +76,24 @@ class TimerParts {
     final y = d.year + m ~/ 12;
     final month = m % 12 + 1;
     final last = DateTime(y, month + 1, 0).day;
-    return DateTime(y, month, d.day > last ? last : d.day, d.hour, d.minute, d.second, d.millisecond);
+    return DateTime(
+      y,
+      month,
+      d.day > last ? last : d.day,
+      d.hour,
+      d.minute,
+      d.second,
+      d.millisecond,
+    );
   }
 
   static int _timeOfDay(DateTime d) =>
       ((d.hour * 60 + d.minute) * 60 + d.second) * 1000 + d.millisecond;
 
   /// «04:05:06».
-  String get clock => [hours, minutes, seconds].map((v) => v.toString().padLeft(2, '0')).join(':');
+  String get clock => [
+    hours,
+    minutes,
+    seconds,
+  ].map((v) => v.toString().padLeft(2, '0')).join(':');
 }

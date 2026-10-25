@@ -27,7 +27,8 @@ final bool _hasNode = () {
 }();
 
 /// Кадр TikTok в node: окно, документ с одним роликом, события.
-String _harness(String script) => '''
+String _harness(String script) =>
+    '''
 const vm = require('vm');
 const handlers = {}; const docHandlers = {};
 const video = { tagName: 'VIDEO', playbackRate: 1 };

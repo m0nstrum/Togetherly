@@ -17,7 +17,10 @@ void main() {
     final sections = groupMoodsByBand(MoodOption.all);
     final flat = sections.expand((s) => s.moods).toList();
     expect(flat.length, MoodOption.all.length);
-    expect(flat.map((m) => m.id).toSet(), MoodOption.all.map((m) => m.id).toSet());
+    expect(
+      flat.map((m) => m.id).toSet(),
+      MoodOption.all.map((m) => m.id).toSet(),
+    );
   });
 
   test('порядок внутри раздела повторяет порядок пака', () {
@@ -30,8 +33,7 @@ void main() {
   });
 
   test('пустые разделы не показываем', () {
-    final onlyHappy =
-        MoodOption.all.where((m) => m.id == 'happy').toList();
+    final onlyHappy = MoodOption.all.where((m) => m.id == 'happy').toList();
     final sections = groupMoodsByBand(onlyHappy);
     expect(sections.length, 1);
     expect(sections.single.band, MoodBand.bright);

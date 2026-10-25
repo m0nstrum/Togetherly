@@ -35,15 +35,21 @@ void main() {
     expect(rows, hasLength(2));
     expect(rows[0]['размер'], 'small');
     expect(rows[1]['размер'], 'medium');
-    expect(rows[0]['разжато'], 'нет',
-        reason: 'вот это и есть ответ: файл был, а картинка не собралась');
+    expect(
+      rows[0]['разжато'],
+      'нет',
+      reason: 'вот это и есть ответ: файл был, а картинка не собралась',
+    );
   });
 
   test('обрыв на середине виден по недостающему признаку', () {
     final rows = parseWidgetRenderLog('7|small|love|start=1');
     expect(rows.first['начал'], 'да');
-    expect(rows.first.containsKey('разжато'), isFalse,
-        reason: 'запись без конца означает, что расширение убили посередине');
+    expect(
+      rows.first.containsKey('разжато'),
+      isFalse,
+      reason: 'запись без конца означает, что расширение убили посередине',
+    );
   });
 
   test('видно, галерея это или рабочий стол', () {
@@ -51,8 +57,11 @@ void main() {
       '9|small|ios_partner_photo_path|stage=snapshot;preview=1;path=1;bytes=1024',
     );
     expect(rows.first['этап'], 'снимок');
-    expect(rows.first['галерея'], 'да',
-        reason: 'след остаётся, даже если виджет ещё не стоит на столе');
+    expect(
+      rows.first['галерея'],
+      'да',
+      reason: 'след остаётся, даже если виджет ещё не стоит на столе',
+    );
     expect(rows.first['вес'], '1 КБ');
   });
 
@@ -64,33 +73,49 @@ void main() {
 
   test('журнал обрезается до последних записей', () {
     final many = List.generate(50, (i) => '$i|small|self|path=1').join('\n');
-    expect(parseWidgetRenderLog(many).length, lessThanOrEqualTo(30),
-        reason: 'в отчёт незачем тащить всю историю, важен хвост');
+    expect(
+      parseWidgetRenderLog(many).length,
+      lessThanOrEqualTo(30),
+      reason: 'в отчёт незачем тащить всю историю, важен хвост',
+    );
   });
 
   group('связка на месте', () {
     test('расширение пишет журнал, приложение его забирает и чистит', () {
-      final swift =
-          File('ios/TogetherlyWidget/SharedStore.swift').readAsStringSync();
+      final swift = File(
+        'ios/TogetherlyWidget/SharedStore.swift',
+      ).readAsStringSync();
       expect(swift, contains('enum WidgetRenderLog'));
-      expect(swift, contains('os_proc_available_memory'),
-          reason: 'по остатку памяти видно, упёрлись ли в потолок расширения');
+      expect(
+        swift,
+        contains('os_proc_available_memory'),
+        reason: 'по остатку памяти видно, упёрлись ли в потолок расширения',
+      );
 
-      final dart =
-          File('lib/services/widget_diagnostics.dart').readAsStringSync();
+      final dart = File(
+        'lib/services/widget_diagnostics.dart',
+      ).readAsStringSync();
       expect(dart, contains('parseWidgetRenderLog'));
-      expect(dart, contains(kWidgetRenderLogKey),
-          reason: 'ключ журнала должен совпадать с тем, что пишет расширение');
-      expect(dart, contains("saveWidgetData<String>(kWidgetRenderLogKey, '')"),
-          reason: 'иначе один и тот же журнал уедет в отчёт десять раз подряд');
+      expect(
+        dart,
+        contains(kWidgetRenderLogKey),
+        reason: 'ключ журнала должен совпадать с тем, что пишет расширение',
+      );
+      expect(
+        dart,
+        contains("saveWidgetData<String>(kWidgetRenderLogKey, '')"),
+        reason: 'иначе один и тот же журнал уедет в отчёт десять раз подряд',
+      );
     });
 
     test('фото-виджеты и парный записывают размер, на котором рисуются', () {
-      final photos =
-          File('ios/TogetherlyWidget/PhotoWidgets.swift').readAsStringSync();
+      final photos = File(
+        'ios/TogetherlyWidget/PhotoWidgets.swift',
+      ).readAsStringSync();
       expect(photos, contains('WidgetRenderLog.familyName'));
-      final love =
-          File('ios/TogetherlyWidget/LoveWidget.swift').readAsStringSync();
+      final love = File(
+        'ios/TogetherlyWidget/LoveWidget.swift',
+      ).readAsStringSync();
       expect(love, contains('WidgetRenderLog.write'));
     });
   });

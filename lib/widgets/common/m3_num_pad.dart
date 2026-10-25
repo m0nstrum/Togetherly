@@ -62,7 +62,10 @@ class M3NumPad extends StatelessWidget {
               ),
               child: Text(
                 actionLabel!,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -93,8 +96,11 @@ class M3NumPad extends StatelessWidget {
                   HapticFeedback.selectionClick();
                   onBackspace();
                 },
-                child: Icon(Icons.backspace_outlined,
-                    size: 22, color: scheme.onSurfaceVariant),
+                child: Icon(
+                  Icons.backspace_outlined,
+                  size: 22,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -112,8 +118,11 @@ class M3NumPad extends StatelessWidget {
                         HapticFeedback.selectionClick();
                         onDone!();
                       },
-                      child: Icon(Icons.keyboard_arrow_down_rounded,
-                          size: 26, color: scheme.onPrimary),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 26,
+                        color: scheme.onPrimary,
+                      ),
                     ),
             ),
           ],
@@ -123,34 +132,33 @@ class M3NumPad extends StatelessWidget {
   }
 
   Widget _digit(ColorScheme scheme, String d) => _key(
-        scheme,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onDigit(d);
-        },
-        child: Text(
-          d,
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w700,
-            color: scheme.onSurface,
-          ),
-        ),
-      );
+    scheme,
+    onTap: () {
+      HapticFeedback.selectionClick();
+      onDigit(d);
+    },
+    child: Text(
+      d,
+      style: TextStyle(
+        fontSize: 26,
+        fontWeight: FontWeight.w700,
+        color: scheme.onSurface,
+      ),
+    ),
+  );
 
   Widget _key(
     ColorScheme scheme, {
     required VoidCallback onTap,
     required Widget child,
     Color? color,
-  }) =>
-      Material(
-        color: color ?? scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(height: 56, child: Center(child: child)),
-        ),
-      );
+  }) => Material(
+    color: color ?? scheme.surfaceContainerHighest,
+    borderRadius: BorderRadius.circular(18),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: SizedBox(height: 56, child: Center(child: child)),
+    ),
+  );
 }

@@ -75,8 +75,11 @@ class _Exec implements SaveExecutor {
   int get concurrency => 100;
 
   @override
-  Future<String?> run(SaveItem item, {required bool hidden, String title = ''}) =>
-      waiting.putIfAbsent(item.file.key, () => Completer<String?>()).future;
+  Future<String?> run(
+    SaveItem item, {
+    required bool hidden,
+    String title = '',
+  }) => waiting.putIfAbsent(item.file.key, () => Completer<String?>()).future;
 
   @override
   Future<void> cancel(Iterable<SaveItem> items) async {
@@ -98,17 +101,17 @@ class _Exec implements SaveExecutor {
 }
 
 SaveItem _item(String ref, {String memoryId = 'm1', int i = 0}) => SaveItem(
-      memoryId: memoryId,
-      takenAt: DateTime(2026, 9, 5, 13, 5),
-      latitude: 46.9,
-      longitude: 29.1,
-      file: MediaFile(ref: ref, kind: SaveKind.photo, index: i),
-    );
+  memoryId: memoryId,
+  takenAt: DateTime(2026, 9, 5, 13, 5),
+  latitude: 46.9,
+  longitude: 29.1,
+  file: MediaFile(ref: ref, kind: SaveKind.photo, index: i),
+);
 
 List<SaveItem> _items(int n, {String memoryId = 'm1'}) => [
-      for (var i = 0; i < n; i++)
-        _item('pb://media/$memoryId/f$i.webp', memoryId: memoryId, i: i),
-    ];
+  for (var i = 0; i < n; i++)
+    _item('pb://media/$memoryId/f$i.webp', memoryId: memoryId, i: i),
+];
 
 Future<void> _settle(MediaSaveQueue q) async {
   for (var i = 0; i < 2000 && q.busy; i++) {
@@ -136,11 +139,11 @@ void main() {
   });
 
   MediaSaveQueue queue(_Fetcher f, _Gallery g) => MediaSaveQueue(
-        fetcher: f,
-        target: g,
-        ledger: ledger,
-        retryDelays: const [Duration.zero, Duration.zero],
-      );
+    fetcher: f,
+    target: g,
+    ledger: ledger,
+    retryDelays: const [Duration.zero, Duration.zero],
+  );
 
   test('всё воспоминание уходит в галерею с датой, местом и папкой', () async {
     final f = _Fetcher(), g = _Gallery();
@@ -182,21 +185,23 @@ void main() {
     expect(f.calls.where((k) => k == 'pb://media/m1/f1.webp'), hasLength(3));
   });
 
-  test('после всех повторов кадр считается несохранённым и его можно повторить',
-      () async {
-    final f = _Fetcher(failFirst: {'pb://media/m1/f0.webp': 3});
-    final q = queue(f, _Gallery());
-    final job = await q.enqueue('отказ', _items(2));
-    await _settle(q);
-    expect(job!.done, 1);
-    expect(job.failed, 1);
-    expect(job.finished, isTrue);
+  test(
+    'после всех повторов кадр считается несохранённым и его можно повторить',
+    () async {
+      final f = _Fetcher(failFirst: {'pb://media/m1/f0.webp': 3});
+      final q = queue(f, _Gallery());
+      final job = await q.enqueue('отказ', _items(2));
+      await _settle(q);
+      expect(job!.done, 1);
+      expect(job.failed, 1);
+      expect(job.finished, isTrue);
 
-    q.retryFailed(job.id);
-    await _settle(q);
-    expect(job.done, 2);
-    expect(job.failed, 0);
-  });
+      q.retryFailed(job.id);
+      await _settle(q);
+      expect(job.done, 2);
+      expect(job.failed, 0);
+    },
+  );
 
   test('уже сохранённое не загружается второй раз', () async {
     await ledger.add('pb://media/m1/f0.webp');
@@ -249,22 +254,24 @@ void main() {
     await _drain(q, f);
   });
 
-  test('ход по одной записи внутри общего задания и признак «в очереди»',
-      () async {
-    final f = _Fetcher()..holdAll = true;
-    final q = queue(f, _Gallery());
-    await q.enqueue('два воспоминания', [
-      ..._items(3, memoryId: 'a'),
-      ..._items(2, memoryId: 'b'),
-    ]);
-    await Future<void>.delayed(Duration.zero);
-    expect(q.progressFor('b'), (0, 2));
-    expect(q.isQueued('pb://media/b/f1.webp'), isTrue);
-    expect(q.isQueued('pb://media/c/f1.webp'), isFalse);
-    await _drain(q, f);
-    expect(q.progressFor('b'), isNull);
-    expect(q.isQueued('pb://media/b/f1.webp'), isFalse);
-  });
+  test(
+    'ход по одной записи внутри общего задания и признак «в очереди»',
+    () async {
+      final f = _Fetcher()..holdAll = true;
+      final q = queue(f, _Gallery());
+      await q.enqueue('два воспоминания', [
+        ..._items(3, memoryId: 'a'),
+        ..._items(2, memoryId: 'b'),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(q.progressFor('b'), (0, 2));
+      expect(q.isQueued('pb://media/b/f1.webp'), isTrue);
+      expect(q.isQueued('pb://media/c/f1.webp'), isFalse);
+      await _drain(q, f);
+      expect(q.progressFor('b'), isNull);
+      expect(q.isQueued('pb://media/b/f1.webp'), isFalse);
+    },
+  );
 
   test('исполнитель берёт всё разом, отмена доходит до него', () async {
     final e = _Exec();

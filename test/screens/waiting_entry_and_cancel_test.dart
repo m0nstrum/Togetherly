@@ -13,19 +13,30 @@ import 'package:love_app/models/waiting_cancel.dart';
 /// экране связи, где человек уже понимает, что к чему.
 void main() {
   test('на экране новичка нет входа в ожидание', () {
-    final source =
-        File('lib/screens/invite_partner_screen.dart').readAsStringSync();
-    expect(source.contains('WaitingSetupSheet'), isFalse,
-        reason: 'Лист ожидания не открывается с первого экрана');
-    expect(source.contains('_keepSeatCard('), isFalse,
-        reason: 'И карточки-приманки там тоже нет');
+    final source = File(
+      'lib/screens/invite_partner_screen.dart',
+    ).readAsStringSync();
+    expect(
+      source.contains('WaitingSetupSheet'),
+      isFalse,
+      reason: 'Лист ожидания не открывается с первого экрана',
+    );
+    expect(
+      source.contains('_keepSeatCard('),
+      isFalse,
+      reason: 'И карточки-приманки там тоже нет',
+    );
   });
 
   test('вход в ожидание остался на экране связи', () {
-    final source =
-        File('lib/screens/connect_partner_screen.dart').readAsStringSync();
-    expect(source.contains('WaitingSetupSheet.show'), isTrue,
-        reason: 'Тем, кому есть кого ждать, путь остаётся');
+    final source = File(
+      'lib/screens/connect_partner_screen.dart',
+    ).readAsStringSync();
+    expect(
+      source.contains('WaitingSetupSheet.show'),
+      isTrue,
+      reason: 'Тем, кому есть кого ждать, путь остаётся',
+    );
   });
 
   group('waitingCancelOutcome', () {
@@ -35,45 +46,66 @@ void main() {
     // ошибку, человек жал снова: шесть отказов за секунду в журнале
     // 18.08.2026. Ждать тут больше некого, поэтому такой ответ — успех.
     test('сервер согласился — ожидание снято', () {
-      expect(waitingCancelOutcome(ok: true, message: ''),
-          WaitingCancelOutcome.cancelled);
+      expect(
+        waitingCancelOutcome(ok: true, message: ''),
+        WaitingCancelOutcome.cancelled,
+      );
     });
 
     test('место уже занято — значит ждать некого', () {
-      expect(waitingCancelOutcome(ok: false, message: 'Место уже занято'),
-          WaitingCancelOutcome.alreadyPaired);
+      expect(
+        waitingCancelOutcome(ok: false, message: 'Место уже занято'),
+        WaitingCancelOutcome.alreadyPaired,
+      );
     });
 
     test('пара не найдена — ожидания тоже нет', () {
-      expect(waitingCancelOutcome(ok: false, message: 'Пара не найдена'),
-          WaitingCancelOutcome.alreadyPaired);
+      expect(
+        waitingCancelOutcome(ok: false, message: 'Пара не найдена'),
+        WaitingCancelOutcome.alreadyPaired,
+      );
     });
 
     test('уже отменено — это успех, а не ошибка', () {
-      expect(waitingCancelOutcome(ok: false, message: 'already'),
-          WaitingCancelOutcome.alreadyPaired);
+      expect(
+        waitingCancelOutcome(ok: false, message: 'already'),
+        WaitingCancelOutcome.alreadyPaired,
+      );
     });
 
     test('сеть отвалилась — честная ошибка', () {
-      expect(waitingCancelOutcome(ok: false, message: ''),
-          WaitingCancelOutcome.failed);
       expect(
-          waitingCancelOutcome(ok: false, message: 'Сервер не отвечает'),
-          WaitingCancelOutcome.failed);
+        waitingCancelOutcome(ok: false, message: ''),
+        WaitingCancelOutcome.failed,
+      );
+      expect(
+        waitingCancelOutcome(ok: false, message: 'Сервер не отвечает'),
+        WaitingCancelOutcome.failed,
+      );
     });
   });
 
   test('отмена ожидания слушается правила, а не голого «не вышло»', () {
-    final source =
-        File('lib/models/connections_manager.dart').readAsStringSync();
+    final source = File(
+      'lib/models/connections_manager.dart',
+    ).readAsStringSync();
     final from = source.indexOf('Future<bool> cancelWaitingPair(');
     expect(from, greaterThan(-1), reason: 'Отмена на месте');
     final body = source.substring(from, from + 1600);
-    expect(body.contains('waitingCancelOutcome('), isTrue,
-        reason: 'Ответ сервера разбирается правилом');
-    expect(body.contains('WaitingCancelOutcome.alreadyPaired'), isTrue,
-        reason: 'Занятое место — не ошибка, а снятое ожидание');
-    expect(body.contains('clearWaiting()'), isTrue,
-        reason: 'Карточка уходит с экрана, а не остаётся висеть');
+    expect(
+      body.contains('waitingCancelOutcome('),
+      isTrue,
+      reason: 'Ответ сервера разбирается правилом',
+    );
+    expect(
+      body.contains('WaitingCancelOutcome.alreadyPaired'),
+      isTrue,
+      reason: 'Занятое место — не ошибка, а снятое ожидание',
+    );
+    expect(
+      body.contains('clearWaiting()'),
+      isTrue,
+      reason: 'Карточка уходит с экрана, а не остаётся висеть',
+    );
   });
 }

@@ -57,17 +57,17 @@ class MemorySticker {
   final int at;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'uid': uid,
-        'img': image,
-        'pack': pack,
-        'mood': mood,
-        'x': x,
-        'y': y,
-        's': size,
-        'r': angle,
-        't': at,
-      };
+    'id': id,
+    'uid': uid,
+    'img': image,
+    'pack': pack,
+    'mood': mood,
+    'x': x,
+    'y': y,
+    's': size,
+    'r': angle,
+    't': at,
+  };
 
   MemorySticker copyWith({double? x, double? y, double? size, double? angle}) =>
       MemorySticker(
@@ -93,18 +93,20 @@ class MemorySticker {
     if (sid.isEmpty || uid.isEmpty || !stickerImageAllowed(image)) return null;
     double num0(Object? v, double fallback) =>
         v is num && v.isFinite ? v.toDouble() : fallback;
-    return clampSticker(MemorySticker(
-      id: sid,
-      uid: uid,
-      image: image,
-      pack: (raw['pack'] ?? '').toString(),
-      mood: (raw['mood'] ?? '').toString(),
-      x: num0(raw['x'], .5),
-      y: num0(raw['y'], .5),
-      size: num0(raw['s'], kStickerDefaultSize),
-      angle: num0(raw['r'], 0),
-      at: raw['t'] is num ? (raw['t'] as num).toInt() : 0,
-    ));
+    return clampSticker(
+      MemorySticker(
+        id: sid,
+        uid: uid,
+        image: image,
+        pack: (raw['pack'] ?? '').toString(),
+        mood: (raw['mood'] ?? '').toString(),
+        x: num0(raw['x'], .5),
+        y: num0(raw['y'], .5),
+        size: num0(raw['s'], kStickerDefaultSize),
+        angle: num0(raw['r'], 0),
+        at: raw['t'] is num ? (raw['t'] as num).toInt() : 0,
+      ),
+    );
   }
 }
 
@@ -167,8 +169,8 @@ List<MemorySticker> parseStickers(dynamic raw) {
 }
 
 Map<String, dynamic> stickersToJson(List<MemorySticker> list) => {
-      for (final s in list) s.id: s.toJson(),
-    };
+  for (final s in list) s.id: s.toJson(),
+};
 
 int stickersBy(List<MemorySticker> list, String uid) =>
     list.where((s) => s.uid == uid).length;
@@ -181,9 +183,11 @@ bool canMoveSticker(MemorySticker s, String uid) =>
 
 /// Свою наклейку убирает тот, кто наклеил. Автор записи убирает любую со
 /// своего пина: это его воспоминание.
-bool canRemoveSticker(MemorySticker s,
-        {required String uid, required String authorUid}) =>
-    uid.isNotEmpty && (s.uid == uid || authorUid == uid);
+bool canRemoveSticker(
+  MemorySticker s, {
+  required String uid,
+  required String authorUid,
+}) => uid.isNotEmpty && (s.uid == uid || authorUid == uid);
 
 /// Копия json-карты записи с наклейкой [s] (новой или переставленной).
 Map<String, dynamic> withSticker(Map<String, dynamic> data, MemorySticker s) {

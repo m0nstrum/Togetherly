@@ -79,9 +79,12 @@ class CanvasRepository {
   // ── Каталог холстов ────────────────────────────────────────────────────────
   /// Живой каталог в форме, которую ждёт `CanvasStorageService._mergeRemoteCanvases`:
   /// {id, name, createdAt(ms), updatedAt(ms)}. id холста — в колонке canvas_id.
-  Stream<List<Map<String, dynamic>>> watchCatalogue(String groupId) =>
-      _rt.watchCanvasCatalogue(groupId).map((recs) => recs
-          .map((r) => {
+  Stream<List<Map<String, dynamic>>> watchCatalogue(String groupId) => _rt
+      .watchCanvasCatalogue(groupId)
+      .map(
+        (recs) => recs
+            .map(
+              (r) => {
                 'id': (r.data['canvas_id'] ?? '').toString(),
                 'name': (r.data['name'] ?? '').toString(),
                 'createdAt': (r.data['created_at'] as num?)?.toInt() ?? 0,
@@ -96,9 +99,11 @@ class CanvasRepository {
                   final v = (r.data['sheet_ratio'] as num?)?.toDouble();
                   return (v == null || v <= 0) ? null : v;
                 }(),
-              })
-          .where((m) => (m['id'] as String).isNotEmpty)
-          .toList());
+              },
+            )
+            .where((m) => (m['id'] as String).isNotEmpty)
+            .toList(),
+      );
 
   Future<void> upsertCatalogue(
     String groupId,
@@ -110,19 +115,18 @@ class CanvasRepository {
     int? pixelW,
     int? pixelH,
     double? sheetRatio,
-  }) =>
-      _data.upsertCanvasCatalogue(groupId, canvasId, {
-        'name': name,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-        'createdBy': ?createdBy,
-        'pixelW': ?pixelW,
-        'pixelH': ?pixelH,
-        // Пропорция листа обязана уехать вместе с холстом: точки штрихов
-        // лежат в долях 0..1, и без неё второй телефон растянет рисунок
-        // на всю свободную область.
-        'sheetRatio': ?sheetRatio,
-      });
+  }) => _data.upsertCanvasCatalogue(groupId, canvasId, {
+    'name': name,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'createdBy': ?createdBy,
+    'pixelW': ?pixelW,
+    'pixelH': ?pixelH,
+    // Пропорция листа обязана уехать вместе с холстом: точки штрихов
+    // лежат в долях 0..1, и без неё второй телефон растянет рисунок
+    // на всю свободную область.
+    'sheetRatio': ?sheetRatio,
+  });
 
   /// Листы раскрасок пары и каталог, в котором они лежат, — прямо с сервера.
   ///
@@ -130,7 +134,7 @@ class CanvasRepository {
   /// назад, доезжает в него только когда открыта галерея. Каталог нужен,
   /// потому что `canvas_meta` удаление холста не чистит.
   Future<({List<ColoringSheet> sheets, Map<String, CanvasMeta> catalogue})>
-      coloringSheets(String groupId) async {
+  coloringSheets(String groupId) async {
     final results = await Future.wait([
       _data.loadCanvasMetaRows(groupId),
       _data.loadCanvasCatalogue(groupId),
@@ -149,9 +153,11 @@ class CanvasRepository {
         id: id,
         name: (r.data['name'] ?? '').toString(),
         createdAt: DateTime.fromMillisecondsSinceEpoch(
-            (r.data['created_at'] as num?)?.toInt() ?? 0),
+          (r.data['created_at'] as num?)?.toInt() ?? 0,
+        ),
         updatedAt: DateTime.fromMillisecondsSinceEpoch(
-            (r.data['updated_at'] as num?)?.toInt() ?? 0),
+          (r.data['updated_at'] as num?)?.toInt() ?? 0,
+        ),
         sheetRatio: (ratio == null || ratio <= 0) ? 1.0 : ratio,
       );
     }
@@ -173,9 +179,9 @@ class CanvasRepository {
 
   // ── Рисование: committed-штрихи ──────────────────────────────────────────
   /// Живые штрихи холста (по order_index). Замена listenToDrawingStrokes.
-  Stream<List<DrawStroke>> watchStrokes(String groupId, String canvasId) =>
-      _rt.watchCanvasStrokes(groupId, canvasId).map(
-          (recs) => recs.map(DrawStroke.fromPb).toList());
+  Stream<List<DrawStroke>> watchStrokes(String groupId, String canvasId) => _rt
+      .watchCanvasStrokes(groupId, canvasId)
+      .map((recs) => recs.map(DrawStroke.fromPb).toList());
 
   /// Начало холста для плитки в галерее: первые штрихи по порядку рисования.
   Future<List<DrawStroke>> previewStrokes(
@@ -183,15 +189,17 @@ class CanvasRepository {
     String canvasId, {
     int limit = 400,
   }) async {
-    final recs =
-        await _data.loadStrokesPage(groupId, canvasId, limit: limit);
+    final recs = await _data.loadStrokesPage(groupId, canvasId, limit: limit);
     return recs.map(DrawStroke.fromPb).toList();
   }
 
   /// Коммит штриха (server-id). Возвращает id записи (для оптимистичного
   /// сопоставления в draw_screen) или ''.
   Future<String> addStroke(
-      String groupId, String canvasId, Map<String, dynamic> data) async {
+    String groupId,
+    String canvasId,
+    Map<String, dynamic> data,
+  ) async {
     final rec = await _data.createStroke(groupId, canvasId, data);
     return rec?.id ?? '';
   }
@@ -211,8 +219,7 @@ class CanvasRepository {
     String canvasId, {
     required int clearVersion,
     int? bgColor,
-  }) =>
-      _data.clearCanvas(groupId, canvasId, clearVersion, bgColor: bgColor);
+  }) => _data.clearCanvas(groupId, canvasId, clearVersion, bgColor: bgColor);
 
   // ── Рисование: мета (bg/очистка/раскраска) ────────────────────────────────
   Stream<CanvasMetaUpdate> watchMeta(String groupId, String canvasId) =>
@@ -250,12 +257,14 @@ class CanvasRepository {
     required String pictureId,
     required String mode,
     String? outlineRef,
-  }) =>
-      _data.upsertCanvasMeta(groupId, canvasId,
-          coloringId: pictureId,
-          coloringMode: mode,
-          coloringDone: const {},
-          coloringOutline: outlineRef);
+  }) => _data.upsertCanvasMeta(
+    groupId,
+    canvasId,
+    coloringId: pictureId,
+    coloringMode: mode,
+    coloringDone: const {},
+    coloringOutline: outlineRef,
+  );
 
   /// Дописывает картинку раскраски в мету, не трогая «Готово»: запись при
   /// заведении листа могла не дойти (см. [coloringMetaNeedsPicture]).
@@ -265,9 +274,13 @@ class CanvasRepository {
     required String pictureId,
     required String mode,
     String? outlineRef,
-  }) =>
-      _data.upsertCanvasMeta(groupId, canvasId,
-          coloringId: pictureId, coloringMode: mode, coloringOutline: outlineRef);
+  }) => _data.upsertCanvasMeta(
+    groupId,
+    canvasId,
+    coloringId: pictureId,
+    coloringMode: mode,
+    coloringOutline: outlineRef,
+  );
 
   /// Отмечает готовность одного из двоих. Карта целиком, а не поле: правку
   /// одного ключа PocketBase в json-поле не умеет.
@@ -280,16 +293,24 @@ class CanvasRepository {
     String canvasId, {
     required bool swapped,
     String? pictureId,
-  }) =>
-      _data.upsertCanvasMeta(groupId, canvasId, coloringSwap: swapped, coloringId: pictureId);
+  }) => _data.upsertCanvasMeta(
+    groupId,
+    canvasId,
+    coloringSwap: swapped,
+    coloringId: pictureId,
+  );
 
   Future<void> setColoringDone(
     String groupId,
     String canvasId,
     Map<String, dynamic> done, {
     String? pictureId,
-  }) =>
-      _data.upsertCanvasMeta(groupId, canvasId, coloringDone: done, coloringId: pictureId);
+  }) => _data.upsertCanvasMeta(
+    groupId,
+    canvasId,
+    coloringDone: done,
+    coloringId: pictureId,
+  );
 
   // ── Рисование: live-штрихи (in-progress) — ЭФЕМЕРНО через Centrifugo ───────
   // НЕ пишем в БД: раньше каждый in-progress штрих = запись в коллекцию
@@ -306,22 +327,30 @@ class CanvasRepository {
   /// пропустишь пакет, и линия потеряет кусок, — поэтому подписчик видит каждое
   /// сообщение. `data == null` означает, что мазок снят (надгробие).
   Stream<LivePacket> watchLivePackets(
-      String groupId, String canvasId, String myUid) {
+    String groupId,
+    String canvasId,
+    String myUid,
+  ) {
     RtUnsub? unsub;
     late StreamController<LivePacket> ctrl;
     ctrl = StreamController<LivePacket>.broadcast(
       onListen: () async {
-        unsub = await CentrifugoService.instance
-            .subscribeRaw(_liveChannel(groupId), (m) {
-          final uid = (m['uid'] ?? '').toString();
-          if (uid.isEmpty || uid == myUid) return;
-          if ((m['canvasId'] ?? '').toString() != canvasId) return;
-          // fork (S9): живой штрих идёт шифром ключа пары.
-          final live = ForkE2E.openLive(
-              _liveChannel(groupId), 'stroke:$uid:$canvasId', m['data']);
-          if (!live.ok || ctrl.isClosed) return;
-          ctrl.add(LivePacket(uid: uid, data: live.data));
-        });
+        unsub = await CentrifugoService.instance.subscribeRaw(
+          _liveChannel(groupId),
+          (m) {
+            final uid = (m['uid'] ?? '').toString();
+            if (uid.isEmpty || uid == myUid) return;
+            if ((m['canvasId'] ?? '').toString() != canvasId) return;
+            // fork (S9): живой штрих идёт шифром ключа пары.
+            final live = ForkE2E.openLive(
+              _liveChannel(groupId),
+              'stroke:$uid:$canvasId',
+              m['data'],
+            );
+            if (!live.ok || ctrl.isClosed) return;
+            ctrl.add(LivePacket(uid: uid, data: live.data));
+          },
+        );
       },
       onCancel: () async {
         await unsub?.call();
@@ -332,11 +361,19 @@ class CanvasRepository {
   }
 
   /// Опубликовать свой in-progress штрих (эфемерно, мимо БД).
-  Future<void> setLive(String groupId, String canvasId, String uid,
-      Map<String, dynamic> liveData) async {
+  Future<void> setLive(
+    String groupId,
+    String canvasId,
+    String uid,
+    Map<String, dynamic> liveData,
+  ) async {
     // fork (S9): шифром ключа пары; нет ключа — не шлём вовсе.
     final sealed = ForkE2E.sealLive(
-        groupId, _liveChannel(groupId), 'stroke:$uid:$canvasId', liveData);
+      groupId,
+      _liveChannel(groupId),
+      'stroke:$uid:$canvasId',
+      liveData,
+    );
     if (sealed == null) return;
     await CentrifugoService.instance.publish(_liveChannel(groupId), {
       'uid': uid,
@@ -347,6 +384,9 @@ class CanvasRepository {
 
   /// Снять свой in-progress штрих (надгробие data:null).
   Future<void> clearLive(String groupId, String canvasId, String uid) =>
-      CentrifugoService.instance.publish(_liveChannel(groupId),
-          {'uid': uid, 'canvasId': canvasId, 'data': null});
+      CentrifugoService.instance.publish(_liveChannel(groupId), {
+        'uid': uid,
+        'canvasId': canvasId,
+        'data': null,
+      });
 }

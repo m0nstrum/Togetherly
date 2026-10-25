@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../main.dart';
@@ -53,11 +54,8 @@ class TogetherLauncher {
     final hasVideo = videoUrl != null && videoUrl.isNotEmpty;
     if (hasVideo && !WatchVideosService.playsInRoom(videoUrl)) {
       final player = MaterialPageRoute<void>(
-        builder: (_) => WatchPlayerScreen(
-          room: room,
-          pairId: pairId,
-          url: videoUrl,
-        ),
+        builder: (_) =>
+            WatchPlayerScreen(room: room, pairId: pairId, url: videoUrl),
       );
       await navigator.push(player);
       return;
@@ -107,6 +105,5 @@ class TogetherLauncher {
     required String pairId,
     required String partnerUid,
     required String videoUrl,
-  }) =>
-      open(context, pairId: pairId, videoUrl: videoUrl);
+  }) => open(context, pairId: pairId, videoUrl: videoUrl);
 }

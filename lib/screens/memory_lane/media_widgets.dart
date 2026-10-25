@@ -69,9 +69,7 @@ class _SpoilerRichTextState extends State<_SpoilerRichText> {
                 child: Text(
                   seg.text,
                   style: widget.style.copyWith(
-                    color: isRevealed
-                        ? widget.style.color
-                        : veil,
+                    color: isRevealed ? widget.style.color : veil,
                   ),
                 ),
               ),
@@ -388,13 +386,15 @@ class _YouTubeInlineCardState extends State<_YouTubeInlineCard> {
     // длинное видео гасло бы по системному таймеру.
     ScreenAwake.sync(
       this,
-      playing: value.playerState == ytp.PlayerState.playing ||
+      playing:
+          value.playerState == ytp.PlayerState.playing ||
           value.playerState == ytp.PlayerState.buffering,
     );
     final fullscreen = value.fullScreenOption.enabled;
     if (fullscreen != _wasFullscreen) {
       _wasFullscreen = fullscreen;
-      _playedBeforeFullscreen = value.playerState == ytp.PlayerState.playing ||
+      _playedBeforeFullscreen =
+          value.playerState == ytp.PlayerState.playing ||
           value.playerState == ytp.PlayerState.buffering;
       _settling = true;
       _fullscreenSettle?.cancel();
@@ -473,8 +473,9 @@ class _YouTubeInlineCardState extends State<_YouTubeInlineCard> {
                 extensions: <ThemeExtension<dynamic>>[
                   YoutubePlayerTheme(
                     progressBarActiveColor: theme.fillColor,
-                    progressBarBufferedColor:
-                        theme.fillColor.withValues(alpha: 0.4),
+                    progressBarBufferedColor: theme.fillColor.withValues(
+                      alpha: 0.4,
+                    ),
                   ),
                 ],
               ),
@@ -490,11 +491,11 @@ class _YouTubeInlineCardState extends State<_YouTubeInlineCard> {
       // Совместный просмотр: комната пары, ролик включается у обоих.
       onWatchTogether: widget.pairId.isNotEmpty && url.isNotEmpty
           ? () => TogetherLauncher.hostVideo(
-                context,
-                pairId: widget.pairId,
-                partnerUid: widget.partnerUid,
-                videoUrl: url,
-              )
+              context,
+              pairId: widget.pairId,
+              partnerUid: widget.partnerUid,
+              videoUrl: url,
+            )
           : null,
     );
   }
@@ -756,23 +757,21 @@ class _InAppVideoPlayerPageState extends State<InAppVideoPlayerPage> {
                         ),
                       )
                     : (_isInitialized && controller != null)
-                        ? Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              AspectRatio(
-                                aspectRatio: controller.value.aspectRatio,
-                                child: VideoPlayer(controller),
-                              ),
-                              // fork: D7 — индикатор буферизации на лету
-                              if (controller.value.isBuffering)
-                                const CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                            ],
-                          )
-                        : const CircularProgressIndicator(
-                            color: Colors.white,
+                    ? Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: controller.value.aspectRatio,
+                            child: VideoPlayer(controller),
                           ),
+                          // fork: D7 — индикатор буферизации на лету
+                          if (controller.value.isBuffering)
+                            const CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                        ],
+                      )
+                    : const CircularProgressIndicator(color: Colors.white),
               ),
 
               // ── Controls overlay ──
@@ -946,8 +945,9 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
   Widget build(BuildContext context) {
     final v = widget.controller.value;
     final durMs = v.duration.inMilliseconds;
-    final played =
-        durMs > 0 ? (v.position.inMilliseconds / durMs).clamp(0.0, 1.0) : 0.0;
+    final played = durMs > 0
+        ? (v.position.inMilliseconds / durMs).clamp(0.0, 1.0)
+        : 0.0;
     // Player caught up to where we dragged → drop the override (the next
     // controller-driven rebuild resumes painting the live position smoothly).
     if (_dragValue != null && (played - _dragValue!).abs() < 0.02) {

@@ -6,12 +6,22 @@ void main() {
     test('без ссылки фигурки нет — это обычное сообщение', () {
       expect(
         ShapeNote.fromFields(
-            url: '', ms: 5000, shape: 'heart', thumb: '', hearts: ''),
+          url: '',
+          ms: 5000,
+          shape: 'heart',
+          thumb: '',
+          hearts: '',
+        ),
         isNull,
       );
       expect(
         ShapeNote.fromFields(
-            url: null, ms: null, shape: null, thumb: null, hearts: null),
+          url: null,
+          ms: null,
+          shape: null,
+          thumb: null,
+          hearts: null,
+        ),
         isNull,
       );
     });

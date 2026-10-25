@@ -35,7 +35,9 @@ enum VoiceCallState {
 /// договариваться одновременно и не перебили друг друга, предложение делает
 /// тот, чей uid «больше». Второй ждёт и отвечает.
 class WatchVoiceService extends ChangeNotifier {
-  WatchVoiceService({required this.channel, required this.me,
+  WatchVoiceService({
+    required this.channel,
+    required this.me,
     Future<void> Function(bool)? setSpeakerphone,
   }) : _setSpeakerphone = setSpeakerphone ?? Helper.setSpeakerphoneOn;
 
@@ -44,7 +46,10 @@ class WatchVoiceService extends ChangeNotifier {
   bool _disposed = false;
 
   @override
-  void notifyListeners() { if (!_disposed) super.notifyListeners(); }
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
   bool get routing => _routing;
 
   final WatchChannel channel;
@@ -179,7 +184,9 @@ class WatchVoiceService extends ChangeNotifier {
     _setRinging('');
     try {
       await channel.send('voice-decline', extra: {'uid': me});
-    } catch (_) {/* канал мог закрыться */}
+    } catch (_) {
+      /* канал мог закрыться */
+    }
   }
 
   void _stopCalling() {
@@ -204,7 +211,8 @@ class WatchVoiceService extends ChangeNotifier {
     if (s == VoiceCallState.live && _liveSince == null) {
       _liveSince = DateTime.now();
       _talkPeer = _peer;
-    } else if ((s == VoiceCallState.off || s == VoiceCallState.failed) && _liveSince != null) {
+    } else if ((s == VoiceCallState.off || s == VoiceCallState.failed) &&
+        _liveSince != null) {
       final talked = DateTime.now().difference(_liveSince!);
       _liveSince = null;
       onCallEnded?.call(talked, _talkPeer);
@@ -231,7 +239,9 @@ class WatchVoiceService extends ChangeNotifier {
         },
         'video': false,
       });
-      for (final track in _local!.getAudioTracks()) { track.enabled = _micOn; }
+      for (final track in _local!.getAudioTracks()) {
+        track.enabled = _micOn;
+      }
       await _setSpeakerphone(_speakerOn);
       await ForkCallProximity.active(true);
       await _ensurePeer();
@@ -241,9 +251,11 @@ class WatchVoiceService extends ChangeNotifier {
       _setStage(answering ? VoiceStage.connecting : VoiceStage.calling); // fork
       // fork (UX L5): зов не ушёл — сразу говорим почему, а не ждём 45 с.
       if (!await channel.send('voice-hello', extra: {'uid': me})) {
-        await _fail(channel.lastFailure == ForkFailure.noKey
-            ? VoiceProblem.noKey
-            : VoiceProblem.network);
+        await _fail(
+          channel.lastFailure == ForkFailure.noKey
+              ? VoiceProblem.noKey
+              : VoiceProblem.network,
+        );
         return;
       }
       if (answering) _awaitConnection(); // fork
@@ -280,7 +292,9 @@ class WatchVoiceService extends ChangeNotifier {
     _pending.clear();
     try {
       await channel.send('voice-bye', extra: {'uid': me});
-    } catch (_) {/* канал мог уже закрыться */}
+    } catch (_) {
+      /* канал мог уже закрыться */
+    }
     await _local?.dispose();
     _local = null;
     await _remote?.dispose();
@@ -297,8 +311,9 @@ class WatchVoiceService extends ChangeNotifier {
   void toggleMic() {
     if (_stage == VoiceStage.idle && !active) return;
     _micOn = !_micOn;
-    for (final track in _local?.getAudioTracks() ?? const <MediaStreamTrack>[]) {
-    track.enabled = _micOn;
+    for (final track
+        in _local?.getAudioTracks() ?? const <MediaStreamTrack>[]) {
+      track.enabled = _micOn;
     }
     notifyListeners();
   }
@@ -359,17 +374,21 @@ class WatchVoiceService extends ChangeNotifier {
         }
         await _ensurePeer();
         await _pc!.setRemoteDescription(
-            RTCSessionDescription(msg['sdp']?.toString(), 'offer'));
+          RTCSessionDescription(msg['sdp']?.toString(), 'offer'),
+        );
         await _drainPending();
         final answer = await _pc!.createAnswer();
         await _pc!.setLocalDescription(answer);
-        await channel.send('voice-answer',
-            extra: {'uid': me, 'sdp': answer.sdp});
+        await channel.send(
+          'voice-answer',
+          extra: {'uid': me, 'sdp': answer.sdp},
+        );
         break;
       case 'voice-answer':
         if (_pc == null) return true;
         await _pc!.setRemoteDescription(
-            RTCSessionDescription(msg['sdp']?.toString(), 'answer'));
+          RTCSessionDescription(msg['sdp']?.toString(), 'answer'),
+        );
         await _drainPending();
         break;
       case 'voice-ice':
@@ -414,12 +433,15 @@ class WatchVoiceService extends ChangeNotifier {
 
     _pc!.onIceCandidate = (c) {
       if (c.candidate == null) return;
-      channel.send('voice-ice', extra: {
-        'uid': me,
-        'candidate': c.candidate,
-        'sdpMid': c.sdpMid,
-        'sdpMLineIndex': c.sdpMLineIndex,
-      });
+      channel.send(
+        'voice-ice',
+        extra: {
+          'uid': me,
+          'candidate': c.candidate,
+          'sdpMid': c.sdpMid,
+          'sdpMLineIndex': c.sdpMLineIndex,
+        },
+      );
     };
     _pc!.onTrack = (event) {
       if (event.streams.isEmpty) return;

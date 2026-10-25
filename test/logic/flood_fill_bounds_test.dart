@@ -26,7 +26,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('границы совпадают с закрашенным прямоугольником', () async {
-    final image = await _imageWithRect(100, 80, const Rect.fromLTWH(20, 10, 30, 25));
+    final image = await _imageWithRect(
+      100,
+      80,
+      const Rect.fromLTWH(20, 10, 30, 25),
+    );
     final bounds = await FloodFill.opaqueBounds(image);
     image.dispose();
 
@@ -38,7 +42,11 @@ void main() {
   });
 
   test('пятно у самого края не обрезается', () async {
-    final image = await _imageWithRect(40, 40, const Rect.fromLTWH(0, 0, 40, 40));
+    final image = await _imageWithRect(
+      40,
+      40,
+      const Rect.fromLTWH(0, 0, 40, 40),
+    );
     final bounds = await FloodFill.opaqueBounds(image);
     image.dispose();
 

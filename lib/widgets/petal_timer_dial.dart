@@ -251,7 +251,11 @@ class _PetalTimerDialState extends State<PetalTimerDial>
   }
 
   List<_PetalData> _computePetalsAt(DateTime now) {
-    final p = TimerParts.of(widget.startDate, now, countdown: widget.isCountdown);
+    final p = TimerParts.of(
+      widget.startDate,
+      now,
+      countdown: widget.isCountdown,
+    );
     if (identical(p, TimerParts.zero)) return _zeroPetals();
     final years = p.years, months = p.months, days = p.days;
     final hI = p.hours, minI = p.minutes, sI = p.seconds;
@@ -261,31 +265,31 @@ class _PetalTimerDialState extends State<PetalTimerDial>
         label: LocaleService.current.yearsLabel,
         value: years,
         maxValue: 100,
-        exactValue: years  + months / 12.0,
+        exactValue: years + months / 12.0,
       ),
       _PetalData(
         label: LocaleService.current.monthsShortLabel,
         value: months,
         maxValue: 12,
-        exactValue: months + days  / 30.0,
+        exactValue: months + days / 30.0,
       ),
       _PetalData(
         label: LocaleService.current.daysShortLabel,
         value: days,
         maxValue: 30,
-        exactValue: days   + hI   / 24.0,
+        exactValue: days + hI / 24.0,
       ),
       _PetalData(
         label: LocaleService.current.hoursLabel,
         value: hI,
         maxValue: 24,
-        exactValue: hI    + minI  / 60.0,
+        exactValue: hI + minI / 60.0,
       ),
       _PetalData(
         label: LocaleService.current.minLabel,
         value: minI,
         maxValue: 60,
-        exactValue: minI  + sI   / 60.0,
+        exactValue: minI + sI / 60.0,
       ),
       _PetalData(
         label: LocaleService.current.secLabel,
@@ -297,13 +301,43 @@ class _PetalTimerDialState extends State<PetalTimerDial>
   }
 
   List<_PetalData> _zeroPetals() => [
-        _PetalData(label: LocaleService.current.yearsLabel,       value: 0, maxValue: 100, exactValue: 0),
-        _PetalData(label: LocaleService.current.monthsShortLabel, value: 0, maxValue: 12,  exactValue: 0),
-        _PetalData(label: LocaleService.current.daysShortLabel,   value: 0, maxValue: 30,  exactValue: 0),
-        _PetalData(label: LocaleService.current.hoursLabel,       value: 0, maxValue: 24,  exactValue: 0),
-        _PetalData(label: LocaleService.current.minLabel,         value: 0, maxValue: 60,  exactValue: 0),
-        _PetalData(label: LocaleService.current.secLabel,         value: 0, maxValue: 60,  exactValue: 0),
-      ];
+    _PetalData(
+      label: LocaleService.current.yearsLabel,
+      value: 0,
+      maxValue: 100,
+      exactValue: 0,
+    ),
+    _PetalData(
+      label: LocaleService.current.monthsShortLabel,
+      value: 0,
+      maxValue: 12,
+      exactValue: 0,
+    ),
+    _PetalData(
+      label: LocaleService.current.daysShortLabel,
+      value: 0,
+      maxValue: 30,
+      exactValue: 0,
+    ),
+    _PetalData(
+      label: LocaleService.current.hoursLabel,
+      value: 0,
+      maxValue: 24,
+      exactValue: 0,
+    ),
+    _PetalData(
+      label: LocaleService.current.minLabel,
+      value: 0,
+      maxValue: 60,
+      exactValue: 0,
+    ),
+    _PetalData(
+      label: LocaleService.current.secLabel,
+      value: 0,
+      maxValue: 60,
+      exactValue: 0,
+    ),
+  ];
 
   /// Which petal index is at [localPos]? Returns -1 if outside the ring.
   int _petalIndexAt(Offset localPos) {
@@ -618,8 +652,10 @@ class _PetalDialPainter extends CustomPainter {
       }
 
       final textR = (innerR + outerR) / 2;
-      final txColor = petalTextColor(theme, factor)
-          .withValues(alpha: 0.95 * textAlpha);
+      final txColor = petalTextColor(
+        theme,
+        factor,
+      ).withValues(alpha: 0.95 * textAlpha);
 
       // Масштабируем размер текста пропорционально, но нелинейно (корень), чтобы не переборщить
       // При 1 лепестке рост будет около 2.45x вместо 6x
@@ -753,7 +789,10 @@ class _PetalDialPainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: AppFonts.onest(size: fontSize, color: color).copyWith(fontWeight: fontWeight),
+        style: AppFonts.onest(
+          size: fontSize,
+          color: color,
+        ).copyWith(fontWeight: fontWeight),
       ),
       textDirection: TextDirection.ltr,
     );

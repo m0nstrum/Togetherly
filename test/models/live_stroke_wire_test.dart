@@ -34,8 +34,11 @@ void main() {
       expect(packet['sid'], 's1');
       expect(packet['from'], 3);
       expect((packet['pts'] as List).length, 2);
-      expect(packet['points'], isNull,
-          reason: 'полный список в приросте — это и есть прежняя тяжесть');
+      expect(
+        packet['points'],
+        isNull,
+        reason: 'полный список в приросте — это и есть прежняя тяжесть',
+      );
     });
 
     test('ключевой кадр несёт всю линию — его читают старые сборки', () {
@@ -67,34 +70,57 @@ void main() {
   group('сборщик на стороне партнёра', () {
     test('склеивает приросты в одну линию', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 0, points: pts(2), meta: meta));
-      a.accept(LiveStrokeWire.increment(
-          sid: 's1', seq: 1, from: 2, points: pts(4).sublist(2), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(2), meta: meta),
+      );
+      a.accept(
+        LiveStrokeWire.increment(
+          sid: 's1',
+          seq: 1,
+          from: 2,
+          points: pts(4).sublist(2),
+          meta: meta,
+        ),
+      );
       expect(a.points.length, 4);
       expect(a.strokeId, 's1');
     });
 
     test('пакет не по порядку не рвёт линию — ждём ключевой кадр', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 0, points: pts(2), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(2), meta: meta),
+      );
       // Прирост с дырой: точек 2, а пакет начинается с пятой.
-      a.accept(LiveStrokeWire.increment(
-          sid: 's1', seq: 5, from: 5, points: pts(6).sublist(5), meta: meta));
-      expect(a.points.length, 2, reason: 'дыру не заполняем выдуманными точками');
+      a.accept(
+        LiveStrokeWire.increment(
+          sid: 's1',
+          seq: 5,
+          from: 5,
+          points: pts(6).sublist(5),
+          meta: meta,
+        ),
+      );
+      expect(
+        a.points.length,
+        2,
+        reason: 'дыру не заполняем выдуманными точками',
+      );
 
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 6, points: pts(6), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 6, points: pts(6), meta: meta),
+      );
       expect(a.points.length, 6, reason: 'ключевой кадр чинит потерю');
     });
 
     test('новый мазок сбрасывает прежний', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 0, points: pts(4), meta: meta));
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's2', seq: 0, points: pts(1), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(4), meta: meta),
+      );
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's2', seq: 0, points: pts(1), meta: meta),
+      );
       expect(a.strokeId, 's2');
       expect(a.points.length, 1);
     });
@@ -120,24 +146,36 @@ void main() {
 
     test('финал отдаёт готовый штрих партнёра', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 0, points: pts(3), meta: meta));
-      a.accept(LiveStrokeWire.done(
-          sid: 's1', seq: 1, points: pts(4), meta: meta, orderIndex: 7));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: meta),
+      );
+      a.accept(
+        LiveStrokeWire.done(
+          sid: 's1',
+          seq: 1,
+          points: pts(4),
+          meta: meta,
+          orderIndex: 7,
+        ),
+      );
       expect(a.done, isTrue);
       final stroke = a.buildStroke('partner-uid');
       expect(stroke, isNotNull);
       expect(stroke!.points.length, 4);
       expect(stroke.orderIndex, 7);
-      expect(stroke.id, 'live_s1',
-          reason: 'по этому id запись из базы заменит оптимистичный штрих');
+      expect(
+        stroke.id,
+        'live_s1',
+        reason: 'по этому id запись из базы заменит оптимистичный штрих',
+      );
       expect(stroke.colorValue, 0xFF112233);
     });
 
     test('живой штрих отдаётся прямо во время мазка', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 0, points: pts(3), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: meta),
+      );
       final live = a.buildLive('partner-uid');
       expect(live, isNotNull);
       expect(live!.points.length, 3);
@@ -148,15 +186,22 @@ void main() {
 
     test('пустой мазок живым штрихом не притворяется', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 0, points: const [], meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(
+          sid: 's1',
+          seq: 0,
+          points: const [],
+          meta: meta,
+        ),
+      );
       expect(a.buildLive('partner-uid'), isNull);
     });
 
     test('без финала штрих не строится', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(
-          sid: 's1', seq: 0, points: pts(3), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: meta),
+      );
       expect(a.buildStroke('partner-uid'), isNull);
     });
   });
@@ -176,13 +221,28 @@ void main() {
 
     test('слой едет в пакете и доходит до живой линии', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: onSecond));
+      a.accept(
+        LiveStrokeWire.keyframe(
+          sid: 's1',
+          seq: 0,
+          points: pts(3),
+          meta: onSecond,
+        ),
+      );
       expect(a.buildLive('partner-uid', fallbackLayer: 5)!.layer, 2);
     });
 
     test('законченный мазок сразу ложится в свой слой', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.done(sid: 's1', seq: 1, points: pts(3), meta: onSecond, orderIndex: 7));
+      a.accept(
+        LiveStrokeWire.done(
+          sid: 's1',
+          seq: 1,
+          points: pts(3),
+          meta: onSecond,
+          orderIndex: 7,
+        ),
+      );
       final stroke = a.buildStroke('partner-uid', fallbackLayer: 5)!;
       expect(stroke.layer, 2);
       expect(stroke.isEraser, isTrue);
@@ -190,7 +250,9 @@ void main() {
 
     test('старая сборка слоя не шлёт — линия встаёт в запасной слой', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: meta),
+      );
       expect(a.buildLive('partner-uid', fallbackLayer: 5)!.layer, 5);
     });
 
@@ -212,22 +274,47 @@ void main() {
 
     test('кисть едет в каждом пакете и доходит до живой линии', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: marker));
+      a.accept(
+        LiveStrokeWire.keyframe(
+          sid: 's1',
+          seq: 0,
+          points: pts(3),
+          meta: marker,
+        ),
+      );
       expect(a.buildLive('partner-uid')!.brush, StrokeBrush.marker);
-      a.accept(LiveStrokeWire.increment(sid: 's1', seq: 1, from: 3, points: pts(2, base: 0.5), meta: marker));
+      a.accept(
+        LiveStrokeWire.increment(
+          sid: 's1',
+          seq: 1,
+          from: 3,
+          points: pts(2, base: 0.5),
+          meta: marker,
+        ),
+      );
       expect(a.buildLive('partner-uid')!.brush, StrokeBrush.marker);
     });
 
     test('законченный мазок остаётся маркером', () {
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.done(sid: 's1', seq: 2, points: pts(3), meta: marker, orderIndex: 4));
+      a.accept(
+        LiveStrokeWire.done(
+          sid: 's1',
+          seq: 2,
+          points: pts(3),
+          meta: marker,
+          orderIndex: 4,
+        ),
+      );
       expect(a.buildStroke('partner-uid')!.brush, StrokeBrush.marker);
     });
 
     test('старая сборка кисть не шлёт — партнёр рисует пером', () {
       expect(meta.toMap().containsKey('brush'), isFalse);
       final a = LiveStrokeAssembler();
-      a.accept(LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: meta));
+      a.accept(
+        LiveStrokeWire.keyframe(sid: 's1', seq: 0, points: pts(3), meta: meta),
+      );
       expect(a.buildLive('partner-uid')!.brush, StrokeBrush.pen);
     });
   });

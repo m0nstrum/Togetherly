@@ -18,24 +18,32 @@ void main() {
       addTearDown(tester.view.reset);
       final theme = AppThemes.byIndex(6);
       final key = GlobalKey();
-      await tester.pumpWidget(RepaintBoundary(
-        key: key,
-        child: MaterialApp(
-          theme: ProfileTheme.data(ProfileTheme.schemeFor(theme)),
-          home: MediaQuery(
-            data: MediaQueryData(size: Size(w, 700), textScaler: TextScaler.linear(scale)),
-            child: GiftShopScreen(theme: theme, groupId: 'g', coins: 25),
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: MaterialApp(
+            theme: ProfileTheme.data(ProfileTheme.schemeFor(theme)),
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(w, 700),
+                textScaler: TextScaler.linear(scale),
+              ),
+              child: GiftShopScreen(theme: theme, groupId: 'g', coins: 25),
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump(const Duration(milliseconds: 500));
       expect(tester.takeException(), isNull);
       await tester.runAsync(() async {
-        final b = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final b =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final img = await b.toImage(pixelRatio: 2);
         final data = await img.toByteData(format: ui.ImageByteFormat.png);
         Directory('build/gift-shop').createSync(recursive: true);
-        File('build/gift-shop/shop_${w.toInt()}_$scale.png').writeAsBytesSync(data!.buffer.asUint8List());
+        File(
+          'build/gift-shop/shop_${w.toInt()}_$scale.png',
+        ).writeAsBytesSync(data!.buffer.asUint8List());
       });
     });
   }

@@ -99,7 +99,9 @@ abstract final class ForkPushRelay {
   }) {
     final at = int.tryParse('${data['at'] ?? ''}') ?? 0;
     final age = now().difference(DateTime.fromMillisecondsSinceEpoch(at));
-    if (at <= 0 || age.abs() > (touch ? const Duration(minutes: 2) : watchFresh)) return;
+    if (at <= 0 ||
+        age.abs() > (touch ? const Duration(minutes: 2) : watchFresh))
+      return;
     notify(
       'fork_${touch ? 'touch' : 'watch'}${data['group_id'] ?? ''}'.hashCode,
       touch

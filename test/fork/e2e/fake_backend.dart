@@ -113,7 +113,9 @@ class FakeBackend implements E2EBackend {
     return LinkRecord(
       id: id,
       uid: j['user_uid'] as String,
-      device: DeviceEntry.fromJson((j['device'] as Map).cast<String, dynamic>()),
+      device: DeviceEntry.fromJson(
+        (j['device'] as Map).cast<String, dynamic>(),
+      ),
       mac: unb64(j['mac'] as String),
       payload: j['payload'] as String? ?? '',
     );
@@ -122,7 +124,8 @@ class FakeBackend implements E2EBackend {
   @override
   Future<void> putLinkPayload(String id, String payload) async {
     final j = db.links[id];
-    if (j == null || j['user_uid'] != viewer) throw StateError('сервер: нет привязки');
+    if (j == null || j['user_uid'] != viewer)
+      throw StateError('сервер: нет привязки');
     j['payload'] = payload;
   }
 

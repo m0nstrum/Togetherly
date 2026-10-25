@@ -53,8 +53,8 @@ class MoodOption {
       final suffix = gender == 'male'
           ? '_m'
           : gender == 'female'
-              ? '_f'
-              : '';
+          ? '_f'
+          : '';
       if (suffix.isNotEmpty) {
         final form = entry['${LocaleService.instance.language.code}$suffix'];
         if (form != null && form.isNotEmpty) return form;
@@ -645,8 +645,9 @@ class MoodEntry {
     required this.timestamp,
     this.zone = '',
     DateTime? authorDate,
-  }) : authorDate = authorDate ??
-            DateTime(timestamp.year, timestamp.month, timestamp.day);
+  }) : authorDate =
+           authorDate ??
+           DateTime(timestamp.year, timestamp.month, timestamp.day);
 
   Color get color => MoodOption.byId(moodId)?.color ?? const Color(0xFF9CA3AF);
   int get score => MoodOption.byId(moodId)?.score ?? 3;
@@ -715,7 +716,8 @@ class MoodEntry {
     final byDay = <String, MoodEntry>{};
     for (final e in entries) {
       final cur = byDay[e.dayKey];
-      if (cur == null || e.timestamp.isAfter(cur.timestamp)) byDay[e.dayKey] = e;
+      if (cur == null || e.timestamp.isAfter(cur.timestamp))
+        byDay[e.dayKey] = e;
     }
     return byDay.values.toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));

@@ -42,27 +42,31 @@ void main() {
     final labels = trackLabels(track, s, s.dayLogDate);
 
     Widget card(TogetherCardSize size) => TogetherTrackCard(
-          size: size,
-          days: track.days,
-          daysLabel: s.tgDaysTogetherCaption(track.days),
-          percent: track.percent,
-          roles: roles,
-          startDate: 'С ${s.dayLogDate(start)} ${start.year}',
-          names: 'THET1ME + JB SHARAN',
-          previousTitle: labels.previousTitle,
-          previousSub: labels.previousSub,
-          todayTitle: labels.todayTitle,
-          todaySub: labels.todaySub,
-          nextTitle: labels.nextTitle,
-          nextSub: labels.nextSub,
-          anniversaryTitle: labels.anniversaryTitle,
-          anniversarySub: labels.anniversarySub,
-          myAvatar: _face('Т', roles['avatarMine']!, roles['onPrimaryContainer']!),
-          partnerAvatar:
-              _face('Ш', roles['avatarPartner']!, roles['onTertiaryContainer']!),
-        );
+      size: size,
+      days: track.days,
+      daysLabel: s.tgDaysTogetherCaption(track.days),
+      percent: track.percent,
+      roles: roles,
+      startDate: 'С ${s.dayLogDate(start)} ${start.year}',
+      names: 'THET1ME + JB SHARAN',
+      previousTitle: labels.previousTitle,
+      previousSub: labels.previousSub,
+      todayTitle: labels.todayTitle,
+      todaySub: labels.todaySub,
+      nextTitle: labels.nextTitle,
+      nextSub: labels.nextSub,
+      anniversaryTitle: labels.anniversaryTitle,
+      anniversarySub: labels.anniversarySub,
+      myAvatar: _face('Т', roles['avatarMine']!, roles['onPrimaryContainer']!),
+      partnerAvatar: _face(
+        'Ш',
+        roles['avatarPartner']!,
+        roles['onTertiaryContainer']!,
+      ),
+    );
 
-    final out = Directory('build/together-preview')..createSync(recursive: true);
+    final out = Directory('build/together-preview')
+      ..createSync(recursive: true);
     for (final (name, size, w, h) in [
       ('small', TogetherCardSize.small, 160.0, 160.0),
       ('medium', TogetherCardSize.medium, 338.0, 158.0),
@@ -93,9 +97,9 @@ void main() {
             key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 3);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-        File('${out.path}/$name.png').writeAsBytesSync(
-          bytes!.buffer.asUint8List(),
-        );
+        File(
+          '${out.path}/$name.png',
+        ).writeAsBytesSync(bytes!.buffer.asUint8List());
       });
     }
 
@@ -104,15 +108,15 @@ void main() {
 }
 
 Widget _face(String initial, Color bg, Color fg) => Container(
-      decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-      alignment: Alignment.center,
-      child: Text(
-        initial,
-        style: TextStyle(
-          fontFamily: 'Onest',
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          color: fg,
-        ),
-      ),
-    );
+  decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+  alignment: Alignment.center,
+  child: Text(
+    initial,
+    style: TextStyle(
+      fontFamily: 'Onest',
+      fontSize: 12,
+      fontWeight: FontWeight.w800,
+      color: fg,
+    ),
+  ),
+);

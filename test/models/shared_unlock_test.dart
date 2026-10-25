@@ -14,17 +14,17 @@ void main() {
     });
 
     test('Список ключей разбирается', () {
-      final owned = GroupMascotState.parseOwned(['mascot:kuku', 'mascot:migun']);
+      final owned = GroupMascotState.parseOwned([
+        'mascot:kuku',
+        'mascot:migun',
+      ]);
       expect(owned, {'mascot:kuku', 'mascot:migun'});
     });
 
     test('Строка json разбирается так же', () {
       // PocketBase отдаёт json-поле то списком, то строкой — смотря пришло оно
       // по сети или поднялось из офлайн-кэша.
-      expect(
-        GroupMascotState.parseOwned('["mascot:kuku"]'),
-        {'mascot:kuku'},
-      );
+      expect(GroupMascotState.parseOwned('["mascot:kuku"]'), {'mascot:kuku'});
     });
 
     test('Мусор не роняет разбор', () {
@@ -39,10 +39,7 @@ void main() {
     const key = 'mascot:kuku';
 
     test('Купил сам — открыт', () {
-      expect(
-        paid.isUnlocked(level: 1, owned: true, plus: false),
-        isTrue,
-      );
+      expect(paid.isUnlocked(level: 1, owned: true, plus: false), isTrue);
     });
 
     test('Купил партнёр — открыт и мне', () {

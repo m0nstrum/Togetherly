@@ -17,7 +17,13 @@ enum ChestPrizeKind { coins, gift, plus, frame, badge, plusTrial }
 enum ChestTier { common, rare, legendary }
 
 class ChestPrize {
-  const ChestPrize({required this.key, required this.kind, required this.weight, required this.tier, this.amount = 0});
+  const ChestPrize({
+    required this.key,
+    required this.kind,
+    required this.weight,
+    required this.tier,
+    this.amount = 0,
+  });
 
   /// `coins5`, ключ подарка из [GiftCatalog.chest], `plus` или id рамки и
   /// значка в каталоге (`frame_cat`, `badge_kitty`).
@@ -34,12 +40,16 @@ class ChestPrize {
   Gift? get gift => kind == ChestPrizeKind.gift ? GiftCatalog.byKey(key) : null;
 
   /// Ключ рамки аватарки (`cat` из `frame_cat`); у прочих призов null.
-  String? get frameKey => kind == ChestPrizeKind.frame && key.startsWith('frame_') ? key.substring(6) : null;
+  String? get frameKey =>
+      kind == ChestPrizeKind.frame && key.startsWith('frame_')
+      ? key.substring(6)
+      : null;
 
   AvatarFrame? get frame => AvatarFrame.byKey(frameKey);
 
   /// Значок-жилец из сундука; у прочих призов null.
-  ProfileIcon? get badge => kind == ChestPrizeKind.badge ? ProfileIcon.byCatalogId(key) : null;
+  ProfileIcon? get badge =>
+      kind == ChestPrizeKind.badge ? ProfileIcon.byCatalogId(key) : null;
 
   static ChestPrize? fromJson(Map<String, dynamic> j) {
     final kind = switch (j['kind']) {
@@ -106,7 +116,12 @@ class ChestState {
 
   /// То же состояние с другим остатком и ещё одним призом дня — после
   /// удачного открытия, без лишнего запроса.
-  ChestState afterOpen({required int left, int? untilRare, PairJar? jar, ChestPrize? prize}) => ChestState(
+  ChestState afterOpen({
+    required int left,
+    int? untilRare,
+    PairJar? jar,
+    ChestPrize? prize,
+  }) => ChestState(
     left: left,
     perDay: perDay,
     odds: odds,
@@ -155,11 +170,19 @@ class ChestState {
 /// `chest.pb.js`. Пул делится поровну между всеми предметами редкости
 /// (подарки сундука, рамки и значки из каталога), поэтому подарок, рамка и
 /// значок одной редкости выпадают одинаково.
-const Map<String, int> kChestTierPools = {'common': 252, 'rare': 144, 'legendary': 36};
+const Map<String, int> kChestTierPools = {
+  'common': 252,
+  'rare': 144,
+  'legendary': 36,
+};
 
 /// Цена продажи подарка из запаса по редкости — зеркало `SELL` в
 /// `chest.pb.js`. Столько же, сколько монетные призы того же яруса.
-const Map<String, int> kChestSellPrice = {'common': 5, 'rare': 10, 'legendary': 25};
+const Map<String, int> kChestSellPrice = {
+  'common': 5,
+  'rare': 10,
+  'legendary': 25,
+};
 
 /// Редкость подарков обычного сундука — зеркало `SELL_TIER` и `GIFTS`.
 const Map<String, String> _chestGiftTier = {
@@ -189,7 +212,11 @@ const int kChestPity = 10;
 /// Вес одного предмета в запасной таблице: пул, делённый на число предметов
 /// редкости в каталоге на 28.09.2026 (обычных 12, редких 16, легендарных 9).
 /// Настоящий вес считает сервер по живому каталогу.
-const Map<ChestTier, int> _fallbackItemWeight = {ChestTier.common: 21, ChestTier.rare: 9, ChestTier.legendary: 4};
+const Map<ChestTier, int> _fallbackItemWeight = {
+  ChestTier.common: 21,
+  ChestTier.rare: 9,
+  ChestTier.legendary: 4,
+};
 
 /// Запасная таблица, пока сервер не ответил: монеты, Плюс и подарки сундука
 /// (рамок и значков без каталога показать нечем). Всё, что не разложено, —
@@ -211,18 +238,53 @@ List<ChestPrize> fallbackChestOdds({required bool withPlus}) {
   };
   final gifts = [
     for (final e in tiers.entries)
-      ChestPrize(key: e.key, kind: ChestPrizeKind.gift, weight: _fallbackItemWeight[e.value]!, tier: e.value),
+      ChestPrize(
+        key: e.key,
+        kind: ChestPrizeKind.gift,
+        weight: _fallbackItemWeight[e.value]!,
+        tier: e.value,
+      ),
   ];
   final rest = [
-    const ChestPrize(key: 'coins10', kind: ChestPrizeKind.coins, amount: 10, weight: 180, tier: ChestTier.common),
-    const ChestPrize(key: 'coins25', kind: ChestPrizeKind.coins, amount: 25, weight: 75, tier: ChestTier.rare),
-    if (withPlus) const ChestPrize(key: 'plus', kind: ChestPrizeKind.plus, weight: 1, tier: ChestTier.legendary),
+    const ChestPrize(
+      key: 'coins10',
+      kind: ChestPrizeKind.coins,
+      amount: 10,
+      weight: 180,
+      tier: ChestTier.common,
+    ),
+    const ChestPrize(
+      key: 'coins25',
+      kind: ChestPrizeKind.coins,
+      amount: 25,
+      weight: 75,
+      tier: ChestTier.rare,
+    ),
     if (withPlus)
-      const ChestPrize(key: 'plus7', kind: ChestPrizeKind.plusTrial, amount: 7, weight: 10, tier: ChestTier.legendary),
+      const ChestPrize(
+        key: 'plus',
+        kind: ChestPrizeKind.plus,
+        weight: 1,
+        tier: ChestTier.legendary,
+      ),
+    if (withPlus)
+      const ChestPrize(
+        key: 'plus7',
+        kind: ChestPrizeKind.plusTrial,
+        amount: 7,
+        weight: 10,
+        tier: ChestTier.legendary,
+      ),
   ];
   final used = [...gifts, ...rest].fold<int>(0, (t, p) => t + p.weight);
   return [
-    ChestPrize(key: 'coins5', kind: ChestPrizeKind.coins, amount: 5, weight: 1000 - used, tier: ChestTier.common),
+    ChestPrize(
+      key: 'coins5',
+      kind: ChestPrizeKind.coins,
+      amount: 5,
+      weight: 1000 - used,
+      tier: ChestTier.common,
+    ),
     rest[0],
     ...gifts.where((g) => g.tier == ChestTier.common),
     rest[1],
@@ -234,7 +296,11 @@ List<ChestPrize> fallbackChestOdds({required bool withPlus}) {
 
 /// Доля приза от всей таблицы строкой: «35%», «2,5%». Десятичный знак — по
 /// языку ([decimal]), ноль после запятой не пишется.
-String chestPercent(ChestPrize p, List<ChestPrize> all, {String decimal = ','}) {
+String chestPercent(
+  ChestPrize p,
+  List<ChestPrize> all, {
+  String decimal = ',',
+}) {
   final total = all.fold<int>(0, (t, e) => t + e.weight);
   if (total <= 0) return '0%';
   final tenths = (p.weight * 1000 / total).round();
@@ -246,7 +312,9 @@ String chestPercent(ChestPrize p, List<ChestPrize> all, {String decimal = ','}) 
 /// — как пришло с сервера. Пустой ярус не попадает.
 List<(ChestTier, List<ChestPrize>)> chestTiers(List<ChestPrize> odds) => [
   for (final t in ChestTier.values)
-    if (odds.where((p) => p.tier == t).toList() case final list when list.isNotEmpty) (t, list),
+    if (odds.where((p) => p.tier == t).toList() case final list
+        when list.isNotEmpty)
+      (t, list),
 ];
 
 /// Разделы списка шансов на экране сундука. Togetherly+ стоит отдельно в
@@ -254,9 +322,13 @@ List<(ChestTier, List<ChestPrize>)> chestTiers(List<ChestPrize> odds) => [
 /// сундуке, им сундук и привлекает (решение заказчика 27.09.2026). Дальше —
 /// ярусы по [chestTiers] уже без него. Нет Плюса в таблице — нет и раздела.
 List<(ChestTier?, List<ChestPrize>)> chestSections(List<ChestPrize> odds) {
-  bool isPlus(ChestPrize p) => p.kind == ChestPrizeKind.plus || p.kind == ChestPrizeKind.plusTrial;
+  bool isPlus(ChestPrize p) =>
+      p.kind == ChestPrizeKind.plus || p.kind == ChestPrizeKind.plusTrial;
   final top = odds.where(isPlus).toList();
-  return [if (top.isNotEmpty) (null, top), ...chestTiers(odds.where((p) => !isPlus(p)).toList())];
+  return [
+    if (top.isNotEmpty) (null, top),
+    ...chestTiers(odds.where((p) => !isPlus(p)).toList()),
+  ];
 }
 
 /// Где стоит приз в кадрах открытия сундука: `[x, y, сторона]` в долях
@@ -337,13 +409,16 @@ const List<List<double>?> kChestPrizeTrack = [
 
 /// Последнее положение приза над открытым сундуком — так он лежит на
 /// карточке «Поделиться».
-final List<double> kChestPrizeRest = kChestPrizeTrack.lastWhere((s) => s != null)!;
+final List<double> kChestPrizeRest = kChestPrizeTrack.lastWhere(
+  (s) => s != null,
+)!;
 
 /// Ярус приза на карточке «Поделиться»: ключ строки и выделять ли его
 /// заливкой. Плюс — «Главный приз», как в списке шансов; легендарное тоже
 /// выделено — им и хвастаются.
 (String, bool) chestShareTier(ChestPrize p) {
-  if (p.kind == ChestPrizeKind.plus || p.kind == ChestPrizeKind.plusTrial) return ('chestTierTop', true);
+  if (p.kind == ChestPrizeKind.plus || p.kind == ChestPrizeKind.plusTrial)
+    return ('chestTierTop', true);
   return switch (p.tier) {
     ChestTier.legendary => ('chestShareLegendary', true),
     ChestTier.rare => ('chestShareRare', false),

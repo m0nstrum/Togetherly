@@ -202,15 +202,20 @@ class _SnapCaptureScreenState extends State<SnapCaptureScreen>
                     IconButton(
                       tooltip: ruEn('Закрыть', 'Close'),
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
                     ),
                     const Spacer(),
                     if (_cameras.length > 1)
                       IconButton(
                         tooltip: ruEn('Переключить камеру', 'Switch camera'),
                         onPressed: _flip,
-                        icon: const Icon(Icons.cameraswitch_rounded,
-                            color: Colors.white),
+                        icon: const Icon(
+                          Icons.cameraswitch_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                   ],
                 ),
@@ -218,7 +223,10 @@ class _SnapCaptureScreenState extends State<SnapCaptureScreen>
                 Text(
                   _recording ? s.snapRecording : s.snapHoldToRecord,
                   style: AppFonts.onest(
-                      size: 14, weight: 600, color: Colors.white),
+                    size: 14,
+                    weight: 600,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 GestureDetector(

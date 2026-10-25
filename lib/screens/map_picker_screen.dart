@@ -11,7 +11,6 @@ import '../services/locale_service.dart';
 import '../theme/theme_scope.dart';
 import '../services/map/map_tiles.dart';
 
-
 // ─── Data class ─────────────────────────────────────────────────────────────
 class _PlaceResult {
   final String displayName;
@@ -94,7 +93,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         setState(() => _address = parts.join(', '));
       }
     } catch (_) {
-      if (mounted) setState(() => _address = LocaleService.current.selectedLocation);
+      if (mounted)
+        setState(() => _address = LocaleService.current.selectedLocation);
     }
     if (mounted) setState(() => _loadingAddr = false);
   }
@@ -116,12 +116,20 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     _debounce?.cancel();
     final t = q.trim();
     if (t.isEmpty) {
-      setState(() { _suggestions = []; _showSugg = false; _searching = false; });
+      setState(() {
+        _suggestions = [];
+        _showSugg = false;
+        _searching = false;
+      });
       return;
     }
     // If it looks like coordinates, don't trigger Nominatim search
     if (_parseCoords(t) != null) {
-      setState(() { _suggestions = []; _showSugg = false; _searching = false; });
+      setState(() {
+        _suggestions = [];
+        _showSugg = false;
+        _searching = false;
+      });
       return;
     }
     if (t.length < 2) return;
@@ -153,12 +161,17 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     setState(() => _searching = true);
     _nominatim(t).then((results) {
       if (!mounted) return;
-      setState(() { _searching = false; });
+      setState(() {
+        _searching = false;
+      });
       if (results.isNotEmpty) {
         if (results.length == 1) {
           _selectPlace(results.first);
         } else {
-          setState(() { _suggestions = results; _showSugg = true; });
+          setState(() {
+            _suggestions = results;
+            _showSugg = true;
+          });
         }
       }
     });
@@ -197,7 +210,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         perm = await Geolocator.requestPermission();
       }
       if (perm == LocationPermission.denied ||
-          perm == LocationPermission.deniedForever) return;
+          perm == LocationPermission.deniedForever)
+        return;
       final pos = await Geolocator.getCurrentPosition();
       final loc = LatLng(pos.latitude, pos.longitude);
       if (!mounted) return;
@@ -231,23 +245,37 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         'limit': '7',
         'addressdetails': '1',
       });
-      final resp = await http.get(uri, headers: {
-        'User-Agent': 'Togetherly/1.0 (love app)',
-        'Accept-Language': 'ru,en',
-      }).timeout(const Duration(seconds: 8));
+      final resp = await http
+          .get(
+            uri,
+            headers: {
+              'User-Agent': 'Togetherly/1.0 (love app)',
+              'Accept-Language': 'ru,en',
+            },
+          )
+          .timeout(const Duration(seconds: 8));
       if (resp.statusCode != 200) return [];
       final data = json.decode(resp.body) as List<dynamic>;
       return data.map((d) {
         final displayName = d['display_name'] as String;
         final addr = (d['address'] as Map<String, dynamic>?) ?? {};
         final shortParts = <String>[];
-        final poi = addr['amenity'] ?? addr['tourism'] ?? addr['shop'] ??
-            addr['leisure'] ?? addr['building'] ?? '';
+        final poi =
+            addr['amenity'] ??
+            addr['tourism'] ??
+            addr['shop'] ??
+            addr['leisure'] ??
+            addr['building'] ??
+            '';
         if (poi != '') shortParts.add(poi as String);
         final road = addr['road'] ?? addr['pedestrian'] ?? addr['street'] ?? '';
         if (road != '') shortParts.add(road as String);
-        final city = addr['city'] ?? addr['town'] ?? addr['village'] ??
-            addr['municipality'] ?? '';
+        final city =
+            addr['city'] ??
+            addr['town'] ??
+            addr['village'] ??
+            addr['municipality'] ??
+            '';
         if (city != '') shortParts.add(city as String);
         final country = addr['country'] ?? '';
         if (country != '') shortParts.add(country as String);
@@ -383,7 +411,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             style: AppFonts.onest(size: 13),
                             decoration: InputDecoration(
                               hintText: LocaleService.current.placeOrCoordsHint,
-                              hintStyle: AppFonts.onest(size: 13, color: t.textMuted),
+                              hintStyle: AppFonts.onest(
+                                size: 13,
+                                color: t.textMuted,
+                              ),
                               prefixIcon: _searching
                                   ? Padding(
                                       padding: const EdgeInsets.all(13),
@@ -419,8 +450,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                     )
                                   : null,
                               border: InputBorder.none,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 13),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 13,
+                              ),
                             ),
                           ),
                         ),
@@ -457,7 +489,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             const SizedBox(width: 8),
                             Text(
                               LocaleService.current.goToCoordinates,
-                              style: AppFonts.onest(size: 13, weight: 600, color: primary),
+                              style: AppFonts.onest(
+                                size: 13,
+                                weight: 600,
+                                color: primary,
+                              ),
                             ),
                             const Spacer(),
                             Icon(
@@ -486,10 +522,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                         child: ListView.separated(
                           shrinkWrap: true,
                           itemCount: _suggestions.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            color: t.divider,
-                          ),
+                          separatorBuilder: (_, __) =>
+                              Divider(height: 1, color: t.divider),
                           itemBuilder: (_, i) {
                             final p = _suggestions[i];
                             return InkWell(
@@ -514,13 +548,20 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                         children: [
                                           Text(
                                             p.shortName,
-                                            style: AppFonts.onest(size: 13, weight: 600, color: t.textPrimary),
+                                            style: AppFonts.onest(
+                                              size: 13,
+                                              weight: 600,
+                                              color: t.textPrimary,
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           Text(
                                             p.displayName,
-                                            style: AppFonts.onest(size: 11, color: t.textMuted),
+                                            style: AppFonts.onest(
+                                              size: 11,
+                                              color: t.textMuted,
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -570,8 +611,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: t.cardSurface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               padding: EdgeInsets.fromLTRB(20, 14, 20, bottom + 16),
               child: Column(
@@ -596,8 +638,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           color: primary.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child:
-                            Icon(Icons.location_on_rounded, color: primary, size: 18),
+                        child: Icon(
+                          Icons.location_on_rounded,
+                          color: primary,
+                          size: 18,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -615,7 +660,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                   const SizedBox(width: 8),
                                   Text(
                                     LocaleService.current.gettingAddress,
-                                    style: AppFonts.onest(size: 13, color: t.textMuted),
+                                    style: AppFonts.onest(
+                                      size: 13,
+                                      color: t.textMuted,
+                                    ),
                                   ),
                                 ],
                               )
@@ -623,11 +671,17 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                 _address.isNotEmpty
                                     ? _address
                                     : LocaleService.current.tapOnMapToSelect,
-                                style: AppFonts.onest(size: 14, color: _address.isNotEmpty
-                                      ? t.textPrimary
-                                      : t.textMuted).copyWith(fontWeight: _address.isNotEmpty
-                                      ? FontWeight.w600
-                                      : FontWeight.w400),
+                                style:
+                                    AppFonts.onest(
+                                      size: 14,
+                                      color: _address.isNotEmpty
+                                          ? t.textPrimary
+                                          : t.textMuted,
+                                    ).copyWith(
+                                      fontWeight: _address.isNotEmpty
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                    ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),

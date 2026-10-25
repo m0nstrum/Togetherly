@@ -34,7 +34,9 @@ bool isNetworkNoise(Object error) {
       s.contains('Connection refused') ||
       s.contains('Connection failed') ||
       s.contains('Connection terminated') ||
-      s.contains('Connection abort') || // вкл. "Software caused connection abort"
+      s.contains(
+        'Connection abort',
+      ) || // вкл. "Software caused connection abort"
       s.contains('Network is unreachable') ||
       s.contains('Connection timed out') ||
       s.contains('Operation timed out') ||
@@ -134,7 +136,8 @@ bool isRoutineRouteRefusal(Object error) {
 /// 19.10.2026 на 1.37, приложение при этом живо. Пакет транзитивный, поэтому
 /// узнаём его отмену по имени типа и тексту.
 bool isCancelledMapJob(Object error) =>
-    error.runtimeType.toString() == 'CancellationException' && error.toString() == 'Cancelled';
+    error.runtimeType.toString() == 'CancellationException' &&
+    error.toString() == 'Cancelled';
 
 /// Событие вообще не стоит слать в Bugsink.
 bool isCrashNoise(Object error) =>

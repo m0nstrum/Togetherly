@@ -40,7 +40,9 @@ MissWidgetCard _card(MissCardSize size, {int mine = 1000, int partner = 198}) =>
 
 void main() {
   testWidgets('четырёхзначный счёт не вылезает из плитки 4×2', (tester) async {
-    await tester.pumpWidget(_host(_card(MissCardSize.medium), width: 300, height: 142));
+    await tester.pumpWidget(
+      _host(_card(MissCardSize.medium), width: 300, height: 142),
+    );
     await tester.pump();
 
     expect(tester.takeException(), isNull);
@@ -49,20 +51,26 @@ void main() {
   });
 
   testWidgets('узкая карточка 2×2 держит тот же счёт', (tester) async {
-    await tester.pumpWidget(_host(_card(MissCardSize.small), width: 150, height: 150));
+    await tester.pumpWidget(
+      _host(_card(MissCardSize.small), width: 150, height: 150),
+    );
     await tester.pump();
 
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('полоска 4×1 не переполняется', (tester) async {
-    await tester.pumpWidget(_host(_card(MissCardSize.strip), width: 300, height: 70));
+    await tester.pumpWidget(
+      _host(_card(MissCardSize.strip), width: 300, height: 70),
+    );
     await tester.pump();
 
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('шестизначный счёт сокращается, а не ломает плитку', (tester) async {
+  testWidgets('шестизначный счёт сокращается, а не ломает плитку', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(_card(MissCardSize.medium, mine: 123456), width: 300, height: 142),
     );

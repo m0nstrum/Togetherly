@@ -52,10 +52,15 @@ class CelebrationNotificationService {
       android: androidSettings,
       iOS: iosSettings,
     );
-    await _plugin.initialize(settings: settings, onDidReceiveNotificationResponse: ForkNotifTap.onResponse); // fork
+    await _plugin.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
+    ); // fork
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
@@ -68,7 +73,8 @@ class CelebrationNotificationService {
     if (Platform.isIOS) {
       await _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     }
 
@@ -104,7 +110,9 @@ class CelebrationNotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (anniversaryDate != null) {
       await prefs.setInt(
-          _keyAnniversaryMs, anniversaryDate.millisecondsSinceEpoch);
+        _keyAnniversaryMs,
+        anniversaryDate.millisecondsSinceEpoch,
+      );
     } else {
       await prefs.remove(_keyAnniversaryMs);
     }
@@ -114,7 +122,9 @@ class CelebrationNotificationService {
       await prefs.remove(_keyBirthdayMs);
     }
     await _rescheduleAll(
-        anniversaryDate: anniversaryDate, birthDate: birthDate);
+      anniversaryDate: anniversaryDate,
+      birthDate: birthDate,
+    );
   }
 
   /// Пересчитывает расписание из SharedPreferences (вызывается при старте приложения).
@@ -129,10 +139,12 @@ class CelebrationNotificationService {
     final annMs = prefs.getInt(_keyAnniversaryMs);
     final bdMs = prefs.getInt(_keyBirthdayMs);
     await _rescheduleAll(
-      anniversaryDate:
-          annMs != null ? DateTime.fromMillisecondsSinceEpoch(annMs) : null,
-      birthDate:
-          bdMs != null ? DateTime.fromMillisecondsSinceEpoch(bdMs) : null,
+      anniversaryDate: annMs != null
+          ? DateTime.fromMillisecondsSinceEpoch(annMs)
+          : null,
+      birthDate: bdMs != null
+          ? DateTime.fromMillisecondsSinceEpoch(bdMs)
+          : null,
     );
   }
 
@@ -143,8 +155,10 @@ class CelebrationNotificationService {
     if (!await isEnabled()) return;
     await init();
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     // Общий сериализатор: не падаем на параллельном запросе (permissionRequestInProgress).
     await requestNotificationPermissionSafely(androidPlugin);
 
@@ -218,9 +232,11 @@ class CelebrationNotificationService {
     try {
       final now = tz.TZDateTime.now(tz.local);
       // Вычисляем целевую дату с учётом смещения daysOffset.
-      DateTime target = DateTime(now.year, month, day).add(
-        Duration(days: daysOffset),
-      );
+      DateTime target = DateTime(
+        now.year,
+        month,
+        day,
+      ).add(Duration(days: daysOffset));
       // Если дата уже прошла в этом году — берём следующий год.
       var scheduled = tz.TZDateTime(
         tz.local,
@@ -232,9 +248,11 @@ class CelebrationNotificationService {
       );
       if (scheduled.isBefore(now)) {
         // Следующий год: пересчитываем от базовой даты + 1 год.
-        target = DateTime(now.year + 1, month, day).add(
-          Duration(days: daysOffset),
-        );
+        target = DateTime(
+          now.year + 1,
+          month,
+          day,
+        ).add(Duration(days: daysOffset));
         scheduled = tz.TZDateTime(
           tz.local,
           target.year,
@@ -267,9 +285,7 @@ class CelebrationNotificationService {
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
-      debugPrint(
-        'CelebrationNotif: scheduled id=$id at $scheduled ($title)',
-      );
+      debugPrint('CelebrationNotif: scheduled id=$id at $scheduled ($title)');
     } catch (e) {
       debugPrint('CelebrationNotificationService._scheduleAnnual failed: $e');
     }

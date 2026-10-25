@@ -18,11 +18,7 @@ import '../mood_image.dart';
 /// поверхность с прозрачностью, а не заливается в полную силу. Иначе блок
 /// кричит громче самой сетки, ради которой открывают экран.
 class MoodRingStats extends StatefulWidget {
-  const MoodRingStats({
-    super.key,
-    required this.counts,
-    required this.scheme,
-  });
+  const MoodRingStats({super.key, required this.counts, required this.scheme});
 
   final Map<String, int> counts;
   final ColorScheme scheme;
@@ -37,7 +33,9 @@ class _MoodRingStatsState extends State<MoodRingStats> {
   /// Мягкий тон настроения: тот же приём, что у клеток сетки.
   static Color soften(Color color, ColorScheme scheme, {double alpha = 0.55}) =>
       Color.alphaBlend(
-          color.withValues(alpha: alpha), scheme.surfaceContainerHighest);
+        color.withValues(alpha: alpha),
+        scheme.surfaceContainerHighest,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -69,13 +67,18 @@ class _MoodRingStatsState extends State<MoodRingStats> {
                       Text(
                         '${summary.brightPercent}%',
                         style: AppFonts.unbounded(
-                            size: 21, weight: 600, color: cs.onSurface),
+                          size: 21,
+                          weight: 600,
+                          color: cs.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         ruEn('светлых', 'bright'),
                         style: AppFonts.onest(
-                            size: 11.5, color: cs.onSurfaceVariant),
+                          size: 11.5,
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -119,13 +122,16 @@ class _MoodRingStatsState extends State<MoodRingStats> {
                 foregroundColor: cs.onSecondaryContainer,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               child: Text(
                 _expanded
                     ? ruEn('Свернуть', 'Collapse')
-                    : ruEn('Ещё ${summary.restCount}',
-                        '${summary.restCount} more'),
+                    : ruEn(
+                        'Ещё ${summary.restCount}',
+                        '${summary.restCount} more',
+                      ),
                 style: AppFonts.onest(size: 13.5, weight: 600),
               ),
             ),
@@ -151,8 +157,10 @@ class _MoodChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final mood = slice.option;
     final tint = _MoodRingStatsState.soften(
-        mood?.color ?? scheme.outlineVariant, scheme,
-        alpha: 0.35);
+      mood?.color ?? scheme.outlineVariant,
+      scheme,
+      alpha: 0.35,
+    );
 
     return Container(
       width: compact ? null : double.infinity,
@@ -173,7 +181,8 @@ class _MoodChip extends StatelessWidget {
             // подложки. Клипаем по кругу, а не подгоняем каждую вручную.
             child: mood != null && mood.imagePath.isNotEmpty
                 ? ClipOval(
-                    child: MoodImage(mood.imagePath, width: 24, height: 24))
+                    child: MoodImage(mood.imagePath, width: 24, height: 24),
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
@@ -184,7 +193,10 @@ class _MoodChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppFonts.onest(
-                    size: 13, weight: 600, color: scheme.onSurface),
+                  size: 13,
+                  weight: 600,
+                  color: scheme.onSurface,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -192,7 +204,10 @@ class _MoodChip extends StatelessWidget {
           Text(
             '${slice.percent}%',
             style: AppFonts.onest(
-                size: 13, weight: 700, color: scheme.onSurface),
+              size: 13,
+              weight: 700,
+              color: scheme.onSurface,
+            ),
           ),
         ],
       ),
@@ -218,8 +233,12 @@ class _RingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(_stroke / 2, _stroke / 2,
-        size.width - _stroke, size.height - _stroke);
+    final rect = Rect.fromLTWH(
+      _stroke / 2,
+      _stroke / 2,
+      size.width - _stroke,
+      size.height - _stroke,
+    );
     final base = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = _stroke
@@ -238,7 +257,9 @@ class _RingPainter extends CustomPainter {
         ..strokeWidth = _stroke
         ..strokeCap = StrokeCap.round
         ..color = _MoodRingStatsState.soften(
-            slice.option?.color ?? scheme.outlineVariant, scheme);
+          slice.option?.color ?? scheme.outlineVariant,
+          scheme,
+        );
       canvas.drawArc(rect, start, sweep, false, paint);
       start += sweep + _gap;
     }

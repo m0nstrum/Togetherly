@@ -241,40 +241,45 @@ void main() {
           newId: newPbId,
         ),
       )..authStore.save(env['SMOKE_BTOK']!, null);
-      await bobFull.collection('wishes').update(
-        wish.id,
-        body: {
-          'done': true,
-          'done_at': DateTime.utc(2026, 10, 25).toIso8601String(),
-          'done_by': b.uid,
-          'also': b.uid,
-        },
-      );
-      final marked = await chat(env['SMOKE_ATOK']!, a)
+      await bobFull
           .collection('wishes')
-          .getOne(wish.id);
+          .update(
+            wish.id,
+            body: {
+              'done': true,
+              'done_at': DateTime.utc(2026, 10, 25).toIso8601String(),
+              'done_by': b.uid,
+              'also': b.uid,
+            },
+          );
+      final marked = await chat(
+        env['SMOKE_ATOK']!,
+        a,
+      ).collection('wishes').getOne(wish.id);
       expect(marked.getBoolValue('done'), isTrue);
       expect(marked.getStringValue('also'), b.uid);
       expect(marked.getIntValue('price'), 990);
       expect(marked.getStringValue('done_at'), startsWith('2026-10-25'));
       // «Другое желание недели» ставит и партнёр; срок «Дарю» — шифром.
-      await bobFull.collection('wishes').update(
-        wish.id,
-        body: {'skip': '2026-W43', 'memory': 'mem123'},
-      );
-      final shared = await chat(env['SMOKE_ATOK']!, a)
+      await bobFull
           .collection('wishes')
-          .getOne(wish.id);
+          .update(wish.id, body: {'skip': '2026-W43', 'memory': 'mem123'});
+      final shared = await chat(
+        env['SMOKE_ATOK']!,
+        a,
+      ).collection('wishes').getOne(wish.id);
       expect(shared.getStringValue('skip'), '2026-W43');
       expect(shared.getStringValue('memory'), 'mem123');
-      final res = await bobChat.collection('wish_reservations').create(
-        body: {
-          'group_id': pair,
-          'wish_id': wish.id,
-          'uid': b.uid,
-          'until': '2026-11-03',
-        },
-      );
+      final res = await bobChat
+          .collection('wish_reservations')
+          .create(
+            body: {
+              'group_id': pair,
+              'wish_id': wish.id,
+              'uid': b.uid,
+              'until': '2026-11-03',
+            },
+          );
       expect(
         (await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
                 .collection('wish_reservations')
@@ -288,24 +293,28 @@ void main() {
         '2026-11-03',
       );
       // Комментарий партнёра — шифром; удалённое желание уносит его.
-      final comment = await bobChat.collection('wish_comments').create(
-        body: {
-          'group_id': pair,
-          'wish_id': wish.id,
-          'author_uid': b.uid,
-          'text': 'в пятницу?',
-        },
-      );
+      final comment = await bobChat
+          .collection('wish_comments')
+          .create(
+            body: {
+              'group_id': pair,
+              'wish_id': wish.id,
+              'author_uid': b.uid,
+              'text': 'в пятницу?',
+            },
+          );
       final rawComment =
           await (PocketBase(url)..authStore.save(env['SMOKE_ATOK']!, null))
               .collection('wish_comments')
               .getOne(comment.id);
       expect(rawComment.getStringValue('text'), startsWith(e2eFieldPrefix));
       expect(
-        (await chat(env['SMOKE_ATOK']!, a)
-                .collection('wish_comments')
-                .getOne(comment.id))
-            .getStringValue('text'),
+        (await chat(
+          env['SMOKE_ATOK']!,
+          a,
+        ).collection('wish_comments').getOne(comment.id)).getStringValue(
+          'text',
+        ),
         'в пятницу?',
       );
       await chat(env['SMOKE_ATOK']!, a).collection('wishes').delete(wish.id);
@@ -444,8 +453,11 @@ void main() {
         b.currentKey(pair)!.key.extractBytes(),
       );
       await b.syncGroup(pair);
-      expect(b.status.value[pair], PairE2EStatus.verified,
-          reason: 'новое устройство того же аккаунта — без смены ключа');
+      expect(
+        b.status.value[pair],
+        PairE2EStatus.verified,
+        reason: 'новое устройство того же аккаунта — без смены ключа',
+      );
     },
     skip: base == null
         ? 'нужен сервер: запускайте через server/scripts/smoke.sh'

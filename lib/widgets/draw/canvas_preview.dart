@@ -88,13 +88,19 @@ class CanvasPreviewPainter extends CustomPainter {
     final size = _sheetSize(tile);
     canvas.save();
     canvas.clipRect(Offset.zero & tile);
-    canvas.translate((tile.width - size.width) / 2, (tile.height - size.height) / 2);
+    canvas.translate(
+      (tile.width - size.width) / 2,
+      (tile.height - size.height) / 2,
+    );
 
     // Каждый слой рисунка — в своём saveLayer: ластик снимает краску только
     // своего слоя и не выедает ни нижние слои, ни подложку плитки. Тот же
     // приём, что на холсте и в повторе (20.10.2026).
     for (final layer in layersOf(visible)) {
-      final own = [for (final s in visible) if (s.layer == layer) s];
+      final own = [
+        for (final s in visible)
+          if (s.layer == layer) s,
+      ];
       // Буфер нужен только слою с ластиком: остальной ложится прямо на плитку.
       final erases = own.any((s) => s.isEraser);
       if (erases) canvas.saveLayer(Offset.zero & size, Paint());
@@ -115,7 +121,13 @@ class CanvasPreviewPainter extends CustomPainter {
     return Size(tile.height * ratio, tile.height);
   }
 
-  void _paintLayer(Canvas canvas, Size size, List<DrawStroke> visible, int? cols, int? rows) {
+  void _paintLayer(
+    Canvas canvas,
+    Size size,
+    List<DrawStroke> visible,
+    int? cols,
+    int? rows,
+  ) {
     for (final s in visible) {
       if (s.isImageStroke) {
         // Заливка и фото лежат в том же порядке, что и линии: так же, как на
@@ -245,8 +257,10 @@ class _CanvasPreviewState extends State<CanvasPreview> {
     // одного запроса, а иначе человек видит пустую карточку и думает, что
     // холст пустой.
     if (loaded.isEmpty && widget.groupId.isNotEmpty) {
-      loaded = await CanvasRepository.instance
-          .previewStrokes(widget.groupId, widget.meta.id);
+      loaded = await CanvasRepository.instance.previewStrokes(
+        widget.groupId,
+        widget.meta.id,
+      );
     }
 
     _cache[_key] = loaded;

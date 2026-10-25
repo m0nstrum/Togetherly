@@ -60,8 +60,7 @@ class _ZhStrings extends _EnStrings {
   @override
   String registrationError(String e) => '注册出错：$e';
   @override
-  String passwordResetSent(String email) =>
-      '重置密码的邮件已发送到 $email，请查看收件箱和垃圾邮件。';
+  String passwordResetSent(String email) => '重置密码的邮件已发送到 $email，请查看收件箱和垃圾邮件。';
 
   // ── Главная ──
   @override
@@ -75,8 +74,7 @@ class _ZhStrings extends _EnStrings {
   @override
   String moodPackAuthor(String name) => '画师：$name';
   @override
-  String partnerAilmentBanner(String name, String label) =>
-      '$name 不太舒服：$label';
+  String partnerAilmentBanner(String name, String label) => '$name 不太舒服：$label';
   @override
   String moodDateLabel(String dateLabel) => '心情 · $dateLabel';
   @override

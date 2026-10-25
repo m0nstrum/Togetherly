@@ -47,15 +47,13 @@ class PbMediaService {
     String? uid,
     String? groupId,
     String? kind,
-  }) async =>
-      (await uploadBytesWithReason(
-        bytes,
-        filename,
-        uid: uid,
-        groupId: groupId,
-        kind: kind,
-      ))
-          .ref;
+  }) async => (await uploadBytesWithReason(
+    bytes,
+    filename,
+    uid: uid,
+    groupId: groupId,
+    kind: kind,
+  )).ref;
 
   /// То же, что [uploadBytes], но при отказе говорит причину
   /// ([classifyUploadError]): экрану нужно отличать обрыв сети от истёкшей
@@ -107,7 +105,9 @@ class PbMediaService {
         lastError = e;
         final code = e is ClientException ? e.statusCode : null;
         if (attempt == 2 || !uploadWorthRetry(code)) break;
-        debugPrint('PbMedia.uploadBytes: попытка $attempt не прошла ($e) — повтор');
+        debugPrint(
+          'PbMedia.uploadBytes: попытка $attempt не прошла ($e) — повтор',
+        );
         await Future<void>.delayed(const Duration(seconds: 2));
       }
     }
@@ -124,21 +124,30 @@ class PbMediaService {
     // Обрыв сети и протухшая сессия — не баги: первое лечит повтор, второе
     // вход. Их в панель не шлём, чтобы не топить настоящие отказы.
     if (!uploadErrorWorthReporting(e)) return UploadOutcome.failed(failure);
-    unawaited(Sentry.captureException(e, withScope: (s) {
-      s.level = SentryLevel.warning;
-      s.setExtra('reason', 'PbMedia.uploadBytes failed');
-      s.setExtra('kind', kind ?? '(none)');
-      // Размер и срок: по ним видно, упёрлись мы в потолок или сеть молчала.
-      s.setExtra('bytes', bytes.length.toString());
-      s.setExtra('timeoutSeconds', limit.inSeconds.toString());
-      s.setExtra('hasUid', (uid != null && uid.isNotEmpty).toString());
-      s.setExtra('hasGroupId', (groupId != null && groupId.isNotEmpty).toString());
-      s.setExtra('loggedIn', loggedIn.toString());
-      s.setExtra('filename', filename);
-      s.setExtra('failure', failure.name);
-      if (statusCode != null) s.setExtra('statusCode', statusCode.toString());
-      if (response != null) s.setExtra('pbResponse', response);
-    }));
+    unawaited(
+      Sentry.captureException(
+        e,
+        withScope: (s) {
+          s.level = SentryLevel.warning;
+          s.setExtra('reason', 'PbMedia.uploadBytes failed');
+          s.setExtra('kind', kind ?? '(none)');
+          // Размер и срок: по ним видно, упёрлись мы в потолок или сеть молчала.
+          s.setExtra('bytes', bytes.length.toString());
+          s.setExtra('timeoutSeconds', limit.inSeconds.toString());
+          s.setExtra('hasUid', (uid != null && uid.isNotEmpty).toString());
+          s.setExtra(
+            'hasGroupId',
+            (groupId != null && groupId.isNotEmpty).toString(),
+          );
+          s.setExtra('loggedIn', loggedIn.toString());
+          s.setExtra('filename', filename);
+          s.setExtra('failure', failure.name);
+          if (statusCode != null)
+            s.setExtra('statusCode', statusCode.toString());
+          if (response != null) s.setExtra('pbResponse', response);
+        },
+      ),
+    );
     return UploadOutcome.failed(failure);
   }
 
@@ -159,7 +168,13 @@ class PbMediaService {
       }
       final bytes = await file.readAsBytes();
       final filename = localPath.split(Platform.pathSeparator).last;
-      return await uploadBytes(bytes, filename, uid: uid, groupId: groupId, kind: kind);
+      return await uploadBytes(
+        bytes,
+        filename,
+        uid: uid,
+        groupId: groupId,
+        kind: kind,
+      );
     } catch (e) {
       debugPrint('PbMedia.uploadFile($localPath) failed: $e');
       return null;

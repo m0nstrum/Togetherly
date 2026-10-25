@@ -70,10 +70,9 @@ class ApnsService {
     final uid = svc.userId;
     if (uid == null || uid.isEmpty || !svc.isLoggedIn) return;
     try {
-      await svc.pb.collection('users').update(uid, body: {
-        'apns_token': token,
-        'apns_sandbox': kDebugMode,
-      });
+      await svc.pb
+          .collection('users')
+          .update(uid, body: {'apns_token': token, 'apns_sandbox': kDebugMode});
       debugPrint('ApnsService: токен устройства записан в профиль');
     } catch (e) {
       debugPrint('ApnsService: токен не записался — $e');

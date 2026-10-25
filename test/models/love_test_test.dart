@@ -38,8 +38,8 @@ void main() {
     // утверждения вытянулись, — только от их граней.
     final round = pickLoveRound(random: Random(1));
     Map<int, int> answers(int weight) => {
-          for (var i = 0; i < round.length; i++) i: weight,
-        };
+      for (var i = 0; i < round.length; i++) i: weight,
+    };
 
     test('все ответы «почти всегда» — сто по каждой грани', () {
       final r = scoreLoveRound(round, answers(100));
@@ -70,8 +70,11 @@ void main() {
 
     test('незаконченный тест результата не даёт', () {
       final a = answers(67)..remove(3);
-      expect(scoreLoveRound(round, a), isNull,
-          reason: 'пропуск сделал бы фигуру, которая врёт формой');
+      expect(
+        scoreLoveRound(round, a),
+        isNull,
+        reason: 'пропуск сделал бы фигуру, которая врёт формой',
+      );
     });
 
     test('чужие веса не принимаются', () {
@@ -136,7 +139,11 @@ void main() {
         takenAt: DateTime(2026, 8, 18),
       );
       final pair = comparePair(mine, theirs);
-      expect(pair.closest, LoveFacet.mutuality, reason: '66 и 68 — разница два');
+      expect(
+        pair.closest,
+        LoveFacet.mutuality,
+        reason: '66 и 68 — разница два',
+      );
       expect(pair.widest, LoveFacet.passion, reason: '52 и 83 — разница 31');
       expect(pair.gapOf(LoveFacet.passion), 31);
     });

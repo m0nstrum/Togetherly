@@ -54,15 +54,23 @@ void main() {
       expect(q['name'], 'Саша');
     });
 
-    test('совместная лента открывается своей страницей, а не поверх комнаты', () {
-      final url = WatchRoomService.siteUrl('abcd2345', reels: true, feed: 'tiktok', name: 'Аня');
-      final u = Uri.parse(url);
-      expect(u.path, '/watch/reels/');
-      expect(u.queryParameters['feed'], 'tiktok');
-      expect(u.queryParameters['name'], 'Аня');
-      expect(u.queryParameters.containsKey('reels'), isFalse);
-      expect(u.fragment, 'abcd2345');
-    });
+    test(
+      'совместная лента открывается своей страницей, а не поверх комнаты',
+      () {
+        final url = WatchRoomService.siteUrl(
+          'abcd2345',
+          reels: true,
+          feed: 'tiktok',
+          name: 'Аня',
+        );
+        final u = Uri.parse(url);
+        expect(u.path, '/watch/reels/');
+        expect(u.queryParameters['feed'], 'tiktok');
+        expect(u.queryParameters['name'], 'Аня');
+        expect(u.queryParameters.containsKey('reels'), isFalse);
+        expect(u.fragment, 'abcd2345');
+      },
+    );
 
     test('пустое имя в адрес не попадает', () {
       expect(
@@ -146,7 +154,10 @@ void main() {
     });
 
     test('чужая страница без видео комнате не годится', () {
-      expect(WatchVideosService.playsInRoom('https://example.org/page'), isFalse);
+      expect(
+        WatchVideosService.playsInRoom('https://example.org/page'),
+        isFalse,
+      );
       expect(WatchVideosService.playsInRoom(''), isFalse);
       expect(WatchVideosService.playsInRoom('не ссылка'), isFalse);
     });

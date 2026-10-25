@@ -27,7 +27,8 @@ void main() {
   setUp(() {
     tmp = io.Directory.systemTemp.createTempSync('banner_cache');
     server = FakeBannerServer(
-        (url) => 'GIF89a ${Uri.parse(url).path}'.codeUnits);
+      (url) => 'GIF89a ${Uri.parse(url).path}'.codeUnits,
+    );
     cache = open();
   });
 
@@ -35,15 +36,19 @@ void main() {
 
   const gif = 'pb://media/rec1/profile.gif';
 
-  test('качает один раз, дальше берёт с диска, хотя срок свежести вышел',
-      () async {
-    final first = await cache.file(gif);
-    final second = await cache.file(gif);
-    expect(server.downloads, hasLength(1));
-    expect(first, isNotNull);
-    expect(await second!.readAsString(),
-        'GIF89a /api/files/media/rec1/profile.gif');
-  });
+  test(
+    'качает один раз, дальше берёт с диска, хотя срок свежести вышел',
+    () async {
+      final first = await cache.file(gif);
+      final second = await cache.file(gif);
+      expect(server.downloads, hasLength(1));
+      expect(first, isNotNull);
+      expect(
+        await second!.readAsString(),
+        'GIF89a /api/files/media/rec1/profile.gif',
+      );
+    },
+  );
 
   test('после перезапуска приложения тоже не качает', () async {
     await cache.file(gif);

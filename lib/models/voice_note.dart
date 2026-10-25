@@ -48,9 +48,7 @@ class VoicePeaks {
     if (clean.length < count) {
       return List<double>.filled(count, 0.35);
     }
-    final take = clean.length == count
-        ? clean
-        : _resampleStrings(clean, count);
+    final take = clean.length == count ? clean : _resampleStrings(clean, count);
     return take.map((c) => _digits.indexOf(c) / 9).toList();
   }
 
@@ -62,7 +60,9 @@ class VoicePeaks {
       // Замеров меньше, чем столбиков (короткая запись) — растягиваем, повторяя
       // соседа: ступеньки честнее, чем интерполяция несуществующего звука.
       return List<double>.generate(
-          target, (i) => src[(i * src.length ~/ target).clamp(0, src.length - 1)]);
+        target,
+        (i) => src[(i * src.length ~/ target).clamp(0, src.length - 1)],
+      );
     }
     final out = <double>[];
     final step = src.length / target;
@@ -80,7 +80,9 @@ class VoicePeaks {
 
   static List<String> _resampleStrings(List<String> src, int target) =>
       List<String>.generate(
-          target, (i) => src[(i * src.length ~/ target).clamp(0, src.length - 1)]);
+        target,
+        (i) => src[(i * src.length ~/ target).clamp(0, src.length - 1)],
+      );
 }
 
 /// Голосовое сообщение внутри записи чата: ссылка, длительность, волна.

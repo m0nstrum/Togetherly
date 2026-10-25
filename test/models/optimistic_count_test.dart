@@ -28,23 +28,21 @@ void main() {
       expect(c.display, 11);
     });
 
-
     // Жалоба 13 августа 2026: «Скучаю откатывается на предыдущие состояния».
     // Счётчик пары только растёт, а `confirm` слепо принимал любое число с
     // сервера. Между офлайн-кэшем, отставшим снимком realtime и повторным
     // чтением до людей доезжало старое значение — и число прыгало назад на
     // глазах.
     test('устаревший снимок не откатывает число назад', () {
-      final c = OptimisticCount(confirmed: 577)
-          .confirm(561, now: t0);
+      final c = OptimisticCount(confirmed: 577).confirm(561, now: t0);
       expect(c.display, 577);
       expect(c.confirmed, 577);
     });
 
     test('после тапа устаревший снимок тоже не роняет счёт', () {
-      final c = OptimisticCount(confirmed: 577)
-          .tap(t0)
-          .confirm(570, now: t0.add(const Duration(seconds: 1)));
+      final c = OptimisticCount(
+        confirmed: 577,
+      ).tap(t0).confirm(570, now: t0.add(const Duration(seconds: 1)));
       expect(c.display, 578);
     });
 
@@ -60,9 +58,9 @@ void main() {
     });
 
     test('подтверждение сервера снимает ожидание, число не прыгает', () {
-      final c = OptimisticCount(confirmed: 10)
-          .tap(t0)
-          .confirm(11, now: t0.add(const Duration(seconds: 1)));
+      final c = OptimisticCount(
+        confirmed: 10,
+      ).tap(t0).confirm(11, now: t0.add(const Duration(seconds: 1)));
       expect(c.display, 11);
       expect(c.pending, 0);
     });
@@ -97,17 +95,17 @@ void main() {
     });
 
     test('свежее ожидание переподписка не сбрасывает', () {
-      final c = OptimisticCount(confirmed: 10)
-          .tap(t0)
-          .confirm(10, now: t0.add(const Duration(seconds: 1)));
+      final c = OptimisticCount(
+        confirmed: 10,
+      ).tap(t0).confirm(10, now: t0.add(const Duration(seconds: 1)));
       expect(c.display, 11);
       expect(c.pending, 1);
     });
 
     test('число никогда не уходит вниз от подтверждённого', () {
-      final c = OptimisticCount(confirmed: 10)
-          .tap(t0)
-          .confirm(12, now: t0.add(const Duration(seconds: 1)));
+      final c = OptimisticCount(
+        confirmed: 10,
+      ).tap(t0).confirm(12, now: t0.add(const Duration(seconds: 1)));
       // Партнёрское устройство добавило свои импульсы: сервер обогнал нас на
       // два, ожидание снято целиком, отрицательных остатков нет.
       expect(c.display, 12);

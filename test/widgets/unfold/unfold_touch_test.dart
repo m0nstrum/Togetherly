@@ -15,26 +15,26 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
 
 /// Список с одной кнопкой: вокруг неё прокрутка со своим слушателем касаний.
 Widget _listWithButton({VoidCallback? onTap}) => ListView(
-      children: [
-        const SizedBox(height: 120),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: GestureDetector(
-              onTap: onTap ?? () {},
-              child: Container(
-                key: _button,
-                width: 140,
-                height: 48,
-                color: Colors.teal,
-              ),
-            ),
+  children: [
+    const SizedBox(height: 120),
+    Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 40),
+        child: GestureDetector(
+          onTap: onTap ?? () {},
+          child: Container(
+            key: _button,
+            width: 140,
+            height: 48,
+            color: Colors.teal,
           ),
         ),
-        const SizedBox(height: 1200),
-      ],
-    );
+      ),
+    ),
+    const SizedBox(height: 1200),
+  ],
+);
 
 void main() {
   late DateTime now;
@@ -87,11 +87,13 @@ void main() {
     expect(UnfoldTouch.take(), isNull);
   });
 
-  testWidgets('палец ещё лежит (долгое нажатие) — место годится',
-      (tester) async {
+  testWidgets('палец ещё лежит (долгое нажатие) — место годится', (
+    tester,
+  ) async {
     await _pump(tester, _listWithButton());
-    final gesture =
-        await tester.startGesture(tester.getCenter(find.byKey(_button)));
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(_button)),
+    );
     now = now.add(const Duration(seconds: 2));
 
     expect(UnfoldTouch.take(), isNotNull);
@@ -128,8 +130,9 @@ void main() {
     expect(spot.rect(null), tester.getRect(find.byKey(_button)));
   });
 
-  testWidgets('круг внутри зоны нажатия: местом становится сам круг',
-      (tester) async {
+  testWidgets('круг внутри зоны нажатия: местом становится сам круг', (
+    tester,
+  ) async {
     const circle = ValueKey<String>('circle');
     await _pump(
       tester,
@@ -146,7 +149,9 @@ void main() {
                 width: 40,
                 height: 40,
                 decoration: const BoxDecoration(
-                    color: Colors.indigo, shape: BoxShape.circle),
+                  color: Colors.indigo,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
           ),
@@ -160,14 +165,16 @@ void main() {
     expect(spot.radius, 20);
   });
 
-  testWidgets('без формы скругление — половина короткой стороны, не больше 24',
-      (tester) async {
-    await _pump(tester, _listWithButton());
-    await tester.tap(find.byKey(_button));
+  testWidgets(
+    'без формы скругление — половина короткой стороны, не больше 24',
+    (tester) async {
+      await _pump(tester, _listWithButton());
+      await tester.tap(find.byKey(_button));
 
-    // Кнопка 140×48 залита `ColoredBox`: формы у него не спросить.
-    expect(UnfoldTouch.take()!.radius, 24);
-  });
+      // Кнопка 140×48 залита `ColoredBox`: формы у него не спросить.
+      expect(UnfoldTouch.take()!.radius, 24);
+    },
+  );
 
   testWidgets('экран целиком местом не считается', (tester) async {
     await _pump(
@@ -200,7 +207,8 @@ void main() {
 
     Future<void> pumpThumb(WidgetTester tester, {bool veiled = false}) async {
       photo = (await tester.runAsync(
-          () => createTestImage(width: 40, height: 30)))!;
+        () => createTestImage(width: 40, height: 30),
+      ))!;
       addTearDown(photo.dispose);
       Widget thumb = ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -214,7 +222,9 @@ void main() {
       if (veiled) thumb = UnfoldVeiled(child: thumb);
       await _pump(
         tester,
-        Center(child: GestureDetector(onTap: () {}, child: thumb)),
+        Center(
+          child: GestureDetector(onTap: () {}, child: thumb),
+        ),
       );
     }
 

@@ -12,14 +12,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('витрина Togetherly+ открывается только за проверкой доступа', () {
     final gateRe = RegExp(
-        r'PlusGate|PlusService\.instance\.(gate|visible|active)|plusVisible|'
-        r'plusGate|shouldShowPlusPromo|_gate');
+      r'PlusGate|PlusService\.instance\.(gate|visible|active)|plusVisible|'
+      r'plusGate|shouldShowPlusPromo|_gate',
+    );
     final offenders = <String>[];
 
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       if (file.path.endsWith('plus_screen.dart')) continue; // сама витрина
       final source = file.readAsStringSync();
       if (!source.contains('PlusScreen(')) continue;
@@ -30,7 +32,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'переход на витрину без проверки доступности — на iPhone это '
+      reason:
+          'переход на витрину без проверки доступности — на iPhone это '
           'реджект 3.1.1: ${offenders.join(', ')}',
     );
   });

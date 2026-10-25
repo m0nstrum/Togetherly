@@ -21,9 +21,15 @@ void main() {
     // них. Пропустит одно — у части людей доля останется прошлой.
     // Минимальная сборка, «Подарки» и «Хочу с тобой» — три чтения конфига
     // на старте.
-    final room = "RoomWindowFlag.ingest(res.items.first.data['room_native_ios']);".allMatches(data).length;
+    final room =
+        "RoomWindowFlag.ingest(res.items.first.data['room_native_ios']);"
+            .allMatches(data)
+            .length;
     expect(room, greaterThanOrEqualTo(3));
-    expect(read('lib/screens/home_screen.dart'), contains('RoomWindowFlag.restore()'));
+    expect(
+      read('lib/screens/home_screen.dart'),
+      contains('RoomWindowFlag.restore()'),
+    );
   });
 
   test('вход решает правилом и передаёт экрану окно и сборку', () {
@@ -36,12 +42,20 @@ void main() {
   test('окно открывается поверх экрана, а не вместо него', () {
     // FULL_SCREEN снимает экран Flutter с показа: приложение считает себя
     // свёрнутым, гасит отрисовку и присутствие, звонок в комнате рвётся.
-    expect(screen, contains('presentationStyle: ModalPresentationStyle.OVER_FULL_SCREEN'));
+    expect(
+      screen,
+      contains('presentationStyle: ModalPresentationStyle.OVER_FULL_SCREEN'),
+    );
     expect(screen, isNot(contains('ModalPresentationStyle.FULL_SCREEN')));
   });
 
   test('панели браузера спрятаны: шапку рисует страница', () {
-    for (final line in ['hideToolbarTop: true', 'hideUrlBar: true', 'hideProgressBar: true', 'hideCloseButton: true']) {
+    for (final line in [
+      'hideToolbarTop: true',
+      'hideUrlBar: true',
+      'hideProgressBar: true',
+      'hideCloseButton: true',
+    ]) {
       expect(screen, contains(line), reason: line);
     }
   });
@@ -63,10 +77,16 @@ void main() {
     expect(screen, contains('onClosed: _onWindowClosed'));
     // Маршрут под окном не должен остаться пустым экраном.
     final closed = screen.substring(screen.indexOf('void _onWindowClosed()'));
-    expect(closed.substring(0, closed.indexOf('\n  }')), contains('_dropRoute()'));
+    expect(
+      closed.substring(0, closed.indexOf('\n  }')),
+      contains('_dropRoute()'),
+    );
     // И окно не переживает свой экран.
     final dispose = screen.substring(screen.indexOf('void dispose()'));
-    expect(dispose.substring(0, dispose.indexOf('super.dispose()')), contains('_closeWindow()'));
+    expect(
+      dispose.substring(0, dispose.indexOf('super.dispose()')),
+      contains('_closeWindow()'),
+    );
   });
 
   test('сообщения под нативным окном показывает страница', () {
@@ -76,15 +96,18 @@ void main() {
     expect(page, contains('window.roomNote = '));
   });
 
-  test('страница узнаёт окно и сборку по тем же меткам, что шлёт приложение', () {
-    final service = read('lib/services/watch_room_service.dart');
-    expect(service, contains("query['nb'] = '1'"));
-    expect(service, contains("query['b'] = '\$build'"));
-    expect(page, contains(r'/[?&]nb=1\b/'));
-    expect(page, contains(r'/[?&]b=(\d{1,6})\b/'));
-    expect(page, contains("classList.add('native-window')"));
-    expect(css, contains('.native-window .room-body'));
-  });
+  test(
+    'страница узнаёт окно и сборку по тем же меткам, что шлёт приложение',
+    () {
+      final service = read('lib/services/watch_room_service.dart');
+      expect(service, contains("query['nb'] = '1'"));
+      expect(service, contains("query['b'] = '\$build'"));
+      expect(page, contains(r'/[?&]nb=1\b/'));
+      expect(page, contains(r'/[?&]b=(\d{1,6})\b/'));
+      expect(page, contains("classList.add('native-window')"));
+      expect(css, contains('.native-window .room-body'));
+    },
+  );
 
   test('отступы под вырез экрана приложение сообщает и нативному окну', () {
     expect(screen, contains('if (widget.reels || _native)'));

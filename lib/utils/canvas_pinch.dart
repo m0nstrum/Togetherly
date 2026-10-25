@@ -71,8 +71,10 @@ CanvasView applyPinch(
   // Опора — фокус ПРОШЛОГО кадра: сегодняшний уже уехал на focalDelta, и
   // считать от него значило бы применить перемещение дважды.
   final prevFocal = step.focal - step.focalDelta;
-  final underFinger =
-      _rotate((prevFocal - view.offset) / view.scale, -view.rotation);
+  final underFinger = _rotate(
+    (prevFocal - view.offset) / view.scale,
+    -view.rotation,
+  );
   return CanvasView(
     scale: nextScale,
     rotation: nextRotation,

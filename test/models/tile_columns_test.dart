@@ -40,8 +40,11 @@ void main() {
     for (final w in [200.0, 300.0, 360.0, 411.0, 480.0, 768.0]) {
       final n = tileColumns(width: w, minTileWidth: 190);
       final tile = tileWidth(width: w, columns: n, spacing: 7);
-      expect(tile * n + 7 * (n - 1), lessThanOrEqualTo(w + 0.01),
-          reason: 'при ширине $w плитки не должны переполнять строку');
+      expect(
+        tile * n + 7 * (n - 1),
+        lessThanOrEqualTo(w + 0.01),
+        reason: 'при ширине $w плитки не должны переполнять строку',
+      );
     }
   });
 }

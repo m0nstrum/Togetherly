@@ -80,9 +80,10 @@ class SavedMediaLedger extends ChangeNotifier {
   }
 
   /// Файлы, которых ещё нет в галерее.
-  List<MediaFile> pending(Iterable<MediaFile> files) =>
-      [for (final f in files) if (!containsFile(f)) f];
+  List<MediaFile> pending(Iterable<MediaFile> files) => [
+    for (final f in files)
+      if (!containsFile(f)) f,
+  ];
 
-  int countSaved(Iterable<MediaFile> files) =>
-      files.where(containsFile).length;
+  int countSaved(Iterable<MediaFile> files) => files.where(containsFile).length;
 }

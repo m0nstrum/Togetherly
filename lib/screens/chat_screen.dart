@@ -7,7 +7,8 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData, HapticFeedback;
+import 'package:flutter/services.dart'
+    show Clipboard, ClipboardData, HapticFeedback;
 import 'package:image_picker/image_picker.dart';
 import '../utils/safe_pick.dart';
 import '../utils/safe_text.dart';
@@ -352,8 +353,13 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _belowUpdateQueued = false;
       if (!mounted || _myUid.isEmpty) return;
-      _newBelow.value = _below.update(_lastMessages, myUid: _myUid,
-        atBottom: _scrollController.hasClients && _scrollController.position.extentAfter < 72);
+      _newBelow.value = _below.update(
+        _lastMessages,
+        myUid: _myUid,
+        atBottom:
+            _scrollController.hasClients &&
+            _scrollController.position.extentAfter < 72,
+      );
     });
   }
 
@@ -377,7 +383,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final rec = await PbDataService().loadWidget(_groupId, uid);
     if (!mounted || rec == null) return;
     final card = WidgetData.fromPb(rec);
-    setState(() { _partnerGender = card.gender; if (card.plus) _partnerPlus = true; });
+    setState(() {
+      _partnerGender = card.gender;
+      if (card.plus) _partnerPlus = true;
+    });
   }
 
   @override
@@ -399,10 +408,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadQuickReaction();
     _loadNoteMode();
     _loadChatBackground();
-    _noteFinishedSub =
-        NotePlayerService.instance.finished.listen(_onNoteFinished);
-    _voiceFinishedSub =
-        VoicePlayerService.instance.finished.listen(_onVoiceFinished);
+    _noteFinishedSub = NotePlayerService.instance.finished.listen(
+      _onNoteFinished,
+    );
+    _voiceFinishedSub = VoicePlayerService.instance.finished.listen(
+      _onVoiceFinished,
+    );
     _controller.addListener(_onTextChanged);
     _scrollController.addListener(_onScroll);
   }
@@ -517,7 +528,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final pos = _scrollController.position;
     // Кнопка «вниз» — когда заметно отлистали от низа.
     final show = (pos.maxScrollExtent - pos.pixels) > 320;
-    if (pos.extentAfter < 72) { _below.markSeen(_lastMessageTs); _queueBelowUpdate(); }
+    if (pos.extentAfter < 72) {
+      _below.markSeen(_lastMessageTs);
+      _queueBelowUpdate();
+    }
     if (show != _showScrollDown) setState(() => _showScrollDown = show);
     // Сохраняем позицию (троттлинг) — чтобы при перезаходе вернуть ровно сюда.
     final now = DateTime.now();
@@ -708,7 +722,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void _quickReact(ChatMsg msg) {
     if (msg.deleted) return;
     final next = quickReactionToggle(
-        mine: msg.reactions[_myUid], quick: _quickReaction);
+      mine: msg.reactions[_myUid],
+      quick: _quickReaction,
+    );
     HapticFeedback.lightImpact();
     _chat.setReaction(groupId: _groupId, messageId: msg.id, emoji: next);
     final at = _doubleTapAt;
@@ -718,12 +734,14 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Поиск по переписке. Найденное сообщение чат подгружает в ленту и
   /// подсвечивает: у давнего сообщения ленту сперва надо дотянуть до него.
   Future<void> _openSearch() async {
-    final found = await Navigator.of(context).push<ChatMsg>(MaterialPageRoute(
-      builder: (_) => Theme(
-        data: ProfileTheme.themeFor(_t),
-        child: ChatSearchScreen(groupId: _groupId, myUid: _myUid),
+    final found = await Navigator.of(context).push<ChatMsg>(
+      MaterialPageRoute(
+        builder: (_) => Theme(
+          data: ProfileTheme.themeFor(_t),
+          child: ChatSearchScreen(groupId: _groupId, myUid: _myUid),
+        ),
       ),
-    ));
+    );
     if (found == null || !mounted) return;
     await _jumpTo(found);
   }
@@ -1439,13 +1457,14 @@ class _ChatScreenState extends State<ChatScreen> {
             _attachedPin = pin;
             _replyingTo = reply;
           });
-          final why = _chat.lastSendFailure; // fork (UX C1): причина, а не общее «не отправилось»
+          final why = _chat
+              .lastSendFailure; // fork (UX C1): причина, а не общее «не отправилось»
           if (why != null) {
             ForkNotice.failure(context, why);
           } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(LocaleService.current.chatSendFailed)),
-          );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(LocaleService.current.chatSendFailed)),
+            );
           }
         }
       }
@@ -1468,7 +1487,10 @@ class _ChatScreenState extends State<ChatScreen> {
       return trKey('chatTomorrowAt').replaceAll('{t}', _hm(d));
     }
     return trKey('chatDateAt')
-        .replaceAll('{d}', '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}')
+        .replaceAll(
+          '{d}',
+          '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}',
+        )
         .replaceAll('{t}', _hm(d));
   }
 
@@ -1495,14 +1517,20 @@ class _ChatScreenState extends State<ChatScreen> {
     if (time == null || !mounted) return;
     final at = scheduledMoment(date, time.hour, time.minute);
     if (at == null) {
-      showFloatingNote(context, trKey('chatSendPast'), icon: Icons.schedule_rounded);
+      showFloatingNote(
+        context,
+        trKey('chatSendPast'),
+        icon: Icons.schedule_rounded,
+      );
       return;
     }
     await _send(deliverAt: at.millisecondsSinceEpoch);
     if (!mounted) return;
     showFloatingNote(
       context,
-      trKey('chatScheduledAt').replaceAll('{t}', _formatDeliver(at.millisecondsSinceEpoch)),
+      trKey(
+        'chatScheduledAt',
+      ).replaceAll('{t}', _formatDeliver(at.millisecondsSinceEpoch)),
       icon: Icons.schedule_rounded,
     );
   }
@@ -1970,7 +1998,11 @@ class _ChatScreenState extends State<ChatScreen> {
   // fork (UX C12): жесты чата не видны — один раз подсказываем после первой отправки.
   Future<void> _hintGestures() async {
     if (!await ForkHints.take(ForkHints.gestures) || !mounted) return;
-    showFloatingNote(context, ForkHints.gesturesText, icon: Icons.touch_app_rounded);
+    showFloatingNote(
+      context,
+      ForkHints.gesturesText,
+      icon: Icons.touch_app_rounded,
+    );
   }
 
   void _toast(String msg) {
@@ -2321,8 +2353,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _namePill(s, cs,
-                          onTap: () => _openPartnerProfile(who)),
+                      child: _namePill(
+                        s,
+                        cs,
+                        onTap: () => _openPartnerProfile(who),
+                      ),
                     ),
                   ],
                 ),
@@ -2334,7 +2369,8 @@ class _ChatScreenState extends State<ChatScreen> {
               icon: const Icon(Icons.call_rounded),
               color: cs.onSurface,
               onPressed: () {
-                ForkPairCall.instance.partnerName = widget.pairData.partnerDisplayName;
+                ForkPairCall.instance.partnerName =
+                    widget.pairData.partnerDisplayName;
                 unawaited(ForkPairCall.instance.call(_groupId));
               },
             ),
@@ -2347,7 +2383,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// Аватар отдельным кружком слева от пилюли — как связь в карусели.
-  Widget _headerAvatarPill(ColorScheme cs, {bool profile = false}) { // fork: profile — касание решает родитель
+  Widget _headerAvatarPill(ColorScheme cs, {bool profile = false}) {
+    // fork: profile — касание решает родитель
     final url = widget.pairData.partnerAvatarUrl;
     final name = widget.pairData.partnerDisplayName.trim();
     return PlusAvatarDot(
@@ -2359,7 +2396,9 @@ class _ChatScreenState extends State<ChatScreen> {
       child: GestureDetector(
         // Фото партнёра открывается целиком: в шапке от него остаётся кружок
         // в 44 точки. У заглушки с буквой открывать нечего.
-        onTap: url.isEmpty || profile // fork
+        onTap:
+            url.isEmpty ||
+                profile // fork
             ? null
             : () =>
                   openWidgetPhotoView(context, imageUrl: url, authorName: name),
@@ -2407,8 +2446,11 @@ class _ChatScreenState extends State<ChatScreen> {
   );
 
   /// Пилюля с именем: точка присутствия, имя и время последнего визита.
-  Widget _namePill(AppStrings s, ColorScheme cs,
-      {required VoidCallback onTap}) {
+  Widget _namePill(
+    AppStrings s,
+    ColorScheme cs, {
+    required VoidCallback onTap,
+  }) {
     final name = widget.pairData.partnerDisplayName;
     final uid = widget.pairData.partnerUid;
 
@@ -2426,28 +2468,38 @@ class _ChatScreenState extends State<ChatScreen> {
             builder: (context, presSnap) {
               final online = presSnap.data == true;
               return ForkChatIdentityLayout(
-                dot: Container(width: 8, height: 8, decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                  color: online ? cs.primary : cs.onPrimaryContainer.withValues(alpha: .35))),
+                dot: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: online
+                        ? cs.primary
+                        : cs.onPrimaryContainer.withValues(alpha: .35),
+                  ),
+                ),
                 name: UnfoldShared(
-                      tag: 'name',
-                      fit: UnfoldFit.scale,
-                      child: Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: ProfileTheme.displayFont,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          letterSpacing: -0.2,
-                          color: cs.onPrimaryContainer,
-                        ),
-                      ),
+                  tag: 'name',
+                  fit: UnfoldFit.scale,
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: ProfileTheme.displayFont,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      letterSpacing: -0.2,
+                      color: cs.onPrimaryContainer,
                     ),
+                  ),
+                ),
                 status: _pillTrailing(s, cs, online: online, uid: uid),
-                battery: ForkBatteryBadge(groupId: _groupId, uid: uid,
-                  color: cs.onPrimaryContainer.withValues(alpha: .7)),
+                battery: ForkBatteryBadge(
+                  groupId: _groupId,
+                  uid: uid,
+                  color: cs.onPrimaryContainer.withValues(alpha: .7),
+                ),
               );
             },
           ),
@@ -2477,7 +2529,9 @@ class _ChatScreenState extends State<ChatScreen> {
         }
         if (online) {
           return Text(
-            s.chatOnline, maxLines: 1, overflow: TextOverflow.ellipsis,
+            s.chatOnline,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: ProfileTheme.bodyFont,
               fontSize: 11.5,
@@ -2493,7 +2547,9 @@ class _ChatScreenState extends State<ChatScreen> {
             final label = _lastSeenLabel(s, seenSnap.data);
             if (label.isEmpty) return const SizedBox.shrink();
             return Text(
-              label, maxLines: 1, overflow: TextOverflow.ellipsis,
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: ProfileTheme.bodyFont,
                 fontSize: 11.5,
@@ -2552,8 +2608,11 @@ class _ChatScreenState extends State<ChatScreen> {
             value: 'look',
             child: Row(
               children: [
-                Icon(Icons.chat_bubble_outline_rounded,
-                    color: cs.primary, size: 20),
+                Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: cs.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Text(trKey('chatLookTitle')),
               ],
@@ -2656,193 +2715,214 @@ class _ChatScreenState extends State<ChatScreen> {
     return StickerBoilScope(
       active: _look == ChatLook.sticker,
       child: Scaffold(
-      backgroundColor: _t.bgGradient.last,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight((MediaQuery.textScalerOf(context).scale(16) +
-            MediaQuery.textScalerOf(context).scale(12.5) + 34).clamp(70, double.infinity)),
-        // Шапка, лента и поле ввода проявляются по очереди, когда чат вырос
-        // из своей плитки (UnfoldRoute). При обычном открытии обёртки
-        // ничего не делают.
-        child: Material(
-          color: ProfileTheme.themeFor(_t).colorScheme.surface,
-          child: UnfoldStagger(index: 0, child: _buildTopBar(s)),
+        backgroundColor: _t.bgGradient.last,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(
+            (MediaQuery.textScalerOf(context).scale(16) +
+                    MediaQuery.textScalerOf(context).scale(12.5) +
+                    34)
+                .clamp(70, double.infinity),
+          ),
+          // Шапка, лента и поле ввода проявляются по очереди, когда чат вырос
+          // из своей плитки (UnfoldRoute). При обычном открытии обёртки
+          // ничего не делают.
+          child: Material(
+            color: ProfileTheme.themeFor(_t).colorScheme.surface,
+            child: UnfoldStagger(index: 0, child: _buildTopBar(s)),
+          ),
         ),
-      ),
-      body: Stack(
-        children: [
-          // Узор — нижний слой. Рисуется кодом от ролей схемы, поэтому следует
-          // за темой пары и не требует ни одного файла в ассетах.
-          if (_sharedBgUrl.isEmpty && _bgPath == null)
-            Positioned.fill(
-              child: ChatBackgroundView(
-                background: _bgPattern,
-                scheme: ProfileTheme.themeFor(_t).colorScheme,
-              ),
-            ),
-          // Общий фон пары — поверх него локальный не нужен: если пара
-          // выбрала картинку вместе, она и должна быть у обоих.
-          if (_sharedBgUrl.isNotEmpty)
-            Positioned.fill(
-              // Ссылка вида pb://media/…: файл защищённый и открывается
-              // только с файловым токеном. Image.network её не понимал, и
-              // после «Фон поставлен» экран оставался чёрным.
-              child: StorageImage(
-                imageUrl: _sharedBgUrl,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            )
-          else if (_bgPath != null)
-            Positioned.fill(
-              child: Image.file(
-                File(_bgPath!),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
-          // Лёгкая вуаль для читаемости пузырей поверх любого фото.
-          if (_sharedBgUrl.isNotEmpty || _bgPath != null)
-            Positioned.fill(
-              child: Container(color: Colors.black.withOpacity(0.06)),
-            ),
-          Column(
-            children: [
-              // fork: состояние ключей E2E пары (docs/E2E.md §6.3).
-              ForkE2EBanner(
-                groupId: _groupId,
-                partnerUid: widget.pairData.partnerUid,
-                partnerName: widget.pairData.partnerDisplayName,
-              ),
-              Expanded(
-                // Во время съёмки лента не рисуется: сверху всё равно стоит
-                // непрозрачный экран камеры, а список сообщений продолжал бы
-                // раскладываться и перерисовываться каждый кадр. `Offstage`
-                // сохраняет состояние — позиция прокрутки и подписки на месте.
-                // Панель ввода при этом ОСТАЁТСЯ в дереве: палец держит кнопку на
-                // ней, и уход виджета закрыл бы арену жеста.
-                child: Offstage(
-                  offstage: _noteRecording,
-                  child: UnfoldStagger(
-                    index: 2,
-                    child: Stack(
-                    children: [
-                      StreamBuilder<List<ChatMsg>>(
-                        stream: _messagesStream,
-                        builder: (context, snap) {
-                          // Во время пересоздания потока (пагинация) держим прошлый срез.
-                          if (snap.data != null) _lastMessages = snap.data!;
-                          final messages = snap.data ?? _lastMessages;
-                          if (!identical(_belowOf, messages)) {
-                            _belowOf = messages;
-                            _queueBelowUpdate();
-                          }
-                          if (messages.isNotEmpty) {
-                            _lastMessageTs = messages.last.ts;
-                            _lastIsMine = messages.last.uid == _myUid;
-                            if (!identical(_readOf, messages)) {
-                              _readOf = messages;
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                _chat.markRead(_groupId, _lastMessageTs);
-                              });
-                            }
-                          }
-                          // Меньше, чем просили → достигли начала истории.
-                          _hasMore = messages.length >= _limit;
-
-                          if (snap.connectionState == ConnectionState.waiting &&
-                              messages.isEmpty) {
-                            return Center(
-                              child: M3Loading(color: _t.primaryLight),
-                            );
-                          }
-                          if (messages.isEmpty) {
-                            return _buildEmptyChat(s);
-                          }
-                          // Без своего uid выравнивание «моё/чужое» неверно — ВСЕ пузыри
-                          // уехали бы на одну сторону. Если PocketBase ещё не отдал
-                          // userId (восстановление сессии), ждём, а не рисуем криво.
-                          if (_myUid.isEmpty) {
-                            return Center(
-                              child: M3Loading(color: _t.primaryLight),
-                            );
-                          }
-
-                          final items = _itemsFor(messages);
-                          return _stick.wrap(
-                            ListView.builder(
-                              // Запас прогрева: без него ряд за краем экрана начинал готовиться
-                              // ровно тогда, когда его уже листают.
-                              cacheExtent: 600,
-                              controller: _scrollController,
-                              padding: const EdgeInsets.fromLTRB(10, 12, 10, 8),
-                              itemCount: items.length,
-                              itemBuilder: (context, i) =>
-                                  _buildItem(items[i], i, items.length),
-                            ),
-                          );
-                        },
-                      ),
-                      // FAB «вниз» — в области списка, НАД композером (не перекрывает
-                      // кнопку отправки). Виден, когда отлистали заметно вверх.
-                      Positioned(
-                        right: 14,
-                        bottom: 8,
-                        child: ValueListenableBuilder<int>(
-                          valueListenable: _newBelow,
-                          builder: (context, count, _) {
-                            final visible = _showScrollDown || count > 0;
-                            return IgnorePointer(ignoring: !visible,
-                              child: AnimatedScale(scale: visible ? 1 : 0,
-                                duration: const Duration(milliseconds: 180), curve: Curves.easeOut,
-                                child: ForkChatScrollDown(count: count, onTap: _jumpToBottom,
-                                  surface: _t.cardSurface, ink: _t.primary),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  ),
+        body: Stack(
+          children: [
+            // Узор — нижний слой. Рисуется кодом от ролей схемы, поэтому следует
+            // за темой пары и не требует ни одного файла в ассетах.
+            if (_sharedBgUrl.isEmpty && _bgPath == null)
+              Positioned.fill(
+                child: ChatBackgroundView(
+                  background: _bgPattern,
+                  scheme: ProfileTheme.themeFor(_t).colorScheme,
                 ),
               ),
-              if (mentionPanelVisible(_mentionQuery)) _buildMentionList(),
-              // «Печатает…» теперь в хедере (см. _buildHeaderTitle).
-              UnfoldStagger(index: 4, child: _buildComposer(s)),
-            ],
-          ),
-          // Экран съёмки: живёт поверх чата, потому что человек снимает ответ
-          // на конкретное сообщение и должен видеть, на какое.
-          if (_noteRecording)
-            Positioned.fill(
-              child: NoteRecorderOverlay(
-                controller: _noteCamera,
-                shape: _noteShape,
-                onShape: _setNoteShape,
-                elapsed: _noteElapsed,
-                recording: _noteRecording,
-                paused: _notePaused,
-                locked: _noteLocked,
-                cancelling: _noteGesture == VoiceGesture.cancelling,
-                mirrored: _noteMirrored && NoteRecorderService.instance.isFront,
-                plusGate: PlusService.instance.gate,
-                torchOn: NoteRecorderService.instance.torchOn,
-                canFlip: NoteRecorderService.instance.hasSecondCamera,
-                canTorch: !NoteRecorderService.instance.isFront,
-                error: _noteError,
-                onRetry: _retryCamera,
-                onFlip: _flipNoteCamera,
-                onTorch: _toggleNoteTorch,
-                onMirror: () => setState(() => _noteMirrored = !_noteMirrored),
-                onPauseToggle: _toggleNotePause,
-                onCancel: () => _finishNote(cancelled: true),
-                onSend: () => _finishNote(cancelled: false),
-                onClose: () => _finishNote(cancelled: true),
+            // Общий фон пары — поверх него локальный не нужен: если пара
+            // выбрала картинку вместе, она и должна быть у обоих.
+            if (_sharedBgUrl.isNotEmpty)
+              Positioned.fill(
+                // Ссылка вида pb://media/…: файл защищённый и открывается
+                // только с файловым токеном. Image.network её не понимал, и
+                // после «Фон поставлен» экран оставался чёрным.
+                child: StorageImage(
+                  imageUrl: _sharedBgUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              )
+            else if (_bgPath != null)
+              Positioned.fill(
+                child: Image.file(
+                  File(_bgPath!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
+            // Лёгкая вуаль для читаемости пузырей поверх любого фото.
+            if (_sharedBgUrl.isNotEmpty || _bgPath != null)
+              Positioned.fill(
+                child: Container(color: Colors.black.withOpacity(0.06)),
+              ),
+            Column(
+              children: [
+                // fork: состояние ключей E2E пары (docs/E2E.md §6.3).
+                ForkE2EBanner(
+                  groupId: _groupId,
+                  partnerUid: widget.pairData.partnerUid,
+                  partnerName: widget.pairData.partnerDisplayName,
+                ),
+                Expanded(
+                  // Во время съёмки лента не рисуется: сверху всё равно стоит
+                  // непрозрачный экран камеры, а список сообщений продолжал бы
+                  // раскладываться и перерисовываться каждый кадр. `Offstage`
+                  // сохраняет состояние — позиция прокрутки и подписки на месте.
+                  // Панель ввода при этом ОСТАЁТСЯ в дереве: палец держит кнопку на
+                  // ней, и уход виджета закрыл бы арену жеста.
+                  child: Offstage(
+                    offstage: _noteRecording,
+                    child: UnfoldStagger(
+                      index: 2,
+                      child: Stack(
+                        children: [
+                          StreamBuilder<List<ChatMsg>>(
+                            stream: _messagesStream,
+                            builder: (context, snap) {
+                              // Во время пересоздания потока (пагинация) держим прошлый срез.
+                              if (snap.data != null) _lastMessages = snap.data!;
+                              final messages = snap.data ?? _lastMessages;
+                              if (!identical(_belowOf, messages)) {
+                                _belowOf = messages;
+                                _queueBelowUpdate();
+                              }
+                              if (messages.isNotEmpty) {
+                                _lastMessageTs = messages.last.ts;
+                                _lastIsMine = messages.last.uid == _myUid;
+                                if (!identical(_readOf, messages)) {
+                                  _readOf = messages;
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    _chat.markRead(_groupId, _lastMessageTs);
+                                  });
+                                }
+                              }
+                              // Меньше, чем просили → достигли начала истории.
+                              _hasMore = messages.length >= _limit;
+
+                              if (snap.connectionState ==
+                                      ConnectionState.waiting &&
+                                  messages.isEmpty) {
+                                return Center(
+                                  child: M3Loading(color: _t.primaryLight),
+                                );
+                              }
+                              if (messages.isEmpty) {
+                                return _buildEmptyChat(s);
+                              }
+                              // Без своего uid выравнивание «моё/чужое» неверно — ВСЕ пузыри
+                              // уехали бы на одну сторону. Если PocketBase ещё не отдал
+                              // userId (восстановление сессии), ждём, а не рисуем криво.
+                              if (_myUid.isEmpty) {
+                                return Center(
+                                  child: M3Loading(color: _t.primaryLight),
+                                );
+                              }
+
+                              final items = _itemsFor(messages);
+                              return _stick.wrap(
+                                ListView.builder(
+                                  // Запас прогрева: без него ряд за краем экрана начинал готовиться
+                                  // ровно тогда, когда его уже листают.
+                                  cacheExtent: 600,
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.fromLTRB(
+                                    10,
+                                    12,
+                                    10,
+                                    8,
+                                  ),
+                                  itemCount: items.length,
+                                  itemBuilder: (context, i) =>
+                                      _buildItem(items[i], i, items.length),
+                                ),
+                              );
+                            },
+                          ),
+                          // FAB «вниз» — в области списка, НАД композером (не перекрывает
+                          // кнопку отправки). Виден, когда отлистали заметно вверх.
+                          Positioned(
+                            right: 14,
+                            bottom: 8,
+                            child: ValueListenableBuilder<int>(
+                              valueListenable: _newBelow,
+                              builder: (context, count, _) {
+                                final visible = _showScrollDown || count > 0;
+                                return IgnorePointer(
+                                  ignoring: !visible,
+                                  child: AnimatedScale(
+                                    scale: visible ? 1 : 0,
+                                    duration: const Duration(milliseconds: 180),
+                                    curve: Curves.easeOut,
+                                    child: ForkChatScrollDown(
+                                      count: count,
+                                      onTap: _jumpToBottom,
+                                      surface: _t.cardSurface,
+                                      ink: _t.primary,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (mentionPanelVisible(_mentionQuery)) _buildMentionList(),
+                // «Печатает…» теперь в хедере (см. _buildHeaderTitle).
+                UnfoldStagger(index: 4, child: _buildComposer(s)),
+              ],
             ),
-        ],
+            // Экран съёмки: живёт поверх чата, потому что человек снимает ответ
+            // на конкретное сообщение и должен видеть, на какое.
+            if (_noteRecording)
+              Positioned.fill(
+                child: NoteRecorderOverlay(
+                  controller: _noteCamera,
+                  shape: _noteShape,
+                  onShape: _setNoteShape,
+                  elapsed: _noteElapsed,
+                  recording: _noteRecording,
+                  paused: _notePaused,
+                  locked: _noteLocked,
+                  cancelling: _noteGesture == VoiceGesture.cancelling,
+                  mirrored:
+                      _noteMirrored && NoteRecorderService.instance.isFront,
+                  plusGate: PlusService.instance.gate,
+                  torchOn: NoteRecorderService.instance.torchOn,
+                  canFlip: NoteRecorderService.instance.hasSecondCamera,
+                  canTorch: !NoteRecorderService.instance.isFront,
+                  error: _noteError,
+                  onRetry: _retryCamera,
+                  onFlip: _flipNoteCamera,
+                  onTorch: _toggleNoteTorch,
+                  onMirror: () =>
+                      setState(() => _noteMirrored = !_noteMirrored),
+                  onPauseToggle: _toggleNotePause,
+                  onCancel: () => _finishNote(cancelled: true),
+                  onSend: () => _finishNote(cancelled: false),
+                  onClose: () => _finishNote(cancelled: true),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -3141,14 +3221,19 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               if (isMine) ...[
                 const SizedBox(width: 4),
-                ForkSendMark( // fork (UX C2)
+                ForkSendMark(
+                  // fork (UX C2)
                   messageId: msg.id,
                   mine: true,
                   color: metaColor,
                   sent: Icon(
-                    msg.ts <= _partnerReadTs ? Icons.done_all_rounded : Icons.done_rounded,
+                    msg.ts <= _partnerReadTs
+                        ? Icons.done_all_rounded
+                        : Icons.done_rounded,
                     size: 14,
-                    color: msg.ts <= _partnerReadTs ? const Color(0xFF8FD3FF) : metaColor,
+                    color: msg.ts <= _partnerReadTs
+                        ? const Color(0xFF8FD3FF)
+                        : metaColor,
                   ),
                 ),
               ],
@@ -3165,7 +3250,10 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(color: fg.withValues(alpha: .14), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: fg.withValues(alpha: .14),
+              shape: BoxShape.circle,
+            ),
             child: Icon(Icons.call_rounded, size: 20, color: fg),
           ),
           const SizedBox(width: 10),
@@ -3175,7 +3263,12 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               Text(
                 s.chatCallTitle,
-                style: TextStyle(fontFamily: 'Onest', fontSize: 15, fontWeight: FontWeight.w700, color: fg),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: fg,
+                ),
               ),
               Text(
                 '${callDuration(msg.callMs!)} · ${_formatTime(msg.ts)}',
@@ -3221,12 +3314,15 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               if (isMine) ...[
                 const SizedBox(width: 4),
-                ForkSendMark( // fork (UX C2)
+                ForkSendMark(
+                  // fork (UX C2)
                   messageId: msg.id,
                   mine: true,
                   color: meta,
                   sent: Icon(
-                    msg.ts <= _partnerReadTs ? Icons.done_all_rounded : Icons.done_rounded,
+                    msg.ts <= _partnerReadTs
+                        ? Icons.done_all_rounded
+                        : Icons.done_rounded,
                     size: 14,
                     color: msg.ts <= _partnerReadTs ? _t.primary : meta,
                   ),
@@ -3251,8 +3347,11 @@ class _ChatScreenState extends State<ChatScreen> {
               onTap: () {
                 final url = msg.pinThumb ?? '';
                 if (url.isEmpty) return;
-                openWidgetPhotoView(context,
-                    imageUrl: url, authorName: msg.name);
+                openWidgetPhotoView(
+                  context,
+                  imageUrl: url,
+                  authorName: msg.name,
+                );
               },
             )
           else if (msg.pinId != null)
@@ -3284,10 +3383,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 Icon(Icons.schedule_rounded, size: 13, color: metaColor),
                 const SizedBox(width: 3),
                 Text(
-                  trKey('chatScheduledAt')
-                      .replaceAll('{t}', _formatDeliver(msg.deliverAt!)),
+                  trKey(
+                    'chatScheduledAt',
+                  ).replaceAll('{t}', _formatDeliver(msg.deliverAt!)),
                   style: TextStyle(
-                      fontSize: 10, color: metaColor, fontWeight: FontWeight.w600),
+                    fontSize: 10,
+                    color: metaColor,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ] else ...[
                 Text(
@@ -3296,14 +3399,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 if (isMine && !msg.deleted) ...[
                   const SizedBox(width: 4),
-                  ForkSendMark( // fork (UX C2)
+                  ForkSendMark(
+                    // fork (UX C2)
                     messageId: msg.id,
                     mine: true,
                     color: metaColor,
                     sent: Icon(
-                      msg.ts <= _partnerReadTs ? Icons.done_all_rounded : Icons.done_rounded,
+                      msg.ts <= _partnerReadTs
+                          ? Icons.done_all_rounded
+                          : Icons.done_rounded,
                       size: 14,
-                      color: msg.ts <= _partnerReadTs ? const Color(0xFF8FD3FF) : metaColor,
+                      color: msg.ts <= _partnerReadTs
+                          ? const Color(0xFF8FD3FF)
+                          : metaColor,
                     ),
                   ),
                 ],
@@ -3341,17 +3449,17 @@ class _ChatScreenState extends State<ChatScreen> {
       // рисуется painter'ом, текст/лицо — поверх. Тап — реакции, долгое — меню.
       final CustomPainter shell = switch (_look) {
         ChatLook.sticker => StickerBubblePainter(
-            color: bg,
-            seed: seed,
-            frame: StickerBoilScope.of(context),
-          ),
+          color: bg,
+          seed: seed,
+          frame: StickerBoilScope.of(context),
+        ),
         ChatLook.pixel => PixelBubblePainter(color: bg, tailLeft: !isMine),
         _ => _BubblePainter(
-            color: bg,
-            corners: corners,
-            tailLeft: !isMine,
-            tailDrop: tailDrop,
-          ),
+          color: bg,
+          corners: corners,
+          tailLeft: !isMine,
+          tailDrop: tailDrop,
+        ),
       };
       // Наклейке нужны поля под кайму и контур, пикселю — под хвостик-лесенку.
       final extra = _look == ChatLook.sticker ? kStickerInset : 0.0;
@@ -3370,10 +3478,18 @@ class _ChatScreenState extends State<ChatScreen> {
           // С мордочкой — заметно больше воздуха вокруг текста, чтобы лицу было
           // куда встать; без неё — компактно (низ = padding + tailDrop 9).
           padding: expr == null
-              ? EdgeInsets.fromLTRB(14 + extra, 10 + extra, 14 + extra,
-                  10 + low + extra)
-              : EdgeInsets.fromLTRB(18 + extra, 22 + extra, 18 + extra,
-                  22 + low + extra),
+              ? EdgeInsets.fromLTRB(
+                  14 + extra,
+                  10 + extra,
+                  14 + extra,
+                  10 + low + extra,
+                )
+              : EdgeInsets.fromLTRB(
+                  18 + extra,
+                  22 + extra,
+                  18 + extra,
+                  22 + low + extra,
+                ),
           child: content,
         ),
       );

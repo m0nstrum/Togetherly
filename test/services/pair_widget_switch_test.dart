@@ -21,15 +21,14 @@ void main() {
     String? photo,
     String avatar = '',
     String emoji = '',
-  }) =>
-      WidgetData(
-        uid: uid,
-        status: status,
-        moodLabel: mood,
-        photoUrl: photo,
-        avatarUrl: avatar,
-        moodEmoji: emoji,
-      );
+  }) => WidgetData(
+    uid: uid,
+    status: status,
+    moodLabel: mood,
+    photoUrl: photo,
+    avatarUrl: avatar,
+    moodEmoji: emoji,
+  );
 
   group('тексты', () {
     test('пара сменилась, своих данных нет — свои ключи стираем', () {
@@ -38,8 +37,11 @@ void main() {
         partner: person('you', status: 'дома'),
         pairChanged: true,
       );
-      expect(keys['my_status'], '',
-          reason: 'иначе на виджете останется статус прежней пары');
+      expect(
+        keys['my_status'],
+        '',
+        reason: 'иначе на виджете останется статус прежней пары',
+      );
       expect(keys['my_mood'], '');
       expect(keys['my_name'], '');
       expect(keys['partner_status'], 'дома');
@@ -82,8 +84,11 @@ void main() {
         partner: person('you', photo: 'pb://media/b/2.webp'),
         pairChanged: true,
       );
-      expect(m.myPhoto, '',
-          reason: 'иначе на столе останется лицо прежней пары');
+      expect(
+        m.myPhoto,
+        '',
+        reason: 'иначе на столе останется лицо прежней пары',
+      );
       expect(m.myAvatar, '');
       expect(m.myMoodEmoji, '');
       expect(m.myIosPhotos, isEmpty);

@@ -24,10 +24,8 @@ Future<Color?> showColorPickerSheet({
 }) {
   return showAppSheet<Color>(
     context,
-    builder: (ctx) => _ColorPickerSheet(
-      initial: initial,
-      onEyedropper: onEyedropper,
-    ),
+    builder: (ctx) =>
+        _ColorPickerSheet(initial: initial, onEyedropper: onEyedropper),
   );
 }
 
@@ -39,11 +37,7 @@ abstract final class RecentColors {
   static Future<List<Color>> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_key) ?? const [];
-    return raw
-        .map(int.tryParse)
-        .whereType<int>()
-        .map((v) => Color(v))
-        .toList();
+    return raw.map(int.tryParse).whereType<int>().map((v) => Color(v)).toList();
   }
 
   /// Кладёт цвет в начало списка. Повтор поднимается наверх, а не двоится.
@@ -134,7 +128,10 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
               ),
               child: Text(
                 s.cancel,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -150,7 +147,10 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
               ),
               child: Text(
                 s.selectAction,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -224,7 +224,8 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
                     inputFormatters: [
                       LengthLimitingTextInputFormatter(9),
                       FilteringTextInputFormatter.allow(
-                          RegExp(r'[#0-9a-fA-F]')),
+                        RegExp(r'[#0-9a-fA-F]'),
+                      ),
                     ],
                     style: const TextStyle(
                       fontFamily: 'monospace',
@@ -249,7 +250,9 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
                         borderSide: BorderSide(color: cs.primary, width: 2),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                     onChanged: (raw) {
                       final parsed = ColorHex.parse(raw);

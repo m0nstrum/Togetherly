@@ -35,10 +35,9 @@ Future<void> _shoot(
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: child,
-  ));
+  await tester.pumpWidget(
+    MaterialApp(debugShowCheckedModeBanner: false, home: child),
+  );
   await tester.pump(const Duration(milliseconds: 600));
   if (images) await settleImages(tester);
   await expectLater(find.byType(MaterialApp), matchesGoldenFile('$name.png'));
@@ -96,5 +95,4 @@ void main() {
       images: true,
     );
   });
-
 }

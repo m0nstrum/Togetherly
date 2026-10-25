@@ -28,7 +28,8 @@ void main() {
 
   final dart = _read('lib/services/home_widget_service.dart');
   final registry = _read(
-      'android/app/src/main/kotlin/com/togetherly/love/WidgetIdRegistry.kt');
+    'android/app/src/main/kotlin/com/togetherly/love/WidgetIdRegistry.kt',
+  );
 
   const keys = {
     'getPhotoDayWidgetIds': 'widget_ids_photo_day',
@@ -49,14 +50,20 @@ void main() {
   });
 
   test('виджеты сами обновляют запись о себе', () {
-    for (final f in ['PhotoDayWidgetProvider.kt', 'PhotoGridWidgetProvider.kt']) {
+    for (final f in [
+      'PhotoDayWidgetProvider.kt',
+      'PhotoGridWidgetProvider.kt',
+    ]) {
       final src = _read('android/app/src/main/kotlin/com/togetherly/love/$f');
-      expect(RegExp(r'WidgetIdRegistry\.refresh\(').allMatches(src).length,
-          greaterThanOrEqualTo(2),
-          reason: '$f: нужно и в onUpdate, и в onDeleted');
+      expect(
+        RegExp(r'WidgetIdRegistry\.refresh\(').allMatches(src).length,
+        greaterThanOrEqualTo(2),
+        reason: '$f: нужно и в onUpdate, и в onDeleted',
+      );
     }
-    final activity =
-        _read('android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt');
+    final activity = _read(
+      'android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt',
+    );
     expect(activity, contains('WidgetIdRegistry.refresh('));
   });
 

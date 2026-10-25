@@ -50,7 +50,16 @@ class DeepLinkService {
   // не доезжает — приложение просто открывалось, а настроение не ставилось.
   // Поэтому раздаём такие ссылки отсюда, из единственного места, куда они
   // приходят наверняка.
-  static const _widgetHosts = {'mood', 'miss', 'note', 'memories', 'widgets', 'map', 'fork-miss', 'touch' /* fork: QS tiles */};
+  static const _widgetHosts = {
+    'mood',
+    'miss',
+    'note',
+    'memories',
+    'widgets',
+    'map',
+    'fork-miss',
+    'touch' /* fork: QS tiles */,
+  };
 
   /// Ссылка с виджета рабочего стола, а не приглашение и не письмо.
   static bool isWidgetAction(Uri uri) =>
@@ -145,13 +154,13 @@ class DeepLinkService {
       // fork: свои хосты из конфига; Firebase-домена (и email-ссылок с него)
       // у форка нет.
       final isMainHost = Endpoints.current.ownHosts.contains(uri.host);
-      final isInvitePath = uri.pathSegments.isNotEmpty &&
-          uri.pathSegments.first == 'invite';
+      final isInvitePath =
+          uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'invite';
 
-      if (isMainHost && isInvitePath) { // fork
+      if (isMainHost && isInvitePath) {
+        // fork
         // https://<host>/invite/ABC123
-        final code =
-            uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
+        final code = uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
         if (code != null && code.length == 6) {
           debugPrint('DeepLinkService: invite code from web link: $code');
           ForkE2E.rememberFragment(code, uri.fragment); // fork
@@ -160,7 +169,6 @@ class DeepLinkService {
         }
         return;
       }
-
     }
   }
 

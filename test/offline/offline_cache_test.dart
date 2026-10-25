@@ -15,15 +15,14 @@ RecordModel mem(
   String g, {
   bool deleted = false,
   String updated = '2026-01-01 00:00:00.000Z',
-}) =>
-    RecordModel.fromJson({
-      'id': id,
-      'group_id': g,
-      'deleted': deleted,
-      'created': updated,
-      'updated': updated,
-      'data': {'id': id, 'caption': 'c-$id', 'type': 'text'},
-    });
+}) => RecordModel.fromJson({
+  'id': id,
+  'group_id': g,
+  'deleted': deleted,
+  'created': updated,
+  'updated': updated,
+  'data': {'id': id, 'caption': 'c-$id', 'type': 'text'},
+});
 
 void main() {
   group('RecordScope', () {
@@ -36,16 +35,28 @@ void main() {
 
     test('contains: членство в списке (members ~ uid)', () {
       final s = RecordScope('t', contains: {'members': 'u1'});
-      expect(s.matches({'members': ['u1', 'u2']}), isTrue);
-      expect(s.matches({'members': ['u2']}), isFalse);
+      expect(
+        s.matches({
+          'members': ['u1', 'u2'],
+        }),
+        isTrue,
+      );
+      expect(
+        s.matches({
+          'members': ['u2'],
+        }),
+        isFalse,
+      );
       expect(s.matches({'members': 'not-a-list'}), isFalse);
     });
   });
 
   group('LocalStore', () {
     final store = LocalStore.instance;
-    final memScope = RecordScope('memories:g=g1',
-        equals: {'group_id': 'g1', 'deleted': false});
+    final memScope = RecordScope(
+      'memories:g=g1',
+      equals: {'group_id': 'g1', 'deleted': false},
+    );
 
     setUp(() async {
       await store.initWith(databaseFactoryMemory, 'test_pb_cache.db');
@@ -56,7 +67,10 @@ void main() {
       await store.upsert('memories', mem('m1', 'g1'));
       await store.upsert('memories', mem('m2', 'g1'));
       await store.upsert('memories', mem('m3', 'g2')); // другая группа
-      await store.upsert('memories', mem('m4', 'g1', deleted: true)); // надгробие
+      await store.upsert(
+        'memories',
+        mem('m4', 'g1', deleted: true),
+      ); // надгробие
 
       final got = await store.getScope('memories', memScope);
       expect(got.map((r) => r.id).toSet(), {'m1', 'm2'});
@@ -69,33 +83,41 @@ void main() {
       expect(got, isEmpty);
     });
 
-    test('reconcileScope: добавляет, обновляет и удаляет осиротевшие в области',
-        () async {
-      await store.upsert('memories', mem('m1', 'g1'));
-      await store.upsert('memories', mem('m2', 'g1'));
-      await store.upsert('memories', mem('keepOther', 'g2'));
+    test(
+      'reconcileScope: добавляет, обновляет и удаляет осиротевшие в области',
+      () async {
+        await store.upsert('memories', mem('m1', 'g1'));
+        await store.upsert('memories', mem('m2', 'g1'));
+        await store.upsert('memories', mem('keepOther', 'g2'));
 
-      // Сервер вернул m1 (обновл.) и m3; m2 на сервере нет → должно удалиться.
-      await store.reconcileScope('memories', memScope, [
-        mem('m1', 'g1', updated: '2026-02-02 00:00:00.000Z'),
-        mem('m3', 'g1'),
-      ]);
+        // Сервер вернул m1 (обновл.) и m3; m2 на сервере нет → должно удалиться.
+        await store.reconcileScope('memories', memScope, [
+          mem('m1', 'g1', updated: '2026-02-02 00:00:00.000Z'),
+          mem('m3', 'g1'),
+        ]);
 
-      final inScope = await store.getScope('memories', memScope);
-      expect(inScope.map((r) => r.id).toSet(), {'m1', 'm3'});
-      // Чужая область не тронута.
-      final other = await store.getRecord('memories', 'keepOther');
-      expect(other, isNotNull);
-    });
+        final inScope = await store.getScope('memories', memScope);
+        expect(inScope.map((r) => r.id).toSet(), {'m1', 'm3'});
+        // Чужая область не тронута.
+        final other = await store.getRecord('memories', 'keepOther');
+        expect(other, isNotNull);
+      },
+    );
 
-    test('reconcileScope: protectIds спасает не-отправленный локальный create',
-        () async {
-      await store.upsert('memories', mem('local1', 'g1')); // создан офлайн
-      await store.reconcileScope('memories', memScope, [mem('srv1', 'g1')],
-          protectIds: {'local1'});
-      final inScope = await store.getScope('memories', memScope);
-      expect(inScope.map((r) => r.id).toSet(), {'local1', 'srv1'});
-    });
+    test(
+      'reconcileScope: protectIds спасает не-отправленный локальный create',
+      () async {
+        await store.upsert('memories', mem('local1', 'g1')); // создан офлайн
+        await store.reconcileScope(
+          'memories',
+          memScope,
+          [mem('srv1', 'g1')],
+          protectIds: {'local1'},
+        );
+        final inScope = await store.getScope('memories', memScope);
+        expect(inScope.map((r) => r.id).toSet(), {'local1', 'srv1'});
+      },
+    );
 
     test('водяной знак: set/bump монотонны', () async {
       const t = 'memories:g=g1';
@@ -150,8 +172,10 @@ void main() {
         'label': 'Счастье',
         'timestamp': '2026-01-01T00:00:00.000Z',
       });
-      final scope = RecordScope('moods:g=g1:u=u1',
-          equals: {'group_id': 'g1', 'user_uid': 'u1'});
+      final scope = RecordScope(
+        'moods:g=g1:u=u1',
+        equals: {'group_id': 'g1', 'user_uid': 'u1'},
+      );
       final got = await store.getScope('mood_entries', scope);
       expect(got.length, 1);
       final e = MoodEntry.fromPb(got.first);
@@ -190,8 +214,10 @@ void main() {
         'text': 'комм',
         'created_at': '2026-01-01T00:00:00.000Z',
       });
-      final scope = RecordScope('comments:m=mem1',
-          equals: {'memory_id': 'mem1', 'deleted': false});
+      final scope = RecordScope(
+        'comments:m=mem1',
+        equals: {'memory_id': 'mem1', 'deleted': false},
+      );
       final got = await store.getScope('memory_comments', scope);
       expect(got.length, 1);
       final c = MemoryComment.fromPb(got.first);
@@ -210,27 +236,38 @@ void main() {
       expect(mc.localPath('pb://x'), isNull);
     });
 
-    test('deepReplaceRefs: подмена ссылки рекурсивно (список + вложенность)', () {
-      final data = {
-        'imageUrl': 'localfile:///x/a.webp',
-        'imageUrls': ['localfile:///x/a.webp', 'pb://media/keep/k.webp'],
-        'nested': {'musicUrl': 'localfile:///x/a.webp'},
-        'caption': 'текст',
-      };
-      final changed = MediaCache.deepReplaceRefs(
-          data, 'localfile:///x/a.webp', 'pb://media/1/a.webp');
-      expect(changed, isTrue);
-      expect(data['imageUrl'], 'pb://media/1/a.webp');
-      expect((data['imageUrls'] as List)[0], 'pb://media/1/a.webp');
-      expect((data['imageUrls'] as List)[1], 'pb://media/keep/k.webp'); // не тронут
-      expect((data['nested'] as Map)['musicUrl'], 'pb://media/1/a.webp');
-      expect(data['caption'], 'текст');
-    });
+    test(
+      'deepReplaceRefs: подмена ссылки рекурсивно (список + вложенность)',
+      () {
+        final data = {
+          'imageUrl': 'localfile:///x/a.webp',
+          'imageUrls': ['localfile:///x/a.webp', 'pb://media/keep/k.webp'],
+          'nested': {'musicUrl': 'localfile:///x/a.webp'},
+          'caption': 'текст',
+        };
+        final changed = MediaCache.deepReplaceRefs(
+          data,
+          'localfile:///x/a.webp',
+          'pb://media/1/a.webp',
+        );
+        expect(changed, isTrue);
+        expect(data['imageUrl'], 'pb://media/1/a.webp');
+        expect((data['imageUrls'] as List)[0], 'pb://media/1/a.webp');
+        expect(
+          (data['imageUrls'] as List)[1],
+          'pb://media/keep/k.webp',
+        ); // не тронут
+        expect((data['nested'] as Map)['musicUrl'], 'pb://media/1/a.webp');
+        expect(data['caption'], 'текст');
+      },
+    );
 
     test('deepReplaceRefs: нет совпадения → false', () {
       final data = {'imageUrl': 'pb://media/x/y.webp'};
       expect(
-          MediaCache.deepReplaceRefs(data, 'localfile:///z', 'pb://q'), isFalse);
+        MediaCache.deepReplaceRefs(data, 'localfile:///z', 'pb://q'),
+        isFalse,
+      );
     });
   });
 }

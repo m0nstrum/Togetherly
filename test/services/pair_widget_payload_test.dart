@@ -27,16 +27,23 @@ void main() {
   });
 
   test('своих данных нет — свои ключи не трогаем', () {
-    final keys =
-        pairWidgetPayload(my: null, partner: person('you', status: 'дома'));
-    expect(keys.keys.where((k) => k.startsWith('my_')), isEmpty,
-        reason: 'иначе своя половина обнуляется при незагруженной сессии');
+    final keys = pairWidgetPayload(
+      my: null,
+      partner: person('you', status: 'дома'),
+    );
+    expect(
+      keys.keys.where((k) => k.startsWith('my_')),
+      isEmpty,
+      reason: 'иначе своя половина обнуляется при незагруженной сессии',
+    );
     expect(keys['partner_status'], 'дома');
   });
 
   test('данных партнёра нет — его ключи не трогаем', () {
-    final keys =
-        pairWidgetPayload(my: person('me', status: 'на работе'), partner: null);
+    final keys = pairWidgetPayload(
+      my: person('me', status: 'на работе'),
+      partner: null,
+    );
     expect(keys.keys.where((k) => k.startsWith('partner_')), isEmpty);
     expect(keys['my_status'], 'на работе');
   });

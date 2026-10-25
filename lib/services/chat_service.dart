@@ -243,14 +243,18 @@ class ChatService {
 
   /// Переносит запись в папку приложения (`files/<dir>`). Возвращает
   /// новый путь или null, если перенести не вышло.
-  Future<String?> _keepFile(String tempPath, {String dir = 'voice_outbox'}) async {
+  Future<String?> _keepFile(
+    String tempPath, {
+    String dir = 'voice_outbox',
+  }) async {
     try {
       final src = File(tempPath);
       if (!await src.exists()) return null;
       final base = await getApplicationSupportDirectory();
       final folder = Directory('${base.path}/$dir');
       if (!await folder.exists()) await folder.create(recursive: true);
-      final dst = '${folder.path}/${tempPath.split(Platform.pathSeparator).last}';
+      final dst =
+          '${folder.path}/${tempPath.split(Platform.pathSeparator).last}';
       try {
         final moved = await src.rename(dst);
         return moved.path;
@@ -274,7 +278,8 @@ class ChatService {
         final base = await getApplicationSupportDirectory();
         final folder = Directory('${base.path}/$dir');
         if (!await folder.exists()) await folder.create(recursive: true);
-        final dst = '${folder.path}/${tempPath.split(Platform.pathSeparator).last}';
+        final dst =
+            '${folder.path}/${tempPath.split(Platform.pathSeparator).last}';
         await File(tempPath).copy(dst);
         await File(tempPath).delete();
         return dst;
@@ -451,8 +456,10 @@ class ChatService {
       'face_y': faceY ?? 0,
     };
     await _patchCachedMessage(messageId, fields); // оптимистично
-    await OutboxService.instance.enqueue('chatUpdate',
-        {'id': messageId, 'fields': fields});
+    await OutboxService.instance.enqueue('chatUpdate', {
+      'id': messageId,
+      'fields': fields,
+    });
   }
 
   /// Мягко удалить сообщение (томбстоун — партнёр видит «сообщение удалено»).
@@ -469,13 +476,17 @@ class ChatService {
       'edited_ts': DateTime.now().millisecondsSinceEpoch,
     };
     await _patchCachedMessage(messageId, fields); // оптимистично
-    await OutboxService.instance.enqueue('chatUpdate',
-        {'id': messageId, 'fields': fields});
+    await OutboxService.instance.enqueue('chatUpdate', {
+      'id': messageId,
+      'fields': fields,
+    });
   }
 
   /// Оптимистично применить snake_case-поля к кэш-ряду сообщения.
   Future<void> _patchCachedMessage(
-      String messageId, Map<String, dynamic> fields) async {
+    String messageId,
+    Map<String, dynamic> fields,
+  ) async {
     final rec = await LocalStore.instance.getRecord('chat_messages', messageId);
     if (rec == null) return;
     final row = Map<String, dynamic>.from(rec.data)..addAll(fields);
@@ -495,8 +506,9 @@ class ChatService {
     if (rec != null) {
       final row = Map<String, dynamic>.from(rec.data);
       final cur = row['reactions'];
-      final r =
-          cur is Map ? Map<String, dynamic>.from(cur) : <String, dynamic>{};
+      final r = cur is Map
+          ? Map<String, dynamic>.from(cur)
+          : <String, dynamic>{};
       if (emoji == null || emoji.isEmpty) {
         r.remove(_uid);
       } else {
@@ -506,8 +518,11 @@ class ChatService {
       await LocalStore.instance.upsertRaw('chat_messages', messageId, row);
     }
     // в очередь (setChatReaction идемпотентен: ставит uid→emoji / снимает)
-    await OutboxService.instance.enqueue(
-        'chatSetReaction', {'id': messageId, 'uid': _uid, 'emoji': emoji});
+    await OutboxService.instance.enqueue('chatSetReaction', {
+      'id': messageId,
+      'uid': _uid,
+      'emoji': emoji,
+    });
   }
 
   // ── «Печатает…» (эфемерный презенс на PB heartbeat+TTL) ─────────────────────
@@ -522,8 +537,11 @@ class ChatService {
     if (groupId.isEmpty || _uid.isEmpty) return;
     final at = typing ? DateTime.now().millisecondsSinceEpoch : 0;
     // fork (E2E): сигнал шифром ключа пары; нет ключа — не шлём.
-    final msg = ForkE2E.sealSignal(
-        groupId, 'pair:$groupId', {'t': 'typing', 'uid': _uid, 'at': at});
+    final msg = ForkE2E.sealSignal(groupId, 'pair:$groupId', {
+      't': 'typing',
+      'uid': _uid,
+      'at': at,
+    });
     if (msg == null) return;
     await CentrifugoService().publish('pair:$groupId', msg);
   }
@@ -682,10 +700,9 @@ class ChatService {
       // Ответ записи и есть ответ: `updateGroupFields` глотает отказ и
       // возвращает false, а прежний `return true` превращал его в «Фон
       // поставлен — он теперь у обоих».
-      return await PbDataService().updateGroupFields(
-        groupId,
-        {'chat_background': url},
-      );
+      return await PbDataService().updateGroupFields(groupId, {
+        'chat_background': url,
+      });
     } catch (e) {
       debugPrint('ChatService.setSharedBackground failed: $e');
       return false;
@@ -767,7 +784,9 @@ class ChatService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(
-          _kRecentColors, colors.map((c) => '$c').toList());
+        _kRecentColors,
+        colors.map((c) => '$c').toList(),
+      );
     } catch (_) {}
   }
 
@@ -809,7 +828,9 @@ class ChatService {
     if (groupId.isEmpty) return Stream.value(false);
     return _rt.watchMessages(groupId, limit: 1).asyncMap((recs) async {
       if (recs.isEmpty) return false;
-      final last = ChatMsg.fromPb(recs.last); // watchMessages сортирует по ts ASC
+      final last = ChatMsg.fromPb(
+        recs.last,
+      ); // watchMessages сортирует по ts ASC
       if (last.uid == _uid) return false; // своё сообщение
       if (last.deleted) return false;
       final lastRead = await _lastRead(groupId);

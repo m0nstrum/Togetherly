@@ -72,7 +72,6 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
   AppTheme get _t => widget.theme;
   ColorScheme get _cs => ProfileTheme.themeFor(_t).colorScheme;
 
-
   @override
   void initState() {
     super.initState();
@@ -90,7 +89,9 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
       _theirs = pair.theirs;
       _lastRound = pair.myLastRound;
       _previous = pair.myPrevious;
-      _progress = pair.mine == null ? null : loveProgress(pair.mine!, _previous);
+      _progress = pair.mine == null
+          ? null
+          : loveProgress(pair.mine!, _previous);
       _stage = pair.mine == null ? _Stage.intro : _Stage.result;
     });
   }
@@ -136,11 +137,9 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
     if (!saved) {
       // Отказ сервера проходил молча: человек видел свою фигуру, закрывал
       // приложение и обнаруживал, что тест снова непройден.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(trKey('love_not_saved')),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(trKey('love_not_saved'))));
     }
     // Фигуру партнёра забираем уже после сохранения: до этой минуты она была
     // под замком, и показывать её раньше собственного результата незачем.
@@ -211,10 +210,7 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
             style: TextStyle(fontSize: 16, color: _cs.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
-          FilledButton(
-            onPressed: _startQuiz,
-            child: Text(trKey('love_start')),
-          ),
+          FilledButton(onPressed: _startQuiz, child: Text(trKey('love_start'))),
         ],
       ),
     );
@@ -223,16 +219,16 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
   /// Фигура на вступлении — ровная, без чужих цифр: она объясняет форму, а не
   /// показывает чей-то результат.
   LoveTestResult get _sample => LoveTestResult(
-        facets: const {
-          LoveFacet.interest: 78,
-          LoveFacet.trust: 64,
-          LoveFacet.gratitude: 86,
-          LoveFacet.mutuality: 60,
-          LoveFacet.passion: 72,
-          LoveFacet.acceptance: 55,
-        },
-        takenAt: DateTime.now(),
-      );
+    facets: const {
+      LoveFacet.interest: 78,
+      LoveFacet.trust: 64,
+      LoveFacet.gratitude: 86,
+      LoveFacet.mutuality: 60,
+      LoveFacet.passion: 72,
+      LoveFacet.acceptance: 55,
+    },
+    takenAt: DateTime.now(),
+  );
 
   // ── Вопросы ───────────────────────────────────────────────────────────────
 
@@ -255,7 +251,10 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
                 style: TextStyle(fontSize: 13, color: _cs.onSurfaceVariant),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: _cs.secondaryContainer,
                   borderRadius: BorderRadius.circular(999),
@@ -390,8 +389,9 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
                 )
               else
                 Text(
-                  trKey('love_strongest')
-                      .replaceAll('{facet}', mine.strongest.title.toLowerCase()),
+                  trKey(
+                    'love_strongest',
+                  ).replaceAll('{facet}', mine.strongest.title.toLowerCase()),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
@@ -446,9 +446,9 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            trKey('love_since_last')
-                .replaceAll('{date}', _shortDate(p.since))
-                .toUpperCase(),
+            trKey(
+              'love_since_last',
+            ).replaceAll('{date}', _shortDate(p.since)).toUpperCase(),
             style: TextStyle(
               fontSize: 12,
               letterSpacing: 1.2,
@@ -501,20 +501,18 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
           if (grown > 0) ...[
             const SizedBox(height: 4),
             Text(
-              trKey('love_grown').replaceAll(
-                '{facet}',
-                p.grown.title.toLowerCase(),
-              ),
+              trKey(
+                'love_grown',
+              ).replaceAll('{facet}', p.grown.title.toLowerCase()),
               style: TextStyle(color: _cs.onSurfaceVariant),
             ),
           ],
           if (fallen < 0) ...[
             const SizedBox(height: 6),
             Text(
-              trKey('love_fallen').replaceAll(
-                '{facet}',
-                p.fallen.title.toLowerCase(),
-              ),
+              trKey(
+                'love_fallen',
+              ).replaceAll('{facet}', p.fallen.title.toLowerCase()),
               style: TextStyle(color: _cs.onSurfaceVariant),
             ),
           ],
@@ -625,8 +623,10 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
               color: _cs.onSecondaryContainer,
             ),
           ),
-          Text(line(pair.closest),
-              style: TextStyle(color: _cs.onSecondaryContainer)),
+          Text(
+            line(pair.closest),
+            style: TextStyle(color: _cs.onSecondaryContainer),
+          ),
           const SizedBox(height: 12),
           Text(
             trKey('love_widest'),
@@ -635,8 +635,10 @@ class _LoveTestScreenState extends State<LoveTestScreen> {
               color: _cs.onSecondaryContainer,
             ),
           ),
-          Text(line(pair.widest),
-              style: TextStyle(color: _cs.onSecondaryContainer)),
+          Text(
+            line(pair.widest),
+            style: TextStyle(color: _cs.onSecondaryContainer),
+          ),
         ],
       ),
     );

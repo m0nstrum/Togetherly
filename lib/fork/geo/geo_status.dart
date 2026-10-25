@@ -27,36 +27,44 @@ enum ShareIssue {
 
   /// Объяснение для плашки. null — говорить нечего.
   String? get text => switch (this) {
-        none => null,
-        noPartner => ruEn(
-            'Партнёра пока нет — делиться геопозицией не с кем',
-            'No partner yet — nobody to share your location with'),
-        denied => ruEn(
-            'Нет доступа к геопозиции — партнёр вас не видит',
-            'No location access — your partner can’t see you'),
-        deniedForever => ruEn(
-            'Доступ к геопозиции запрещён — разрешите его в настройках',
-            'Location access is blocked — allow it in settings'),
-        servicesOff => ruEn(
-            'Геолокация на телефоне выключена — партнёр вас не видит',
-            'Location is turned off on this phone — your partner can’t see you'),
-        needsForeground => ruEn(
-            'Откройте приложение, чтобы передача началась',
-            'Open the app to start sharing'),
-        noConsent => ruEn(
-            'Показ выключен: партнёр сменился. Включите заново',
-            'Sharing is off: your partner changed. Turn it on again'),
-        streamFailed => ruEn(
-            'Передача не запустилась — выключите и включите показ',
-            'Sharing didn’t start — turn it off and on again'),
-      };
+    none => null,
+    noPartner => ruEn(
+      'Партнёра пока нет — делиться геопозицией не с кем',
+      'No partner yet — nobody to share your location with',
+    ),
+    denied => ruEn(
+      'Нет доступа к геопозиции — партнёр вас не видит',
+      'No location access — your partner can’t see you',
+    ),
+    deniedForever => ruEn(
+      'Доступ к геопозиции запрещён — разрешите его в настройках',
+      'Location access is blocked — allow it in settings',
+    ),
+    servicesOff => ruEn(
+      'Геолокация на телефоне выключена — партнёр вас не видит',
+      'Location is turned off on this phone — your partner can’t see you',
+    ),
+    needsForeground => ruEn(
+      'Откройте приложение, чтобы передача началась',
+      'Open the app to start sharing',
+    ),
+    noConsent => ruEn(
+      'Показ выключен: партнёр сменился. Включите заново',
+      'Sharing is off: your partner changed. Turn it on again',
+    ),
+    streamFailed => ruEn(
+      'Передача не запустилась — выключите и включите показ',
+      'Sharing didn’t start — turn it off and on again',
+    ),
+  };
 
   /// Подпись кнопки под [text].
   String? get actionLabel => switch (this) {
-        denied || deniedForever || servicesOff =>
-          ruEn('Открыть настройки', 'Open settings'),
-        _ => null,
-      };
+    denied ||
+    deniedForever ||
+    servicesOff => ruEn('Открыть настройки', 'Open settings'),
+    _ => null,
+  };
 }
 
 /// Точка свежая: видно, что партнёр на связи, а не просто был здесь когда-то.
@@ -79,15 +87,15 @@ String hereSince(int updatedAtMs, {required DateTime now}) {
   final day = DateTime(at.year, at.month, at.day);
   final days = today.difference(day).inDays;
   if (days <= 0) return ruEn('на месте с $hm', 'here since $hm');
-  if (days == 1) return ruEn('на месте с $hm вчера', 'here since $hm yesterday');
+  if (days == 1)
+    return ruEn('на месте с $hm вчера', 'here since $hm yesterday');
   final date = '${_two(at.day)}.${_two(at.month)}';
   return ruEn('на месте с $date, $hm', 'here since $date, $hm');
 }
 
 /// Подпись под именем партнёра; null — точка свежая, подписывать нечего.
 String? partnerPointCaption(int updatedAtMs, {required DateTime now}) {
-  final age =
-      LivePointAge.of(updatedAtMs, nowMs: now.millisecondsSinceEpoch);
+  final age = LivePointAge.of(updatedAtMs, nowMs: now.millisecondsSinceEpoch);
   if (!age.needsCaption) return null;
   return hereSince(updatedAtMs, now: now);
 }
@@ -104,8 +112,13 @@ String distanceLabel(
   required String unitKm,
 }) {
   if (fresh || meters >= 50) {
-    return formatMapDistance(meters,
-        lang: lang, nearby: nearby, unitM: unitM, unitKm: unitKm);
+    return formatMapDistance(
+      meters,
+      lang: lang,
+      nearby: nearby,
+      unitM: unitM,
+      unitKm: unitKm,
+    );
   }
   return ruEn('до 50 $unitM', 'under 50 $unitM');
 }
@@ -116,9 +129,11 @@ String waitingPartnerHint({required bool iShare}) => iShare
         'Партнёр пока не делится геопозицией. Попросите его открыть '
             '«Где мы» и нажать «Показывать».',
         'Your partner isn’t sharing yet. Ask them to open “Where we are” '
-            'and turn sharing on.')
+            'and turn sharing on.',
+      )
     : ruEn(
         'Включите показ у себя и попросите партнёра сделать то же — '
             'тогда вы увидите друг друга.',
         'Turn sharing on and ask your partner to do the same — then you’ll '
-            'see each other.');
+            'see each other.',
+      );

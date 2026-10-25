@@ -100,7 +100,10 @@ class _WishDetailsSheetState extends State<WishDetailsSheet> {
               Text(
                 authorName,
                 style: AppFonts.onest(
-                    size: 13.5, weight: 600, color: cs.onSurfaceVariant),
+                  size: 13.5,
+                  weight: 600,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             if (hasShopLine) ...[
               const SizedBox(height: 10),
@@ -112,7 +115,9 @@ class _WishDetailsSheetState extends State<WishDetailsSheet> {
                   if (wish.hasPrice)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 5),
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: cs.secondaryContainer,
                         borderRadius: BorderRadius.circular(999),
@@ -120,16 +125,19 @@ class _WishDetailsSheetState extends State<WishDetailsSheet> {
                       child: Text(
                         wish.priceLabel,
                         style: AppFonts.onest(
-                            size: 13.5,
-                            weight: 700,
-                            color: cs.onSecondaryContainer),
+                          size: 13.5,
+                          weight: 700,
+                          color: cs.onSecondaryContainer,
+                        ),
                       ),
                     ),
                   if (wish.shop.isNotEmpty)
                     Text(
                       wish.shop,
                       style: AppFonts.onest(
-                          size: 13.5, color: cs.onSurfaceVariant),
+                        size: 13.5,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                 ],
               ),
@@ -143,7 +151,10 @@ class _WishDetailsSheetState extends State<WishDetailsSheet> {
                   Text(
                     due,
                     style: AppFonts.onest(
-                        size: 14, weight: 600, color: cs.onSurface),
+                      size: 14,
+                      weight: 600,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ],
               ),
@@ -172,7 +183,10 @@ class _WishDetailsSheetState extends State<WishDetailsSheet> {
               Text(
                 wish.note,
                 style: AppFonts.onest(
-                    size: 16, height: 1.45, color: cs.onSurface),
+                  size: 16,
+                  height: 1.45,
+                  color: cs.onSurface,
+                ),
               ),
             ],
           ],

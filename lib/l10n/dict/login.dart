@@ -153,13 +153,20 @@ const Map<String, Map<String, String>> loginStrings = {
   // Сервер не дозвонился до Google или Apple. Человеку важно понять, что дело
   // не в пароле и повторять ввод бесполезно — надо просто попробовать снова.
   'providerUnreachable': {
-    'ru': 'Не получилось связаться с Google. Пароль тут ни при чём — попробуйте войти ещё раз через минуту.',
-    'en': 'Could not reach Google. Your password is fine — try signing in again in a minute.',
-    'de': 'Google war nicht erreichbar. Am Passwort liegt es nicht — versuche es in einer Minute noch einmal.',
-    'fr': 'Impossible de joindre Google. Ce n’est pas le mot de passe — réessaie dans une minute.',
-    'es': 'No se pudo contactar con Google. No es la contraseña — inténtalo de nuevo en un minuto.',
-    'it': 'Non siamo riusciti a contattare Google. Non è la password — riprova tra un minuto.',
-    'pt': 'Não deu para falar com o Google. Não é a senha — tente entrar de novo em um minuto.',
+    'ru':
+        'Не получилось связаться с Google. Пароль тут ни при чём — попробуйте войти ещё раз через минуту.',
+    'en':
+        'Could not reach Google. Your password is fine — try signing in again in a minute.',
+    'de':
+        'Google war nicht erreichbar. Am Passwort liegt es nicht — versuche es in einer Minute noch einmal.',
+    'fr':
+        'Impossible de joindre Google. Ce n’est pas le mot de passe — réessaie dans une minute.',
+    'es':
+        'No se pudo contactar con Google. No es la contraseña — inténtalo de nuevo en un minuto.',
+    'it':
+        'Non siamo riusciti a contattare Google. Non è la password — riprova tra un minuto.',
+    'pt':
+        'Não deu para falar com o Google. Não é a senha — tente entrar de novo em um minuto.',
   },
   'providerPageFailed': {
     'ru': 'Страница входа не открылась. Попробуйте снова или войдите по почте',
@@ -167,8 +174,10 @@ const Map<String, Map<String, String>> loginStrings = {
     'pt': 'A página de login não abriu. Tente de novo ou use o e-mail',
     'it': 'La pagina di accesso non si è aperta. Riprova o usa l’e-mail',
     'es': 'La página de acceso no se abrió. Inténtalo otra vez o usa el correo',
-    'fr': 'La page de connexion ne s’est pas ouverte. Réessaie ou utilise l’e-mail',
-    'de': 'Die Anmeldeseite ging nicht auf. Versuche es erneut oder nimm die E-Mail',
+    'fr':
+        'La page de connexion ne s’est pas ouverte. Réessaie ou utilise l’e-mail',
+    'de':
+        'Die Anmeldeseite ging nicht auf. Versuche es erneut oder nimm die E-Mail',
   },
   'wrongPassword': {
     'ru': 'Неверный пароль',

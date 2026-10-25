@@ -114,10 +114,10 @@ class QuietPartnerCard extends StatelessWidget {
   /// Тот же аватар, что в остальных местах: сам подставляет живой урл по uid и
   /// рисует букву, когда фото нет.
   Widget _avatar() => AvatarWidget(
-        uid: partnerUid,
-        fallbackUrl: partnerAvatarUrl,
-        name: partnerName,
-        size: 44,
-        primary: scheme.primary,
-      );
+    uid: partnerUid,
+    fallbackUrl: partnerAvatarUrl,
+    name: partnerName,
+    size: 44,
+    primary: scheme.primary,
+  );
 }

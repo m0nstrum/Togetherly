@@ -5,9 +5,11 @@ import 'package:love_app/screens/plus_screen.dart';
 
 void main() {
   testWidgets('PlusScreen без витрины, когда всё открыто', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: PlusScreen(scheme: ColorScheme.fromSeed(seedColor: Colors.pink)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PlusScreen(scheme: ColorScheme.fromSeed(seedColor: Colors.pink)),
+      ),
+    );
     expect(find.byIcon(Icons.lock_open_rounded), findsOneWidget);
     expect(find.textContaining('₽'), findsNothing);
   });

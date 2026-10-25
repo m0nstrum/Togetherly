@@ -37,7 +37,8 @@ class HeartField extends StatefulWidget {
   State<HeartField> createState() => HeartFieldState();
 }
 
-class HeartFieldState extends State<HeartField> with SingleTickerProviderStateMixin {
+class HeartFieldState extends State<HeartField>
+    with SingleTickerProviderStateMixin {
   late final Ticker _ticker = createTicker(_tick);
   final ValueNotifier<int> _repaint = ValueNotifier(0);
 
@@ -125,8 +126,12 @@ class HeartFieldState extends State<HeartField> with SingleTickerProviderStateMi
 }
 
 class _HeartFieldPainter extends CustomPainter {
-  _HeartFieldPainter({required Listenable repaint, required this.state, required this.color, required this.still})
-      : super(repaint: repaint);
+  _HeartFieldPainter({
+    required Listenable repaint,
+    required this.state,
+    required this.color,
+    required this.still,
+  }) : super(repaint: repaint);
 
   final HeartFieldState state;
   final Color color;
@@ -154,7 +159,11 @@ class _HeartFieldPainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
     var row = 0;
     for (var y = step / 2; y < size.height + step; y += step, row++) {
-      for (var x = row.isOdd ? step / 2 : 0.0; x < size.width + step; x += step) {
+      for (
+        var x = row.isOdd ? step / 2 : 0.0;
+        x < size.width + step;
+        x += step
+      ) {
         final d = (Offset(x, y) - c).distance;
         var wave = 0.0;
         for (final w in state._waves) {
@@ -163,9 +172,14 @@ class _HeartFieldPainter extends CustomPainter {
           wave += math.exp(-k * k) * math.max(0, 1 - age / 1.4);
         }
         wave = math.min(1.4, wave);
-        final sway = still ? 0.0 : math.sin(t * 0.9 + x * 0.05 + y * 0.07) * 0.12;
+        final sway = still
+            ? 0.0
+            : math.sin(t * 0.9 + x * 0.05 + y * 0.07) * 0.12;
         final s = 8 * (1 + 0.9 * wave);
-        final a = (0.10 + 0.10 * energy + 0.45 * math.min(1, wave)).clamp(0.0, 1.0);
+        final a = (0.10 + 0.10 * energy + 0.45 * math.min(1, wave)).clamp(
+          0.0,
+          1.0,
+        );
         paint.color = color.withValues(alpha: a);
         canvas
           ..save()
@@ -180,5 +194,6 @@ class _HeartFieldPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_HeartFieldPainter old) => old.color != color || old.still != still;
+  bool shouldRepaint(_HeartFieldPainter old) =>
+      old.color != color || old.still != still;
 }

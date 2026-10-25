@@ -17,27 +17,34 @@ import 'package:love_app/widgets/memory/media_strip.dart';
 void main() {
   setUpAll(() async {
     final loader = FontLoader('MaterialIcons')
-      ..addFont(File('${Platform.environment['HOME']}/snap/flutter/common/flutter'
-              '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf')
-          .readAsBytes()
-          .then(ByteData.sublistView));
+      ..addFont(
+        File(
+          '${Platform.environment['HOME']}/snap/flutter/common/flutter'
+          '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+        ).readAsBytes().then(ByteData.sublistView),
+      );
     await loader.load();
   });
 
   testWidgets('завеса 18+', (tester) async {
     final image = await tester.runAsync(() async {
-      final bytes = File('assets/images/Screenshots/01 profile.jpg').readAsBytesSync();
+      final bytes = File(
+        'assets/images/Screenshots/01 profile.jpg',
+      ).readAsBytesSync();
       final codec = await ui.instantiateImageCodec(bytes, targetWidth: 400);
       return (await codec.getNextFrame()).image;
     });
     final provider = _Ready(image!);
     final key = GlobalKey();
 
-    Widget pair(double h) => Row(mainAxisSize: MainAxisSize.min, children: [
-          FilmFrame(url: 'a$h', provider: provider, height: h),
-          const SizedBox(width: 12),
-          FilmFrame(url: 'b$h', provider: provider, height: h, blurred: true),
-        ]);
+    Widget pair(double h) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FilmFrame(url: 'a$h', provider: provider, height: h),
+        const SizedBox(width: 12),
+        FilmFrame(url: 'b$h', provider: provider, height: h, blurred: true),
+      ],
+    );
     Widget tile({required bool veiled}) {
       final img = Image(image: provider, fit: BoxFit.cover);
       return SizedBox(
@@ -51,56 +58,66 @@ void main() {
     }
 
     await tester.binding.setSurfaceSize(const Size(560, 860));
-    await tester.pumpWidget(RepaintBoundary(
-      key: key,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: const Color(0xFFFFF6F4),
-          body: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                pair(56),
-                const SizedBox(height: 16),
-                pair(76),
-                const SizedBox(height: 16),
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  tile(veiled: false),
-                  const SizedBox(width: 12),
-                  tile(veiled: true),
-                ]),
-                const SizedBox(height: 16),
-                // Кадр на весь экран: размытие сильнее, замок крупнее.
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  SizedBox(
-                      width: 240,
-                      height: 420,
-                      child: Image(image: provider, fit: BoxFit.contain)),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 240,
-                    height: 420,
-                    child: Center(
-                      child: AdultVeil(
-                        sigma: 44,
-                        iconSize: 36,
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(
+            backgroundColor: const Color(0xFFFFF6F4),
+            body: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  pair(56),
+                  const SizedBox(height: 16),
+                  pair(76),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      tile(veiled: false),
+                      const SizedBox(width: 12),
+                      tile(veiled: true),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Кадр на весь экран: размытие сильнее, замок крупнее.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 240,
+                        height: 420,
                         child: Image(image: provider, fit: BoxFit.contain),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 240,
+                        height: 420,
+                        child: Center(
+                          child: AdultVeil(
+                            sigma: 44,
+                            iconSize: 36,
+                            child: Image(image: provider, fit: BoxFit.contain),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ]),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
     await tester.runAsync(() async {
-      final b = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final b =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final img = await b.toImage(pixelRatio: 2);
       final data = await img.toByteData(format: ui.ImageByteFormat.png);
       File('build/adult-veil/veil.png')
@@ -120,5 +137,6 @@ class _Ready extends ImageProvider<_Ready> {
   @override
   ImageStreamCompleter loadImage(_Ready key, ImageDecoderCallback decode) =>
       OneFrameImageStreamCompleter(
-          Future.value(ImageInfo(image: image.clone())));
+        Future.value(ImageInfo(image: image.clone())),
+      );
 }

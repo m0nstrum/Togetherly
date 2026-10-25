@@ -32,13 +32,13 @@ void main() {
   );
 
   RecordModel memory(String id) => RecordModel({
-        'id': id,
-        'collectionName': 'memories',
-        'group_id': 'g1',
-        'deleted': false,
-        'created_at': '2026-10-14 12:49:24.296Z',
-        'updated': '2026-10-14 12:49:24.878Z',
-      });
+    'id': id,
+    'collectionName': 'memories',
+    'group_id': 'g1',
+    'deleted': false,
+    'created_at': '2026-10-14 12:49:24.296Z',
+    'updated': '2026-10-14 12:49:24.878Z',
+  });
 
   setUp(() async {
     store = LocalStore.instance;
@@ -60,8 +60,11 @@ void main() {
     // Как MemoryRepository.add: строка в кэше и операция в очереди.
     await store.upsert('memories', memory('old'));
     await store.upsert('memories', memory('knights'));
-    await ob.enqueue(
-        'memoryUpsert', {'groupId': 'g1', 'id': 'knights', 'data': {}});
+    await ob.enqueue('memoryUpsert', {
+      'groupId': 'g1',
+      'id': 'knights',
+      'data': {},
+    });
 
     await reconcileWithServer(
       store: store,
@@ -81,28 +84,33 @@ void main() {
     expect(await store.getRecord('memories', 'knights'), isNotNull);
   });
 
-  test('запись, созданная и отправленная прямо во время сверки, остаётся',
-      () async {
-    ob.applyOverride = (type, payload) async => true;
-    await store.upsert('memories', memory('old'));
+  test(
+    'запись, созданная и отправленная прямо во время сверки, остаётся',
+    () async {
+      ob.applyOverride = (type, payload) async => true;
+      await store.upsert('memories', memory('old'));
 
-    await reconcileWithServer(
-      store: store,
-      outbox: ob,
-      collection: 'memories',
-      scope: scope,
-      fetchServer: () async {
-        final snapshot = [memory('old')];
-        await store.upsert('memories', memory('fresh'));
-        await ob.enqueue(
-            'memoryUpsert', {'groupId': 'g1', 'id': 'fresh', 'data': {}});
-        await _waitDrained(ob);
-        return snapshot;
-      },
-    );
+      await reconcileWithServer(
+        store: store,
+        outbox: ob,
+        collection: 'memories',
+        scope: scope,
+        fetchServer: () async {
+          final snapshot = [memory('old')];
+          await store.upsert('memories', memory('fresh'));
+          await ob.enqueue('memoryUpsert', {
+            'groupId': 'g1',
+            'id': 'fresh',
+            'data': {},
+          });
+          await _waitDrained(ob);
+          return snapshot;
+        },
+      );
 
-    expect(await store.getRecord('memories', 'fresh'), isNotNull);
-  });
+      expect(await store.getRecord('memories', 'fresh'), isNotNull);
+    },
+  );
 
   test('удалённое на сервере по-прежнему уходит из кэша', () async {
     await store.upsert('memories', memory('old'));

@@ -32,10 +32,9 @@ class MissYouRepository {
 
   /// То же живьём, но целыми записями: счётчик, последний импульс с его
   /// временем и карта дней недели. Свою запись отделяет от партнёрской.
-  Stream<MissYouState> watchState(String groupId) =>
-      _rt.watchMissYouRows(groupId).map(
-            (rows) => MissYouState.fromRows(rows, myUid: _uid ?? ''),
-          );
+  Stream<MissYouState> watchState(String groupId) => _rt
+      .watchMissYouRows(groupId)
+      .map((rows) => MissYouState.fromRows(rows, myUid: _uid ?? ''));
 
   /// Счётчики пары разово, без подписки.
   ///
@@ -51,7 +50,11 @@ class MissYouRepository {
   /// ответа не знает, что отправка сорвалась (`incrementMissYou` возвращает
   /// false и при таймауте, и при отказе роута). Раньше надбавка в такой
   /// ситуации оставалась висеть — число «жило своей жизнью».
-  Future<bool> sendMissYou(String groupId, {int count = 1, String? replyTo}) async {
+  Future<bool> sendMissYou(
+    String groupId, {
+    int count = 1,
+    String? replyTo,
+  }) async {
     final uid = _uid;
     if (uid == null || groupId.isEmpty) return false;
     final ok = await _data.incrementMissYou(
@@ -82,8 +85,7 @@ class MissYouRepository {
       text: customText,
       replyTo: replyTo,
     );
-    if (ok) {
-    }
+    if (ok) {}
     return ok;
   }
 

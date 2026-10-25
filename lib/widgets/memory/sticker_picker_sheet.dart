@@ -32,7 +32,11 @@ import '../mood_pack_selector.dart';
 
 /// Выбранная в листе наклейка: картинка и откуда она.
 class StickerChoice {
-  const StickerChoice({required this.image, required this.pack, required this.mood});
+  const StickerChoice({
+    required this.image,
+    required this.pack,
+    required this.mood,
+  });
 
   final String image;
   final String pack;
@@ -110,11 +114,11 @@ class _StickerPickerState extends State<StickerPicker> {
   PlusGate get _gate => widget.plusGate ?? PlusService.instance.gate;
 
   OwnPackState get _ownState => ownPackState(
-        hasGroup: widget.groupId.isNotEmpty,
-        gate: _gate,
-        loaded: _customLoaded,
-        count: _custom.length,
-      );
+    hasGroup: widget.groupId.isNotEmpty,
+    gate: _gate,
+    loaded: _customLoaded,
+    count: _custom.length,
+  );
 
   @override
   void initState() {
@@ -130,7 +134,9 @@ class _StickerPickerState extends State<StickerPicker> {
 
   Future<void> _loadCustom() async {
     final none = widget.groupId.isEmpty || _gate == PlusGate.hidden;
-    final list = none ? const <CustomMood>[] : await _store.load(widget.groupId);
+    final list = none
+        ? const <CustomMood>[]
+        : await _store.load(widget.groupId);
     if (!mounted) return;
     setState(() {
       _custom = list;
@@ -155,9 +161,9 @@ class _StickerPickerState extends State<StickerPicker> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(kStickerLastPackKey, pack.id);
     if (!mounted) return;
-    Navigator.of(context).pop(
-      StickerChoice(image: mood.imagePath, pack: pack.id, mood: mood.id),
-    );
+    Navigator.of(
+      context,
+    ).pop(StickerChoice(image: mood.imagePath, pack: pack.id, mood: mood.id));
   }
 
   Future<void> _pickOwn(CustomMood mood) async {
@@ -166,28 +172,44 @@ class _StickerPickerState extends State<StickerPicker> {
     await prefs.setString(kStickerLastPackKey, kOwnMoodPackId);
     if (!mounted) return;
     Navigator.of(context).pop(
-      StickerChoice(image: mood.imageUrl, pack: kOwnMoodPackId, mood: mood.moodId),
+      StickerChoice(
+        image: mood.imageUrl,
+        pack: kOwnMoodPackId,
+        mood: mood.moodId,
+      ),
     );
   }
 
   /// Первое своё настроение пары: с Плюсом и пустым набором.
   Future<void> _createOwn() async {
-    final made = await showCustomMoodSheet(context, widget.groupId, store: widget.store);
+    final made = await showCustomMoodSheet(
+      context,
+      widget.groupId,
+      store: widget.store,
+    );
     if (made == true) await _loadCustom();
   }
 
   void _openPlus() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => PlusScreen(scheme: ProfileTheme.schemeFor(context.appTheme)),
-    ));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            PlusScreen(scheme: ProfileTheme.schemeFor(context.appTheme)),
+      ),
+    );
   }
 
   Future<void> _buy(MoodPack pack) async {
     final user = widget.user;
     if (user == null) return;
-    await buyMoodPack(context, pack, user: user, onBought: () {
-      if (mounted) setState(() {});
-    });
+    await buyMoodPack(
+      context,
+      pack,
+      user: user,
+      onBought: () {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   @override
@@ -198,12 +220,14 @@ class _StickerPickerState extends State<StickerPicker> {
       animation: CatalogService.instance,
       builder: (context, _) {
         final packs = CatalogService.instance.allPacks
-            .where((p) => moodPackVisible(
-                  isIOS: Platform.isIOS,
-                  isMoney: p.unlock.isMoney,
-                  isOpen: _open(p),
-                  buysInStore: kCatalogBuysInStore,
-                ))
+            .where(
+              (p) => moodPackVisible(
+                isIOS: Platform.isIOS,
+                isMoney: p.unlock.isMoney,
+                isOpen: _open(p),
+                buysInStore: kCatalogBuysInStore,
+              ),
+            )
             .where((p) => p.moods.isNotEmpty)
             .toList();
         if (packs.isEmpty) return const SizedBox(height: 120);
@@ -255,7 +279,9 @@ class _StickerPickerState extends State<StickerPicker> {
             const SizedBox(height: 12),
             Flexible(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: math.max(180, screen * 0.46)),
+                constraints: BoxConstraints(
+                  maxHeight: math.max(180, screen * 0.46),
+                ),
                 child: ownShown
                     ? _ownBody(own, cs)
                     : _grid(
@@ -267,7 +293,9 @@ class _StickerPickerState extends State<StickerPicker> {
                             image: mood.imagePath,
                             background: t.cardSurface,
                             locked: !open,
-                            onTap: open ? () => _pick(pack, mood) : () => _buy(pack),
+                            onTap: open
+                                ? () => _pick(pack, mood)
+                                : () => _buy(pack),
                           );
                         },
                       ),
@@ -287,7 +315,10 @@ class _StickerPickerState extends State<StickerPicker> {
                   style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
               ),
-            ] else if (!ownShown && !open && widget.user != null && pack.unlock.isForSale)
+            ] else if (!ownShown &&
+                !open &&
+                widget.user != null &&
+                pack.unlock.isForSale)
               _bottomButton(
                 key: const Key('sticker-pack-buy'),
                 label: _buyLabel(pack),
@@ -316,26 +347,25 @@ class _StickerPickerState extends State<StickerPicker> {
     required Key key,
     required String label,
     required VoidCallback onPressed,
-  }) =>
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-        child: SizedBox(
-          height: 56,
-          child: FilledButton(
-            key: key,
-            onPressed: onPressed,
-            style: FilledButton.styleFrom(
-              shape: const StadiumBorder(),
-              textStyle: const TextStyle(
-                fontFamily: 'Onest',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            child: Text(label),
+  }) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+    child: SizedBox(
+      height: 56,
+      child: FilledButton(
+        key: key,
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(
+            fontFamily: 'Onest',
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
-      );
+        child: Text(label),
+      ),
+    ),
+  );
 
   /// Таблетка «Свои»: картинка первого своего настроения или «+».
   OwnPackChip _ownChipData(ColorScheme cs) {
@@ -417,8 +447,11 @@ class _StickerPickerState extends State<StickerPicker> {
     // второй ценой).
     final price = catalogPriceLabel(
       storePrice: kCatalogBuysInStore
-          ? sharedCoinStore.priceLabel(catalogProductId(
-              Unlock.featureKey(kMoodPackFeatureKind, pack.id)))
+          ? sharedCoinStore.priceLabel(
+              catalogProductId(
+                Unlock.featureKey(kMoodPackFeatureKind, pack.id),
+              ),
+            )
           : null,
       catalogPrice: pack.unlock.priceLabel,
     );
@@ -454,8 +487,12 @@ class _Tile extends StatelessWidget {
         onTap: onTap,
         child: LayoutBuilder(
           builder: (_, box) => fill
-              ? MoodImage(image,
-                  fit: BoxFit.cover, width: box.maxWidth, height: box.maxHeight)
+              ? MoodImage(
+                  image,
+                  fit: BoxFit.cover,
+                  width: box.maxWidth,
+                  height: box.maxHeight,
+                )
               : Center(
                   child: Opacity(
                     opacity: locked ? 0.45 : 1,

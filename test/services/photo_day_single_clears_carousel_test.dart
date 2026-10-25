@@ -35,7 +35,9 @@ void main() {
       }
     });
     // MainActivity.updatePhotoDayCarousel пишет в тот же HomeWidgetPreferences.
-    m.setMockMethodCallHandler(const MethodChannel('love_app/widgets'), (c) async {
+    m.setMockMethodCallHandler(const MethodChannel('love_app/widgets'), (
+      c,
+    ) async {
       if (c.method == 'updatePhotoDayCarousel') {
         final a = c.arguments as Map;
         final id = a['widgetId'];
@@ -46,8 +48,9 @@ void main() {
       return <int>[];
     });
     m.setMockMethodCallHandler(
-        const MethodChannel('plugins.flutter.io/path_provider'),
-        (c) async => tmp.path);
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (c) async => tmp.path,
+    );
   });
 
   File jpg(String name) =>
@@ -108,8 +111,8 @@ void main() {
 
   test('ротация пропускает виджет с пустым списком кадров', () {
     final kt = File(
-            'android/app/src/main/kotlin/com/togetherly/love/PhotoDayRotationReceiver.kt')
-        .readAsStringSync();
+      'android/app/src/main/kotlin/com/togetherly/love/PhotoDayRotationReceiver.kt',
+    ).readAsStringSync();
     expect(kt, contains('if (pathsStr.isNullOrEmpty()) continue'));
   });
 }

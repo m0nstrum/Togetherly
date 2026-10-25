@@ -96,7 +96,8 @@ enum AuthFailure {
   /// характерные причины обрыва.
   static bool _saysProviderUnreachable(ClientException e) {
     final text = '${e.response} ${e}'.toLowerCase();
-    final aboutProvider = text.contains('googleapis.com') ||
+    final aboutProvider =
+        text.contains('googleapis.com') ||
         text.contains('accounts.google.com') ||
         text.contains('appleid.apple.com') ||
         text.contains('oauth2');

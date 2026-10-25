@@ -87,8 +87,10 @@ class _SaveIslandState extends State<SaveIsland> {
       transitionBuilder: (c, a) => FadeTransition(
         opacity: a,
         child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.4), end: Offset.zero)
-              .animate(a),
+          position: Tween(
+            begin: const Offset(0, 0.4),
+            end: Offset.zero,
+          ).animate(a),
           child: c,
         ),
       ),
@@ -96,7 +98,8 @@ class _SaveIslandState extends State<SaveIsland> {
     );
   }
 
-  Widget _shell(BuildContext context, {
+  Widget _shell(
+    BuildContext context, {
     required Key key,
     required Widget lead,
     required String title,
@@ -209,7 +212,8 @@ class _SaveIslandState extends State<SaveIsland> {
         key: const ValueKey('failed'),
         lead: Icon(Icons.error_outline_rounded, color: cs.onInverseSurface),
         title: trKey('islandFailed').replaceAll('{n}', '${job.failed}'),
-        sub: '${job.title} · ${trKey('islandDone').replaceAll('{n}', '${job.done}')}',
+        sub:
+            '${job.title} · ${trKey('islandDone').replaceAll('{n}', '${job.done}')}',
         action: TextButton(
           key: SaveIsland.retryKey,
           onPressed: () => _q.retryFailed(job.id),
@@ -221,7 +225,11 @@ class _SaveIslandState extends State<SaveIsland> {
     return _shell(
       context,
       key: const ValueKey('done'),
-      lead: Icon(Icons.download_done_rounded, color: cs.inversePrimary, size: 26),
+      lead: Icon(
+        Icons.download_done_rounded,
+        color: cs.inversePrimary,
+        size: 26,
+      ),
       title: trKey('islandDone').replaceAll('{n}', '${job.done}'),
       sub: job.title,
       action: TextButton(

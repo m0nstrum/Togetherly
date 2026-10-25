@@ -45,7 +45,8 @@ int brushSeedFor(String key) {
 
 /// Простой и одинаковый везде генератор случайных чисел (xorshift32).
 class BrushRandom {
-  BrushRandom(int seed) : _state = (seed & 0xFFFFFFFF) == 0 ? 0x9E3779B9 : seed & 0xFFFFFFFF;
+  BrushRandom(int seed)
+    : _state = (seed & 0xFFFFFFFF) == 0 ? 0x9E3779B9 : seed & 0xFFFFFFFF;
 
   int _state;
 

@@ -72,8 +72,14 @@ void _line(int x0, int y0, int x1, int y1, void Function(int, int) put) {
   }
 }
 
-void _rect(int x0, int y0, int x1, int y1, bool filled,
-    void Function(int, int) put) {
+void _rect(
+  int x0,
+  int y0,
+  int x1,
+  int y1,
+  bool filled,
+  void Function(int, int) put,
+) {
   final left = x0 < x1 ? x0 : x1;
   final right = x0 < x1 ? x1 : x0;
   final top = y0 < y1 ? y0 : y1;

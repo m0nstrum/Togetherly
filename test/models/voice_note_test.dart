@@ -6,8 +6,11 @@ void main() {
     test('всегда ровно 40 символов, сколько бы замеров ни пришло', () {
       for (final n in [0, 1, 7, 40, 41, 300]) {
         final peaks = VoicePeaks.encode(List.generate(n, (i) => i / (n + 1)));
-        expect(peaks.length, VoicePeaks.count,
-            reason: 'на $n замерах длина уехала');
+        expect(
+          peaks.length,
+          VoicePeaks.count,
+          reason: 'на $n замерах длина уехала',
+        );
       }
     });
 
@@ -25,22 +28,30 @@ void main() {
       expect(secondHalf, greaterThan(firstHalf + 0.3));
     });
 
-    test('тихий голос читается так же, как громкий — нормализуем по максимуму',
-        () {
-      final loudTalk = [0.2, 0.9, 0.35, 0.8, 0.15];
-      final quietTalk = loudTalk.map((v) => v * 0.12).toList();
-      final a = VoicePeaks.decode(VoicePeaks.encode(loudTalk));
-      final b = VoicePeaks.decode(VoicePeaks.encode(quietTalk));
-      for (var i = 0; i < a.length; i++) {
-        expect((a[i] - b[i]).abs(), lessThan(0.12),
-            reason: 'столбик $i разошёлся: ${a[i]} против ${b[i]}');
-      }
-    });
+    test(
+      'тихий голос читается так же, как громкий — нормализуем по максимуму',
+      () {
+        final loudTalk = [0.2, 0.9, 0.35, 0.8, 0.15];
+        final quietTalk = loudTalk.map((v) => v * 0.12).toList();
+        final a = VoicePeaks.decode(VoicePeaks.encode(loudTalk));
+        final b = VoicePeaks.decode(VoicePeaks.encode(quietTalk));
+        for (var i = 0; i < a.length; i++) {
+          expect(
+            (a[i] - b[i]).abs(),
+            lessThan(0.12),
+            reason: 'столбик $i разошёлся: ${a[i]} против ${b[i]}',
+          );
+        }
+      },
+    );
 
     test('тишина остаётся тишиной, а не превращается в шум', () {
       final peaks = VoicePeaks.decode(VoicePeaks.encode(List.filled(30, 0.0)));
-      expect(peaks.every((v) => v <= VoicePeaks.floor + 0.01), isTrue,
-          reason: peaks.toString());
+      expect(
+        peaks.every((v) => v <= VoicePeaks.floor + 0.01),
+        isTrue,
+        reason: peaks.toString(),
+      );
     });
 
     test('разбор возвращает 40 значений в границах 0..1', () {
@@ -77,9 +88,15 @@ void main() {
 
     test('местная запись отличается от серверной', () {
       final local = VoiceNote.fromFields(
-          url: '/data/user/0/rec/voice_1.m4a', ms: 1200, peaks: '');
+        url: '/data/user/0/rec/voice_1.m4a',
+        ms: 1200,
+        peaks: '',
+      );
       final remote = VoiceNote.fromFields(
-          url: 'pb://media/abc/voice.m4a', ms: 1200, peaks: '');
+        url: 'pb://media/abc/voice.m4a',
+        ms: 1200,
+        peaks: '',
+      );
       expect(local!.isLocalFile, isTrue);
       expect(remote!.isLocalFile, isFalse);
     });

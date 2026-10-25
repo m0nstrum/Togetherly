@@ -66,12 +66,19 @@ const Map<String, Map<String, String>> missYouHistoryStrings = {
     'de': 'zuletzt online {t}',
   },
   'missYouEmptyDay': {
-    'ru': 'Сегодня пока тихо. Нажми на сердце, и здесь появится первый импульс.',
-    'en': 'Quiet so far today. Tap the heart and the first pulse shows up here.',
-    'pt': 'Tudo calmo hoje. Toque no coração e o primeiro impulso aparece aqui.',
-    'it': 'Oggi tutto tranquillo. Tocca il cuore e qui apparirà il primo impulso.',
-    'es': 'Hoy todo tranquilo. Toca el corazón y aquí aparecerá el primer impulso.',
-    'fr': 'Calme aujourd’hui. Touche le cœur et le premier élan apparaîtra ici.',
-    'de': 'Heute noch ruhig. Tipp aufs Herz, dann erscheint hier der erste Impuls.',
+    'ru':
+        'Сегодня пока тихо. Нажми на сердце, и здесь появится первый импульс.',
+    'en':
+        'Quiet so far today. Tap the heart and the first pulse shows up here.',
+    'pt':
+        'Tudo calmo hoje. Toque no coração e o primeiro impulso aparece aqui.',
+    'it':
+        'Oggi tutto tranquillo. Tocca il cuore e qui apparirà il primo impulso.',
+    'es':
+        'Hoy todo tranquilo. Toca el corazón y aquí aparecerá el primer impulso.',
+    'fr':
+        'Calme aujourd’hui. Touche le cœur et le premier élan apparaîtra ici.',
+    'de':
+        'Heute noch ruhig. Tipp aufs Herz, dann erscheint hier der erste Impuls.',
   },
 };

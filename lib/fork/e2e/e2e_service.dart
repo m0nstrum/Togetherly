@@ -300,7 +300,8 @@ class E2EService implements E2EKeyring {
     if (rec.payload.isEmpty) return false;
     final bundle = offer.open(crypto, rec.payload);
     final secret = bundle.accountSecret;
-    if (secret.length != 64) throw E2EVerifyError('ключ аккаунта не разбирается');
+    if (secret.length != 64)
+      throw E2EVerifyError('ключ аккаунта не разбирается');
     final account = KeyPair(
       publicKey: Uint8List.fromList(secret.sublist(32)),
       secretKey: crypto.keyFromBytes(secret),
@@ -309,7 +310,11 @@ class E2EService implements E2EKeyring {
     // уже опубликован: иначе нас привязали бы к чужому аккаунту.
     final probe = utf8Bytes('tethered-link-probe|$uid');
     final published = await backend.identity(uid);
-    if (!crypto.verify(probe, crypto.sign(probe, account.secretKey), account.publicKey) ||
+    if (!crypto.verify(
+          probe,
+          crypto.sign(probe, account.secretKey),
+          account.publicKey,
+        ) ||
         published == null ||
         !bytesEqual(published.accountKey, account.publicKey) ||
         !_verifies(published.devices, published.accountKey, uid, 0)) {

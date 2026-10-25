@@ -79,7 +79,9 @@ class PresenceService with WidgetsBindingObserver {
   Future<void> _listenChannel(String groupId) async {
     _unsub?.call();
     final generation = _generation;
-    final unsub = await CentrifugoService().subscribeRaw(_channel(groupId), (raw) {
+    final unsub = await CentrifugoService().subscribeRaw(_channel(groupId), (
+      raw,
+    ) {
       if (!_started || generation != _generation) return;
       final data = ForkE2E.openSignal(_channel(groupId), raw); // fork
       if (data == null || data['t'] != 'alive') return;
@@ -107,14 +109,19 @@ class PresenceService with WidgetsBindingObserver {
     if (_groupId.isNotEmpty) {
       // Публикация не касается диска: её видит только тот, кто сейчас в канале.
       // fork (E2E): сигнал шифром ключа пары; нет ключа — не шлём.
-      final msg = ForkE2E.sealSignal(_groupId, _channel(_groupId),
-          {'t': 'alive', 'uid': uid, 'at': now});
+      final msg = ForkE2E.sealSignal(_groupId, _channel(_groupId), {
+        't': 'alive',
+        'uid': uid,
+        'at': now,
+      });
       if (msg != null) CentrifugoService().publish(_channel(_groupId), msg);
     }
 
     // Отметка «был в сети» нужна для подписи в шапке чата, и только для неё.
     if (PresenceLiveness.shouldWriteLastSeen(
-        writtenAtMs: _lastStoredMs, nowMs: now)) {
+      writtenAtMs: _lastStoredMs,
+      nowMs: now,
+    )) {
       _lastStoredMs = now;
       PbDataService().touchPresence(uid);
     }

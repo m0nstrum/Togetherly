@@ -22,20 +22,33 @@ void main() {
   });
 
   test('экран показывает отказ и не удаляет связь', () {
-    final src = File('lib/screens/connect_partner_screen.dart')
-        .readAsStringSync();
+    final src = File(
+      'lib/screens/connect_partner_screen.dart',
+    ).readAsStringSync();
     expect(src, contains('final done = await pair.unpair();'));
     expect(src, contains('if (!done) _showSnack(_unpairFailed);'));
-    expect(src, contains('if (!ok) {\n                        _showSnack(_unpairFailed);'));
+    expect(
+      src,
+      contains(
+        'if (!ok) {\n                        _showSnack(_unpairFailed);',
+      ),
+    );
     final mgr = File('lib/models/connections_manager.dart').readAsStringSync();
-    expect(mgr,
-        contains('if (connection.isPaired && !await connection.unpair()) return false;'));
+    expect(
+      mgr,
+      contains(
+        'if (connection.isPaired && !await connection.unpair()) return false;',
+      ),
+    );
   });
 
   test('диалог говорит про переписку и воспоминания', () {
-    final src = File('lib/screens/connect_partner_screen.dart')
-        .readAsStringSync();
-    expect(body(src, 'Future<void> _showUnpairDialog()'),
-        contains('Переписка, воспоминания и рисунки этой пары'));
+    final src = File(
+      'lib/screens/connect_partner_screen.dart',
+    ).readAsStringSync();
+    expect(
+      body(src, 'Future<void> _showUnpairDialog()'),
+      contains('Переписка, воспоминания и рисунки этой пары'),
+    );
   });
 }

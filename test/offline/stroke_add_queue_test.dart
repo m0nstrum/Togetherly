@@ -16,38 +16,59 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   final draw = File('lib/screens/draw_screen.dart').readAsStringSync();
-  final outbox =
-      File('lib/services/offline/outbox_service.dart').readAsStringSync();
+  final outbox = File(
+    'lib/services/offline/outbox_service.dart',
+  ).readAsStringSync();
 
   test('очередь знает операцию strokeAdd', () {
-    expect(outbox.contains("case 'strokeAdd':"), isTrue,
-        reason: 'без своей ветки очередь операцию не исполнит');
-    expect(outbox.contains("k('canvas_strokes', p['id'])"), isTrue,
-        reason: 'ключ записи держит порядок правок одного штриха');
-    expect(outbox.contains('createStroke('), isTrue,
-        reason: 'исполнение должно и правда создавать штрих');
+    expect(
+      outbox.contains("case 'strokeAdd':"),
+      isTrue,
+      reason: 'без своей ветки очередь операцию не исполнит',
+    );
+    expect(
+      outbox.contains("k('canvas_strokes', p['id'])"),
+      isTrue,
+      reason: 'ключ записи держит порядок правок одного штриха',
+    );
+    expect(
+      outbox.contains('createStroke('),
+      isTrue,
+      reason: 'исполнение должно и правда создавать штрих',
+    );
   });
 
   test('отказ отправки не убирает штрих с холста', () {
     expect(
       draw.contains('_pendingLocalStrokes.remove(stroke.id)'),
       isFalse,
-      reason: 'нарисованную клетку нельзя стирать из-за сбоя сети: '
+      reason:
+          'нарисованную клетку нельзя стирать из-за сбоя сети: '
           'её ставят в очередь и повторяют',
     );
   });
 
   test('каждый коммит штриха подстрахован очередью', () {
-    expect(draw.contains("enqueue('strokeAdd'"), isTrue,
-        reason: 'запасной путь для добавления штриха');
+    expect(
+      draw.contains("enqueue('strokeAdd'"),
+      isTrue,
+      reason: 'запасной путь для добавления штриха',
+    );
   });
 
   test('отменённый штрих снимается с очереди, а не воскресает', () {
-    expect(draw.contains("enqueue('strokeCancel'"), isTrue,
-        reason: 'отмена ещё не улетевшего штриха обязана гасить задачу: '
-            'иначе очередь пришлёт его позже и он вернётся на холст');
+    expect(
+      draw.contains("enqueue('strokeCancel'"),
+      isTrue,
+      reason:
+          'отмена ещё не улетевшего штриха обязана гасить задачу: '
+          'иначе очередь пришлёт его позже и он вернётся на холст',
+    );
     expect(outbox.contains("case 'strokeCancel':"), isTrue);
-    expect(outbox.contains('_dropQueued('), isTrue,
-        reason: 'гашение удаляет задачу из очереди, а не добавляет новую');
+    expect(
+      outbox.contains('_dropQueued('),
+      isTrue,
+      reason: 'гашение удаляет задачу из очереди, а не добавляет новую',
+    );
   });
 }

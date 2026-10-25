@@ -11,8 +11,9 @@ void main() {
   final kotlin = File(
     'android/app/src/main/kotlin/com/togetherly/love/WidgetImages.kt',
   ).readAsStringSync();
-  final swift =
-      File('ios/TogetherlyWidget/TogetherWidget.swift').readAsStringSync();
+  final swift = File(
+    'ios/TogetherlyWidget/TogetherWidget.swift',
+  ).readAsStringSync();
 
   group('растр', () {
     test('левый верх остаётся чистым — там число', () {
@@ -24,8 +25,9 @@ void main() {
 
     test('к дальнему углу точки крупнее', () {
       final dots = togetherHalftoneDots(const Size(338, 338));
-      final corner = dots.reduce((a, b) =>
-          a.center.distance > b.center.distance ? a : b);
+      final corner = dots.reduce(
+        (a, b) => a.center.distance > b.center.distance ? a : b,
+      );
       expect(corner.radius, greaterThan(TogetherTrackSpec.dotMaxRadius * 0.6));
     });
 
@@ -53,19 +55,31 @@ void main() {
     test('растр', () {
       for (final src in [kotlin, swift]) {
         expect(src.contains('15'), isTrue);
-        expect(src.contains('5.2'), isTrue,
-            reason: 'радиус самой крупной точки разошёлся');
-        expect(src.contains('0.18'), isTrue,
-            reason: 'порог, с которого точки проявляются, разошёлся');
-        expect(src.contains('0.55'), isTrue,
-            reason: 'прозрачность точек разошлась');
+        expect(
+          src.contains('5.2'),
+          isTrue,
+          reason: 'радиус самой крупной точки разошёлся',
+        );
+        expect(
+          src.contains('0.18'),
+          isTrue,
+          reason: 'порог, с которого точки проявляются, разошёлся',
+        );
+        expect(
+          src.contains('0.55'),
+          isTrue,
+          reason: 'прозрачность точек разошлась',
+        );
       }
     });
 
     test('дорожка', () {
       for (final src in [kotlin, swift]) {
-        expect(src.contains('9.5'), isTrue,
-            reason: 'обводка сегодняшней отметки разошлась');
+        expect(
+          src.contains('9.5'),
+          isTrue,
+          reason: 'обводка сегодняшней отметки разошлась',
+        );
       }
     });
   });

@@ -13,10 +13,10 @@ void main() {
   // Сутки прибавляем календарём: Duration(days:) на переводе часов даёт
   // 23-часовые сутки, и «сотый день» уезжает на день назад.
   MilestoneTrack at(int days, {DateTime? anniversary}) => milestoneTrack(
-        start: start,
-        today: DateTime(start.year, start.month, start.day + days),
-        anniversary: anniversary,
-      );
+    start: start,
+    today: DateTime(start.year, start.month, start.day + days),
+    anniversary: anniversary,
+  );
 
   group('ближайшая веха', () {
     test('в первую сотню позади ничего нет', () {

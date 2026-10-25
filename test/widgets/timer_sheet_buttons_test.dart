@@ -30,9 +30,7 @@ Future<void> _loadFont(String family, String path) async {
 
 /// Число строк, на которое реально разложился текст виджета.
 int _linesOf(WidgetTester tester, String text) {
-  final paragraph = tester.renderObject<RenderParagraph>(
-    find.text(text).first,
-  );
+  final paragraph = tester.renderObject<RenderParagraph>(find.text(text).first);
   return paragraph
       .getBoxesForSelection(
         TextSelection(baseOffset: 0, extentOffset: text.length),
@@ -54,8 +52,9 @@ void main() {
   });
 
   for (final scale in [1.0, 1.3, 1.5]) {
-    testWidgets('«Отмена» и «Сохранить» держат одну строку при шрифте $scale',
-        (tester) async {
+    testWidgets('«Отмена» и «Сохранить» держат одну строку при шрифте $scale', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(360 * 3, 800 * 3);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
@@ -84,10 +83,16 @@ void main() {
 
       final s = LocaleService.current;
       expect(find.text(s.cancel), findsOneWidget);
-      expect(_linesOf(tester, s.cancel), 1,
-          reason: '«${s.cancel}» снова переносится внутри кнопки');
-      expect(_linesOf(tester, s.saveSettings), 1,
-          reason: '«${s.saveSettings}» снова переносится внутри кнопки');
+      expect(
+        _linesOf(tester, s.cancel),
+        1,
+        reason: '«${s.cancel}» снова переносится внутри кнопки',
+      );
+      expect(
+        _linesOf(tester, s.saveSettings),
+        1,
+        reason: '«${s.saveSettings}» снова переносится внутри кнопки',
+      );
     });
   }
 }

@@ -17,7 +17,8 @@ const Map<String, String> chatAZh = {
   'voiceHeard': '已听',
   'waitingSetupTitle': '等一个人',
   'waitingEditTitle': '在等谁',
-  'waitingSetupHint': '配对马上就会建立，先只有你一个人。照片、心情和“想你”从第一天起都会存在里面，TA 回来输入邀请码后就能看到全部。',
+  'waitingSetupHint':
+      '配对马上就会建立，先只有你一个人。照片、心情和“想你”从第一天起都会存在里面，TA 回来输入邀请码后就能看到全部。',
   'waitingNameLabel': 'TA 的名字',
   'waitingReturnDate': '回来的日期',
   'waitingCreateAction': '建立配对',

@@ -44,21 +44,25 @@ void main() {
     final cs = buildAppTheme(kPalettes[7], Brightness.light).scheme!;
 
     Widget row(IconData icon, String title, {String note = ''}) => Padding(
-          padding: const EdgeInsets.fromLTRB(6, 12, 6, 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: cs.primary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(title.toUpperCase(),
-                    style: ProfileTheme.sectionLabel(cs)),
-              ),
-              if (note.isNotEmpty)
-                Text(note,
-                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-            ],
+      padding: const EdgeInsets.fromLTRB(6, 12, 6, 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: cs.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title.toUpperCase(),
+              style: ProfileTheme.sectionLabel(cs),
+            ),
           ),
-        );
+          if (note.isNotEmpty)
+            Text(
+              note,
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+            ),
+        ],
+      ),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -76,16 +80,31 @@ void main() {
                   row(Icons.favorite_rounded, 'Отношения', note: 'соседи'),
                   row(Icons.insights_rounded, 'Статистика', note: 'соседи'),
                   const Divider(height: 40),
-                  row(Icons.calendar_view_week_rounded, 'Когда вы скучаете',
-                      note: 'сейчас'),
-                  row(Icons.monitor_heart_rounded, 'Когда вы скучаете',
-                      note: 'пульс'),
-                  row(Icons.schedule_rounded, 'Когда вы скучаете',
-                      note: 'часы'),
-                  row(Icons.bar_chart_rounded, 'Когда вы скучаете',
-                      note: 'столбики'),
-                  row(Icons.volunteer_activism_rounded, 'Когда вы скучаете',
-                      note: 'ладони'),
+                  row(
+                    Icons.calendar_view_week_rounded,
+                    'Когда вы скучаете',
+                    note: 'сейчас',
+                  ),
+                  row(
+                    Icons.monitor_heart_rounded,
+                    'Когда вы скучаете',
+                    note: 'пульс',
+                  ),
+                  row(
+                    Icons.schedule_rounded,
+                    'Когда вы скучаете',
+                    note: 'часы',
+                  ),
+                  row(
+                    Icons.bar_chart_rounded,
+                    'Когда вы скучаете',
+                    note: 'столбики',
+                  ),
+                  row(
+                    Icons.volunteer_activism_rounded,
+                    'Когда вы скучаете',
+                    note: 'ладони',
+                  ),
                 ],
               ),
             ),
@@ -101,8 +120,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 3);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/section-icon.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/section-icon.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }

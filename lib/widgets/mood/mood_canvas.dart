@@ -74,7 +74,10 @@ void paintMoodStrokes(Canvas canvas, Size size, List<MoodStroke> strokes) {
 }
 
 /// Рисунок → PNG [size]×[size] на белом. Сторона 512 — как у картинок паков.
-Future<Uint8List> renderStrokesPng(List<MoodStroke> strokes, {int size = 512}) async {
+Future<Uint8List> renderStrokesPng(
+  List<MoodStroke> strokes, {
+  int size = 512,
+}) async {
   final recorder = ui.PictureRecorder();
   final side = size.toDouble();
   paintMoodStrokes(Canvas(recorder), Size(side, side), strokes);
@@ -93,7 +96,8 @@ class _StrokesPainter extends CustomPainter {
   _StrokesPainter(this.strokes, Listenable repaint) : super(repaint: repaint);
 
   @override
-  void paint(Canvas canvas, Size size) => paintMoodStrokes(canvas, size, strokes);
+  void paint(Canvas canvas, Size size) =>
+      paintMoodStrokes(canvas, size, strokes);
 
   // Список штрихов правится на месте (дописывается, отменяется), поэтому по
   // ссылке перемены не видно: перерисовываем всегда, это дёшево.
@@ -118,10 +122,12 @@ class _StaticStrokesPainter extends CustomPainter {
   const _StaticStrokesPainter(this.strokes);
 
   @override
-  void paint(Canvas canvas, Size size) => paintMoodStrokes(canvas, size, strokes);
+  void paint(Canvas canvas, Size size) =>
+      paintMoodStrokes(canvas, size, strokes);
 
   @override
-  bool shouldRepaint(covariant _StaticStrokesPainter old) => old.strokes != strokes;
+  bool shouldRepaint(covariant _StaticStrokesPainter old) =>
+      old.strokes != strokes;
 }
 
 /// Квадрат, по которому рисуют пальцем. Список штрихов принадлежит листу:
@@ -157,56 +163,60 @@ class _MoodCanvasState extends State<MoodCanvas> {
   }
 
   Offset _share(Offset local, Size size) => Offset(
-        (local.dx / size.width).clamp(0.0, 1.0),
-        (local.dy / size.height).clamp(0.0, 1.0),
-      );
+    (local.dx / size.width).clamp(0.0, 1.0),
+    (local.dy / size.height).clamp(0.0, 1.0),
+  );
 
   void _noDrag(DragUpdateDetails _) {}
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, box) {
-      final size = box.biggest;
-      // Рисуем по сырым касаниям: они не спорят с прокруткой листа. А сами
-      // перетаскивания забирает пустой детектор ниже — иначе вертикальный
-      // штрих уводил бы лист вверх, а не оставлял линию.
-      return Listener(
-        behavior: HitTestBehavior.opaque,
-        onPointerDown: (e) {
-          if (_pointer != null) return;
-          _pointer = e.pointer;
-          widget.strokes.add(MoodStroke(
-            points: [_share(e.localPosition, size)],
-            color: widget.color,
-            width: widget.eraser ? kMoodEraser : kMoodBrush,
-            eraser: widget.eraser,
-          ));
-          _repaint.value++;
-          widget.onChanged();
-        },
-        onPointerMove: (e) {
-          if (e.pointer != _pointer || widget.strokes.isEmpty) return;
-          widget.strokes.last.points.add(_share(e.localPosition, size));
-          _repaint.value++;
-        },
-        onPointerUp: (e) {
-          if (e.pointer == _pointer) _pointer = null;
-        },
-        onPointerCancel: (e) {
-          if (e.pointer == _pointer) _pointer = null;
-        },
-        child: GestureDetector(
+    return LayoutBuilder(
+      builder: (context, box) {
+        final size = box.biggest;
+        // Рисуем по сырым касаниям: они не спорят с прокруткой листа. А сами
+        // перетаскивания забирает пустой детектор ниже — иначе вертикальный
+        // штрих уводил бы лист вверх, а не оставлял линию.
+        return Listener(
           behavior: HitTestBehavior.opaque,
-          onVerticalDragUpdate: _noDrag,
-          onHorizontalDragUpdate: _noDrag,
-          child: RepaintBoundary(
-            child: CustomPaint(
-              painter: _StrokesPainter(widget.strokes, _repaint),
-              size: size,
+          onPointerDown: (e) {
+            if (_pointer != null) return;
+            _pointer = e.pointer;
+            widget.strokes.add(
+              MoodStroke(
+                points: [_share(e.localPosition, size)],
+                color: widget.color,
+                width: widget.eraser ? kMoodEraser : kMoodBrush,
+                eraser: widget.eraser,
+              ),
+            );
+            _repaint.value++;
+            widget.onChanged();
+          },
+          onPointerMove: (e) {
+            if (e.pointer != _pointer || widget.strokes.isEmpty) return;
+            widget.strokes.last.points.add(_share(e.localPosition, size));
+            _repaint.value++;
+          },
+          onPointerUp: (e) {
+            if (e.pointer == _pointer) _pointer = null;
+          },
+          onPointerCancel: (e) {
+            if (e.pointer == _pointer) _pointer = null;
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onVerticalDragUpdate: _noDrag,
+            onHorizontalDragUpdate: _noDrag,
+            child: RepaintBoundary(
+              child: CustomPaint(
+                painter: _StrokesPainter(widget.strokes, _repaint),
+                size: size,
+              ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }

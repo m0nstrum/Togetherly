@@ -19,8 +19,11 @@ void main() {
     );
     expect(targets.first.groupId, 'b');
     expect(targets.first.shared, isTrue);
-    expect(targets.where((t) => t.shared), hasLength(1),
-        reason: 'иначе связи снова затирают друг друга в общих ключах');
+    expect(
+      targets.where((t) => t.shared),
+      hasLength(1),
+      reason: 'иначе связи снова затирают друг друга в общих ключах',
+    );
   });
 
   test('остальные пары обновляются каждая в свои ключи', () {

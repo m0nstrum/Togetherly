@@ -20,8 +20,10 @@ void main() {
     });
 
     test('отозванное согласие закрывает раздел и спрашивает снова', () {
-      final c = CycleConsent.granted(at: now, version: kCycleConsentVersion)
-          .withdrawn(at: now.add(const Duration(days: 1)));
+      final c = CycleConsent.granted(
+        at: now,
+        version: kCycleConsentVersion,
+      ).withdrawn(at: now.add(const Duration(days: 1)));
       expect(c.granted, isFalse);
       expect(c.needsAsking, isTrue);
       expect(c.withdrawnAt, isNotNull);
@@ -29,7 +31,10 @@ void main() {
 
     test('согласие на старую редакцию просят заново', () {
       // Изменили формулировку — старое согласие уже не про этот текст.
-      final c = CycleConsent.granted(at: now, version: kCycleConsentVersion - 1);
+      final c = CycleConsent.granted(
+        at: now,
+        version: kCycleConsentVersion - 1,
+      );
       expect(c.granted, isFalse);
       expect(c.needsAsking, isTrue);
     });
@@ -44,8 +49,10 @@ void main() {
 
     test('мусор в хранилище читается как отсутствие согласия', () {
       expect(CycleConsent.fromMap(const {}).needsAsking, isTrue);
-      expect(CycleConsent.fromMap(const {'granted_at': 'не дата'}).granted,
-          isFalse);
+      expect(
+        CycleConsent.fromMap(const {'granted_at': 'не дата'}).granted,
+        isFalse,
+      );
     });
   });
 }

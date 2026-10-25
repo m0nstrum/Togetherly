@@ -15,7 +15,8 @@ class ForceUpdateScreen extends StatelessWidget {
   const ForceUpdateScreen({super.key});
 
   /// Страница последнего релиза; сборка сама из магазина не обновляется.
-  static final String _releasesLatestUrl = Endpoints.current.releasesUrl; // fork
+  static final String _releasesLatestUrl =
+      Endpoints.current.releasesUrl; // fork
 
   Future<void> _openUpdate() async {
     if (_releasesLatestUrl.isNotEmpty) await _launch(_releasesLatestUrl);

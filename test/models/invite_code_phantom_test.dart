@@ -34,7 +34,8 @@ void main() {
       expect(
         inviteCodeStateOf(code: 'TPNQGP', signedIn: false, confirmed: true),
         InviteCodeState.sessionLost,
-        reason: 'без сессии сервер нас не узнаёт: ни принять чужой код, ни '
+        reason:
+            'без сессии сервер нас не узнаёт: ни принять чужой код, ни '
             'проверить свой',
       );
     });
@@ -74,7 +75,8 @@ void main() {
       expect(
         ConfirmedInviteCodes.contains('AB12CD', ownerUid: 'u2'),
         isFalse,
-        reason: 'после смены аккаунта код прежнего владельца рабочим не считается',
+        reason:
+            'после смены аккаунта код прежнего владельца рабочим не считается',
       );
     });
 
@@ -111,9 +113,13 @@ void main() {
     test('сервер кода не знает, перевыпуск не прошёл — поле пустеет', () {
       expect(
         Connection.codeAfterServerCheck(
-            current: 'TPNQGP', mine: false, fresh: ''),
+          current: 'TPNQGP',
+          mine: false,
+          fresh: '',
+        ),
         '',
-        reason: 'мёртвый код нельзя оставлять на экране: партнёр получит '
+        reason:
+            'мёртвый код нельзя оставлять на экране: партнёр получит '
             '«Код не найден»',
       );
     });
@@ -121,21 +127,32 @@ void main() {
     test('сервер кода не знает, перевыпуск прошёл — встаёт новый', () {
       expect(
         Connection.codeAfterServerCheck(
-            current: 'TPNQGP', mine: false, fresh: 'XY99ZZ'),
+          current: 'TPNQGP',
+          mine: false,
+          fresh: 'XY99ZZ',
+        ),
         'XY99ZZ',
       );
     });
 
     test('сервер код подтвердил — код остаётся', () {
       expect(
-        Connection.codeAfterServerCheck(current: 'AB12CD', mine: true, fresh: ''),
+        Connection.codeAfterServerCheck(
+          current: 'AB12CD',
+          mine: true,
+          fresh: '',
+        ),
         'AB12CD',
       );
     });
 
     test('сервер промолчал — код остаётся в поле, но рабочим не считается', () {
       expect(
-        Connection.codeAfterServerCheck(current: 'AB12CD', mine: null, fresh: ''),
+        Connection.codeAfterServerCheck(
+          current: 'AB12CD',
+          mine: null,
+          fresh: '',
+        ),
         'AB12CD',
       );
     });
@@ -144,14 +161,18 @@ void main() {
   group('сторожа по исходникам', () {
     String bodyOf(String src, String signature, {int length = 1800}) {
       final start = src.indexOf(signature);
-      expect(start, greaterThan(0),
-          reason: '$signature не найден — поправьте сторожа');
+      expect(
+        start,
+        greaterThan(0),
+        reason: '$signature не найден — поправьте сторожа',
+      );
       return src.substring(start, (start + length).clamp(0, src.length));
     }
 
     test('экран подключения раздаёт только подтверждённый код', () {
-      final src =
-          File('lib/screens/connect_partner_screen.dart').readAsStringSync();
+      final src = File(
+        'lib/screens/connect_partner_screen.dart',
+      ).readAsStringSync();
       for (final sig in const [
         'void _handleCopy()',
         'Future<void> _handleShare()',
@@ -164,50 +185,67 @@ void main() {
         expect(
           body.contains('pair.inviteCode'),
           isFalse,
-          reason: '$sig берёт pair.inviteCode напрямую: так на экран снова '
+          reason:
+              '$sig берёт pair.inviteCode напрямую: так на экран снова '
               'попадёт код, которого сервер не подтвердил',
         );
       }
     });
 
-    test('первый экран после регистрации тоже раздаёт только подтверждённый код', () {
-      final src =
-          File('lib/screens/invite_partner_screen.dart').readAsStringSync();
-      for (final sig in const [
-        'Future<void> _share()',
-        'void _copyCode()',
-        'void _showQr()',
-        'Widget build(BuildContext context)',
-      ]) {
-        final start = src.indexOf(sig);
-        expect(start, greaterThan(0), reason: '$sig не найден');
-        final body = src.substring(start, (start + 400).clamp(0, src.length));
-        expect(body.contains('_pair.inviteCode;'), isFalse,
-            reason: '$sig берёт неподтверждённый код');
-      }
-    });
+    test(
+      'первый экран после регистрации тоже раздаёт только подтверждённый код',
+      () {
+        final src = File(
+          'lib/screens/invite_partner_screen.dart',
+        ).readAsStringSync();
+        for (final sig in const [
+          'Future<void> _share()',
+          'void _copyCode()',
+          'void _showQr()',
+          'Widget build(BuildContext context)',
+        ]) {
+          final start = src.indexOf(sig);
+          expect(start, greaterThan(0), reason: '$sig не найден');
+          final body = src.substring(start, (start + 400).clamp(0, src.length));
+          expect(
+            body.contains('_pair.inviteCode;'),
+            isFalse,
+            reason: '$sig берёт неподтверждённый код',
+          );
+        }
+      },
+    );
 
     test('сверка кода гостем не считается ответом сервера', () {
       final src = File('lib/services/pb_data_service.dart').readAsStringSync();
       final body = bodyOf(src, 'Future<bool?> inviteCodeIsMine(');
       final guard = body.indexOf('authStore.isValid');
       final query = body.indexOf("collection('invite_codes')");
-      expect(guard, greaterThan(0),
-          reason: 'без живого токена сервер отдаёт гостю пустой список, и '
-              '404 читался как «кода нет»');
+      expect(
+        guard,
+        greaterThan(0),
+        reason:
+            'без живого токена сервер отдаёт гостю пустой список, и '
+            '404 читался как «кода нет»',
+      );
       expect(guard, lessThan(query));
     });
 
     test('сервер записывает в журнал каждый выданный и подтверждённый код', () {
       final src = File('lib/services/pb_data_service.dart').readAsStringSync();
       expect(
-        bodyOf(src, 'Future<String> generateInviteCode(', length: 2600)
-            .contains('ConfirmedInviteCodes.confirm('),
+        bodyOf(
+          src,
+          'Future<String> generateInviteCode(',
+          length: 2600,
+        ).contains('ConfirmedInviteCodes.confirm('),
         isTrue,
       );
       expect(
-        bodyOf(src, 'Future<bool?> inviteCodeIsMine(')
-            .contains('ConfirmedInviteCodes.confirm('),
+        bodyOf(
+          src,
+          'Future<bool?> inviteCodeIsMine(',
+        ).contains('ConfirmedInviteCodes.confirm('),
         isTrue,
       );
     });

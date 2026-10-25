@@ -63,14 +63,13 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
         ),
         title: Text(
           LocaleService.current.relationshipStatus,
-          style: TextStyle(
-            color: t.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
         ),
       ),
       body: _loading
-          ? Center(child: M3Loading(color: Theme.of(context).colorScheme.primary))
+          ? Center(
+              child: M3Loading(color: Theme.of(context).colorScheme.primary),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -179,7 +178,9 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isSelected ? Theme.of(context).colorScheme.primaryContainer : t.cardSurface,
+        color: isSelected
+            ? Theme.of(context).colorScheme.primaryContainer
+            : t.cardSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected ? Theme.of(context).colorScheme.primary : t.divider,
@@ -201,7 +202,10 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isSelected)
-                    Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
+                    Icon(
+                      Icons.check_circle,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   if (isSelected) const SizedBox(width: 8),
                   IconButton(
                     tooltip: ruEn('Изменить', 'Edit'),
@@ -218,7 +222,10 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
                 ],
               )
             : isSelected
-            ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary)
+            ? Icon(
+                Icons.check_circle,
+                color: Theme.of(context).colorScheme.primary,
+              )
             : null,
       ),
     );
@@ -260,7 +267,10 @@ class _RelationshipStatusScreenState extends State<RelationshipStatusScreen> {
     try {
       await widget.pairData.manager.activeConnection?.setStatus(status);
       if (mounted) {
-        AppSnack.success(context, LocaleService.current.statusSetTo(status.label));
+        AppSnack.success(
+          context,
+          LocaleService.current.statusSetTo(status.label),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -456,27 +466,27 @@ class _CustomStatusSheetState extends State<_CustomStatusSheet> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _emojiController,
-            decoration: InputDecoration(
-              labelText: LocaleService.current.emojiLabel,
-              hintText: LocaleService.current.emojiHint,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _emojiController,
+              decoration: InputDecoration(
+                labelText: LocaleService.current.emojiLabel,
+                hintText: LocaleService.current.emojiHint,
+              ),
+              maxLength: 2,
             ),
-            maxLength: 2,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _labelController,
-            decoration: InputDecoration(
-              labelText: LocaleService.current.labelField,
-              hintText: LocaleService.current.egLivingTogether,
+            const SizedBox(height: 16),
+            TextField(
+              controller: _labelController,
+              decoration: InputDecoration(
+                labelText: LocaleService.current.labelField,
+                hintText: LocaleService.current.egLivingTogether,
+              ),
+              maxLength: 30,
+              textCapitalization: TextCapitalization.words,
             ),
-            maxLength: 30,
-            textCapitalization: TextCapitalization.words,
-          ),
-        ],
+          ],
         ),
       ),
     );

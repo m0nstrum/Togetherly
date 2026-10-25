@@ -22,8 +22,11 @@ void main() {
     test('classic uses the full default mood set; pink is the kawaii set', () {
       expect(MoodPack.classic.moods, same(MoodOption.all));
       expect(MoodPack.pink.moods, same(MoodOption.pinkPack));
-      expect(MoodPack.pink.tileGradient, isNotNull,
-          reason: 'pink stickers are transparent and need a backdrop');
+      expect(
+        MoodPack.pink.tileGradient,
+        isNotNull,
+        reason: 'pink stickers are transparent and need a backdrop',
+      );
       expect(MoodPack.classic.tileGradient, isNull);
     });
   });
@@ -32,8 +35,11 @@ void main() {
     test('all point to existing mood_packs/pink webp assets', () {
       expect(MoodOption.pinkPack.length, 22);
       for (final m in MoodOption.pinkPack) {
-        expect(m.imagePath, 'assets/images/mood_packs/pink/${m.id}.webp',
-            reason: 'unexpected path for ${m.id}');
+        expect(
+          m.imagePath,
+          'assets/images/mood_packs/pink/${m.id}.webp',
+          reason: 'unexpected path for ${m.id}',
+        );
         expect(m.label, isNotEmpty);
         expect(m.score, inInclusiveRange(1, 5));
       }
@@ -60,8 +66,11 @@ void main() {
       // 'happy' exists in both packs; classic is canonical (listed first).
       final happy = MoodOption.byId('happy');
       expect(happy, isNotNull);
-      expect(happy!.imagePath, contains('new emodji'),
-          reason: 'shared ids should resolve to the classic image in stats');
+      expect(
+        happy!.imagePath,
+        contains('new emodji'),
+        reason: 'shared ids should resolve to the classic image in stats',
+      );
     });
   });
 }
@@ -69,13 +78,13 @@ void main() {
 void _packOrderTests() {
   group('Порядок паков', () {
     MoodPack fake(String id, int sort) => MoodPack(
-          id: id,
-          isFree: true,
-          nameRu: id,
-          nameEn: id,
-          moods: MoodOption.all,
-          sort: sort,
-        );
+      id: id,
+      isFree: true,
+      nameRu: id,
+      nameEn: id,
+      moods: MoodOption.all,
+      sort: sort,
+    );
 
     test('каталожный пак встаёт между встроенными по своему sort', () {
       final order = orderedPacks([

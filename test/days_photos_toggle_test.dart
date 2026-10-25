@@ -52,18 +52,26 @@ void main() {
 
   group('Состояние тумблера — по факту, а не по просьбе', () {
     test('в настройки уходит usePhotos, ответ возвращается экрану', () {
-      final src =
-          File('lib/services/home_widget_service.dart').readAsStringSync();
+      final src = File(
+        'lib/services/home_widget_service.dart',
+      ).readAsStringSync();
       final start = src.indexOf('Future<bool> setDaysCounterPhotos(');
-      expect(start, greaterThan(0),
-          reason: 'метод должен отвечать, что вышло на самом деле');
+      expect(
+        start,
+        greaterThan(0),
+        reason: 'метод должен отвечать, что вышло на самом деле',
+      );
       final body = src.substring(start, start + 3000);
-      expect(body.contains('prefs.setBool(_daysPhotosKeyFor(groupId), usePhotos)'),
-          isTrue,
-          reason: 'запоминаем факт, иначе тумблер обещает несуществующие фото');
-      expect(body.contains('prefs.setBool(_daysPhotosEnabledKey, enabled)'),
-          isFalse,
-          reason: 'просьбу в настройки писать нельзя — это и был баг');
+      expect(
+        body.contains('prefs.setBool(_daysPhotosKeyFor(groupId), usePhotos)'),
+        isTrue,
+        reason: 'запоминаем факт, иначе тумблер обещает несуществующие фото',
+      );
+      expect(
+        body.contains('prefs.setBool(_daysPhotosEnabledKey, enabled)'),
+        isFalse,
+        reason: 'просьбу в настройки писать нельзя — это и был баг',
+      );
       expect(body.contains('return usePhotos;'), isTrue);
     });
 
@@ -73,8 +81,11 @@ void main() {
       expect(start, greaterThan(0));
       final body = src.substring(start, start + 1200);
       expect(body.contains('_daysPhotosEnabled = applied'), isTrue);
-      expect(body.contains('daysPhotosFailed'), isTrue,
-          reason: 'человеку надо сказать, почему на виджете остался рисунок');
+      expect(
+        body.contains('daysPhotosFailed'),
+        isTrue,
+        reason: 'человеку надо сказать, почему на виджете остался рисунок',
+      );
     });
   });
 }

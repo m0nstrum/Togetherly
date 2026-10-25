@@ -38,7 +38,8 @@ class ColoringSheet {
     final pictureId = (row['coloring_id'] ?? '').toString().trim();
     if (canvasId.isEmpty || pictureId.isEmpty) return null;
 
-    final at = DateTime.tryParse((row['updated_at'] ?? '').toString()) ??
+    final at =
+        DateTime.tryParse((row['updated_at'] ?? '').toString()) ??
         _timeFromCanvasId(canvasId);
     if (at == null) return null;
 

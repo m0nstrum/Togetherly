@@ -26,18 +26,26 @@ void main() {
 
   testWidgets('полученное показывает рисунок, а не число', (tester) async {
     final a = PairAchievement.byId('streak_14')!;
-    await tester.pumpWidget(achievementApp(
-      Scaffold(body: AchievementMedal(achievement: a, earned: true, size: 64)),
-    ));
+    await tester.pumpWidget(
+      achievementApp(
+        Scaffold(
+          body: AchievementMedal(achievement: a, earned: true, size: 64),
+        ),
+      ),
+    );
     expect(find.byType(AchievementArt), findsOneWidget);
     expect(find.text('14'), findsNothing);
   });
 
   testWidgets('неполученное показывает число-цель без рисунка', (tester) async {
     final a = PairAchievement.byId('streak_14')!;
-    await tester.pumpWidget(achievementApp(
-      Scaffold(body: AchievementMedal(achievement: a, earned: false, size: 64)),
-    ));
+    await tester.pumpWidget(
+      achievementApp(
+        Scaffold(
+          body: AchievementMedal(achievement: a, earned: false, size: 64),
+        ),
+      ),
+    );
     expect(find.byType(AchievementArt), findsNothing);
     expect(find.text('14'), findsOneWidget);
   });
@@ -46,16 +54,20 @@ void main() {
     final a = PairAchievement.byId('streak_7')!;
     var taps = 0;
     for (final earned in [false, true]) {
-      await tester.pumpWidget(achievementApp(Scaffold(
-        body: Center(
-          child: AchievementMedal(
-            achievement: a,
-            earned: earned,
-            size: 64,
-            onTap: () => taps++,
+      await tester.pumpWidget(
+        achievementApp(
+          Scaffold(
+            body: Center(
+              child: AchievementMedal(
+                achievement: a,
+                earned: earned,
+                size: 64,
+                onTap: () => taps++,
+              ),
+            ),
           ),
         ),
-      )));
+      );
       await tester.tap(find.byType(AchievementMedal));
     }
     expect(taps, 1);

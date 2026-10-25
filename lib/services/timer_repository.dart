@@ -30,15 +30,22 @@ class TimerRepository {
         .watchGroup(groupId)
         .map((rec) => rec?.data['timers'])
         .where((raw) {
-      final sig = raw?.toString() ?? '';
-      if (sig == prevSig) return false;
-      prevSig = sig;
-      return true;
-    }).map((raw) => raw is List
-            ? raw
-                .map((e) => TimerItem.fromJson(Map<String, dynamic>.from(e as Map)))
-                .toList()
-            : <TimerItem>[]);
+          final sig = raw?.toString() ?? '';
+          if (sig == prevSig) return false;
+          prevSig = sig;
+          return true;
+        })
+        .map(
+          (raw) => raw is List
+              ? raw
+                    .map(
+                      (e) => TimerItem.fromJson(
+                        Map<String, dynamic>.from(e as Map),
+                      ),
+                    )
+                    .toList()
+              : <TimerItem>[],
+        );
   }
 
   Future<bool> saveGroupTimers(String groupId, List<TimerItem> timers) =>

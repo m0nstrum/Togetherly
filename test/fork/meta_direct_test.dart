@@ -95,7 +95,10 @@ void main() {
         headers: {'content-type': 'text/html; charset=utf-8'},
       );
     });
-    final r = await ForkLinkPreview.fetch('https://maps.app.goo.gl/abc', client: c);
+    final r = await ForkLinkPreview.fetch(
+      'https://maps.app.goo.gl/abc',
+      client: c,
+    );
     expect(r?['url'], full);
     expect(r?['lat'], 55.7298);
     expect(r?['lng'], 37.6011);

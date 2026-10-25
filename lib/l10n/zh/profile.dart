@@ -62,7 +62,8 @@ const Map<String, String> profileZh = {
   'deleteAccount': '注销账号',
   'deleteAccountQuestion': '注销账号？',
   // fork (UX A14): по настоящей отсрочке сервера.
-  'deleteAccountConfirm': '你将退出登录，账号会等待 7 天后才删除。在此期间，配对对你的伴侣保持不变，重新登录即可取消删除，一切都会回来。7 天后配对解除，你的账号和个人数据将被永久清除，配对的聊天和回忆对伴侣也将无法打开。',
+  'deleteAccountConfirm':
+      '你将退出登录，账号会等待 7 天后才删除。在此期间，配对对你的伴侣保持不变，重新登录即可取消删除，一切都会回来。7 天后配对解除，你的账号和个人数据将被永久清除，配对的聊天和回忆对伴侣也将无法打开。',
   'deleteAccountBtn': '永久注销',
   'deleteAccountReauth': '注销账号前，请重新登录后再试。',
   'deleteAccountError': '账号没能注销，请再试一次。',

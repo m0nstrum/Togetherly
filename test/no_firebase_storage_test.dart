@@ -33,8 +33,11 @@ void main() {
   test('ошибка загрузки не отправляет человека в Firebase', () {
     for (final f in Directory('lib/l10n/dict').listSync()) {
       if (f is! File) continue;
-      expect(f.readAsStringSync().contains('Firebase Storage'), isFalse,
-          reason: '${f.path}: строка про Firebase Storage');
+      expect(
+        f.readAsStringSync().contains('Firebase Storage'),
+        isFalse,
+        reason: '${f.path}: строка про Firebase Storage',
+      );
     }
   });
 }

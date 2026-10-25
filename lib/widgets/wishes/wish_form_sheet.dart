@@ -135,10 +135,12 @@ class _WishForm extends StatefulWidget {
 }
 
 class _WishFormState extends State<_WishForm> {
-  late final TextEditingController _title =
-      TextEditingController(text: widget.existing?.title ?? '');
-  late final TextEditingController _note =
-      TextEditingController(text: widget.existing?.note ?? '');
+  late final TextEditingController _title = TextEditingController(
+    text: widget.existing?.title ?? '',
+  );
+  late final TextEditingController _note = TextEditingController(
+    text: widget.existing?.note ?? '',
+  );
   late List<WishKind> _custom = List.of(widget.customKinds);
   late WishKind _kind = _initialKind();
 
@@ -179,8 +181,9 @@ class _WishFormState extends State<_WishForm> {
 
   // ── Вещь ──
   /// Ссылка на товар: по ней сервер сам достаёт название, картинку и цену.
-  late final TextEditingController _url =
-      TextEditingController(text: widget.existing?.url ?? widget.initialUrl);
+  late final TextEditingController _url = TextEditingController(
+    text: widget.existing?.url ?? widget.initialUrl,
+  );
   final TextEditingController _price = TextEditingController();
   bool _fetching = false;
   bool _uploading = false;
@@ -211,25 +214,27 @@ class _WishFormState extends State<_WishForm> {
             child: OutlinedButton.icon(
               key: const Key('wish-place'),
               onPressed: _pickPlace,
-              icon: Icon(p == null
-                  ? Icons.add_location_alt_outlined
-                  : Icons.location_on_rounded),
+              icon: Icon(
+                p == null
+                    ? Icons.add_location_alt_outlined
+                    : Icons.location_on_rounded,
+              ),
               label: Text(
                 p == null
                     ? _tr('Место на карте', 'Place on the map')
                     : p.name.isNotEmpty
-                        ? p.name
-                        : _tr('Точка на карте', 'Pinned on the map'),
+                    ? p.name
+                    : _tr('Точка на карте', 'Pinned on the map'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppFonts.onest(size: 14.5, weight: 600),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor:
-                    p == null ? _cs.onSurfaceVariant : _cs.primary,
+                foregroundColor: p == null ? _cs.onSurfaceVariant : _cs.primary,
                 side: BorderSide(color: _cs.outlineVariant),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
@@ -258,8 +263,8 @@ class _WishFormState extends State<_WishForm> {
   /// Точка из ответа превью: по итоговому адресу (короткие ссылки) или из
   /// разметки места.
   static WishPlace? _previewPlace(String url, Map<String, dynamic> data) {
-    final direct = mapPointFromUrl(url) ??
-        mapPointFromUrl((data['url'] ?? '').toString());
+    final direct =
+        mapPointFromUrl(url) ?? mapPointFromUrl((data['url'] ?? '').toString());
     if (direct != null) return direct;
     final lat = (data['lat'] as num?)?.toDouble();
     final lng = (data['lng'] as num?)?.toDouble();
@@ -284,11 +289,13 @@ class _WishFormState extends State<_WishForm> {
       if (point != null) {
         final title = (data['title'] ?? '').toString();
         if (title.isNotEmpty && _title.text.trim().isEmpty) _title.text = title;
-        _becomePlace(WishPlace(
-          lat: point.lat,
-          lng: point.lng,
-          name: point.name.isNotEmpty ? point.name : title,
-        ));
+        _becomePlace(
+          WishPlace(
+            lat: point.lat,
+            lng: point.lng,
+            name: point.name.isNotEmpty ? point.name : title,
+          ),
+        );
         return;
       }
       _isItem = true;
@@ -303,8 +310,12 @@ class _WishFormState extends State<_WishForm> {
     if (data == null && mounted && _place == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_tr('Магазин не дал карточку — впишите руками',
-              "The shop didn't share a card — fill it in")),
+          content: Text(
+            _tr(
+              'Магазин не дал карточку — впишите руками',
+              "The shop didn't share a card — fill it in",
+            ),
+          ),
         ),
       );
     }
@@ -346,8 +357,12 @@ class _WishFormState extends State<_WishForm> {
       // а фото добавится правкой, когда сеть вернётся.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_tr('Фото не загрузилось — попробуйте позже',
-              "The photo didn't upload — try later")),
+          content: Text(
+            _tr(
+              'Фото не загрузилось — попробуйте позже',
+              "The photo didn't upload — try later",
+            ),
+          ),
         ),
       );
     }
@@ -367,14 +382,18 @@ class _WishFormState extends State<_WishForm> {
             const SizedBox(height: 8),
             ListTile(
               leading: Icon(Icons.photo_library_rounded, color: _cs.primary),
-              title: Text(_tr('Из галереи', 'From gallery'),
-                  style: AppFonts.onest(size: 16, color: _cs.onSurface)),
+              title: Text(
+                _tr('Из галереи', 'From gallery'),
+                style: AppFonts.onest(size: 16, color: _cs.onSurface),
+              ),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
             ),
             ListTile(
               leading: Icon(Icons.photo_camera_rounded, color: _cs.primary),
-              title: Text(_tr('Снять', 'Take a photo'),
-                  style: AppFonts.onest(size: 16, color: _cs.onSurface)),
+              title: Text(
+                _tr('Снять', 'Take a photo'),
+                style: AppFonts.onest(size: 16, color: _cs.onSurface),
+              ),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
             const SizedBox(height: 8),
@@ -412,14 +431,16 @@ class _WishFormState extends State<_WishForm> {
   void _submit() {
     final text = _title.text.trim();
     if (text.isEmpty) return;
-    final price = int.tryParse(_price.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    final price =
+        int.tryParse(_price.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
     Navigator.of(context).pop(
       WishDraft(
         title: text,
         note: _note.text.trim(),
         kind: _kind,
         // Ссылка у «Места» — на карты, вещью она его не делает.
-        isItem: _isItem ||
+        isItem:
+            _isItem ||
             (_url.text.trim().isNotEmpty && _place == null) ||
             price > 0,
         price: price,
@@ -466,8 +487,9 @@ class _WishFormState extends State<_WishForm> {
                       selected: k.id == _kind.id,
                       scheme: _cs,
                       onTap: () => setState(() => _kind = k),
-                      onLongPress:
-                          k.custom ? () => widget.onEditCategory?.call(k) : null,
+                      onLongPress: k.custom
+                          ? () => widget.onEditCategory?.call(k)
+                          : null,
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -512,10 +534,7 @@ class _WishFormState extends State<_WishForm> {
             _linkField(),
             const SizedBox(height: 10),
             _photoButton(),
-            if (_isItem) ...[
-              const SizedBox(height: 10),
-              _itemPreview(),
-            ],
+            if (_isItem) ...[const SizedBox(height: 10), _itemPreview()],
             const SizedBox(height: 18),
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: _title,
@@ -526,10 +545,12 @@ class _WishFormState extends State<_WishForm> {
                   style: FilledButton.styleFrom(
                     backgroundColor: _cs.primary,
                     foregroundColor: _cs.onPrimary,
-                    disabledBackgroundColor:
-                        _cs.onSurface.withValues(alpha: .12),
-                    disabledForegroundColor:
-                        _cs.onSurface.withValues(alpha: .38),
+                    disabledBackgroundColor: _cs.onSurface.withValues(
+                      alpha: .12,
+                    ),
+                    disabledForegroundColor: _cs.onSurface.withValues(
+                      alpha: .38,
+                    ),
                     shape: const StadiumBorder(),
                     textStyle: AppFonts.onest(size: 16, weight: 700),
                   ),
@@ -570,11 +591,15 @@ class _WishFormState extends State<_WishForm> {
                 width: 18,
                 height: 18,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2.2, color: _cs.primary),
+                  strokeWidth: 2.2,
+                  color: _cs.primary,
+                ),
               )
-            : Icon(_image.isEmpty
-                ? Icons.add_a_photo_outlined
-                : Icons.photo_rounded),
+            : Icon(
+                _image.isEmpty
+                    ? Icons.add_a_photo_outlined
+                    : Icons.photo_rounded,
+              ),
         label: Text(
           _image.isEmpty
               ? _tr('Своё фото', 'Own photo')
@@ -584,8 +609,9 @@ class _WishFormState extends State<_WishForm> {
         style: OutlinedButton.styleFrom(
           foregroundColor: _cs.onSurfaceVariant,
           side: BorderSide(color: _cs.outlineVariant),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );
@@ -610,8 +636,11 @@ class _WishFormState extends State<_WishForm> {
               hintText: _tr('не обязательно', 'optional'),
               filled: true,
               fillColor: _cs.surfaceContainerHighest,
-              labelStyle:
-                  AppFonts.onest(size: 12, weight: 600, color: _cs.primary),
+              labelStyle: AppFonts.onest(
+                size: 12,
+                weight: 600,
+                color: _cs.primary,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
                 borderSide: BorderSide.none,
@@ -672,8 +701,11 @@ class _WishFormState extends State<_WishForm> {
                     width: 56,
                     height: 56,
                     color: _cs.surfaceContainerHighest,
-                    child: Icon(Icons.image_outlined,
-                        color: _cs.onSurfaceVariant, size: 22),
+                    child: Icon(
+                      Icons.image_outlined,
+                      color: _cs.onSurfaceVariant,
+                      size: 22,
+                    ),
                   )
                 : StorageImage(
                     imageUrl: _image,
@@ -684,8 +716,11 @@ class _WishFormState extends State<_WishForm> {
                       width: 56,
                       height: 56,
                       color: _cs.surfaceContainerHighest,
-                      child: Icon(Icons.link_off_rounded,
-                          color: _cs.onSurfaceVariant, size: 20),
+                      child: Icon(
+                        Icons.link_off_rounded,
+                        color: _cs.onSurfaceVariant,
+                        size: 20,
+                      ),
                     ),
                   ),
           ),
@@ -701,7 +736,10 @@ class _WishFormState extends State<_WishForm> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.onest(
-                        size: 12, weight: 600, color: _cs.onSurfaceVariant),
+                      size: 12,
+                      weight: 600,
+                      color: _cs.onSurfaceVariant,
+                    ),
                   ),
                 const SizedBox(height: 4),
                 SizedBox(
@@ -718,7 +756,9 @@ class _WishFormState extends State<_WishForm> {
                       filled: true,
                       fillColor: _cs.surfaceContainerHighest,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -746,8 +786,9 @@ class _WishFormState extends State<_WishForm> {
       controller: controller,
       autofocus: autofocus,
       maxLength: maxLength,
-      textInputAction:
-          onSubmitted == null ? TextInputAction.done : TextInputAction.go,
+      textInputAction: onSubmitted == null
+          ? TextInputAction.done
+          : TextInputAction.go,
       onSubmitted: onSubmitted,
       textCapitalization: TextCapitalization.sentences,
       style: AppFonts.onest(size: 16, color: _cs.onSurface),
@@ -759,11 +800,16 @@ class _WishFormState extends State<_WishForm> {
         filled: true,
         fillColor: _cs.surfaceContainerHighest,
         labelStyle: AppFonts.onest(size: 12, weight: 600, color: _cs.primary),
-        floatingLabelStyle:
-            AppFonts.onest(size: 12, weight: 600, color: _cs.primary),
+        floatingLabelStyle: AppFonts.onest(
+          size: 12,
+          weight: 600,
+          color: _cs.primary,
+        ),
         hintStyle: AppFonts.onest(size: 16, color: _cs.onSurfaceVariant),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
@@ -816,8 +862,10 @@ class _CategoryChip extends StatelessWidget {
             children: [
               SymbolIcon(kind.symbol, size: 18, color: fg),
               const SizedBox(width: 6),
-              Text(label,
-                  style: AppFonts.onest(size: 13.5, weight: 600, color: fg)),
+              Text(
+                label,
+                style: AppFonts.onest(size: 13.5, weight: 600, color: fg),
+              ),
             ],
           ),
         ),
@@ -863,7 +911,10 @@ class _AddChip extends StatelessWidget {
               Text(
                 label,
                 style: AppFonts.onest(
-                    size: 13.5, weight: 700, color: scheme.onPrimaryContainer),
+                  size: 13.5,
+                  weight: 700,
+                  color: scheme.onPrimaryContainer,
+                ),
               ),
             ],
           ),

@@ -14,36 +14,50 @@ import 'package:flutter_test/flutter_test.dart';
 /// Версии обязаны приходить из тех же переменных, что у Runner, а для этого
 /// расширению нужен доступ к `Generated.xcconfig` — иначе переменные пустые.
 void main() {
-  final project =
-      File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+  final project = File(
+    'ios/Runner.xcodeproj/project.pbxproj',
+  ).readAsStringSync();
 
   /// Куски настроек, относящиеся к виджет-расширению.
   List<String> widgetConfigs() {
-    final blocks = project.split(RegExp(r'\n\t\t[0-9A-F]{24} /\* (?:Debug|Release|Profile) \*/ = \{'));
+    final blocks = project.split(
+      RegExp(r'\n\t\t[0-9A-F]{24} /\* (?:Debug|Release|Profile) \*/ = \{'),
+    );
     return blocks
         .where((b) => b.contains('com.togetherly.love.TogetherlyWidget'))
         .toList();
   }
 
   test('расширение виджетов есть в проекте', () {
-    expect(widgetConfigs(), isNotEmpty,
-        reason: 'таргет расширения пропал из проекта');
+    expect(
+      widgetConfigs(),
+      isNotEmpty,
+      reason: 'таргет расширения пропал из проекта',
+    );
   });
 
   test('версия расширения берётся из версии приложения', () {
     for (final config in widgetConfigs()) {
-      expect(config, contains(r'MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)"'),
-          reason: 'зашитая версия расширения не даёт iOS его зарегистрировать');
       expect(
-          config, contains(r'CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"'),
-          reason: 'номер сборки расширения обязан совпадать с приложением');
+        config,
+        contains(r'MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)"'),
+        reason: 'зашитая версия расширения не даёт iOS его зарегистрировать',
+      );
+      expect(
+        config,
+        contains(r'CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"'),
+        reason: 'номер сборки расширения обязан совпадать с приложением',
+      );
     }
   });
 
   test('расширению доступны переменные Flutter', () {
     for (final config in widgetConfigs()) {
-      expect(config, contains('Generated.xcconfig'),
-          reason: 'без этого FLUTTER_BUILD_NAME пустой, и версия обнулится');
+      expect(
+        config,
+        contains('Generated.xcconfig'),
+        reason: 'без этого FLUTTER_BUILD_NAME пустой, и версия обнулится',
+      );
     }
   });
 }

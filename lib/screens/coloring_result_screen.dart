@@ -151,8 +151,7 @@ class _ColoringResultScreenState extends State<ColoringResultScreen> {
                             label: Text(_s.coloringShare),
                             style: FilledButton.styleFrom(
                               shape: const StadiumBorder(),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                           ),
                         ),
@@ -166,8 +165,7 @@ class _ColoringResultScreenState extends State<ColoringResultScreen> {
                               backgroundColor: cs.surfaceContainerHigh,
                               foregroundColor: cs.onSurface,
                               shape: const StadiumBorder(),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                           ),
                         ),

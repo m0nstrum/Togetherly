@@ -36,10 +36,18 @@ void main() {
     final pain = tips.firstWhere((t) => t.title.toLowerCase().contains('боль'));
     expect(pain.body.toLowerCase(), contains('врач'));
     for (final drug in [
-      'ибупрофен', 'но-шпа', 'нош-па', 'парацетамол', 'анальгин', 'аспирин',
+      'ибупрофен',
+      'но-шпа',
+      'нош-па',
+      'парацетамол',
+      'анальгин',
+      'аспирин',
     ]) {
-      expect(pain.body.toLowerCase().contains(drug), isFalse,
-          reason: 'в совете названо лекарство: $drug');
+      expect(
+        pain.body.toLowerCase().contains(drug),
+        isFalse,
+        reason: 'в совете названо лекарство: $drug',
+      );
     }
   });
 }

@@ -15,8 +15,11 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('sort ссылается только на существующие поля коллекции', () {
     final schemaFile = File('pocketbase/collections_schema.json');
-    expect(schemaFile.existsSync(), isTrue,
-        reason: 'нет pocketbase/collections_schema.json');
+    expect(
+      schemaFile.existsSync(),
+      isTrue,
+      reason: 'нет pocketbase/collections_schema.json',
+    );
 
     final decoded = jsonDecode(schemaFile.readAsStringSync());
     final collections = decoded is List
@@ -43,9 +46,9 @@ void main() {
       // поля сортировки, и тест ловил бы описание бага вместо самого бага.
       // Пробелы вместо вырезания — чтобы не съехали номера строк.
       final source = entity.readAsStringSync().replaceAllMapped(
-            RegExp(r'//[^\n]*'),
-            (m) => ' ' * m.group(0)!.length,
-          );
+        RegExp(r'//[^\n]*'),
+        (m) => ' ' * m.group(0)!.length,
+      );
 
       for (final call in callRe.allMatches(source)) {
         final name = call.group(1)!;
@@ -64,7 +67,8 @@ void main() {
             if (field.isEmpty || field.startsWith('@')) continue;
             if (known.contains(field)) continue;
 
-            final line = '\n'.allMatches(source.substring(0, call.start)).length + 1;
+            final line =
+                '\n'.allMatches(source.substring(0, call.start)).length + 1;
             problems.add(
               '${entity.path}:$line — коллекция «$name» сортируется по «$field», '
               'такого поля в схеме нет',

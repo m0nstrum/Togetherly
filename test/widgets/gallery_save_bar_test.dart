@@ -15,17 +15,17 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Widget host(String url) => MaterialApp(
-        home: Scaffold(
-          backgroundColor: Colors.black,
-          body: Center(
-            child: GallerySaveBar(
-              imageUrl: url,
-              title: 'Аня',
-              takenAt: DateTime(2026, 10, 17, 18, 20),
-            ),
-          ),
+    home: Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: GallerySaveBar(
+          imageUrl: url,
+          title: 'Аня',
+          takenAt: DateTime(2026, 10, 17, 18, 20),
         ),
-      );
+      ),
+    ),
+  );
 
   testWidgets('у своего файла кнопка есть', (tester) async {
     await tester.pumpWidget(host('pb://media/abcdefghij12345/photo.jpg'));
@@ -42,8 +42,9 @@ void main() {
 
   testWidgets('уже сохранённое помечено сразу', (tester) async {
     const url = 'pb://media/zyxwvutsrqponml/photo.jpg';
-    await SavedMediaLedger.instance
-        .add(const MediaFile(ref: url, kind: SaveKind.photo, index: 0).key);
+    await SavedMediaLedger.instance.add(
+      const MediaFile(ref: url, kind: SaveKind.photo, index: 0).key,
+    );
     await tester.pumpWidget(host(url));
     await tester.pumpAndSettle();
     expect(find.text(trKey('photoSaved')), findsOneWidget);

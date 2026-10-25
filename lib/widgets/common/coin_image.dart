@@ -13,12 +13,15 @@ List<InlineSpan> coinSpans(String text, TextStyle? style) {
   final parts = text.split(mark);
   final spans = <InlineSpan>[];
   for (var i = 0; i < parts.length; i++) {
-    if (parts[i].isNotEmpty || parts.length == 1) spans.add(TextSpan(text: parts[i], style: style));
+    if (parts[i].isNotEmpty || parts.length == 1)
+      spans.add(TextSpan(text: parts[i], style: style));
     if (i < parts.length - 1) {
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: CoinImage(side: side),
-      ));
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: CoinImage(side: side),
+        ),
+      );
     }
   }
   return spans;

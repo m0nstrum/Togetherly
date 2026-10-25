@@ -41,7 +41,10 @@ const int kBookStickerSide = 340;
 ///
 /// Наборы лежат в WebP, а PDF понимает только JPEG и PNG; JPEG съел бы
 /// прозрачный фон. Кодек телефона заодно ужимает исходные 512 точек.
-Future<Uint8List?> bookStickerPng(Uint8List raw, {int side = kBookStickerSide}) async {
+Future<Uint8List?> bookStickerPng(
+  Uint8List raw, {
+  int side = kBookStickerSide,
+}) async {
   try {
     final buffer = await ui.ImmutableBuffer.fromUint8List(raw);
     final descriptor = await ui.ImageDescriptor.encoded(buffer);
@@ -74,14 +77,16 @@ Future<List<BookPdfSticker>> bookStickers(
   for (final s in stickers) {
     final image = await png(s.image);
     if (image == null) continue;
-    out.add(BookPdfSticker(
-      image: image,
-      x: s.x,
-      y: s.y,
-      size: s.size,
-      angle: s.angle,
-      rounded: isOwnMoodSticker(s.image),
-    ));
+    out.add(
+      BookPdfSticker(
+        image: image,
+        x: s.x,
+        y: s.y,
+        size: s.size,
+        angle: s.angle,
+        rounded: isOwnMoodSticker(s.image),
+      ),
+    );
   }
   return out;
 }
@@ -117,23 +122,27 @@ class PairBookService {
     for (final day in days) {
       final entries = <BookPdfEntry>[];
       for (final m in day.memories) {
-        entries.add(BookPdfEntry(
-          title: _titleOf(m),
-          caption: _captionOf(m),
-          author: m.authorName,
-          photos: await _photosOf(m),
-          stickers: await bookStickers(
-            m.stickers,
-            (image) => stickerPngs[image] ??= _stickerPng(image),
+        entries.add(
+          BookPdfEntry(
+            title: _titleOf(m),
+            caption: _captionOf(m),
+            author: m.authorName,
+            photos: await _photosOf(m),
+            stickers: await bookStickers(
+              m.stickers,
+              (image) => stickerPngs[image] ??= _stickerPng(image),
+            ),
           ),
-        ));
+        );
         onProgress?.call(++done, memories.length);
       }
-      pdfDays.add(BookPdfDay(
-        date: day.day,
-        dateLabel: LocaleService.current.dayLogDate(day.day),
-        entries: entries,
-      ));
+      pdfDays.add(
+        BookPdfDay(
+          date: day.day,
+          dateLabel: LocaleService.current.dayLogDate(day.day),
+          entries: entries,
+        ),
+      );
     }
 
     final bytes = await buildPairBookPdf(
@@ -160,15 +169,17 @@ class PairBookService {
     final place = (m.locationName ?? '').trim();
     if (place.isNotEmpty) return place;
     if (m.type == MemoryType.music) {
-      final song = [m.musicArtist, m.musicTitle]
-          .where((s) => (s ?? '').trim().isNotEmpty)
-          .join(' — ');
+      final song = [
+        m.musicArtist,
+        m.musicTitle,
+      ].where((s) => (s ?? '').trim().isNotEmpty).join(' — ');
       if (song.isNotEmpty) return song;
     }
     return '';
   }
 
-  String _captionOf(Memory m) => normalizeMemoryCaption(m.caption)?.trim() ?? '';
+  String _captionOf(Memory m) =>
+      normalizeMemoryCaption(m.caption)?.trim() ?? '';
 
   /// Снимки записи: скачиваются по правам текущего человека и ужимаются.
   ///
@@ -195,16 +206,21 @@ class PairBookService {
     try {
       if (ref.startsWith('localfile://')) {
         final file = File(ref.substring('localfile://'.length));
-        return await file.exists() ? await _shrink(await file.readAsBytes()) : null;
+        return await file.exists()
+            ? await _shrink(await file.readAsBytes())
+            : null;
       }
       if (!ref.startsWith('http') && !_media.isPbRef(ref)) {
         final file = File(ref);
-        return await file.exists() ? await _shrink(await file.readAsBytes()) : null;
+        return await file.exists()
+            ? await _shrink(await file.readAsBytes())
+            : null;
       }
       final url = await _media.resolveUrlAuthed(ref);
       if (url == null || url.isEmpty) return null;
-      final res =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 20));
+      final res = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 20));
       if (res.statusCode != 200 || res.bodyBytes.isEmpty) return null;
       return await _shrink(res.bodyBytes);
     } catch (e) {

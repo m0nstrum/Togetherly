@@ -70,9 +70,9 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
   }
 
   List<SaveItem> _itemsOf(Iterable<int> indexes) => [
-        for (final i in indexes)
-          if (_files[i] case (final m, final f)) SaveItem.of(m, f),
-      ];
+    for (final i in indexes)
+      if (_files[i] case (final m, final f)) SaveItem.of(m, f),
+  ];
 
   String _monthLabel(DateTime d) {
     if (d.year == 1970) return '';
@@ -107,7 +107,10 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
     final cs = widget.scheme;
     final botPad = MediaQuery.of(context).padding.bottom;
     final ledger = SavedMediaLedger.instance;
-    final all = [for (final f in _files) if (f != null) f.$2];
+    final all = [
+      for (final f in _files)
+        if (f != null) f.$2,
+    ];
     final summary = summarizeMedia(all);
     return Theme(
       data: ProfileTheme.data(cs),
@@ -119,7 +122,10 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
           title: Text(
             trKey('allSavedTitle'),
             style: const TextStyle(
-                fontFamily: 'Unbounded', fontSize: 18, fontWeight: FontWeight.w700),
+              fontFamily: 'Unbounded',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           leading: IconButton(
             tooltip: ruEn('Назад', 'Back'),
@@ -165,7 +171,9 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
                                         trKey('allFilesLabel'),
                                         if (summary.videos > 0)
                                           trKey('saveCountVideos').replaceAll(
-                                              '{n}', '${summary.videos}'),
+                                            '{n}',
+                                            '${summary.videos}',
+                                          ),
                                       ].join('\n'),
                                       style: TextStyle(
                                         fontFamily: 'Onest',
@@ -183,8 +191,13 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
                               onPressed: all.isEmpty
                                   ? null
                                   : () => _save(trKey('allSavedTitle'), [
-                                        for (var i = 0; i < widget.items.length; i++) i,
-                                      ]),
+                                      for (
+                                        var i = 0;
+                                        i < widget.items.length;
+                                        i++
+                                      )
+                                        i,
+                                    ]),
                               icon: const Icon(Icons.download_rounded),
                               label: FittedBox(
                                 fit: BoxFit.scaleDown,
@@ -197,10 +210,13 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
                             const SizedBox(height: 6),
                             Text(
                               [
-                                trKey('allSaveSub')
-                                    .replaceAll('{mb}', '${summary.megabytes}'),
+                                trKey(
+                                  'allSaveSub',
+                                ).replaceAll('{mb}', '${summary.megabytes}'),
                                 if (saved > 0)
-                                  trKey('saveAlreadyIn').replaceAll('{n}', '$saved'),
+                                  trKey(
+                                    'saveAlreadyIn',
+                                  ).replaceAll('{n}', '$saved'),
                               ].join(' · '),
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -221,16 +237,20 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  [
-                                    _monthLabel(g.month),
-                                    '${g.indexes.length}',
-                                  ].where((e) => e.isNotEmpty).join(' · ').toUpperCase(),
+                                  [_monthLabel(g.month), '${g.indexes.length}']
+                                      .where((e) => e.isNotEmpty)
+                                      .join(' · ')
+                                      .toUpperCase(),
                                   style: ProfileTheme.sectionLabel(cs),
                                 ),
                               ),
                               TextButton.icon(
-                                onPressed: () => _save(_monthLabel(g.month), g.indexes),
-                                icon: const Icon(Icons.download_rounded, size: 18),
+                                onPressed: () =>
+                                    _save(_monthLabel(g.month), g.indexes),
+                                icon: const Icon(
+                                  Icons.download_rounded,
+                                  size: 18,
+                                ),
                                 label: Text(trKey('allSaveMonth')),
                               ),
                             ],
@@ -240,64 +260,71 @@ class _PhotoGalleryScreenState extends State<_PhotoGalleryScreen> {
                       SliverPadding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         sliver: SliverGrid(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 3,
-                            crossAxisSpacing: 3,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (_, k) {
-                              final i = g.indexes[k];
-                              final item = widget.items[i];
-                              final f = _files[i]?.$2;
-                              final isSaved = f != null && ledger.containsFile(f);
-                              return GestureDetector(
-                                onTap: () => _open(i),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      StorageImage(
-                                        imageUrl: item.url,
-                                        fit: BoxFit.cover,
-                                        // Только ширина: с высотой кадр
-                                        // декодируется в квадрат и сплющивается.
-                                        memCacheWidth: 300,
-                                        errorWidget: (_, _, _) => ColoredBox(
-                                          color: cs.surfaceContainerHigh,
-                                          child: Icon(Icons.broken_image_rounded,
-                                              color: cs.onSurfaceVariant),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                mainAxisSpacing: 3,
+                                crossAxisSpacing: 3,
+                              ),
+                          delegate: SliverChildBuilderDelegate((_, k) {
+                            final i = g.indexes[k];
+                            final item = widget.items[i];
+                            final f = _files[i]?.$2;
+                            final isSaved = f != null && ledger.containsFile(f);
+                            return GestureDetector(
+                              onTap: () => _open(i),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    StorageImage(
+                                      imageUrl: item.url,
+                                      fit: BoxFit.cover,
+                                      // Только ширина: с высотой кадр
+                                      // декодируется в квадрат и сплющивается.
+                                      memCacheWidth: 300,
+                                      errorWidget: (_, _, _) => ColoredBox(
+                                        color: cs.surfaceContainerHigh,
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          color: cs.onSurfaceVariant,
                                         ),
                                       ),
-                                      if (item.isVideo)
-                                        const Center(
-                                          child: Icon(Icons.play_circle_fill_rounded,
-                                              color: Colors.white70, size: 34),
+                                    ),
+                                    if (item.isVideo)
+                                      const Center(
+                                        child: Icon(
+                                          Icons.play_circle_fill_rounded,
+                                          color: Colors.white70,
+                                          size: 34,
                                         ),
-                                      if (isSaved)
-                                        Positioned(
-                                          left: 5,
-                                          bottom: 5,
-                                          child: Container(
-                                            width: 22,
-                                            height: 22,
-                                            decoration: BoxDecoration(
-                                              color: cs.inverseSurface
-                                                  .withValues(alpha: 0.72),
-                                              shape: BoxShape.circle,
+                                      ),
+                                    if (isSaved)
+                                      Positioned(
+                                        left: 5,
+                                        bottom: 5,
+                                        child: Container(
+                                          width: 22,
+                                          height: 22,
+                                          decoration: BoxDecoration(
+                                            color: cs.inverseSurface.withValues(
+                                              alpha: 0.72,
                                             ),
-                                            child: Icon(Icons.download_done_rounded,
-                                                size: 15, color: cs.onInverseSurface),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.download_done_rounded,
+                                            size: 15,
+                                            color: cs.onInverseSurface,
                                           ),
                                         ),
-                                    ],
-                                  ),
+                                      ),
+                                  ],
                                 ),
-                              );
-                            },
-                            childCount: g.indexes.length,
-                          ),
+                              ),
+                            );
+                          }, childCount: g.indexes.length),
                         ),
                       ),
                     ],
@@ -424,18 +451,23 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
       builder: (context, _) {
         final chips = <Widget>[];
         m.reactions.forEach((who, key) {
-          chips.add(ReactionChip(
-            uid: who,
-            name: who == m.authorUid ? m.authorName : '',
-            avatarUrl: who == m.authorUid ? m.authorAvatar : '',
-            reactionKey: key,
-            theme: theme,
-            isMine: who == uid,
-            onTap: who == uid
-                ? () => repo.setReaction(
-                    groupId: m.groupId, memoryId: m.id, reaction: key)
-                : null,
-          ));
+          chips.add(
+            ReactionChip(
+              uid: who,
+              name: who == m.authorUid ? m.authorName : '',
+              avatarUrl: who == m.authorUid ? m.authorAvatar : '',
+              reactionKey: key,
+              theme: theme,
+              isMine: who == uid,
+              onTap: who == uid
+                  ? () => repo.setReaction(
+                      groupId: m.groupId,
+                      memoryId: m.id,
+                      reaction: key,
+                    )
+                  : null,
+            ),
+          );
         });
         final saved = ledger.containsFile(f);
         final saving = !saved && queue.isQueued(f.key);
@@ -446,7 +478,10 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
               AddReactionButton(
                 theme: theme,
                 onPick: (key) => repo.setReaction(
-                    groupId: m.groupId, memoryId: m.id, reaction: key),
+                  groupId: m.groupId,
+                  memoryId: m.id,
+                  reaction: key,
+                ),
               ),
             const Spacer(),
             SaveSplitButton(
@@ -493,15 +528,19 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
     if (choice == null || !mounted) return;
     switch (choice) {
       case ViewerSaveChoice.frame:
-        await saveToGallery(context,
-            title: memorySaveTitle(m),
-            items: [SaveItem.of(m, f)],
-            adult: m.isAdult);
+        await saveToGallery(
+          context,
+          title: memorySaveTitle(m),
+          items: [SaveItem.of(m, f)],
+          adult: m.isAdult,
+        );
       case ViewerSaveChoice.memory:
-        await saveToGallery(context,
-            title: memorySaveTitle(m),
-            items: [for (final x in memFiles) SaveItem.of(m, x)],
-            adult: m.isAdult);
+        await saveToGallery(
+          context,
+          title: memorySaveTitle(m),
+          items: [for (final x in memFiles) SaveItem.of(m, x)],
+          adult: m.isAdult,
+        );
       case ViewerSaveChoice.feed:
         await saveToGallery(
           context,
@@ -512,17 +551,25 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
           ],
         );
       case ViewerSaveChoice.pick:
-        final picked =
-            await showFramePicker(context, files: memFiles, scheme: scheme);
+        final picked = await showFramePicker(
+          context,
+          files: memFiles,
+          scheme: scheme,
+        );
         if (picked == null || picked.files.isEmpty || !mounted) return;
         if (picked.share) {
-          await shareMemoryMedia(context,
-              files: picked.files, takenAt: m.createdAt);
+          await shareMemoryMedia(
+            context,
+            files: picked.files,
+            takenAt: m.createdAt,
+          );
         } else {
-          await saveToGallery(context,
-              title: memorySaveTitle(m),
-              items: [for (final x in picked.files) SaveItem.of(m, x)],
-              adult: m.isAdult);
+          await saveToGallery(
+            context,
+            title: memorySaveTitle(m),
+            items: [for (final x in picked.files) SaveItem.of(m, x)],
+            adult: m.isAdult,
+          );
         }
     }
   }
@@ -535,7 +582,9 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
     bool ok = false,
     bool busy = false,
   }) {
-    final bg = ok ? const Color(0xFFE9F6EE) : Colors.white.withValues(alpha: 0.14);
+    final bg = ok
+        ? const Color(0xFFE9F6EE)
+        : Colors.white.withValues(alpha: 0.14);
     final fg = ok ? const Color(0xFF1C4A2C) : Colors.white;
     return Material(
       key: key,
@@ -555,7 +604,10 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
                   SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2.4, color: fg),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: fg,
+                    ),
                   )
                 else
                   Icon(icon, size: 20, color: fg),
@@ -578,17 +630,26 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
     );
   }
 
-
   /// Круглая кнопка поверх кадра: стекло, чтобы читалась и на светлом.
   /// Плёнка едет за кадром: текущий всегда виден, а не остаётся за краем.
   void _scrollStripTo(int index, {bool animate = true}) {
-    if (!_stripCtrl.hasClients || index < 0 || index >= widget.items.length) return;
+    if (!_stripCtrl.hasClients || index < 0 || index >= widget.items.length)
+      return;
     final position = _stripCtrl.position;
-    final widths = [for (var i = 0; i <= index; i++) filmFrameWidth(widget.items[i].url, 56)];
-    final target = filmStripCenter(widths: widths, index: index, viewport: position.viewportDimension)
-        .clamp(0.0, position.maxScrollExtent);
+    final widths = [
+      for (var i = 0; i <= index; i++) filmFrameWidth(widget.items[i].url, 56),
+    ];
+    final target = filmStripCenter(
+      widths: widths,
+      index: index,
+      viewport: position.viewportDimension,
+    ).clamp(0.0, position.maxScrollExtent);
     if (animate) {
-      _stripCtrl.animateTo(target, duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+      _stripCtrl.animateTo(
+        target,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
     } else {
       _stripCtrl.jumpTo(target);
     }
@@ -618,8 +679,8 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
     final title = (memory?.title?.trim().isNotEmpty == true)
         ? memory!.title!.trim()
         : (_current.caption?.trim().isNotEmpty == true
-            ? _current.caption!.trim()
-            : LocaleService.current.memoryLane);
+              ? _current.caption!.trim()
+              : LocaleService.current.memoryLane);
     // Номер внутри записи, а не в общей ленте: «3/7» понятнее, чем «118/412».
     final sameMemory = [
       for (final it in widget.items)
@@ -661,8 +722,11 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: Colors.white70, size: 20),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white70,
+                size: 20,
+              ),
             ],
           ),
         ),
@@ -701,8 +765,11 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
                   title: trKey('pickShare'),
                   onTap: () {
                     Navigator.pop(ctx);
-                    shareMemoryMedia(context,
-                        files: [hit.$2], takenAt: hit.$1.createdAt);
+                    shareMemoryMedia(
+                      context,
+                      files: [hit.$2],
+                      takenAt: hit.$1.createdAt,
+                    );
                   },
                 ),
               ],
@@ -713,10 +780,12 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
     );
   }
 
-  Widget _frameMenuRow(ColorScheme cs,
-      {required IconData icon,
-      required String title,
-      required VoidCallback onTap}) {
+  Widget _frameMenuRow(
+    ColorScheme cs, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: cs.surfaceContainerHigh,
       borderRadius: BorderRadius.circular(18),
@@ -731,15 +800,22 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
                 width: 44,
                 height: 44,
                 alignment: Alignment.center,
-                decoration:
-                    BoxDecoration(color: cs.surface, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(icon, size: 22, color: cs.onSurface),
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(title,
-                    style: AppFonts.onest(
-                        size: 16, weight: 600, color: cs.onSurface)),
+                child: Text(
+                  title,
+                  style: AppFonts.onest(
+                    size: 16,
+                    weight: 600,
+                    color: cs.onSurface,
+                  ),
+                ),
               ),
             ],
           ),
@@ -801,90 +877,90 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
             // которого просмотр открыли: у остальных своей миниатюры на
             // прежнем экране нет.
             child: PhotoFlightStage(
-            canDismiss: !_zoomed,
-            returns: _currentIndex == widget.initialIndex,
-            child: PageView.builder(
-            controller: _pageController,
-            itemCount: count,
-            onPageChanged: (i) {
-              setState(() {
-                _currentIndex = i;
-                _zoomed = false;
-              });
-              _scrollStripTo(i);
-            },
-            itemBuilder: (_, i) {
-              final item = widget.items[i];
-              if (_veiled(item)) {
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () =>
-                      setState(() => _revealedAdult.add(item.memoryId)),
-                  child: Center(
-                    child: AdultVeil(
-                      sigma: 44,
-                      iconSize: 36,
+              canDismiss: !_zoomed,
+              returns: _currentIndex == widget.initialIndex,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: count,
+                onPageChanged: (i) {
+                  setState(() {
+                    _currentIndex = i;
+                    _zoomed = false;
+                  });
+                  _scrollStripTo(i);
+                },
+                itemBuilder: (_, i) {
+                  final item = widget.items[i];
+                  if (_veiled(item)) {
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () =>
+                          setState(() => _revealedAdult.add(item.memoryId)),
+                      child: Center(
+                        child: AdultVeil(
+                          sigma: 44,
+                          iconSize: 36,
+                          child: StorageImage(
+                            imageUrl: item.url,
+                            fit: BoxFit.contain,
+                            errorWidget: (_, __, ___) =>
+                                Container(color: Colors.grey.shade900),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  if (item.isVideo) {
+                    return GestureDetector(
+                      // Свой плеер, а не система: ролик, снятый в приложении,
+                      // открывался в браузере. Ссылку он разбирает сам
+                      // (`resolvePlayable` внутри), поэтому её сюда тащить не надо.
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              InAppVideoPlayerPage(url: item.videoUrl!),
+                          settings: const RouteSettings(name: '/video_player'),
+                        ),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          StorageImage(
+                            imageUrl: item.url,
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                            height: double.infinity,
+                            errorWidget: (_, __, ___) =>
+                                Container(color: Colors.grey.shade900),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.play_arrow_rounded,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return ZoomablePhoto(
+                    onZoomChanged: (zoomed) {
+                      if (i == _currentIndex && mounted) {
+                        setState(() => _zoomed = zoomed);
+                      }
+                    },
+                    child: Center(
                       child: StorageImage(
                         imageUrl: item.url,
                         fit: BoxFit.contain,
-                        errorWidget: (_, __, ___) =>
-                            Container(color: Colors.grey.shade900),
-                      ),
-                    ),
-                  ),
-                );
-              }
-              if (item.isVideo) {
-                return GestureDetector(
-                  // Свой плеер, а не система: ролик, снятый в приложении,
-                  // открывался в браузере. Ссылку он разбирает сам
-                  // (`resolvePlayable` внутри), поэтому её сюда тащить не надо.
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          InAppVideoPlayerPage(url: item.videoUrl!),
-                      settings: const RouteSettings(name: '/video_player'),
-                    ),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      StorageImage(
-                        imageUrl: item.url,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                        height: double.infinity,
-                        errorWidget: (_, __, ___) =>
-                            Container(color: Colors.grey.shade900),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow_rounded,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return ZoomablePhoto(
-                onZoomChanged: (zoomed) {
-                  if (i == _currentIndex && mounted) {
-                    setState(() => _zoomed = zoomed);
-                  }
-                },
-                child: Center(
-                  child: StorageImage(
-                    imageUrl: item.url,
-                    fit: BoxFit.contain,
-                    placeholder: (_, __) =>
-                        flown != null && i == widget.initialIndex
+                        placeholder: (_, __) =>
+                            flown != null && i == widget.initialIndex
                             ? RawImage(
                                 image: flown,
                                 fit: BoxFit.contain,
@@ -898,17 +974,17 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
                                   color: Colors.white54,
                                 ),
                               ),
-                    errorWidget: (_, __, ___) => const Icon(
-                      Icons.broken_image_rounded,
-                      color: Colors.white38,
-                      size: 48,
+                        errorWidget: (_, __, ___) => const Icon(
+                          Icons.broken_image_rounded,
+                          color: Colors.white38,
+                          size: 48,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
-          ),
+                  );
+                },
+              ),
+            ),
           ),
           // Шапка: крестик, пилюля с номером кадра и названием записи —
           // она же переход к воспоминанию, и она же отвечает, из какой
@@ -919,22 +995,22 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
             right: 8,
             child: PhotoFlightChrome(
               child: Row(
-              children: [
-                _viewerRound(
-                  icon: Icons.close_rounded,
-                  onTap: () => Navigator.pop(context),
-                ),
-                const SizedBox(width: 6),
-                // Пилюля занимает всю середину: справа оставалось пустое
-                // место, а название записи обрезалось на третьей букве.
-                Expanded(child: _viewerTitlePill(count)),
-                const SizedBox(width: 6),
-                _viewerRound(
-                  icon: Icons.more_vert_rounded,
-                  onTap: () => _openFrameMenu(),
-                ),
-              ],
-            ),
+                children: [
+                  _viewerRound(
+                    icon: Icons.close_rounded,
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 6),
+                  // Пилюля занимает всю середину: справа оставалось пустое
+                  // место, а название записи обрезалось на третьей букве.
+                  Expanded(child: _viewerTitlePill(count)),
+                  const SizedBox(width: 6),
+                  _viewerRound(
+                    icon: Icons.more_vert_rounded,
+                    onTap: () => _openFrameMenu(),
+                  ),
+                ],
+              ),
             ),
           ),
           if (_fileOf(_current) case final hit?)
@@ -951,28 +1027,29 @@ class _FullscreenGalleryState extends State<FullscreenGallery> {
               right: 0,
               bottom: botPad + 68,
               child: PhotoFlightChrome(
-              index: 1,
-              child: SizedBox(
-                height: 56,
-                child: ListView.separated(
-                  controller: _stripCtrl,
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: count,
-                  separatorBuilder: (_, _) => const SizedBox(width: 2),
-                  itemBuilder: (_, i) => FilmFrame(
-                    url: widget.items[i].url,
-                    height: 56,
-                    blurred: widget.items[i].adult && _veiled(widget.items[i]),
-                    selected: i == _currentIndex,
-                    onTap: () => _pageController.animateToPage(
-                      i,
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOutCubic,
+                index: 1,
+                child: SizedBox(
+                  height: 56,
+                  child: ListView.separated(
+                    controller: _stripCtrl,
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: count,
+                    separatorBuilder: (_, _) => const SizedBox(width: 2),
+                    itemBuilder: (_, i) => FilmFrame(
+                      url: widget.items[i].url,
+                      height: 56,
+                      blurred:
+                          widget.items[i].adult && _veiled(widget.items[i]),
+                      selected: i == _currentIndex,
+                      onTap: () => _pageController.animateToPage(
+                        i,
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOutCubic,
+                      ),
                     ),
                   ),
                 ),
-              ),
               ),
             ),
         ],
@@ -1044,7 +1121,11 @@ class _MapAppTile extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Icon(Icons.chevron_right_rounded, color: context.appTheme.textMuted, size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: context.appTheme.textMuted,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -1101,21 +1182,20 @@ class _BlurAfterTapState extends State<_BlurAfterTap> {
                         color: Colors.black.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.lock_rounded,
-                        color: Colors.white,
-                        size: 20,
+                      child: const Center(
+                        child: Icon(
+                          Icons.lock_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
         ),
       ),
     );
   }
 }
-

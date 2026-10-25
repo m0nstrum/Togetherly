@@ -26,10 +26,11 @@ void main() {
 
   setUp(() {
     calls = [];
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (_) async => Directory.systemTemp.path,
-    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (_) async => Directory.systemTemp.path,
+        );
     SharedPreferences.setMockInitialValues({'chest_sound': false});
     LocaleService.instance.setLanguage(AppLanguage.ru);
     PairJarService.instance.debugReset();
@@ -37,28 +38,42 @@ void main() {
   tearDown(() => PairJarService.instance.debugReset());
 
   void serverStash(List<Map<String, dynamic>> items) {
-    PocketBaseService().debugUse(PocketBase(
-      'https://togetherly.day',
-      httpClientFactory: () => MockClient((req) async {
-        calls.add('${req.method} ${req.url.path}');
-        if (req.url.path.endsWith('/chest_opens/records')) {
-          return http.Response.bytes(
-            utf8.encode(jsonEncode({
-              'page': 1,
-              'perPage': 100,
-              'totalItems': items.length,
-              'totalPages': 1,
-              'items': [
-                for (final i in items) {'collectionId': 'c', 'collectionName': 'chest_opens', 'state': 'stash', ...i},
-              ],
-            })),
+    PocketBaseService().debugUse(
+      PocketBase(
+        'https://togetherly.day',
+        httpClientFactory: () => MockClient((req) async {
+          calls.add('${req.method} ${req.url.path}');
+          if (req.url.path.endsWith('/chest_opens/records')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'page': 1,
+                  'perPage': 100,
+                  'totalItems': items.length,
+                  'totalPages': 1,
+                  'items': [
+                    for (final i in items)
+                      {
+                        'collectionId': 'c',
+                        'collectionName': 'chest_opens',
+                        'state': 'stash',
+                        ...i,
+                      },
+                  ],
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          return http.Response(
+            '{"ok":true}',
             200,
-            headers: {'content-type': 'application/json; charset=utf-8'},
+            headers: {'content-type': 'application/json'},
           );
-        }
-        return http.Response('{"ok":true}', 200, headers: {'content-type': 'application/json'});
-      }),
-    ));
+        }),
+      ),
+    );
   }
 
   Future<void> pumpChest(WidgetTester tester) async {
@@ -66,11 +81,16 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.runAsync(() => ChestSound.instance.load());
-    final t = buildAppTheme(kPalettes.firstWhere((p) => p.name == 'Розовая'), Brightness.light);
-    await tester.pumpWidget(MaterialApp(
-      theme: ProfileTheme.data(t.scheme!),
-      home: ChestScreen(theme: t, groupId: 'g', debugSeasons: const []),
-    ));
+    final t = buildAppTheme(
+      kPalettes.firstWhere((p) => p.name == 'Розовая'),
+      Brightness.light,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ProfileTheme.data(t.scheme!),
+        home: ChestScreen(theme: t, groupId: 'g', debugSeasons: const []),
+      ),
+    );
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -80,7 +100,13 @@ void main() {
     // Подарка нет в таблице шансов, поэтому его название на экране — только
     // надпись выигрыша. Сезон кончился: подарок встаёт под обычный сундук.
     GiftCatalog.registerSeasonal({
-      'cocoa': const Gift(key: 'cocoa', price: 0, engine: GiftEngine.response, titleRu: 'Какао', titleEn: 'Cocoa'),
+      'cocoa': const Gift(
+        key: 'cocoa',
+        price: 0,
+        engine: GiftEngine.response,
+        titleRu: 'Какао',
+        titleEn: 'Cocoa',
+      ),
     });
     addTearDown(() => GiftCatalog.registerSeasonal(const {}));
     serverStash([
@@ -89,7 +115,11 @@ void main() {
     await pumpChest(tester);
 
     expect(calls, contains('GET /api/collections/chest_opens/records'));
-    expect(find.text('Подарок «Какао»'), findsOneWidget, reason: 'подарок из запаса не виден на экране сундука');
+    expect(
+      find.text('Подарок «Какао»'),
+      findsOneWidget,
+      reason: 'подарок из запаса не виден на экране сундука',
+    );
     expect(find.text('Подарить'), findsOneWidget);
     expect(find.text('Оставить себе'), findsOneWidget);
 
@@ -97,7 +127,9 @@ void main() {
     await tester.pump(const Duration(seconds: 30));
   });
 
-  testWidgets('пустой запас — экран как раньше, с кнопкой открытия', (tester) async {
+  testWidgets('пустой запас — экран как раньше, с кнопкой открытия', (
+    tester,
+  ) async {
     serverStash(const []);
     await pumpChest(tester);
 
@@ -111,6 +143,10 @@ void main() {
   test('подарок кончившегося сезона ждёт под обычным сундуком', () {
     expect(stashSlotFor(const [null, 'hw'], 'hw'), 1);
     expect(stashSlotFor(const [null, 'hw'], null), 0);
-    expect(stashSlotFor(const [null], 'hw'), 0, reason: 'сезон кончился, а подарок остался');
+    expect(
+      stashSlotFor(const [null], 'hw'),
+      0,
+      reason: 'сезон кончился, а подарок остался',
+    );
   });
 }

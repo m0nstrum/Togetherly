@@ -48,7 +48,8 @@ double unfoldSpring(double ms, {required double omega, required double zeta}) {
   final damped = omega * math.sqrt(1 - zeta * zeta);
   return 1 -
       math.exp(-zeta * omega * t) *
-          (math.cos(damped * t) + (zeta * omega / damped) * math.sin(damped * t));
+          (math.cos(damped * t) +
+              (zeta * omega / damped) * math.sin(damped * t));
 }
 
 /// Окно между прямоугольниками [a] и [b] на доле пути [t].
@@ -66,7 +67,12 @@ Rect unfoldRectLerp(Rect a, Rect b, double t) {
 }
 
 ({double start, double end}) _unfoldAxis(
-    double fromStart, double fromEnd, double toStart, double toEnd, double t) {
+  double fromStart,
+  double fromEnd,
+  double toStart,
+  double toEnd,
+  double t,
+) {
   final from = fromEnd - fromStart;
   final to = toEnd - toStart;
   // Размер не меняется: остаётся простой сдвиг.
@@ -209,9 +215,9 @@ abstract final class PhotoTiming {
 typedef PhotoFrame = ({double flight, double backdrop});
 
 PhotoFrame photoOpenFrame(double ms) => (
-      flight: unfoldSpring(ms, omega: 18, zeta: 0.82),
-      backdrop: _unit(ms / 220),
-    );
+  flight: unfoldSpring(ms, omega: 18, zeta: 0.82),
+  backdrop: _unit(ms / 220),
+);
 
 /// Кнопки просмотра проявляются после кадра: шапка, за ней низ.
 double photoChromeIn(double ms, int index) =>
@@ -220,9 +226,9 @@ double photoChromeIn(double ms, int index) =>
 /// Обратный путь. [backdropFrom] — фон в момент закрытия: из-под пальца он
 /// уже наполовину светлый.
 PhotoFrame photoCloseFrame(double ms, {double backdropFrom = 1}) => (
-      flight: 1 - unfoldSpring(ms, omega: 21, zeta: 1),
-      backdrop: backdropFrom * (1 - _unit(ms / 240)),
-    );
+  flight: 1 - unfoldSpring(ms, omega: 21, zeta: 1),
+  backdrop: backdropFrom * (1 - _unit(ms / 240)),
+);
 
 double photoChromeOut(double ms, {double from = 1}) =>
     from * (1 - _unit(ms / 90));
@@ -230,7 +236,8 @@ double photoChromeOut(double ms, {double from = 1}) =>
 /// Кадр под пальцем: едет вниз, вбок вдвое медленнее, сжимается до 0,7, фон
 /// светлеет до 0,15, кнопки гаснут на первых 90 точках.
 ({Offset shift, double scale, double backdrop, double chrome}) photoDragFrame(
-    Offset delta) {
+  Offset delta,
+) {
   final down = math.max(0.0, delta.dy);
   if (down == 0) {
     return (shift: Offset.zero, scale: 1, backdrop: 1, chrome: 1);
@@ -248,8 +255,10 @@ bool photoDragCommits(double down) => down > PhotoTiming.dismissAfter;
 /// Где в [stage] встанет картинка размером [image], вписанная целиком.
 Rect photoFit(Size image, Rect stage) {
   if (image.isEmpty || stage.isEmpty) return stage;
-  final scale =
-      math.min(stage.width / image.width, stage.height / image.height);
+  final scale = math.min(
+    stage.width / image.width,
+    stage.height / image.height,
+  );
   return Rect.fromCenter(
     center: stage.center,
     width: image.width * scale,

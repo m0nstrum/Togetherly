@@ -24,21 +24,23 @@ void main() {
     String url = 'https://example.com/avatar.jpg',
   }) async {
     final routes = _Routes();
-    await tester.pumpWidget(MaterialApp(
-      navigatorObservers: [routes],
-      home: Scaffold(
-        body: Center(
-          child: AvatarWidget(
-            uid: 'partner-uid',
-            liveUrl: url,
-            name: 'Аня',
-            size: 40,
-            primary: Colors.pink,
-            tapToView: tapToView,
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorObservers: [routes],
+        home: Scaffold(
+          body: Center(
+            child: AvatarWidget(
+              uid: 'partner-uid',
+              liveUrl: url,
+              name: 'Аня',
+              size: 40,
+              primary: Colors.pink,
+              tapToView: tapToView,
+            ),
           ),
         ),
       ),
-    ));
+    );
     return routes;
   }
 
@@ -62,7 +64,10 @@ void main() {
     await tester.tap(find.byType(AvatarWidget));
     await tester.pump(const Duration(milliseconds: 300));
     expect(routes.pushes, 0);
-    expect(find.text('А'), findsOneWidget,
-        reason: 'вместо фотографии остаётся первая буква имени');
+    expect(
+      find.text('А'),
+      findsOneWidget,
+      reason: 'вместо фотографии остаётся первая буква имени',
+    );
   });
 }

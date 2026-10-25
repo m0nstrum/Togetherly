@@ -104,7 +104,8 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
     final t = widget.theme;
     final uid = widget.currentUserUid;
 
-    final bool isMine = uid != null &&
+    final bool isMine =
+        uid != null &&
         c.memories.where((m) => m.authorUid == uid).length >
             c.memories.length / 2;
 
@@ -198,7 +199,11 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
                         child: Center(
                           child: Text(
                             '${c.count}',
-                            style: AppFonts.onest(size: size * 0.32, weight: 800, color: Colors.white),
+                            style: AppFonts.onest(
+                              size: size * 0.32,
+                              weight: 800,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -252,7 +257,11 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
                             const SizedBox(width: 8),
                             Text(
                               LocaleService.current.memoriesMapTooltip,
-                              style: AppFonts.onest(size: 14, weight: 700, color: t.textPrimary),
+                              style: AppFonts.onest(
+                                size: 14,
+                                weight: 700,
+                                color: t.textPrimary,
+                              ),
                             ),
                             const Spacer(),
                             Container(
@@ -266,7 +275,11 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
                               ),
                               child: Text(
                                 '${widget.memories.where((m) => m.latitude != null).length}',
-                                style: AppFonts.onest(size: 12, weight: 700, color: t.primary),
+                                style: AppFonts.onest(
+                                  size: 12,
+                                  weight: 700,
+                                  color: t.primary,
+                                ),
                               ),
                             ),
                           ],
@@ -292,13 +305,20 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.location_off_rounded,
-                        size: 48, color: t.textMuted),
+                    Icon(
+                      Icons.location_off_rounded,
+                      size: 48,
+                      color: t.textMuted,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       LocaleService.current.noGeoMemories,
                       textAlign: TextAlign.center,
-                      style: AppFonts.onest(size: 16, weight: 700, color: t.textSecondary),
+                      style: AppFonts.onest(
+                        size: 16,
+                        weight: 700,
+                        color: t.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -327,9 +347,12 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
   Widget _buildClusterPanel(_MemoryCluster cluster) {
     final t = widget.theme;
     final photos = cluster.memories
-        .where((m) =>
-            m.type == MemoryType.photo &&
-            (m.imageUrls?.isNotEmpty == true || m.imageUrl?.isNotEmpty == true))
+        .where(
+          (m) =>
+              m.type == MemoryType.photo &&
+              (m.imageUrls?.isNotEmpty == true ||
+                  m.imageUrl?.isNotEmpty == true),
+        )
         .take(6)
         .toList();
     final locationName = cluster.memories
@@ -360,8 +383,11 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
                     color: t.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.location_on_rounded,
-                      size: 18, color: t.primary),
+                  child: Icon(
+                    Icons.location_on_rounded,
+                    size: 18,
+                    color: t.primary,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -370,7 +396,11 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
                     children: [
                       Text(
                         locationName ?? LocaleService.current.placeFallback,
-                        style: AppFonts.onest(size: 15, weight: 700, color: t.textPrimary),
+                        style: AppFonts.onest(
+                          size: 15,
+                          weight: 700,
+                          color: t.textPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -404,8 +434,10 @@ class _MemoriesMapScreenState extends State<MemoriesMapScreen> {
                         width: 72,
                         height: 72,
                         color: t.surfaceMuted,
-                        child: Icon(Icons.broken_image_rounded,
-                            color: t.textMuted),
+                        child: Icon(
+                          Icons.broken_image_rounded,
+                          color: t.textMuted,
+                        ),
                       ),
                     );
                     return ClipRRect(

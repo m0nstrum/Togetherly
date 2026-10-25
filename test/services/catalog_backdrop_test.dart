@@ -18,15 +18,28 @@ void main() {
           'files': {'mask': 'https://x/mask.webp'},
         },
       },
-      {'id': 'backdrop_bad', 'kind': 'backdrop', 'data': {'key': 'bad'}},
+      {
+        'id': 'backdrop_bad',
+        'kind': 'backdrop',
+        'data': {'key': 'bad'},
+      },
     ]);
     expect(CatalogService.instance.backdrops.map((b) => b.key), ['hw']);
-    expect(CatalogService.instance.activeBackdrop(DateTime(2026, 10, 20))?.key, 'hw');
-    expect(CatalogService.instance.activeBackdrop(DateTime(2026, 11, 2)), isNull);
+    expect(
+      CatalogService.instance.activeBackdrop(DateTime(2026, 10, 20))?.key,
+      'hw',
+    );
+    expect(
+      CatalogService.instance.activeBackdrop(DateTime(2026, 11, 2)),
+      isNull,
+    );
   });
 
   test('запись выключили на сервере — фона нет', () {
     CatalogService.instance.debugApply(const []);
-    expect(CatalogService.instance.activeBackdrop(DateTime(2026, 10, 20)), isNull);
+    expect(
+      CatalogService.instance.activeBackdrop(DateTime(2026, 10, 20)),
+      isNull,
+    );
   });
 }

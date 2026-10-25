@@ -12,29 +12,30 @@ Map<String, dynamic> row({
   String kind = 'badge',
   int sort = 920,
   Map<String, String>? name,
-}) =>
-    {
-      'id': 'badge_fish',
-      'kind': kind,
-      'price': price,
-      'sort': sort,
-      'enabled': enabled,
-      'data': {
-        'key': key,
-        'rarity': grantOnly ? 'award' : 'common',
-        'grantOnly': grantOnly,
-        'name': name ?? {'ru': 'Рыбка', 'en': 'Fish', 'de': 'Fischlein'},
-        'desc': {'ru': 'За вклад', 'en': 'For help'},
-        'sm': 'https://x/sm.webp',
-        'lg': 'https://x/lg.webp',
-        'still': 'https://x/still.png',
-      },
-    };
+}) => {
+  'id': 'badge_fish',
+  'kind': kind,
+  'price': price,
+  'sort': sort,
+  'enabled': enabled,
+  'data': {
+    'key': key,
+    'rarity': grantOnly ? 'award' : 'common',
+    'grantOnly': grantOnly,
+    'name': name ?? {'ru': 'Рыбка', 'en': 'Fish', 'de': 'Fischlein'},
+    'desc': {'ru': 'За вклад', 'en': 'For help'},
+    'sm': 'https://x/sm.webp',
+    'lg': 'https://x/lg.webp',
+    'still': 'https://x/still.png',
+  },
+};
 
 void main() {
   group('Значок из строки каталога', () {
     test('разбирает ключ, цену, наградной флаг и адреса', () {
-      final i = ProfileIcon.fromCatalog(row(key: 'Paw', price: 20, grantOnly: false))!;
+      final i = ProfileIcon.fromCatalog(
+        row(key: 'Paw', price: 20, grantOnly: false),
+      )!;
       expect(i.id, 'Paw');
       expect(i.price, 20);
       expect(i.grantOnly, isFalse);
@@ -63,15 +64,18 @@ void main() {
       expect(i.price, 0);
     });
 
-    test('название на языке человека, иначе английское, иначе русское, иначе ключ', () {
-      final i = ProfileIcon.fromCatalog(row())!;
-      expect(i.nameIn('de'), 'Fischlein');
-      expect(i.nameIn('fr'), 'Fish');
-      final ruOnly = ProfileIcon.fromCatalog(row(name: {'ru': 'Рыбка'}))!;
-      expect(ruOnly.nameIn('fr'), 'Рыбка');
-      final none = ProfileIcon.fromCatalog(row(name: {}))!;
-      expect(none.nameIn('ru'), 'Fish');
-    });
+    test(
+      'название на языке человека, иначе английское, иначе русское, иначе ключ',
+      () {
+        final i = ProfileIcon.fromCatalog(row())!;
+        expect(i.nameIn('de'), 'Fischlein');
+        expect(i.nameIn('fr'), 'Fish');
+        final ruOnly = ProfileIcon.fromCatalog(row(name: {'ru': 'Рыбка'}))!;
+        expect(ruOnly.nameIn('fr'), 'Рыбка');
+        final none = ProfileIcon.fromCatalog(row(name: {}))!;
+        expect(none.nameIn('ru'), 'Fish');
+      },
+    );
 
     test('мелкий показ берёт маленькую анимацию, крупный — большую', () {
       final i = ProfileIcon.fromCatalog(row())!;

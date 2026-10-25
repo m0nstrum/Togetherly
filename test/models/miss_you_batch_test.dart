@@ -62,7 +62,11 @@ void main() {
         batch.add();
       }
       expect(batch.takeAllChunks(), [20, 17]);
-      expect(batch.pending, 0, reason: 'в накопителе не должно остаться ничего');
+      expect(
+        batch.pending,
+        0,
+        reason: 'в накопителе не должно остаться ничего',
+      );
     });
 
     test('пустой накопитель на выходе не шлёт ничего', () {

@@ -43,7 +43,6 @@ class MoodService extends ChangeNotifier {
     _widgetService = widgetService;
   }
 
-
   // ── Состояние (источник правды — live-стримы PB) ─────────────────────────
   /// Мои записи настроений (плоский отсортированный список — публичный API).
   List<MoodEntry> _myEntries = [];
@@ -97,7 +96,9 @@ class MoodService extends ChangeNotifier {
   void listenToPartner(String partnerUid) {
     if (_groupId.isEmpty || partnerUid.isEmpty) return;
     _partnerSubs[partnerUid]?.cancel();
-    _partnerSubs[partnerUid] = _repo.watch(_groupId, partnerUid).listen((entries) {
+    _partnerSubs[partnerUid] = _repo.watch(_groupId, partnerUid).listen((
+      entries,
+    ) {
       _partnerEntries[partnerUid] = entries;
       notifyListeners();
     });
@@ -180,7 +181,8 @@ class MoodService extends ChangeNotifier {
   }) async {
     if (_groupId.isEmpty) return;
     final today = DateTime.now();
-    final isToday = date.year == today.year &&
+    final isToday =
+        date.year == today.year &&
         date.month == today.month &&
         date.day == today.day;
 
@@ -215,7 +217,8 @@ class MoodService extends ChangeNotifier {
   Future<void> clearMoodForDate(DateTime date) async {
     if (_groupId.isEmpty) return;
     final today = DateTime.now();
-    final isToday = date.year == today.year &&
+    final isToday =
+        date.year == today.year &&
         date.month == today.month &&
         date.day == today.day;
 

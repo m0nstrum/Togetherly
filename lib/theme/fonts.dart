@@ -20,16 +20,15 @@ class AppFonts {
     double? height,
     double? letterSpacing,
     Color? color,
-  }) =>
-      TextStyle(
-        fontFamily: display,
-        fontSize: size,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-        fontWeight: _weightOf(weight),
-        fontVariations: [FontVariation('wght', weight)],
-      );
+  }) => TextStyle(
+    fontFamily: display,
+    fontSize: size,
+    height: height,
+    letterSpacing: letterSpacing,
+    color: color,
+    fontWeight: _weightOf(weight),
+    fontVariations: [FontVariation('wght', weight)],
+  );
 
   /// Текстовый стиль: Onest нужного веса.
   static TextStyle onest({
@@ -38,16 +37,15 @@ class AppFonts {
     double? height,
     double? letterSpacing,
     Color? color,
-  }) =>
-      TextStyle(
-        fontFamily: body,
-        fontSize: size,
-        height: height,
-        letterSpacing: letterSpacing,
-        color: color,
-        fontWeight: _weightOf(weight),
-        fontVariations: [FontVariation('wght', weight)],
-      );
+  }) => TextStyle(
+    fontFamily: body,
+    fontSize: size,
+    height: height,
+    letterSpacing: letterSpacing,
+    color: color,
+    fontWeight: _weightOf(weight),
+    fontVariations: [FontVariation('wght', weight)],
+  );
 
   static FontWeight _weightOf(double w) {
     if (w >= 850) return FontWeight.w900;

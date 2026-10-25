@@ -99,6 +99,9 @@ jobs:
       - name: browser room security and queue
         run: node --test test/fork/watch/*.test.cjs
 
+      - name: dart format
+        run: dart format --set-exit-if-changed -o none lib test
+
       # Ошибки фатальны всегда. Предупреждения апстрима записаны в
       # tool/fork/analyze_baseline.txt, новые валят проверку.
       - name: flutter analyze

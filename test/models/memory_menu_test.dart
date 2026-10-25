@@ -15,22 +15,21 @@ Memory _m({
   String? videoUrl,
   String? musicUrl,
   List<String>? imageUrls,
-}) =>
-    Memory(
-      id: 'm1',
-      groupId: 'g1',
-      authorUid: 'partner',
-      authorName: 'Лиза',
-      type: type,
-      createdAt: DateTime(2026, 9, 5),
-      caption: caption,
-      latitude: lat,
-      longitude: lng,
-      videoUrl: videoUrl,
-      musicUrl: musicUrl,
-      imageUrls: imageUrls,
-      imageUrl: imageUrls?.first,
-    );
+}) => Memory(
+  id: 'm1',
+  groupId: 'g1',
+  authorUid: 'partner',
+  authorName: 'Лиза',
+  type: type,
+  createdAt: DateTime(2026, 9, 5),
+  caption: caption,
+  latitude: lat,
+  longitude: lng,
+  videoUrl: videoUrl,
+  musicUrl: musicUrl,
+  imageUrls: imageUrls,
+  imageUrl: imageUrls?.first,
+);
 
 void main() {
   test('чужая запись с местом: сохранить, выбрать, отправить, карта', () {
@@ -54,27 +53,39 @@ void main() {
   });
 
   test('один кадр: выбирать нечего, сохранить и отправить есть', () {
-    final a = memoryMenuActions(_m(imageUrls: ['pb://media/a/1.webp']),
-        isOwner: false, canSetPlace: false);
+    final a = memoryMenuActions(
+      _m(imageUrls: ['pb://media/a/1.webp']),
+      isOwner: false,
+      canSetPlace: false,
+    );
     expect(a, contains(MemoryMenuAction.saveAll));
     expect(a, isNot(contains(MemoryMenuAction.pick)));
     expect(a, contains(MemoryMenuAction.share));
   });
 
   test('своя запись без места: указать место, изменить и удалить', () {
-    final a = memoryMenuActions(_m(imageUrls: ['pb://media/a/1.webp']),
-        isOwner: true, canSetPlace: true);
-    expect(a, containsAllInOrder([
-      MemoryMenuAction.setPlace,
-      MemoryMenuAction.edit,
-      MemoryMenuAction.delete,
-    ]));
+    final a = memoryMenuActions(
+      _m(imageUrls: ['pb://media/a/1.webp']),
+      isOwner: true,
+      canSetPlace: true,
+    );
+    expect(
+      a,
+      containsAllInOrder([
+        MemoryMenuAction.setPlace,
+        MemoryMenuAction.edit,
+        MemoryMenuAction.delete,
+      ]),
+    );
     expect(a.last, MemoryMenuAction.delete);
   });
 
   test('«Изменить» только у своей записи', () {
-    final a = memoryMenuActions(_m(imageUrls: ['pb://media/a/1.webp']),
-        isOwner: false, canSetPlace: false);
+    final a = memoryMenuActions(
+      _m(imageUrls: ['pb://media/a/1.webp']),
+      isOwner: false,
+      canSetPlace: false,
+    );
     expect(a, isNot(contains(MemoryMenuAction.edit)));
   });
 
@@ -90,17 +101,21 @@ void main() {
 
   test('заметка партнёра с подписью: скопировать подпись', () {
     final a = memoryMenuActions(
-        _m(type: MemoryType.text, caption: 'Скучаю'),
-        isOwner: false,
-        canSetPlace: false);
+      _m(type: MemoryType.text, caption: 'Скучаю'),
+      isOwner: false,
+      canSetPlace: false,
+    );
     expect(a, [MemoryMenuAction.copyCaption]);
   });
 
   test('ни одной записи с пустым меню у собравшейся пары не бывает', () {
     // Самая бедная запись: чужая заметка без текста и без места — место
     // можно указать, и меню не пустое.
-    final a = memoryMenuActions(_m(type: MemoryType.text),
-        isOwner: false, canSetPlace: true);
+    final a = memoryMenuActions(
+      _m(type: MemoryType.text),
+      isOwner: false,
+      canSetPlace: true,
+    );
     expect(a, isNotEmpty);
   });
 }

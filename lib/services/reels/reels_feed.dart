@@ -47,7 +47,8 @@ class ReelsFeed {
 
   /// Скрипт страницы: перехват ответов ленты, тишина, согласие на куки.
   /// Правила площадок повторяет разведка (`reels_source.dart`).
-  static String script(ReelsSource source) => '''
+  static String script(ReelsSource source) =>
+      '''
 (function(){
   if (window.__tgReels) return; window.__tgReels = 1;
   var SRC = '${source.key}';
@@ -147,16 +148,23 @@ class ReelsFeed {
     if (_view != null || _disposed) return;
     final view = HeadlessInAppWebView(
       initialUrlRequest: URLRequest(url: WebUri(source.home)),
-      initialSize: source.desktop ? const Size(1280, 900) : const Size(390, 844),
+      initialSize: source.desktop
+          ? const Size(1280, 900)
+          : const Size(390, 844),
       initialUserScripts: UnmodifiableListView([
-        UserScript(source: script(source), injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START),
+        UserScript(
+          source: script(source),
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
       ]),
       initialSettings: InAppWebViewSettings(
         javaScriptEnabled: true,
         mediaPlaybackRequiresUserGesture: false,
         allowsInlineMediaPlayback: true,
         userAgent: source.desktop ? _desktopUa : null,
-        preferredContentMode: source.desktop ? UserPreferredContentMode.DESKTOP : UserPreferredContentMode.RECOMMENDED,
+        preferredContentMode: source.desktop
+            ? UserPreferredContentMode.DESKTOP
+            : UserPreferredContentMode.RECOMMENDED,
         // Движок браузеров на Android один на все окна приложения. Без флага
         // его гибель уносит приложение целиком (обращение 297).
         useOnRenderProcessGone: true,
@@ -185,7 +193,9 @@ class ReelsFeed {
         c.addJavaScriptHandler(
           handlerName: 'reelIds',
           callback: (args) {
-            final ids = args.isNotEmpty && args.first is List ? (args.first as List) : const [];
+            final ids = args.isNotEmpty && args.first is List
+                ? (args.first as List)
+                : const [];
             _accept(ids);
             return null;
           },
@@ -193,12 +203,17 @@ class ReelsFeed {
         c.addJavaScriptHandler(
           handlerName: 'reelThumbs',
           callback: (args) {
-            final raw = args.isNotEmpty && args.first is Map ? (args.first as Map) : const {};
+            final raw = args.isNotEmpty && args.first is Map
+                ? (args.first as Map)
+                : const {};
             final out = <String, String>{};
             raw.forEach((k, v) {
               final id = '$k';
               final url = '$v';
-              if (ReelQueue.isId(id) && url.startsWith('https://') && url.length < 2000) out['${source.key}:$id'] = url;
+              if (ReelQueue.isId(id) &&
+                  url.startsWith('https://') &&
+                  url.length < 2000)
+                out['${source.key}:$id'] = url;
             });
             if (out.isNotEmpty) onThumbs?.call(out);
             return null;
@@ -249,7 +264,10 @@ class ReelsFeed {
   }
 
   /// До [n] номеров. Пусто — ждём ленту до [wait], пока страница раскачается.
-  Future<List<String>> take(int n, {Duration wait = const Duration(seconds: 14)}) async {
+  Future<List<String>> take(
+    int n, {
+    Duration wait = const Duration(seconds: 14),
+  }) async {
     if (_queue.length == 0) {
       _refill();
       final arrived = _arrived ??= Completer<void>();
@@ -294,9 +312,12 @@ class ReelsFeed {
   /// открываем заново — каждая загрузка ленты приносит свежую подборку.
   void _refill() {
     // Страница только что открыта и ещё отвечает — не дёргаем её.
-    if (DateTime.now().difference(_lastNav) < const Duration(seconds: 6)) return;
+    if (DateTime.now().difference(_lastNav) < const Duration(seconds: 6))
+      return;
     final last = _queue.last;
-    final url = source == ReelsSource.shorts && last != null ? source.watchUrl(last) : source.home;
+    final url = source == ReelsSource.shorts && last != null
+        ? source.watchUrl(last)
+        : source.home;
     unawaited(_go(url));
   }
 
@@ -316,7 +337,10 @@ class ReelsFeed {
     final c = _view?.webViewController;
     if (c == null) return;
     try {
-      await c.evaluateJavascript(source: "window.__tgStop=1;document.querySelectorAll('video').forEach(function(v){try{v.pause()}catch(e){}});");
+      await c.evaluateJavascript(
+        source:
+            "window.__tgStop=1;document.querySelectorAll('video').forEach(function(v){try{v.pause()}catch(e){}});",
+      );
       if (defaultTargetPlatform == TargetPlatform.android) await c.pause();
     } catch (_) {}
   }

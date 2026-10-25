@@ -8,22 +8,36 @@
 const Map<String, Map<String, String>> homeStrings = {
   // ── Одноразовые подсказки о новых функциях (см. HintQueue) ────────────────
   'snapHoldHint': {
-    'ru': 'Задержите палец на кнопке фото — снимется ролик на три секунды и уедет партнёру живым фото на рабочий стол',
-    'en': 'Hold the photo button — it records a three-second clip and lands on your partner’s home screen as a live photo',
-    'pt': 'Segure o botão de foto — grava um clipe de três segundos que chega à tela inicial do parceiro como foto viva',
-    'it': 'Tieni premuto il pulsante foto — registra un video di tre secondi che arriva sulla schermata del partner come foto viva',
-    'es': 'Mantén pulsado el botón de foto: graba un clip de tres segundos que llega a la pantalla de tu pareja como foto viva',
-    'fr': 'Maintiens le bouton photo : il enregistre un clip de trois secondes qui arrive en photo vivante sur l’écran de ton partenaire',
-    'de': 'Halte den Fotoknopf gedrückt — er nimmt drei Sekunden Video auf und landet als Lebendfoto auf dem Startbildschirm deines Partners',
+    'ru':
+        'Задержите палец на кнопке фото — снимется ролик на три секунды и уедет партнёру живым фото на рабочий стол',
+    'en':
+        'Hold the photo button — it records a three-second clip and lands on your partner’s home screen as a live photo',
+    'pt':
+        'Segure o botão de foto — grava um clipe de três segundos que chega à tela inicial do parceiro como foto viva',
+    'it':
+        'Tieni premuto il pulsante foto — registra un video di tre secondi che arriva sulla schermata del partner come foto viva',
+    'es':
+        'Mantén pulsado el botón de foto: graba un clip de tres segundos que llega a la pantalla de tu pareja como foto viva',
+    'fr':
+        'Maintiens le bouton photo : il enregistre un clip de trois secondes qui arrive en photo vivante sur l’écran de ton partenaire',
+    'de':
+        'Halte den Fotoknopf gedrückt — er nimmt drei Sekunden Video auf und landet als Lebendfoto auf dem Startbildschirm deines Partners',
   },
   'missScreenHint': {
-    'ru': 'Нажмите счётчик — покажем, в какие дни вы скучали друг по другу, и дадим ответить',
-    'en': 'Tap the counter — see which days you missed each other and answer right there',
-    'pt': 'Toque no contador — veja em que dias vocês sentiram saudade e responda ali mesmo',
-    'it': 'Tocca il contatore — guarda in quali giorni vi siete mancati e rispondi lì',
-    'es': 'Toca el contador: mira en qué días os echasteis de menos y responde ahí mismo',
-    'fr': 'Touche le compteur : vois les jours où vous vous êtes manqué et réponds sur place',
-    'de': 'Tippe auf den Zähler — sieh, an welchen Tagen ihr euch vermisst habt, und antworte gleich dort',
+    'ru':
+        'Нажмите счётчик — покажем, в какие дни вы скучали друг по другу, и дадим ответить',
+    'en':
+        'Tap the counter — see which days you missed each other and answer right there',
+    'pt':
+        'Toque no contador — veja em que dias vocês sentiram saudade e responda ali mesmo',
+    'it':
+        'Tocca il contatore — guarda in quali giorni vi siete mancati e rispondi lì',
+    'es':
+        'Toca el contador: mira en qué días os echasteis de menos y responde ahí mismo',
+    'fr':
+        'Touche le compteur : vois les jours où vous vous êtes manqué et réponds sur place',
+    'de':
+        'Tippe auf den Zähler — sieh, an welchen Tagen ihr euch vermisst habt, und antworte gleich dort',
   },
   'home': {
     'ru': 'Главная',
@@ -749,19 +763,26 @@ const Map<String, Map<String, String>> homeStrings = {
     'de': 'Neuen Code setzen?',
   },
   'pinResetBody': {
-    'ru': 'Пароль живёт только на этом телефоне, восстановить старый нельзя. '
+    'ru':
+        'Пароль живёт только на этом телефоне, восстановить старый нельзя. '
         'Задайте новый — секретные воспоминания откроются им.',
-    'en': 'The code is stored on this phone only and cannot be recovered. Set a '
+    'en':
+        'The code is stored on this phone only and cannot be recovered. Set a '
         'new one and your secret memories will open with it.',
-    'pt': 'O código fica apenas neste telefone e não pode ser recuperado. '
+    'pt':
+        'O código fica apenas neste telefone e não pode ser recuperado. '
         'Defina um novo e suas memórias secretas abrirão com ele.',
-    'it': 'Il codice vive solo su questo telefono e non si può recuperare. '
+    'it':
+        'Il codice vive solo su questo telefono e non si può recuperare. '
         'Impostane uno nuovo: i ricordi segreti si apriranno con quello.',
-    'es': 'El código solo vive en este teléfono y no se puede recuperar. '
+    'es':
+        'El código solo vive en este teléfono y no se puede recuperar. '
         'Establece uno nuevo y tus recuerdos secretos se abrirán con él.',
-    'fr': 'Le code n’existe que sur ce téléphone et ne peut pas être récupéré. '
+    'fr':
+        'Le code n’existe que sur ce téléphone et ne peut pas être récupéré. '
         'Définis-en un nouveau : tes souvenirs secrets s’ouvriront avec lui.',
-    'de': 'Der Code liegt nur auf diesem Telefon und lässt sich nicht '
+    'de':
+        'Der Code liegt nur auf diesem Telefon und lässt sich nicht '
         'wiederherstellen. Setze einen neuen — damit öffnen sich die geheimen '
         'Erinnerungen.',
   },
@@ -813,7 +834,8 @@ const Map<String, Map<String, String>> homeStrings = {
   'capsuleIntro': {
     'ru': 'Запечатай письмо или фото, и оно откроется в выбранный день',
     'en': 'Seal a letter or a photo, and it opens on the day you choose',
-    'pt': 'Lacre uma carta ou uma foto, e ela vai abrir no dia que você escolher',
+    'pt':
+        'Lacre uma carta ou uma foto, e ela vai abrir no dia que você escolher',
     'it': 'Sigilla una lettera o una foto, e si aprirà il giorno che scegli',
     'es': 'Sella una carta o una foto, y se abrirá el día que elijas',
     'fr':
@@ -1151,22 +1173,36 @@ const Map<String, Map<String, String>> homeStrings = {
     'de': 'Serie zurückholen?',
   },
   'streakRestoreBody': {
-    'ru': 'Серия сгорела, а было {n}. Посмотрите рекламу, и она вернётся у вас обоих.',
-    'en': 'Your streak of {n} burned out. Watch an ad and it comes back for both of you.',
-    'pt': 'Sua sequência de {n} se apagou. Veja um anúncio e ela volta para vocês dois.',
-    'it': 'La vostra serie di {n} si è spenta. Guarda una pubblicità e tornerà a entrambi.',
-    'es': 'Vuestra racha de {n} se apagó. Mira un anuncio y volverá para los dos.',
-    'fr': 'Votre série de {n} s’est éteinte. Regardez une publicité et elle revient pour vous deux.',
-    'de': 'Eure Serie von {n} ist erloschen. Schau eine Werbung, und sie kommt für euch beide zurück.',
+    'ru':
+        'Серия сгорела, а было {n}. Посмотрите рекламу, и она вернётся у вас обоих.',
+    'en':
+        'Your streak of {n} burned out. Watch an ad and it comes back for both of you.',
+    'pt':
+        'Sua sequência de {n} se apagou. Veja um anúncio e ela volta para vocês dois.',
+    'it':
+        'La vostra serie di {n} si è spenta. Guarda una pubblicità e tornerà a entrambi.',
+    'es':
+        'Vuestra racha de {n} se apagó. Mira un anuncio y volverá para los dos.',
+    'fr':
+        'Votre série de {n} s’est éteinte. Regardez une publicité et elle revient pour vous deux.',
+    'de':
+        'Eure Serie von {n} ist erloschen. Schau eine Werbung, und sie kommt für euch beide zurück.',
   },
   'streakRestoreBodyPlus': {
-    'ru': 'Серия сгорела, а было {n}. С Togetherly+ она возвращается без рекламы, у вас обоих.',
-    'en': 'Your streak of {n} burned out. With Togetherly+ it comes back for both of you, no ads.',
-    'pt': 'Sua sequência de {n} se apagou. Com o Togetherly+ ela volta para vocês dois, sem anúncios.',
-    'it': 'La vostra serie di {n} si è spenta. Con Togetherly+ torna a entrambi, senza pubblicità.',
-    'es': 'Vuestra racha de {n} se apagó. Con Togetherly+ vuelve para los dos, sin anuncios.',
-    'fr': 'Votre série de {n} s’est éteinte. Avec Togetherly+, elle revient pour vous deux, sans publicité.',
-    'de': 'Eure Serie von {n} ist erloschen. Mit Togetherly+ kommt sie für euch beide zurück, ohne Werbung.',
+    'ru':
+        'Серия сгорела, а было {n}. С Togetherly+ она возвращается без рекламы, у вас обоих.',
+    'en':
+        'Your streak of {n} burned out. With Togetherly+ it comes back for both of you, no ads.',
+    'pt':
+        'Sua sequência de {n} se apagou. Com o Togetherly+ ela volta para vocês dois, sem anúncios.',
+    'it':
+        'La vostra serie di {n} si è spenta. Con Togetherly+ torna a entrambi, senza pubblicità.',
+    'es':
+        'Vuestra racha de {n} se apagó. Con Togetherly+ vuelve para los dos, sin anuncios.',
+    'fr':
+        'Votre série de {n} s’est éteinte. Avec Togetherly+, elle revient pour vous deux, sans publicité.',
+    'de':
+        'Eure Serie von {n} ist erloschen. Mit Togetherly+ kommt sie für euch beide zurück, ohne Werbung.',
   },
   'streakRestoreWatch': {
     'ru': 'Да, посмотреть рекламу',
@@ -1229,7 +1265,8 @@ const Map<String, Map<String, String>> homeStrings = {
     'it': 'Per oggi i regali per video sono finiti. Domani ce ne sono altri.',
     'es': 'Por hoy se acabaron los regalos por vídeo. Mañana habrá más.',
     'fr': 'Plus de cadeaux vidéo pour aujourd’hui. Il y en aura demain.',
-    'de': 'Für heute sind die Video-Geschenke aufgebraucht. Morgen gibt es neue.',
+    'de':
+        'Für heute sind die Video-Geschenke aufgebraucht. Morgen gibt es neue.',
   },
   'giftForCoins': {
     'ru': 'За монеты',

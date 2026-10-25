@@ -47,19 +47,18 @@ class _HelpScreenState extends State<HelpScreen> {
   bool get _browsing => _query.text.trim().isEmpty && _topic == null;
 
   List<HelpItem> get _shown => [
-        for (final i in _items)
-          if ((_topic == null || i.topic == _topic) &&
-              helpMatches(i, _query.text))
-            i,
-      ];
+    for (final i in _items)
+      if ((_topic == null || i.topic == _topic) && helpMatches(i, _query.text))
+        i,
+  ];
 
   void _open(HelpItem item) => showHelpAnswer(
-        context,
-        item: item,
-        scheme: widget.scheme,
-        onAction: widget.onAction,
-        onWriteUs: widget.onWriteUs,
-      );
+    context,
+    item: item,
+    scheme: widget.scheme,
+    onAction: widget.onAction,
+    onWriteUs: widget.onWriteUs,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +91,11 @@ class _HelpScreenState extends State<HelpScreen> {
         body: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: EdgeInsets.fromLTRB(
-              16, 4, 16, MediaQuery.of(context).padding.bottom + 32),
+            16,
+            4,
+            16,
+            MediaQuery.of(context).padding.bottom + 32,
+          ),
           children: [
             _search(cs),
             const SizedBox(height: 12),
@@ -130,8 +133,11 @@ class _HelpScreenState extends State<HelpScreen> {
       style: AppFonts.onest(size: 16, weight: 500, color: cs.onSurface),
       decoration: InputDecoration(
         hintText: trKey('help.search'),
-        hintStyle:
-            AppFonts.onest(size: 16, weight: 500, color: cs.onSurfaceVariant),
+        hintStyle: AppFonts.onest(
+          size: 16,
+          weight: 500,
+          color: cs.onSurfaceVariant,
+        ),
         prefixIcon: Icon(Icons.search_rounded, color: cs.onSurfaceVariant),
         suffixIcon: _query.text.isEmpty
             ? null
@@ -154,39 +160,44 @@ class _HelpScreenState extends State<HelpScreen> {
 
   Widget _chips(ColorScheme cs, List<HelpTopic> topics) {
     Widget pill(String label, bool selected, VoidCallback onTap) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Material(
-            color: selected ? cs.primary : cs.surfaceContainerHigh,
-            shape: const StadiumBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onTap,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(
-                  label,
-                  style: AppFonts.onest(
-                    size: 14,
-                    weight: 700,
-                    color: selected ? cs.onPrimary : cs.onSurfaceVariant,
-                  ),
-                ),
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: selected ? cs.primary : cs.surfaceContainerHigh,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Text(
+              label,
+              style: AppFonts.onest(
+                size: 14,
+                weight: 700,
+                color: selected ? cs.onPrimary : cs.onSurfaceVariant,
               ),
             ),
           ),
-        );
+        ),
+      ),
+    );
 
     return SizedBox(
       height: 42,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          pill(trKey('help.all'), _topic == null,
-              () => setState(() => _topic = null)),
+          pill(
+            trKey('help.all'),
+            _topic == null,
+            () => setState(() => _topic = null),
+          ),
           for (final t in topics)
-            pill(helpTopicLabel(t), _topic == t,
-                () => setState(() => _topic = _topic == t ? null : t)),
+            pill(
+              helpTopicLabel(t),
+              _topic == t,
+              () => setState(() => _topic = _topic == t ? null : t),
+            ),
         ],
       ),
     );
@@ -203,13 +214,17 @@ class _HelpScreenState extends State<HelpScreen> {
     // поэтому узким плиткам кегль поменьше. Меряем снаружи: IntrinsicHeight
     // не уживается с LayoutBuilder внутри.
     return LayoutBuilder(
-      builder: (_, box) => _popularRow(
-          cs, top, colors, box.maxWidth < 340 ? 12.5 : 15),
+      builder: (_, box) =>
+          _popularRow(cs, top, colors, box.maxWidth < 340 ? 12.5 : 15),
     );
   }
 
-  Widget _popularRow(ColorScheme cs, List<HelpItem> top,
-      List<(Color, Color)> colors, double titleSize) {
+  Widget _popularRow(
+    ColorScheme cs,
+    List<HelpItem> top,
+    List<(Color, Color)> colors,
+    double titleSize,
+  ) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -236,9 +251,10 @@ class _HelpScreenState extends State<HelpScreen> {
                           Text(
                             _keepPlus(top[n].question),
                             style: AppFonts.unbounded(
-                                size: titleSize,
-                                weight: 700,
-                                color: colors[n].$2),
+                              size: titleSize,
+                              weight: 700,
+                              color: colors[n].$2,
+                            ),
                           ),
                         ],
                       ),
@@ -262,7 +278,10 @@ class _HelpScreenState extends State<HelpScreen> {
           Text(
             trKey('help.nothing'),
             style: AppFonts.onest(
-                size: 15.5, weight: 500, color: cs.onSurfaceVariant),
+              size: 15.5,
+              weight: 500,
+              color: cs.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 16),
           FilledButton.tonal(
@@ -279,10 +298,10 @@ class _HelpScreenState extends State<HelpScreen> {
 /// Тональная кнопка. Тема профиля красит все FilledButton в `primary`, и
 /// «Написать нам» без явных цветов сливалась с главной кнопкой «Открыть».
 ButtonStyle _tonal(ColorScheme cs) => FilledButton.styleFrom(
-      backgroundColor: cs.secondaryContainer,
-      foregroundColor: cs.onSecondaryContainer,
-      minimumSize: const Size.fromHeight(56),
-    );
+  backgroundColor: cs.secondaryContainer,
+  foregroundColor: cs.onSecondaryContainer,
+  minimumSize: const Size.fromHeight(56),
+);
 
 /// Знак «+» не отрывается от слова: на узком экране «Togetherly+» переносился
 /// плюсом на отдельную строку.
@@ -317,7 +336,8 @@ Future<void> showHelpAnswer(
                 icon: const Icon(Icons.open_in_new_rounded, size: 20),
                 label: Text(trKey('help.open')),
                 style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56)),
+                  minimumSize: const Size.fromHeight(56),
+                ),
               ),
             if (action != null) const SizedBox(height: 8),
             FilledButton.tonal(
@@ -337,8 +357,10 @@ Future<void> showHelpAnswer(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: scheme.secondaryContainer,
                   borderRadius: BorderRadius.circular(999),
@@ -346,16 +368,20 @@ Future<void> showHelpAnswer(
                 child: Text(
                   item.path,
                   style: AppFonts.onest(
-                      size: 12.5,
-                      weight: 700,
-                      color: scheme.onSecondaryContainer),
+                    size: 12.5,
+                    weight: 700,
+                    color: scheme.onSecondaryContainer,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 _keepPlus(item.question),
                 style: AppFonts.unbounded(
-                    size: 21, weight: 800, color: scheme.onSurface),
+                  size: 21,
+                  weight: 800,
+                  color: scheme.onSurface,
+                ),
               ),
               const SizedBox(height: 16),
               for (var n = 0; n < item.steps.length; n++)
@@ -375,9 +401,10 @@ Future<void> showHelpAnswer(
                         child: Text(
                           '${n + 1}',
                           style: AppFonts.unbounded(
-                              size: 15,
-                              weight: 700,
-                              color: scheme.onPrimaryContainer),
+                            size: 15,
+                            weight: 700,
+                            color: scheme.onPrimaryContainer,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -387,9 +414,10 @@ Future<void> showHelpAnswer(
                           child: Text(
                             item.steps[n],
                             style: AppFonts.onest(
-                                size: 15,
-                                height: 1.4,
-                                color: scheme.onSurface),
+                              size: 15,
+                              height: 1.4,
+                              color: scheme.onSurface,
+                            ),
                           ),
                         ),
                       ),

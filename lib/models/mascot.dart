@@ -60,17 +60,16 @@ class Mascot {
     required String nameEn,
     required String url,
     Unlock unlock = const Unlock.free(),
-  }) =>
-      Mascot(
-        id: id,
-        name: nameRu,
-        nameEn: nameEn,
-        catalogUrl: url,
-        unlock: unlock,
-        createdBy: 'catalog',
-        createdAt: DateTime(2024),
-        isDefault: true,
-      );
+  }) => Mascot(
+    id: id,
+    name: nameRu,
+    nameEn: nameEn,
+    catalogUrl: url,
+    unlock: unlock,
+    createdBy: 'catalog',
+    createdAt: DateTime(2024),
+    isDefault: true,
+  );
 
   bool get isCatalog => catalogUrl != null;
 
@@ -85,13 +84,20 @@ class Mascot {
     if (!isDefault) return name;
     final s = LocaleService.current;
     switch (id) {
-      case 'default_boy': return s.mascotBoyName;
-      case 'default_girl': return s.mascotGirlName;
-      case 'default_spiky': return s.mascotSpikyName;
-      case 'default_lulu': return s.mascotLuluName;
-      case 'default_iskrik': return s.mascotIskrikName;
-      case 'default_zhuzha': return s.mascotZhuzhaName;
-      default: return name;
+      case 'default_boy':
+        return s.mascotBoyName;
+      case 'default_girl':
+        return s.mascotGirlName;
+      case 'default_spiky':
+        return s.mascotSpikyName;
+      case 'default_lulu':
+        return s.mascotLuluName;
+      case 'default_iskrik':
+        return s.mascotIskrikName;
+      case 'default_zhuzha':
+        return s.mascotZhuzhaName;
+      default:
+        return name;
     }
   }
 
@@ -109,7 +115,8 @@ class Mascot {
       defaultAsset: nz(d['default_asset']),
       createdBy: (d['created_by'] ?? '').toString(),
       createdAt:
-          DateTime.tryParse((d['created_at'] ?? '').toString()) ?? DateTime.now(),
+          DateTime.tryParse((d['created_at'] ?? '').toString()) ??
+          DateTime.now(),
       isDefault: d['is_default'] == true,
       recordStreak: (d['record_streak'] as num?)?.toInt() ?? 0,
     );
@@ -200,8 +207,9 @@ class GroupMascotState {
     final d = e['d']?.toString();
     if (d == null || d.isEmpty || s <= 0) return 0;
     final today = _localDateStr(DateTime.now());
-    final yesterday =
-        _localDateStr(DateTime.now().subtract(const Duration(days: 1)));
+    final yesterday = _localDateStr(
+      DateTime.now().subtract(const Duration(days: 1)),
+    );
     return (d == today || d == yesterday) ? s : 0;
   }
 

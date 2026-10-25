@@ -46,7 +46,9 @@ void main() {
     for (var i = 0; i < 2; i++) {
       final login = find.widgetWithText(TextButton, s.alreadyHaveAccount);
       expect(tester.widget<TextButton>(login).onPressed, isNotNull);
-      final opacity = tester.widget<AnimatedOpacity>(find.ancestor(of: login, matching: find.byType(AnimatedOpacity)).first);
+      final opacity = tester.widget<AnimatedOpacity>(
+        find.ancestor(of: login, matching: find.byType(AnimatedOpacity)).first,
+      );
       expect(opacity.opacity, 1);
       await tester.tap(find.text(s.welcomeNext));
       await tester.pump();

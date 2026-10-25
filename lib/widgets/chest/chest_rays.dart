@@ -33,8 +33,12 @@ class ChestRays extends StatefulWidget {
   State<ChestRays> createState() => _ChestRaysState();
 }
 
-class _ChestRaysState extends State<ChestRays> with SingleTickerProviderStateMixin {
-  late final AnimationController _spin = AnimationController(vsync: this, duration: const Duration(minutes: 1));
+class _ChestRaysState extends State<ChestRays>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _spin = AnimationController(
+    vsync: this,
+    duration: const Duration(minutes: 1),
+  );
 
   @override
   void didChangeDependencies() {
@@ -61,7 +65,12 @@ class _ChestRaysState extends State<ChestRays> with SingleTickerProviderStateMix
         : Color.lerp(bg, cs.surface, 0.55)!;
     return RepaintBoundary(
       child: CustomPaint(
-        painter: _RaysPainter(turn: _spin, background: bg, ray: ray, focus: widget.focus),
+        painter: _RaysPainter(
+          turn: _spin,
+          background: bg,
+          ray: ray,
+          focus: widget.focus,
+        ),
         size: Size.infinite,
       ),
     );
@@ -69,8 +78,12 @@ class _ChestRaysState extends State<ChestRays> with SingleTickerProviderStateMix
 }
 
 class _RaysPainter extends CustomPainter {
-  _RaysPainter({required this.turn, required this.background, required this.ray, required this.focus})
-      : super(repaint: turn);
+  _RaysPainter({
+    required this.turn,
+    required this.background,
+    required this.ray,
+    required this.focus,
+  }) : super(repaint: turn);
 
   final Animation<double> turn;
   final Color background;
@@ -102,5 +115,8 @@ class _RaysPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RaysPainter old) =>
-      old.background != background || old.ray != ray || old.turn != turn || old.focus != focus;
+      old.background != background ||
+      old.ray != ray ||
+      old.turn != turn ||
+      old.focus != focus;
 }

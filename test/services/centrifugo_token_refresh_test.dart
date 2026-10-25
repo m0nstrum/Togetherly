@@ -35,22 +35,28 @@ class _FakePb extends PocketBase {
 void main() {
   test('обычный ответ отдаёт токен', () async {
     final pb = _FakePb([
-      {'token': 'jwt-1'}
+      {'token': 'jwt-1'},
     ]);
-    expect(await CentrifugoService.askToken(pb, '/api/centrifugo/connection-token'),
-        'jwt-1');
+    expect(
+      await CentrifugoService.askToken(pb, '/api/centrifugo/connection-token'),
+      'jwt-1',
+    );
     expect(pb.calls, 1);
   });
 
-  test('пустой ответ — это ошибка, а не молчаливое отсутствие токена', () async {
-    final pb = _FakePb([
-      {'token': ''}
-    ]);
-    expect(
-      () => CentrifugoService.askToken(pb, '/api/centrifugo/connection-token'),
-      throwsA(isA<StateError>()),
-    );
-  });
+  test(
+    'пустой ответ — это ошибка, а не молчаливое отсутствие токена',
+    () async {
+      final pb = _FakePb([
+        {'token': ''},
+      ]);
+      expect(
+        () =>
+            CentrifugoService.askToken(pb, '/api/centrifugo/connection-token'),
+        throwsA(isA<StateError>()),
+      );
+    },
+  );
 
   test('не-401 пробрасывается как есть: сессия тут ни при чём', () async {
     final pb = _FakePb([ClientException(statusCode: 500)]);

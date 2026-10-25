@@ -45,12 +45,14 @@ abstract final class ForkSessionEnd {
               'пара, переписка и ключи шифрования остались на телефоне.',
           'You were signed out on this phone: the server revoked the session — '
               'usually after a password change or signing out everywhere. Sign in '
-              'again — your pair, chat and encryption keys are still on this phone.')
+              'again — your pair, chat and encryption keys are still on this phone.',
+        )
       : ruEn(
           'Вход устарел — так бывает, если долго не открывать приложение. Войдите '
               'снова — пара, переписка и ключи шифрования остались на телефоне.',
           'Your sign-in expired — this happens after a long break. Sign in again '
-              '— your pair, chat and encryption keys are still on this phone.');
+              '— your pair, chat and encryption keys are still on this phone.',
+        );
 }
 
 /// Экран входа для вернувшегося человека: один раз объясняет, почему он тут.

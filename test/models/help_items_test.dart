@@ -10,10 +10,10 @@ import 'package:love_app/services/locale_service.dart';
 const _langs = ['ru', 'en', 'pt', 'it', 'es', 'fr', 'de'];
 
 Iterable<String> _keysOf(HelpItem i) => [
-      'help.${i.id}.q',
-      'help.${i.id}.path',
-      for (final n in [1, 2, 3]) 'help.${i.id}.s$n',
-    ];
+  'help.${i.id}.q',
+  'help.${i.id}.path',
+  for (final n in [1, 2, 3]) 'help.${i.id}.s$n',
+];
 
 void main() {
   final store = helpItems();
@@ -39,8 +39,11 @@ void main() {
       for (final lang in _langs) {
         for (final m in label.allMatches(entry.value[lang] ?? '')) {
           final key = m.group(1)!;
-          expect(kStrings[key]?[lang], isNotNull,
-              reason: '${entry.key}/$lang ссылается на $key');
+          expect(
+            kStrings[key]?[lang],
+            isNotNull,
+            reason: '${entry.key}/$lang ссылается на $key',
+          );
         }
       }
     }

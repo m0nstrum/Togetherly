@@ -15,7 +15,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final draw = File('lib/screens/draw_screen.dart').readAsStringSync();
   final repo = File('lib/services/canvas_repository.dart').readAsStringSync();
-  final outbox = File('lib/services/offline/outbox_service.dart').readAsStringSync();
+  final outbox = File(
+    'lib/services/offline/outbox_service.dart',
+  ).readAsStringSync();
 
   test('репозиторий отдаёт результат удаления, а не void', () {
     expect(
@@ -27,20 +29,31 @@ void main() {
 
   test('очередь знает операцию strokeDelete', () {
     expect(outbox.contains("case 'strokeDelete':"), isTrue);
-    expect(outbox.contains("k('canvas_strokes', p['id'])"), isTrue,
-        reason: 'у операции должен быть ключ записи, иначе порядок разъедется');
-    expect(outbox.contains("data.deleteStroke(p['id'] as String? ?? '')"), isTrue,
-        reason: 'операция должна что-то делать при исполнении');
+    expect(
+      outbox.contains("k('canvas_strokes', p['id'])"),
+      isTrue,
+      reason: 'у операции должен быть ключ записи, иначе порядок разъедется',
+    );
+    expect(
+      outbox.contains("data.deleteStroke(p['id'] as String? ?? '')"),
+      isTrue,
+      reason: 'операция должна что-то делать при исполнении',
+    );
   });
 
   test('каждое удаление штриха на экране подстраховано очередью', () {
     final calls = 'deleteStroke('.allMatches(draw).length;
     final rescues = "enqueue('strokeDelete'".allMatches(draw).length;
-    expect(calls, greaterThan(0), reason: 'вызовы удаления пропали — проверьте экран');
+    expect(
+      calls,
+      greaterThan(0),
+      reason: 'вызовы удаления пропали — проверьте экран',
+    );
     expect(
       rescues,
       greaterThanOrEqualTo(calls),
-      reason: 'на каждый вызов удаления нужен запасной путь через очередь: '
+      reason:
+          'на каждый вызов удаления нужен запасной путь через очередь: '
           'без него отказ теряется молча и штрих возвращается',
     );
   });

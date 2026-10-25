@@ -16,88 +16,100 @@ import 'package:love_app/services/map/my_position_feed.dart';
 /// «Выключить». Хуже того, подписка заводилась ПОСЛЕ первой точки: закрыл
 /// экран раньше — и она оставалась навсегда.
 Position _pos(double lat) => Position(
-      latitude: lat,
-      longitude: 28.8,
-      timestamp: DateTime(2026, 10, 21),
-      accuracy: 5,
-      altitude: 0,
-      altitudeAccuracy: 0,
-      heading: 0,
-      headingAccuracy: 0,
-      speed: 0,
-      speedAccuracy: 0,
-    );
+  latitude: lat,
+  longitude: 28.8,
+  timestamp: DateTime(2026, 10, 21),
+  accuracy: 5,
+  altitude: 0,
+  altitudeAccuracy: 0,
+  heading: 0,
+  headingAccuracy: 0,
+  speed: 0,
+  speedAccuracy: 0,
+);
 
 void main() {
-  test('экран закрыли до первой точки — подписки на поток не остаётся',
-      () async {
-    final first = Completer<Position>();
-    final stream = StreamController<Position>.broadcast();
-    final got = <double>[];
-    final feed = MyPositionFeed(
-      onPosition: (p) => got.add(p.latitude),
-      currentPosition: () => first.future,
-      positionStream: () => stream.stream,
-    );
+  test(
+    'экран закрыли до первой точки — подписки на поток не остаётся',
+    () async {
+      final first = Completer<Position>();
+      final stream = StreamController<Position>.broadcast();
+      final got = <double>[];
+      final feed = MyPositionFeed(
+        onPosition: (p) => got.add(p.latitude),
+        currentPosition: () => first.future,
+        positionStream: () => stream.stream,
+      );
 
-    unawaited(feed.start());
-    feed.dispose();
-    first.complete(_pos(47));
-    await Future<void>.delayed(Duration.zero);
+      unawaited(feed.start());
+      feed.dispose();
+      first.complete(_pos(47));
+      await Future<void>.delayed(Duration.zero);
 
-    expect(stream.hasListener, isFalse,
-        reason: 'подписка после закрытия держала бы нативный поток вечно');
-    expect(got, isEmpty);
-  });
+      expect(
+        stream.hasListener,
+        isFalse,
+        reason: 'подписка после закрытия держала бы нативный поток вечно',
+      );
+      expect(got, isEmpty);
+    },
+  );
 
-  test('показ включён — карта берёт точку у службы и потока не трогает',
-      () async {
-    final shared = ValueNotifier<Position?>(_pos(46));
-    var asked = 0;
-    final got = <double>[];
-    final feed = MyPositionFeed(
-      onPosition: (p) => got.add(p.latitude),
-      currentPosition: () async {
-        asked++;
-        return _pos(0);
-      },
-      positionStream: () {
-        asked++;
-        return const Stream<Position>.empty();
-      },
-      sharedFix: shared,
-    );
+  test(
+    'показ включён — карта берёт точку у службы и потока не трогает',
+    () async {
+      final shared = ValueNotifier<Position?>(_pos(46));
+      var asked = 0;
+      final got = <double>[];
+      final feed = MyPositionFeed(
+        onPosition: (p) => got.add(p.latitude),
+        currentPosition: () async {
+          asked++;
+          return _pos(0);
+        },
+        positionStream: () {
+          asked++;
+          return const Stream<Position>.empty();
+        },
+        sharedFix: shared,
+      );
 
-    await feed.start();
-    shared.value = _pos(47);
-    expect(got, [46, 47]);
-    expect(asked, 0,
-        reason: 'вторая подписка на общий поток пережила бы «Выключить»');
+      await feed.start();
+      shared.value = _pos(47);
+      expect(got, [46, 47]);
+      expect(
+        asked,
+        0,
+        reason: 'вторая подписка на общий поток пережила бы «Выключить»',
+      );
 
-    feed.dispose();
-    shared.value = _pos(48);
-    expect(got, [46, 47], reason: 'после закрытия экрана точки не нужны');
-  });
+      feed.dispose();
+      shared.value = _pos(48);
+      expect(got, [46, 47], reason: 'после закрытия экрана точки не нужны');
+    },
+  );
 
-  test('показ выключен — своя подписка, и закрытие экрана её снимает',
-      () async {
-    final stream = StreamController<Position>.broadcast();
-    final got = <double>[];
-    final feed = MyPositionFeed(
-      onPosition: (p) => got.add(p.latitude),
-      currentPosition: () async => _pos(46),
-      positionStream: () => stream.stream,
-    );
+  test(
+    'показ выключен — своя подписка, и закрытие экрана её снимает',
+    () async {
+      final stream = StreamController<Position>.broadcast();
+      final got = <double>[];
+      final feed = MyPositionFeed(
+        onPosition: (p) => got.add(p.latitude),
+        currentPosition: () async => _pos(46),
+        positionStream: () => stream.stream,
+      );
 
-    await feed.start();
-    stream.add(_pos(47));
-    await Future<void>.delayed(Duration.zero);
-    expect(got, [46, 47]);
-    expect(stream.hasListener, isTrue);
+      await feed.start();
+      stream.add(_pos(47));
+      await Future<void>.delayed(Duration.zero);
+      expect(got, [46, 47]);
+      expect(stream.hasListener, isTrue);
 
-    feed.dispose();
-    expect(stream.hasListener, isFalse);
-  });
+      feed.dispose();
+      expect(stream.hasListener, isFalse);
+    },
+  );
 
   test('на поток геопозиции подписываются только служба показа и карта', () {
     // Разовая точка (getCurrentPosition) у плагина своя и потоку не мешает.
@@ -113,8 +125,12 @@ void main() {
             f.readAsStringSync().contains('getPositionStream('))
           f.path,
     ];
-    expect(offenders, isEmpty,
-        reason: 'на iOS поток один на всё приложение: лишняя подписка держит '
-            'его после «Выключить»');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'на iOS поток один на всё приложение: лишняя подписка держит '
+          'его после «Выключить»',
+    );
   });
 }

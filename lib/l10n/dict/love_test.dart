@@ -109,18 +109,24 @@ const Map<String, Map<String, String>> loveTestStrings = {
 
   // ── Интерес ──────────────────────────────────────────────────────────────
   'love_q1': {
-    'ru': 'Я замечаю, что {p:партнёру|партнёрше} тяжело, раньше, чем {p:он|она} об этом скажет',
+    'ru':
+        'Я замечаю, что {p:партнёру|партнёрше} тяжело, раньше, чем {p:он|она} об этом скажет',
     'en': 'I notice my partner is struggling before they say a word',
-    'de': 'Ich merke, dass es {p:meinem Partner|meiner Partnerin} schlecht geht, bevor {p:er|sie} es sagt',
-    'fr': 'Je remarque que {p:mon partenaire|ma partenaire} va mal avant {p:qu’il|qu’elle} le dise',
+    'de':
+        'Ich merke, dass es {p:meinem Partner|meiner Partnerin} schlecht geht, bevor {p:er|sie} es sagt',
+    'fr':
+        'Je remarque que {p:mon partenaire|ma partenaire} va mal avant {p:qu’il|qu’elle} le dise',
     'es': 'Noto que mi pareja lo está pasando mal antes de que lo diga',
-    'it': 'Mi accorgo che {p:il mio partner|la mia partner} sta male prima che lo dica',
+    'it':
+        'Mi accorgo che {p:il mio partner|la mia partner} sta male prima che lo dica',
     'pt': 'Percebo que meu par está mal antes de {p:ele|ela} dizer',
   },
   'love_q2': {
-    'ru': 'Мне любопытно, что {p:он|она} думает о вещах, которые меня не касаются',
+    'ru':
+        'Мне любопытно, что {p:он|она} думает о вещах, которые меня не касаются',
     'en': 'I am curious what they think about things that do not concern me',
-    'de': 'Mich interessiert, was {p:er|sie} über Dinge denkt, die mich nichts angehen',
+    'de':
+        'Mich interessiert, was {p:er|sie} über Dinge denkt, die mich nichts angehen',
     'fr':
         'Cela m’intéresse de savoir ce {p:qu’il|qu’elle} pense de choses qui ne me concernent pas',
     'es': 'Tengo curiosidad por lo que piensa de cosas que no me afectan',
@@ -142,7 +148,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
   'love_q4': {
     'ru': 'Я рассказываю {p:ему|ей} о своих неудачах, не смягчая',
     'en': 'I tell them about my failures without softening them',
-    'de': 'Ich erzähle {p:ihm|ihr} von meinen Misserfolgen, ohne sie zu beschönigen',
+    'de':
+        'Ich erzähle {p:ihm|ihr} von meinen Misserfolgen, ohne sie zu beschönigen',
     'fr': 'Je lui parle de mes échecs sans les adoucir',
     'es': 'Le cuento mis fracasos sin suavizarlos',
     'it': '{p:Gli|Le} racconto i miei fallimenti senza addolcirli',
@@ -151,7 +158,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
   'love_q5': {
     'ru': 'Когда {p:он|она} задерживается, я не выстраиваю худших версий',
     'en': 'When they are late, I do not imagine the worst',
-    'de': 'Wenn {p:er|sie} sich verspätet, male ich mir nicht das Schlimmste aus',
+    'de':
+        'Wenn {p:er|sie} sich verspätet, male ich mir nicht das Schlimmste aus',
     'fr': 'Quand {p:il|elle} est en retard, je n’imagine pas le pire',
     'es': 'Cuando llega tarde, no me imagino lo peor',
     'it': 'Quando fa tardi, non immagino il peggio',
@@ -181,7 +189,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
     'ru': 'Я говорю спасибо за мелочи, которые {p:он|она} делает каждый день',
     'en': 'I say thank you for the small things they do every day',
     'de': 'Ich sage Danke für die Kleinigkeiten, die {p:er|sie} jeden Tag tut',
-    'fr': 'Je dis merci pour les petites choses {p:qu’il|qu’elle} fait chaque jour',
+    'fr':
+        'Je dis merci pour les petites choses {p:qu’il|qu’elle} fait chaque jour',
     'es': 'Doy las gracias por las pequeñas cosas que hace cada día',
     'it': 'Dico grazie per le piccole cose che fa ogni giorno',
     'pt': 'Agradeço pelas pequenas coisas que {p:ele|ela} faz todo dia',
@@ -199,7 +208,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
     'ru': 'Мне легко сказать вслух, за что я {p:его|её} ценю',
     'en': 'It is easy for me to say out loud what I value in them',
     'de': 'Es fällt mir leicht auszusprechen, wofür ich {p:ihn|sie} schätze',
-    'fr': 'Il m’est facile de dire à voix haute ce que j’apprécie chez {p:lui|elle}',
+    'fr':
+        'Il m’est facile de dire à voix haute ce que j’apprécie chez {p:lui|elle}',
     'es': 'Me resulta fácil decir en voz alta lo que valoro de {p:él|ella}',
     'it': 'Mi è facile dire ad alta voce cosa apprezzo di {p:lui|lei}',
     'pt': 'É fácil dizer em voz alta o que valorizo {p:nele|nela}',
@@ -225,10 +235,13 @@ const Map<String, Map<String, String>> loveTestStrings = {
     'pt': 'Meus planos levam em conta os {p:dele|dela}',
   },
   'love_q13': {
-    'ru': '{p:Он|Она} получает от меня столько же внимания, сколько я от {p:него|неё}',
+    'ru':
+        '{p:Он|Она} получает от меня столько же внимания, сколько я от {p:него|неё}',
     'en': 'They get as much attention from me as I get from them',
-    'de': '{p:Er|Sie} bekommt von mir so viel Aufmerksamkeit wie ich von {p:ihm|ihr}',
-    'fr': '{p:Il|Elle} reçoit de moi autant d’attention que j’en reçois {p:de lui|d’elle}',
+    'de':
+        '{p:Er|Sie} bekommt von mir so viel Aufmerksamkeit wie ich von {p:ihm|ihr}',
+    'fr':
+        '{p:Il|Elle} reçoit de moi autant d’attention que j’en reçois {p:de lui|d’elle}',
     'es': 'Recibe de mí tanta atención como yo de {p:él|ella}',
     'it': 'Riceve da me tanta attenzione quanta ne ricevo io',
     'pt': '{p:Ele|Ela} recebe de mim tanta atenção quanto eu {p:dele|dela}',
@@ -513,7 +526,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
   'love_q25': {
     'ru': 'Я спрашиваю, чем закончилась {p:его|её} вчерашняя история',
     'en': 'I ask how yesterday’s story ended for them',
-    'de': 'Ich frage nach, wie {p:seine|ihre} Geschichte von gestern ausgegangen ist',
+    'de':
+        'Ich frage nach, wie {p:seine|ihre} Geschichte von gestern ausgegangen ist',
     'fr': 'Je demande comment s’est terminée son histoire d’hier',
     'es': 'Pregunto cómo terminó su historia de ayer',
     'it': 'Chiedo com’è finita la sua storia di ieri',
@@ -743,10 +757,12 @@ const Map<String, Map<String, String>> loveTestStrings = {
     'ru': 'Я замечаю, когда {p:он устал|она устала} и всё равно помогает',
     'en': 'I notice when they’re tired and help anyway',
     'de': 'Ich merke, wenn {p:er|sie} müde ist und trotzdem hilft',
-    'fr': 'Je remarque quand {p:il est fatigué|elle est fatiguée} et m’aide quand même',
+    'fr':
+        'Je remarque quand {p:il est fatigué|elle est fatiguée} et m’aide quand même',
     'es': 'Noto cuando está {p:cansado|cansada} y aun así ayuda',
     'it': 'Noto quando è {p:stanco|stanca} e mi aiuta lo stesso',
-    'pt': 'Percebo quando {p:ele está cansado|ela está cansada} e ajuda mesmo assim',
+    'pt':
+        'Percebo quando {p:ele está cansado|ela está cansada} e ajuda mesmo assim',
   },
   'love_q51': {
     'ru': 'Мне легко признать, что {p:он был прав|она была права}',
@@ -762,17 +778,21 @@ const Map<String, Map<String, String>> loveTestStrings = {
   'love_q52': {
     'ru': 'Я спрашиваю {p:его|её} мнение, прежде чем решить за нас двоих',
     'en': 'I ask what they think before deciding for the two of us',
-    'de': 'Ich frage nach {p:seiner|ihrer} Meinung, bevor ich für uns beide entscheide',
+    'de':
+        'Ich frage nach {p:seiner|ihrer} Meinung, bevor ich für uns beide entscheide',
     'fr': 'Je lui demande son avis avant de décider pour nous deux',
     'es': 'Le pregunto su opinión antes de decidir por los dos',
     'it': '{p:Gli|Le} chiedo la sua opinione prima di decidere per entrambi',
     'pt': 'Pergunto a opinião {p:dele|dela} antes de decidir pelos dois',
   },
   'love_q53': {
-    'ru': 'Я подстраиваю планы под {p:него|неё} так же часто, как {p:он|она} под меня',
+    'ru':
+        'Я подстраиваю планы под {p:него|неё} так же часто, как {p:он|она} под меня',
     'en': 'I rearrange my plans for them as often as they do for me',
-    'de': 'Ich richte meine Pläne genauso oft nach {p:ihm|ihr} wie {p:er|sie} nach mir',
-    'fr': 'Je modifie mes projets pour {p:lui|elle} aussi souvent {p:que lui|qu’elle} pour moi',
+    'de':
+        'Ich richte meine Pläne genauso oft nach {p:ihm|ihr} wie {p:er|sie} nach mir',
+    'fr':
+        'Je modifie mes projets pour {p:lui|elle} aussi souvent {p:que lui|qu’elle} pour moi',
     'es': 'Cambio mis planes por {p:él|ella} tanto como {p:él|ella} por mí',
     'it': 'Cambio i miei piani per {p:lui|lei} tanto quanto {p:lui|lei} per me',
     'pt': 'Mudo meus planos por {p:ele|ela} tanto quanto {p:ele|ela} por mim',
@@ -781,7 +801,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
     'ru': 'Мириться {i:первым|первой} я иду не реже, чем {p:он|она}',
     'en': 'I’m the first to make up as often as they are',
     'de': 'Ich mache den ersten Schritt zur Versöhnung so oft wie {p:er|sie}',
-    'fr': 'Je fais le premier pas vers la réconciliation autant {p:que lui|qu’elle}',
+    'fr':
+        'Je fais le premier pas vers la réconciliation autant {p:que lui|qu’elle}',
     'es': 'Doy el primer paso para reconciliarnos tanto como {p:él|ella}',
     'it': 'Faccio il primo passo per fare pace quanto {p:lui|lei}',
     'pt': 'Dou o primeiro passo para fazer as pazes tanto quanto {p:ele|ela}',
@@ -805,7 +826,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
     'pt': 'As despesas grandes decidimos juntos',
   },
   'love_q57': {
-    'ru': 'Я оставляю {p:ему|ей} столько же времени на себя, сколько беру {i:сам|сама}',
+    'ru':
+        'Я оставляю {p:ему|ей} столько же времени на себя, сколько беру {i:сам|сама}',
     'en': 'I leave them as much time for themselves as I take',
     'de': 'Ich lasse {p:ihm|ihr} so viel Zeit für sich, wie ich mir nehme',
     'fr': 'Je lui laisse autant de temps pour {p:lui|elle} que j’en prends',
@@ -882,7 +904,8 @@ const Map<String, Map<String, String>> loveTestStrings = {
     'ru':
         'Мне нравится, как {p:он|она} выглядит сегодня, а не только на старых фотографиях',
     'en': 'I like how they look today, not just in old photos',
-    'de': 'Mir gefällt, wie {p:er|sie} heute aussieht, nicht nur auf alten Fotos',
+    'de':
+        'Mir gefällt, wie {p:er|sie} heute aussieht, nicht nur auf alten Fotos',
     'fr':
         'Je {p:le trouve beau|la trouve belle} aujourd’hui, pas seulement sur les vieilles photos',
     'es': 'Me gusta cómo se ve hoy, no solo en las fotos viejas',
@@ -984,8 +1007,10 @@ const Map<String, Map<String, String>> loveTestStrings = {
   'love_q76': {
     'ru': 'Меня не задевает, что часть моих взглядов {p:он|она} не разделяет',
     'en': 'It doesn’t sting that they don’t share some of my views',
-    'de': 'Es kränkt mich nicht, dass {p:er|sie} manche meiner Ansichten nicht teilt',
-    'fr': 'Cela ne me blesse pas {p:qu’il|qu’elle} ne partage pas certaines de mes idées',
+    'de':
+        'Es kränkt mich nicht, dass {p:er|sie} manche meiner Ansichten nicht teilt',
+    'fr':
+        'Cela ne me blesse pas {p:qu’il|qu’elle} ne partage pas certaines de mes idées',
     'es': 'No me duele que no comparta algunas de mis ideas',
     'it': 'Non mi ferisce che non condivida alcune mie idee',
     'pt': 'Não me magoa que {p:ele|ela} não compartilhe algumas ideias minhas',
@@ -1011,8 +1036,10 @@ const Map<String, Map<String, String>> loveTestStrings = {
   'love_q79': {
     'ru': 'Я не жду, что со временем {p:он|она} станет другим человеком',
     'en': 'I don’t expect them to become a different person over time',
-    'de': 'Ich erwarte nicht, dass {p:er|sie} mit der Zeit {p:ein anderer|eine andere} wird',
-    'fr': 'Je n’attends pas {p:qu’il|qu’elle} devienne quelqu’un d’autre avec le temps',
+    'de':
+        'Ich erwarte nicht, dass {p:er|sie} mit der Zeit {p:ein anderer|eine andere} wird',
+    'fr':
+        'Je n’attends pas {p:qu’il|qu’elle} devienne quelqu’un d’autre avec le temps',
     'es': 'No espero que con el tiempo se convierta en otra persona',
     'it': 'Non mi aspetto che col tempo diventi un’altra persona',
     'pt': 'Não espero que com o tempo {p:ele|ela} vire outra pessoa',

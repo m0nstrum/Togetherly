@@ -14,14 +14,18 @@ void main() {
     var calls = 0;
     final gate = Completer<FilePickerResult?>();
 
-    final first = pickAudioFile(open: () {
-      calls++;
-      return gate.future;
-    });
-    final second = pickAudioFile(open: () {
-      calls++;
-      return Future.value(null);
-    });
+    final first = pickAudioFile(
+      open: () {
+        calls++;
+        return gate.future;
+      },
+    );
+    final second = pickAudioFile(
+      open: () {
+        calls++;
+        return Future.value(null);
+      },
+    );
 
     expect(await second, isNull);
     expect(calls, 1);
@@ -47,17 +51,21 @@ void main() {
     var calls = 0;
 
     await expectLater(
-      pickAudioFile(open: () {
-        calls++;
-        return Future<FilePickerResult?>.error(Exception('нет доступа'));
-      }),
+      pickAudioFile(
+        open: () {
+          calls++;
+          return Future<FilePickerResult?>.error(Exception('нет доступа'));
+        },
+      ),
       throwsException,
     );
 
-    await pickAudioFile(open: () {
-      calls++;
-      return Future.value(null);
-    });
+    await pickAudioFile(
+      open: () {
+        calls++;
+        return Future.value(null);
+      },
+    );
 
     expect(calls, 2);
   });

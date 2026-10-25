@@ -29,8 +29,11 @@ void main() {
   });
 
   test('длительность строкой и неизвестный вид читаются', () {
-    final clip = SoundClip.fromJson(
-        {'url': 'pb://media/x/y.m4a', 'ms': '1500', 'kind': 'опера'})!;
+    final clip = SoundClip.fromJson({
+      'url': 'pb://media/x/y.m4a',
+      'ms': '1500',
+      'kind': 'опера',
+    })!;
     expect(clip.duration, const Duration(milliseconds: 1500));
     expect(clip.kind, SoundKind.voice);
     expect(clip.bars, hasLength(40));
@@ -43,7 +46,8 @@ void main() {
 
   test('json-строкой тоже читается', () {
     final clip = SoundClip.fromJson(
-        '{"url":"pb://media/x/y.m4a","ms":900,"kind":"song"}')!;
+      '{"url":"pb://media/x/y.m4a","ms":900,"kind":"song"}',
+    )!;
     expect(clip.kind, SoundKind.song);
     expect(clip.duration, const Duration(milliseconds: 900));
   });
@@ -55,10 +59,11 @@ void main() {
 
   test('пустые название и исполнитель не пишутся в json', () {
     const clip = SoundClip(
-        url: 'pb://m/x',
-        duration: Duration(seconds: 2),
-        peaks: '',
-        kind: SoundKind.voice);
+      url: 'pb://m/x',
+      duration: Duration(seconds: 2),
+      peaks: '',
+      kind: SoundKind.voice,
+    );
     expect(clip.toJson().containsKey('title'), isFalse);
     expect(clip.toJson().containsKey('artist'), isFalse);
     expect(clip.toJson()['kind'], 'voice');
@@ -66,7 +71,11 @@ void main() {
 
   test('неотправленный звук — путь на диске', () {
     SoundClip at(String url) => SoundClip(
-        url: url, duration: Duration.zero, peaks: '', kind: SoundKind.voice);
+      url: url,
+      duration: Duration.zero,
+      peaks: '',
+      kind: SoundKind.voice,
+    );
     expect(at('/data/x.m4a').isLocalFile, isTrue);
     expect(at('localfile:///x.m4a').isLocalFile, isTrue);
     expect(at('pb://media/a/b').isLocalFile, isFalse);
@@ -75,11 +84,12 @@ void main() {
 
   test('заменить ссылку после заливки', () {
     const local = SoundClip(
-        url: '/data/x.m4a',
-        duration: Duration(seconds: 3),
-        peaks: '1111111111111111111111111111111111111111',
-        kind: SoundKind.song,
-        title: 'T');
+      url: '/data/x.m4a',
+      duration: Duration(seconds: 3),
+      peaks: '1111111111111111111111111111111111111111',
+      kind: SoundKind.song,
+      title: 'T',
+    );
     final sent = local.withUrl('pb://media/abc/x.m4a');
     expect(sent.url, 'pb://media/abc/x.m4a');
     expect(sent.duration, local.duration);
