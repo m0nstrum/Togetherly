@@ -51,7 +51,6 @@ jobs:
               - '.github/workflows/fork-ci.yml'
             server:
               - 'server/**'
-              - 'pocketbase/pb_hooks/**'
               - 'pocketbase/pb_public/**'
               - 'deploy/**'
               - '.github/workflows/fork-ci.yml'

@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// хука вход с «Anna@…» снова отвечает «неверный пароль», а без своего
 /// маршрута «Забыли пароль» снова молча не шлёт письмо.
 void main() {
-  final hook = File('pocketbase/pb_hooks/email_case.pb.js').readAsStringSync();
+  final hook = File('server/pb_hooks/email_case.pb.js').readAsStringSync();
 
   test('Вход ищет почту без учёта регистра, только когда точный поиск промахнулся', () {
     expect(hook, contains('onRecordAuthWithPasswordRequest('));

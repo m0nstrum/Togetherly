@@ -16,7 +16,7 @@ Map<String, String> _table(String src, String name) {
 }
 
 void main() {
-  final src = File('pocketbase/pb_hooks/chest.pb.js').readAsStringSync();
+  final src = File('server/pb_hooks/chest.pb.js').readAsStringSync();
 
   test('цены продажи совпадают с сервером', () {
     final server = _table(src, 'SELL');

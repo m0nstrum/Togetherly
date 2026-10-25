@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Смоук сервера: настоящий бинарник, JS-хуки по hooks.allow, пустая база.
+# Смоук сервера: настоящий бинарник, JS-хуки из server/pb_hooks, пустая база.
 # Проверяет критерий S4: регистрация и вход, пара по коду приглашения,
 # сообщение в чат, которое видит партнёр, токен Centrifugo.
 #
@@ -23,7 +23,6 @@ trap cleanup EXIT
 touch "$work/server.log"
 if [ -z "${SMOKE_BASE:-}" ]; then
 (cd "$here" && go build -o "$work/tethered" ./cmd/tethered)
-"$here/scripts/sync-hooks.sh" "$work/pb_hooks" >/dev/null
 
 # Прокси роликов (S11) — на самоподписанном сертификате.
 proxy_port=$((port + 1))
@@ -37,7 +36,7 @@ TETHERED_WATCH_PROXY__CERT_FILE="$work/proxy.crt" \
 TETHERED_WATCH_PROXY__KEY_FILE="$work/proxy.key" \
 TETHERED_HTTP_ADDR="127.0.0.1:$port" \
 TETHERED_DATA_DIR="$work/pb_data" \
-TETHERED_HOOKS_DIR="$work/pb_hooks" \
+TETHERED_HOOKS_DIR="$here/pb_hooks" \
 TETHERED_RATE_LIMITS=false \
 TETHERED_PUBLIC_DIR="$here/../pocketbase/pb_public" \
 CENTRIFUGO_TOKEN_HMAC="smoke-secret" \

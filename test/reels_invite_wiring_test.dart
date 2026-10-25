@@ -11,7 +11,7 @@ void main() {
   final activity = File('android/app/src/main/kotlin/com/togetherly/love/MainActivity.kt').readAsStringSync();
   // fork: FcmService.kt удалён — FCM в форке нет (TOUCHPOINTS.md).
   final swift = File('ios/Runner/AppDelegate.swift').readAsStringSync();
-  final hook = File('pocketbase/pb_hooks/reels_invite.pb.js').readAsStringSync();
+  final hook = File('server/pb_hooks/reels_invite.pb.js').readAsStringSync();
 
   test('канал один и тот же', () {
     for (final src in [dart, kotlin, swift]) {

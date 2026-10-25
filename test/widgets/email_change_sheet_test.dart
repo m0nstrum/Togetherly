@@ -114,7 +114,7 @@ void main() {
   test('настройки и профиль подключены, хук закрыт входом', () {
     final settings = File('lib/screens/settings_screen.dart').readAsStringSync();
     final profile = File('lib/screens/profile_screen.dart').readAsStringSync();
-    final hook = File('pocketbase/pb_hooks/email_change.pb.js').readAsStringSync();
+    final hook = File('server/pb_hooks/email_change.pb.js').readAsStringSync();
     expect(settings, contains("trKey('emailChangeTitle')"));
     expect(profile, contains('showEmailChangeSheet('));
     expect(profile, contains('widget.userData.setEmail(email)'));

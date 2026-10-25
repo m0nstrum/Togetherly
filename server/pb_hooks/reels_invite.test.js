@@ -1,4 +1,4 @@
-// node pocketbase/pb_hooks/reels_invite.test.js
+// node server/pb_hooks/reels_invite.test.js
 const assert = require('assert');
 const r = require('./reels_invite.js');
 

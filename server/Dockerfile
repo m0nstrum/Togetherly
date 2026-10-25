@@ -8,10 +8,8 @@ WORKDIR /src/server
 COPY server/go.mod server/go.sum ./
 RUN go mod download
 COPY server/ ./
-COPY pocketbase/pb_hooks /src/pocketbase/pb_hooks
 COPY pocketbase/pb_public /src/pocketbase/pb_public
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/tethered ./cmd/tethered \
- && sh scripts/sync-hooks.sh /out/pb_hooks \
  && sh scripts/sync-public.sh /out/pb_public
 
 FROM alpine:3.22
@@ -20,7 +18,7 @@ RUN apk add --no-cache ca-certificates tzdata \
  && mkdir /data /backups && chown tethered /data /backups
 WORKDIR /app
 COPY --from=build /out/tethered /app/tethered
-COPY --from=build /out/pb_hooks /app/pb_hooks
+COPY --from=build /src/server/pb_hooks /app/pb_hooks
 COPY --from=build /out/pb_public /app/pb_public
 ENV TETHERED_DATA_DIR=/data \
     TETHERED_HOOKS_DIR=/app/pb_hooks \

@@ -8,7 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// вместе с сокетом — с закрытым приложением человек не узнаёт ни о сообщении,
 /// ни о «скучаю». Работает это только через APNs, и держится на трёх звеньях:
 /// нативная регистрация устройства, канал токена в Dart и запись токена в
-/// профиль, откуда его берёт серверный хук `push_apns.pb.js`.
+/// профиль. Серверную отправку APNs форк пока не поднимает (хук апстрима
+/// `push_apns.pb.js` удалён вместе с остальными неиспользуемыми, 25.10).
 ///
 /// Любое пропавшее звено ломает пуши молча: приложение работает, просто уведомы
 /// не приходят. Поэтому проверяем, что все три на месте.
@@ -40,16 +41,5 @@ void main() {
     expect(deferredAt, isNot(-1));
     expect(source, contains('ApnsService.instance.start()'),
         reason: 'без вызова токен никто не запросит');
-  });
-
-  test('серверный хук не шлёт пуш тому, кто на связи', () {
-    final source =
-        File('pocketbase/pb_hooks/push_apns.pb.js').readAsStringSync();
-
-    expect(source, contains('user_presence'),
-        reason: 'иначе баннер придёт дважды: от Apple и от живого сокета');
-    expect(source, contains('apns_token'));
-    expect(source, contains('chat_messages'));
-    expect(source, contains('miss_you'));
   });
 }

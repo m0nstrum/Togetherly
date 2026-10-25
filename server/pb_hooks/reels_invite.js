@@ -2,7 +2,7 @@
 ///
 /// Отдельным модулем, потому что обработчики JSVM не видят функций уровня
 /// файла: хук подключает это через `require`, тест — через node
-/// (`node pocketbase/pb_hooks/reels_invite.test.js`).
+/// (`node server/pb_hooks/reels_invite.test.js`).
 
 /// Площадки ленты — те же ключи, что `ReelsSource.key` в приложении и
 /// `SOURCES` в reels.js.

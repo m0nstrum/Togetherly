@@ -24,7 +24,7 @@ List<List<String>> serverOdds(String src) {
 }
 
 void main() {
-  final src = File('pocketbase/pb_hooks/chest.pb.js').readAsStringSync();
+  final src = File('server/pb_hooks/chest.pb.js').readAsStringSync();
 
   /// Подарки сундука из хука: `["ключ", "ярус"]`, обе копии одинаковы.
   List<List<String>> serverGifts() {
@@ -152,7 +152,7 @@ void main() {
     expect(gifts, GiftCatalog.chest.map((g) => g.key).toSet());
     final shop = GiftCatalog.all.map((g) => g.key).toSet();
     expect(gifts.intersection(shop), isEmpty);
-    final prices = File('pocketbase/pb_hooks/gifts.pb.js').readAsStringSync();
+    final prices = File('server/pb_hooks/gifts.pb.js').readAsStringSync();
     for (final k in gifts) {
       expect(RegExp('\\b$k:').hasMatch(prices), isFalse, reason: '$k продаётся через gifts/send');
     }
@@ -301,7 +301,7 @@ void main() {
   });
 
   test('открытие без ролика не разыгрывает Плюс, а без зоны сервер его не пускает', () {
-    final src = File('pocketbase/pb_hooks/chest.pb.js').readAsStringSync();
+    final src = File('server/pb_hooks/chest.pb.js').readAsStringSync();
     final open = src.substring(src.indexOf('"/api/chest/open"'), src.indexOf('"/api/chest/keep"'));
     expect(open.contains('error: "ad_required"'), isTrue);
     expect(RegExp(r'\(r\[1\] === "plus" \|\| r\[1\] === "plus_trial"\) && noAd\)').hasMatch(open), isTrue);

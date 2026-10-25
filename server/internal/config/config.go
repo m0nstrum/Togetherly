@@ -21,7 +21,7 @@ type Config struct {
 	HTTPAddr string `koanf:"http_addr"`
 	// DataDir — база SQLite и файлы (pb_data).
 	DataDir string `koanf:"data_dir"`
-	// HooksDir — JS-хуки апстрима, отобранные по server/hooks.allow.
+	// HooksDir — JS-хуки (server/pb_hooks), пока не перенесены на Go.
 	HooksDir string `koanf:"hooks_dir"`
 	// PublicDir — статика (комнаты «Смотрим вместе», лендинг приглашения).
 	PublicDir string `koanf:"public_dir"`

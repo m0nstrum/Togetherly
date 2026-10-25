@@ -1,5 +1,5 @@
 /// Рассылка пушей для хуков апстрима — версия форка (кладётся поверх
-/// pocketbase/pb_hooks/apns_push.js скриптом scripts/sync-hooks.sh).
+/// server/pb_hooks/apns_push.js скриптом scripts/sync-hooks.sh).
 ///
 /// API тот же: notifyGroup, sendTo, isOnline, wakeUp, wakeGroup — хуки
 /// апстрима (draw_invite, reels_invite, coins) не меняются. Правила «кому не

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Паритет с апстримом (PLAN S5): тесты автора против нашего сервера.
 #
-#   - JS-тесты хуков из pocketbase/pb_hooks (*.test.js) для хуков, которые
-#     мы гоняем по hooks.allow;
+#   - JS-тесты хуков из server/pb_hooks (*.test.js);
 #   - живые регрессы pocketbase/*.test.py из parity.allow: они бьют в прод
 #     автора, поэтому адреса подменяются во временной копии, их файлы не
 #     трогаем;
@@ -41,10 +40,8 @@ run() { # имя, команда...
 }
 
 # 1. Тесты хуков: чистая логика, сервер не нужен.
-for t in "$up"/pb_hooks/*.test.js; do
-  hook=$(basename "$t" .test.js)
-  grep -qx "$hook.pb.js" "$here/hooks.allow" || continue
-  run "hook $hook" node "$t"
+for t in "$here"/pb_hooks/*.test.js; do
+  run "hook $(basename "$t" .test.js)" node "$t"
 done
 
 # 2. Живые регрессы.
@@ -57,10 +54,9 @@ docker run -d --name "$cf_name" -p "127.0.0.1:$cf_port:8000" \
   "${CENTRIFUGO_IMAGE:-centrifugo/centrifugo:v6}" centrifugo --config=/centrifugo/config.json >/dev/null
 
 (cd "$here" && go build -o "$work/tethered" ./cmd/tethered)
-"$here/scripts/sync-hooks.sh" "$work/pb_hooks" >/dev/null
 TETHERED_HTTP_ADDR="127.0.0.1:$port" \
 TETHERED_DATA_DIR="$work/pb_data" \
-TETHERED_HOOKS_DIR="$work/pb_hooks" \
+TETHERED_HOOKS_DIR="$here/pb_hooks" \
 TETHERED_RATE_LIMITS=false \
 TETHERED_CENTRIFUGO__API="http://127.0.0.1:$cf_port/api" \
 TETHERED_CENTRIFUGO__API_KEY="$secret" \

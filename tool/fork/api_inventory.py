@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 """Карта API: какие роуты зовёт клиент и где они реализованы на сервере.
 
-Источник для docs/history/API_INVENTORY.md (S3). Запускать после мёржа апстрима:
-новые строки в выводе — новые роуты, которые надо разобрать и внести в
-инвентарь.
-
     python3 tool/fork/api_inventory.py            # таблица TSV
     python3 tool/fork/api_inventory.py --missing  # клиент зовёт, сервера нет
-    python3 tool/fork/api_inventory.py --missing --fork
-        # то же для сервера форка: Go-роуты (server/internal/handler) и хуки
-        # из server/hooks.allow; осознанно отсутствующие — tool/fork/api_absent.txt
+        # осознанно отсутствующие — tool/fork/api_absent.txt
 
 Сканирует:
   - lib/**/*.dart: строки `/api/...`, плюс динамические `_call('x')` в
     pb_coins_service.dart (→ /api/coins/x) и `_callGroupRoute('x')` в
     pb_data_service.dart (→ /api/group/x);
-  - pocketbase/pb_hooks/*.pb.js: `routerAdd("METHOD", "/path"`;
-  - pocketbase/hotpath/hotpath.py: `@app.get("/path")` и т.п.
+  - server/pb_hooks/*.pb.js: `routerAdd("METHOD", "/path"`;
+  - server/internal/handler/*.go: Go-роуты.
 Встроенные роуты PocketBase (`/api/collections`, `/api/files`, `/api/realtime`,
-`/api/oauth2-redirect`) и внутренние `/internal/*` hotpath не выводятся.
+`/api/oauth2-redirect`) и `/internal/*` не выводятся. Флаг `--fork` остался
+от времён апстрима и ничего не меняет.
 """
 
 from __future__ import annotations
@@ -55,24 +50,9 @@ def client_routes() -> dict[str, set[str]]:
 
 def server_routes() -> dict[str, set[str]]:
     out: dict[str, set[str]] = collections.defaultdict(set)
-    for p in ROOT.glob("pocketbase/pb_hooks/*.pb.js"):
+    for p in ROOT.glob("server/pb_hooks/*.pb.js"):
         for method, path in re.findall(r"routerAdd\(\s*['\"]([A-Z]+)['\"]\s*,\s*['\"]([^'\"]+)", p.read_text()):
             out[path].add(f"{method} {p.name}")
-    hp = ROOT / "pocketbase/hotpath/hotpath.py"
-    if hp.exists():
-        for method, path in re.findall(r'@app\.(get|post|patch|delete)\("([^"]+)"', hp.read_text()):
-            out[path].add(f"{method.upper()} hotpath")
-    return out
-
-
-def fork_server_routes() -> dict[str, set[str]]:
-    out: dict[str, set[str]] = collections.defaultdict(set)
-    allow = ROOT / "server/hooks.allow"
-    for name in allow.read_text().split():
-        p = ROOT / "pocketbase/pb_hooks" / name
-        if name.endswith(".pb.js") and p.exists():
-            for method, path in re.findall(r"routerAdd\(\s*['\"]([A-Z]+)['\"]\s*,\s*['\"]([^'\"]+)", p.read_text()):
-                out[path].add(f"{method} {p.name}")
     for p in ROOT.glob("server/internal/handler/*.go"):
         for method, path in re.findall(r'\.(GET|POST|PATCH|PUT|DELETE)\("(/api/[^"]+)"', p.read_text()):
             out[path].add(f"{method} {p.name}")
@@ -85,10 +65,9 @@ def absent() -> set[str]:
 
 
 def main() -> None:
-    fork = "--fork" in sys.argv
-    client, server = client_routes(), (fork_server_routes() if fork else server_routes())
+    client, server = client_routes(), server_routes()
     missing_only = "--missing" in sys.argv
-    skip = absent() if fork and missing_only else set()
+    skip = absent() if missing_only else set()
     for path in sorted(set(client) | set(server)):
         if path.startswith(BUILTIN_PREFIXES) or path in BUILTIN or path in EXTERNAL:
             continue

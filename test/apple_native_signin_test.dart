@@ -31,19 +31,6 @@ void main() {
     expect(source, contains('sha256'));
   });
 
-  test('сервер проверяет токен и узнаёт прежние аккаунты', () {
-    final hook =
-        File('pocketbase/pb_hooks/apple_native.pb.js').readAsStringSync();
-
-    expect(hook, contains('/apple/verify'),
-        reason: 'подпись проверяет релей: RS256 в JSVM нет');
-    expect(hook, contains('nonce'));
-    expect(hook, contains('_externalAuths'),
-        reason: 'по sub находим тех, кто раньше входил через браузер');
-    expect(hook, contains('recordAuthResponse'),
-        reason: 'ответ должен быть той же формы, что у обычного входа');
-  });
-
   test('релей умеет проверять токен Apple', () {
     final relay = File('pocketbase/apns/apns_relay.py').readAsStringSync();
 

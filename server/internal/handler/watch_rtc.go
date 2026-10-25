@@ -13,7 +13,7 @@ import (
 )
 
 // WatchRTC — GET /api/watch/rtc → {success, iceServers}. Заменяет
-// pocketbase/pb_hooks/watch_rtc.pb.js: только свой coturn, временные ключи.
+// watch_rtc.pb.js апстрима: только свой coturn, временные ключи.
 func WatchRTC(r *router.Router[*core.RequestEvent], turn ice.TURN, now func() time.Time) {
 	r.GET("/api/watch/rtc", func(e *core.RequestEvent) error {
 		return e.JSON(http.StatusOK, map[string]any{

@@ -177,7 +177,7 @@ class PbAuthService {
   /// (в PB ещё нет пароля) сервер (pb_hook `/api/migrate/verify-password`)
   /// проверяет email+пароль в Firebase Auth и при успехе записывает пароль в
   /// PB-запись. true → пароль перенесён, можно повторить authWithPassword.
-  /// Никаких писем/сброса. См. pocketbase/pb_hooks/migrate_bridge.pb.js.
+  /// Никаких писем/сброса. Сервер — migrate_bridge.pb.js апстрима (в форке нет).
   Future<bool> _tryFirebaseBridge(String email, String password) async {
     try {
       final res = await _pb.send(

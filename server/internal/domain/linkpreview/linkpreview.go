@@ -1,5 +1,5 @@
 // Package linkpreview — карточка товара по HTML страницы: название, картинка,
-// магазин, цена. Порт разбора из pocketbase/pb_hooks/link_preview.pb.js один
+// магазин, цена. Порт разбора из link_preview.pb.js апстрима один
 // в один, чтобы ответ клиенту не изменился.
 package linkpreview
 

@@ -70,7 +70,7 @@ def api_routes() -> list[str]:
 def sync_scripts() -> list[str]:
     problems = []
     with tempfile.TemporaryDirectory() as tmp:
-        for script in ("sync-hooks.sh", "sync-public.sh"):
+        for script in ("sync-public.sh",):
             r = subprocess.run(["sh", f"server/scripts/{script}", f"{tmp}/{script}"],
                                cwd=ROOT, capture_output=True, text=True)
             if r.returncode:
@@ -97,7 +97,7 @@ def main() -> None:
     check("нет маркеров конфликтов", conflict_markers())
     check("убранные зависимости не вернулись", removed_deps())
     check("все роуты клиента есть на сервере", api_routes())
-    check("хуки и статика собираются по спискам", sync_scripts())
+    check("статика собирается по списку", sync_scripts())
     if "--full" in sys.argv:
         full()
     print()

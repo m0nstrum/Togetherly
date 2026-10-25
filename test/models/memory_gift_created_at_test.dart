@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:love_app/models/memory.dart';
 
-/// Хук подарков (`pocketbase/pb_hooks/gifts.pb.js`) кладёт в `data.createdAt`
+/// Хук подарков (`server/pb_hooks/gifts.pb.js`) кладёт в `data.createdAt`
 /// миллисекунды числом и не заполняет колонку `created_at`. Такая запись не
 /// должна ронять разбор — иначе одна «салютная» строка обнуляет всю ленту.
 void main() {

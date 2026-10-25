@@ -20,8 +20,6 @@ void main() {
   final appDelegate = read('ios/Runner/AppDelegate.swift');
   final mainDart = read('lib/main.dart');
   final relay = read('pocketbase/apns/apns_relay.py');
-  final pushModule = read('pocketbase/pb_hooks/apns_push.js');
-  final pushHook = read('pocketbase/pb_hooks/push_apns.pb.js');
   final infoPlist = read('ios/Runner/Info.plist');
 
   test('приложению разрешено просыпаться от пуша', () {
@@ -56,14 +54,6 @@ void main() {
     expect(relay.contains('"5" if push_type == "background" else "10"'), isTrue);
     expect(relay.contains('"content-available": 1'), isTrue);
     expect(relay.contains('push_type="background" if req.get("silent")'), isTrue);
-  });
-
-  test('сервер будит партнёра на изменение данных виджетов', () {
-    expect(pushModule.contains('function wakeUp('), isTrue);
-    expect(pushModule.contains('MIN_WAKE_GAP_MS'), isTrue,
-        reason: 'Apple лимитирует тихие пуши — нужен разрыв между ними');
-    expect(pushHook.contains('"widget_data"'), isTrue);
-    expect(pushHook.contains('wakeGroup('), isTrue);
   });
 
   test('фоновое обновление больше не заперто на Android', () {

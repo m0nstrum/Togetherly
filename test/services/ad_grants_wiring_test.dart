@@ -1,6 +1,6 @@
 // Баланс наград за рекламу живёт в двух местах: константы клиента
 // (lib/models/ad_grants.dart) и словарь RULES серверного хука
-// (pocketbase/pb_hooks/coins.pb.js). Разъезд ничем себя не выдаёт — кнопка
+// (server/pb_hooks/coins.pb.js). Разъезд ничем себя не выдаёт — кнопка
 // нажимается, сервер молча отвечает отказом, человек видит «не сработало».
 import 'dart:io';
 
@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/ad_grants.dart';
 
 void main() {
-  final hook = File('pocketbase/pb_hooks/coins.pb.js').readAsStringSync();
+  final hook = File('server/pb_hooks/coins.pb.js').readAsStringSync();
 
   test('Цена награды в просмотрах совпадает с хуком', () {
     final rules = hook.substring(

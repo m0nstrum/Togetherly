@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:love_app/models/gift.dart';
 
-/// Прайс-таблица серверного роута `pocketbase/pb_hooks/gifts.pb.js`.
+/// Прайс-таблица серверного роута `server/pb_hooks/gifts.pb.js`.
 /// Расхождение с каталогом = списание не той суммы, что видел человек.
 const Map<String, int> serverPrices = {
   'heart': 10, 'star': 10, 'fire': 10, 'sun': 10,
@@ -18,7 +18,7 @@ const Map<String, int> serverPrices = {
 
 void main() {
   test('за рекламу можно подарить всё, кроме копилки, как и на сервере', () {
-    final src = File('pocketbase/pb_hooks/gifts.pb.js').readAsStringSync();
+    final src = File('server/pb_hooks/gifts.pb.js').readAsStringSync();
     final m = RegExp(r'const NO_AD = \{([^}]*)\}').firstMatch(src);
     expect(m, isNotNull, reason: 'в gifts.pb.js нет таблицы NO_AD');
     final serverNoAd = RegExp(r'(\w+):\s*true')
