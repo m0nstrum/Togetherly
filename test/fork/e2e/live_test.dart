@@ -209,6 +209,8 @@ void main() {
               'author_uid': a.uid,
               'title': 'Плед',
               'price': 990,
+              'place': '{"lat":55.7298,"lng":37.6011}',
+              'due': '2026-11-14',
             },
           );
       final rawWish =
@@ -216,6 +218,8 @@ void main() {
               .collection('wishes')
               .getOne(wish.id);
       expect(rawWish.getStringValue('title'), startsWith(e2eFieldPrefix));
+      expect(rawWish.getStringValue('place'), startsWith(e2eFieldPrefix));
+      expect(rawWish.getStringValue('due'), startsWith(e2eFieldPrefix));
       expect(
         (await bobChat.collection('wishes').getOne(wish.id)).getStringValue(
           'title',

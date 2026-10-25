@@ -2,6 +2,7 @@ import 'package:pocketbase/pocketbase.dart';
 
 import 'wish_category.dart';
 import 'wish_due.dart';
+import 'wish_place.dart';
 
 /// Общее желание пары: фильм, который ждут, место, куда хотят, или что-то своё.
 ///
@@ -31,6 +32,7 @@ class Wish {
     this.also = const [],
     this.pos,
     this.skip = '',
+    this.place,
     required this.createdAt,
   });
 
@@ -101,6 +103,9 @@ class Wish {
   /// Неделя (`2026-W43`), на которую пара попросила другое «желание
   /// недели»: в эту неделю желание не выпадает. Общее поле.
   final String skip;
+
+  /// Точка «Места» на карте. Правит автор.
+  final WishPlace? place;
 
   /// Хотят оба: автор и кто-то ещё.
   bool get wantedByBoth => also.any((u) => u.isNotEmpty && u != authorUid);
@@ -199,6 +204,7 @@ class Wish {
         also: _uids(rec.getStringValue('also')),
         pos: _pos(rec.getStringValue('pos')),
         skip: rec.getStringValue('skip'),
+        place: WishPlace.parse(rec.getStringValue('place')),
         createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
       );
 
@@ -225,6 +231,7 @@ class Wish {
         also: _uids((map['also'] ?? '').toString()),
         pos: _pos(map['pos']),
         skip: (map['skip'] ?? '').toString(),
+        place: WishPlace.parse(map['place']?.toString()),
         createdAt: _date(map['created']) ?? DateTime.now(),
       );
 
@@ -250,6 +257,7 @@ class Wish {
         if (also.isNotEmpty) 'also': also.join(','),
         if (pos != null) 'pos': posText(pos!),
         if (skip.isNotEmpty) 'skip': skip,
+        if (place != null) 'place': place!.encode(),
         'created': createdAt.toIso8601String(),
       };
 
@@ -272,6 +280,8 @@ class Wish {
     List<String>? also,
     double? pos,
     String? skip,
+    WishPlace? place,
+    bool noPlace = false,
   }) =>
       Wish(
         id: id,
@@ -294,6 +304,7 @@ class Wish {
         also: also ?? this.also,
         pos: pos ?? this.pos,
         skip: skip ?? this.skip,
+        place: noPlace ? null : place ?? this.place,
         createdAt: createdAt,
       );
 
@@ -328,6 +339,7 @@ class Wish {
         also: also,
         pos: pos,
         skip: skip,
+        place: place,
         createdAt: createdAt,
       );
 

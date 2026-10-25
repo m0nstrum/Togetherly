@@ -21,6 +21,8 @@ import '../widgets/avatar_widget.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/storage_image.dart';
+import '../fork/wishes/wish_place_picker.dart';
+import '../fork/wishes/wish_places.dart';
 import '../fork/wishes/wish_reminder_plan.dart';
 import '../fork/wishes/wish_reminder_settings.dart';
 import '../fork/wishes/wish_reminders.dart';
@@ -136,6 +138,7 @@ class _WishesScreenState extends State<WishesScreen> {
       image: draft.image,
       shop: draft.shop,
       due: draft.due,
+      place: draft.place,
     );
   }
 
@@ -289,11 +292,13 @@ class _WishesScreenState extends State<WishesScreen> {
   void _maybeReschedule(List<Wish> all) {
     final sig = [
       for (final w in all)
-        '${w.id}|${w.done}|${w.due.encode()}|${w.skip}|${w.isItem}|${w.title}',
+        '${w.id}|${w.done}|${w.due.encode()}|${w.skip}|${w.isItem}|${w.title}'
+            '|${w.place?.encode()}',
     ].join(';');
     if (sig == _remindersSig) return;
     _remindersSig = sig;
     WishReminders.instance.schedule();
+    WishPlaces.instance.invalidate();
   }
 
   @override
@@ -334,6 +339,7 @@ class _WishesScreenState extends State<WishesScreen> {
       image: draft.image,
       shop: draft.shop,
       due: draft.due,
+      place: draft.place,
     );
   }
 
@@ -341,6 +347,7 @@ class _WishesScreenState extends State<WishesScreen> {
     final draft = await _openForm(existing: wish);
     if (draft == null) return;
     await _repo.edit(
+      noPlace: draft.place == null,
       groupId: widget.groupId,
       wish: wish,
       title: draft.title,
@@ -353,6 +360,7 @@ class _WishesScreenState extends State<WishesScreen> {
       image: draft.image,
       shop: draft.shop,
       due: draft.due,
+      place: draft.place,
     );
   }
 
@@ -736,6 +744,10 @@ class _WishesScreenState extends State<WishesScreen> {
       alsoMine: wish.also.contains(widget.myUid),
       comments: _commentCounts[wish.id] ?? 0,
       onComments: () => _openComments(wish),
+      onShowPlace: wish.place == null
+          ? null
+          : () => WishPlacePicker.show(context,
+              theme: widget.theme, place: wish.place!),
     );
   }
 
@@ -907,6 +919,7 @@ class _WishTile extends StatelessWidget {
     this.alsoMine = false,
     this.comments = 0,
     this.onComments,
+    this.onShowPlace,
   });
 
   final Wish wish;
@@ -943,6 +956,9 @@ class _WishTile extends StatelessWidget {
   /// Сколько комментариев и как их открыть.
   final int comments;
   final VoidCallback? onComments;
+
+  /// Показать точку «Места» на карте.
+  final VoidCallback? onShowPlace;
 
   @override
   Widget build(BuildContext context) {
@@ -1053,7 +1069,10 @@ class _WishTile extends StatelessWidget {
                         color: done ? scheme.onSurfaceVariant : scheme.onSurface,
                       ),
                     ),
-                    if (due.isNotEmpty || both || comments > 0)
+                    if (due.isNotEmpty ||
+                        both ||
+                        comments > 0 ||
+                        wish.place != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Wrap(
@@ -1067,6 +1086,14 @@ class _WishTile extends StatelessWidget {
                                 color: duePast
                                     ? scheme.error
                                     : scheme.onSurfaceVariant,
+                              ),
+                            if (wish.place != null)
+                              _Meta(
+                                icon: Icons.place_rounded,
+                                label: wish.place!.name.isNotEmpty
+                                    ? wish.place!.name
+                                    : (ru ? 'На карте' : 'On the map'),
+                                color: scheme.onSurfaceVariant,
                               ),
                             if (comments > 0)
                               _Meta(
@@ -1249,10 +1276,16 @@ class _WishTile extends StatelessWidget {
                   onSelected: (action) async {
                     if (action == 'delete') { onDelete?.call(); return; }
                     if (action == 'comments') { onComments?.call(); return; }
+                    if (action == 'map') { onShowPlace?.call(); return; }
                     final uri = Uri.tryParse(wish.url);
                     if (uri != null) await safeLaunchUrl(uri, mode: LaunchMode.externalApplication);
                   },
                   itemBuilder: (_) => [
+                    if (onShowPlace != null)
+                      PopupMenuItem(
+                        value: 'map',
+                        child: Text(ru ? 'Показать на карте' : 'Show on the map'),
+                      ),
                     if (onComments != null)
                       PopupMenuItem(
                         value: 'comments',

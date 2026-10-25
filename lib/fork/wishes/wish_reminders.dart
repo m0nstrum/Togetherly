@@ -187,6 +187,43 @@ class WishReminders {
     await prefs.setString(_idsKey, jsonEncode(next.toList()));
   }
 
+  /// Показать сразу — «вы оба рядом с местом» (WishPlaces).
+  Future<void> showNow({
+    required String key,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      await _init();
+      await _plugin.show(
+        id: WishReminder(
+          key: key,
+          kind: WishReminderKind.due,
+          at: DateTime(0),
+          title: title,
+          body: body,
+        ).notificationId,
+        title: title,
+        body: body,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channelId,
+            'Хочу с тобой',
+            channelDescription:
+                'Сроки желаний, желание недели, подсказки к датам',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@drawable/ic_notification',
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        payload: 'loveapp://wishes',
+      );
+    } catch (e) {
+      debugPrint('WishReminders: $key не показано — $e');
+    }
+  }
+
   /// Пригодится экрану: желание недели сейчас.
   static Wish? currentWeekly(List<Wish> wishes, String groupId) =>
       weeklyWish(wishes, groupId, isoWeekKey(DateTime.now()));

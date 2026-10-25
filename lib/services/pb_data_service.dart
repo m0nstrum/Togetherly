@@ -1747,6 +1747,7 @@ class PbDataService {
         'also': wish['also'] ?? '',
         'pos': wish['pos'] ?? '',
         'skip': wish['skip'] ?? '',
+        'place': wish['place'] ?? '',
       };
 
   /// Тело правки чужого желания: только присланные общие поля. Задания
@@ -2152,6 +2153,24 @@ class PbDataService {
   }
 
   /// Удалить свою точку (явное выключение шеринга).
+  /// Последняя сохранённая точка участника канала «Где мы» (`data`,
+  /// расшифрованная). Null — точки нет или сеть не ответила.
+  Future<Map<String, dynamic>?> getLivePoint(String channel, String uid) async {
+    if (channel.isEmpty || uid.isEmpty) return null;
+    try {
+      final rec = await _pb.collection('live_location').getFirstListItem(
+            _pb.filter('channel = {:c} && user_uid = {:u}',
+                {'c': channel, 'u': uid}),
+          ).timeout(const Duration(seconds: 15));
+      final data = rec.data['data'];
+      return data is Map ? Map<String, dynamic>.from(data) : null;
+    } catch (e) {
+      if (e is ClientException && e.statusCode == 404) return null;
+      debugPrint('PbData.getLivePoint failed: $e');
+      return null;
+    }
+  }
+
   Future<bool> clearLivePoint(String channel, String uid) async {
     if (channel.isEmpty || uid.isEmpty) return false;
     try {

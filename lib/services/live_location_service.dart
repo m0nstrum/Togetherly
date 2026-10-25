@@ -17,6 +17,7 @@ import 'pocketbase_service.dart';
 import '../fork/e2e/fork_e2e.dart'; // fork
 import '../fork/location_consent.dart'; // fork
 import '../fork/geo/geo_status.dart'; // fork
+import '../fork/wishes/wish_places.dart'; // fork
 
 const String _kSharingEnabledKey = 'live_location_sharing_enabled';
 
@@ -486,6 +487,14 @@ class LiveLocationService with WidgetsBindingObserver {
     }
     // Точка ушла — значит передача жива (после сбоя потока и т.п.).
     if (issue.value == ShareIssue.streamFailed) issue.value = ShareIssue.none;
+    // fork: «вы оба рядом с местом из вишлиста» (docs/WISHLIST.md).
+    unawaited(WishPlaces.instance.onMyFix(
+      channel: channel,
+      myUid: _uid,
+      lat: pos.latitude,
+      lng: pos.longitude,
+      accuracy: acc,
+    ));
   }
 
   Timer? _storeTimer;

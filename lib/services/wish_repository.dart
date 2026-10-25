@@ -5,6 +5,7 @@ import '../models/wish_reservation.dart';
 import '../models/wish_category.dart';
 import '../models/wish_comment.dart';
 import '../models/wish_due.dart';
+import '../models/wish_place.dart';
 import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/pb_id.dart';
@@ -76,6 +77,7 @@ class WishRepository {
     String image = '',
     String shop = '',
     WishDue due = WishDue.none,
+    WishPlace? place,
   }) async {
     final uid = _uid;
     final text = title.trim();
@@ -97,6 +99,7 @@ class WishRepository {
       image: image,
       shop: shop,
       due: due,
+      place: place,
       createdAt: DateTime.now(),
     );
     await _save(groupId, wish);
@@ -117,6 +120,8 @@ class WishRepository {
     String? image,
     String? shop,
     WishDue? due,
+    WishPlace? place,
+    bool noPlace = false,
   }) async {
     final text = title.trim();
     if (groupId.isEmpty || text.isEmpty) return;
@@ -134,6 +139,8 @@ class WishRepository {
         image: image,
         shop: shop,
         due: due,
+        place: place,
+        noPlace: noPlace,
       ),
     );
   }

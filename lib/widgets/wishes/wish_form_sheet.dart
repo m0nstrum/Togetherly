@@ -5,6 +5,8 @@ import '../../models/symbol_catalog.dart';
 import '../../models/wish.dart';
 import '../../models/wish_category.dart';
 import '../../models/wish_due.dart';
+import '../../models/wish_place.dart';
+import '../../fork/wishes/wish_place_picker.dart';
 import '../../dict_strings.dart' show zhForEnglishIfZh;
 import '../../services/locale_service.dart';
 import '../../services/pb_data_service.dart';
@@ -31,6 +33,7 @@ class WishDraft {
     this.image = '',
     this.shop = '',
     this.due = WishDue.none,
+    this.place,
   });
 
   final String title;
@@ -47,6 +50,9 @@ class WishDraft {
 
   /// «Когда»: дата, месяц или «когда-нибудь».
   final WishDue due;
+
+  /// Точка на карте; null — нет (или сняли).
+  final WishPlace? place;
 }
 
 /// Лист «Новое желание»: категория чипами, название и необязательная заметка.
@@ -76,6 +82,7 @@ Future<WishDraft?> showWishFormSheet(
     context,
     background: scheme.surfaceContainer,
     builder: (_) => _WishForm(
+      theme: theme,
       scheme: scheme,
       ru: ru,
       groupId: groupId,
@@ -93,6 +100,7 @@ Future<WishDraft?> showWishFormSheet(
 
 class _WishForm extends StatefulWidget {
   const _WishForm({
+    required this.theme,
     required this.scheme,
     required this.ru,
     required this.customKinds,
@@ -106,6 +114,7 @@ class _WishForm extends StatefulWidget {
     this.onOfferPlus,
   });
 
+  final AppTheme theme;
   final ColorScheme scheme;
   final bool ru;
   final List<WishKind> customKinds;
@@ -172,6 +181,60 @@ class _WishFormState extends State<_WishForm> {
   late String _shop = widget.existing?.shop ?? '';
   late String _currency = widget.existing?.currency ?? '';
   late WishDue _due = widget.existing?.due ?? WishDue.none;
+  late WishPlace? _place = widget.existing?.place;
+
+  /// Точка на карте: у «Места» и у желания, где она уже стоит.
+  Future<void> _pickPlace() async {
+    final picked = await WishPlacePicker.pick(
+      context,
+      theme: widget.theme,
+      initial: _place,
+    );
+    if (picked != null && mounted) setState(() => _place = picked);
+  }
+
+  Widget _placeRow() {
+    final p = _place;
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              key: const Key('wish-place'),
+              onPressed: _pickPlace,
+              icon: Icon(p == null
+                  ? Icons.add_location_alt_outlined
+                  : Icons.location_on_rounded),
+              label: Text(
+                p == null
+                    ? _tr('Место на карте', 'Place on the map')
+                    : p.name.isNotEmpty
+                        ? p.name
+                        : _tr('Точка на карте', 'Pinned on the map'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.onest(size: 14.5, weight: 600),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor:
+                    p == null ? _cs.onSurfaceVariant : _cs.primary,
+                side: BorderSide(color: _cs.outlineVariant),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
+        ),
+        if (p != null)
+          IconButton(
+            tooltip: _tr('Убрать точку', 'Remove the pin'),
+            onPressed: () => setState(() => _place = null),
+            icon: const Icon(Icons.close_rounded),
+          ),
+      ],
+    );
+  }
 
   /// Тянет карточку товара со страницы магазина. Что не нашлось — человек
   /// вписывает сам: у половины магазинов og-тегов нет вовсе, и пустая форма
@@ -319,6 +382,7 @@ class _WishFormState extends State<_WishForm> {
         image: _image,
         shop: _shop,
         due: _due,
+        place: _place,
       ),
     );
   }
@@ -394,6 +458,10 @@ class _WishFormState extends State<_WishForm> {
               ru: widget.ru,
               onChanged: (v) => setState(() => _due = v),
             ),
+            if (_kind.id == 'place' || _place != null) ...[
+              const SizedBox(height: 10),
+              _placeRow(),
+            ],
             const SizedBox(height: 12),
             _linkField(),
             const SizedBox(height: 10),
