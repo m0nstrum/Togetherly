@@ -7,6 +7,7 @@ import '../../models/wish_category.dart';
 import '../../models/wish_due.dart';
 import '../../models/wish_place.dart';
 import '../../fork/wishes/wish_place_picker.dart';
+import '../../utils/map_link.dart';
 import '../../dict_strings.dart' show zhForEnglishIfZh;
 import '../../services/locale_service.dart';
 import '../../services/pb_data_service.dart';
@@ -151,7 +152,14 @@ class _WishFormState extends State<_WishForm> {
     // Ссылка пришла из «Поделиться» — карточку тянем сразу, человек нажал
     // «поделиться» именно ради неё.
     if (widget.existing == null && widget.initialUrl.isNotEmpty) {
-      _isItem = true;
+      // Ссылка на карты — это «Место» с точкой, а не вещь
+      // (docs/WISHLIST.md, «Поделиться → Tethered»).
+      final point = mapPointFromUrl(widget.initialUrl);
+      if (point != null) {
+        _becomePlace(point);
+      } else {
+        _isItem = true;
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) => _fetchPreview());
     }
     if (widget.existing?.isItem ?? false) _isItem = true;
@@ -236,6 +244,30 @@ class _WishFormState extends State<_WishForm> {
     );
   }
 
+  /// Желание становится «Местом» с точкой: так приходят ссылки на карты.
+  void _becomePlace(WishPlace point) {
+    _place = point;
+    _isItem = false;
+    final kind = builtinWishKind('place');
+    if (kind != null) _kind = kind;
+    if (point.name.isNotEmpty && _title.text.trim().isEmpty) {
+      _title.text = point.name;
+    }
+  }
+
+  /// Точка из ответа превью: по итоговому адресу (короткие ссылки) или из
+  /// разметки места.
+  static WishPlace? _previewPlace(String url, Map<String, dynamic> data) {
+    final direct = mapPointFromUrl(url) ??
+        mapPointFromUrl((data['url'] ?? '').toString());
+    if (direct != null) return direct;
+    final lat = (data['lat'] as num?)?.toDouble();
+    final lng = (data['lng'] as num?)?.toDouble();
+    if (lat == null || lng == null) return null;
+    final p = WishPlace(lat: lat, lng: lng);
+    return p.valid ? p : null;
+  }
+
   /// Тянет карточку товара со страницы магазина. Что не нашлось — человек
   /// вписывает сам: у половины магазинов og-тегов нет вовсе, и пустая форма
   /// после «загрузки» выглядела бы поломкой.
@@ -248,6 +280,17 @@ class _WishFormState extends State<_WishForm> {
     setState(() {
       _fetching = false;
       if (data == null) return;
+      final point = _previewPlace(url, data);
+      if (point != null) {
+        final title = (data['title'] ?? '').toString();
+        if (title.isNotEmpty && _title.text.trim().isEmpty) _title.text = title;
+        _becomePlace(WishPlace(
+          lat: point.lat,
+          lng: point.lng,
+          name: point.name.isNotEmpty ? point.name : title,
+        ));
+        return;
+      }
       _isItem = true;
       final title = (data['title'] ?? '').toString();
       if (title.isNotEmpty && _title.text.trim().isEmpty) _title.text = title;
@@ -257,7 +300,7 @@ class _WishFormState extends State<_WishForm> {
       if (price > 0) _price.text = price.toString();
       _currency = (data['currency'] ?? '').toString();
     });
-    if (data == null && mounted) {
+    if (data == null && mounted && _place == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_tr('Магазин не дал карточку — впишите руками',
@@ -375,7 +418,10 @@ class _WishFormState extends State<_WishForm> {
         title: text,
         note: _note.text.trim(),
         kind: _kind,
-        isItem: _isItem || _url.text.trim().isNotEmpty || price > 0,
+        // Ссылка у «Места» — на карты, вещью она его не делает.
+        isItem: _isItem ||
+            (_url.text.trim().isNotEmpty && _place == null) ||
+            price > 0,
         price: price,
         currency: _currency,
         url: _url.text.trim(),
@@ -558,7 +604,9 @@ class _WishFormState extends State<_WishForm> {
             style: AppFonts.onest(size: 15, color: _cs.onSurface),
             cursorColor: _cs.primary,
             decoration: InputDecoration(
-              labelText: _tr('Ссылка на товар', 'Product link'),
+              labelText: _place == null
+                  ? _tr('Ссылка на товар', 'Product link')
+                  : _tr('Ссылка', 'Link'),
               hintText: _tr('не обязательно', 'optional'),
               filled: true,
               fillColor: _cs.surfaceContainerHighest,

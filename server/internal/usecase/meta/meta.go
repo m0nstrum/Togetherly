@@ -154,7 +154,9 @@ func (s *Service) LinkPreview(ctx context.Context, raw string) (linkpreview.Prev
 	}
 	key := "p:" + u.String()
 	if r, ok := s.cache.get(key, s.now()); ok {
-		return linkpreview.Parse(string(r.Body), r.ContentType), true, nil
+		p := linkpreview.Parse(string(r.Body), r.ContentType)
+		p.URL = r.ContentType
+		return p, true, nil
 	}
 	resp, err := s.fetch.Get(ctx, u.String(), nil)
 	if err != nil || resp.Status != 200 {
@@ -162,5 +164,7 @@ func (s *Service) LinkPreview(ctx context.Context, raw string) (linkpreview.Prev
 	}
 	// В кэше — HTML и итоговый адрес (он нужен для относительных картинок).
 	s.cache.put(key, Response{Status: 200, ContentType: resp.FinalURL, Body: resp.Body}, time.Hour, s.now())
-	return linkpreview.Parse(string(resp.Body), resp.FinalURL), true, nil
+	p := linkpreview.Parse(string(resp.Body), resp.FinalURL)
+	p.URL = resp.FinalURL
+	return p, true, nil
 }

@@ -18,6 +18,13 @@ type Preview struct {
 	Shop     string `json:"shop"`
 	Price    int    `json:"price"`
 	Currency string `json:"currency"`
+
+	// Форк (docs/WISHLIST.md, «Поделиться»): итоговый адрес после
+	// переадресаций — по нему клиент узнаёт точку у коротких ссылок на
+	// карты — и точка из разметки места, если страница её даёт.
+	URL string  `json:"url,omitempty"`
+	Lat float64 `json:"lat,omitempty"`
+	Lng float64 `json:"lng,omitempty"`
 }
 
 // Parse разбирает html страницы pageURL.
@@ -74,12 +81,20 @@ func Parse(html, pageURL string) Preview {
 		image = "https:" + image
 	}
 
+	lat, _ := strconv.ParseFloat(meta(html, "place:location:latitude", "og:latitude"), 64)
+	lng, _ := strconv.ParseFloat(meta(html, "place:location:longitude", "og:longitude"), 64)
+	if lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+		lat, lng = 0, 0
+	}
+
 	return Preview{
 		Title:    cut(title, 120),
 		Image:    cut(image, 500),
 		Shop:     cut(site, 80),
 		Price:    amount(price),
 		Currency: sign,
+		Lat:      lat,
+		Lng:      lng,
 	}
 }
 

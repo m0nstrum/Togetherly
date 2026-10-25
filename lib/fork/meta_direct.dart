@@ -57,12 +57,30 @@ abstract final class ForkLinkPreview {
     }
     final c = client ?? http.Client();
     try {
-      final resp = await c
-          .get(uri, headers: {'Accept-Language': 'ru,en;q=0.8'})
-          .timeout(const Duration(seconds: 15));
-      if (resp.statusCode != 200) return null;
+      // Переадресации — вручную: итоговый адрес нужен короткой ссылке на
+      // карты, точка лежит именно в нём (docs/WISHLIST.md).
+      var current = uri;
+      http.Response? resp;
+      for (var hop = 0; hop < 5; hop++) {
+        final req = http.Request('GET', current)
+          ..followRedirects = false
+          ..headers['Accept-Language'] = 'ru,en;q=0.8';
+        resp = await http.Response.fromStream(
+          await c.send(req).timeout(const Duration(seconds: 15)),
+        );
+        final loc = resp.headers['location'];
+        if (resp.statusCode < 300 || resp.statusCode >= 400 || loc == null) {
+          break;
+        }
+        current = current.resolve(loc);
+      }
+      if (resp == null || resp.statusCode != 200) return null;
       final html = resp.body;
-      return {'success': true, ...parse(html, uri.toString())};
+      return {
+        'success': true,
+        ...parse(html, current.toString()),
+        'url': current.toString(),
+      };
     } catch (e) {
       debugPrint('ForkLinkPreview: $e');
       return null;
@@ -123,12 +141,27 @@ abstract final class ForkLinkPreview {
     }
     if (image.startsWith('//')) image = 'https:$image';
 
+    // Точка места из разметки (форк, «Поделиться» ссылкой на карты).
+    final lat = double.tryParse(
+      _meta(html, ['place:location:latitude', 'og:latitude']),
+    );
+    final lng = double.tryParse(
+      _meta(html, ['place:location:longitude', 'og:longitude']),
+    );
+    final hasPoint = lat != null &&
+        lng != null &&
+        lat.abs() <= 90 &&
+        lng.abs() <= 180 &&
+        (lat != 0 || lng != 0);
+
     return {
       'title': _cut(title, 120),
       'image': _cut(image, 500),
       'shop': _cut(site, 80),
       'price': _amount(price),
       'currency': sign,
+      if (hasPoint) 'lat': lat,
+      if (hasPoint) 'lng': lng,
     };
   }
 

@@ -75,10 +75,19 @@ func Meta(r *router.Router[*core.RequestEvent], svc *meta.Service, limit, perUse
 		if err != nil || !ok {
 			return e.JSON(http.StatusOK, map[string]any{"success": false, "message": "fetch failed"})
 		}
-		return e.JSON(http.StatusOK, map[string]any{
+		out := map[string]any{
 			"success": true, "title": p.Title, "image": p.Image, "shop": p.Shop,
 			"price": p.Price, "currency": p.Currency,
-		})
+		}
+		// Форк: итоговый адрес и точка места — для «Поделиться» ссылкой на
+		// карты (docs/WISHLIST.md).
+		if p.URL != "" {
+			out["url"] = p.URL
+		}
+		if p.Lat != 0 || p.Lng != 0 {
+			out["lat"], out["lng"] = p.Lat, p.Lng
+		}
+		return e.JSON(http.StatusOK, out)
 	}).Bind(apis.RequireAuth())
 }
 

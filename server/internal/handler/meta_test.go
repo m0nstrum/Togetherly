@@ -71,3 +71,40 @@ func (f *textFetcher) Get(_ context.Context, raw string, _ map[string]string) (s
 func (f *textFetcher) GetManual(ctx context.Context, raw string, h map[string]string) (safefetch.Response, error) {
 	return f.Get(ctx, raw, h)
 }
+
+// «Поделиться» ссылкой на карты (docs/WISHLIST.md): превью отдаёт итоговый
+// адрес после переадресаций и точку из разметки места.
+func TestLinkPreviewPlace(t *testing.T) {
+	app := testutil.NewApp(t)
+	svc := meta.New(placeFetcher{}, 1<<20, time.Now)
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		handler.Meta(e.Router, svc, &handler.IPLimiter{Max: 100, Window: time.Minute},
+			&handler.IPLimiter{Max: 100, Window: time.Hour}, slog.New(slog.DiscardHandler))
+		return e.Next()
+	})
+	_, tok := testutil.User(t, app, "placealice00001")
+	path := "/api/link/preview?url=" + url.QueryEscape("https://maps.app.goo.gl/abc")
+	for range 2 { // второй раз — из кэша
+		code, body := testutil.Do(t, app, http.MethodGet, path, tok, "")
+		require.Equal(t, http.StatusOK, code, body)
+		assert.Contains(t, body, `"url":"https://www.google.com/maps/place/x/@55.7298,37.6011,17z"`)
+		assert.Contains(t, body, `"lat":55.7298`)
+		assert.Contains(t, body, `"lng":37.6011`)
+	}
+}
+
+type placeFetcher struct{}
+
+func (placeFetcher) Get(context.Context, string, map[string]string) (safefetch.Response, error) {
+	return safefetch.Response{
+		Status:   200,
+		FinalURL: "https://www.google.com/maps/place/x/@55.7298,37.6011,17z",
+		Body: []byte(`<meta property="og:title" content="Парк">` +
+			`<meta property="place:location:latitude" content="55.7298">` +
+			`<meta property="place:location:longitude" content="37.6011">`),
+	}, nil
+}
+
+func (f placeFetcher) GetManual(ctx context.Context, raw string, h map[string]string) (safefetch.Response, error) {
+	return f.Get(ctx, raw, h)
+}

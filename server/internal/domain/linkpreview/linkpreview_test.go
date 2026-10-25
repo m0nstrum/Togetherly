@@ -37,6 +37,12 @@ func TestParse(t *testing.T) {
 			want: linkpreview.Preview{Title: "Чайник", Shop: "t.example.org", Price: 1299, Currency: "₽"},
 		},
 		{
+			name: "место: точка из разметки",
+			html: `<meta property="og:title" content="Парк Горького"><meta property="place:location:latitude" content="55.7298"><meta property="place:location:longitude" content="37.6011">`,
+			url:  "https://maps.example.org/org/1",
+			want: linkpreview.Preview{Title: "Парк Горького", Shop: "maps.example.org", Lat: 55.7298, Lng: 37.6011},
+		},
+		{
 			name: "пусто",
 			url:  "https://e.example.org/",
 			want: linkpreview.Preview{Shop: "e.example.org"},

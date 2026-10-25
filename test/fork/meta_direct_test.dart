@@ -80,4 +80,24 @@ void main() {
     );
     expect(await ForkLinkPreview.fetch('javascript:alert(1)'), isNull);
   });
+
+  test('fetch: короткая ссылка — итоговый адрес и точка места', () async {
+    const full = 'https://www.google.com/maps/place/x/@55.7298,37.6011,17z';
+    final c = MockClient((req) async {
+      if (req.url.host == 'maps.app.goo.gl') {
+        return http.Response('', 302, headers: {'location': full});
+      }
+      return http.Response(
+        '<meta property="og:title" content="Парк">'
+        '<meta property="place:location:latitude" content="55.7298">'
+        '<meta property="place:location:longitude" content="37.6011">',
+        200,
+        headers: {'content-type': 'text/html; charset=utf-8'},
+      );
+    });
+    final r = await ForkLinkPreview.fetch('https://maps.app.goo.gl/abc', client: c);
+    expect(r?['url'], full);
+    expect(r?['lat'], 55.7298);
+    expect(r?['lng'], 37.6011);
+  });
 }
