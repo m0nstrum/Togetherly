@@ -32,6 +32,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/usecase/e2eretention"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/music"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/ring"
@@ -119,6 +120,8 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute},
 			&handler.IPLimiter{Max: 300, Window: time.Hour}, log)
 		handler.Movies(e.Router, films, log)
+		handler.UserCard(e.Router)
+		handler.Music(e.Router, music.New(safefetch.New(safefetch.Options{Timeout: 8 * time.Second, MaxBytes: 1 << 20})), log)
 		handler.WatchProxy(e.Router, proxyInfo)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
 			e.Router.GET("/{path...}", apis.Static(os.DirFS(cfg.PublicDir), false))
