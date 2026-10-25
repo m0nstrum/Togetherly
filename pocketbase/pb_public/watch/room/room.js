@@ -1039,7 +1039,13 @@
       case 'hello':
         // Кто-то вошёл в уже живую комнату. Сервер ничего не хранит, поэтому
         // ссылку на видео и переписку ему передаёт вкладка того, кто внутри.
-        if (!state.url && !state.file && !state.log.length) break;
+        // fork (B4): пустая вкладка отвечает встречным hello — вдруг у
+        // новичка (или проснувшегося партнёра) ролик уже есть.
+        {
+          const reply = window.ForkRoomSync.helloReply(state, forkQueue.snapshot(), data);
+          if (reply === 'echo') send('hello', 0, Object.assign({ echo: true }, helloMark()));
+          if (reply !== 'state') break;
+        }
         send('state', ytTime(), { queue: forkQueue.snapshot(),
           to: data.from,
           url: state.url,
@@ -1273,8 +1279,24 @@
         state.wanted = '';
         applySource(wanted);
       }
+      helloRetry(0); // fork (B4)
     },
   };
+
+  /** fork (B4): снимок не пришёл, а в комнате кто-то есть — его вкладка
+   *  могла спать, когда мы вошли. Просим ещё раз, несколько раз. */
+  let helloTimer = 0;
+  /** Как в pair.js: вкладка браузера помечает свой hello (E2E §10.1). */
+  const helloMark = () => (window.__togetherlyChrome ? {} : { web: true });
+  function helloRetry(tries) {
+    clearTimeout(helloTimer);
+    const sync = window.ForkRoomSync;
+    helloTimer = setTimeout(() => {
+      if (!ch || !ch.subscribed() || !sync.shouldRetry(state, tries, sync.RETRIES)) return;
+      send('hello', 0, helloMark());
+      helloRetry(tries + 1);
+    }, sync.RETRY_MS);
+  }
 
   /** Ведущий — тот, кто последним трогал плеер: он раз в три секунды шлёт
    *  своё время, чтобы вылечить накопленный дрейф. Остальные молчат — до

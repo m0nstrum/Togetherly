@@ -989,7 +989,10 @@ class UserData extends ChangeNotifier {
     try {
       final data = await PbDataService().loadUserProfileMap(PocketBaseService().userId ?? "");
       if (data != null) {
-        _displayName = data['displayName'] ?? _displayName;
+        // fork (B3): пока ключ не открылся, сервер отдаёт шифр или пустоту —
+        // они не должны затирать имя, иначе партнёр видит «Гость».
+        final serverName = '${data['displayName'] ?? ''}';
+        if (ForkOwnName.usable(serverName)) _displayName = serverName.trim();
         ForkOwnName.value = _displayName; // fork
         _email = data['email'] ?? _email;
         // Only overwrite local avatar if Firestore has a real non-empty value.
