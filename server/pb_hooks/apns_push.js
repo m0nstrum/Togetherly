@@ -2,7 +2,7 @@
 /// server/pb_hooks/apns_push.js скриптом scripts/sync-hooks.sh).
 ///
 /// API тот же: notifyGroup, sendTo, isOnline, wakeUp, wakeGroup — хуки
-/// апстрима (draw_invite, reels_invite, coins) не меняются. Правила «кому не
+/// апстрима (coins) не меняются; зовы порисовать и в ленту — на Go (handler.Calls). Правила «кому не
 /// слать» тоже его: не автору, не тому, кто на связи (если не force), не
 /// тому, кто выключил этот вид в настройках.
 ///

@@ -99,7 +99,7 @@ import WidgetKit
 
   // MARK: - Зов в совместную ленту
 
-  /// «Аня зовёт смотреть TikTok» (`pb_hooks/reels_invite.pb.js`) — из системы
+  /// «Аня зовёт смотреть TikTok» (`server/internal/handler/calls.go`) — из системы
   /// во Flutter, канал `love_app/reels_invite`. Касание по пушу на холодном
   /// старте приходит раньше, чем Dart начнёт слушать, — тогда зов лежит в
   /// `pendingReelsInvite`, и Dart забирает его вопросом `pending`. Пока Dart

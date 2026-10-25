@@ -8,7 +8,7 @@ import '../pocketbase_service.dart';
 
 /// Зов в совместную ленту (решение 05.10.2026): ленту запускает тот, у кого
 /// Togetherly+, партнёру приходит пуш «Аня зовёт смотреть TikTok», и он
-/// входит без своего Плюса. Сервер — `pb_hooks/reels_invite.pb.js`.
+/// входит без своего Плюса. Сервер — `server/internal/handler/calls.go`.
 class ReelsInvite {
   const ReelsInvite({
     required this.groupId,

@@ -15,7 +15,7 @@ void main() {
   ).readAsStringSync();
   // fork: FcmService.kt удалён — FCM в форке нет (TOUCHPOINTS.md).
   final swift = File('ios/Runner/AppDelegate.swift').readAsStringSync();
-  final hook = File('server/pb_hooks/reels_invite.pb.js').readAsStringSync();
+  final hook = File('server/internal/handler/calls.go').readAsStringSync();
 
   test('канал один и тот же', () {
     for (final src in [dart, kotlin, swift]) {
@@ -33,7 +33,7 @@ void main() {
 
   test('поля пуша, которые шлёт сервер, читают обе платформы', () {
     for (final f in ['feed', 'group', 'name']) {
-      expect(hook.contains('$f:'), isTrue, reason: 'сервер: $f');
+      expect(hook.contains('"$f":'), isTrue, reason: 'сервер: $f');
       expect(kotlin.contains('"$f"'), isTrue, reason: 'Kotlin: $f');
       expect(swift.contains('"$f"'), isTrue, reason: 'Swift: $f');
     }
@@ -42,7 +42,7 @@ void main() {
 
   test('в данных пуша нет служебного ключа Firebase from', () {
     expect(
-      RegExp(r'data:\s*\{[^}]*\bfrom:').hasMatch(hook),
+      RegExp(r'Data:\s*map\[string\]string\{[^}]*"from"').hasMatch(hook),
       isFalse,
       reason:
           'с ключом from FCM отвечает INVALID_ARGUMENT, и релей стирает живой токен',

@@ -34,6 +34,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/music"
+	pushes "github.com/m0nstrum/togetherly/server/internal/usecase/notify"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/ring"
@@ -130,6 +131,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.UserCard(e.Router)
 		handler.Group(e.Router, groups, log)
 		handler.WidgetAnim(e.Router, anim)
+		handler.Calls(e.Router, pushes.New(app, pub, time.Now), time.Now)
 		handler.InviteAccept(e.Router, pairs.New(app), log)
 		handler.CoupleStats(e.Router, stats.New(app), time.Now, log)
 		handler.Waiting(e.Router, pairs.New(app), time.Now, log)
@@ -252,7 +254,7 @@ func bindCompat(app core.App, addr string, pub handler.Publisher, log *slog.Logg
 	if addr == "" {
 		return
 	}
-	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), pub, log), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), pushes.New(app, pub, time.Now), log), ReadHeaderTimeout: 5 * time.Second}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

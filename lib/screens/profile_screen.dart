@@ -221,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _notifChat = true;
 
   /// Зов порисовать: партнёр сел за холст. Пуш собирает сервер
-  /// (`pb_hooks/draw_invite.pb.js`), здесь только выключатель.
+  /// (`server/internal/handler/calls.go`), здесь только выключатель.
   bool _notifDraw = true;
 
   /// Комментарии под воспоминанием — отдельно от самой ленты.

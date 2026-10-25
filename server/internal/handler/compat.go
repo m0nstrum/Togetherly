@@ -1,17 +1,13 @@
 package handler
 
 import (
-	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net"
 	"net/http"
-	"regexp"
-	"strings"
 
+	"github.com/m0nstrum/togetherly/server/internal/usecase/notify"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 )
@@ -25,9 +21,9 @@ import (
 // Остались пути, которые зовут ещё не перенесённые в Go хуки
 // (server/pb_hooks); перенесённые убраны вместе с хуками. Остальные пути
 // hotpath отвечают 501 с записью в журнал.
-func Compat(svc *pairs.Service, recs *records.Service, pub Publisher, log *slog.Logger) http.Handler {
+func Compat(svc *pairs.Service, recs *records.Service, notif *notify.Service, log *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
-	h := compat{svc: svc, recs: recs, pub: pub, log: log}
+	h := compat{svc: svc, recs: recs, notif: notif, log: log}
 	mux.HandleFunc("GET /internal/group-read", h.groupRead)
 	mux.HandleFunc("POST /internal/group-write", h.groupWrite)
 	mux.HandleFunc("GET /internal/groups-of", h.groupsOf)
@@ -43,16 +39,14 @@ func Compat(svc *pairs.Service, recs *records.Service, pub Publisher, log *slog.
 	return loopbackOnly(mux)
 }
 
-type compat struct {
-	svc  *pairs.Service
-	recs *records.Service
-	pub  Publisher
-	log  *slog.Logger
-}
+// Publisher — публикация в канал Centrifugo.
+type Publisher = notify.Publisher
 
-// Publisher — публикация в канал Centrifugo (infrastructure/centrifugo).
-type Publisher interface {
-	Publish(ctx context.Context, channel string, data any) error
+type compat struct {
+	svc   *pairs.Service
+	recs  *records.Service
+	notif *notify.Service
+	log   *slog.Logger
 }
 
 // notify — уведомление человеку в его канал `user:<uid>`. Клиент
@@ -70,33 +64,15 @@ func (h compat) notify(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false})
 		return
 	}
-	body.Title, body.Body = dropSealed(body.Title), dropSealed(body.Body)
-	id := make([]byte, 8)
-	_, _ = rand.Read(id)
-	err := h.pub.Publish(r.Context(), "user:"+body.UID, map[string]any{
-		"event": "create", "collection": "fork_notify",
-		"record": map[string]any{
-			"id": hex.EncodeToString(id), "collectionName": "fork_notify",
-			"thread": body.Thread, "title": body.Title, "body": body.Body, "data": body.Data,
-		},
+	// Кому слать, хук уже решил сам (apns_push.js).
+	err := h.notif.Deliver(r.Context(), body.UID, notify.Message{
+		Thread: body.Thread, Title: body.Title, Body: body.Body, Data: body.Data,
 	})
 	if err != nil {
 		h.fail(w, r, "notify", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
-}
-
-// sealedToken — шифртекст поля E2E (`e2e1.<keyId>.<nonce>.<ct>`).
-var sealedToken = regexp.MustCompile(`e2e1\.[A-Za-z0-9_:.+/=\-]+`)
-
-// dropSealed убирает шифртекст из текста уведомления: хуки апстрима берут
-// имя из профиля, а там теперь шифр личного ключа (docs/E2E.md).
-func dropSealed(s string) string {
-	if !strings.Contains(s, "e2e1.") {
-		return s
-	}
-	return strings.Join(strings.Fields(sealedToken.ReplaceAllString(s, "")), " ")
 }
 
 func (h compat) record(w http.ResponseWriter, r *http.Request) {

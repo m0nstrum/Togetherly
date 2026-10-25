@@ -48,7 +48,7 @@ void main() {
     );
   });
 
-  test('ключи площадок совпадают с сервером (reels_invite.js)', () {
+  test('ключи площадок совпадают с сервером (handler/calls.go)', () {
     expect(ReelsSource.values.map((s) => s.key).toSet(), {
       'shorts',
       'tiktok',
