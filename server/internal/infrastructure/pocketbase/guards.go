@@ -22,6 +22,7 @@ func bindGuards(app core.App) {
 	bindWishComments(app)
 	bindCommentsCount(app)
 	bindCounters(app)
+	bindUsersGuard(app)
 
 	// Новую группу создаёшь только с собой: правило `members ?~ auth.id`
 	// пускало вписать в неё кого угодно. Второй участник появляется только
