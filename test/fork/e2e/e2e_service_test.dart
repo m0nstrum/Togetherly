@@ -1,7 +1,9 @@
+import 'dart:convert';
 // fork: обмен ключами пары (PLAN S8, критерий: две установки получают общий
 // ключ пары, подмену ключа на сервере видно в состоянии для UI).
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:love_app/fork/e2e/device_link.dart';
 import 'dart:io';
 
 import 'package:love_app/fork/e2e/backup.dart';
@@ -20,6 +22,7 @@ void main() {
     ServerDb db,
     String uid, [
     MemoryVault? vault,
+    bool fresh = true,
   ]) async {
     final s = E2EService(
       crypto: c,
@@ -29,6 +32,11 @@ void main() {
       kdfParams: const KdfParams(ops: 1, mem: 8 << 20),
     );
     await s.start();
+    // T3: ключи аккаунта уже опубликованы, бэкапа нет — человек выбирает
+    // «начать заново» (переустановка) или привязку (тесты привязки ниже).
+    if (fresh && s.needsRestore.value && s.restoreMethod == null) {
+      await s.startFresh();
+    }
     return s;
   }
 
@@ -525,5 +533,94 @@ void main() {
         expect(keyBytes(b), keyBytes(a));
       },
     );
+  });
+
+  group('T3: привязка второго устройства по QR', () {
+    test('ключи аккаунта и пар переходят, устройство в списке, партнёр не видит смены', () async {
+      final db = ServerDb();
+      final a = await install(db, alice);
+      final b = await install(db, bob);
+      await syncBoth(a, b);
+      await a.enableBackup(BackupMethod.password, 'correct horse battery');
+
+      final a2 = await install(db, alice, null, false);
+      expect(a2.needsRestore.value, isTrue);
+
+      final qr = await a2.linkStart();
+      expect(await a2.linkPoll(), isFalse, reason: 'старое ещё не ответило');
+      await a.linkApprove(LinkQr.parse(qr.encode())!);
+      expect(await a2.linkPoll(), isTrue);
+
+      expect(a2.needsRestore.value, isFalse);
+      expect(a2.keys.account.publicKey, a.keys.account.publicKey);
+      expect(keyBytes(a2), keyBytes(a), reason: 'ключ пары сразу');
+      expect(a2.backupMethod.value, BackupMethod.password, reason: 'бэкап обновляется и отсюда');
+      final list = (await FakeBackend(db, bob).identity(alice))!.devices;
+      expect(list.devices.map((d) => d.id), containsAll([a.keys.device.id, a2.keys.device.id]));
+      expect(db.links, isEmpty, reason: 'запись привязки удалена');
+      await syncBoth(a2, b);
+      expect(b.status.value[gid], isNot(PairE2EStatus.keyChanged));
+      expect(b.status.value[gid], isNot(PairE2EStatus.tampered));
+    });
+
+    test('сервер подменил ключи нового устройства — старое не отдаёт ключи', () async {
+      final db = ServerDb();
+      final a = await install(db, alice);
+      final a2 = await install(db, alice, null, false);
+      final qr = await a2.linkStart();
+      final evil = LinkOffer.create(c, alice, linkId: qr.linkId).record(c);
+      db.links[qr.linkId]!['device'] = evil['device'];
+      await expectLater(a.linkApprove(qr), throwsA(isA<E2EVerifyError>()));
+      expect(db.links[qr.linkId]!['payload'], isEmpty);
+    });
+
+    test('сервер подсунул свой пакет — новое устройство его не примет', () async {
+      final db = ServerDb();
+      final mallory = await install(db, 'mallory');
+      await install(db, alice);
+      final a2 = await install(db, alice, null, false);
+      final qr = await a2.linkStart();
+      // Сервер знает ключи нового устройства, но не секрет из QR: пакет с
+      // ключом аккаунта злоумышленника он шифрует наугад.
+      final rec = (await FakeBackend(db, alice).link(qr.linkId))!;
+      final inner = c.seal(
+        utf8Bytes(jsonEncode({
+          'user': alice,
+          'link': qr.linkId,
+          'device': rec.device.id,
+          'account': b64(mallory.keys.account.secretKey.extractBytes()),
+          'pairs': [],
+        })),
+        rec.device.boxKey,
+      );
+      final nonce = c.random(c.aeadNonceBytes);
+      db.links[qr.linkId]!['payload'] = jsonEncode({
+        'v': 1,
+        'nonce': b64(nonce),
+        'ct': b64(c.aeadEncrypt(inner, nonce, c.symmetricKey(), utf8Bytes('x'))),
+      });
+      await expectLater(a2.linkPoll(), throwsA(isA<E2EVerifyError>()));
+      expect(a2.needsRestore.value, isTrue);
+    });
+
+    test('QR другого аккаунта и истёкшая привязка', () async {
+      final db = ServerDb();
+      final a = await install(db, alice);
+      final a2 = await install(db, alice, null, false);
+      final qr = await a2.linkStart();
+      await expectLater(
+        a.linkApprove(LinkQr(uid: bob, linkId: qr.linkId, secret: qr.secret)),
+        throwsA(isA<E2EVerifyError>()),
+      );
+      db.links.clear();
+      await expectLater(a2.linkPoll(), throwsA(isA<E2ELinkExpired>()));
+      await expectLater(a.linkApprove(qr), throwsA(isA<E2ELinkExpired>()));
+    });
+
+    test('без опубликованных ключей новый телефон заводит свои сразу', () async {
+      final db = ServerDb();
+      final a = await install(db, alice, null, false);
+      expect(a.needsRestore.value, isFalse);
+    });
   });
 }

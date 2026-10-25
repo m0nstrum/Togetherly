@@ -10,8 +10,9 @@ import '../../services/coin_store.dart' show kCoinsPurchasable;
 import '../../widgets/settings_scaffold.dart';
 import '../e2e/backup_ui.dart';
 import '../e2e/fork_e2e.dart';
+import '../e2e/link_ui.dart';
 
-/// Секция «Шифрование»: бэкап ключей. Без сервиса шифрования строки нет, и
+/// Секция «Шифрование»: бэкап ключей и привязка второго телефона (T3). Без сервиса шифрования строки нет, и
 /// заголовок без строк тоже не рисуем.
 class ForkEncryptionSection extends StatelessWidget {
   const ForkEncryptionSection({super.key});
@@ -25,7 +26,7 @@ class ForkEncryptionSection extends StatelessWidget {
             prefsKey: 'encryption',
             title: ruEn('Шифрование', 'Encryption'),
             icon: Icons.lock_rounded,
-            children: const [ForkE2EBackupRow()],
+            children: const [ForkE2EBackupRow(), ForkE2ELinkRow()],
           ),
   );
 }

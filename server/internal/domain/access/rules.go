@@ -229,6 +229,8 @@ var Collections = map[string]Rules{
 		Delete: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
 	},
 	"e2e_backups": own("user_uid"),
+	// Привязка устройства по QR (§5.3): только свои записи.
+	"e2e_links": own("user_uid"),
 
 	// Токены FCM устройств (PLAN S12): пишет и читает только сервер через
 	// /api/fork/push-token — чужой токен не прочитать и не подменить.

@@ -10,6 +10,7 @@ import '../../widgets/settings_scaffold.dart';
 import 'backup.dart';
 import 'e2e_service.dart';
 import 'fork_e2e.dart';
+import 'link_ui.dart';
 import 'password_policy.dart';
 import 'crypto.dart' show E2EVerifyError;
 import '../ui/feedback.dart';
@@ -83,10 +84,16 @@ class ForkE2EBackupRow extends StatelessWidget {
             ? SettingsRow(
                 icon: Icons.restore_rounded,
                 title: _t('Восстановить ключи', 'Restore keys'),
-                subtitle: _t(
-                  'На сервере есть бэкап — введите фразу или пароль, чтобы читать историю',
-                  'There is a backup on the server — enter your phrase or password to read your history',
-                ),
+                // T3: без бэкапа ключи только на другом телефоне.
+                subtitle: svc.restoreMethod == null
+                    ? _t(
+                        'Ключи на другом вашем телефоне — привяжите этот по QR, чтобы читать историю',
+                        'Your keys are on your other phone — link this one by QR to read your history',
+                      )
+                    : _t(
+                        'На сервере есть бэкап — введите фразу или пароль, чтобы читать историю',
+                        'There is a backup on the server — enter your phrase or password to read your history',
+                      ),
                 onTap: () => Navigator.of(context).push(
                   forkE2ERoute<void>(context, const ForkE2ERestoreScreen()),
                 ),
@@ -590,6 +597,8 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
   Widget build(BuildContext context) => ForkSecureScreen(builder: _protectedBody);
 
   Widget _protectedBody(BuildContext context) {
+    // T3: бэкапа нет, ключи на другом телефоне — только привязка или заново.
+    if (_svc.restoreMethod == null) return _noBackupBody(context);
     final phrase = _svc.restoreMethod == BackupMethod.phrase;
     return Scaffold(
       appBar: AppBar(title: Text(_t('Восстановить ключи', 'Restore keys'))),
@@ -635,6 +644,12 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
                   ? const _Spinner()
                   : Text(_t('Восстановить', 'Restore')),
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _openLink,
+              icon: const Icon(Icons.qr_code_rounded),
+              label: Text(_t('Привязать с другого телефона', 'Link from another phone')),
+            ),
             const SizedBox(height: 24),
             TextButton(
               onPressed: _busy ? null : _fresh,
@@ -650,6 +665,39 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       ),
     );
   }
+
+  void _openLink() => Navigator.of(context).push(forkE2ELinkShowRoute(context));
+
+  Widget _noBackupBody(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(_t('Восстановить ключи', 'Restore keys'))),
+    body: SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(
+            _t(
+              'Ключи шифрования этого аккаунта уже есть на другом вашем телефоне, а бэкапа на сервере нет. Привяжите этот телефон по QR — переписка откроется здесь.',
+              'This account’s encryption keys are on your other phone, and there’s no backup on the server. Link this phone by QR to open your history here.',
+            ),
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: _busy ? null : _openLink,
+            icon: const Icon(Icons.qr_code_rounded),
+            label: Text(_t('Привязать с другого телефона', 'Link from another phone')),
+          ),
+          const SizedBox(height: 24),
+          TextButton(
+            onPressed: _busy ? null : _fresh,
+            child: Text(
+              _t('Другого телефона нет — начать заново', 'No other phone — start over'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _Spinner extends StatelessWidget {

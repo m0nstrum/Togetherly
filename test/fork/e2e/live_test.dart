@@ -15,6 +15,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
+import 'package:love_app/fork/e2e/device_link.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
 import 'package:love_app/fork/e2e/key_store.dart';
 import 'package:love_app/fork/e2e/media_cipher.dart';
@@ -333,6 +334,27 @@ void main() {
         a2.currentKey(pair)!.key.extractBytes(),
         b.currentKey(pair)!.key.extractBytes(),
       );
+
+      // T3: третий телефон привязывается по QR с первого через e2e_links.
+      final a3 = install(env['SMOKE_ATOK']!, env['SMOKE_AID']!);
+      await a3.start();
+      expect(a3.needsRestore.value, isTrue);
+      final qr = await a3.linkStart();
+      expect(await a3.linkPoll(), isFalse);
+      // Чужой аккаунт запись привязки не видит.
+      await expectLater(
+        b.linkApprove(LinkQr(uid: b.uid, linkId: qr.linkId, secret: qr.secret)),
+        throwsA(isA<E2ELinkExpired>()),
+      );
+      await a.linkApprove(qr);
+      expect(await a3.linkPoll(), isTrue);
+      expect(
+        a3.currentKey(pair)!.key.extractBytes(),
+        b.currentKey(pair)!.key.extractBytes(),
+      );
+      await b.syncGroup(pair);
+      expect(b.status.value[pair], PairE2EStatus.verified,
+          reason: 'новое устройство того же аккаунта — без смены ключа');
     },
     skip: base == null
         ? 'нужен сервер: запускайте через server/scripts/smoke.sh'
