@@ -31,7 +31,7 @@ const groupsCol = "groups"
 // ErrNotFound — пары нет.
 var ErrNotFound = errors.New("pairs: пара не найдена")
 
-// AcceptInput — приём кода приглашения (тело /internal/pair-accept).
+// AcceptInput — приём кода приглашения.
 type AcceptInput struct {
 	OwnerUID    string `json:"owner_uid"`
 	MyUID       string `json:"my_uid"`

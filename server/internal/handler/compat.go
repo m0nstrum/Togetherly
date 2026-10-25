@@ -11,11 +11,9 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
-	"github.com/m0nstrum/togetherly/server/internal/usecase/stats"
 )
 
 // Compat — внутренний API, который JS-хуки апстрима зовут по
@@ -24,24 +22,16 @@ import (
 // остаются нетронутыми. Слушает только петлю; запросы не с петли — 404, как в
 // hotpath.
 //
-// Перенесено всё, что зовут хуки из server/hooks.allow. Остальные пути
-// hotpath отвечают 501 с записью в журнал — так видно, если новый хук
-// апстрима потянул ещё один.
-func Compat(svc *pairs.Service, recs *records.Service, st *stats.Service, pub Publisher, log *slog.Logger) http.Handler {
+// Остались пути, которые зовут ещё не перенесённые в Go хуки
+// (server/pb_hooks); перенесённые убраны вместе с хуками. Остальные пути
+// hotpath отвечают 501 с записью в журнал.
+func Compat(svc *pairs.Service, recs *records.Service, pub Publisher, log *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
-	h := compat{svc: svc, recs: recs, st: st, pub: pub, log: log}
-	mux.HandleFunc("POST /internal/pair-accept", h.pairAccept)
+	h := compat{svc: svc, recs: recs, pub: pub, log: log}
 	mux.HandleFunc("GET /internal/group-read", h.groupRead)
 	mux.HandleFunc("POST /internal/group-write", h.groupWrite)
 	mux.HandleFunc("GET /internal/groups-of", h.groupsOf)
-	mux.HandleFunc("POST /internal/waiting-create", h.waitingCreate)
-	mux.HandleFunc("POST /internal/waiting-reset", h.waitingReset)
-	mux.HandleFunc("POST /internal/pair-claim-approve", h.claimApprove)
 	mux.HandleFunc("POST /internal/record", h.record)
-	// Счётчики статистики пары (couple_stats.pb.js) — по метаданным,
-	// без содержимого (usecase/stats, BACKLOG T2).
-	mux.HandleFunc("GET /internal/couple-agg", h.coupleAgg)
-	mux.HandleFunc("GET /internal/count", h.count)
 	// Своё, не hotpath: пуши хуков (зов в ленту, порисовать) вместо
 	// APNs/FCM — server/hooks/apns_push.js.
 	mux.HandleFunc("POST /internal/notify", h.notify)
@@ -56,36 +46,8 @@ func Compat(svc *pairs.Service, recs *records.Service, st *stats.Service, pub Pu
 type compat struct {
 	svc  *pairs.Service
 	recs *records.Service
-	st   *stats.Service
 	pub  Publisher
 	log  *slog.Logger
-}
-
-func (h compat) coupleAgg(w http.ResponseWriter, r *http.Request) {
-	g := r.URL.Query().Get("group_id")
-	if g == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false})
-		return
-	}
-	out, err := h.st.CoupleAgg(r.Context(), g, time.Now())
-	if err != nil {
-		h.fail(w, r, "couple-agg", err)
-		return
-	}
-	writeJSON(w, http.StatusOK, out)
-}
-
-func (h compat) count(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	n, err := h.st.Count(r.Context(), q.Get("col"), q.Get("group_id"))
-	switch {
-	case errors.Is(err, stats.ErrUnknownCol) || q.Get("group_id") == "":
-		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false})
-	case err != nil:
-		h.fail(w, r, "count", err)
-	default:
-		writeJSON(w, http.StatusOK, map[string]any{"n": n})
-	}
 }
 
 // Publisher — публикация в канал Centrifugo (infrastructure/centrifugo).
@@ -137,36 +99,6 @@ func dropSealed(s string) string {
 	return strings.Join(strings.Fields(sealedToken.ReplaceAllString(s, "")), " ")
 }
 
-func (h compat) waitingCreate(w http.ResponseWriter, r *http.Request) {
-	var in pairs.WaitingCreateInput
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"success": false, "message": "bad body"})
-		return
-	}
-	h.result(w, r, "waiting-create")(h.svc.WaitingCreate(r.Context(), in))
-}
-
-func (h compat) waitingReset(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		GroupID string `json:"group_id"`
-		UID     string `json:"uid"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"success": false, "message": "bad body"})
-		return
-	}
-	h.result(w, r, "waiting-reset")(h.svc.WaitingReset(r.Context(), in.GroupID, in.UID))
-}
-
-func (h compat) claimApprove(w http.ResponseWriter, r *http.Request) {
-	var in pairs.ClaimApproveInput
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "error": "bad body"})
-		return
-	}
-	h.result(w, r, "pair-claim-approve")(h.svc.ClaimApprove(r.Context(), in))
-}
-
 func (h compat) record(w http.ResponseWriter, r *http.Request) {
 	var body map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -188,35 +120,6 @@ func (h compat) record(w http.ResponseWriter, r *http.Request) {
 }
 
 // result отдаёт ответ usecase как есть: код и тело hotpath.
-func (h compat) result(w http.ResponseWriter, r *http.Request, op string) func(pairs.Result, error) {
-	return func(res pairs.Result, err error) {
-		if err != nil {
-			h.fail(w, r, op, err)
-			return
-		}
-		writeJSON(w, res.Status, res.Body)
-	}
-}
-
-func (h compat) pairAccept(w http.ResponseWriter, r *http.Request) {
-	var in pairs.AcceptInput
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"success": false, "message": "bad body"})
-		return
-	}
-	res, err := h.svc.Accept(r.Context(), in)
-	if err != nil {
-		h.log.ErrorContext(r.Context(), "pair-accept", "err", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"success": false, "message": "internal error"})
-		return
-	}
-	status := http.StatusOK
-	if !res.Success && res.Message == "bad params" {
-		status = http.StatusBadRequest
-	}
-	writeJSON(w, status, res)
-}
-
 func (h compat) groupRead(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	var (

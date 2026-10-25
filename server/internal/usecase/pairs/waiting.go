@@ -28,7 +28,7 @@ func fail(status int, msg string) Result {
 	return Result{Status: status, Body: map[string]any{"success": false, "message": msg}}
 }
 
-// WaitingCreateInput — тело /internal/waiting-create.
+// WaitingCreateInput — пара с пустым местом.
 type WaitingCreateInput struct {
 	UID               string `json:"uid"`
 	PlaceholderName   string `json:"placeholder_name"`
@@ -149,7 +149,7 @@ func (s *Service) WaitingReset(ctx context.Context, groupID, uid string) (Result
 	return res, nil
 }
 
-// ClaimApproveInput — тело /internal/pair-claim-approve.
+// ClaimApproveInput — подтверждение заявки на второе место.
 type ClaimApproveInput struct {
 	GroupID     string `json:"group_id"`
 	ClaimUID    string `json:"claim_uid"`

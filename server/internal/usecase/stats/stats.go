@@ -1,5 +1,5 @@
-// Package stats — счётчики пары для экрана статистики (/internal/couple-agg и
-// /internal/count, которые у апстрима держал hotpath поверх Postgres).
+// Package stats — счётчики пары для экрана статистики (/api/couple/stats; у
+// апстрима их считал hotpath поверх Postgres).
 //
 // Считаются только метаданные, которые сервер и так хранит открыто: кто и
 // когда написал, добавил воспоминание или отметил настроение, тип
@@ -23,10 +23,10 @@ type Service struct{ app core.App }
 // New — счётчики над app.
 func New(app core.App) *Service { return &Service{app: app} }
 
-// ErrUnknownCol — коллекцию нельзя считать через /internal/count.
+// ErrUnknownCol — коллекцию так не считают.
 var ErrUnknownCol = errors.New("stats: коллекция не считается")
 
-// countable — что можно посчитать по group_id через /internal/count.
+// countable — что можно посчитать по group_id.
 var countable = map[string]bool{"canvas_strokes": true, "canvas_meta": true}
 
 // Count — сколько записей пары в коллекции col (без удалённых, где есть флаг).
@@ -82,8 +82,8 @@ var (
 	moods    = source{"mood_entries", "group_id = {:g}", moodAt, "user_uid"}
 )
 
-// CoupleAgg — ответ в форме hotpath `/internal/couple-agg` (его читает
-// couple_stats.pb.js). now — отсчёт для «за 30/90 дней» и года по месяцам.
+// CoupleAgg — ряды чата, ленты и настроений в форме hotpath (их собирает
+// CoupleStats). now — отсчёт для «за 30/90 дней» и года по месяцам.
 func (s *Service) CoupleAgg(ctx context.Context, groupID string, now time.Time) (map[string]any, error) {
 	out := map[string]any{}
 	var err error
@@ -215,4 +215,114 @@ func params(groupID string, extra []dbx.Params) dbx.Params {
 		}
 	}
 	return p
+}
+
+// videoFile — условие «файл ленты — видео» по расширению.
+const videoFile = "(file LIKE '%.mp4' OR file LIKE '%.mov' OR file LIKE '%.webm' OR file LIKE '%.m4v' OR file LIKE '%.3gp' OR file LIKE '%.avi' OR file LIKE '%.mkv')"
+
+// CoupleStats — ответ /api/couple/stats (бывший couple_stats.pb.js): всё для
+// экрана «Статистика пары» готовыми числами — тянуть ради графика десятки
+// тысяч записей на телефон нельзя. Ряды по чату, ленте и настроениям — из
+// CoupleAgg, остальное считается здесь.
+func (s *Service) CoupleStats(ctx context.Context, groupID string, now time.Time) (map[string]any, error) {
+	agg, err := s.CoupleAgg(ctx, groupID, now)
+	if err != nil {
+		return nil, err
+	}
+	n := func(sql string) int {
+		var v int
+		if err == nil {
+			v, err = s.one(ctx, sql, groupID)
+		}
+		return v
+	}
+	list := func(dst any, sql string) {
+		if err == nil {
+			err = s.all(ctx, dst, sql, groupID)
+		}
+	}
+
+	var couple []struct {
+		Created string  `db:"created" json:"created"`
+		Start   string  `db:"start" json:"start"`
+		Anni    string  `db:"anni" json:"anniversary"`
+		Streak  float64 `db:"streak" json:"streak"`
+		XP      float64 `db:"xp" json:"xp"`
+	}
+	list(&couple, `SELECT created_at AS created, start_date AS start, anniversary_date AS anni,
+		COALESCE(streak_days, 0) AS streak, COALESCE(xp, 0) AS xp FROM groups WHERE id = {:g}`)
+	members := []struct {
+		UID  string `db:"uid" json:"uid"`
+		Name string `db:"name" json:"name"`
+	}{}
+	list(&members, `SELECT je.value AS uid, COALESCE(u.display_name, '') AS name
+		FROM groups gr, json_each(gr.members) je LEFT JOIN users u ON u.id = je.value
+		WHERE gr.id = {:g} AND json_valid(gr.members)`)
+
+	media := n("SELECT COUNT(*) AS n FROM media WHERE group_id = {:g}")
+	videos := n("SELECT COUNT(*) AS n FROM media WHERE group_id = {:g} AND " + videoFile)
+	strokes, cerr := s.Count(ctx, "canvas_strokes", groupID)
+	if err == nil {
+		err = cerr
+	}
+	totals := map[string]any{
+		"memories": agg["memories_total"],
+		"comments": n("SELECT COUNT(*) AS n FROM memory_comments WHERE group_id = {:g}"),
+		"messages": agg["messages"],
+		"moods":    agg["moods"],
+		"missYou":  n("SELECT COALESCE(SUM(count), 0) AS n FROM miss_you WHERE group_id = {:g}"),
+		"strokes":  strokes,
+		"canvases": agg["canvases"],
+		"gifts":    n("SELECT COUNT(*) AS n FROM gifts WHERE group_id = {:g}"),
+		"watch":    n("SELECT COUNT(*) AS n FROM watch_history WHERE group_id = {:g}"),
+		"media":    media,
+		"videos":   videos,
+		"photos":   media - videos,
+		"mascots":  n("SELECT COUNT(*) AS n FROM mascots WHERE group_id = {:g}"),
+	}
+
+	missYou, gifts := []byUID{}, []byUID{}
+	list(&missYou, "SELECT user_uid AS uid, COALESCE(SUM(count), 0) AS c FROM miss_you WHERE group_id = {:g} GROUP BY uid")
+	list(&gifts, "SELECT sender_uid AS uid, COUNT(*) AS c FROM gifts WHERE group_id = {:g} GROUP BY uid")
+	giftKinds, watchKinds := []byKind{}, []byKind{}
+	list(&giftKinds, "SELECT gift_key AS k, COUNT(*) AS c FROM gifts WHERE group_id = {:g} GROUP BY k ORDER BY c DESC LIMIT 10")
+	list(&watchKinds, "SELECT kind AS k, COUNT(*) AS c FROM watch_history WHERE group_id = {:g} GROUP BY k ORDER BY c DESC")
+	missWeek := []struct {
+		UID string `db:"uid" json:"uid"`
+		W   string `db:"w" json:"w"`
+	}{}
+	list(&missWeek, "SELECT user_uid AS uid, COALESCE(by_weekday, '') AS w FROM miss_you WHERE group_id = {:g}")
+	if err != nil {
+		return nil, err
+	}
+
+	out := map[string]any{"ok": true, "couple": map[string]any{}, "members": members, "totals": totals}
+	if len(couple) > 0 {
+		out["couple"] = couple[0]
+	}
+	out["byMember"] = map[string]any{
+		"memories": agg["by_member_memories"], "messages": agg["by_member_messages"],
+		"moods": agg["by_member_moods"], "missYou": missYou, "gifts": gifts,
+	}
+	out["timeline"] = map[string]any{
+		"memories": agg["timeline_memories"], "messages": agg["timeline_messages"], "moods": agg["timeline_moods"],
+	}
+	// %w — 0 = воскресенье; клиент разворачивает под свою неделю.
+	out["rhythm"] = map[string]any{
+		"weekdayMessages": agg["weekday_messages"], "hourMessages": agg["hour_messages"],
+		"weekdayMemories": agg["weekday_memories"],
+	}
+	out["mood"] = map[string]any{"daily": agg["mood_daily"], "top": agg["mood_top"]}
+	out["breakdown"] = map[string]any{
+		"memoryTypes": agg["memory_types"], "gifts": giftKinds, "watchKinds": watchKinds, "missYouWeekday": missWeek,
+	}
+	// Темп последних недель — основа прогноза: годовое среднее для пары,
+	// которая только начала, врало бы вдвое.
+	out["pace"] = map[string]any{
+		"memories30": agg["memories30"], "memories90": agg["memories90"],
+		"messages30": agg["messages30"], "messages90": agg["messages90"],
+		"moods30": agg["moods30"], "activeDays30": agg["active_days30_count"],
+		"firstMemory": agg["first_memory"],
+	}
+	return out, nil
 }

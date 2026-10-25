@@ -126,6 +126,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.UserCard(e.Router)
 		handler.Group(e.Router, groups, log)
 		handler.InviteAccept(e.Router, pairs.New(app), log)
+		handler.CoupleStats(e.Router, stats.New(app), time.Now, log)
 		handler.Waiting(e.Router, pairs.New(app), time.Now, log)
 		handler.InviteWeb(e.Router, handler.InvitePage{
 			AppName: cfg.AppName, Scheme: cfg.Invite.Scheme,
@@ -246,7 +247,7 @@ func bindCompat(app core.App, addr string, pub handler.Publisher, log *slog.Logg
 	if addr == "" {
 		return
 	}
-	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), stats.New(app), pub, log), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), pub, log), ReadHeaderTimeout: 5 * time.Second}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
