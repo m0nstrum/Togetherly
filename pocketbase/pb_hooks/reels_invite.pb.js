@@ -6,6 +6,8 @@
 // он входит в ленту и без своего Плюса.
 //
 //   POST /api/reels/invite {group_id, feed}        — запустил ленту, позвать
+//   POST /api/reels/invite {group_id, feed, again: true} — кнопка «Позвать»
+//                                                    в ленте (пауза минута)
 //   POST /api/reels/invite {group_id, stop: true}  — вышел из ленты
 //   GET  /api/reels/active?group_id=               — зовёт ли партнёр сейчас
 //
@@ -59,7 +61,7 @@ routerAdd("POST", "/api/reels/invite", (e) => {
   $app.store().set(key, { by: me, name: name, feed: feed, at: now });
 
   const lastKey = "reelsInviteAt:" + me;
-  if (!rule.mayInvite(Number($app.store().get(lastKey) || 0), now)) {
+  if (!rule.mayInvite(Number($app.store().get(lastKey) || 0), now, body.again === true)) {
     return e.json(200, { ok: true, sent: false, why: "too soon" });
   }
   const msg = rule.message(name, feed);

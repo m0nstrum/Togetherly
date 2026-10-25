@@ -28,6 +28,7 @@ import '../../fork/watch/voice_stage.dart'; // fork
 import '../../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../../fork/e2e/reels_chat_bridge.dart'; // fork
 import '../../fork/reels/tiktok_comments.dart'; // fork: комментарии TikTok
+import '../../fork/reels/tiktok_rate.dart'; // fork (D1)
 import '../../fork/flags.dart'; // fork
 import '../../models/exit_guard.dart';
 import '../../widgets/memory_save/floating_note.dart';
@@ -409,6 +410,14 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
       UserScript(
         source: 'window.__forkShell=true;window.__forkPartner=${jsonEncode(ForkPairCall.instance.partnerName)};',
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
+    // fork (D1): скорость ×2 у TikTok — скрипт внутри кадра плеера TikTok.
+    if (widget.reels)
+      UserScript(
+        source: forkTikTokRateScript(WatchRoomService.siteHost),
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        forMainFrameOnly: false,
+        allowedOriginRules: {'https://www.tiktok.com'},
       ),
     // Лента идёт под строку состояния, нативное окно — во весь экран: обеим
     // страницам отступы сообщаем сами.
@@ -1083,6 +1092,16 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
           cid: '${info['cid'] ?? ''}',
           cursor: int.tryParse('${info['cursor'] ?? 0}') ?? 0,
         );
+      },
+    );
+    // fork (D2): «Позвать партнёра» из ленты — пуш ещё раз.
+    c.addJavaScriptHandler(
+      handlerName: 'reelsInvite',
+      callback: (_) async {
+        if (!widget.reels) return {'result': 'fail'};
+        final result = await ReelsInvite.again(widget.pairId, widget.reelsSource);
+        if (result == 'sent') _invited = true;
+        return {'result': result};
       },
     );
     // «Обновить рекомендации»: скрытая лента начинается заново.

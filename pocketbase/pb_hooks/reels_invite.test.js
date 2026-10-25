@@ -11,6 +11,8 @@ assert.ok(r.mayInvite(0, now), 'никогда не звал — можно');
 assert.ok(!r.mayInvite(now - 60_000, now), 'минуту назад — рано');
 assert.ok(r.mayInvite(now - r.GAP_MS, now), 'через десять минут — можно');
 assert.ok(r.mayInvite(now + 60_000, now), 'отметка из будущего не запирает');
+assert.ok(!r.mayInvite(now - 30_000, now, true), 'кнопкой — не чаще раза в минуту');
+assert.ok(r.mayInvite(now - r.MANUAL_GAP_MS, now, true), 'кнопкой через минуту — можно');
 
 assert.strictEqual(r.message('Аня', 'tiktok').title, 'Аня зовёт смотреть TikTok');
 assert.strictEqual(r.message('', 'vk').title, 'Партнёр зовёт смотреть ВК Клипы');

@@ -49,6 +49,7 @@
   const T = RU ? {
     mine: 'Твоя лента', theirs: (n) => 'Лента · ' + n, partner: 'партнёр',
     refresh: 'Обновить рекомендации', refreshing: 'Подбираем свежие ролики…',
+    invite: 'Позвать', inviteLabel: 'Позвать партнёра в ленту', invited: 'Позвали — придёт уведомление', inviteSoon: 'Уже позвали — подождите минуту', inviteFail: 'Не получилось позвать', speed: 'Скорость ×2', speedOn: 'Скорость ×2', speedOff: 'Обычная скорость',
     call: 'Позвонить', callShort: 'Звонок', react: 'Реакция', chat: 'Чат', share: 'Отправить ролик', prev: 'Прошлый ролик', back: 'Назад',
     mic: 'Микрофон', hang: 'Положить трубку', ringing: 'Звоним…', failed: 'Не вышло',
     write: () => 'Твоя реплика…', send: 'Отправить',
@@ -68,6 +69,7 @@
   } : {
     mine: 'Your feed', theirs: (n) => 'Feed · ' + n, partner: 'partner',
     refresh: 'Refresh recommendations', refreshing: 'Picking fresh clips…',
+    invite: 'Invite', inviteLabel: 'Invite your partner to the feed', invited: 'Invited — they’ll get a notification', inviteSoon: 'Already invited — wait a minute', inviteFail: 'Couldn’t invite', speed: 'Speed ×2', speedOn: 'Speed ×2', speedOff: 'Normal speed',
     call: 'Call', callShort: 'Call', react: 'React', chat: 'Chat', share: 'Send clip', prev: 'Previous clip', back: 'Back',
     mic: 'Microphone', hang: 'Hang up', ringing: 'Calling…', failed: 'Failed',
     write: () => 'Your line…', send: 'Send',
@@ -144,7 +146,7 @@
     me: '', name: '', partnerId: '', partnerName: '',
     mine: [], theirs: [], seen: new Set(),
     cur: null, back: [],
-    viewers: 1, reacts: {}, saved: new Set(),
+    viewers: 1, reacts: {}, saved: new Set(), rate: 1, // fork (D1): скорость роликов TikTok
     // Ведущий: листает он, второй смотрит то же. Пусто — ещё никто не листал.
     lead: '',
     started: false, paused: false,
@@ -178,6 +180,7 @@
           ${IOS || window.__togetherlyChrome ? `<button class="rl-ib rl-back" aria-label="${T.back}">${ic(IC.back)}</button>` : ''}
           <button class="rl-ib rl-refresh" aria-label="${T.refresh}">${ic(IC.refresh)}</button>
           <span class="rl-pill"><span class="rl-av"></span><b></b><span class="rl-src">SHORTS</span></span>
+          <button type="button" class="rl-invite" aria-label="${T.inviteLabel}" hidden>${T.invite}</button>
         </div>
         <div class="rl-lead" hidden><span></span><button type="button">${T.take}</button></div>
         <div class="rl-voice" hidden>
@@ -193,6 +196,7 @@
           <button class="rl-rx rl-cmt" hidden></button>
           <button class="rl-rx rl-save" aria-label="${T.save}">${ic(IC.save)}</button>
           <button class="rl-rx rl-chatbtn" aria-label="${T.chat}">${ic(IC.chat)}</button>
+          <button class="rl-rx rl-speed" aria-label="${T.speed}" aria-pressed="false" hidden><b>×2</b></button>
           <button class="rl-rx rl-share" aria-label="${T.share}">${ic(IC.share)}</button>
           <button class="rl-rx rl-prev" aria-label="${T.prev}" disabled>${ic(IC.undo)}</button>
         </div>
@@ -216,6 +220,7 @@
       pick: $('.rl-pick', root), feed: $('.rl-feed', root), sound: $('.rl-sound', root),
       list: $('.rl-list', root), prev: $('.rl-prev', root), input: $('.rl-input', root),
       save: $('.rl-save', root), lead: $('.rl-lead', root), send: $('.rl-send', root),
+      invite: $('.rl-invite', root), speed: $('.rl-speed', root),
     };
     el.input.addEventListener('input', syncTyping);
     $('button', el.lead).addEventListener('click', takeLead);
@@ -232,6 +237,8 @@
     // нажатия, и без кнопки из ленты не выйти.
     if (IOS || window.__togetherlyChrome) $('.rl-back', root).addEventListener('click', leave);
     el.refresh.addEventListener('click', refreshFeed);
+    el.invite.addEventListener('click', invitePartner); // fork (D2)
+    el.speed.addEventListener('click', toggleSpeed); // fork (D1)
     el.react.addEventListener('click', (e) => { e.stopPropagation(); el.pick.hidden ? openPick() : closePick(); });
     $('.rl-chatbtn', root).addEventListener('click', () => setChat(!el.root.classList.contains('chat-open')));
     $('.rl-x', root).addEventListener('click', () => setChat(false));
@@ -746,6 +753,10 @@
       url: (id) => 'https://www.tiktok.com/player/v1/' + id + '?autoplay=1&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0',
       say: (w, cmd) => w.postMessage({ type: { play: 'play', pause: 'pause', mute: 'mute', unmute: 'unMute' }[cmd], 'x-tiktok-player': true }, '*'),
       playing: (m) => m && m.type === 'onStateChange' && m.value === 1,
+      // fork (D1): скорости у плеера TikTok нет — её ставит скрипт
+      // приложения внутри кадра (forkTikTokRateScript), только по команде
+      // этой страницы.
+      rate: (w, r) => w.postMessage({ 'x-fork-rate': r }, 'https://www.tiktok.com'),
       keep: true,
     },
     rutube: {
@@ -999,7 +1010,8 @@
         f.src = 'about:blank';
         setTimeout(() => { f.src = u; }, 50);
       },
-      wake: () => {},
+      wake: () => { try { if (spec.rate) spec.rate(f.contentWindow, S.rate); } catch (_) {} },
+      rate: (r) => { try { if (spec.rate) spec.rate(f.contentWindow, r); } catch (_) {} },
       destroy: () => f.remove(),
     };
     f.addEventListener('load', () => {
@@ -1280,6 +1292,33 @@
     $('b', el.pill).textContent = mine ? T.mine : T.theirs(pName);
     $('.rl-src', el.pill).textContent = SOURCES[S.cur ? keySrc(S.cur.id) : S.src] || 'SHORTS';
     el.input.placeholder = T.write();
+    // fork (D2): позвать можно, пока партнёра в ленте нет и рядом приложение.
+    el.invite.hidden = !bridge() || !window.__togetherlyChrome || S.viewers > 1;
+    // fork (D1): ×2 — только у TikTok и только в приложении (скрипт кадра).
+    el.speed.hidden = !window.__togetherlyChrome || !S.cur || keySrc(S.cur.id) !== 'tiktok';
+    el.speed.classList.toggle('is-on', S.rate === 2);
+    el.speed.setAttribute('aria-pressed', S.rate === 2 ? 'true' : 'false');
+  }
+
+  /** fork (D1): скорость ×2 у роликов TikTok — своя, партнёру не передаётся. */
+  function toggleSpeed() {
+    S.rate = S.rate === 2 ? 1 : 2;
+    [cards.cur, cards.next, cards.prev].forEach((c) => { if (c && c.api && c.api.rate) c.api.rate(S.rate); });
+    paintTurn();
+    toast(S.rate === 2 ? T.speedOn : T.speedOff, '', '');
+  }
+
+  /** fork (D2): «Позвать партнёра» — пуш ещё раз, не чаще раза в минуту. */
+  async function invitePartner() {
+    const b = bridge();
+    if (!b || el.invite.disabled) return;
+    el.invite.disabled = true;
+    let result = 'fail';
+    try { result = String(((await b.callHandler('reelsInvite', {})) || {}).result || 'fail'); } catch (_) { /* старая сборка */ }
+    el.invite.disabled = false;
+    if (result === 'sent') toast(T.invited, '', '');
+    else if (result === 'soon') toast(T.inviteSoon, '', '');
+    else toast(T.inviteFail, '', '');
   }
 
   // ── ведущий ──────────────────────────────────────────────────────────────

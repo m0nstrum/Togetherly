@@ -18,6 +18,10 @@ const FEEDS = {
 /// и каждый вход не должен будить партнёра заново.
 const GAP_MS = 10 * 60 * 1000;
 
+/// D2: кнопка «Позвать партнёра» в ленте — человек зовёт сам, нарочно.
+/// Будить чаще раза в минуту и так не нужно.
+const MANUAL_GAP_MS = 60 * 1000;
+
 /// Сколько зов считается живым: столько партнёр без Плюса может войти по
 /// плитке, не дожидаясь нового пуша.
 const ACTIVE_MS = 3 * 60 * 60 * 1000;
@@ -27,12 +31,12 @@ function feedOf(raw) {
   return FEEDS[k] ? k : "";
 }
 
-function mayInvite(lastMs, nowMs) {
+function mayInvite(lastMs, nowMs, manual) {
   const now = Number(nowMs);
   const last = Number(lastMs);
   if (!isFinite(now) || now <= 0) return false;
   if (!isFinite(last) || last <= 0 || last > now) return true;
-  return now - last >= GAP_MS;
+  return now - last >= (manual ? MANUAL_GAP_MS : GAP_MS);
 }
 
 /// Заголовок и текст пуша. Имя не склоняем: «Аня зовёт смотреть TikTok».
@@ -51,4 +55,4 @@ function isActive(session, nowMs) {
   return age >= 0 && age < ACTIVE_MS;
 }
 
-module.exports = { FEEDS, GAP_MS, ACTIVE_MS, feedOf, mayInvite, message, isActive };
+module.exports = { FEEDS, GAP_MS, MANUAL_GAP_MS, ACTIVE_MS, feedOf, mayInvite, message, isActive };

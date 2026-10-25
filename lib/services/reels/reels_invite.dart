@@ -44,6 +44,27 @@ class ReelsInvite {
     }
   }
 
+  /// D2: кнопка «Позвать партнёра» в ленте. 'sent' — пуш ушёл, 'soon' —
+  /// звали меньше минуты назад, 'fail' — сервер не ответил или отказал.
+  static Future<String> again(String groupId, ReelsSource source) async {
+    if (groupId.isEmpty) return 'fail';
+    try {
+      final r = await PocketBaseService()
+          .pb
+          .send<Map<String, dynamic>>('/api/reels/invite', method: 'POST', body: {
+            'group_id': groupId,
+            'feed': source.key,
+            'again': true,
+          })
+          .timeout(const Duration(seconds: 8));
+      if (r['sent'] == true) return 'sent';
+      return r['why'] == 'too soon' ? 'soon' : 'fail';
+    } catch (e) {
+      debugPrint('ReelsInvite: зов кнопкой не ушёл: $e');
+      return 'fail';
+    }
+  }
+
   /// Вышел из ленты — зов больше не действует.
   static Future<void> stop(String groupId) async {
     if (groupId.isEmpty) return;
