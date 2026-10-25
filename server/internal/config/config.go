@@ -54,6 +54,7 @@ type Config struct {
 	Backup     Backup     `koanf:"backup"`
 	WatchProxy WatchProxy `koanf:"watch_proxy"`
 	FCM        FCM        `koanf:"fcm"`
+	Invite     Invite     `koanf:"invite"`
 }
 
 // Backup — встроенные бэкапы PocketBase (zip в pb_data/backups). Cron пуст —
@@ -108,6 +109,31 @@ type TURN struct {
 	TTL    time.Duration `koanf:"ttl"`
 }
 
+// Invite — страница приглашения и проверка домена для ссылок приложения.
+// Пустые адреса магазинов не показываются, без пакета и отпечатков (или
+// appID iOS) файлы проверки домена не раздаются.
+type Invite struct {
+	Scheme         string `koanf:"scheme"`
+	PlayURL        string `koanf:"play_url"`
+	RuStoreURL     string `koanf:"rustore_url"`
+	APKURL         string `koanf:"apk_url"`
+	AndroidPackage string `koanf:"android_package"`
+	// AndroidFingerprints — SHA-256 подписей через запятую.
+	AndroidFingerprints string `koanf:"android_fingerprints"`
+	IOSAppID            string `koanf:"ios_app_id"`
+}
+
+// Fingerprints — отпечатки списком.
+func (i Invite) Fingerprints() []string {
+	var out []string
+	for _, f := range strings.Split(i.AndroidFingerprints, ",") {
+		if f = strings.TrimSpace(f); f != "" {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // Centrifugo — HTTP API для публикации изменений.
 type Centrifugo struct {
 	API     string        `koanf:"api"`
@@ -159,6 +185,7 @@ func Load() (Config, error) {
 		Backup:     Backup{MaxKeep: 7},
 		WatchProxy: WatchProxy{Addr: "0.0.0.0:8443", DailyMB: 3072},
 		FCM:        FCM{TTL: 10 * time.Minute, Timeout: 10 * time.Second},
+		Invite:     Invite{Scheme: "tethered", AndroidPackage: "io.github.m0nstrum.tethered"},
 	}
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return Config{}, fmt.Errorf("config: разбор: %w", err)

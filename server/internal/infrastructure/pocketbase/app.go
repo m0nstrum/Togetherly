@@ -127,6 +127,12 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.Group(e.Router, groups, log)
 		handler.InviteAccept(e.Router, pairs.New(app), log)
 		handler.Waiting(e.Router, pairs.New(app), time.Now, log)
+		handler.InviteWeb(e.Router, handler.InvitePage{
+			AppName: cfg.AppName, Scheme: cfg.Invite.Scheme,
+			PlayURL: cfg.Invite.PlayURL, RuStoreURL: cfg.Invite.RuStoreURL, APKURL: cfg.Invite.APKURL,
+			AndroidPackage: cfg.Invite.AndroidPackage, AndroidFingerprints: cfg.Invite.Fingerprints(),
+			IOSAppID: cfg.Invite.IOSAppID,
+		})
 		handler.RealtimeTokens(e.Router, cfg.Centrifugo.TokenHMAC)
 		handler.PasswordReset(e.Router, time.Now, log)
 		handler.EmailChange(e.Router, time.Now, log)

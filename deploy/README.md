@@ -138,6 +138,17 @@ Caddy: пускает только по входу в приложение и т
 запрет средств обхода блокировок (149-ФЗ, ст. 15.8). По умолчанию выключено.
 Проверьте на деле, отдаёт ли YouTube ролики IP вашего дата-центра.
 
+## Приглашения по ссылке
+
+Ссылка `https://<домен>/invite/<код>` открывает страницу с кодом и сразу
+пробует приложение (`tethered://invite/<код>`). Куда вести тех, у кого
+приложения нет, задают `INVITE_PLAY_URL`, `INVITE_RUSTORE_URL`,
+`INVITE_APK_URL` в `.env` — пустые кнопки не показываются. Чтобы ссылка
+открывала приложение без страницы (App Links), укажите отпечатки подписи APK
+в `INVITE_ANDROID_FINGERPRINTS` (через запятую, `keytool -list -v -keystore …`);
+для iOS — `INVITE_IOS_APP_ID` вида `TeamID.BundleID`. Без них файлы
+`/.well-known/assetlinks.json` и `apple-app-site-association` не раздаются.
+
 ## Бэкапы
 
 PocketBase снимает бэкап по `BACKUP_CRON`. С ключом `BACKUP_AGE_RECIPIENTS`

@@ -67,7 +67,7 @@ class PairData extends ChangeNotifier {
   RelationshipType get relationshipType =>
       _active?.relationshipType ?? RelationshipType.couple;
 
-  // Лендинг приглашения отдаёт `pb_hooks/invite_web.pb.js` (страница,
+  // Лендинг приглашения отдаёт сервер (handler.InviteWeb: страница,
   // assetlinks, AASA), и на своём домене он уже живёт. Ссылку человек
   // отправляет партнёру — в ней должно стоять наше имя, а не служебный
   // поддомен duckdns.
