@@ -253,6 +253,36 @@ void main() {
       expect(marked.getStringValue('also'), b.uid);
       expect(marked.getIntValue('price'), 990);
       expect(marked.getStringValue('done_at'), startsWith('2026-10-25'));
+      // «Другое желание недели» ставит и партнёр; срок «Дарю» — шифром.
+      await bobFull.collection('wishes').update(
+        wish.id,
+        body: {'skip': '2026-W43'},
+      );
+      expect(
+        (await chat(env['SMOKE_ATOK']!, a).collection('wishes').getOne(wish.id))
+            .getStringValue('skip'),
+        '2026-W43',
+      );
+      final res = await bobChat.collection('wish_reservations').create(
+        body: {
+          'group_id': pair,
+          'wish_id': wish.id,
+          'uid': b.uid,
+          'until': '2026-11-03',
+        },
+      );
+      expect(
+        (await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+                .collection('wish_reservations')
+                .getOne(res.id))
+            .getStringValue('until'),
+        startsWith(e2eFieldPrefix),
+      );
+      expect(
+        (await bobChat.collection('wish_reservations').getOne(res.id))
+            .getStringValue('until'),
+        '2026-11-03',
+      );
       // Комментарий партнёра — шифром; удалённое желание уносит его.
       final comment = await bobChat.collection('wish_comments').create(
         body: {

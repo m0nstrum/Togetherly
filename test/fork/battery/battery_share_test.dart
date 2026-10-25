@@ -55,7 +55,8 @@ void main() {
     final body = {'group_id': _gid, 'user_uid': 'alice', 'state': s(42, c: true).toJson()};
     final sealed = codec.encode(ForkBattery.collection, 'b1', _gid, body);
     expect(sealed['state'], startsWith(e2eFieldPrefix));
-    expect('${sealed['state']}', isNot(contains('42')));
+    // «42» в base64 шифра может встретиться случайно — ищем имя поля.
+    expect('${sealed['state']}', isNot(contains('level')));
     final open = codec.decode(ForkBattery.collection, {'id': 'b1', ...sealed});
     expect(ForkBatteryState.fromJson(open['state'])!.level, 42);
     // Без ключа пары — не уходит открытым текстом.

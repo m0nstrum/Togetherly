@@ -60,6 +60,7 @@ import '../widgets/chest/chest_home_card.dart';
 import '../widgets/home/wishes_card.dart';
 import '../services/shared_link_service.dart';
 import 'wishes_screen.dart';
+import '../fork/wishes/wish_reminders.dart';
 import 'invite_partner_screen.dart';
 import '../services/deep_link_service.dart';
 import '../services/media_service.dart';
@@ -473,6 +474,8 @@ class _HomeScreenState extends State<HomeScreen> {
       await CelebrationNotificationService.instance.rescheduleOnAppStart();
       // Постоянный счётчик «дней вместе» (если включён) — пересчитать число.
       await DaysTogetherNotificationService.instance.rescheduleOnAppStart();
+      // fork: напоминания вишлиста (docs/WISHLIST.md).
+      WishReminders.instance.updatePair(_pairData);
 
       // Самоотчёт о контейнере виджетов (только iPhone). Виджеты там стоят
       // пустыми, а по снимкам экрана не понять, чего не хватает: записей,
@@ -534,7 +537,12 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Без пары раздела нет вовсе — тогда молчим: человек делится товаром, а
   /// получает экран подключения, и это выглядит поломкой, а не подсказкой.
   void _openSharedLink(String url) {
-    if (!mounted || url.isEmpty) return;
+    if (url.isEmpty) return;
+    _openWishes(sharedUrl: url);
+  }
+
+  void _openWishes({String sharedUrl = ''}) {
+    if (!mounted) return;
     if (!_pairData.isPaired || _pairData.pairId.isEmpty) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -547,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
           partnerName: _pairData.partnerDisplayName,
           myAvatarUrl: widget.userData.avatarUrl,
           partnerAvatarUrl: _pairData.partnerAvatarUrl,
-          sharedUrl: url,
+          sharedUrl: sharedUrl,
         ),
         settings: const RouteSettings(name: '/wishes'),
       ),
@@ -641,6 +649,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() => _selectedNavIndex = 0);
       }
+    }
+    // loveapp://wishes → «Хочу с тобой»: тап по напоминанию вишлиста
+    // (fork, docs/WISHLIST.md).
+    else if (uri.host == 'wishes') {
+      _openWishes();
     }
     // loveapp://memory_lane → открыть Memory Lane (с общим навбаром)
     else if (uri.host == 'memory_lane') {
@@ -779,6 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onPairChanged() {
     if (!mounted) return;
+    WishReminders.instance.updatePair(_pairData); // fork: напоминания вишлиста
     if (_pendingMapOpen && _pairData.isPaired) _openLiveMapFromWidget();
     final draw = _pendingDrawOpen; // fork (UX D8)
     if (draw != null && _pairData.isPaired) {

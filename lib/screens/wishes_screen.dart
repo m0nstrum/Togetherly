@@ -21,6 +21,9 @@ import '../widgets/avatar_widget.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/storage_image.dart';
+import '../fork/wishes/wish_reminder_plan.dart';
+import '../fork/wishes/wish_reminder_settings.dart';
+import '../fork/wishes/wish_reminders.dart';
 import '../widgets/wishes/wish_category_sheet.dart';
 import '../widgets/wishes/wish_comments_sheet.dart';
 import '../widgets/wishes/wish_details_sheet.dart';
@@ -82,8 +85,12 @@ class _WishesScreenState extends State<WishesScreen> {
 
   /// Вещи, которые я взял на себя. Список приходит только свой: у коллекции
   /// правило чтения `uid = auth.id`, автору сюрприз не виден вовсе.
-  Set<String> _reserved = const {};
-  Map<String, String> _reservationIds = const {};
+  /// Свои «Дарю» по id желания.
+  Map<String, WishReservation> _reservations = const {};
+  Set<String> get _reserved => _reservations.keys.toSet();
+
+  /// Подпись списка, по которой в последний раз пересчитали напоминания.
+  String _remindersSig = '';
 
   /// Сколько комментариев у желаний — цифра на карточке.
   Map<String, int> _commentCounts = const {};
@@ -136,30 +143,25 @@ class _WishesScreenState extends State<WishesScreen> {
     final list = await _repo.loadReservations(widget.groupId);
     if (!mounted) return;
     setState(() {
-      _reserved = reservedWishIds(list);
-      _reservationIds = {for (final r in list) r.wishId: r.id};
+      _reservations = {
+        for (final r in list)
+          if (r.wishId.isNotEmpty) r.wishId: r,
+      };
     });
   }
 
   /// «Дарю» и обратно. Состояние правим на месте: список свой, ждать ответа
   /// сервера ради переключения одной иконки незачем.
   Future<void> _toggleReserve(Wish wish) async {
-    final taken = _reserved.contains(wish.id);
-    if (taken) {
-      final id = _reservationIds[wish.id] ?? '';
-      setState(() {
-        _reserved = {..._reserved}..remove(wish.id);
-        _reservationIds = {..._reservationIds}..remove(wish.id);
-      });
-      await _repo.release(id);
+    final taken = _reservations[wish.id];
+    if (taken != null) {
+      await _reserveSheet(wish, taken);
       return;
     }
     final res = await _repo.reserve(groupId: widget.groupId, wishId: wish.id);
     if (res == null || !mounted) return;
-    setState(() {
-      _reserved = {..._reserved, wish.id};
-      _reservationIds = {..._reservationIds, wish.id: res.id};
-    });
+    setState(() => _reservations = {..._reservations, wish.id: res});
+    WishReminders.instance.schedule();
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
     messenger.showSnackBar(
@@ -173,8 +175,125 @@ class _WishesScreenState extends State<WishesScreen> {
               "You're gifting it — your partner won't know"),
           style: AppFonts.onest(size: 14, color: _cs.onInverseSurface),
         ),
+        action: SnackBarAction(
+          label: _tr('СРОК', 'DEADLINE'),
+          textColor: _cs.inversePrimary,
+          onPressed: () => _pickReserveUntil(res),
+        ),
       ),
     );
+  }
+
+  /// Срок «Дарю» (docs/WISHLIST.md): напомнит только дарящему.
+  Future<void> _pickReserveUntil(WishReservation res) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final current = res.until;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current == null || current.isBefore(today)
+          ? today.add(const Duration(days: 7))
+          : current,
+      firstDate: today,
+      lastDate: DateTime(now.year + 5, 12, 31),
+      helpText: _tr('Подарить до', 'Gift by'),
+      builder: (ctx, child) => Theme(data: ProfileTheme.data(_cs), child: child!),
+    );
+    if (picked == null || !mounted) return;
+    final next = await _repo.setReserveUntil(
+        groupId: widget.groupId, res: res, until: picked);
+    if (!mounted) return;
+    setState(() => _reservations = {..._reservations, next.wishId: next});
+    WishReminders.instance.schedule();
+  }
+
+  /// Взятая вещь: срок или «передумал».
+  Future<void> _reserveSheet(Wish wish, WishReservation res) async {
+    final s = LocaleService.current;
+    final until = res.until;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: _cs.surfaceContainerHigh,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(wish.title,
+                  style: AppFonts.onest(size: 16, weight: 700)),
+              subtitle: Text(_tr('Дарите вы — партнёр не знает',
+                  "You're gifting it — your partner doesn't know")),
+            ),
+            ListTile(
+              key: const Key('wish-reserve-until'),
+              leading: Icon(Icons.event_rounded,
+                  color: res.overdue(DateTime.now()) ? _cs.error : _cs.primary),
+              title: Text(until == null
+                  ? _tr('Поставить срок', 'Set a deadline')
+                  : '${_tr('Срок', 'Deadline')}: ${s.dayLogDate(until)}'),
+              onTap: () => Navigator.of(ctx).pop('until'),
+            ),
+            if (until != null)
+              ListTile(
+                leading: const Icon(Icons.event_busy_rounded),
+                title: Text(_tr('Без срока', 'No deadline')),
+                onTap: () => Navigator.of(ctx).pop('clear'),
+              ),
+            ListTile(
+              key: const Key('wish-reserve-release'),
+              leading: const Icon(Icons.undo_rounded),
+              title: Text(_tr('Передумал — отпустить', 'Changed my mind')),
+              onTap: () => Navigator.of(ctx).pop('release'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    switch (action) {
+      case 'until':
+        await _pickReserveUntil(res);
+      case 'clear':
+        final next = await _repo.setReserveUntil(
+            groupId: widget.groupId, res: res, until: null);
+        if (!mounted) return;
+        setState(() => _reservations = {..._reservations, next.wishId: next});
+        WishReminders.instance.schedule();
+      case 'release':
+        setState(() => _reservations = {..._reservations}..remove(wish.id));
+        await _repo.release(res.id);
+        WishReminders.instance.schedule();
+    }
+  }
+
+  /// Попросили другое желание недели: это до конца недели не выпадает.
+  Future<void> _anotherWeekly(Wish wish) => _repo.skipWeek(
+        groupId: widget.groupId,
+        wish: wish,
+        weekKey: isoWeekKey(DateTime.now()),
+      );
+
+  void _openReminderSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Theme(
+          data: ProfileTheme.data(_cs),
+          child: const WishReminderSettingsScreen(),
+        ),
+        settings: const RouteSettings(name: '/wishes/reminders'),
+      ),
+    );
+  }
+
+  /// Список поменялся по существу — пересчитать напоминания.
+  void _maybeReschedule(List<Wish> all) {
+    final sig = [
+      for (final w in all)
+        '${w.id}|${w.done}|${w.due.encode()}|${w.skip}|${w.isItem}|${w.title}',
+    ].join(';');
+    if (sig == _remindersSig) return;
+    _remindersSig = sig;
+    WishReminders.instance.schedule();
   }
 
   @override
@@ -433,6 +552,14 @@ class _WishesScreenState extends State<WishesScreen> {
           _tr('Хочу с тобой', 'Want with you'),
           style: AppFonts.unbounded(size: 17, weight: 600, color: _cs.onSurface),
         ),
+        actions: [
+          IconButton(
+            key: const Key('wish-reminders'),
+            tooltip: _tr('Напоминания', 'Reminders'),
+            onPressed: _openReminderSettings,
+            icon: const Icon(Icons.notifications_none_rounded),
+          ),
+        ],
       ),
       body: StableStreamBuilder<List<Wish>>(
         create: () => _repo.watch(widget.groupId),
@@ -449,6 +576,7 @@ class _WishesScreenState extends State<WishesScreen> {
                   ? w.copyWith(pos: _posOverride[w.id])
                   : w,
           ];
+          if (snapshot.hasData) _maybeReschedule(raw);
           final dreaming = Wish.dreaming(all);
           final fulfilled = Wish.fulfilled(all);
           final shown = _fulfilledTab ? fulfilled : dreaming;
@@ -490,9 +618,9 @@ class _WishesScreenState extends State<WishesScreen> {
                                   padding:
                                       const EdgeInsets.fromLTRB(16, 2, 16, 8),
                                   buildDefaultDragHandles: false,
+                                  header: _weeklyCard(dreaming),
                                   itemCount: shown.length,
-                                  onReorder: (from, to) => _reorder(
-                                      shown, from, to > from ? to - 1 : to),
+                                  onReorderItem: (from, to) => _reorder(shown, from, to),
                                   itemBuilder: (_, i) =>
                                       ReorderableDelayedDragStartListener(
                                     key: ValueKey(shown[i].id),
@@ -510,6 +638,63 @@ class _WishesScreenState extends State<WishesScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// «Желание недели» над мечтами: одно на пару, одинаковое у обоих.
+  Widget? _weeklyCard(List<Wish> dreaming) {
+    if (dreaming.length < 2) return null;
+    final w = weeklyWish(dreaming, widget.groupId, isoWeekKey(DateTime.now()));
+    if (w == null) return null;
+    return Padding(
+      key: const Key('wish-weekly'),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: _cs.tertiaryContainer,
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+          child: Row(
+            children: [
+              Icon(Icons.auto_awesome_rounded,
+                  color: _cs.onTertiaryContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _tr('Желание недели', 'Wish of the week'),
+                      style: AppFonts.onest(
+                          size: 12,
+                          weight: 700,
+                          color: _cs.onTertiaryContainer),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      w.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.unbounded(
+                          size: 15,
+                          weight: 600,
+                          color: _cs.onTertiaryContainer),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                key: const Key('wish-weekly-another'),
+                onPressed: () => _anotherWeekly(w),
+                style: TextButton.styleFrom(
+                    foregroundColor: _cs.onTertiaryContainer),
+                child: Text(_tr('Другое', 'Another')),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -545,6 +730,8 @@ class _WishesScreenState extends State<WishesScreen> {
       onEditDate: wish.done ? () => _editDoneDate(wish) : null,
       onReserve: mine ? null : () => _toggleReserve(wish),
       reserved: _reserved.contains(wish.id),
+      reserveOverdue:
+          _reservations[wish.id]?.overdue(DateTime.now()) ?? false,
       onAlso: mine || wish.done ? null : () => _toggleAlso(wish),
       alsoMine: wish.also.contains(widget.myUid),
       comments: _commentCounts[wish.id] ?? 0,
@@ -715,6 +902,7 @@ class _WishTile extends StatelessWidget {
     this.onEditDate,
     this.onReserve,
     this.reserved = false,
+    this.reserveOverdue = false,
     this.onAlso,
     this.alsoMine = false,
     this.comments = 0,
@@ -742,6 +930,9 @@ class _WishTile extends StatelessWidget {
 
   /// Уже взял. Знают об этом только даритель и сервер.
   final bool reserved;
+
+  /// Срок «Дарю» прошёл — значок подарка красным.
+  final bool reserveOverdue;
 
   /// «Я тоже хочу» — на чужом несбывшемся желании.
   final VoidCallback? onAlso;
@@ -1044,7 +1235,11 @@ class _WishTile extends StatelessWidget {
                         ? Icons.card_giftcard_rounded
                         : Icons.redeem_outlined,
                     size: 20,
-                    color: reserved ? scheme.primary : scheme.onSurfaceVariant,
+                    color: reserveOverdue
+                        ? scheme.error
+                        : reserved
+                            ? scheme.primary
+                            : scheme.onSurfaceVariant,
                   ),
                 ),
               if (wish.url.isNotEmpty || onDelete != null || onComments != null)

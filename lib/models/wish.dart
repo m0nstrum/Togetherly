@@ -30,6 +30,7 @@ class Wish {
     this.due = WishDue.none,
     this.also = const [],
     this.pos,
+    this.skip = '',
     required this.createdAt,
   });
 
@@ -96,6 +97,10 @@ class Wish {
   /// Место в общем порядке карточек (перетаскивание). Null — порядка ещё не
   /// задавали: такие желания идут по дате добавления, сверху новые.
   final double? pos;
+
+  /// Неделя (`2026-W43`), на которую пара попросила другое «желание
+  /// недели»: в эту неделю желание не выпадает. Общее поле.
+  final String skip;
 
   /// Хотят оба: автор и кто-то ещё.
   bool get wantedByBoth => also.any((u) => u.isNotEmpty && u != authorUid);
@@ -193,6 +198,7 @@ class Wish {
         due: WishDue.parse(rec.getStringValue('due')),
         also: _uids(rec.getStringValue('also')),
         pos: _pos(rec.getStringValue('pos')),
+        skip: rec.getStringValue('skip'),
         createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
       );
 
@@ -218,6 +224,7 @@ class Wish {
         due: WishDue.parse(map['due']?.toString()),
         also: _uids((map['also'] ?? '').toString()),
         pos: _pos(map['pos']),
+        skip: (map['skip'] ?? '').toString(),
         createdAt: _date(map['created']) ?? DateTime.now(),
       );
 
@@ -242,6 +249,7 @@ class Wish {
         if (due.isSet) 'due': due.encode(),
         if (also.isNotEmpty) 'also': also.join(','),
         if (pos != null) 'pos': posText(pos!),
+        if (skip.isNotEmpty) 'skip': skip,
         'created': createdAt.toIso8601String(),
       };
 
@@ -263,6 +271,7 @@ class Wish {
     WishDue? due,
     List<String>? also,
     double? pos,
+    String? skip,
   }) =>
       Wish(
         id: id,
@@ -284,6 +293,7 @@ class Wish {
         due: due ?? this.due,
         also: also ?? this.also,
         pos: pos ?? this.pos,
+        skip: skip ?? this.skip,
         createdAt: createdAt,
       );
 
@@ -317,6 +327,7 @@ class Wish {
         due: due,
         also: also,
         pos: pos,
+        skip: skip,
         createdAt: createdAt,
       );
 

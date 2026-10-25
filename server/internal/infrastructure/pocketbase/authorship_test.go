@@ -70,6 +70,7 @@ func TestWishSharedFields(t *testing.T) {
 		`{"done":true,"done_by":"` + bob + `","enc":"e2e1.k.n.c"}`,
 		`{"also":"e2e1.k.n.c"}`,
 		`{"pos":"e2e1.k.n.c"}`,
+		`{"skip":"e2e1.k.n.c"}`,
 	} {
 		code, body := w.do(t, http.MethodPatch, path, w.bTok, patch)
 		assert.Equal(t, http.StatusOK, code, patch+" "+body)

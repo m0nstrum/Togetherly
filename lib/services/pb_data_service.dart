@@ -1746,6 +1746,7 @@ class PbDataService {
         'due': wish['due'] ?? '',
         'also': wish['also'] ?? '',
         'pos': wish['pos'] ?? '',
+        'skip': wish['skip'] ?? '',
       };
 
   /// Тело правки чужого желания: только присланные общие поля. Задания
@@ -1759,6 +1760,7 @@ class PbDataService {
           'done_note': fields['done_note'] ?? '',
         if (fields.containsKey('also')) 'also': fields['also'] ?? '',
         if (fields.containsKey('pos')) 'pos': fields['pos'] ?? '',
+        if (fields.containsKey('skip')) 'skip': fields['skip'] ?? '',
       };
 
   /// Комментарий к желанию (docs/WISHLIST.md).
@@ -1881,6 +1883,8 @@ class PbDataService {
       'group_id': groupId,
       'wish_id': res['wish_id'] ?? '',
       'uid': res['uid'] ?? '',
+      // Срок «Дарю»; пустое снимает срок.
+      'until': res['until'] ?? '',
     }, op: 'upsertWishReservation');
   }
 

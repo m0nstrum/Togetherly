@@ -165,6 +165,18 @@ class WishRepository {
     return next;
   }
 
+  /// «Другое желание недели»: это желание не выпадает до конца недели
+  /// [weekKey]. Общее поле — выбор недели у пары один.
+  Future<Wish> skipWeek({
+    required String groupId,
+    required Wish wish,
+    required String weekKey,
+  }) async {
+    final next = wish.copyWith(skip: weekKey);
+    if (groupId.isNotEmpty) await _save(groupId, next, shared: const ['skip']);
+    return next;
+  }
+
   /// Заводит свою категорию пары. Доступ решает вызывающий: создание закрыто
   /// Togetherly+, но уже созданными категориями пользуются оба.
   Future<WishKind?> addCategory({
@@ -374,6 +386,22 @@ class WishRepository {
     return res;
   }
 
+  /// Срок «Дарю»: напомнит дарящему (WishReminders). Null — без срока.
+  Future<WishReservation> setReserveUntil({
+    required String groupId,
+    required WishReservation res,
+    DateTime? until,
+  }) async {
+    final next = res.withUntil(until);
+    final map = next.toMap(groupId: groupId);
+    await LocalStore.instance.upsertRaw(_reservations, next.id, map);
+    await OutboxService.instance.enqueue('wishReserve', {
+      'groupId': groupId,
+      'res': map,
+    });
+    return next;
+  }
+
   /// Передумал дарить.
   Future<void> release(String reservationId) async {
     if (reservationId.isEmpty) return;
@@ -411,6 +439,7 @@ class WishRepository {
           if (shared.contains('also')) 'also': wish.also.join(','),
           if (shared.contains('pos'))
             'pos': wish.pos == null ? '' : Wish.posText(wish.pos!),
+          if (shared.contains('skip')) 'skip': wish.skip,
         },
       });
       return;

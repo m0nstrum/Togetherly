@@ -43,8 +43,9 @@ onRecordUpdateRequest((e) => {
       // (`PbDataService.markWish`), а не всю запись — иначе страж отклонил бы
       // обычную галочку вместе с попыткой переписать название.
       // enc — шифр переехавших полей (там и дата отметки), also — «я тоже
-      // хочу», pos — общий порядок карточек (docs/WISHLIST.md).
-      const allowed = { done: 1, done_at: 1, done_by: 1, done_note: 1, enc: 1, also: 1, pos: 1, id: 1 };
+      // хочу», pos — общий порядок карточек, skip — «другое желание недели»
+      // (docs/WISHLIST.md).
+      const allowed = { done: 1, done_at: 1, done_by: 1, done_note: 1, enc: 1, also: 1, pos: 1, skip: 1, id: 1 };
       const body = (e.requestInfo().body || {});
       const keys = Object.keys(body);
       for (let i = 0; i < keys.length; i++) {

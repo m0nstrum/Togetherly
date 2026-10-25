@@ -13,6 +13,7 @@ class WishReservation {
     required this.wishId,
     required this.uid,
     required this.createdAt,
+    this.until,
   });
 
   final String id;
@@ -25,6 +26,29 @@ class WishReservation {
 
   final DateTime createdAt;
 
+  /// Срок «Дарю» (docs/WISHLIST.md): к этому дню даритель обещал себе
+  /// успеть. Null — без срока. Видит только дарящий.
+  final DateTime? until;
+
+  /// Срок прошёл: день срока позади.
+  bool overdue(DateTime now) {
+    final u = until;
+    if (u == null) return false;
+    return DateTime(u.year, u.month, u.day)
+        .isBefore(DateTime(now.year, now.month, now.day));
+  }
+
+  WishReservation withUntil(DateTime? at) => WishReservation(
+        id: id,
+        wishId: wishId,
+        uid: uid,
+        createdAt: createdAt,
+        until: at == null ? null : DateTime(at.year, at.month, at.day),
+      );
+
+  static String _day(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   static DateTime? _date(Object? raw) {
     final text = (raw ?? '').toString();
     if (text.isEmpty) return null;
@@ -36,6 +60,7 @@ class WishReservation {
         wishId: rec.getStringValue('wish_id'),
         uid: rec.getStringValue('uid'),
         createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
+        until: _date(rec.getStringValue('until')),
       );
 
   factory WishReservation.fromMap(Map<String, dynamic> map) => WishReservation(
@@ -43,6 +68,7 @@ class WishReservation {
         wishId: (map['wish_id'] ?? '') as String,
         uid: (map['uid'] ?? '') as String,
         createdAt: _date(map['created']) ?? DateTime.now(),
+        until: _date(map['until']),
       );
 
   Map<String, dynamic> toMap({required String groupId}) => {
@@ -51,6 +77,7 @@ class WishReservation {
         'wish_id': wishId,
         'uid': uid,
         'created': createdAt.toUtc().toIso8601String(),
+        if (until != null) 'until': _day(until!),
       };
 }
 
