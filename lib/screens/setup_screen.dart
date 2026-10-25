@@ -1,4 +1,3 @@
-import '../fork/flags.dart'; // fork
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:io';
 import '../widgets/storage_image.dart';
@@ -10,7 +9,6 @@ import '../dict_strings.dart' show ruEn, trKey;
 import 'package:flutter/services.dart';
 import '../utils/safe_launch.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:pocketbase/pocketbase.dart';
 import '../utils/safe_pick.dart';
 import 'package:image_cropper/image_cropper.dart';
 import '../models/user_data.dart';
@@ -65,11 +63,6 @@ class _SetupScreenState extends State<SetupScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
 
-  // OAuth: PB authWithOAuth2 зависает, если закрыть окно провайдера крестиком
-  // (нет сигнала отмены). Ловим возврат в приложение и снимаем спиннер.
-  AppLifecycleListener? _lifecycle;
-  bool _oauthInFlight = false;
-
   // Colors based on gender
   Color get _accent {
     if (_selectedGender == Gender.male) return const Color(0xFF7898BF);
@@ -90,12 +83,10 @@ class _SetupScreenState extends State<SetupScreen>
     );
     _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
     _fadeController.forward();
-    _lifecycle = AppLifecycleListener(onResume: _onOAuthResume);
   }
 
   @override
   void dispose() {
-    _lifecycle?.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -106,125 +97,11 @@ class _SetupScreenState extends State<SetupScreen>
     super.dispose();
   }
 
-  /// Вернулись из in-app браузера. Если OAuth-вход не завершился (юзер отменил) —
-  /// снимаем бесконечную загрузку. На успехе `_oauthInFlight` уже сброшен.
-  void _onOAuthResume() {
-    if (!_oauthInFlight) return;
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted && _oauthInFlight) {
-        setState(() {
-          _isLoading = false;
-          _oauthInFlight = false;
-        });
-      }
-    });
-  }
-
   void _goToStep(int step) {
     _fadeController.reverse().then((_) {
       setState(() => _step = step);
       _fadeController.forward();
     });
-  }
-
-  /// Универсальный OAuth-вход: google / apple / yandex / vk / facebook.
-  Future<void> _oauthSignIn(String provider) =>
-      _handleOAuth(() => PbAuthService().signInWithOAuth2(provider));
-
-  /// Общий обработчик OAuth-входа (Google/Apple) через PocketBase. Есть профиль
-  /// с полом → домой; нет → дозаполняем профиль (пол из выбранного) и домой.
-  Future<void> _handleOAuth(Future<RecordModel?> Function() signIn) async {
-    setState(() => _isLoading = true);
-    _oauthInFlight = true;
-    try {
-      final auth = PbAuthService();
-      final user = await signIn();
-      _oauthInFlight = false;
-      if (user != null) {
-        // Профиль из записи users PB (camelCase — как раньше Firestore).
-        final profile = auth.currentProfile();
-
-        if (profile != null &&
-            profile['displayName'] != null &&
-            profile['gender'] != null) {
-          // Уже есть профиль — авто-вход и на главную.
-          final displayName = profile['displayName'] as String;
-          final email = profile['email'] as String? ?? '';
-          final avatarUrl = profile['avatarUrl'] as String? ?? '';
-          final genderStr = profile['gender'] as String;
-          final gender = genderStr == 'male' ? Gender.male : Gender.female;
-
-          await widget.userData.register(
-            displayName: displayName,
-            email: email,
-            gender: gender,
-            avatarUrl: avatarUrl,
-            isReturningUser: true, // не обнулять данные пары
-          );
-
-          if (!mounted) return;
-          Navigator.of(context).pushReplacement(
-            PageRouteBuilder(
-              pageBuilder: (_, _, _) => HomeScreen(userData: widget.userData),
-              transitionsBuilder: (_, animation, _, child) =>
-                  FadeTransition(opacity: animation, child: child),
-              transitionDuration: const Duration(milliseconds: 400),
-            ),
-          );
-        } else {
-          // Новый OAuth-юзер — дозаполняем профиль (пол из выбранного шага) и домой.
-          final displayName = (profile?['displayName'] as String?) ?? '';
-          final email = (profile?['email'] as String?) ?? '';
-          final avatarUrl = (profile?['avatarUrl'] as String?) ?? '';
-          final gender = _selectedGender ?? Gender.female;
-          final uid = auth.currentUid ?? '';
-
-          // Профиль в записи users PB (пол/имя/аватар).
-          if (uid.isNotEmpty) {
-            await PbDataService().updateUserProfile(uid, {
-              'displayName': displayName,
-              'gender': gender == Gender.male ? 'male' : 'female',
-              if (avatarUrl.isNotEmpty) 'avatarUrl': avatarUrl,
-            });
-          }
-
-          await widget.userData.register(
-            displayName: displayName,
-            email: email,
-            gender: gender,
-            avatarUrl: avatarUrl,
-          );
-
-          if (!mounted) return;
-          Navigator.of(context).pushReplacement(
-            PageRouteBuilder(
-              pageBuilder: (_, _, _) => HomeScreen(userData: widget.userData),
-              transitionsBuilder: (_, animation, _, child) =>
-                  FadeTransition(opacity: animation, child: child),
-              transitionDuration: const Duration(milliseconds: 400),
-            ),
-          );
-        }
-      } else {
-        if (mounted) setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      _oauthInFlight = false;
-      if (mounted) {
-        setState(() => _isLoading = false);
-        final s = LocaleService.current;
-        _showError(switch (AuthFailure.of(e)) {
-          AuthFailure.blockedConnection => s.connectionBlocked,
-          AuthFailure.noConnection ||
-          AuthFailure.timeout ||
-          AuthFailure.serverDown =>
-            s.serverNotResponding,
-          AuthFailure.tooManyAttempts => s.tooManyAttempts,
-          AuthFailure.providerPageFailed => s.providerPageFailed,
-          _ => ForkFailure.of(e).text,
-        });
-      }
-    }
   }
 
   Future<void> _completeSetup() async {
@@ -854,17 +731,6 @@ class _SetupScreenState extends State<SetupScreen>
                   _termsCheckbox(s),
                   const SizedBox(height: 24),
                   _signUpButton(s),
-                  if (!ForkFlags.emailOnlyAuth) const SizedBox(height: 26),
-                  AuthSocialRow(
-                    label: s.signUpWith,
-                    onGoogle:
-                        _isLoading ? null : () => _oauthSignIn('google'),
-                    onYandex:
-                        _isLoading ? null : () => _oauthSignIn('yandex'),
-                    onApple: Platform.isIOS
-                        ? (_isLoading ? null : () => _oauthSignIn('apple'))
-                        : null,
-                  ),
                   const SizedBox(height: 28),
                   // Already have an account? Sign In
                   Row(

@@ -4,11 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// UX_AUDIT A1: вход не пробует пароль на чужих «опечаточных» адресах.
 void main() {
-  test('перебор опечаток стоит за ForkFlags.strictLogin', () {
+  test('вход идёт только на введённую почту', () {
     final src = File('lib/screens/login_screen.dart').readAsStringSync();
-    final guard = src.indexOf('if (ForkFlags.strictLogin) rethrow;');
-    final loop = src.indexOf('for (final typo in emailTypoVariants');
-    expect(guard, greaterThan(0), reason: 'проверка флага пропала');
-    expect(guard, lessThan(loop), reason: 'флаг должен стоять до перебора');
+    expect(src, isNot(contains('emailTypoVariants')));
+    expect(src, contains('auth.signInWithEmail(email: email, password: password)'));
   });
 }

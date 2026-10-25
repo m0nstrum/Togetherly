@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dict_strings.dart';
-import '../fork/flags.dart'; // fork (PLAN 2.3)
 import '../fork/identity.dart'; // fork (PLAN 2.1)
 
 import 'package:love_app/config/update_notes.dart';
@@ -83,7 +82,7 @@ class LocaleService extends ChangeNotifier {
   /// Что показывать в `MaterialApp.supportedLocales`: без этого системные части
   /// (выбор даты, меню копирования) остаются английскими при любом переводе.
   static List<AppLanguage> get availableLanguages =>
-      ForkFlags.fullLanguageCatalog || allLanguagesForTests
+      allLanguagesForTests
           ? AppLanguage.values
           : const [AppLanguage.ru, AppLanguage.en];
 
@@ -116,7 +115,7 @@ class LocaleService extends ChangeNotifier {
   /// а страна говорит иначе: латиноамериканская `es-419`, бразильская `pt-BR`,
   /// австрийская `de-AT` приходят разными кодами, а язык у них один.
   static AppLanguage detect(ui.Locale locale) {
-    if (!ForkFlags.fullLanguageCatalog && !allLanguagesForTests) {
+    if (!allLanguagesForTests) {
       return locale.languageCode.toLowerCase() == 'ru' ? AppLanguage.ru : AppLanguage.en;
     }
     final byLang = AppLanguage.byCode(locale.languageCode.toLowerCase());

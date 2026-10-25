@@ -22,9 +22,11 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
-# Зависимости, которые мы убрали (реклама, покупки, вход через Google).
+# Зависимости, которые мы убрали (реклама, покупки, вход через Google,
+# обновления через Play).
 REMOVED_DEPS = ("google_sign_in", "google_mobile_ads", "yandex_mobileads", "in_app_purchase",
-                "flutter_rustore_billing", "firebase_core", "firebase_messaging")
+                "flutter_rustore_billing", "firebase_core", "firebase_messaging", "in_app_update",
+                "sign_in_with_apple")
 
 failed: list[str] = []
 

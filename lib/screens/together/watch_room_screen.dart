@@ -29,9 +29,6 @@ import '../../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../../fork/e2e/reels_chat_bridge.dart'; // fork
 import '../../fork/reels/tiktok_comments.dart'; // fork: комментарии TikTok
 import '../../fork/reels/tiktok_rate.dart'; // fork (D1)
-import '../../fork/flags.dart'; // fork
-import '../../models/exit_guard.dart';
-import '../../widgets/memory_save/floating_note.dart';
 import '../../services/locale_service.dart';
 import '../../services/pocketbase_service.dart';
 import '../../models/reels_source.dart';
@@ -593,13 +590,6 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     _say(LocaleService.current.linkCopied);
   }
 
-  /// Когда последний раз нажимали «назад».
-  ///
-  /// Выход из комнаты останавливает кино у обоих, и промахнуться легко:
-  /// «случайно нажимаешь и тебя выбрасывает с комнаты» (просьба пары,
-  /// 20.09.2026). Первое нажатие предупреждает, второе выпускает.
-  DateTime? _backAt;
-
   // fork (UX V7): «назад» в полном экране выводит из полного экрана, а не
   // из комнаты — иначе кино останавливалось у обоих.
   Future<void> _onBack() async {
@@ -619,26 +609,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
         debugPrint('WatchRoom: полный экран не ответил: $e');
       }
     }
-    if (_allowLeave() && mounted) await _leave();
-  }
-
-  /// Отпускать ли из комнаты. Первое нажатие показывает подсказку.
-  bool _allowLeave() {
-    if (ForkFlags.singleBackExit) return true; // fork: выход с первого «назад»
-    final now = DateTime.now();
-    if (exitOnBack(lastPress: _backAt, now: now)) return true;
-    _backAt = now;
-    if (_native) {
-      _say(LocaleService.current.watchRoomBackAgain);
-      return false;
-    }
-    showFloatingNote(
-      context,
-      LocaleService.current.watchRoomBackAgain,
-      icon: Icons.logout_rounded,
-      duration: kExitWindow,
-    );
-    return false;
+    if (mounted) await _leave();
   }
 
   @override
@@ -1026,7 +997,7 @@ class _WatchRoomScreenState extends State<WatchRoomScreen> with WidgetsBindingOb
     c.addJavaScriptHandler(
       handlerName: 'watchBack',
       callback: (_) {
-        if (mounted && _allowLeave()) unawaited(_leave());
+        if (mounted) unawaited(_leave());
         return null;
       },
     );

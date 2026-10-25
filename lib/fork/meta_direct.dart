@@ -17,7 +17,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/locale_service.dart';
 import '../widgets/settings_scaffold.dart';
-import 'flags.dart';
 
 abstract final class ForkMetaDirect {
   static const String prefsKey = 'fork_meta_direct';
@@ -242,7 +241,6 @@ class ForkMetaDirectRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ForkFlags.metaGateway) return const SizedBox.shrink();
     final ru = const {
       'ru',
       'uk',

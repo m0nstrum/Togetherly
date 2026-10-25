@@ -977,7 +977,5 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="yandexmaps" />
         </intent>
-        <!-- Required by in_app_update to detect the Play Store package on Android 11+ -->
-        <package android:name="com.android.vending" />
     </queries>
 </manifest>

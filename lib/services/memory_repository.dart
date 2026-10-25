@@ -7,7 +7,6 @@ import '../models/memory.dart';
 import '../models/sound_clip.dart';
 import '../models/memory_sticker.dart';
 import '../utils/pair_time.dart';
-import 'analytics_service.dart';
 import 'daily_task_service.dart';
 import 'level_service.dart';
 import 'offline/local_store.dart';
@@ -214,7 +213,6 @@ class MemoryRepository {
       unawaited(DailyTaskService.instance
           .onMemoryCreated(type, fromTaskId: dailyTaskId));
     }
-    unawaited(AnalyticsService.instance.logMemoryAdded(type: type.name));
     return memory;
   }
 

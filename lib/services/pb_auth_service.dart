@@ -1,15 +1,9 @@
 import 'dart:async';
-import 'dart:io' show Platform;
-import 'dart:math' show Random;
 
-import 'package:crypto/crypto.dart' show sha256;
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import '../utils/safe_launch.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/session_restore.dart';
 import '../utils/auth_failure.dart';
@@ -21,9 +15,8 @@ import '../fork/ui/session_note.dart'; // fork (UX A13)
 /// Аутентификация через PocketBase (миграция Firebase→PB, Этап 6, слой Auth).
 ///
 /// Заменяет Firebase Auth. Поддерживает:
-///  • email/пароль (регистрация + вход) — работает сразу;
-///  • Google OAuth2 (web-flow PB) — требует настройки провайдера `google` в
-///    панели PocketBase (Client ID/Secret + redirect `…/api/oauth2-redirect`).
+///  • email/пароль (регистрация + вход). Входа через Google/Яндекс/Apple в
+///    форке нет: только почта.
 ///
 /// Идентичность в данных завязана на `users.id`: `author_uid`/`user_uid`/
 /// `members[]` хранят его строкой. У мигрированных юзеров `id` = их прежний uid
@@ -190,144 +183,6 @@ class PbAuthService {
       debugPrint('PbAuth._tryFirebaseBridge failed: $e');
       return false;
     }
-  }
-
-  /// Универсальный OAuth2-вход (web-flow PocketBase): открывает страницу
-  /// провайдера в in-app браузере, PB ловит редирект и возвращает сессию по
-  /// realtime. [provider] — ключ провайдера в панели PB: `google` / `apple` /
-  /// `yandex` / `vk` / `facebook`. Требует настроенного провайдера (Client
-  /// ID/Secret + redirect `<host>/api/oauth2-redirect`).
-  Future<RecordModel?> signInWithOAuth2(String provider) async {
-    try {
-      final auth = await _pb.collection(_usersCol).authWithOAuth2(
-        provider,
-        (url) async {
-          // In-app браузер держит приложение на переднем плане → realtime-
-          // websocket OAuth-флоу PB выживает и сессия возвращается в приложение
-          // (externalApplication уводил Flutter в фон → Completer висел).
-          try {
-            final opened =
-                await safeLaunchUrl(url, mode: LaunchMode.inAppBrowserView);
-            if (opened) return;
-          } catch (e) {
-            debugPrint('PbAuth: встроенный браузер не открыл страницу — $e');
-          }
-          // Встроенный браузер иногда возвращает провал загрузки страницы
-          // провайдера: за сутки 59 таких обрывов против 31 удачного входа, и в
-          // журнале сервера при этом одна ошибка — до нас дело не доходит.
-          // Пробуем системным браузером: приложение уходит в фон, сокет живёт
-          // недолго, но лучше один шанс, чем гарантированный отказ.
-          debugPrint('PbAuth: повторяем вход системным браузером');
-          await safeLaunchUrl(url, mode: LaunchMode.externalApplication);
-        },
-      );
-      // OAuth завершён — закрыть in-app вьюху (iOS: SFSafariViewController;
-      // Android Custom Tabs: no-op, фокус и так возвращается).
-      try {
-        await closeInAppWebView();
-      } catch (_) {}
-      // Профиль из OAuth-меты (имя/аватар), если в записи ещё пусто.
-      final meta = auth.meta;
-      await _ensureProfile(
-        displayName: meta['name']?.toString(),
-        avatarUrl: meta['avatarUrl']?.toString() ?? meta['avatarURL']?.toString(),
-      );
-      return _svc.currentUser;
-    } catch (e, st) {
-      debugPrint('PbAuth.signInWithOAuth2($provider) failed: $e');
-      debugPrintStack(stackTrace: st);
-      unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-        s.setExtra('reason', 'signInWithOAuth2($provider) failed');
-        s.level = SentryLevel.warning; // часть — отмена пользователем, не баг
-      }));
-      rethrow;
-    }
-  }
-
-  /// Вход через Google. Требует настроенного провайдера `google` в панели PB.
-  Future<RecordModel?> signInWithGoogle() => signInWithOAuth2('google');
-
-  /// Вход через Apple.
-  ///
-  /// На iPhone сперва системным диалогом (`ASAuthorizationController`), без
-  /// всякой веб-страницы: через браузер вход отказывал у части людей — за сутки
-  /// 77 обрывов загрузки `appleid.apple.com` против 33 удачных входов на 57
-  /// разных телефонах, причём в журнале сервера за те же сутки одна ошибка.
-  /// Если системный диалог не сложился (отмена не в счёт — она просто выходит),
-  /// остаётся прежний путь через браузер: он хотя бы у части людей работает.
-  Future<RecordModel?> signInWithApple() async {
-    if (Platform.isIOS) {
-      try {
-        final user = await _signInWithAppleNative();
-        if (user != null) return user;
-      } on SignInWithAppleAuthorizationException catch (e) {
-        // Человек закрыл диалог сам — второй раз ему то же самое не показываем.
-        if (e.code == AuthorizationErrorCode.canceled) return null;
-        debugPrint('PbAuth: системный вход Apple не вышел (${e.code}) — $e');
-      } catch (e, st) {
-        debugPrint('PbAuth: системный вход Apple не вышел — $e');
-        unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-          s.setExtra('reason', 'нативный вход Apple сорвался, уходим в браузер');
-          s.level = SentryLevel.warning;
-        }));
-      }
-    }
-    return signInWithOAuth2('apple');
-  }
-
-  /// Системный вход Apple: токен от Apple меняем на сессию PocketBase.
-  ///
-  /// Подпись токена проверяет сервер (`pb_hooks/apple_native.pb.js` через релей
-  /// `apns_relay.py`: RS256 и ключи Apple в JSVM недоступны). Человека там
-  /// находят по `sub`, поэтому те, кто раньше входил через браузер, попадают в
-  /// свои прежние аккаунты, а не заводят вторые.
-  Future<RecordModel?> _signInWithAppleNative() async {
-    // Nonce привязывает токен к этой попытке входа: Apple положит его внутрь, а
-    // сервер сверит. Внутрь кладём уже свёрнутое значение — так же требует Apple.
-    final raw = List<int>.generate(32, (_) => Random.secure().nextInt(256));
-    final nonce = sha256.convert(raw).toString();
-
-    final credential = await SignInWithApple.getAppleIDCredential(
-      scopes: const [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: nonce,
-    );
-
-    final identityToken = credential.identityToken;
-    if (identityToken == null || identityToken.isEmpty) {
-      throw StateError('Apple не отдал identityToken');
-    }
-
-    // Имя Apple присылает ОДИН раз, при первом входе: передаём сразу, иначе
-    // профиль останется безымянным навсегда.
-    final name = [credential.givenName, credential.familyName]
-        .whereType<String>()
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
-        .join(' ');
-
-    final res = await _pb.send(
-      '/api/apple/native',
-      method: 'POST',
-      body: {
-        'identityToken': identityToken,
-        'nonce': nonce,
-        if (name.isNotEmpty) 'name': name,
-      },
-    ).timeout(const Duration(seconds: 25));
-
-    if (res is! Map || res['token'] == null || res['record'] == null) {
-      throw StateError('сервер не отдал сессию: $res');
-    }
-
-    _pb.authStore.save(
-      res['token'] as String,
-      RecordModel.fromJson(Map<String, dynamic>.from(res['record'] as Map)),
-    );
-    await _ensureProfile(displayName: name.isEmpty ? null : name);
-    return _svc.currentUser;
   }
 
   /// Смена пароля вошедшим — без письма и без выхода из аккаунта.

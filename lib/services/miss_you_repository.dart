@@ -2,7 +2,6 @@ import 'dart:async';
 
 import '../models/miss_you_event.dart';
 import '../models/miss_you_state.dart';
-import 'analytics_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import 'pocketbase_service.dart';
@@ -62,7 +61,6 @@ class MissYouRepository {
       count: count,
       replyTo: replyTo,
     );
-    if (ok) unawaited(AnalyticsService.instance.logMissYouSent());
     return ok;
   }
 
@@ -85,7 +83,6 @@ class MissYouRepository {
       replyTo: replyTo,
     );
     if (ok) {
-      unawaited(AnalyticsService.instance.logVibeSent(vibeType: vibeType));
     }
     return ok;
   }

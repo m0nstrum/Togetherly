@@ -43,7 +43,6 @@ import '../models/pixel_grid_style.dart';
 import '../models/pair_data.dart';
 import '../models/ad_grants.dart';
 import '../models/user_data.dart';
-import '../services/analytics_service.dart';
 import '../services/canvas/canvas_widget_service.dart';
 import '../widgets/draw/canvas_preview.dart' show kPreviewStrokeLimit;
 import '../services/canvas_storage_service.dart';
@@ -707,9 +706,6 @@ class _DrawScreenState extends State<DrawScreen>
     if (!_hasSharedCanvas) _loadSoloStrokes();
     _markPresence(true);
     _scheduleHints();
-    unawaited(
-      AnalyticsService.instance.logCanvasOpened(shared: _hasSharedCanvas),
-    );
     // Зов партнёру: «сел рисовать, давай вместе». Один запрос на вход, дальше
     // всё решает сервер — и частоту, и выключатель, и то, что человеку в
     // приложении звать незачем. В одиночном холсте звать некого.

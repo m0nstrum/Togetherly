@@ -25,7 +25,6 @@ import 'theme/app_theme.dart';
 import 'theme/app_palettes.dart';
 import 'theme/profile_theme.dart';
 import 'theme/theme_scope.dart';
-import 'services/analytics_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/shared_link_service.dart';
 import 'services/pb_push_service.dart';
@@ -64,7 +63,6 @@ import 'widgets/launch_splash/launch_splash_overlay.dart';
 import 'widgets/offline_sync_banner.dart';
 import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
-import 'fork/flags.dart'; // fork (PLAN 1.9)
 import 'fork/config/endpoints.dart'; // fork
 import 'fork/crash_reports.dart'; // fork
 import 'fork/e2e/fork_e2e.dart'; // fork
@@ -480,11 +478,6 @@ void main() async {
     unawaited(WidgetBackgroundRefreshService.instance.init());
   }
 
-  // Аналитика отключена (firebase_analytics убран при уходе с Firebase) —
-  // AnalyticsService теперь no-op shell. Привязку userId оставляем как заглушку
-  // на случай будущей серверной аналитики на PocketBase.
-  unawaited(AnalyticsService.instance.setUserId(PocketBaseService().userId));
-
   // Deep links — инициализация
   DeepLinkService().init();
 
@@ -523,10 +516,6 @@ void main() async {
   // диска мгновенно, свежий список тянем фоном. Новые паки/эмоции приезжают без
   // обновления приложения. Офлайн/без credentials — остаются встроенные паки.
   await CatalogService.instance.init();
-
-  // Своя аналитика: экраны считает NavigatorObserver, события уходят пачками
-  // раз в минуту. До входа ничего не отправляется.
-  unawaited(AnalyticsService.instance.init());
 
   // Магазин покупок поднимаем на старте, а не при открытии экрана.
   //
@@ -816,7 +805,7 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
 
   Future<void> _checkMinBuild() async {
     // fork: do not lock people out without an available fork release.
-    if (!ForkFlags.upstreamUpdates && Endpoints.current.releasesUrl.isEmpty) return;
+    if (Endpoints.current.releasesUrl.isEmpty) return;
     try {
       // fail-open: нет ответа или ошибка — не блокируем.
       final minBuild = await PbDataService()
@@ -957,7 +946,6 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        navigatorObservers: [AnalyticsService.instance.observer],
         // Глобальная плашка «офлайн / ожидает синхронизации» поверх любого экрана.
         // fork: app lock covers Navigator routes and dialog overlays (PLAN 3.1).
         builder: (context, child) => ForkAppLockGate(

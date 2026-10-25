@@ -59,7 +59,7 @@ void main() {
   });
 
   test('выход закрывает окно, а закрытое системой окно уводит из комнаты', () {
-    expect(screen, contains('if (mounted && _allowLeave()) unawaited(_leave());'));
+    expect(screen, contains('if (mounted) unawaited(_leave());'));
     expect(screen, contains('onClosed: _onWindowClosed'));
     // Маршрут под окном не должен остаться пустым экраном.
     final closed = screen.substring(screen.indexOf('void _onWindowClosed()'));

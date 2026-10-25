@@ -1,7 +1,6 @@
 @Tags(['fork-runtime'])
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/flags.dart';
 import 'package:http/http.dart' as http;
@@ -10,30 +9,13 @@ import 'package:love_app/models/help_items.dart';
 import 'package:love_app/services/coin_store.dart';
 import 'package:love_app/services/movie_search_service.dart';
 import 'package:love_app/services/plus_service.dart';
-import 'package:love_app/widgets/auth_widgets.dart';
 
 /// Поведение сборки форка. Запускается без env/test.json
 /// (`flutter test --tags fork-runtime`), иначе флаги вернут поведение апстрима.
 void main() {
   test('флаги форка включены', () {
-    expect(ForkFlags.analyticsDisabled, isTrue);
     expect(ForkFlags.allFree, isTrue);
     expect(ForkFlags.hideUpstreamChannels, isTrue);
-    expect(ForkFlags.emailOnlyAuth, isTrue);
-    expect(ForkFlags.metaGateway, isTrue);
-    expect(ForkFlags.noUpstreamKeys, isTrue);
-    expect(ForkFlags.strictLogin, isTrue);
-  });
-
-  testWidgets('кнопок входа через Google/Яндекс/Apple нет', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Center(
-          child: AuthSocialRow(label: 'x', onGoogle: () {}, onYandex: () {}),
-        ),
-      ),
-    );
-    expect(tester.getSize(find.byType(AuthSocialRow)), Size.zero);
   });
 
   test('Плюс открыт у всех, купить и задонатить нельзя', () {

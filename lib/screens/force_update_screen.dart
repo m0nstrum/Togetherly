@@ -3,44 +3,22 @@ import '../utils/safe_launch.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/locale_service.dart';
-import '../services/update_service.dart';
 import '../theme/theme_scope.dart';
 import '../fork/config/endpoints.dart'; // fork
-import '../fork/flags.dart'; // fork (PLAN 1.9)
 
 /// Блокирующий экран принудительного обновления.
 ///
 /// Показывается на старте, когда установленная сборка ниже минимально
 /// поддерживаемой (`app_config.min_build` в Supabase). Выйти нельзя —
-/// единственное действие ведёт в магазин / на скачивание APK.
+/// единственное действие ведёт на страницу релиза.
 class ForceUpdateScreen extends StatelessWidget {
   const ForceUpdateScreen({super.key});
 
-  /// Публичная страница последнего релиза (sideload-сборки).
+  /// Страница последнего релиза; сборка сама из магазина не обновляется.
   static final String _releasesLatestUrl = Endpoints.current.releasesUrl; // fork
 
-  /// Страница приложения в Google Play.
-  static const String _playUrl =
-      'https://play.google.com/store/apps/details?id=com.togetherly.love';
-  static const String _playMarketUri =
-      'market://details?id=com.togetherly.love';
-
   Future<void> _openUpdate() async {
-    // fork: installer source does not change the identity of this app.
-    if (!ForkFlags.upstreamUpdates) {
-      if (_releasesLatestUrl.isNotEmpty) await _launch(_releasesLatestUrl);
-      return;
-    }
-    // Sideload — на страницу релизов GitHub (там APK); Play — в магазин.
-    final sideloaded = await UpdateService.isSideloaded();
-    if (sideloaded) {
-      await _launch(_releasesLatestUrl);
-      return;
-    }
-    // Сначала пробуем нативный market://, затем https-фолбэк.
-    if (!await _launch(_playMarketUri)) {
-      await _launch(_playUrl);
-    }
+    if (_releasesLatestUrl.isNotEmpty) await _launch(_releasesLatestUrl);
   }
 
   Future<bool> _launch(String url) async {
