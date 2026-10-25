@@ -75,6 +75,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	bindRealtime(app, pub, mx.Published, cfg.Centrifugo.Timeout, log)
 	bindCapsules(app, time.Now, log)
 	bindHeld(app, time.Now, log)
+	bindMemoryDates(app, time.Now)
 	bindGuards(app)
 	bindE2EGuards(app)
 	app.Cron().MustAdd("e2e_retention", "17 * * * *", func() {

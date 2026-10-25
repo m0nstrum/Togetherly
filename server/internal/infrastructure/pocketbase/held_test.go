@@ -85,3 +85,26 @@ func TestHeldSendNow(t *testing.T) {
 	assert.EqualValues(t, now, rec.GetInt("ts"))
 	assert.Equal(t, []realtime.Event{realtime.EventCreate}, events, "партнёру выпущенное приходит как новое")
 }
+
+// Воспоминание с часов из будущего встаёт сегодняшним, со сдвигом по
+// моменту занесения.
+func TestMemoryDatesNoFuture(t *testing.T) {
+	w := newWorld(t)
+	now := time.Now().UTC()
+	future := now.Add(7 * 24 * time.Hour).Format(time.RFC3339)
+	code, body := w.do(t, http.MethodPost, "/api/collections/memories/records", w.aTok,
+		`{"group_id":"`+pairA+`","author_uid":"`+alice+`","type":"text","created_at":"`+future+`",`+
+			`"data":{"createdAt":"`+future+`","addedAt":"`+future+`","e2e":"e2e1.k.n.c"}}`)
+	require.Equal(t, http.StatusOK, code, body)
+	var created struct{ ID string }
+	require.NoError(t, json.Unmarshal([]byte(body), &created))
+	rec, err := w.app.FindRecordById("memories", created.ID)
+	require.NoError(t, err)
+	assert.WithinDuration(t, now, rec.GetDateTime("created_at").Time(), time.Minute)
+	data := map[string]any{}
+	require.NoError(t, rec.UnmarshalJSONField("data", &data))
+	got, err := time.Parse(time.RFC3339Nano, data["addedAt"].(string))
+	require.NoError(t, err)
+	assert.WithinDuration(t, now, got, time.Minute)
+	assert.Equal(t, "e2e1.k.n.c", data["e2e"], "шифр не тронут")
+}
