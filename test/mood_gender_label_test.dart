@@ -10,6 +10,8 @@ import 'package:love_app/models/mood_entry.dart';
 import 'package:love_app/services/locale_service.dart';
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   MoodOption mood(String id) => MoodOption.byId(id)!;
 
   group('русский', () {

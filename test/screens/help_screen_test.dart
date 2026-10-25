@@ -12,7 +12,6 @@ void main() {
 
   Future<List<HelpAction>> pump(
     WidgetTester tester, {
-    bool plusInStore = true,
     Size size = const Size(390, 844),
     double textScale = 1,
   }) async {
@@ -26,7 +25,6 @@ void main() {
             size: size, textScaler: TextScaler.linear(textScale)),
         child: HelpScreen(
           scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B)),
-          plusInStore: plusInStore,
           onAction: actions.add,
           onWriteUs: () {},
         ),
@@ -39,7 +37,7 @@ void main() {
   testWidgets('наверху два частых вопроса, ниже темы', (tester) async {
     await pump(tester);
     expect(find.text('Чаще всего спрашивают'.toUpperCase()), findsOneWidget);
-    expect(find.textContaining('Как оплатить Togetherly'), findsWidgets);
+    expect(find.text('Как поменять дату начала отношений'), findsWidgets);
     expect(find.text('Как удалить пару'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -68,16 +66,6 @@ void main() {
     await tester.tap(find.byKey(const Key('help-open')));
     await tester.pumpAndSettle();
     expect(actions, [HelpAction.tabConnect]);
-  });
-
-  testWidgets('в сборке с сайта Плюс ведёт на lava.top', (tester) async {
-    final actions = await pump(tester, plusInStore: false);
-    await tester.tap(find.textContaining('Как оплатить Togetherly').first);
-    await tester.pumpAndSettle();
-    expect(find.textContaining('lava.top'), findsWidgets);
-    await tester.tap(find.byKey(const Key('help-open')));
-    await tester.pumpAndSettle();
-    expect(actions, [HelpAction.plusSite]);
   });
 
   testWidgets('320 dp и шрифт 1.3 без переполнений', (tester) async {

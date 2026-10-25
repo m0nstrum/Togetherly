@@ -26,8 +26,6 @@ Widget _app({String? appIconId}) => MaterialApp(
         onSupport: () {},
         onOfficial: () {},
         onDrawTools: () {},
-        onTelegramChannel: () {},
-        onBugBot: () {},
         onAbout: () {},
         onChangePassword: () {},
         onLogout: () {},

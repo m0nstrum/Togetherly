@@ -63,6 +63,8 @@ Future<void> _tapSave(WidgetTester tester) async {
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     LocaleService.instance.setLanguage(AppLanguage.ru);

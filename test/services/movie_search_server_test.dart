@@ -156,50 +156,40 @@ void main() {
     });
   });
 
-  group('запасной путь', () {
+  // Своего ключа poiskkino в тестах нет (`KINOPOISK_TOKEN`), а общий ключ
+  // апстрима форк не берёт: без сервера форма уходит в ручной ввод.
+  group('запасной путь без своего ключа', () {
     for (final code in [404, 401, 500, 502]) {
-      test('сервер ответил $code — ищем в poiskkino', () async {
+      test('сервер ответил $code — «не настроено», poiskkino не трогаем', () async {
         final calls = _Calls();
-        final res = await MovieSearchService.searchWith(
-          'матрица',
-          base: _base,
-          token: 'tok',
-          lang: 'ru',
-          client: _client(calls, (_) => _json({'code': code}, code)),
+        await expectLater(
+          MovieSearchService.searchWith(
+            'матрица',
+            base: _base,
+            token: 'tok',
+            lang: 'ru',
+            client: _client(calls, (_) => _json({'code': code}, code)),
+          ),
+          throwsA(isA<MovieSearchException>()
+              .having((e) => e.notConfigured, 'notConfigured', isTrue)),
         );
-        expect(res.single.title, 'Матрица');
-        expect(res.single.infoUrl, 'https://www.kinopoisk.ru/film/301/');
+        expect(calls.uris.map((u) => u.host), isNot(contains('api.poiskkino.dev')));
       });
     }
 
-    test('сервер недоступен — ищем в poiskkino', () async {
-      final res = await MovieSearchService.searchWith(
-        'матрица',
-        base: _base,
-        token: 'tok',
-        lang: 'ru',
-        client: MockClient((req) async {
-          if (req.url.host == 'api.poiskkino.dev') {
-            return _json({
-              'docs': [_poiskkinoDoc]
-            }, 200);
-          }
-          throw http.ClientException('connection refused');
-        }),
-      );
-      expect(res.single.title, 'Матрица');
-    });
-
     test('без сессии сервер не спрашиваем', () async {
       final calls = _Calls();
-      await MovieSearchService.searchWith(
-        'матрица',
-        base: _base,
-        token: '',
-        lang: 'ru',
-        client: _client(calls, (_) => fail('сервер без сессии ответит 401')),
+      await expectLater(
+        MovieSearchService.searchWith(
+          'матрица',
+          base: _base,
+          token: '',
+          lang: 'ru',
+          client: _client(calls, (_) => fail('сервер без сессии ответит 401')),
+        ),
+        throwsA(isA<MovieSearchException>()),
       );
-      expect(calls.uris.single.host, 'api.poiskkino.dev');
+      expect(calls.uris, isEmpty);
     });
   });
 

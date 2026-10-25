@@ -59,6 +59,8 @@ FilledButton _seal(WidgetTester tester) =>
     tester.widget<FilledButton>(find.byKey(const ValueKey('capsule-seal')));
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({'app_language': 'ru'});

@@ -8,6 +8,8 @@ import 'package:love_app/services/locale_service.dart';
 /// и если реализацию забыть, немец увидит английское «2 days» посреди
 /// немецкого экрана — на глаз это заметно не сразу, тест ловит сразу.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings de;
   late AppStrings en;
 

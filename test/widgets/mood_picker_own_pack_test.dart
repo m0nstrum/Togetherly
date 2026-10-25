@@ -82,6 +82,8 @@ Future<void> _size(WidgetTester tester, double width, {double height = 760}) asy
 Finder get _ownChip => find.byKey(const Key('mood-pack-own'));
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     LocaleService.instance.setLanguage(AppLanguage.ru);

@@ -96,8 +96,6 @@ class _Home extends StatelessWidget {
                           onSupport: _nothing,
                           onOfficial: _nothing,
                           onDrawTools: _nothing,
-                          onTelegramChannel: _nothing,
-                          onBugBot: _nothing,
                           onAbout: _nothing,
                           onChangePassword: _nothing,
                           onLogout: _nothing,

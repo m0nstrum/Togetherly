@@ -82,8 +82,15 @@ class LocaleService extends ChangeNotifier {
 
   /// Что показывать в `MaterialApp.supportedLocales`: без этого системные части
   /// (выбор даты, меню копирования) остаются английскими при любом переводе.
-  static List<AppLanguage> get availableLanguages => ForkFlags.fullLanguageCatalog
-      ? AppLanguage.values : const [AppLanguage.ru, AppLanguage.en];
+  static List<AppLanguage> get availableLanguages =>
+      ForkFlags.fullLanguageCatalog || allLanguagesForTests
+          ? AppLanguage.values
+          : const [AppLanguage.ru, AppLanguage.en];
+
+  /// Переводы на остальные языки в сборке не показываются (PLAN 2.3), но
+  /// лежат в коде, и их тесты включают весь каталог этим флагом.
+  @visibleForTesting
+  static bool allLanguagesForTests = false;
 
   static AppLanguage supportedLanguage(AppLanguage lang) =>
       availableLanguages.contains(lang) ? lang : AppLanguage.en;
@@ -109,7 +116,7 @@ class LocaleService extends ChangeNotifier {
   /// а страна говорит иначе: латиноамериканская `es-419`, бразильская `pt-BR`,
   /// австрийская `de-AT` приходят разными кодами, а язык у них один.
   static AppLanguage detect(ui.Locale locale) {
-    if (!ForkFlags.fullLanguageCatalog) {
+    if (!ForkFlags.fullLanguageCatalog && !allLanguagesForTests) {
       return locale.languageCode.toLowerCase() == 'ru' ? AppLanguage.ru : AppLanguage.en;
     }
     final byLang = AppLanguage.byCode(locale.languageCode.toLowerCase());

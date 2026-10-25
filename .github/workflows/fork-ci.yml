@@ -104,13 +104,12 @@ jobs:
       - name: flutter analyze
         run: tool/fork/analyze_check.sh
 
-      # env/test.json повторяет адреса и платное поведение апстрима: его тесты
-      # проверяют их буквально. Логику форка проверяют test/fork/*.
+      # env/test.json повторяет адреса апстрима: унаследованные тесты сверяют
+      # их буквально. Поведение то же, что у сборки форка.
       - name: flutter test
         run: flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime
 
-      # Поведение сборки форка (всё бесплатно, без рекламы и каналов автора) —
-      # без env/test.json, как в настоящей сборке.
+      # Сборка форка без env/test.json — адреса и ключи как в настоящей.
       - name: flutter test (сборка форка)
         run: flutter test test/fork --tags fork-runtime
 

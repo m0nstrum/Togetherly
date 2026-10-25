@@ -55,10 +55,12 @@ void main() {
     expect(find.textContaining(trKey('shopBuyFor').replaceAll('{n}', '')), findsNothing);
   });
 
-  testWidgets('значки: цена из каталога, наградные без цены', (tester) async {
+  testWidgets('значки: платные уже свои (всё открыто), наградные без цены',
+      (tester) async {
     await pumpShop(tester, ShopTab.badges);
     expect(tester.takeException(), isNull);
-    expect(find.text('20'), findsOneWidget, reason: 'цена лапки из каталога');
+    expect(find.text('20'), findsNothing, reason: 'цен у значков нет');
+    expect(find.text(trKey('shopMineBadge')), findsWidgets);
     expect(find.text(trKey('shopAward')), findsWidgets);
   });
 

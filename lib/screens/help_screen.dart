@@ -16,16 +16,11 @@ class HelpScreen extends StatefulWidget {
   const HelpScreen({
     super.key,
     required this.scheme,
-    required this.plusInStore,
     required this.onAction,
     required this.onWriteUs,
   });
 
   final ColorScheme scheme;
-
-  /// Плюс покупается через магазин (Google Play, iPhone): тогда ни слова о
-  /// внешней оплате. См. [helpItems].
-  final bool plusInStore;
 
   /// Куда ведёт «Открыть». Экран справки к этому моменту уже закрыт листом.
   final void Function(HelpAction action) onAction;
@@ -41,8 +36,7 @@ class _HelpScreenState extends State<HelpScreen> {
   final _query = TextEditingController();
   HelpTopic? _topic;
 
-  late final List<HelpItem> _items =
-      helpItems(plusInStore: widget.plusInStore);
+  late final List<HelpItem> _items = helpItems();
 
   @override
   void dispose() {

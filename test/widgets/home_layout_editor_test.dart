@@ -37,18 +37,6 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('без Плюса раздел помещается и стоит под замком', (tester) async {
-    HomeLayoutService.instance.debugSet(const HomeLayout());
-    await render(
-      tester,
-      ListView(children: const [HomeLayoutSettingsSection()]),
-    );
-    expect(tester.takeException(), isNull);
-    expect(find.text('Открыть с Togetherly+'), findsOneWidget);
-    expect(find.text('Карта «Где мы»'), findsOneWidget);
-    expect(find.byIcon(Icons.drag_indicator_rounded), findsNothing);
-  });
-
   group('с Плюсом', () {
     setUp(() => PlusService.instance.setTrialUntil(
         DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch));

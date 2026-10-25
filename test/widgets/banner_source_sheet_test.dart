@@ -7,6 +7,8 @@ import 'package:love_app/services/locale_service.dart';
 import 'package:love_app/services/plus_access.dart';
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   final cs = ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B));
 
   setUp(() => LocaleService.instance.setLanguage(AppLanguage.ru));

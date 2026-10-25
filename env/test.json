@@ -6,6 +6,5 @@
   "SUPPORT_EMAIL": "support@togetherly.day",
   "OFFICIAL_EMAIL": "official@togetherly.day",
   "SENTRY_DSN": "https://00000000000000000000000000000000@bugsink.togetherly.day/1",
-  "STORE": "play",
-  "FORK_UPSTREAM_BEHAVIOR": "true"
+  "STORE": "play"
 }

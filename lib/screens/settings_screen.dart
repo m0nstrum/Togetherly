@@ -41,8 +41,6 @@ class SettingsScreen extends StatelessWidget {
     required this.onSupport,
     required this.onOfficial,
     required this.onDrawTools,
-    required this.onTelegramChannel,
-    required this.onBugBot,
     this.onHelp,
     this.onChangeEmail,
     required this.onAbout,
@@ -102,11 +100,6 @@ class SettingsScreen extends StatelessWidget {
     defaultValue: supportEmail,
   );
 
-  /// Канал в Telegram и бот, принимающий жалобы. Обе ссылки жили где угодно,
-  /// кроме приложения: «не могу найти ссылку на тгк» — обычный вопрос в
-  /// поддержке, а про бота знали только те, кому его присылали в ответ.
-  final VoidCallback onTelegramChannel;
-  final VoidCallback onBugBot;
 
   /// Справка «Как сделать».
   final VoidCallback? onHelp;
@@ -507,22 +500,6 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onOfficial,
                   ),
-                  if (!ForkFlags.hideUpstreamChannels) ...[ // fork
-                  SettingsRow(
-                    icon: Icons.campaign_rounded,
-                    title: s.telegramChannelTitle,
-                    subtitle: s.telegramChannelHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onTelegramChannel,
-                  ),
-                  SettingsRow(
-                    icon: Icons.bug_report_rounded,
-                    title: s.bugBotTitle,
-                    subtitle: s.bugBotHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onBugBot,
-                  ),
-                  ], // fork
                 ],
               ),
 

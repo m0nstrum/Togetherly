@@ -23,8 +23,6 @@ Widget _app({VoidCallback? onChangePassword}) => MaterialApp(
         onSupport: () {},
         onOfficial: () {},
         onDrawTools: () {},
-        onTelegramChannel: () {},
-        onBugBot: () {},
         onAbout: () {},
         onChangePassword: onChangePassword ?? () {},
         onLogout: () {},

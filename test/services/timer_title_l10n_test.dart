@@ -16,6 +16,8 @@ Future<void> _switchTo(AppLanguage lang) async {
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('предлог берётся из языка интерфейса', () async {

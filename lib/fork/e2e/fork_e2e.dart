@@ -504,7 +504,7 @@ abstract final class ForkE2E {
   }
 
   /// Коллекции пары, где своё старое перешифровывает сам автор: править
-  /// чужое сервер не даёт (chat_guard.pb.js, правила цикла).
+  /// чужое сервер не даёт (authorship.go сервера, правила цикла).
   /// Коллекция → поле автора.
   static const Map<String, String> migrated = {
     'chat_messages': 'user_uid',

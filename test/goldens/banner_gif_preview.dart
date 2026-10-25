@@ -46,6 +46,8 @@ List<int> _bannerGif() {
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late String gifPath;
 
   setUpAll(() async {

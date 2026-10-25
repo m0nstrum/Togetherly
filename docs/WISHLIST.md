@@ -56,7 +56,7 @@ docs/TESTING.md §20.
 
 | Что | Где |
 |---|---|
-| «Когда», «я тоже», порядок, «другое на неделе», точка, воспоминание | поля `wishes.due/also/pos/skip/place/memory`, шифр ключа пары; партнёр пишет только `done*`, `enc`, `also`, `pos`, `skip`, `memory` (authorship.go, wishes_guard.pb.js) |
+| «Когда», «я тоже», порядок, «другое на неделе», точка, воспоминание | поля `wishes.due/also/pos/skip/place/memory`, шифр ключа пары; партнёр пишет только `done*`, `enc`, `also`, `pos`, `skip`, `memory` (server authorship.go) |
 | Комментарии | коллекция `wish_comments`, удаляются вместе с желанием |
 | Срок «Дарю» | `wish_reservations.until`, видит только дарящий |
 | Напоминания | настройки на телефоне (`WishReminderPrefs`), расписание `planWishReminders` → системный будильник (`WishReminders`) |

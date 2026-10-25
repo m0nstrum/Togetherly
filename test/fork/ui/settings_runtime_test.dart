@@ -33,8 +33,6 @@ void main() {
           onChangePassword: () {},
           onLogout: () {},
           onDeleteAccount: () {},
-          onTelegramChannel: () {},
-          onBugBot: () {},
           lockScreenMood: false,
           onLockScreenMoodChanged: (_) {},
           sideActionIsArrow: true,

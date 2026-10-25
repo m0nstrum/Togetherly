@@ -8,6 +8,8 @@ import 'package:love_app/services/locale_service.dart';
 /// («0 días», но «1 día»), поэтому порог в хелпере `_n` — `== 1`, а не `<= 1`.
 /// Месяцы и дни недели пишутся со строчной — это норма языка.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings es;
 
   setUp(() {

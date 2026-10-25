@@ -67,7 +67,10 @@ flutter build apk --release --dart-define-from-file=env/prod.local.json
 донатов.
 
 `env/test.json` — только для `flutter test`: в нём адреса Togetherly, потому
-что унаследованные тесты сверяют их буквально.
+что унаследованные тесты сверяют их буквально. Платного поведения апстрима
+(переключатель `FORK_UPSTREAM_BEHAVIOR`) больше нет: тесты проверяют то же,
+что делает сборка. Переводы на скрытые языки тесты включают
+`LocaleService.allLanguagesForTests`.
 
 ## Ключ подписи
 

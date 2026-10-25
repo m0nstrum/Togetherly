@@ -14,6 +14,8 @@ import 'package:love_app/models/love_test.dart';
 import 'package:love_app/services/locale_service.dart';
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   test('метки раскрываются по роду партнёра и отвечающего', () {
     const s = 'Мириться {i:первым|первой} я иду не реже, чем {p:он|она}';
     expect(genderize(s, partnerFemale: false, meFemale: false),

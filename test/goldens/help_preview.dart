@@ -46,7 +46,7 @@ void main() {
 
     final cs = ProfileTheme.schemeFor(AppThemes.pink);
     final key = GlobalKey();
-    final item = helpItems(plusInStore: true).firstWhere((i) => i.id == 'widgetPhoto');
+    final item = helpItems().firstWhere((i) => i.id == 'widgetPhoto');
 
     Widget phone(double w, Widget child) => Container(
           width: w,
@@ -73,7 +73,6 @@ void main() {
                 });
                 return HelpScreen(
                     scheme: cs,
-                    plusInStore: true,
                     onAction: (_) {},
                     onWriteUs: () {});
               },
@@ -95,7 +94,6 @@ void main() {
                   393,
                   HelpScreen(
                       scheme: cs,
-                      plusInStore: true,
                       onAction: (_) {},
                       onWriteUs: () {})),
               withAnswer(393),
@@ -103,7 +101,6 @@ void main() {
                   320,
                   HelpScreen(
                       scheme: cs,
-                      plusInStore: false,
                       onAction: (_) {},
                       onWriteUs: () {})),
             ],

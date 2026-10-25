@@ -11,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Ряд «Заставка при запуске» в «Оформлении»: влезает на 320 точек с
 /// крупным шрифтом, нажатие выбирает заставку и скачивает её.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   final splash = LaunchSplash.fromCatalog({
     'kind': 'splash',
     'data': {

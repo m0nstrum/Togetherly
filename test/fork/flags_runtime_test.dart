@@ -46,7 +46,7 @@ void main() {
   });
 
   test('в помощи нет покупки Плюса и Telegram автора', () {
-    final ids = helpItems(plusInStore: true).map((i) => i.id).toList();
+    final ids = helpItems().map((i) => i.id).toList();
     expect(ids, isNot(contains('plusStore')));
     expect(ids, isNot(contains('plusSite')));
     expect(ids, isNot(contains('telegram')));

@@ -23,6 +23,8 @@ Future<void> _font(String family, String path) async {
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUpAll(() async {
     await _font('Onest', 'assets/fonts/Onest.ttf');
     await _font('MaterialIcons',

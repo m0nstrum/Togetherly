@@ -16,11 +16,10 @@ Iterable<String> _keysOf(HelpItem i) => [
     ];
 
 void main() {
-  final store = helpItems(plusInStore: true);
-  final site = helpItems(plusInStore: false);
+  final store = helpItems();
 
   test('у каждого ответа вопрос, путь и три шага на всех семи языках', () {
-    for (final item in {...store, ...site}) {
+    for (final item in store) {
       for (final key in _keysOf(item)) {
         for (final lang in _langs) {
           expect(helpStrings[key]?[lang], isNotNull, reason: '$key/$lang');
@@ -47,25 +46,6 @@ void main() {
     }
   });
 
-  test('в магазинных сборках ни слова о lava.top', () {
-    for (final item in store) {
-      for (final key in _keysOf(item)) {
-        for (final lang in _langs) {
-          expect(helpStrings[key]![lang]!.toLowerCase(), isNot(contains('lava')),
-              reason: '$key/$lang');
-        }
-      }
-      expect(item.action, isNot(HelpAction.plusSite));
-    }
-  });
-
-  test('в сборках с сайта Плюс ведёт на lava.top', () {
-    final plus = site.singleWhere((i) => i.topic == HelpTopic.plus);
-    expect(plus.action, HelpAction.plusSite);
-    expect(store.singleWhere((i) => i.topic == HelpTopic.plus).action,
-        HelpAction.plusSheet);
-  });
-
   test('поиск прощает окончания, регистр и «ё»', () async {
     await LocaleService.instance.setLanguage(AppLanguage.ru);
     List<String> find(String q) =>
@@ -88,7 +68,6 @@ void main() {
   });
 
   test('наверху два самых частых вопроса', () {
-    expect(helpPopular(store).map((i) => i.id), ['plusStore', 'startDate']);
-    expect(helpPopular(site).map((i) => i.id), ['plusSite', 'startDate']);
+    expect(helpPopular(store).map((i) => i.id), ['startDate', 'unpair']);
   });
 }

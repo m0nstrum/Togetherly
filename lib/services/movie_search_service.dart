@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../dict_strings.dart';
-import '../fork/flags.dart'; // fork
 import 'locale_service.dart';
 import 'pocketbase_service.dart';
 
@@ -20,21 +19,13 @@ import 'pocketbase_service.dart';
 /// ключ выгорал, и фильмы не мог добавить никто. Платный тариф дорог, TMDB
 /// запрещает коммерцию, Викиданные отдают всё под CC0 без ключа.
 ///
-/// Прямой поход в poiskkino остался запасным путём: сервер старый, упал, нет
-/// сессии или сети до него. Ключ по-прежнему можно подменить при сборке:
-/// `--dart-define=KINOPOISK_TOKEN=...`.
+/// Прямой поход в poiskkino — запасной путь (сервер упал, нет сессии или
+/// сети), только со своим ключом из сборки: `--dart-define=KINOPOISK_TOKEN=...`.
+/// Общий ключ автора апстрима не используется.
 class MovieSearchService {
   MovieSearchService._();
 
-  // Токен из --dart-define имеет приоритет над захардкоженным.
-  static const String _envToken = String.fromEnvironment('KINOPOISK_TOKEN');
-
-  /// Бесплатный токен poiskkino.dev (получен через @poiskkinodev_bot).
-  static const String _fallbackToken = 'TM3RQXB-DCZMAJ5-GF7RGGM-NSKB7JS';
-
-  static String get _token => _envToken.isNotEmpty
-      ? _envToken
-      : (ForkFlags.noUpstreamKeys ? '' : _fallbackToken); // fork
+  static const String _token = String.fromEnvironment('KINOPOISK_TOKEN');
 
   /// `true`, если токен задан — иначе форма уходит в ручной ввод.
   static bool get isConfigured => _token.trim().isNotEmpty;

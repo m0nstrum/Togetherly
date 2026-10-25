@@ -12,6 +12,8 @@ import 'package:love_app/services/locale_service.dart';
 /// Колонка лежит отдельно от разделов `lib/l10n/dict/`, поэтому новый ключ
 /// легко завести без перевода. Первый тест ловит именно это.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings zh;
 
   setUp(() {

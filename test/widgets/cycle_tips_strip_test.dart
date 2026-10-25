@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Проверка меряет каждый текст карточки: высота, которую ему дали, обязана
 /// вмещать весь текст, а не его начало.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   for (final lang in [AppLanguage.ru, AppLanguage.de]) {
     group(lang.name, () {
       // Язык ставится вне testWidgets: запись в prefs внутри поддельного

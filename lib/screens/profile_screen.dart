@@ -158,8 +158,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// Канал в Telegram и бот для жалоб. Обе ссылки до 16.08.2026 жили только в
   /// переписке с поддержкой: «не могу найти ссылку на тгк» — обычный вопрос,
   /// а бот знали лишь те, кому его присылали в ответ на жалобу.
-  static final Uri _tgChannelUri = Uri.parse('https://t.me/sandtcompany');
-  static final Uri _bugBotUri = Uri.parse('https://t.me/TogetherlyBugsBot');
   static final Uri _boostyUri = Uri.parse('https://boosty.to/sntcompany');
 
   /// Разовый донат картой или СБП.
@@ -502,13 +500,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     await _openExternalUri(_termsUri);
   }
 
-  Future<void> _openTelegramChannel() async {
-    await _openExternalUri(_tgChannelUri);
-  }
-
-  Future<void> _openBugBot() async {
-    await _openExternalUri(_bugBotUri);
-  }
 
   /// Справка «Как сделать». Открывается из шапки профиля и из настроек.
   void _openHelp(BuildContext context) {
@@ -516,9 +507,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       MaterialPageRoute<void>(
         builder: (_) => HelpScreen(
           scheme: _cs,
-          plusInStore: PlusService.buysInStore,
           onAction: _runHelpAction,
-          onWriteUs: _openBugBot,
+          // fork: своя поддержка, не бот автора апстрима.
+          onWriteUs: _openSupportMail,
         ),
         settings: const RouteSettings(name: '/help'),
       ),
@@ -548,16 +539,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       case HelpAction.settings:
         Navigator.of(context).popUntil((r) => r.isFirst);
         _openSettings(context);
-      case HelpAction.plusSheet:
-        _openPlus(context);
-      case HelpAction.plusSite:
-        // Сюда попадают только сборки с сайта и RuStore: в Play и на iPhone
-        // справка этот ответ не показывает (см. helpItems). Отсечка ещё раз
-        // здесь: ссылка мимо биллинга в этих сборках — снятие из магазина.
-        if (Platform.isIOS || PlusService.buysInStore) return;
-        _openExternalUri(Uri.parse(PlusService.purchaseUrl));
-      case HelpAction.telegram:
-        _openTelegramChannel();
     }
   }
 
@@ -2218,8 +2199,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             onSupport: _openSupportMail,
             onOfficial: _openOfficialMail,
             onDrawTools: _openDrawTools,
-            onTelegramChannel: _openTelegramChannel,
-            onBugBot: _openBugBot,
             onHelp: () => _openHelp(ctx),
             onChangeEmail: () async {
               final email = await showEmailChangeSheet(ctx,

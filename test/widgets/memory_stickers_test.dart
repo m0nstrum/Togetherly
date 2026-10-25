@@ -86,6 +86,8 @@ Future<_Opened> _open(
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   // Смена языка пишет выбор в настройки: без подмены тест ждёт их вечно.
   setUp(() => SharedPreferences.setMockInitialValues({'app_language': 'ru'}));
 

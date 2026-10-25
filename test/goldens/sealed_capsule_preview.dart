@@ -69,6 +69,8 @@ Widget _header(AppTheme t, String name, String when, IconData icon, String badge
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({'app_language': 'ru'});
     await LocaleService.instance.init();

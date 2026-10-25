@@ -79,6 +79,8 @@ Future<_Picked> _open(
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUp(() => SharedPreferences.setMockInitialValues({'app_language': 'ru'}));
 
   testWidgets('наборы рядом, касание по картинке отдаёт наклейку',

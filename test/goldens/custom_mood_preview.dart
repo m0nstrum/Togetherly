@@ -162,6 +162,8 @@ Future<void> _shot(WidgetTester tester, String name) async {
 }
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await LocaleService.instance.init();
