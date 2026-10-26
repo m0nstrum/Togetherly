@@ -1,3 +1,5 @@
+import '../utils/calendar_day.dart';
+
 /// Один импульс «Скучаю» из истории пары (`miss_you_events` в hotpath).
 ///
 /// Запись `miss_you` держит только счётчик и последний импульс; история
@@ -57,7 +59,7 @@ class MissYouEvent {
   DateTime now,
 ) {
   final today = DateTime(now.year, now.month, now.day);
-  final yday = today.subtract(const Duration(days: 1));
+  final yday = calendarDay(today, -1);
   final t = [
     for (final e in all)
       if (!e.at.isBefore(today)) e,
@@ -82,8 +84,7 @@ String missYouReplyVibe(String vibe) =>
     (vibe == 'thinking_of_you' || vibe == 'want_hug') ? vibe : 'miss_you';
 
 /// Полночь телефона в мс — с неё сервер отдаёт историю (вчера тоже нужно).
-int missYouHistorySince(DateTime now) => DateTime(
-  now.year,
-  now.month,
-  now.day,
-).subtract(const Duration(days: 1)).millisecondsSinceEpoch;
+int missYouHistorySince(DateTime now) => calendarDay(
+  DateTime(now.year, now.month, now.day),
+  -1,
+).millisecondsSinceEpoch;

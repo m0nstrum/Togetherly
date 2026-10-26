@@ -16,6 +16,7 @@ import 'models/postcard_template.dart';
 import 'widgets/postcard_card.dart';
 import '../../services/pb_data_service.dart';
 import '../../services/miss_you_repository.dart';
+import '../../utils/couple_days.dart';
 
 class PostcardEditorScreen extends StatefulWidget {
   final UserData userData;
@@ -58,12 +59,10 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
   final GlobalKey _cardKey = GlobalKey();
   final GlobalKey _polaroidKey = GlobalKey();
 
-  int get _days {
-    final date = widget.timerStartDate ?? widget.pairData.startDate;
-    if (date == null) return 0;
-    return DateTime.now().difference(date).inDays;
-  }
-
+  int get _days => daysSinceStart(
+    widget.timerStartDate ?? widget.pairData.startDate,
+    DateTime.now(),
+  );
   String get _myName => widget.userData.displayName;
   String get _partnerName => widget.pairData.partnerDisplayName;
 
