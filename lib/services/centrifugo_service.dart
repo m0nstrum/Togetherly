@@ -143,6 +143,10 @@ class CentrifugoService {
   /// перечитывают по этому сигналу свой список.
   Stream<void> get reconnected => _reconnected.stream;
 
+  /// Подписка на [channel] сейчас живая: события канала доходят.
+  bool isSubscribed(String channel) =>
+      _channels[channel]?.isSubscribed ?? false;
+
   _ChannelHub _hub(String channel) {
     _ensureClient();
     return _channels.putIfAbsent(
@@ -236,6 +240,9 @@ class _ChannelHub {
   final List<void Function(Map<String, dynamic>)> _rawListeners = [];
   StreamSubscription<centrifuge.PublicationEvent>? _pubSub;
   bool _subscribed = false;
+
+  bool get isSubscribed =>
+      _sub.state == centrifuge.SubscriptionState.subscribed;
 
   _ChannelHub(this._client, this.channel, this._pb) {
     _sub = _client.newSubscription(
