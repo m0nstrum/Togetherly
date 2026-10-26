@@ -121,8 +121,9 @@ class PetHome {
 
   void remember(String operation) {
     operations.add(operation);
-    if (operations.length > 128)
+    if (operations.length > 128) {
       operations.removeRange(0, operations.length - 128);
+    }
   }
 
   Map<String, dynamic> toJson() => {
@@ -155,22 +156,25 @@ class PetHome {
     final equipped = <PetSlot, String>{};
     for (final slot in PetSlot.values) {
       final id = data['equipped'][slot.name];
-      if (id is String && owned.contains(id) && petItem(id).slot == slot)
+      if (id is String && owned.contains(id) && petItem(id).slot == slot) {
         equipped[slot] = id;
+      }
     }
     final care = <String, int>{};
     if (data['care'] is Map) {
       for (final action in PetCare.values) {
         final value = data['care'][action.name];
-        if (value is int && value >= 0 && value <= 100000000)
+        if (value is int && value >= 0 && value <= 100000000) {
           care[action.name] = value;
+        }
       }
     }
     final roles = <String, PetRole>{};
     if (data['roles'] is Map) {
       for (final e in (data['roles'] as Map).entries.take(20)) {
-        if (e.key is String && e.value is Map)
+        if (e.key is String && e.value is Map) {
           roles[e.key as String] = PetRole.fromJson(e.value as Map);
+        }
       }
     }
     return PetHome(

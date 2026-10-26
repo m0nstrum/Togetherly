@@ -147,6 +147,7 @@ var Collections = map[string]Rules{
 	"canvas_catalogue": member("group_id"),
 	"canvas_live":      member("group_id"),
 	"mascots":          member("group_id"),
+	"pet_homes":        readOnly(memberExpr("group_id")),
 	"watch_history":    member("group_id"),
 	"watch_videos":     member("group_id"),
 

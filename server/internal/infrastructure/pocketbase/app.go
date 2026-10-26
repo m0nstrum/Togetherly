@@ -36,6 +36,7 @@ import (
 	"github.com/m0nstrum/togetherly/server/internal/usecase/music"
 	pushes "github.com/m0nstrum/togetherly/server/internal/usecase/notify"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/pethome"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/ring"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/stats"
@@ -132,6 +133,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.Movies(e.Router, films, log)
 		handler.UserCard(e.Router)
 		handler.Group(e.Router, groups, log)
+		handler.PetHome(e.Router, pethome.New(app))
 		handler.WidgetAnim(e.Router, anim)
 		handler.Calls(e.Router, pushes.New(app, notify, time.Now), time.Now)
 		handler.InviteAccept(e.Router, pairs.New(app), log)

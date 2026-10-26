@@ -139,6 +139,7 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'author_name': SealedField.text(),
     'author_avatar': SealedField.text(),
   },
+  'pet_homes': {'state': SealedField.json()},
   'wishes': {
     'title': SealedField.text(),
     'note': SealedField.text(),
@@ -308,6 +309,9 @@ bool isSealedValue(Object? v) => v is String && v.startsWith(e2eFieldPrefix);
 /// раскладывает по записям сам, поэтому там — пара и автор.
 String? e2eRecordKey(String collection, Map<String, dynamic> rec) {
   switch (collection) {
+    case 'pet_homes':
+      final group = rec['group_id'];
+      return group is String && group.isNotEmpty ? group : null;
     case 'miss_you' || 'miss_you_events':
       final g = rec['group_id'], u = rec['user_uid'];
       if (g is! String || u is! String || g.isEmpty || u.isEmpty) return null;

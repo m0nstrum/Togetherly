@@ -15,8 +15,9 @@ class PetDialogue {
   }) {
     final lines = petLines[event] ?? petLines['idle']!;
     final bag = _bags.putIfAbsent(event, () => []);
-    if (bag.isEmpty)
+    if (bag.isEmpty) {
       bag.addAll(List.generate(lines.length, (i) => i)..shuffle(_random));
+    }
     final text = lines[bag.removeLast()].split('|')[english ? 1 : 0];
     return text.replaceAllMapped(
       RegExp(r'\{(me|other)\}'),
