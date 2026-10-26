@@ -65,8 +65,13 @@ class ServerReach {
   Future<ServerReachState>? _running;
   DateTime? _lastMissedCheck;
 
+  /// Растёт с каждым открытым соединением. Проверка, начатая раньше, своим
+  /// ответом его не перебивает: сокет мог ожить, пока она ждала таймаута.
+  int _reachedEpoch = 0;
+
   /// Соединение с нашим сервером открылось: он доступен.
   void reached() {
+    _reachedEpoch++;
     state.value = ServerReachState.ok;
   }
 
@@ -95,6 +100,7 @@ class ServerReach {
   }
 
   Future<ServerReachState> _run() async {
+    final epoch = _reachedEpoch;
     final answers = await Future.wait([
       _quietly(_probeOurs),
       _quietly(_probeInternet),
@@ -104,6 +110,8 @@ class ServerReach {
         : answers[1]
         ? ServerReachState.blocked
         : ServerReachState.offline;
+    // Пока шла проверка, соединение открылось — оно свежее её ответа.
+    if (epoch != _reachedEpoch) return ServerReachState.ok;
     state.value = verdict;
     return verdict;
   }

@@ -118,4 +118,20 @@ void main() {
     );
     expect(await reach.check(), ServerReachState.blocked);
   });
+
+  test(
+    'сокет ожил, пока шла проверка, — её старый ответ плашку не ставит',
+    () async {
+      final ours = Completer<bool>();
+      final reach = ServerReach(
+        probeOurs: () => ours.future,
+        probeInternet: () async => true,
+      );
+      final running = reach.check();
+      reach.reached();
+      ours.complete(false);
+      expect(await running, ServerReachState.ok);
+      expect(reach.state.value, ServerReachState.ok);
+    },
+  );
 }

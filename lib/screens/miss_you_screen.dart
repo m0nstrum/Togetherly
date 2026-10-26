@@ -218,7 +218,6 @@ class _MissYouScreenState extends State<MissYouScreen>
 
   void _scheduleStaleSweep() {
     _staleTimer?.cancel();
-    _confirmTimer?.cancel();
     if (!_pending.waiting) return;
     _staleTimer = Timer(OptimisticCount.ttl, () {
       if (!mounted) return;
@@ -231,6 +230,7 @@ class _MissYouScreenState extends State<MissYouScreen>
   void dispose() {
     _sub?.cancel();
     _staleTimer?.cancel();
+    _confirmTimer?.cancel();
     _historyDebounce?.cancel();
     _pulse.dispose();
     _intro.dispose();

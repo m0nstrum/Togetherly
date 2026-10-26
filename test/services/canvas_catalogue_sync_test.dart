@@ -119,7 +119,10 @@ void main() {
   test('холст, удалённый партнёром, бутстрап не заводит снова', () async {
     // У меня холст лежит с прошлого раза, партнёр его удалил. Галерея
     // открылась, и досылка успевает раньше, чем пришёл каталог.
-    await _seedLocal([_canvas('canvas_x'), _canvas('canvas_y')]);
+    await _seedLocal([
+      _canvas('canvas_x', onServer: true),
+      _canvas('canvas_y', onServer: true),
+    ]);
     serve({'canvas_y'});
 
     await storage.pushAllToFirebase('me', 'g1');
@@ -132,12 +135,29 @@ void main() {
   });
 
   test('каталог стал пустым — удалённый холст уходит и у меня', () async {
-    await _seedLocal([_canvas('canvas_x')]);
+    await _seedLocal([_canvas('canvas_x', onServer: true)]);
     serve({});
 
     await storage.mergeRemoteCanvases('me', 'g1', const []);
 
     expect(await storage.getCanvases('me', groupId: 'g1'), isEmpty);
+  });
+
+  test('холст прежней версии без отметки не теряется: досылается', () async {
+    // Прежняя версия слала холст в каталог, не проверяя ответа: дошёл ли он,
+    // неизвестно. Потерять рисунок хуже, чем один раз вернуть удалённый.
+    await _seedLocal([_canvas('canvas_old')]);
+    serve({});
+
+    await storage.mergeRemoteCanvases('me', 'g1', const []);
+    expect((await storage.getCanvases('me', groupId: 'g1')).map((c) => c.id), [
+      'canvas_old',
+    ]);
+
+    await storage.pushAllToFirebase('me', 'g1');
+    expect(server.created, contains('canvas_old'));
+    final after = await storage.getCanvases('me', groupId: 'g1');
+    expect(after.single.onServer, isTrue);
   });
 
   test('каталог без холста — холст, который сервер видел, уходит', () async {
