@@ -194,4 +194,8 @@ const Map<String, String> smallDZh = {
   'photoSaving': '正在保存…',
   'photoSaved': '已在相册',
   'photoSaveFailed': '没有保存，请再点一次',
+  'serverBlockedVpn': '网络正常，但服务器没有响应。它可能暂时不可用，或你的网络屏蔽了它：请稍后再试，或使用 VPN、换一个网络。',
+  'serverBlockedChip': '服务器无法连接 · 网络正常',
+  'noInternet': '没有网络，请检查连接。',
+  'serverSlowRetry': '服务器没有及时响应，请再试一次。',
 };

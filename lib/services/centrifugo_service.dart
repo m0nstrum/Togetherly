@@ -4,6 +4,8 @@ import 'dart:convert';
 
 import 'package:centrifuge/centrifuge.dart' as centrifuge;
 import 'package:flutter/foundation.dart';
+
+import 'network/server_reach.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'pocketbase_service.dart';
@@ -119,12 +121,15 @@ class CentrifugoService {
         _pb,
       ).refreshKey(); // fork: H3 fresh HTTPS clock/key after sleep
       if (kDebugMode) debugPrint('Centrifugo connected: ${e.client}');
+      ServerReach.instance.reached();
       if (_reconnects.onConnected() && !_reconnected.isClosed) {
         _reconnected.add(null);
       }
     });
     c.disconnected.listen((e) {
       if (kDebugMode) debugPrint('Centrifugo disconnected: ${e.reason}');
+      // Сорвалось — проверяем, нет ли сети или не закрыт ли сервер (TOG-16).
+      ServerReach.instance.missed();
       _reconnects.onDisconnected();
     });
     if (kDebugMode) {
