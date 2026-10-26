@@ -6,10 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:pocketbase/pocketbase.dart' show ClientException;
+import '../dict_strings.dart';
 import '../models/user_data.dart';
 import '../services/pb_auth_service.dart';
 import '../services/locale_service.dart';
+import '../services/network/server_reach.dart';
 import '../utils/auth_failure.dart';
+import '../utils/network_failure_text.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/theme_scope.dart';
 import '../theme/profile_theme.dart';
@@ -141,9 +144,20 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
+      final message = await _authErrorText(e);
       if (mounted) setState(() => _isLoading = false);
-      _showError(_authErrorMessage(e));
+      _showError(message);
     }
+  }
+
+  /// Текст ошибки входа. Если запрос не дошёл до сервера, сперва проверяем
+  /// сеть (TOG-16): у людей из Украины и США интернет работал, а приложение
+  /// просило его проверить, хотя сервер закрывал провайдер.
+  Future<String> _authErrorText(Object e) async {
+    if (AuthFailure.of(e).isNetwork) {
+      return networkFailureText(await ServerReach.instance.check());
+    }
+    return _authErrorMessage(e);
   }
 
   /// Человеко-понятный текст ошибки входа. Приложение на PocketBase — прежние
@@ -157,9 +171,12 @@ class _LoginScreenState extends State<LoginScreen> {
       // Соединение рвут по дороге — сервер при этом жив и отвечает остальным,
       // поэтому «сервер не отвечает» тут сбивало бы с толку.
       AuthFailure.blockedConnection => s.connectionBlocked,
+      // Сеть разбирает _authErrorText; сюда обрыв попадает, только если
+      // проверку не звали. Сервер ответил ошибкой — он на месте, просим
+      // повторить, а не проверять интернет.
       AuthFailure.noConnection ||
       AuthFailure.timeout ||
-      AuthFailure.serverDown => s.serverNotResponding,
+      AuthFailure.serverDown => trKey('serverSlowRetry'),
       AuthFailure.tooManyAttempts => s.tooManyAttempts,
       // PB отвечает одинаково и на чужую почту, и на неверный пароль —
       // различить их нельзя, это защита от перебора адресов.
@@ -196,6 +213,12 @@ class _LoginScreenState extends State<LoginScreen> {
       // общий текст. Прежние строки Firebase здесь тоже никогда не совпадали.
       if (e is ClientException && e.statusCode == 429) {
         _showError(LocaleService.current.tooManyAttempts);
+      } else if (AuthFailure.of(e).isNetwork) {
+        // Письмо не ушло из-за связи, а не из-за адреса (TOG-16): прежний
+        // текст «Проверьте email» отправлял человека искать опечатку.
+        final verdict = await ServerReach.instance.check();
+        if (!mounted) return;
+        _showError(networkFailureText(verdict));
       } else {
         _showError(LocaleService.current.passwordResetError);
       }

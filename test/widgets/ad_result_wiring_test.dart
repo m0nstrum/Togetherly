@@ -11,7 +11,6 @@ void main() {
     'lib/screens/gifts/gift_shop_screen.dart': 1,
     'lib/screens/draw_screen.dart': 1,
     'lib/screens/profile_screen.dart': 1,
-    'lib/screens/home_screen.dart': 1,
     'lib/screens/chest_screen.dart': 1,
   };
   for (final e in screens.entries) {

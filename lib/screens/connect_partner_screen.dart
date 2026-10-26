@@ -2882,7 +2882,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
         : pair.inviteDeepLink;
     final cs = ProfileTheme.themeFor(widget.theme).colorScheme;
     final s = LocaleService.current;
-    showModalBottomSheet(
+    showModalSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: false,
@@ -2892,7 +2892,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
       ),
       builder: (sheetCtx) => SafeArea(
         top: false,
-        child: Padding(
+        // На маленьком экране код с кнопками ниже края листа: листаются.
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3041,7 +3042,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     }
     final cs = ProfileTheme.themeFor(widget.theme).colorScheme;
     final s = LocaleService.current;
-    showModalBottomSheet(
+    showModalSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: false,
@@ -3244,7 +3245,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
 
   void _confirmDeleteConnection(String connectionId, {String name = ''}) {
     final cs = ProfileTheme.themeFor(widget.theme).colorScheme;
-    showModalBottomSheet(
+    showModalSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: false,

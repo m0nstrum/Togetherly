@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../models/miss_you_pending.dart';
 import 'package:flutter/services.dart';
 
 import '../dict_strings.dart' show ruEn, trKey;
@@ -22,8 +23,10 @@ import '../theme/app_theme.dart';
 import '../theme/fonts.dart';
 import '../theme/profile_theme.dart';
 import '../widgets/common/stable_stream_builder.dart';
+import '../utils/calendar_day.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/miss_you/custom_vibe_sheet.dart';
+import '../widgets/miss_you/vibe_chip.dart';
 import '../widgets/miss_you/heart_field.dart';
 import '../widgets/settings_scaffold.dart';
 
@@ -88,10 +91,15 @@ class _MissYouScreenState extends State<MissYouScreen>
   MissYouState _state = MissYouState.empty;
   StreamSubscription<MissYouState>? _sub;
 
-  /// Свои нажатия, ещё не подтверждённые сервером: счётчик обязан отзываться
-  /// сразу, иначе кнопка кажется мёртвой на плохой сети. Правило снятия
-  /// надбавки держит [OptimisticCount] — то же, что у кнопки в шапке.
-  OptimisticCount _mine = const OptimisticCount();
+  /// Свои нажатия, ещё не подтверждённые сервером: общий счёт и счёт каждого
+  /// импульса обязаны отзываться сразу, иначе кнопка кажется мёртвой на
+  /// плохой сети (из апстрима, TOG-40). Правило снятия надбавки —
+  /// [MissYouPending].
+  MissYouPending _pending = const MissYouPending();
+
+  /// Своё подтверждение после отправки: без живого канала число иначе стояло
+  /// бы до выхода с экрана.
+  Timer? _confirmTimer;
   bool _resetting = false;
   int _sending = 0;
   Timer? _staleTimer;
@@ -168,9 +176,7 @@ class _MissYouScreenState extends State<MissYouScreen>
     if (widget.groupId.isNotEmpty) {
       _sub = _repo.watchState(widget.groupId).listen((s) {
         if (!mounted) return;
-        _mine = _mine.confirm(s.myCount, now: DateTime.now());
-        setState(() => _state = s);
-        _scheduleStaleSweep();
+        _apply(s);
         // Запись счётчика двинулась — значит, в истории новый импульс.
         _historyDebounce?.cancel();
         _historyDebounce = Timer(
@@ -191,14 +197,31 @@ class _MissYouScreenState extends State<MissYouScreen>
 
   /// Протухшие ожидания уходят сами: без этого последняя надбавка висела бы до
   /// следующего импульса, а он может не случиться до завтра.
+  void _apply(MissYouState s) {
+    _pending = _pending.confirm(s.mine, now: DateTime.now());
+    setState(() => _state = s);
+    _scheduleStaleSweep();
+  }
+
+  /// После своего импульса экран сам перечитывает записи пары: подтверждение
+  /// шло только живым каналом, и при оборванном сокете число стояло, пока не
+  /// выйдешь с экрана. Частые нажатия склеиваются в одно чтение.
+  void _confirmSoon() {
+    _confirmTimer?.cancel();
+    _confirmTimer = Timer(const Duration(milliseconds: 700), () async {
+      final s = await _repo.fetchState(widget.groupId);
+      if (!mounted) return;
+      if (s != null) _apply(s);
+      unawaited(_loadHistory());
+    });
+  }
+
   void _scheduleStaleSweep() {
     _staleTimer?.cancel();
-    if (_mine.pending == 0) return;
+    if (!_pending.waiting) return;
     _staleTimer = Timer(OptimisticCount.ttl, () {
       if (!mounted) return;
-      setState(() {
-        _mine = _mine.confirm(_mine.confirmed, now: DateTime.now());
-      });
+      setState(() => _pending = _pending.expire(DateTime.now()));
       _scheduleStaleSweep();
     });
   }
@@ -207,6 +230,7 @@ class _MissYouScreenState extends State<MissYouScreen>
   void dispose() {
     _sub?.cancel();
     _staleTimer?.cancel();
+    _confirmTimer?.cancel();
     _historyDebounce?.cancel();
     _pulse.dispose();
     _intro.dispose();
@@ -237,7 +261,7 @@ class _MissYouScreenState extends State<MissYouScreen>
     _pulse.forward(from: 0);
     _field.currentState?.pulse();
     _spawnHearts();
-    setState(() => _mine = _mine.tap(DateTime.now()));
+    setState(() => _pending = _pending.tap('miss_you', DateTime.now()));
     _scheduleStaleSweep();
     var ok = false;
     _sending++;
@@ -248,8 +272,11 @@ class _MissYouScreenState extends State<MissYouScreen>
     } finally {
       _sending--;
     }
-    if (!ok && mounted) {
-      setState(() => _mine = _mine.failed());
+    if (!mounted) return;
+    if (ok) {
+      _confirmSoon();
+    } else {
+      setState(() => _pending = _pending.failed('miss_you'));
       // fork (M5): отказ не молчит, у сообщения есть «Повторить».
       ForkNotice.failure(
         context,
@@ -260,9 +287,17 @@ class _MissYouScreenState extends State<MissYouScreen>
     }
   }
 
+  /// Импульс с плитки. Отклик у самой плитки рисует [VibeChip], а число
+  /// растёт сразу, не дожидаясь сервера: и у плитки, и в общем счёте, потому
+  /// что сервер прибавляет любой импульс к обоим (из апстрима, TOG-40).
+  /// Отказ не молчит: надбавка снимается, у сообщения есть «Повторить».
   Future<void> _sendVibe(String type, {String? text, String? replyTo}) async {
     if (widget.groupId.isEmpty || _resetting) return;
-    // fork (M5): сердечки и «отправлено» — после ответа сервера, а не до него.
+    widget.onSent?.call();
+    HapticFeedback.mediumImpact();
+    _spawnHearts(icon: vibeIcon(type));
+    setState(() => _pending = _pending.tap(type, DateTime.now()));
+    _scheduleStaleSweep();
     _sending++;
     final sent = await Outcome.guard(
       () => _repo.sendVibe(
@@ -273,23 +308,24 @@ class _MissYouScreenState extends State<MissYouScreen>
       ),
     );
     _sending--;
-    if (!mounted) return;
-    if (sent.failure != null || sent.value != true) {
-      ForkNotice.failure(
-        context,
-        sent.failure ?? ForkFailure.unknown,
-        what: ruEn('Не отправилось', 'Couldn’t send'),
-        retry: () => _sendVibe(type, text: text, replyTo: replyTo),
-      );
-      return;
-    }
-    widget.onSent?.call();
-    HapticFeedback.mediumImpact();
-    _spawnHearts(icon: vibeIcon(type));
+    // Своё пожелание остаётся в списке и при сорванной отправке: набранный
+    // текст не должен пропадать.
     if (text != null && text.isNotEmpty) {
       final next = await CustomWishesStore.add(_wishes, text);
       if (mounted) setState(() => _wishes = next);
     }
+    if (!mounted) return;
+    if (sent.failure == null && sent.value == true) {
+      _confirmSoon();
+      return;
+    }
+    setState(() => _pending = _pending.failed(type));
+    ForkNotice.failure(
+      context,
+      sent.failure ?? ForkFailure.unknown,
+      what: ruEn('Не отправилось', 'Couldn’t send'),
+      retry: () => _sendVibe(type, text: text, replyTo: replyTo),
+    );
   }
 
   Future<void> _addWish() async {
@@ -379,7 +415,7 @@ class _MissYouScreenState extends State<MissYouScreen>
       destructive: true,
     );
     if (!ok || !mounted || _resetting) return;
-    if (_sending > 0 || _mine.pending > 0) {
+    if (_sending > 0 || _pending.waiting) {
       ForkNotice.info(
         context,
         ruEn(
@@ -399,7 +435,7 @@ class _MissYouScreenState extends State<MissYouScreen>
         ForkNotice.failure(context, ForkFailure.network);
         return;
       }
-      setState(() => _mine = const OptimisticCount());
+      setState(() => _pending = const MissYouPending());
       ForkNotice.info(
         context,
         ruEn('Ваш счётчик сброшен', 'Your counter was reset'),
@@ -602,7 +638,7 @@ class _MissYouScreenState extends State<MissYouScreen>
   // ── Герой: круг с сердцем и оба счёта ───────────────────────────────────────
 
   Widget _hero(ColorScheme cs) {
-    final myCount = _mine.display;
+    final myCount = _pending.total;
     // Живой фон — поле сердечек (макет «Фон сердца «Скучаю»», вариант Б):
     // лежит под содержимым карточки, волна идёт от центра большого сердца.
     return ClipRRect(
@@ -730,8 +766,8 @@ class _MissYouScreenState extends State<MissYouScreen>
   /// строкой `custom` — на чипах его не показываем: их у человека несколько, а
   /// число на сервере одно на все.
   int _vibeCount(String type, {required bool mine}) {
-    final e = mine ? _state.mine : _state.partner;
-    return e?.byVibe[type] ?? 0;
+    if (mine) return _pending.vibe(type);
+    return _state.partner?.byVibe[type] ?? 0;
   }
 
   // ── Чипы: вайбы и свои пожелания ────────────────────────────────────────────
@@ -771,7 +807,7 @@ class _MissYouScreenState extends State<MissYouScreen>
 
   List<Widget> _chipList(ColorScheme cs) {
     return [
-      _VibeChip(
+      VibeChip(
         scheme: cs,
         icon: Icons.cloud_rounded,
         label: _s.thinkingOfYou,
@@ -779,7 +815,7 @@ class _MissYouScreenState extends State<MissYouScreen>
         partner: _vibeCount('thinking_of_you', mine: false),
         onTap: () => _sendVibe('thinking_of_you'),
       ),
-      _VibeChip(
+      VibeChip(
         scheme: cs,
         icon: Icons.volunteer_activism_rounded,
         label: _s.wantHug,
@@ -788,14 +824,14 @@ class _MissYouScreenState extends State<MissYouScreen>
         onTap: () => _sendVibe('want_hug'),
       ),
       for (final w in _wishes)
-        _VibeChip(
+        VibeChip(
           scheme: cs,
           icon: Icons.edit_rounded,
           label: w,
           onTap: () => _sendVibe('custom', text: w),
           onRemove: () => _removeWish(w),
         ),
-      _VibeChip(
+      VibeChip(
         scheme: cs,
         icon: Icons.add_rounded,
         label: _s.customVibe,
@@ -1165,7 +1201,7 @@ String lastSeenLabel(int? seenAtMs, String yesterdayWord) {
       '${seen.hour.toString().padLeft(2, '0')}:'
       '${seen.minute.toString().padLeft(2, '0')}';
   if (day == today) return hhmm;
-  if (day == today.subtract(const Duration(days: 1))) {
+  if (day == calendarDay(today, -1)) {
     return '${yesterdayWord.toLowerCase()} $hhmm';
   }
   return '${seen.day.toString().padLeft(2, '0')}.'
@@ -1299,138 +1335,6 @@ class _Tally extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _VibeChip extends StatelessWidget {
-  const _VibeChip({
-    required this.scheme,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.onRemove,
-    this.accent = false,
-    this.accentFill,
-    this.accentInk,
-    this.mine = 0,
-    this.partner = 0,
-  });
-
-  final ColorScheme scheme;
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final VoidCallback? onRemove;
-  final bool accent;
-  final Color? accentFill;
-  final Color? accentInk;
-
-  /// Сколько раз этот импульс отправляли: свои и партнёрские. Просьба тестера
-  /// («было бы классно добавить счёт в остальные пункты») — до этого число
-  /// стояло только у «Скучаю», хотя сервер считает каждый импульс.
-  final int mine;
-  final int partner;
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = accent
-        ? (accentFill ?? scheme.primary)
-        : scheme.surfaceContainerHigh;
-    final ink = accent ? (accentInk ?? scheme.onPrimary) : scheme.onSurface;
-
-    final chip = Material(
-      color: bg,
-      shape: const StadiumBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: accent ? ink : scheme.primary),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: ProfileTheme.bodyFont,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: ink,
-                  ),
-                ),
-              ),
-              if (mine > 0 || partner > 0) ...[
-                const SizedBox(width: 8),
-                _VibeTally(
-                  mine: mine,
-                  partner: partner,
-                  ink: ink,
-                  muted: accent
-                      ? ink.withValues(alpha: .62)
-                      : scheme.onSurfaceVariant,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-    if (onRemove == null) return chip;
-    // The menu is a separate 48dp target outside the sending surface.
-    return Row(
-      children: [
-        Expanded(child: chip),
-        PopupMenuButton<String>(
-          tooltip: ruEn('Действия с фразой', 'Phrase actions'),
-          icon: const Icon(Icons.more_vert_rounded),
-          onSelected: (_) => onRemove!(),
-          itemBuilder: (_) => [
-            PopupMenuItem(
-              value: 'delete',
-              child: Text(ruEn('Удалить фразу', 'Delete phrase')),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Два числа у импульса: свои и партнёрские, тем же порядком, что в шапке
-/// («мои / её»). Ноль не рисуется вовсе — пустая пилюля читалась бы поломкой.
-class _VibeTally extends StatelessWidget {
-  const _VibeTally({
-    required this.mine,
-    required this.partner,
-    required this.ink,
-    required this.muted,
-  });
-
-  final int mine;
-  final int partner;
-  final Color ink;
-  final Color muted;
-
-  @override
-  Widget build(BuildContext context) {
-    TextStyle style(Color color) => TextStyle(
-      fontFamily: ProfileTheme.bodyFont,
-      fontSize: 12.5,
-      fontWeight: FontWeight.w700,
-      color: color,
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('$mine', style: style(ink)),
-        Text(' · ', style: style(muted)),
-        Text('$partner', style: style(muted)),
-      ],
     );
   }
 }

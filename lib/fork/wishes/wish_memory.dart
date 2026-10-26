@@ -5,6 +5,7 @@ import '../../models/memory.dart';
 import '../../models/wish.dart';
 import '../../services/locale_service.dart';
 import '../../theme/fonts.dart';
+import '../../widgets/app_sheet.dart';
 import '../../widgets/storage_image.dart';
 
 /// Подпись воспоминания в списке выбора: название, подпись или вид записи.
@@ -54,7 +55,7 @@ Future<String?> pickWishMemory(
   required List<Memory> memories,
 }) {
   final list = wishMemoryCandidates(wish, memories);
-  return showModalBottomSheet<String>(
+  return showModalSheet<String>(
     context: context,
     isScrollControlled: true,
     builder: (ctx) {
