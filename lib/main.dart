@@ -597,7 +597,6 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
   // app_config.min_build) → блокирующий экран обновления. fail-open: при любой
   // ошибке/без конфига остаётся false и никого не блокирует.
   bool _forceUpdate = false;
-  AppLifecycleListener? _lifecycleListener;
 
   // Тема пересобирается при смене темы приложения (акцент берётся из активной
   // AppTheme). Кэшируем по акценту, чтобы не пересоздавать на каждый
@@ -732,25 +731,6 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_initDeferredStartup());
     });
-    // Отслеживаем жизненный цикл приложения для обновления статуса присутствия
-    _lifecycleListener = AppLifecycleListener(
-      onResume: () {
-        // Онлайн-презенс ведёт PresenceService (lifecycle-aware).
-        MascotInactivityNotificationService.instance.markAppOpened();
-      },
-      onPause: () {
-        MascotInactivityNotificationService.instance
-            .scheduleReminderAfterOneDay();
-      },
-      onDetach: () {
-        MascotInactivityNotificationService.instance
-            .scheduleReminderAfterOneDay();
-      },
-      onHide: () {
-        MascotInactivityNotificationService.instance
-            .scheduleReminderAfterOneDay();
-      },
-    );
   }
 
   @override
@@ -764,7 +744,6 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _lifecycleListener?.dispose();
     super.dispose();
   }
 
@@ -799,7 +778,7 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
       await MascotInactivityNotificationService.instance.init();
       await MascotInactivityNotificationService.instance.markAppOpened();
     } catch (e) {
-      debugPrint('Старт: напоминание о простое не поднялось — $e');
+      debugPrint('Старт: отмена старого напоминания не удалась — $e');
     }
     // Токен устройства для пушей Apple: без него закрытое приложение молчит —
     // сокет, по которому приходят уведомления, iOS убивает вместе с процессом.

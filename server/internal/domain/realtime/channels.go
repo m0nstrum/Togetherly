@@ -41,6 +41,7 @@ var published = map[string]bool{
 	"fork_battery":       true,
 	"fork_reels_matches": true,
 	"fork_movie_choices": true,
+	"pet_homes":          true,
 }
 
 // IsPublished — рассылаются ли изменения коллекции.

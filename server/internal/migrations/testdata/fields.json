@@ -468,6 +468,15 @@
     "last",
     "updated"
   ],
+  "pet_homes": [
+    "created",
+    "group_id",
+    "id",
+    "operations",
+    "revision",
+    "state",
+    "updated"
+  ],
   "push_tokens": [
     "created",
     "id",

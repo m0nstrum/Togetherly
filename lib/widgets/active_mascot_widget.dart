@@ -30,7 +30,7 @@ final ValueNotifier<bool> mascotHiddenNotifier = ValueNotifier<bool>(false);
 class ActiveMascotWidget extends StatefulWidget {
   final MascotService mascotService;
   final AppTheme theme;
-  final VoidCallback onOpenGallery;
+  final VoidCallback onOpenHome;
 
   /// Окно ночной сцены персонажа: у каждого своё, задаётся в настройках.
   final SleepWindow Function(String mascotId) sleepOf;
@@ -39,7 +39,7 @@ class ActiveMascotWidget extends StatefulWidget {
     super.key,
     required this.mascotService,
     required this.theme,
-    required this.onOpenGallery,
+    required this.onOpenHome,
     required this.sleepOf,
   });
 
@@ -307,7 +307,7 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
   static const String _kStreakKey = 'mascot_anim_last_streak';
 
   /// Сверяет серию с прошлым разом и играет подходящую сцену: выросла — рост,
-  /// тот же день — радость, обнулилась — грусть. Состояние держим в prefs, а не
+  /// рост серии — радость; пропуски не наказывают. Состояние держим в prefs, а не
   /// в памяти: главную открывают заново после каждого убийства приложения.
   Future<void> _reactToStreak() async {
     final anim = CatalogService.instance.animById(_svc.activeMascot?.id);
@@ -322,11 +322,6 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
       // Каждая третья отметка — рост, остальные просто радость: иначе маскот
       // растёт на глазах каждый день и ступени теряют смысл.
       _setAnim(streak % 3 == 0 ? MascotAnimState.grow : MascotAnimState.happy);
-    } else if (streak == 0) {
-      _setAnim(MascotAnimState.sad);
-      Future.delayed(const Duration(seconds: 4), () {
-        if (mounted) _setAnim(MascotAnimState.live);
-      });
     }
   }
 
@@ -427,13 +422,15 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
               ),
               ListTile(
                 leading: Icon(
-                  Icons.photo_library_outlined,
+                  Icons.cottage_outlined,
                   color: widget.theme.primary,
                 ),
-                title: Text(LocaleService.current.goToGallery),
+                title: Text(
+                  LocaleService.instance.isRussian ? 'Наш дом' : 'Our home',
+                ),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  widget.onOpenGallery();
+                  widget.onOpenHome();
                 },
               ),
               ListTile(
@@ -489,7 +486,7 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
               mascot: mascot,
               service: _svc,
               anim: _anim,
-              level: MascotAnim.levelForStreak(_svc.activeStreak),
+              level: MascotAnim.levelForStreak(_svc.state.growthFor(mascot)),
               sleep: widget.sleepOf(mascot.id),
               onAnimDone: () => _setAnim(MascotAnimState.live),
             ),

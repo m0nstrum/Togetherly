@@ -176,6 +176,7 @@ flutter:
     - assets/sounds/
     - assets/images/logo/
     - assets/icons/
+    - assets/pet_home/
     - assets/mascots/
     # Раскраски вдвоём: контур с прозрачным фоном (ложится поверх мазков) и
     # превью для каталога.

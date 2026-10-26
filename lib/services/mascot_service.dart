@@ -205,7 +205,7 @@ class MascotService extends ChangeNotifier {
     final anim = CatalogService.instance.animById(id);
 
     final streak = _state.activeStreak;
-    final record = mascot.recordStreak;
+    final record = _state.growthFor(mascot);
     final sleep = sleepResolver?.call(id) ?? SleepWindow.standard;
 
     unawaited(
@@ -219,9 +219,8 @@ class MascotService extends ChangeNotifier {
           name: mascot.localizedName,
           streakDays: streak,
           recordStreak: record > streak ? record : streak,
-          // Серия оборвалась: вчерашняя отметка была последней, и персонаж
-          // грустит — ровно как на главной.
-          sad: streak == 0 && (_state.streakLastOpenedDate ?? '').isNotEmpty,
+          // The pet stays content when people are away.
+          sad: false,
           sleep: mascotSleepsInWidget(anim)
               ? MascotSleepWindow(from: sleep.from, to: sleep.to)
               : MascotSleepWindow.none,
@@ -296,18 +295,8 @@ class MascotService extends ChangeNotifier {
     _syncStreakWidget();
   }
 
-  /// Серию активного маскота можно вернуть за ролик — сколько дней вернётся.
-  StreakRestoreOffer? get restoreOffer {
-    final id = _state.activeMascotId;
-    if (id == null || id.isEmpty) return null;
-    final entry = _state.mascotStreaks[id];
-    if (entry is! Map) return null;
-    return streakRestoreOffer(
-      Map<String, dynamic>.from(entry),
-      DateTime.now(),
-      pendingDay: _state.streakPendingDate,
-    );
-  }
+  /// No recovery prompts: absence does not harm the pet or its growth.
+  StreakRestoreOffer? get restoreOffer => null;
 
   /// Вернуть серию после досмотренного ролика. `false` — сервер отказал.
   Future<bool> restoreStreak() async {
