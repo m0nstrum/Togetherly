@@ -80,7 +80,9 @@ class WaitingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: cs.tertiaryContainer,
                             borderRadius: BorderRadius.circular(999),
@@ -102,8 +104,8 @@ class WaitingCard extends StatelessWidget {
                       days == null
                           ? s.waitingSetupTitle
                           : days <= 0
-                              ? s.waitingHomeToday
-                              : '${s.waitingUntilReturn} · ${s.waitingDaysLeft(days)}',
+                          ? s.waitingHomeToday
+                          : '${s.waitingUntilReturn} · ${s.waitingDaysLeft(days)}',
                       style: TextStyle(
                         fontFamily: ProfileTheme.bodyFont,
                         fontSize: 13.5,
@@ -121,13 +123,21 @@ class WaitingCard extends StatelessWidget {
                   theme: theme,
                   editing: true,
                 ),
-                icon: Icon(Icons.edit_rounded, size: 20, color: cs.onSurfaceVariant),
+                icon: Icon(
+                  Icons.edit_rounded,
+                  size: 20,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ],
           ),
           if (days != null && days > 0) ...[
             const SizedBox(height: 14),
-            _ReturnProgress(days: days, color: cs.primary, track: cs.surfaceContainerHighest),
+            _ReturnProgress(
+              days: days,
+              color: cs.primary,
+              track: cs.surfaceContainerHighest,
+            ),
           ],
           if (pair.hasClaimRequest) ...[
             const SizedBox(height: 16),
@@ -176,8 +186,7 @@ class _CancelRow extends StatelessWidget {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                  done ? s.waitingCancelDone : s.waitingCreateFailed),
+              content: Text(done ? s.waitingCancelDone : s.waitingCreateFailed),
             ),
           );
         },
@@ -264,8 +273,10 @@ class _CodeRow extends StatelessWidget {
                   }
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(16),
@@ -274,7 +285,9 @@ class _CodeRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          pair.claimToken.isEmpty ? '••••••••' : pair.claimToken,
+                          pair.claimToken.isEmpty
+                              ? '••••••••'
+                              : pair.claimToken,
                           style: TextStyle(
                             fontFamily: ProfileTheme.displayFont,
                             fontSize: 19,
@@ -284,7 +297,11 @@ class _CodeRow extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Icon(Icons.copy_rounded, size: 18, color: cs.onSurfaceVariant),
+                      Icon(
+                        Icons.copy_rounded,
+                        size: 18,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ],
                   ),
                 ),
@@ -298,9 +315,11 @@ class _CodeRow extends StatelessWidget {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(code.isEmpty
-                        ? s.waitingCreateFailed
-                        : '${s.waitingResetCode}: $code'),
+                    content: Text(
+                      code.isEmpty
+                          ? s.waitingCreateFailed
+                          : '${s.waitingResetCode}: $code',
+                    ),
                   ),
                 );
               },

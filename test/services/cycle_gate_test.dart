@@ -28,7 +28,13 @@ void main() {
   });
 
   test('на платформе без Togetherly+ вести некуда', () {
-    expect(cycleTapAction(gate: PlusGate.hidden, known: true), CycleTap.nothing);
-    expect(cycleTapAction(gate: PlusGate.hidden, known: false), CycleTap.nothing);
+    expect(
+      cycleTapAction(gate: PlusGate.hidden, known: true),
+      CycleTap.nothing,
+    );
+    expect(
+      cycleTapAction(gate: PlusGate.hidden, known: false),
+      CycleTap.nothing,
+    );
   });
 }

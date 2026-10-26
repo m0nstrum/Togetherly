@@ -56,8 +56,9 @@ void main() {
         final image = await boundary.toImage(pixelRatio: 2);
         final data = await image.toByteData(format: ui.ImageByteFormat.png);
         final dir = Directory('build/nav-preview')..createSync(recursive: true);
-        File('${dir.path}/${sample.$1}.png')
-            .writeAsBytesSync(data!.buffer.asUint8List());
+        File(
+          '${dir.path}/${sample.$1}.png',
+        ).writeAsBytesSync(data!.buffer.asUint8List());
       });
     });
   }

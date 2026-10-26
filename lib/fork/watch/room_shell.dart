@@ -47,12 +47,17 @@ class ForkRoomTopBar extends StatelessWidget {
 
   static const double height = 56;
   static double heightFor(BuildContext context) =>
-      (MediaQuery.textScalerOf(context).scale(12.5) * 2.7 + 16).clamp(height, double.infinity);
+      (MediaQuery.textScalerOf(context).scale(12.5) * 2.7 + 16).clamp(
+        height,
+        double.infinity,
+      );
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final name = partnerName.trim().isEmpty ? ruEn('Партнёр', 'Partner') : partnerName.trim();
+    final name = partnerName.trim().isEmpty
+        ? ruEn('Партнёр', 'Partner')
+        : partnerName.trim();
     final stage = voice?.stage ?? VoiceStage.idle;
     final inCall = stage != VoiceStage.idle;
     final live = stage == VoiceStage.live;
@@ -67,50 +72,68 @@ class ForkRoomTopBar extends StatelessWidget {
           ),
           Expanded(
             child: Row(
-                  children: [
-                    Container(
-                      key: const ValueKey('fork-room-presence-dot'),
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: partnerHere || live ? const Color(0xFF30A46C) : cs.outline,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        inCall
-                            ? voiceStageText(stage, voice?.problem, name: name)
-                            : partnerHere
-                            ? ruEn('$name в комнате', '$name is here')
-                            : invited
-                                ? ruEn('Позвали — ждём $name', 'Invited — waiting for $name')
-                                : ruEn('$name не в комнате', '$name isn’t here'),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
-                      ),
-                    ),
-                  ],
+              children: [
+                Container(
+                  key: const ValueKey('fork-room-presence-dot'),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: partnerHere || live
+                        ? const Color(0xFF30A46C)
+                        : cs.outline,
+                  ),
                 ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    inCall
+                        ? voiceStageText(stage, voice?.problem, name: name)
+                        : partnerHere
+                        ? ruEn('$name в комнате', '$name is here')
+                        : invited
+                        ? ruEn(
+                            'Позвали — ждём $name',
+                            'Invited — waiting for $name',
+                          )
+                        : ruEn('$name не в комнате', '$name isn’t here'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           if (!partnerHere)
             IconButton(
-              tooltip: invited ? ruEn('Позвали — ждём', 'Invited — waiting') : ruEn('Позвать', 'Invite'),
+              tooltip: invited
+                  ? ruEn('Позвали — ждём', 'Invited — waiting')
+                  : ruEn('Позвать', 'Invite'),
               onPressed: invited ? null : onInvite,
               icon: const Icon(Icons.notifications_active_outlined),
             ),
           IconButton(
-            tooltip: inCall ? ruEn('Открыть звонок', 'Open the call') : ruEn('Позвонить', 'Call'),
+            tooltip: inCall
+                ? ruEn('Открыть звонок', 'Open the call')
+                : ruEn('Позвонить', 'Call'),
             onPressed: onCall,
             style: inCall
                 ? IconButton.styleFrom(
-                    backgroundColor: live ? const Color(0xFF30A46C) : cs.tertiaryContainer,
-                    foregroundColor: live ? Colors.white : cs.onTertiaryContainer,
+                    backgroundColor: live
+                        ? const Color(0xFF30A46C)
+                        : cs.tertiaryContainer,
+                    foregroundColor: live
+                        ? Colors.white
+                        : cs.onTertiaryContainer,
                   )
                 : null,
-            icon: Icon(inCall ? Icons.phone_in_talk_rounded : Icons.call_outlined),
+            icon: Icon(
+              inCall ? Icons.phone_in_talk_rounded : Icons.call_outlined,
+            ),
           ),
           PopupMenuButton<String>(
             tooltip: ruEn('Ещё', 'More'),
@@ -129,7 +152,12 @@ class ForkRoomTopBar extends StatelessWidget {
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.link_rounded),
-                  title: Text(ruEn('Скопировать ссылку для браузера', 'Copy the browser link')),
+                  title: Text(
+                    ruEn(
+                      'Скопировать ссылку для браузера',
+                      'Copy the browser link',
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -163,11 +191,11 @@ class ForkNowPlaying extends StatelessWidget {
   final VoidCallback onFullscreen;
 
   IconData get _icon => switch (live.kind) {
-        'youtube' => Icons.smart_display_rounded,
-        'file' || 'video' => Icons.movie_rounded,
-        'yadisk' || 'drive' || 'mega' => Icons.cloud_rounded,
-        _ => Icons.play_circle_rounded,
-      };
+    'youtube' => Icons.smart_display_rounded,
+    'file' || 'video' => Icons.movie_rounded,
+    'yadisk' || 'drive' || 'mega' => Icons.cloud_rounded,
+    _ => Icons.play_circle_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -227,14 +255,19 @@ class ForkNowPlaying extends StatelessWidget {
         ),
       );
     }
-    final head = live.title.isNotEmpty ? live.title : (live.label.isEmpty ? ruEn('Видео', 'Video') : live.label);
+    final head = live.title.isNotEmpty
+        ? live.title
+        : (live.label.isEmpty ? ruEn('Видео', 'Video') : live.label);
     final sub = live.offline
         ? ruEn('Нет связи — переподключаемся…', 'Offline — reconnecting…')
         : live.lastAct.isNotEmpty
-            ? live.lastAct
-            : live.manual
-                ? ruEn('Этот плеер каждый жмёт сам — по отсчёту', 'Each of you presses play — on the countdown')
-                : live.status;
+        ? live.lastAct
+        : live.manual
+        ? ruEn(
+            'Этот плеер каждый жмёт сам — по отсчёту',
+            'Each of you presses play — on the countdown',
+          )
+        : live.status;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
       child: Row(
@@ -254,22 +287,31 @@ class ForkNowPlaying extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(head,
+                Text(
+                  head,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (sub.isNotEmpty)
+                  Text(
+                    sub,
+                    key: const ValueKey('fork-room-now-sub'),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                if (sub.isNotEmpty)
-                  Text(sub,
-                      key: const ValueKey('fork-room-now-sub'),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: tt.bodySmall?.copyWith(color: live.offline ? cs.error : cs.onSurfaceVariant)),
+                    style: tt.bodySmall?.copyWith(
+                      color: live.offline ? cs.error : cs.onSurfaceVariant,
+                    ),
+                  ),
               ],
             ),
           ),
           if (live.manual) ...[
             IconButton(
-              tooltip: ruEn('Начать вместе: отсчёт 3·2·1', 'Start together: 3·2·1'),
+              tooltip: ruEn(
+                'Начать вместе: отсчёт 3·2·1',
+                'Start together: 3·2·1',
+              ),
               icon: const Icon(Icons.timer_3_rounded),
               onPressed: onTogether,
             ),
@@ -281,18 +323,54 @@ class ForkNowPlaying extends StatelessWidget {
           ] else
             IconButton(
               key: const ValueKey('fork-room-toggle'),
-              tooltip: live.playing ? ruEn('Пауза у обоих', 'Pause for both') : ruEn('Играть у обоих', 'Play for both'),
-              icon: Icon(live.playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
+              tooltip: live.playing
+                  ? ruEn('Пауза у обоих', 'Pause for both')
+                  : ruEn('Играть у обоих', 'Play for both'),
+              icon: Icon(
+                live.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              ),
               onPressed: onToggle,
             ),
           PopupMenuButton<String>(
             tooltip: ruEn('Действия с видео', 'Video actions'),
-            onSelected: (value) { if (value == 'fullscreen') { onFullscreen(); } else if (value == 'queue') { onQueue?.call(); } else if (value == 'pip') { onPip?.call(); } else { onPick(); } },
+            onSelected: (value) {
+              if (value == 'fullscreen') {
+                onFullscreen();
+              } else if (value == 'queue') {
+                onQueue?.call();
+              } else if (value == 'pip') {
+                onPip?.call();
+              } else {
+                onPick();
+              }
+            },
             itemBuilder: (_) => [
-              if (onPip != null) PopupMenuItem(value: 'pip', child: Text(ruEn('Поверх приложений (PiP)', 'Picture-in-picture'))),
-              if (onQueue != null) PopupMenuItem(value: 'queue', child: Text(ruEn('Очередь видео · ${live.queue.length}', 'Video queue · ${live.queue.length}'))),
-              PopupMenuItem(value: 'fullscreen', child: Text(ruEn('Во весь экран', 'Full screen'))),
-              PopupMenuItem(value: 'pick', key: const ValueKey('fork-room-change'), child: Text(ruEn('Другое видео', 'Another video'))),
+              if (onPip != null)
+                PopupMenuItem(
+                  value: 'pip',
+                  child: Text(
+                    ruEn('Поверх приложений (PiP)', 'Picture-in-picture'),
+                  ),
+                ),
+              if (onQueue != null)
+                PopupMenuItem(
+                  value: 'queue',
+                  child: Text(
+                    ruEn(
+                      'Очередь видео · ${live.queue.length}',
+                      'Video queue · ${live.queue.length}',
+                    ),
+                  ),
+                ),
+              PopupMenuItem(
+                value: 'fullscreen',
+                child: Text(ruEn('Во весь экран', 'Full screen')),
+              ),
+              PopupMenuItem(
+                value: 'pick',
+                key: const ValueKey('fork-room-change'),
+                child: Text(ruEn('Другое видео', 'Another video')),
+              ),
             ],
           ),
         ],
@@ -355,16 +433,24 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
   Widget _body(BuildContext context, RoomChat? chat) {
     final cs = Theme.of(context).colorScheme;
     final items = <({int at, RoomMessage? m, ForkRoomLine? l})>[
-      for (final m in chat?.messages ?? const <RoomMessage>[]) (at: m.at, m: m, l: null),
+      for (final m in chat?.messages ?? const <RoomMessage>[])
+        (at: m.at, m: m, l: null),
       for (final l in widget.live.lines) (at: l.at, m: null, l: l),
     ]..sort((a, b) => a.at.compareTo(b.at));
     final usable = chat?.canSend == true;
     final warn = chat != null && !chat.secure;
-    final ask = chat != null && chat.browser && !chat.openAllowed && !chat.noPairKey;
+    final ask =
+        chat != null && chat.browser && !chat.openAllowed && !chat.noPairKey;
     final status = chat == null
         ? (widget.starting
-            ? ruEn('Поднимаем шифрованный чат…', 'Starting the encrypted chat…')
-            : ruEn('Чат появится, когда ключи пары обменяются', 'Chat appears once your pair keys are exchanged'))
+              ? ruEn(
+                  'Поднимаем шифрованный чат…',
+                  'Starting the encrypted chat…',
+                )
+              : ruEn(
+                  'Чат появится, когда ключи пары обменяются',
+                  'Chat appears once your pair keys are exchanged',
+                ))
         : forkRoomChatStatus(chat);
     return Column(
       children: [
@@ -372,14 +458,22 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
           padding: const EdgeInsets.fromLTRB(16, 2, 8, 2),
           child: Row(
             children: [
-              Icon(warn ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
-                  size: 14, color: warn ? cs.error : cs.onSurfaceVariant),
+              Icon(
+                warn ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
+                size: 14,
+                color: warn ? cs.error : cs.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(status,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11.5, color: warn ? cs.error : cs.onSurfaceVariant)),
+                child: Text(
+                  status,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: warn ? cs.error : cs.onSurfaceVariant,
+                  ),
+                ),
               ),
               if (ask)
                 TextButton(
@@ -395,8 +489,10 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      ruEn('Здесь будет ваша переписка и что вы делали с видео: кто включил, поставил паузу, перемотал.',
-                          'Your chat and what you both do with the video — who started, paused or skipped — show up here.'),
+                      ruEn(
+                        'Здесь будет ваша переписка и что вы делали с видео: кто включил, поставил паузу, перемотал.',
+                        'Your chat and what you both do with the video — who started, paused or skipped — show up here.',
+                      ),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: cs.onSurfaceVariant),
                     ),
@@ -408,7 +504,9 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
                   itemCount: items.length,
                   itemBuilder: (_, i) {
                     final it = items[items.length - 1 - i];
-                    return it.m != null ? _bubble(it.m!, cs) : _event(it.l!, cs);
+                    return it.m != null
+                        ? _bubble(it.m!, cs)
+                        : _event(it.l!, cs);
                   },
                 ),
         ),
@@ -431,8 +529,14 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
                       isDense: true,
                       filled: true,
                       fillColor: cs.surfaceContainerHighest,
-                      hintText: ruEn('Написать партнёру…', 'Message your partner…'),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      hintText: ruEn(
+                        'Написать партнёру…',
+                        'Message your partner…',
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(22),
                         borderSide: BorderSide.none,
@@ -456,65 +560,82 @@ class _ForkRoomChatPanelState extends State<ForkRoomChatPanel> {
   }
 
   Widget _bubble(RoomMessage m, ColorScheme cs) => Align(
-        alignment: m.mine ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 3),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          constraints: const BoxConstraints(maxWidth: 300),
-          decoration: BoxDecoration(
-            color: m.mine ? cs.primaryContainer : cs.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
+    alignment: m.mine ? Alignment.centerRight : Alignment.centerLeft,
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      constraints: const BoxConstraints(maxWidth: 300),
+      decoration: BoxDecoration(
+        color: m.mine ? cs.primaryContainer : cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Вдвоём имя не нужно; подписываем только открытые реплики
+          // (в комнате браузер, и это может быть не партнёр).
+          if (!m.mine && m.open && m.name.isNotEmpty)
+            Text(
+              m.name,
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+            ),
+          Text(
+            m.text,
+            style: TextStyle(
+              color: m.mine ? cs.onPrimaryContainer : cs.onSurface,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Вдвоём имя не нужно; подписываем только открытые реплики
-              // (в комнате браузер, и это может быть не партнёр).
-              if (!m.mine && m.open && m.name.isNotEmpty)
-                Text(m.name, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              Text(m.text, style: TextStyle(color: m.mine ? cs.onPrimaryContainer : cs.onSurface)),
-              if (forkRoomMessageTime(m.at).isNotEmpty)
-                Text(forkRoomMessageTime(m.at), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-              if (m.pending)
-                Text(ruEn('Отправляем…', 'Sending…'), style: TextStyle(color: cs.onSurfaceVariant)),
-              if (m.failed)
-                TextButton.icon(
-                  onPressed: widget.chat?.canSend == true && !m.pending
-                      ? () => widget.chat!.retry(m) : null,
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: Text(ruEn('Не отправлено · Повторить', 'Not sent · Retry')),
-                ),
-            ],
-          ),
-        ),
-      );
-
-  static IconData _eventIcon(String kind) => switch (kind) {
-        'play' => Icons.play_arrow_rounded,
-        'pause' || 'pauseNow' => Icons.pause_rounded,
-        'seek' => Icons.fast_forward_rounded,
-        'source' => Icons.movie_creation_outlined,
-        'here' => Icons.login_rounded,
-        'gone' => Icons.logout_rounded,
-        'countdown' => Icons.timer_3_rounded,
-        _ => Icons.info_outline_rounded,
-      };
-
-  Widget _event(ForkRoomLine l, ColorScheme cs) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(_eventIcon(l.kind), size: 14, color: cs.onSurfaceVariant),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                l.text,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
+          if (forkRoomMessageTime(m.at).isNotEmpty)
+            Text(
+              forkRoomMessageTime(m.at),
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+            ),
+          if (m.pending)
+            Text(
+              ruEn('Отправляем…', 'Sending…'),
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+          if (m.failed)
+            TextButton.icon(
+              onPressed: widget.chat?.canSend == true && !m.pending
+                  ? () => widget.chat!.retry(m)
+                  : null,
+              icon: const Icon(Icons.refresh, size: 16),
+              label: Text(
+                ruEn('Не отправлено · Повторить', 'Not sent · Retry'),
               ),
             ),
-          ],
+        ],
+      ),
+    ),
+  );
+
+  static IconData _eventIcon(String kind) => switch (kind) {
+    'play' => Icons.play_arrow_rounded,
+    'pause' || 'pauseNow' => Icons.pause_rounded,
+    'seek' => Icons.fast_forward_rounded,
+    'source' => Icons.movie_creation_outlined,
+    'here' => Icons.login_rounded,
+    'gone' => Icons.logout_rounded,
+    'countdown' => Icons.timer_3_rounded,
+    _ => Icons.info_outline_rounded,
+  };
+
+  Widget _event(ForkRoomLine l, ColorScheme cs) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(_eventIcon(l.kind), size: 14, color: cs.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            l.text,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }

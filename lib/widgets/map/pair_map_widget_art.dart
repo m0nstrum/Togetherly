@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
 
-import '../../fork/battery/battery_ui.dart' show forkBatteryIconFor; // fork
+import '../../fork/battery/battery_ui.dart' show forkBatteryIconFor;
 import '../../models/globe_math.dart';
 import '../../models/pair_map_widget_view.dart';
 import '../../services/map/map_palette.dart';
@@ -17,7 +17,11 @@ class MapWidgetRow {
   final bool mine;
   final String name;
   final String detail;
-  const MapWidgetRow({required this.mine, required this.name, required this.detail});
+  const MapWidgetRow({
+    required this.mine,
+    required this.name,
+    required this.detail,
+  });
 }
 
 /// Всё, из чего складывается картинка виджета «Где мы». Координаты — в
@@ -114,8 +118,16 @@ class PairMapWidgetArt {
   });
 
   // Размеры деталей по размеру виджета: шарик, пилюля, подписи.
-  double get _avatar => switch (kind) { MapWidgetSize.s => 38, MapWidgetSize.m => 42, MapWidgetSize.l => 48 };
-  double get _pillFont => switch (kind) { MapWidgetSize.s => 12.5, MapWidgetSize.m => 14, MapWidgetSize.l => 15.5 };
+  double get _avatar => switch (kind) {
+    MapWidgetSize.s => 38,
+    MapWidgetSize.m => 42,
+    MapWidgetSize.l => 48,
+  };
+  double get _pillFont => switch (kind) {
+    MapWidgetSize.s => 12.5,
+    MapWidgetSize.m => 14,
+    MapWidgetSize.l => 15.5,
+  };
   double get _panelHeight => kind == MapWidgetSize.l ? 112 : 0;
 
   void paint(Canvas canvas) {
@@ -171,11 +183,21 @@ class PairMapWidgetArt {
     if (f == null) return;
     // Вокруг шара — ночь цвета поверхности, чуть темнее суши: так шар
     // держится на картинке, а не растворяется в ней.
-    canvas.drawRect(Offset.zero & size, Paint()..color = Color.lerp(surface, palette.water, .35)!);
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = Color.lerp(surface, palette.water, .35)!,
+    );
     final scene = GlobeScene.globe(f);
     final a = me, b = partner;
-    final placed = (a != null && b != null) ? _arcAndPill(a, b, globeArcBase) : null;
-    GlobePainter(scene: scene, land: land, palette: palette, arc: placed?.$1 ?? const []).paint(canvas, size);
+    final placed = (a != null && b != null)
+        ? _arcAndPill(a, b, globeArcBase)
+        : null;
+    GlobePainter(
+      scene: scene,
+      land: land,
+      palette: palette,
+      arc: placed?.$1 ?? const [],
+    ).paint(canvas, size);
     if (placed != null) {
       _paintBalloons(canvas);
       _pill(canvas, placed.$2, distance);
@@ -189,10 +211,31 @@ class PairMapWidgetArt {
     if (mode == PairMapMode.near && a != null && b != null) {
       final mid = Offset.lerp(a, b, .5)!;
       final d = _avatar;
-      _balloon(canvas, mid.translate(-d * .42, 0), meAvatar, meInitial, meBg, meFg, stale: false);
-      _balloon(canvas, mid.translate(d * .42, 0), partnerAvatar, partnerInitial, partnerBg, partnerFg,
-          stale: partnerStale, battery: true);
-      _pill(canvas, mid.translate(0, -(d + 22 + _pillFont)), distance, heart: true);
+      _balloon(
+        canvas,
+        mid.translate(-d * .42, 0),
+        meAvatar,
+        meInitial,
+        meBg,
+        meFg,
+        stale: false,
+      );
+      _balloon(
+        canvas,
+        mid.translate(d * .42, 0),
+        partnerAvatar,
+        partnerInitial,
+        partnerBg,
+        partnerFg,
+        stale: partnerStale,
+        battery: true,
+      );
+      _pill(
+        canvas,
+        mid.translate(0, -(d + 22 + _pillFont)),
+        distance,
+        heart: true,
+      );
       return;
     }
     if (a != null && b != null) {
@@ -211,12 +254,18 @@ class PairMapWidgetArt {
   /// друг над другом или близко, дуга поднимается выше, пока вершина не
   /// выйдет на свободное место. Не вышла — пилюля встаёт над головами.
   (List<Offset>, Offset) _arcAndPill(Offset a, Offset b, List<Offset> base) {
-    final line = base.length > 2 ? base : [for (var i = 0; i <= 32; i++) Offset.lerp(a, b, i / 32)!];
+    final line = base.length > 2
+        ? base
+        : [for (var i = 0; i <= 32; i++) Offset.lerp(a, b, i / 32)!];
     final pill = _pillSize(distance);
     final room = math.max(0.0, (a.dy + b.dy) / 2 - pill.height / 2 - 8);
     final heads = [_balloonRect(a), _balloonRect(b)];
     bool clear(Offset at) {
-      final r = Rect.fromCenter(center: at, width: pill.width + 8, height: pill.height + 6);
+      final r = Rect.fromCenter(
+        center: at,
+        width: pill.width + 8,
+        height: pill.height + 6,
+      );
       return heads.every((h) => !h.overlaps(r));
     }
 
@@ -230,19 +279,33 @@ class PairMapWidgetArt {
     final arc = liftAlong(line, maxLift: room, minLift: room);
     final apex = arcApex(arc);
     final top = heads.map((h) => h.top).reduce(math.min);
-    final y = math.max(pill.height / 2 + 6, math.min(apex.dy, top - pill.height / 2 - 4));
+    final y = math.max(
+      pill.height / 2 + 6,
+      math.min(apex.dy, top - pill.height / 2 - 4),
+    );
     return (arc, Offset(apex.dx, y));
   }
 
   /// Где на картинке шарик человека с точкой в [dot].
   Rect _balloonRect(Offset dot) {
     final d = _avatar;
-    return Rect.fromLTRB(dot.dx - d / 2 - 3, dot.dy - (9 + d + 6), dot.dx + d / 2 + 3, dot.dy + 5);
+    return Rect.fromLTRB(
+      dot.dx - d / 2 - 3,
+      dot.dy - (9 + d + 6),
+      dot.dx + d / 2 + 3,
+      dot.dy + 5,
+    );
   }
 
   Size _pillSize(String text) {
     final fs = _pillFont;
-    final tp = _painter(text, fontSize: fs, color: onFill, weight: 800, display: true);
+    final tp = _painter(
+      text,
+      fontSize: fs,
+      color: onFill,
+      weight: 800,
+      display: true,
+    );
     final icon = _iconPainter(Icons.favorite_rounded, fs * .95, onFill);
     final size = Size(fs * 1.6 + icon.width + fs * .35 + tp.width, fs * 2.15);
     tp.dispose();
@@ -252,17 +315,43 @@ class PairMapWidgetArt {
 
   void _paintBalloons(Canvas canvas) {
     final people = <(Offset, ui.Image?, String, Color, Color, bool, bool)>[
-      if (partner != null) (partner!, partnerAvatar, partnerInitial, partnerBg, partnerFg, partnerStale, true),
+      if (partner != null)
+        (
+          partner!,
+          partnerAvatar,
+          partnerInitial,
+          partnerBg,
+          partnerFg,
+          partnerStale,
+          true,
+        ),
       if (me != null) (me!, meAvatar, meInitial, meBg, meFg, false, false),
     ]..sort((x, y) => x.$1.dy.compareTo(y.$1.dy));
     for (final p in people) {
-      _balloon(canvas, p.$1, p.$2, p.$3, p.$4, p.$5, stale: p.$6, battery: p.$7);
+      _balloon(
+        canvas,
+        p.$1,
+        p.$2,
+        p.$3,
+        p.$4,
+        p.$5,
+        stale: p.$6,
+        battery: p.$7,
+      );
     }
   }
 
   /// Шарик: точка на месте, ножка вверх и аватарка в кольце цвета поверхности.
-  void _balloon(Canvas canvas, Offset dot, ui.Image? img, String initial, Color bg, Color fg,
-      {required bool stale, bool battery = false}) {
+  void _balloon(
+    Canvas canvas,
+    Offset dot,
+    ui.Image? img,
+    String initial,
+    Color bg,
+    Color fg, {
+    required bool stale,
+    bool battery = false,
+  }) {
     final d = _avatar;
     const stem = 9.0, ring = 3.0;
     final c = dot.translate(0, -(stem + d / 2 + ring));
@@ -290,10 +379,23 @@ class PairMapWidgetArt {
     final box = Rect.fromCircle(center: c, radius: d / 2);
     if (img != null) {
       final src = _coverSrc(img, box.size);
-      canvas.drawImageRect(img, src, box, Paint()..filterQuality = FilterQuality.medium);
+      canvas.drawImageRect(
+        img,
+        src,
+        box,
+        Paint()..filterQuality = FilterQuality.medium,
+      );
     } else {
       canvas.drawRect(box, Paint()..color = bg);
-      _text(canvas, initial, c, fontSize: d * .42, color: fg, weight: 700, center: true);
+      _text(
+        canvas,
+        initial,
+        c,
+        fontSize: d * .42,
+        color: fg,
+        weight: 700,
+        center: true,
+      );
     }
     canvas.restore();
     if (stale) canvas.restore();
@@ -310,7 +412,11 @@ class PairMapWidgetArt {
     final fg = low ? lowColor : onSurface;
     final fs = kind == MapWidgetSize.s ? 9.5 : 10.5;
     final tp = _painter('$level%', fontSize: fs, color: fg, weight: 700);
-    final icon = _iconPainter(forkBatteryIconFor(level, charging: partnerCharging), fs * 1.35, fg);
+    final icon = _iconPainter(
+      forkBatteryIconFor(level, charging: partnerCharging),
+      fs * 1.35,
+      fg,
+    );
     final h = fs * 1.85;
     final w = fs * .6 + icon.height + fs * .15 + tp.width + fs * .6;
     final center = c.translate(d * .38, d * .44);
@@ -327,7 +433,13 @@ class PairMapWidgetArt {
     canvas.rotate(math.pi / 2);
     icon.paint(canvas, Offset(-icon.width / 2, -icon.height / 2));
     canvas.restore();
-    tp.paint(canvas, Offset(r.left + fs * .6 + icon.height + fs * .15, r.center.dy - tp.height / 2));
+    tp.paint(
+      canvas,
+      Offset(
+        r.left + fs * .6 + icon.height + fs * .15,
+        r.center.dy - tp.height / 2,
+      ),
+    );
     tp.dispose();
     icon.dispose();
   }
@@ -343,14 +455,24 @@ class PairMapWidgetArt {
   void _pill(Canvas canvas, Offset at, String text, {bool heart = true}) {
     if (text.isEmpty) return;
     final fs = _pillFont;
-    final tp = _painter(text, fontSize: fs, color: onFill, weight: 800, display: true);
-    final icon = heart ? _iconPainter(Icons.favorite_rounded, fs * .95, onFill) : null;
+    final tp = _painter(
+      text,
+      fontSize: fs,
+      color: onFill,
+      weight: 800,
+      display: true,
+    );
+    final icon = heart
+        ? _iconPainter(Icons.favorite_rounded, fs * .95, onFill)
+        : null;
     final gap = icon == null ? 0.0 : fs * .35;
     final h = fs * 2.15;
     final w = fs * 1.6 + (icon?.width ?? 0) + gap + tp.width;
     var r = Rect.fromCenter(center: at, width: w, height: h);
     // Не даём пилюле уйти за край картинки.
-    final dx = r.left < 6 ? 6 - r.left : (r.right > size.width - 6 ? size.width - 6 - r.right : 0.0);
+    final dx = r.left < 6
+        ? 6 - r.left
+        : (r.right > size.width - 6 ? size.width - 6 - r.right : 0.0);
     final dy = r.top < 6 ? 6 - r.top : 0.0;
     r = r.shift(Offset(dx, dy));
     final rr = RRect.fromRectAndRadius(r, Radius.circular(h / 2));
@@ -370,18 +492,33 @@ class PairMapWidgetArt {
 
   void _paintCaption(Canvas canvas, String text) {
     final fs = kind == MapWidgetSize.s ? 10.5 : 11.5;
-    final tp = _painter(text, fontSize: fs, color: onSurface, weight: 600, maxWidth: size.width - 40);
+    final tp = _painter(
+      text,
+      fontSize: fs,
+      color: onSurface,
+      weight: 600,
+      maxWidth: size.width - 40,
+    );
     final h = fs * 2.2;
     final r = Rect.fromLTWH(12, size.height - 10 - h, tp.width + fs * 1.6, h);
-    canvas.drawRRect(RRect.fromRectAndRadius(r, Radius.circular(h / 2)), Paint()..color = surface.withValues(alpha: .94));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r, Radius.circular(h / 2)),
+      Paint()..color = surface.withValues(alpha: .94),
+    );
     tp.paint(canvas, Offset(r.left + fs * .8, r.center.dy - tp.height / 2));
     tp.dispose();
   }
 
   void _paintPanel(Canvas canvas) {
     final top = size.height - _panelHeight;
-    final panel = RRect.fromLTRBAndCorners(0, top, size.width, size.height + 1,
-        topLeft: const Radius.circular(24), topRight: const Radius.circular(24));
+    final panel = RRect.fromLTRBAndCorners(
+      0,
+      top,
+      size.width,
+      size.height + 1,
+      topLeft: const Radius.circular(24),
+      topRight: const Radius.circular(24),
+    );
     canvas.drawRRect(panel, Paint()..color = surface);
     var y = top + 14.0;
     for (final row in rows.take(2)) {
@@ -389,21 +526,49 @@ class PairMapWidgetArt {
       final c = Offset(16 + d / 2, y + d / 2);
       final img = row.mine ? meAvatar : partnerAvatar;
       canvas.save();
-      canvas.clipPath(Path()..addOval(Rect.fromCircle(center: c, radius: d / 2)));
+      canvas.clipPath(
+        Path()..addOval(Rect.fromCircle(center: c, radius: d / 2)),
+      );
       final box = Rect.fromCircle(center: c, radius: d / 2);
       if (img != null) {
-        canvas.drawImageRect(img, _coverSrc(img, box.size), box, Paint()..filterQuality = FilterQuality.medium);
+        canvas.drawImageRect(
+          img,
+          _coverSrc(img, box.size),
+          box,
+          Paint()..filterQuality = FilterQuality.medium,
+        );
       } else {
         canvas.drawRect(box, Paint()..color = row.mine ? meBg : partnerBg);
-        _text(canvas, row.mine ? meInitial : partnerInitial, c,
-            fontSize: 13, color: row.mine ? meFg : partnerFg, weight: 700, center: true);
+        _text(
+          canvas,
+          row.mine ? meInitial : partnerInitial,
+          c,
+          fontSize: 13,
+          color: row.mine ? meFg : partnerFg,
+          weight: 700,
+          center: true,
+        );
       }
       canvas.restore();
-      final name = _painter(row.name, fontSize: 14, color: onSurface, weight: 700, maxWidth: 120);
+      final name = _painter(
+        row.name,
+        fontSize: 14,
+        color: onSurface,
+        weight: 700,
+        maxWidth: 120,
+      );
       name.paint(canvas, Offset(16 + d + 10, c.dy - name.height / 2));
-      final detail = _painter(row.detail, fontSize: 12.5, color: onSurfaceVariant, weight: 500,
-          maxWidth: size.width - (16 + d + 10 + name.width + 8) - 16);
-      detail.paint(canvas, Offset(size.width - 16 - detail.width, c.dy - detail.height / 2));
+      final detail = _painter(
+        row.detail,
+        fontSize: 12.5,
+        color: onSurfaceVariant,
+        weight: 500,
+        maxWidth: size.width - (16 + d + 10 + name.width + 8) - 16,
+      );
+      detail.paint(
+        canvas,
+        Offset(size.width - 16 - detail.width, c.dy - detail.height / 2),
+      );
       name.dispose();
       detail.dispose();
       y += 44;
@@ -422,19 +587,41 @@ class PairMapWidgetArt {
       tilt: 0,
     );
     canvas.saveLayer(null, Paint()..color = const Color(0x8CFFFFFF));
-    GlobePainter(scene: GlobeScene.globe(frame), land: land, palette: palette, arc: const []).paint(canvas, size);
+    GlobePainter(
+      scene: GlobeScene.globe(frame),
+      land: land,
+      palette: palette,
+      arc: const [],
+    ).paint(canvas, size);
     canvas.restore();
     final t = title ?? '';
     final st = subtitle ?? '';
     final small = kind == MapWidgetSize.s;
-    final titleTp = _painter(t,
-        fontSize: switch (kind) { MapWidgetSize.s => 14, MapWidgetSize.m => 17, MapWidgetSize.l => 21 },
-        color: onSurface, weight: 800, display: true,
-        maxWidth: size.width - 32, align: TextAlign.center, lines: 3);
+    final titleTp = _painter(
+      t,
+      fontSize: switch (kind) {
+        MapWidgetSize.s => 14,
+        MapWidgetSize.m => 17,
+        MapWidgetSize.l => 21,
+      },
+      color: onSurface,
+      weight: 800,
+      display: true,
+      maxWidth: size.width - 32,
+      align: TextAlign.center,
+      lines: 3,
+    );
     final subTp = small || st.isEmpty
         ? null
-        : _painter(st, fontSize: kind == MapWidgetSize.l ? 14.5 : 13, color: onSurfaceVariant, weight: 500,
-            maxWidth: size.width - 48, align: TextAlign.center, lines: 3);
+        : _painter(
+            st,
+            fontSize: kind == MapWidgetSize.l ? 14.5 : 13,
+            color: onSurfaceVariant,
+            weight: 500,
+            maxWidth: size.width - 48,
+            align: TextAlign.center,
+            lines: 3,
+          );
     final total = titleTp.height + (subTp == null ? 0 : 6 + subTp.height);
     var y = (size.height * (kind == MapWidgetSize.l ? .38 : .42)) - total / 2;
     titleTp.paint(canvas, Offset((size.width - titleTp.width) / 2, y));
@@ -462,7 +649,8 @@ class PairMapWidgetArt {
         style: TextStyle(
           fontFamily: display ? 'Unbounded' : 'Onest',
           fontSize: fontSize,
-          fontWeight: FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)],
+          fontWeight:
+              FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)],
           fontVariations: [FontVariation('wght', weight.toDouble())],
           color: color,
           height: 1.2,
@@ -477,16 +665,29 @@ class PairMapWidgetArt {
     return tp;
   }
 
-  TextPainter _iconPainter(IconData icon, double size, Color color) => TextPainter(
+  TextPainter _iconPainter(IconData icon, double size, Color color) =>
+      TextPainter(
         text: TextSpan(
           text: String.fromCharCode(icon.codePoint),
-          style: TextStyle(fontFamily: icon.fontFamily, package: icon.fontPackage, fontSize: size, color: color),
+          style: TextStyle(
+            fontFamily: icon.fontFamily,
+            package: icon.fontPackage,
+            fontSize: size,
+            color: color,
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
 
-  void _text(Canvas canvas, String text, Offset at,
-      {required double fontSize, required Color color, required int weight, bool center = false}) {
+  void _text(
+    Canvas canvas,
+    String text,
+    Offset at, {
+    required double fontSize,
+    required Color color,
+    required int weight,
+    bool center = false,
+  }) {
     final tp = _painter(text, fontSize: fontSize, color: color, weight: weight);
     tp.paint(canvas, center ? at - Offset(tp.width / 2, tp.height / 2) : at);
     tp.dispose();

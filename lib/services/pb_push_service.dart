@@ -4,10 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-import '../fork/push_relay.dart'; // fork
-import '../fork/push/notif_prefs.dart'; // fork
+import '../fork/push_relay.dart';
+import '../fork/push/notif_prefs.dart';
 import '../fork/push/notif_tap.dart'; // fork (UX D8)
-import '../utils/notification_permission.dart'; // fork
+import '../utils/notification_permission.dart';
 import '../models/chat_msg.dart';
 import '../models/avatar_frame.dart';
 import '../models/gift.dart';
@@ -63,8 +63,10 @@ class PbPushService {
       onDidReceiveNotificationResponse: ForkNotifTap.onResponse, // fork (UX D8)
     );
     unawaited(ForkNotifTap.checkLaunch(_ln)); // fork (UX D8)
-    final androidImpl = _ln.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidImpl = _ln
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidImpl?.createNotificationChannel(
       AndroidNotificationChannel(
         _channelId,
@@ -82,14 +84,17 @@ class PbPushService {
   /// Настройки уведомлений текущего юзера (его профиль решает, что показывать).
   bool _pref(String col) {
     // fork (UX G11): тумблер на телефоне — сразу, без ожидания authRefresh.
-    return ForkNotifPrefs.enabled(col, PocketBaseService().currentUser?.data[col]);
+    return ForkNotifPrefs.enabled(
+      col,
+      PocketBaseService().currentUser?.data[col],
+    );
   }
 
   /// Тихая ночь: подарок «Сладких снов» гасит уведомления до восьми утра.
   /// Партнёр дарит тишину, а не просто картинку.
   bool get _muted {
-    final until =
-        (PocketBaseService().currentUser?.data['mute_until'] as num?)?.toInt();
+    final until = (PocketBaseService().currentUser?.data['mute_until'] as num?)
+        ?.toInt();
     return isEffectActive(until, DateTime.now());
   }
 
@@ -122,13 +127,14 @@ class PbPushService {
     required String myUid,
     required String partnerUid,
     String? partnerName,
-  }) =>
-      _synchronized(() => _startLocked(
-            groupId: groupId,
-            myUid: myUid,
-            partnerUid: partnerUid,
-            partnerName: partnerName,
-          ));
+  }) => _synchronized(
+    () => _startLocked(
+      groupId: groupId,
+      myUid: myUid,
+      partnerUid: partnerUid,
+      partnerName: partnerName,
+    ),
+  );
 
   Future<void> _startLocked({
     required String groupId,
@@ -149,129 +155,177 @@ class PbPushService {
         : partnerName;
 
     // 1) Чат
-    _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'chat_messages', (e) async {
-      try {
-        await ForkNotifPrefs.refresh(); // fork (UX G11)
-        if (e.action != 'create') return;
-        final r = e.record;
-        if (r == null || r.data['user_uid'] != partnerUid) return;
-        if (activeChatGroupId == groupId) return; // чат открыт — не дублируем
-        if (r.data['deleted'] == true || !_pref('notif_chat')) return;
-        final name = (r.data['user_name'] ?? partner).toString();
-        final text = (r.data['text'] ?? '').toString();
-        // У голосового текста нет: в шторке показываем подпись с длительностью,
-        // иначе уведомление приходило бы пустым конвертом.
-        final voiceUrl = (r.data['voice_url'] ?? '').toString();
-        final body = voiceUrl.isNotEmpty
-            ? ChatService.voiceQuote(
-                ChatMsg.fromPb(r), LocaleService.current.voiceMessage)
-            : (text.isEmpty ? '✉️' : text);
-        _notify(r.id.hashCode, name, body);
-      } catch (err) {
-        debugPrint('PbPush chat callback error: $err');
-      }
-    }));
+    _subs.add(
+      await CentrifugoService.instance.subscribeDelta(
+        'pair:$groupId',
+        'chat_messages',
+        (e) async {
+          try {
+            await ForkNotifPrefs.refresh(); // fork (UX G11)
+            if (e.action != 'create') return;
+            final r = e.record;
+            if (r == null || r.data['user_uid'] != partnerUid) return;
+            if (activeChatGroupId == groupId)
+              return; // чат открыт — не дублируем
+            if (r.data['deleted'] == true || !_pref('notif_chat')) return;
+            final name = (r.data['user_name'] ?? partner).toString();
+            final text = (r.data['text'] ?? '').toString();
+            // У голосового текста нет: в шторке показываем подпись с длительностью,
+            // иначе уведомление приходило бы пустым конвертом.
+            final voiceUrl = (r.data['voice_url'] ?? '').toString();
+            final body = voiceUrl.isNotEmpty
+                ? ChatService.voiceQuote(
+                    ChatMsg.fromPb(r),
+                    LocaleService.current.voiceMessage,
+                  )
+                : (text.isEmpty ? '✉️' : text);
+            _notify(r.id.hashCode, name, body);
+          } catch (err) {
+            debugPrint('PbPush chat callback error: $err');
+          }
+        },
+      ),
+    );
 
     // 2) Реакция/настроение дня (mood_entries партнёра). Раньше слушали
     //    widget_data.mood_label, но «реакцию на день» правит mood_entries —
     //    его и слушаем (источник истины календаря настроений; ловит и смену
     //    реакции прошлого дня, а не только текущей на виджете).
-    _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'mood_entries', (e) async {
-      try {
-        await ForkNotifPrefs.refresh(); // fork (UX G11)
-        if (e.action != 'create' && e.action != 'update') return;
-        final r = e.record;
-        if (r == null || r.data['user_uid'] != partnerUid) return;
-        if (!_pref('notif_mood')) return;
-        final label = (r.data['label'] ?? '').toString();
-        final key = '${r.id}|$label';
-        if (key == _lastMood) return; // дедуп повторных эмитов того же
-        _lastMood = key;
-        _notify(
-            ('mood$partnerUid').hashCode,
-            partner,
-            label.isEmpty
-                ? trKey('pushMoodMarked')
-                : '${trKey('pushMoodOfDay')}: $label');
-      } catch (err) {
-        debugPrint('PbPush mood callback error: $err');
-      }
-    }));
+    _subs.add(
+      await CentrifugoService.instance.subscribeDelta(
+        'pair:$groupId',
+        'mood_entries',
+        (e) async {
+          try {
+            await ForkNotifPrefs.refresh(); // fork (UX G11)
+            if (e.action != 'create' && e.action != 'update') return;
+            final r = e.record;
+            if (r == null || r.data['user_uid'] != partnerUid) return;
+            if (!_pref('notif_mood')) return;
+            final label = (r.data['label'] ?? '').toString();
+            final key = '${r.id}|$label';
+            if (key == _lastMood) return; // дедуп повторных эмитов того же
+            _lastMood = key;
+            _notify(
+              ('mood$partnerUid').hashCode,
+              partner,
+              label.isEmpty
+                  ? trKey('pushMoodMarked')
+                  : '${trKey('pushMoodOfDay')}: $label',
+            );
+          } catch (err) {
+            debugPrint('PbPush mood callback error: $err');
+          }
+        },
+      ),
+    );
 
     // 3) «Скучаю» (miss_you партнёра)
-    _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'miss_you', (e) async {
-      try {
-        await ForkNotifPrefs.refresh(); // fork (UX G11)
-        final r = e.record;
-        if (r == null || r.data['user_uid'] != partnerUid) return;
-        final cnt = (r.data['count'] as num?)?.toInt() ?? 0;
-        if (_lastMissCount != null && cnt <= _lastMissCount!) return; // только рост
-        final vibe = (r.data['last_vibe'] ?? 'miss_you').toString();
-        final custom = (r.data['last_vibe_text'] ?? '').toString();
-        // custom доставляется всегда; остальное — по настройке notif_miss_you
-        if (vibe != 'custom' && !_pref('notif_miss_you')) return; // check BEFORE state mutation
-        _lastMissCount = cnt;
-        _notify(('miss$partnerUid$cnt').hashCode, partner, _vibeBody(vibe, custom));
-      } catch (err) {
-        debugPrint('PbPush miss_you callback error: $err');
-      }
-    }));
+    _subs.add(
+      await CentrifugoService.instance.subscribeDelta(
+        'pair:$groupId',
+        'miss_you',
+        (e) async {
+          try {
+            await ForkNotifPrefs.refresh(); // fork (UX G11)
+            final r = e.record;
+            if (r == null || r.data['user_uid'] != partnerUid) return;
+            final cnt = (r.data['count'] as num?)?.toInt() ?? 0;
+            if (_lastMissCount != null && cnt <= _lastMissCount!)
+              return; // только рост
+            final vibe = (r.data['last_vibe'] ?? 'miss_you').toString();
+            final custom = (r.data['last_vibe_text'] ?? '').toString();
+            // custom доставляется всегда; остальное — по настройке notif_miss_you
+            if (vibe != 'custom' && !_pref('notif_miss_you'))
+              return; // check BEFORE state mutation
+            _lastMissCount = cnt;
+            _notify(
+              ('miss$partnerUid$cnt').hashCode,
+              partner,
+              _vibeBody(vibe, custom),
+            );
+          } catch (err) {
+            debugPrint('PbPush miss_you callback error: $err');
+          }
+        },
+      ),
+    );
 
     // 4) Новое воспоминание (memories партнёра)
-    _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'memories', (e) async {
-      try {
-        await ForkNotifPrefs.refresh(); // fork (UX G11)
-        if (e.action != 'create') return;
-        final r = e.record;
-        if (r == null || r.data['author_uid'] != partnerUid) return;
-        if (r.data['deleted'] == true || !_pref('notif_new_memory')) return;
-        final name = (r.data['author_name'] ?? partner).toString();
-        _notify(('mem${r.id}').hashCode, name, trKey('pushNewMemory'));
-      } catch (err) {
-        debugPrint('PbPush memory callback error: $err');
-      }
-    }));
+    _subs.add(
+      await CentrifugoService.instance.subscribeDelta(
+        'pair:$groupId',
+        'memories',
+        (e) async {
+          try {
+            await ForkNotifPrefs.refresh(); // fork (UX G11)
+            if (e.action != 'create') return;
+            final r = e.record;
+            if (r == null || r.data['author_uid'] != partnerUid) return;
+            if (r.data['deleted'] == true || !_pref('notif_new_memory')) return;
+            final name = (r.data['author_name'] ?? partner).toString();
+            _notify(('mem${r.id}').hashCode, name, trKey('pushNewMemory'));
+          } catch (err) {
+            debugPrint('PbPush memory callback error: $err');
+          }
+        },
+      ),
+    );
 
     // 5) Подарок от партнёра (gifts). Слушаем только доставку: отклик меняет ту
     //    же запись на state=reacted, и повторное уведомление там не нужно.
-    _subs.add(await CentrifugoService.instance
-        .subscribeDelta('pair:$groupId', 'gifts', (e) async {
-      try {
-        await ForkNotifPrefs.refresh(); // fork (UX G11)
-        if (e.action != 'create') return;
-        final r = e.record;
-        if (r == null || r.data['recipient_uid'] != myUid) return;
-        if (r.data['state'] != 'sent') return;
-        if (!_pref('notif_gifts')) return; // поля нет в профиле → _pref даёт true
-        final giftKey = (r.data['gift_key'] ?? '').toString();
-        // Партнёр отдал рамку: в тексте её название, а не подарка.
-        final frameKey = FrameGiftService.frameKeyOf(giftKey);
-        if (frameKey != null) {
-          final name = AvatarFrame.byKey(frameKey)?.name ?? frameKey;
-          _notify(('gift${r.id}').hashCode, partner,
-              trKey('framePushBody').replaceAll('{frame}', name));
-          return;
-        }
-        final gift = GiftCatalog.byKey(giftKey);
-        if (gift == null) return; // подарок из будущей версии приложения
-        // Ракета проходит сквозь подаренную тихую ночь: она для срочного.
-        _notify(('gift${r.id}').hashCode, partner,
-            LocaleService.current.giftPushBody(gift.title),
-            pierceQuiet: gift.piercesQuietHours);
-      } catch (err) {
-        debugPrint('PbPush gift callback error: $err');
-      }
-    }));
+    _subs.add(
+      await CentrifugoService.instance.subscribeDelta(
+        'pair:$groupId',
+        'gifts',
+        (e) async {
+          try {
+            await ForkNotifPrefs.refresh(); // fork (UX G11)
+            if (e.action != 'create') return;
+            final r = e.record;
+            if (r == null || r.data['recipient_uid'] != myUid) return;
+            if (r.data['state'] != 'sent') return;
+            if (!_pref('notif_gifts'))
+              return; // поля нет в профиле → _pref даёт true
+            final giftKey = (r.data['gift_key'] ?? '').toString();
+            // Партнёр отдал рамку: в тексте её название, а не подарка.
+            final frameKey = FrameGiftService.frameKeyOf(giftKey);
+            if (frameKey != null) {
+              final name = AvatarFrame.byKey(frameKey)?.name ?? frameKey;
+              _notify(
+                ('gift${r.id}').hashCode,
+                partner,
+                trKey('framePushBody').replaceAll('{frame}', name),
+              );
+              return;
+            }
+            final gift = GiftCatalog.byKey(giftKey);
+            if (gift == null) return; // подарок из будущей версии приложения
+            // Ракета проходит сквозь подаренную тихую ночь: она для срочного.
+            _notify(
+              ('gift${r.id}').hashCode,
+              partner,
+              LocaleService.current.giftPushBody(gift.title),
+              pierceQuiet: gift.piercesQuietHours,
+            );
+          } catch (err) {
+            debugPrint('PbPush gift callback error: $err');
+          }
+        },
+      ),
+    );
 
-    _subs.add(await ForkPushRelay.subscribe(myUid, (id, t, b, {payload}) => _notify(id, t, b, payload: payload))); // fork
+    _subs.add(
+      await ForkPushRelay.subscribe(
+        myUid,
+        (id, t, b, {payload}) => _notify(id, t, b, payload: payload),
+      ),
+    );
 
-    debugPrint('PbPush: подписки запущены (group=$groupId, partner=$partnerUid)');
+    debugPrint(
+      'PbPush: подписки запущены (group=$groupId, partner=$partnerUid)',
+    );
   }
-
 
   /// Тело уведомления по типу вайба (зеркало Cloud Functions buildVibePayload).
   String _vibeBody(String vibe, String text) {
@@ -299,8 +353,14 @@ class PbPushService {
     await _notify(id, title, body);
   }
 
-  Future<void> _notify(int id, String title, String body,
-      {bool pierceQuiet = false, String? payload}) async { // fork (UX D8): payload
+  Future<void> _notify(
+    int id,
+    String title,
+    String body, {
+    bool pierceQuiet = false,
+    String? payload,
+  }) async {
+    // fork (UX D8): payload
     if (_muted && !pierceQuiet) {
       debugPrint('PbPush: тихая ночь — уведомление не показываем');
       return;

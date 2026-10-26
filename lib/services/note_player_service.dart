@@ -37,15 +37,14 @@ class NotePlayback {
     bool? playing,
     bool? loading,
     bool? muted,
-  }) =>
-      NotePlayback(
-        messageId: messageId ?? this.messageId,
-        position: position ?? this.position,
-        duration: duration ?? this.duration,
-        playing: playing ?? this.playing,
-        loading: loading ?? this.loading,
-        muted: muted ?? this.muted,
-      );
+  }) => NotePlayback(
+    messageId: messageId ?? this.messageId,
+    position: position ?? this.position,
+    duration: duration ?? this.duration,
+    playing: playing ?? this.playing,
+    loading: loading ?? this.loading,
+    muted: muted ?? this.muted,
+  );
 }
 
 /// Чем экраны пользуются у плеера.
@@ -94,7 +93,8 @@ class NotePlayerService extends ChangeNotifier implements NotePlayer {
   Duration _lastPosition = Duration.zero;
   DateTime _lastStamp = DateTime.now();
 
-  final StreamController<String> _finished = StreamController<String>.broadcast();
+  final StreamController<String> _finished =
+      StreamController<String>.broadcast();
 
   /// id кружка, который только что досмотрели до конца. Приходит один раз за
   /// проигрыш: по нему чат включает следующий непросмотренный.
@@ -149,12 +149,14 @@ class NotePlayerService extends ChangeNotifier implements NotePlayer {
     // следующая фигурка тоже молчит — привычка держится на _soundOn.
     final wantSound = sound ?? (auto ? false : _soundOn || !auto);
     _soundOn = wantSound;
-    _set(NotePlayback(
-      messageId: messageId,
-      loading: true,
-      duration: knownDuration ?? Duration.zero,
-      muted: !wantSound,
-    ));
+    _set(
+      NotePlayback(
+        messageId: messageId,
+        loading: true,
+        duration: knownDuration ?? Duration.zero,
+        muted: !wantSound,
+      ),
+    );
 
     final src = url.startsWith('pb://')
         ? await PbMediaService.instance.resolveUrlAuthed(url)
@@ -168,14 +170,16 @@ class NotePlayerService extends ChangeNotifier implements NotePlayer {
 
     // Фигурку включают снова и снова, поэтому сперва диск. Ключ — исходная
     // ссылка: в src сидит file-токен, живущий пару минут.
-    final local = src.startsWith('http') ? await cachedMediaPath(url, src) : null;
+    final local = src.startsWith('http')
+        ? await cachedMediaPath(url, src)
+        : null;
     if (_state.messageId != messageId) return;
 
     final c = local != null
         ? VideoPlayerController.file(File(local))
         : (src.startsWith('http')
-            ? VideoPlayerController.networkUrl(Uri.parse(src))
-            : VideoPlayerController.file(_fileOf(src)));
+              ? VideoPlayerController.networkUrl(Uri.parse(src))
+              : VideoPlayerController.file(_fileOf(src)));
     _controller = c;
     c.addListener(_onTick);
     try {
@@ -189,11 +193,9 @@ class NotePlayerService extends ChangeNotifier implements NotePlayer {
       await c.play();
       _lastPosition = Duration.zero;
       _lastStamp = DateTime.now();
-      _set(_state.copy(
-        loading: false,
-        playing: true,
-        duration: c.value.duration,
-      ));
+      _set(
+        _state.copy(loading: false, playing: true, duration: c.value.duration),
+      );
     } catch (e) {
       debugPrint('NotePlayer.open($messageId) failed: $e');
       await _disposeController(c);
@@ -256,7 +258,8 @@ class NotePlayerService extends ChangeNotifier implements NotePlayer {
       _lastPosition = pos;
       _lastStamp = DateTime.now();
     }
-    final finished = v.duration > Duration.zero &&
+    final finished =
+        v.duration > Duration.zero &&
         pos >= v.duration - const Duration(milliseconds: 80);
     if (finished && !v.isPlaying) {
       // Досмотрели: бегунок в начало, обод гаснет, кадр остаётся последним.
@@ -264,16 +267,23 @@ class NotePlayerService extends ChangeNotifier implements NotePlayer {
       // несколькими обновлениями подряд.
       if (_state.playing) _finished.add(_state.messageId);
       _lastPosition = Duration.zero;
-      _set(_state.copy(
-          playing: false, position: Duration.zero, duration: v.duration));
+      _set(
+        _state.copy(
+          playing: false,
+          position: Duration.zero,
+          duration: v.duration,
+        ),
+      );
       return;
     }
-    _set(_state.copy(
-      position: pos,
-      duration: v.duration,
-      playing: v.isPlaying,
-      loading: v.isBuffering,
-    ));
+    _set(
+      _state.copy(
+        position: pos,
+        duration: v.duration,
+        playing: v.isPlaying,
+        loading: v.isBuffering,
+      ),
+    );
   }
 
   Future<void> _disposeController(VideoPlayerController c) async {

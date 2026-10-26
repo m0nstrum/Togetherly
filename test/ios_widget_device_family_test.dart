@@ -15,39 +15,46 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final project =
-      File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+  final project = File(
+    'ios/Runner.xcodeproj/project.pbxproj',
+  ).readAsStringSync();
 
   /// Блоки настроек сборки: `XXXX /* Release */ = { … };`
   Iterable<RegExpMatch> configs() => RegExp(
-        r'\n\t\t[0-9A-F]{24} /\* (Debug|Release|Profile) \*/ = \{(.*?)\n\t\t\};',
-        dotAll: true,
-      ).allMatches(project);
+    r'\n\t\t[0-9A-F]{24} /\* (Debug|Release|Profile) \*/ = \{(.*?)\n\t\t\};',
+    dotAll: true,
+  ).allMatches(project);
 
-  String? familyOf(String body) =>
-      RegExp(r'TARGETED_DEVICE_FAMILY\s*=\s*"?([^";]+)"?;')
-          .firstMatch(body)
-          ?.group(1);
+  String? familyOf(String body) => RegExp(
+    r'TARGETED_DEVICE_FAMILY\s*=\s*"?([^";]+)"?;',
+  ).firstMatch(body)?.group(1);
 
-  test('расширение виджетов собирается под те же устройства, что приложение', () {
-    final widgetFamilies = <String, String?>{};
-    for (final m in configs()) {
-      final body = m.group(2)!;
-      if (!body.contains('com.togetherly.love.TogetherlyWidget')) continue;
-      widgetFamilies[m.group(1)!] = familyOf(body);
-    }
+  test(
+    'расширение виджетов собирается под те же устройства, что приложение',
+    () {
+      final widgetFamilies = <String, String?>{};
+      for (final m in configs()) {
+        final body = m.group(2)!;
+        if (!body.contains('com.togetherly.love.TogetherlyWidget')) continue;
+        widgetFamilies[m.group(1)!] = familyOf(body);
+      }
 
-    expect(widgetFamilies, isNotEmpty,
-        reason: 'таргет расширения пропал из проекта');
-
-    for (final entry in widgetFamilies.entries) {
       expect(
-        entry.value,
-        '1',
-        reason: 'конфигурация ${entry.key}: приложение собирается только под '
-            'iPhone, и расширение обязано так же — иначе iOS его не '
-            'активирует и виджетов не будет вовсе',
+        widgetFamilies,
+        isNotEmpty,
+        reason: 'таргет расширения пропал из проекта',
       );
-    }
-  });
+
+      for (final entry in widgetFamilies.entries) {
+        expect(
+          entry.value,
+          '1',
+          reason:
+              'конфигурация ${entry.key}: приложение собирается только под '
+              'iPhone, и расширение обязано так же — иначе iOS его не '
+              'активирует и виджетов не будет вовсе',
+        );
+      }
+    },
+  );
 }

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui' show Rect;
 
 import 'package:archive/archive_io.dart';
@@ -46,7 +45,9 @@ class ExportService {
           ..writeln('--------------------');
       }
       final timerBytes = archiveText(timerBuffer.toString());
-      zip.addArchiveFile(ArchiveFile('Timers.txt', timerBytes.length, timerBytes));
+      zip.addArchiveFile(
+        ArchiveFile('Timers.txt', timerBytes.length, timerBytes),
+      );
 
       // 2. Воспоминания в хронологическом порядке (лента идёт новые сверху).
       final recs = await PbDataService().loadMemories(groupId, limit: 100000);
@@ -71,13 +72,14 @@ class ExportService {
         }
       }
 
-      final text = memoriesText(
-        memories,
-        [for (final e in entries) if (!missing.contains(e.path)) e],
-      );
+      final text = memoriesText(memories, [
+        for (final e in entries)
+          if (!missing.contains(e.path)) e,
+      ]);
       final memoryBytes = archiveText(text);
       zip.addArchiveFile(
-          ArchiveFile('Memories.txt', memoryBytes.length, memoryBytes));
+        ArchiveFile('Memories.txt', memoryBytes.length, memoryBytes),
+      );
       await zip.close();
 
       await Share.shareXFiles(

@@ -14,14 +14,14 @@ import 'package:love_app/models/memory.dart';
 /// какой вопрос отвечало это фото.
 void main() {
   Memory _memory({String? taskId}) => Memory(
-        id: 'm1',
-        groupId: 'g1',
-        authorUid: 'u1',
-        authorName: 'Лера',
-        type: MemoryType.photo,
-        createdAt: DateTime(2026, 8, 22, 12, 0),
-        dailyTaskId: taskId,
-      );
+    id: 'm1',
+    groupId: 'g1',
+    authorUid: 'u1',
+    authorName: 'Лера',
+    type: MemoryType.photo,
+    createdAt: DateTime(2026, 8, 22, 12, 0),
+    dailyTaskId: taskId,
+  );
 
   test('id задания переживает дорогу до сервера и обратно', () {
     final json = _memory(taskId: 'text_admire').toJson();
@@ -55,27 +55,45 @@ void main() {
 
   test('лента показывает подпись у каждой карточки, а не у одного типа', () {
     final feed = File('lib/screens/memory_lane_screen.dart').readAsStringSync();
-    final header = RegExp(r'Widget _cardHeader\(([\s\S]*?)\n  \}\n')
-        .firstMatch(feed);
+    final header = RegExp(
+      r'Widget _cardHeader\(([\s\S]*?)\n  \}\n',
+    ).firstMatch(feed);
     expect(header, isNotNull, reason: 'шапка карточки на месте');
-    expect(header!.group(1), contains('_dailyTaskNote'),
-        reason: 'подпись живёт в общей шапке — иначе её увидит только один '
-            'тип записи из шести');
-    expect(feed, contains('dailyTaskTitleOf'),
-        reason: 'текст задания берётся из каталога, а не пишется заново');
+    expect(
+      header!.group(1),
+      contains('_dailyTaskNote'),
+      reason:
+          'подпись живёт в общей шапке — иначе её увидит только один '
+          'тип записи из шести',
+    );
+    expect(
+      feed,
+      contains('dailyTaskTitleOf'),
+      reason: 'текст задания берётся из каталога, а не пишется заново',
+    );
   });
 
   test('каждая карточка ленты без общей шапки ставит подпись сама', () {
     // Стикер текстовой заметки шапки не рисует, и текстовые ответы на
     // задания стояли без подписи (обращение 236, 05.10.2026).
     final feed = File('lib/screens/memory_lane_screen.dart').readAsStringSync();
-    final tiles = RegExp(r'\n  Widget (_[a-zA-Z]+Tile)\(Memory memory\) \{([\s\S]*?)\n  \}\n').allMatches(feed);
-    expect(tiles.length, greaterThanOrEqualTo(7), reason: 'карточки ленты нашлись');
+    final tiles = RegExp(
+      r'\n  Widget (_[a-zA-Z]+Tile)\(Memory memory\) \{([\s\S]*?)\n  \}\n',
+    ).allMatches(feed);
+    expect(
+      tiles.length,
+      greaterThanOrEqualTo(7),
+      reason: 'карточки ленты нашлись',
+    );
     for (final t in tiles) {
       final body = t.group(2)!;
       if (t.group(1) == '_memoryTile') continue;
-      expect(body.contains('_cardHeader(') || body.contains('_dailyTaskNote('), isTrue,
-          reason: '${t.group(1)}: без шапки и без подписи ответ на задание не отмечен');
+      expect(
+        body.contains('_cardHeader(') || body.contains('_dailyTaskNote('),
+        isTrue,
+        reason:
+            '${t.group(1)}: без шапки и без подписи ответ на задание не отмечен',
+      );
     }
   });
 

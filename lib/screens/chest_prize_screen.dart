@@ -64,8 +64,14 @@ class ChestPrizeScreen extends StatelessWidget {
                       // огромным и толстым (жалоба с 1.35.0+245). Рамка — с
                       // фото в натуральную пропорцию, в ширину экрана.
                       final side = prize.kind == ChestPrizeKind.frame
-                          ? math.min(math.min(c.maxWidth * 0.86, c.maxHeight * 0.8), 420.0)
-                          : math.min(math.min(c.maxWidth * 1.3, c.maxHeight * 1.1), 640.0);
+                          ? math.min(
+                              math.min(c.maxWidth * 0.86, c.maxHeight * 0.8),
+                              420.0,
+                            )
+                          : math.min(
+                              math.min(c.maxWidth * 1.3, c.maxHeight * 1.1),
+                              640.0,
+                            );
                       return Center(
                         child: OverflowBox(
                           maxWidth: side,
@@ -81,8 +87,18 @@ class ChestPrizeScreen extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _chip(cs, tier, cs.secondaryContainer, cs.onSecondaryContainer),
-                    _chip(cs, trKey('chestChance').replaceAll('{p}', chance), cs.primaryContainer, cs.onPrimaryContainer),
+                    _chip(
+                      cs,
+                      tier,
+                      cs.secondaryContainer,
+                      cs.onSecondaryContainer,
+                    ),
+                    _chip(
+                      cs,
+                      trKey('chestChance').replaceAll('{p}', chance),
+                      cs.primaryContainer,
+                      cs.onPrimaryContainer,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -101,7 +117,11 @@ class ChestPrizeScreen extends StatelessWidget {
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, height: 1.4, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.4,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -113,7 +133,10 @@ class ChestPrizeScreen extends StatelessWidget {
 
   Widget _chip(ColorScheme cs, String text, Color bg, Color fg) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(999),
+    ),
     child: Text(
       text,
       style: TextStyle(

@@ -24,10 +24,7 @@ class PhotoDayWidgetResolvedState {
 }
 
 class PhotoDayWidgetModeChange {
-  const PhotoDayWidgetModeChange({
-    required this.mode,
-    required this.forceNext,
-  });
+  const PhotoDayWidgetModeChange({required this.mode, required this.forceNext});
 
   final String mode;
   final bool forceNext;
@@ -36,7 +33,10 @@ class PhotoDayWidgetModeChange {
 class PhotoDayWidgetLogic {
   const PhotoDayWidgetLogic._();
 
-  static int? resolveSelectedWidgetId(List<int> widgetIds, int? currentSelection) {
+  static int? resolveSelectedWidgetId(
+    List<int> widgetIds,
+    int? currentSelection,
+  ) {
     if (widgetIds.isEmpty) return null;
     if (currentSelection != null && widgetIds.contains(currentSelection)) {
       return currentSelection;
@@ -73,7 +73,8 @@ class PhotoDayWidgetLogic {
     final ownPhotoPath =
         normalizedCustomPath ?? normalizedMyPhotoUrl ?? normalizedFallbackOwn;
 
-    final partnerPhotoPath = normalizedWidgetPreview ?? normalizedFallbackPartner;
+    final partnerPhotoPath =
+        normalizedWidgetPreview ?? normalizedFallbackPartner;
 
     return PhotoDayWidgetResolvedState(
       selectedWidgetId: selectedWidgetId,

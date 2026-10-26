@@ -74,7 +74,9 @@ class SeasonBackdrop {
     if (raw is! Map) return null;
     final d = raw.cast<String, dynamic>();
     final key = '${d['key'] ?? ''}'.trim();
-    final files = d['files'] is Map ? (d['files'] as Map).cast<String, dynamic>() : const <String, dynamic>{};
+    final files = d['files'] is Map
+        ? (d['files'] as Map).cast<String, dynamic>()
+        : const <String, dynamic>{};
     final mask = files['mask'];
     if (key.isEmpty || mask is! String || mask.isEmpty) return null;
     final hand = files['hand'];
@@ -86,7 +88,9 @@ class SeasonBackdrop {
     }
 
     final cycle = ms('cycleMs', 16000).clamp(4000, 120000);
-    var inMs = ms('inMs', 3800), holdMs = ms('holdMs', 5500), outMs = ms('outMs', 3800);
+    var inMs = ms('inMs', 3800),
+        holdMs = ms('holdMs', 5500),
+        outMs = ms('outMs', 3800);
     // Фазы обязаны влезть в петлю: иначе призрак не уходил бы вовсе.
     final sum = inMs + holdMs + outMs;
     if (sum > cycle) {
@@ -108,8 +112,14 @@ class SeasonBackdrop {
       holdMs: holdMs,
       outMs: outMs,
       blur: blur is num ? blur.toDouble().clamp(0, 40) : 14,
-      light: BackdropTone.fromJson(d['light'], const BackdropTone(tone: 15, chroma: 40, opacity: 0.78)),
-      dark: BackdropTone.fromJson(d['dark'], const BackdropTone(tone: 88, chroma: 22, opacity: 0.42)),
+      light: BackdropTone.fromJson(
+        d['light'],
+        const BackdropTone(tone: 15, chroma: 40, opacity: 0.78),
+      ),
+      dark: BackdropTone.fromJson(
+        d['dark'],
+        const BackdropTone(tone: 88, chroma: 22, opacity: 0.42),
+      ),
       trigger: '${d['trigger'] ?? ''}'.trim(),
     );
   }
@@ -122,7 +132,8 @@ class SeasonBackdrop {
   /// Идёт ли фон в этот момент по часам человека.
   bool isOn(DateTime now) {
     if (until.isEmpty) return false;
-    final day = '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final day =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     if (from.isNotEmpty && day.compareTo(from) < 0) return false;
     return day.compareTo(until) < 0;
   }
@@ -147,17 +158,26 @@ class SeasonBackdrop {
     } else {
       p = 0;
     }
-    return BackdropPhase(opacity: p, blur: blur * (1 - p), scale: 1 + 0.04 * (1 - p));
+    return BackdropPhase(
+      opacity: p,
+      blur: blur * (1 - p),
+      scale: 1 + 0.04 * (1 - p),
+    );
   }
 
   /// Кадр одного прихода через [ms] после нажатия; после ухода — пусто,
   /// сам призрак не возвращается.
   BackdropPhase onceAt(int ms) {
-    if (ms < 0 || ms >= onceDurationMs) return BackdropPhase(opacity: 0, blur: blur, scale: 1.04);
+    if (ms < 0 || ms >= onceDurationMs)
+      return BackdropPhase(opacity: 0, blur: blur, scale: 1.04);
     return phaseAt(ms);
   }
 
-  static double _ease(double x) => x <= 0 ? 0 : x >= 1 ? 1 : 0.5 - 0.5 * math.cos(math.pi * x);
+  static double _ease(double x) => x <= 0
+      ? 0
+      : x >= 1
+      ? 1
+      : 0.5 - 0.5 * math.cos(math.pi * x);
 
   BackdropTone _toneOf(Brightness b) => b == Brightness.dark ? dark : light;
 
@@ -174,7 +194,12 @@ class SeasonBackdrop {
 
 /// Как красить призрака в одной из тем.
 class BackdropTone {
-  const BackdropTone({required this.tone, required this.chroma, required this.opacity, this.color});
+  const BackdropTone({
+    required this.tone,
+    required this.chroma,
+    required this.opacity,
+    this.color,
+  });
 
   final double tone, chroma, opacity;
 
@@ -183,7 +208,8 @@ class BackdropTone {
 
   static BackdropTone fromJson(Object? raw, BackdropTone def) {
     if (raw is! Map) return def;
-    double num_(Object? v, double d, double lo, double hi) => v is num ? v.toDouble().clamp(lo, hi) : d;
+    double num_(Object? v, double d, double lo, double hi) =>
+        v is num ? v.toDouble().clamp(lo, hi) : d;
     Color? color;
     final c = raw['color'];
     if (c is String) {
@@ -202,6 +228,10 @@ class BackdropTone {
 
 /// Кадр петли: прозрачность, размытие и масштаб призрака.
 class BackdropPhase {
-  const BackdropPhase({required this.opacity, required this.blur, required this.scale});
+  const BackdropPhase({
+    required this.opacity,
+    required this.blur,
+    required this.scale,
+  });
   final double opacity, blur, scale;
 }

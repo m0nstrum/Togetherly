@@ -14,9 +14,10 @@ import 'centrifugo_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import 'pocketbase_service.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
-import '../fork/location_consent.dart'; // fork
-import '../fork/geo/geo_status.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
+import '../fork/location_consent.dart';
+import '../fork/geo/geo_status.dart';
+import '../fork/wishes/wish_places.dart';
 
 const String _kSharingEnabledKey = 'live_location_sharing_enabled';
 
@@ -98,7 +99,9 @@ class LiveLocationService with WidgetsBindingObserver {
   final ValueNotifier<Position?> myFix = ValueNotifier<Position?>(null);
 
   /// fork (UX G3/G4): почему включённый показ на самом деле не передаёт.
-  final ValueNotifier<ShareIssue> issue = ValueNotifier<ShareIssue>(ShareIssue.none);
+  final ValueNotifier<ShareIssue> issue = ValueNotifier<ShareIssue>(
+    ShareIssue.none,
+  );
 
   /// fork (UX G13): на iPhone выдали только «При использовании» — закрытое
   /// приложение партнёра не увидит. Человеку об этом говорит карточка.
@@ -153,7 +156,7 @@ class LiveLocationService with WidgetsBindingObserver {
       return true;
     } catch (e) {
       debugPrint('LiveLocationService.ensurePermission failed: $e');
-      issue.value = ShareIssue.denied; // fork
+      issue.value = ShareIssue.denied;
       return false;
     }
   }
@@ -179,8 +182,9 @@ class LiveLocationService with WidgetsBindingObserver {
   }
 
   /// Канал разрешения «Всегда» (`AppDelegate.setupLocationAlwaysChannel`).
-  static const MethodChannel _alwaysChannel =
-      MethodChannel('love_app/location_always');
+  static const MethodChannel _alwaysChannel = MethodChannel(
+    'love_app/location_always',
+  );
 
   /// Просит на iPhone «Разрешить всегда».
   ///
@@ -225,20 +229,26 @@ class LiveLocationService with WidgetsBindingObserver {
         return false;
       }
       await _persist(true);
-      await LocationConsent.remember(_uid, partnerUid); // fork: согласие — этому партнёру (UX G1)
+      await LocationConsent.remember(
+        _uid,
+        partnerUid,
+      ); // fork: согласие — этому партнёру (UX G1)
       await startSharing(pairId, partnerUid: partnerUid);
       return true;
     } else {
       await _persist(false);
       issue.value = ShareIssue.none; // fork (UX G3)
-      backgroundLimited.value = false; // fork
-      await LocationConsent.remember(_uid, ''); // fork
+      backgroundLimited.value = false;
+      await LocationConsent.remember(_uid, '');
       final wasActive = _activePairId; // fork (UX G2)
       await stopSharing(removePoint: true);
       // fork (UX G2): стрим мог и не стартовать (фон, нет партнёра) — точку
       // прошлого запуска всё равно убираем.
       final channel = _channel(pairId, partnerUid);
-      if (wasActive == null && pairId.isNotEmpty && partnerUid.isNotEmpty && _uid.isNotEmpty) {
+      if (wasActive == null &&
+          pairId.isNotEmpty &&
+          partnerUid.isNotEmpty &&
+          _uid.isNotEmpty) {
         await _data.clearLivePoint(channel, _uid);
         await _announceStop(channel);
       }
@@ -279,7 +289,9 @@ class LiveLocationService with WidgetsBindingObserver {
       await _persist(false);
       await stopSharing(removePoint: true);
       issue.value = ShareIssue.noConsent; // fork (UX G3)
-      debugPrint('LiveLocationService: согласие было не этому партнёру — выключено');
+      debugPrint(
+        'LiveLocationService: согласие было не этому партнёру — выключено',
+      );
       return;
     }
     // Android 12+ запрещает старт foreground-сервиса из фона, а geolocator
@@ -309,10 +321,7 @@ class LiveLocationService with WidgetsBindingObserver {
     try {
       _posSub = Geolocator.getPositionStream(
         locationSettings: _locationSettings(),
-      ).listen(
-        (pos) => _push(channel, pos),
-        onError: _onStreamError,
-      );
+      ).listen((pos) => _push(channel, pos), onError: _onStreamError);
       if (issue.value == ShareIssue.needsForeground ||
           issue.value == ShareIssue.noPartner) {
         issue.value = ShareIssue.none; // fork (UX G3)
@@ -364,7 +373,8 @@ class LiveLocationService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // fork (UX G6): уходим в фон — последняя точка должна лежать в базе, иначе
     // виджет и тот, кто откроет карту позже, увидят место двухминутной давности.
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       unawaited(_flushUnstored());
     }
     if (_posSub == null) return;
@@ -388,10 +398,7 @@ class LiveLocationService with WidgetsBindingObserver {
     try {
       _posSub = Geolocator.getPositionStream(
         locationSettings: _locationSettings(),
-      ).listen(
-        (pos) => _push(channel, pos),
-        onError: _onStreamError,
-      );
+      ).listen((pos) => _push(channel, pos), onError: _onStreamError);
     } catch (e) {
       debugPrint('LiveLocationService: перезапуск потока не вышел: $e');
     }
@@ -413,9 +420,9 @@ class LiveLocationService with WidgetsBindingObserver {
   /// запуска сервиса это как раз опасный случай — холодный старт из фонового
   /// пробуждения выглядит именно так.
   bool _canStartFgs() => fgsLocationStartAllowed(
-        WidgetsBinding.instance.lifecycleState,
-        android: Platform.isAndroid,
-      );
+    WidgetsBinding.instance.lifecycleState,
+    android: Platform.isAndroid,
+  );
 
   Future<void> _pushCurrent(String pairId) async {
     final generation = _sessionGeneration;
@@ -459,8 +466,11 @@ class LiveLocationService with WidgetsBindingObserver {
     };
 
     // Партнёру — сразу через канал, минуя диск.
-    final sealed = ForkE2E.sealPoint(
-        channel, {'t': 'point', 'uid': _uid, ...point}); // fork: нет ключа — null
+    final sealed = ForkE2E.sealPoint(channel, {
+      't': 'point',
+      'uid': _uid,
+      ...point,
+    }); // fork: нет ключа — null
     if (sealed != null) {
       await CentrifugoService().publish('loc:$channel', sealed);
     }
@@ -468,7 +478,10 @@ class LiveLocationService with WidgetsBindingObserver {
     // fork (UX G6): запись в базу — раз в две минуты, но последняя точка не
     // теряется: если она не попала в окно, её дописывает таймер, уход в фон
     // или остановка показа.
-    if (generation != _sessionGeneration || _activePairId != channel || _uid.isEmpty) return;
+    if (generation != _sessionGeneration ||
+        _activePairId != channel ||
+        _uid.isEmpty)
+      return;
     final stored = _storedAtMs;
     if (stored == null || now - stored >= _storeEvery.inMilliseconds) {
       _storeTimer?.cancel();
@@ -486,6 +499,16 @@ class LiveLocationService with WidgetsBindingObserver {
     }
     // Точка ушла — значит передача жива (после сбоя потока и т.п.).
     if (issue.value == ShareIssue.streamFailed) issue.value = ShareIssue.none;
+    // fork: «вы оба рядом с местом из вишлиста» (docs/WISHLIST.md).
+    unawaited(
+      WishPlaces.instance.onMyFix(
+        channel: channel,
+        myUid: _uid,
+        lat: pos.latitude,
+        lng: pos.longitude,
+        accuracy: acc,
+      ),
+    );
   }
 
   Timer? _storeTimer;
@@ -630,18 +653,20 @@ class LiveLocationService with WidgetsBindingObserver {
             .watchLivePoint(channel, uid)
             .handleError((e) => debugPrint('live location point error: $e'))
             .listen((rec) {
-          final v = rec?.data['data'];
-          final had = fromDb != null; // fork (UX G2)
-          fromDb = v is Map ? LivePoint.fromMap(v) : null;
-          if (had && fromDb == null) fromChannel = null; // fork: точку убрали — показ выключен
-          emit();
-        });
+              final v = rec?.data['data'];
+              final had = fromDb != null; // fork (UX G2)
+              fromDb = v is Map ? LivePoint.fromMap(v) : null;
+              if (had && fromDb == null)
+                fromChannel = null; // fork: точку убрали — показ выключен
+              emit();
+            });
 
         unsub = await CentrifugoService().subscribeRaw('loc:$channel', (raw) {
-          final data = ForkE2E.openPoint(channel, raw); // fork
+          final data = ForkE2E.openPoint(channel, raw);
           if (data == null) return;
           if ((data['uid'] ?? '').toString() != uid) return;
-          if (data['t'] == 'stop') { // fork (UX G2): показ выключен
+          if (data['t'] == 'stop') {
+            // fork (UX G2): показ выключен
             fromChannel = null;
             fromDb = null;
             emit();
@@ -670,8 +695,9 @@ class LiveLocationService with WidgetsBindingObserver {
       foreground: _appInForeground(),
       android: Platform.isAndroid,
     );
-    final accuracy =
-        tune.highAccuracy ? LocationAccuracy.high : LocationAccuracy.medium;
+    final accuracy = tune.highAccuracy
+        ? LocationAccuracy.high
+        : LocationAccuracy.medium;
     final distanceFilter = tune.distanceFilter;
     if (Platform.isAndroid) {
       return AndroidSettings(
@@ -712,10 +738,7 @@ class LiveLocationService with WidgetsBindingObserver {
         activityType: ActivityType.other,
       );
     }
-    return LocationSettings(
-      accuracy: accuracy,
-      distanceFilter: distanceFilter,
-    );
+    return LocationSettings(accuracy: accuracy, distanceFilter: distanceFilter);
   }
 
   // ── Утилиты ───────────────────────────────────────────────────────────────

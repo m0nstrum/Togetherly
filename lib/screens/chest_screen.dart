@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../dict_strings.dart' show trKey, ruEn;
-import '../fork/flags.dart'; // fork: M11
 import '../fork/ui/feedback.dart'; // fork: M7
 import '../models/chest.dart';
 import '../models/chest_pending.dart';
@@ -157,10 +156,15 @@ class _Slot {
   String? get chest => season?.key;
 
   /// Ключ недосмотренного открытия на диске: у каждого сундука свой.
-  String pendingKey(String groupId) => season == null ? groupId : '$groupId|${season!.key}';
+  String pendingKey(String groupId) =>
+      season == null ? groupId : '$groupId|${season!.key}';
 
-  String? get idleUrl => season == null ? CatalogService.instance.giftArt('chest_idle')?.lgUrl : season!.file('idle');
-  String? get openUrl => season == null ? CatalogService.instance.giftArt('chest_open')?.lgUrl : season!.file('open');
+  String? get idleUrl => season == null
+      ? CatalogService.instance.giftArt('chest_idle')?.lgUrl
+      : season!.file('idle');
+  String? get openUrl => season == null
+      ? CatalogService.instance.giftArt('chest_open')?.lgUrl
+      : season!.file('open');
 
   /// Дорожка приза в кадрах открытия: у сезонного своя, с сервера.
   List<List<double>?> get track {
@@ -168,17 +172,23 @@ class _Slot {
     return t == null || t.isEmpty ? kChestPrizeTrack : t;
   }
 
-  double? get trackPeak => season == null || season!.track.isEmpty ? null : ChestPrizeFlight.trackPeak(track);
+  double? get trackPeak => season == null || season!.track.isEmpty
+      ? null
+      : ChestPrizeFlight.trackPeak(track);
   int get frameMs => season?.trackFrameMs ?? kChestFrameMs;
-  int get wonFrame => season == null ? kChestWonFrame : season!.wonAtMs ~/ frameMs;
-  int get lockFrame => season == null ? ChestSound.lockFrame : season!.lockAtMs ~/ frameMs;
-  int? get flashFrame => season?.flashColor == null ? null : season!.flashAtMs ~/ frameMs;
+  int get wonFrame =>
+      season == null ? kChestWonFrame : season!.wonAtMs ~/ frameMs;
+  int get lockFrame =>
+      season == null ? ChestSound.lockFrame : season!.lockAtMs ~/ frameMs;
+  int? get flashFrame =>
+      season?.flashColor == null ? null : season!.flashAtMs ~/ frameMs;
 
   int get left => state?.left ?? season?.perDay ?? 3;
   int get perDay => state?.perDay ?? season?.perDay ?? 3;
 }
 
-class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
+class _ChestScreenState extends State<ChestScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final RewardedAdService _ad = RewardedAdService(chest: true);
 
   late final List<_Slot> _slots = [_Slot(null)];
@@ -201,7 +211,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   _Curtain? _curtain;
 
   /// Вспышка молнии на карточке сезона.
-  late final AnimationController _flash = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+  late final AnimationController _flash = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
   int _flashSlot = -1;
 
   _Slot get _s => _slots[_shown];
@@ -238,7 +251,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     final main = _slots.first;
     main.choice = widget.debugChoice;
     if (main.choice != null) {
-      main.won = trKey('chestGiftTitle').replaceAll('{name}', GiftCatalog.byKey(main.choice!.giftKey)?.title ?? '');
+      main.won = trKey('chestGiftTitle').replaceAll(
+        '{name}',
+        GiftCatalog.byKey(main.choice!.giftKey)?.title ?? '',
+      );
     }
     if (!_free) _ad.load();
     PairJarService.instance.addListener(_onJar);
@@ -283,7 +299,8 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
       if (!_s.isMain) _startMusic(_s);
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       _foreground = false;
       unawaited(SeasonMusic.instance.stop());
     }
@@ -323,7 +340,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     ChestTelemetry.step(
       item.openId,
       'pending:restored',
-      data: {'jar': item.fromJar, 'age_s': DateTime.now().difference(item.at).inSeconds, 'chest': ?slot.chest},
+      data: {
+        'jar': item.fromJar,
+        'age_s': DateTime.now().difference(item.at).inSeconds,
+        'chest': ?slot.chest,
+      },
     );
     setState(() {
       slot.pendingOpenId = item.openId;
@@ -360,7 +381,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       ForkNotice.failure(
         context,
         out.failure,
-        what: ruEn('Не удалось загрузить выпавшие подарки', 'Couldn’t load your won gifts'),
+        what: ruEn(
+          'Не удалось загрузить выпавшие подарки',
+          'Couldn’t load your won gifts',
+        ),
         retry: _restoreStash,
       );
       return;
@@ -371,9 +395,16 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       final chests = [for (final s in _slots) s.chest];
       for (final item in items) {
         final slot = _slots[stashSlotFor(chests, item.chest)];
-        if (slot.choice != null || slot.animating || slot.opening != null || slot.wearWon != null) continue;
+        if (slot.choice != null ||
+            slot.animating ||
+            slot.opening != null ||
+            slot.wearWon != null)
+          continue;
         slot.choice = item;
-        slot.won = trKey('chestGiftTitle').replaceAll('{name}', GiftCatalog.byKey(item.giftKey)?.title ?? item.giftKey);
+        slot.won = trKey('chestGiftTitle').replaceAll(
+          '{name}',
+          GiftCatalog.byKey(item.giftKey)?.title ?? item.giftKey,
+        );
       }
     });
   }
@@ -387,7 +418,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   }
 
   Future<void> _loadSeason(_Slot slot) async {
-    final st = await ChestService.instance.state(groupId: widget.groupId, chest: slot.chest);
+    final st = await ChestService.instance.state(
+      groupId: widget.groupId,
+      chest: slot.chest,
+    );
     if (mounted && st != null) setState(() => slot.state = st);
   }
 
@@ -411,7 +445,8 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
           unawaited(
             ChestFrames.prefetch(c.sheetUrl).then((_) {
               final bytes = ChestFrames.bytesOf(c.sheetUrl);
-              if (bytes != null && mounted) unawaited(precacheImage(MemoryImage(bytes), context));
+              if (bytes != null && mounted)
+                unawaited(precacheImage(MemoryImage(bytes), context));
             }),
           );
         }
@@ -442,7 +477,8 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       }
     }
     final current = _s;
-    if (!current.isMain && !keep.contains(current)) keep.insert(math.min(_shown - 1, keep.length), current);
+    if (!current.isMain && !keep.contains(current))
+      keep.insert(math.min(_shown - 1, keep.length), current);
     for (final gone in _slots.skip(1)) {
       if (!keep.contains(gone)) gone.glitch?.dispose();
     }
@@ -472,18 +508,22 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   List<ChestPrize> get _odds {
     final st = _s.state;
     // fork: M11 — Плюс в форке и так открыт, в таблице шансов его не показываем
-    List<ChestPrize> noPlus(List<ChestPrize> all) => !ForkFlags.allFree
-        ? all
-        : [
-            for (final p in all)
-              if (p.kind != ChestPrizeKind.plus && p.kind != ChestPrizeKind.plusTrial) p,
-          ];
+    List<ChestPrize> noPlus(List<ChestPrize> all) => [
+      for (final p in all)
+        if (p.kind != ChestPrizeKind.plus && p.kind != ChestPrizeKind.plusTrial)
+          p,
+    ];
     if (st != null) return noPlus(st.odds);
     if (!_s.isMain) return const [];
-    return noPlus(fallbackChestOdds(withPlus: PlusService.instance.visible && !PlusService.instance.active));
+    return noPlus(
+      fallbackChestOdds(
+        withPlus: PlusService.instance.visible && !PlusService.instance.active,
+      ),
+    );
   }
 
-  void _snack(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  void _snack(String text) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 
   /// Открытия из копилки пары, что ждут меня.
   int get _jarBonus => PairJarService.instance.jar?.bonus ?? 0;
@@ -506,7 +546,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     ChestTelemetry.step(
       openId,
       'tap',
-      data: {'pending': slot.pendingOpenId != null, 'jar': fromJar, 'free': _free, 'chest': ?slot.chest},
+      data: {
+        'pending': slot.pendingOpenId != null,
+        'jar': fromJar,
+        'free': _free,
+        'chest': ?slot.chest,
+      },
     );
     // Плеер звука готовится, пока идут реклама и розыгрыш.
     if (slot.isMain) ChestSound.instance.prepare();
@@ -522,7 +567,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       // Реклама глушит музыку сезона сама, но плеер оставался бы «играющим»
       // под ней — останавливаем честно и включаем после.
       if (!slot.isMain) unawaited(SeasonMusic.instance.stop());
-      final earned = await _ad.show(uid: PocketBaseService().userId ?? '', chestOpenId: openId);
+      final earned = await _ad.show(
+        uid: PocketBaseService().userId ?? '',
+        chestOpenId: openId,
+      );
       _ad.load();
       ChestTelemetry.step(
         openId,
@@ -537,7 +585,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       // Досмотренный ролик ложится на диск ДО всего остального: уйдёт человек
       // с экрана или приложение выгрузят — открытие дойдёт без новой рекламы.
       if (earned) {
-        unawaited(ChestPendingStore.write(storeKey, ChestPending(openId: openId, fromJar: false, at: DateTime.now())));
+        unawaited(
+          ChestPendingStore.write(
+            storeKey,
+            ChestPending(openId: openId, fromJar: false, at: DateTime.now()),
+          ),
+        );
       }
       if (!mounted) return;
       if (!slot.isMain && identical(_s, slot)) _startMusic(slot);
@@ -554,7 +607,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       total.reset();
     }
     if (slot.pendingOpenId == null && fromJar) {
-      unawaited(ChestPendingStore.write(storeKey, ChestPending(openId: openId, fromJar: true, at: DateTime.now())));
+      unawaited(
+        ChestPendingStore.write(
+          storeKey,
+          ChestPending(openId: openId, fromJar: true, at: DateTime.now()),
+        ),
+      );
     }
     slot.pendingOpenId = openId;
     slot.pendingFromJar = fromJar;
@@ -569,7 +627,8 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     );
     if (adShown) await untilAppVisible();
     await ChestFrames.prefetch(slot.openUrl);
-    if (!ChestFrames.isReady(slot.openUrl)) ChestTelemetry.step(openId, 'anim:skip');
+    if (!ChestFrames.isReady(slot.openUrl))
+      ChestTelemetry.step(openId, 'anim:skip');
     final res = await request;
     // Итог на диске фиксируется и тогда, когда экран уже закрыт: иначе
     // следующий заход предложил бы открыть то, что уже открылось.
@@ -596,7 +655,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       );
     } else if (res.ok && total.elapsed > const Duration(seconds: 20)) {
       // Открылось, но так долго, что человек мог решить «не работает».
-      ChestTelemetry.failure(openId, 'open', 'slow', data: {'ms': total.elapsedMilliseconds, 'ad': adShown});
+      ChestTelemetry.failure(
+        openId,
+        'open',
+        'slow',
+        data: {'ms': total.elapsedMilliseconds, 'ad': adShown},
+      );
     }
     if (!mounted) return;
     if (!res.ok) {
@@ -629,9 +693,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     if (res.prize?.kind == ChestPrizeKind.plus) PlusService.instance.refresh();
     // Выпавшая рамка уже во владении на сервере — кладём её и в профиль,
     // иначе «Надеть» упрётся в «не твоя» до следующей синхронизации.
-    if (res.ownedFeatures != null) widget.userData?.applyOwnedFeatures(res.ownedFeatures!);
-    if (res.ownedIcons != null) widget.userData?.applyOwnedIcons(res.ownedIcons!);
-    if (res.plusTrialUntil != null) PlusService.instance.setTrialUntil(res.plusTrialUntil!);
+    if (res.ownedFeatures != null)
+      widget.userData?.applyOwnedFeatures(res.ownedFeatures!);
+    if (res.ownedIcons != null)
+      widget.userData?.applyOwnedIcons(res.ownedIcons!);
     setState(() {
       slot.opening = res.prize;
       slot.animating = true;
@@ -669,12 +734,15 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
         unawaited(SeasonMusic.instance.thunder(slot.season!.file('thunder')));
       }
       final flashAt = slot.flashFrame;
-      if (flashAt != null && from < flashAt && i >= flashAt) _bolt(_slots.indexOf(slot));
-      if (from < slot.wonFrame && i >= slot.wonFrame) HapticFeedback.mediumImpact();
+      if (flashAt != null && from < flashAt && i >= flashAt)
+        _bolt(_slots.indexOf(slot));
+      if (from < slot.wonFrame && i >= slot.wonFrame)
+        HapticFeedback.mediumImpact();
     }
     setState(() {
       slot.frame = i;
-      if (i >= slot.wonFrame && slot.won == null && slot.opening != null) slot.won = _wonText(slot.opening!);
+      if (i >= slot.wonFrame && slot.won == null && slot.opening != null)
+        slot.won = _wonText(slot.opening!);
     });
   }
 
@@ -683,11 +751,17 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     setState(() {
       final prize = slot.opening;
       slot.won ??= prize == null ? null : _wonText(prize);
-      if (prize != null && prize.kind == ChestPrizeKind.gift && slot.lastOpenId != null) {
-        slot.choice = ChestStashItem(openId: slot.lastOpenId!, giftKey: prize.key);
+      if (prize != null &&
+          prize.kind == ChestPrizeKind.gift &&
+          slot.lastOpenId != null) {
+        slot.choice = ChestStashItem(
+          openId: slot.lastOpenId!,
+          giftKey: prize.key,
+        );
       }
       if (prize != null &&
-          (prize.kind == ChestPrizeKind.frame || prize.kind == ChestPrizeKind.badge) &&
+          (prize.kind == ChestPrizeKind.frame ||
+              prize.kind == ChestPrizeKind.badge) &&
           widget.userData != null) {
         slot.wearWon = prize;
       }
@@ -713,7 +787,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     }
     setState(() => _choosing = true);
     final ok = give
-        ? await ChestService.instance.give(choice.openId, widget.groupId, note: note)
+        ? await ChestService.instance.give(
+            choice.openId,
+            widget.groupId,
+            note: note,
+          )
         : await ChestService.instance.keep(choice.openId);
     if (!mounted) return;
     setState(() {
@@ -763,7 +841,9 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     } else {
       unawaited(SeasonMusic.instance.stop());
     }
-    if (MediaQuery.of(context).disableAnimations || curtain == null || !ChestFrames.isReady(curtain.sheetUrl)) {
+    if (MediaQuery.of(context).disableAnimations ||
+        curtain == null ||
+        !ChestFrames.isReady(curtain.sheetUrl)) {
       // Без анимаций или без листа — страница меняется сразу.
       setState(() => _shown = to);
       if (jump) _pager.jumpToPage(to);
@@ -771,7 +851,14 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       if (toNight) _bolt(to);
       return;
     }
-    setState(() => _curtain = _Curtain(to: to, spec: curtain, night: toNight, jump: jump));
+    setState(
+      () => _curtain = _Curtain(
+        to: to,
+        spec: curtain,
+        night: toNight,
+        jump: jump,
+      ),
+    );
     _curtainRun
       ..duration = Duration(milliseconds: curtain.totalMs)
       ..forward(from: 0);
@@ -809,7 +896,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   void _startMusic(_Slot slot) {
     // Мелодии сезона сменяют друг друга плавным переходом, первая — по умолчанию.
     final s = slot.season;
-    unawaited(SeasonMusic.instance.play(s?.musicUrls ?? const [], fadeMs: s?.musicFadeMs ?? 3500));
+    unawaited(
+      SeasonMusic.instance.play(
+        s?.musicUrls ?? const [],
+        fadeMs: s?.musicFadeMs ?? 3500,
+      ),
+    );
   }
 
   /// Молния на карточке сезона: вспышка и гром.
@@ -828,20 +920,36 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   String _badgeName(ChestPrize p) => p.badge?.name ?? p.key;
 
   String _wonText(ChestPrize p) => switch (p.kind) {
-    ChestPrizeKind.coins => trKey('chestWonCoins').replaceAll('{n}', '${p.amount}'),
-    ChestPrizeKind.gift => trKey('chestGiftTitle').replaceAll('{name}', p.gift?.title ?? p.key),
+    ChestPrizeKind.coins => trKey(
+      'chestWonCoins',
+    ).replaceAll('{n}', '${p.amount}'),
+    ChestPrizeKind.gift => trKey(
+      'chestGiftTitle',
+    ).replaceAll('{name}', p.gift?.title ?? p.key),
     ChestPrizeKind.plus => trKey('chestWonPlus'),
-    ChestPrizeKind.frame => trKey('chestFrameTitle').replaceAll('{name}', _frameName(p)),
-    ChestPrizeKind.badge => trKey('chestBadgeTitle').replaceAll('{name}', _badgeName(p)),
+    ChestPrizeKind.frame => trKey(
+      'chestFrameTitle',
+    ).replaceAll('{name}', _frameName(p)),
+    ChestPrizeKind.badge => trKey(
+      'chestBadgeTitle',
+    ).replaceAll('{name}', _badgeName(p)),
     ChestPrizeKind.plusTrial => trKey('chestPlusTrialTitle'),
   };
 
   String _title(ChestPrize p) => switch (p.kind) {
-    ChestPrizeKind.coins => trKey('chestCoins').replaceAll('{n}', '${p.amount}'),
-    ChestPrizeKind.gift => trKey('chestGiftTitle').replaceAll('{name}', p.gift?.title ?? p.key),
+    ChestPrizeKind.coins => trKey(
+      'chestCoins',
+    ).replaceAll('{n}', '${p.amount}'),
+    ChestPrizeKind.gift => trKey(
+      'chestGiftTitle',
+    ).replaceAll('{name}', p.gift?.title ?? p.key),
     ChestPrizeKind.plus => 'Togetherly+',
-    ChestPrizeKind.frame => trKey('chestFrameTitle').replaceAll('{name}', _frameName(p)),
-    ChestPrizeKind.badge => trKey('chestBadgeTitle').replaceAll('{name}', _badgeName(p)),
+    ChestPrizeKind.frame => trKey(
+      'chestFrameTitle',
+    ).replaceAll('{name}', _frameName(p)),
+    ChestPrizeKind.badge => trKey(
+      'chestBadgeTitle',
+    ).replaceAll('{name}', _badgeName(p)),
     ChestPrizeKind.plusTrial => trKey('chestPlusTrialTitle'),
   };
 
@@ -865,7 +973,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   /// «Хэллоуин · до 1 ноября»: день, с которого сундука уже нет, как на макете.
   String _seasonTag(SeasonChest s) {
     final until = DateTime.tryParse(s.until);
-    return s.tagIn(_lang, until == null ? '' : LocaleService.current.dayLogDate(until));
+    return s.tagIn(
+      _lang,
+      until == null ? '' : LocaleService.current.dayLogDate(until),
+    );
   }
 
   // ── вёрстка ─────────────────────────────────────────────────────────────
@@ -874,7 +985,8 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   ColorScheme _schemeFor(_Slot slot, ColorScheme base) {
     final p = slot.season?.palette;
     if (p == null) return base;
-    final dark = ThemeData.estimateBrightnessForColor(p.page) == Brightness.dark;
+    final dark =
+        ThemeData.estimateBrightnessForColor(p.page) == Brightness.dark;
     return base.copyWith(
       brightness: dark ? Brightness.dark : Brightness.light,
       surface: p.page,
@@ -921,9 +1033,19 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                   : SystemUiOverlayStyle.dark,
               actions: [
                 IconButton(
-                  tooltip: trKey(ChestSound.instance.enabled ? 'chestSoundOff' : 'chestSoundOn'),
-                  icon: Icon(ChestSound.instance.enabled ? Icons.volume_up_rounded : Icons.volume_off_rounded),
-                  onPressed: () => ChestSound.instance.setEnabled(!ChestSound.instance.enabled),
+                  tooltip: trKey(
+                    ChestSound.instance.enabled
+                        ? 'chestSoundOff'
+                        : 'chestSoundOn',
+                  ),
+                  icon: Icon(
+                    ChestSound.instance.enabled
+                        ? Icons.volume_up_rounded
+                        : Icons.volume_off_rounded,
+                  ),
+                  onPressed: () => ChestSound.instance.setEnabled(
+                    !ChestSound.instance.enabled,
+                  ),
                 ),
                 const SizedBox(width: 4),
               ],
@@ -944,7 +1066,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
             body: _shake(
               slot,
               SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(0, 4, 0, MediaQuery.of(context).padding.bottom + 28),
+                padding: EdgeInsets.fromLTRB(
+                  0,
+                  4,
+                  0,
+                  MediaQuery.of(context).padding.bottom + 28,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -957,7 +1084,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                       index: 1,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _content(cs, slot)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: _content(cs, slot),
+                        ),
                       ),
                     ),
                   ],
@@ -966,7 +1096,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
             ),
           ),
         ),
-        if (curtain != null) Positioned.fill(child: IgnorePointer(child: _curtainLayer(curtain, base, size))),
+        if (curtain != null)
+          Positioned.fill(
+            child: IgnorePointer(child: _curtainLayer(curtain, base, size)),
+          ),
       ],
     );
   }
@@ -977,10 +1110,19 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     final bytes = ChestFrames.bytesOf(c.spec.sheetUrl);
     if (bytes == null) return const SizedBox.shrink();
     final w = size.width * 1.04, h = size.height * 1.35;
-    Widget sheet = Image.memory(bytes, width: w, height: h, fit: BoxFit.fill, gaplessPlayback: true);
+    Widget sheet = Image.memory(
+      bytes,
+      width: w,
+      height: h,
+      fit: BoxFit.fill,
+      gaplessPlayback: true,
+    );
     // Дневной занавес нарисован белым: красим его в цвет страницы темы.
     if (!c.night) {
-      sheet = ColorFiltered(colorFilter: ColorFilter.mode(base.surface, BlendMode.srcIn), child: sheet);
+      sheet = ColorFiltered(
+        colorFilter: ColorFilter.mode(base.surface, BlendMode.srcIn),
+        child: sheet,
+      );
     }
     return AnimatedBuilder(
       animation: _curtainRun,
@@ -1006,7 +1148,9 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth - 32;
-        final aspect = _slots.length > 1 ? (_slots[1].season?.cardAspect ?? 600 / 516) : 600 / 516;
+        final aspect = _slots.length > 1
+            ? (_slots[1].season?.cardAspect ?? 600 / 516)
+            : 600 / 516;
         final h = w / aspect;
         final locked = _busy || _anyAnimating || _curtain != null;
         // Новые касания глушим, а правила прокрутки не трогаем: смена physics
@@ -1021,8 +1165,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
               controller: _pager,
               itemCount: _slots.length,
               onPageChanged: _onPage,
-              itemBuilder: (context, i) =>
-                  Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _card(i, w, h, base)),
+              itemBuilder: (context, i) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _card(i, w, h, base),
+              ),
             ),
           ),
         );
@@ -1035,8 +1181,14 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   void _goTo(int i) {
     if (_busy || _anyAnimating || _curtain != null) return;
     _swap(i, jump: true);
-    if (_curtain == null && _pager.hasClients && (_pager.page ?? 0).round() != i) {
-      _pager.animateToPage(i, duration: const Duration(milliseconds: 420), curve: Curves.easeInOutCubic);
+    if (_curtain == null &&
+        _pager.hasClients &&
+        (_pager.page ?? 0).round() != i) {
+      _pager.animateToPage(
+        i,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOutCubic,
+      );
     }
   }
 
@@ -1045,11 +1197,21 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     final season = slot.season;
     final multi = _slots.length > 1;
     final next = i + 1 < _slots.length ? i + 1 : 0;
-    final nextLabel = next == 0 ? '← ${trKey('chestTagMain')}' : '${_slots[next].season!.nameIn(_lang)} →';
-    final tagBg = season == null ? base.surfaceContainerLowest : season.palette?.fill ?? base.primary;
-    final tagFg = season == null ? base.onSurfaceVariant : season.palette?.onFill ?? base.onPrimary;
-    final nextBg = season == null ? base.inverseSurface : season.palette?.ink ?? base.inverseSurface;
-    final nextFg = season == null ? base.onInverseSurface : season.palette?.page ?? base.onInverseSurface;
+    final nextLabel = next == 0
+        ? '← ${trKey('chestTagMain')}'
+        : '${_slots[next].season!.nameIn(_lang)} →';
+    final tagBg = season == null
+        ? base.surfaceContainerLowest
+        : season.palette?.fill ?? base.primary;
+    final tagFg = season == null
+        ? base.onSurfaceVariant
+        : season.palette?.onFill ?? base.onPrimary;
+    final nextBg = season == null
+        ? base.inverseSurface
+        : season.palette?.ink ?? base.inverseSurface;
+    final nextFg = season == null
+        ? base.onInverseSurface
+        : season.palette?.page ?? base.onInverseSurface;
     return _bloodTint(
       slot,
       ClipRRect(
@@ -1063,11 +1225,23 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
               Positioned.fill(
                 child: season == null
                     ? ChestRays(scheme: base, focus: const Alignment(0, 0.24))
-                    : ChestFrames(url: season.file('card_back'), still: null, side: w, height: h, fit: BoxFit.fill),
+                    : ChestFrames(
+                        url: season.file('card_back'),
+                        still: null,
+                        side: w,
+                        height: h,
+                        fit: BoxFit.fill,
+                      ),
               ),
               // Сундук квадратом в высоту карточки, центр на 52% высоты, как на
               // макете: рисунок целиком, с полем по бокам.
-              Positioned(left: (w - h) / 2, top: h * 0.02, width: h, height: h, child: _chestArt(slot, h)),
+              Positioned(
+                left: (w - h) / 2,
+                top: h * 0.02,
+                width: h,
+                height: h,
+                child: _chestArt(slot, h),
+              ),
               if (season != null)
                 Positioned.fill(
                   child: IgnorePointer(
@@ -1086,7 +1260,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                     child: AnimatedBuilder(
                       animation: _flash,
                       builder: (context, _) => ColoredBox(
-                        color: season!.flashColor!.withValues(alpha: _flashSlot == i ? _boltOpacity(_flash.value) : 0),
+                        color: season!.flashColor!.withValues(
+                          alpha: _flashSlot == i
+                              ? _boltOpacity(_flash.value)
+                              : 0,
+                        ),
                       ),
                     ),
                   ),
@@ -1095,7 +1273,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                 Positioned(
                   left: 14,
                   top: 14,
-                  child: _pill(season == null ? trKey('chestTagMain') : _seasonTag(season), tagBg, tagFg),
+                  child: _pill(
+                    season == null ? trKey('chestTagMain') : _seasonTag(season),
+                    tagBg,
+                    tagFg,
+                  ),
                 ),
               if (multi)
                 Positioned(
@@ -1113,7 +1295,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                           padding: const EdgeInsets.fromLTRB(12, 6, 10, 6),
                           child: Text(
                             nextLabel,
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: nextFg),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: nextFg,
+                            ),
                           ),
                         ),
                       ),
@@ -1139,12 +1325,37 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     return AnimatedBuilder(
       animation: g ?? _calm,
       child: child,
-      builder: (context, c) =>
-          ColorFiltered(colorFilter: ColorFilter.matrix(g?.phase == GlitchPhase.peak ? _blood : _identity), child: c),
+      builder: (context, c) => ColorFiltered(
+        colorFilter: ColorFilter.matrix(
+          g?.phase == GlitchPhase.peak ? _blood : _identity,
+        ),
+        child: c,
+      ),
     );
   }
 
-  static const List<double> _identity = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+  static const List<double> _identity = [
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
   static const List<double> _blood = [
     0.55, 0.35, 0.1, 0, 10, //
     0.08, 0.14, 0.04, 0, 0,
@@ -1162,7 +1373,9 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       animation: g ?? _calm,
       child: child,
       builder: (context, c) {
-        final s = g != null && g.shaking && !g.reduced ? (g.frame.isEven ? 1.0 : -1.0) : 0.0;
+        final s = g != null && g.shaking && !g.reduced
+            ? (g.frame.isEven ? 1.0 : -1.0)
+            : 0.0;
         return Transform.translate(offset: Offset(s, -s), child: c);
       },
     );
@@ -1171,7 +1384,13 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   /// Вспышка молнии: как `@keyframes bolt` макета — два удара и затухание.
   static double _boltOpacity(double t) {
     if (t <= 0 || t >= 1) return 0;
-    const keys = [(0.0, 0.0), (0.08, 0.85), (0.16, 0.1), (0.26, 0.7), (1.0, 0.0)];
+    const keys = [
+      (0.0, 0.0),
+      (0.08, 0.85),
+      (0.16, 0.1),
+      (0.26, 0.7),
+      (1.0, 0.0),
+    ];
     for (var k = 1; k < keys.length; k++) {
       final (t1, v1) = keys[k];
       if (t <= t1) {
@@ -1186,7 +1405,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     return Container(
       constraints: const BoxConstraints(minHeight: 30),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(15)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: Text(
         text,
         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg),
@@ -1197,7 +1419,9 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   Widget _chestArt(_Slot slot, double side) {
     final opening = slot.opening;
     final track = slot.track;
-    final spot = opening != null && slot.frame >= 0 && slot.frame < track.length ? track[slot.frame] : null;
+    final spot = opening != null && slot.frame >= 0 && slot.frame < track.length
+        ? track[slot.frame]
+        : null;
     final still = slot.isMain ? kChestStill : null;
     final stillUrl = slot.season?.file('still');
     return Stack(
@@ -1227,7 +1451,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                 ),
         ),
         if (opening != null && spot != null)
-          ChestPrizeFlight(prize: opening, spot: spot, stage: side, peak: slot.trackPeak),
+          ChestPrizeFlight(
+            prize: opening,
+            spot: spot,
+            stage: side,
+            peak: slot.trackPeak,
+          ),
       ],
     );
   }
@@ -1259,7 +1488,9 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
             constraints: const BoxConstraints(minHeight: 20),
             child: Text(
               _s.isMain
-                  ? trKey('chestSwipeHint').replaceAll('{name}', _slots[1].season!.nameIn(_lang))
+                  ? trKey(
+                      'chestSwipeHint',
+                    ).replaceAll('{name}', _slots[1].season!.nameIn(_lang))
                   : _s.season!.hintIn(_lang),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
@@ -1296,7 +1527,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       else if (slot.wearWon != null)
         _wear(cs, slot)
       else ...[
-        if (_jarBonus > 0 || slot.pendingFromJar) ...[_jarButton(cs, slot), const SizedBox(height: 8)],
+        if (_jarBonus > 0 || slot.pendingFromJar) ...[
+          _jarButton(cs, slot),
+          const SizedBox(height: 8),
+        ],
         _button(cs, slot),
       ],
       if (slot.choice == null && slot.state?.untilRare != null) ...[
@@ -1316,7 +1550,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 12, height: 1.4, color: cs.onSurfaceVariant),
       ),
-      if (PairJarService.instance.jar != null) ...[const SizedBox(height: 10), _jarRow(cs, slot)],
+      if (PairJarService.instance.jar != null) ...[
+        const SizedBox(height: 10),
+        _jarRow(cs, slot),
+      ],
       if (slot.season != null) ..._inside(cs, slot.season!),
       const SizedBox(height: 8),
       for (final (tier, prizes) in chestSections(_odds)) ...[
@@ -1353,7 +1590,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
       child: Text(
         trKey(key).replaceAll('{n}', '$n').toUpperCase(),
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.4, color: cs.onSurfaceVariant),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.4,
+          color: cs.onSurfaceVariant,
+        ),
       ),
     );
     Widget strip(List<Widget> tiles) => SizedBox(
@@ -1365,7 +1607,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
         itemBuilder: (_, i) => Container(
           width: 64,
           height: 64,
-          decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(18),
+          ),
           alignment: Alignment.center,
           child: tiles[i],
         ),
@@ -1402,7 +1647,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   /// Рамка на неподвижном круге: в ленте важна сама рамка, а не чьё фото.
   Widget _frameThumb(String key) {
     return ChestPrizeImage(
-      ChestPrize(kind: ChestPrizeKind.frame, key: 'frame_$key', tier: ChestTier.common, weight: 0),
+      ChestPrize(
+        kind: ChestPrizeKind.frame,
+        key: 'frame_$key',
+        tier: ChestTier.common,
+        weight: 0,
+      ),
       side: 56,
     );
   }
@@ -1418,7 +1668,9 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
           builder: (_) => ChestShareScreen(
             prize: prize,
             title: slot.won ?? _wonText(prize),
-            chance: trKey('chestChance').replaceAll('{p}', chestPercent(prize, _odds, decimal: _decimal)),
+            chance: trKey(
+              'chestChance',
+            ).replaceAll('{p}', chestPercent(prize, _odds, decimal: _decimal)),
             scheme: cs,
             fill: slot.isMain ? widget.theme.fillColor : cs.primary,
             openUrl: slot.openUrl,
@@ -1451,7 +1703,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     final out = slot.left <= 0 && slot.pendingOpenId == null;
     final busy = _busy || slot.animating;
     // Счётчик в самой кнопке: «Открыть за рекламу 2/3».
-    final prefix = trKey(_free || _noAd || slot.pendingOpenId != null ? 'chestOpenFree' : 'chestOpenAd');
+    final prefix = trKey(
+      _free || _noAd || slot.pendingOpenId != null
+          ? 'chestOpenFree'
+          : 'chestOpenAd',
+    );
     final count = '${slot.left}/${slot.perDay}';
     if (busy && !_jarRun) {
       label = trKey('chestOpening');
@@ -1466,7 +1722,8 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       glitch.reduced = MediaQuery.of(context).disableAnimations;
       return AnimatedBuilder(
         animation: glitch,
-        builder: (context, _) => _glitchButton(cs, glitch, prefix, count, label),
+        builder: (context, _) =>
+            _glitchButton(cs, glitch, prefix, count, label),
       );
     }
     return SizedBox(
@@ -1483,7 +1740,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
           textStyle: _buttonText,
         ),
         // Одной строкой: на 320 точках «Открыть за рекламу 3/3» ломалась на две.
-        child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1)),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(label, maxLines: 1),
+        ),
       ),
     );
   }
@@ -1491,15 +1751,30 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   /// Кнопка сезонного сундука со сбоем (макет «Кнопка 666», вариант А).
   /// Подменяется только надпись: нажатие открывает сундук, читалка экрана
   /// слышит настоящее число.
-  Widget _glitchButton(ColorScheme cs, SeasonGlitch g, String prefix, String count, String label) {
+  Widget _glitchButton(
+    ColorScheme cs,
+    SeasonGlitch g,
+    String prefix,
+    String count,
+    String label,
+  ) {
     final (Color bg, Color fg) = switch (g.phase) {
-      GlitchPhase.dim => (Color.lerp(cs.primary, Colors.black, 0.4)!, cs.onPrimary),
+      GlitchPhase.dim => (
+        Color.lerp(cs.primary, Colors.black, 0.4)!,
+        cs.onPrimary,
+      ),
       GlitchPhase.neg => (const Color(0xFFF6F0FF), Colors.black),
-      GlitchPhase.peak => (g.spec.peakColor ?? const Color(0xFFA3101C), g.spec.onPeak ?? const Color(0xFFFFE9E4)),
+      GlitchPhase.peak => (
+        g.spec.peakColor ?? const Color(0xFFA3101C),
+        g.spec.onPeak ?? const Color(0xFFFFE9E4),
+      ),
       _ => (cs.primary, cs.onPrimary),
     };
     final torn = g.phase == GlitchPhase.split || g.phase == GlitchPhase.peak;
-    final style = _buttonText.copyWith(color: fg, letterSpacing: g.phase == GlitchPhase.peak ? 2.2 : null);
+    final style = _buttonText.copyWith(
+      color: fg,
+      letterSpacing: g.phase == GlitchPhase.peak ? 2.2 : null,
+    );
     return Semantics(
       button: true,
       label: label,
@@ -1514,14 +1789,22 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                 backgroundColor: bg,
                 foregroundColor: fg,
                 minimumSize: const Size(double.infinity, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 shape: const StadiumBorder(),
                 animationDuration: Duration.zero,
                 textStyle: _buttonText,
               ),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: GlitchLabel(glitch: g, prefix: prefix, real: count, style: style),
+                child: GlitchLabel(
+                  glitch: g,
+                  prefix: prefix,
+                  real: count,
+                  style: style,
+                ),
               ),
             ),
             if (torn)
@@ -1555,14 +1838,20 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
           disabledForegroundColor: fg,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontFamily: ProfileTheme.displayFont, fontSize: 16, fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(
+            fontFamily: ProfileTheme.displayFont,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             busy && _jarRun
                 ? trKey('chestOpening')
-                : trKey('jarOpen').replaceAll('{n}', '${_jarBonus > 0 ? _jarBonus : 1}'),
+                : trKey(
+                    'jarOpen',
+                  ).replaceAll('{n}', '${_jarBonus > 0 ? _jarBonus : 1}'),
             maxLines: 1,
           ),
         ),
@@ -1574,10 +1863,14 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
   /// капли — его рисунки с сервера.
   Widget _jarRow(ColorScheme cs, _Slot slot) {
     final jar = PairJarService.instance.jar!;
-    final on = slot.season?.file('drop_on'), off = slot.season?.file('drop_off');
+    final on = slot.season?.file('drop_on'),
+        off = slot.season?.file('drop_off');
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1593,7 +1886,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
           const SizedBox(height: 3),
           Text(
             jar.capped ? trKey('jarCapped') : trKey('jarHint'),
-            style: TextStyle(fontSize: 12.5, height: 1.35, color: cs.onSurfaceVariant),
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.35,
+              color: cs.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 8),
           if (on != null && off != null)
@@ -1610,12 +1907,19 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                     width: 22,
                     height: 27,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const SizedBox(width: 22, height: 27),
+                    errorBuilder: (_, _, _) =>
+                        const SizedBox(width: 22, height: 27),
                   ),
               ],
             )
           else
-            JarDrops(jar: jar, mine: cs.primary, partner: cs.primaryContainer, dropHeight: 26, gap: 2),
+            JarDrops(
+              jar: jar,
+              mine: cs.primary,
+              partner: cs.primaryContainer,
+              dropHeight: 26,
+              gap: 2,
+            ),
         ],
       ),
     );
@@ -1635,7 +1939,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       disabledForegroundColor: fg,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
       shape: const StadiumBorder(),
-      textStyle: const TextStyle(fontFamily: ProfileTheme.displayFont, fontSize: 15, fontWeight: FontWeight.w700),
+      textStyle: const TextStyle(
+        fontFamily: ProfileTheme.displayFont,
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+      ),
     );
     return Row(
       children: [
@@ -1644,7 +1952,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
             onPressed: _choosing ? null : () => _decide(give: true),
             style: style(cs.primary, cs.onPrimary),
             // На узком экране надпись ужимается, а не режется многоточием.
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(trKey('chestGive'), maxLines: 1)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(trKey('chestGive'), maxLines: 1),
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -1652,7 +1963,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
           child: FilledButton(
             onPressed: _choosing ? null : () => _decide(give: false),
             style: style(cs.primaryContainer, cs.onPrimaryContainer),
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(trKey('chestKeep'), maxLines: 1)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(trKey('chestKeep'), maxLines: 1),
+            ),
           ),
         ),
       ],
@@ -1670,9 +1984,15 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
         const SizedBox(width: 6),
         Flexible(
           child: Text(
-            trKey('chestToday').replaceAll('{list}', won.map(_title).join(', ')),
+            trKey(
+              'chestToday',
+            ).replaceAll('{list}', won.map(_title).join(', ')),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
+            ),
           ),
         ),
       ],
@@ -1684,17 +2004,27 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
     final next = untilRare <= 1;
     final text = next
         ? trKey('chestPityNext')
-        : trKey('chestPity').replaceAll('{n}', '${kChestPity - untilRare}').replaceAll('{m}', '$kChestPity');
+        : trKey('chestPity')
+              .replaceAll('{n}', '${kChestPity - untilRare}')
+              .replaceAll('{m}', '$kChestPity');
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(next ? Icons.auto_awesome_rounded : Icons.shield_moon_rounded, size: 16, color: cs.primary),
+        Icon(
+          next ? Icons.auto_awesome_rounded : Icons.shield_moon_rounded,
+          size: 16,
+          color: cs.primary,
+        ),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
             text,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
+            ),
           ),
         ),
       ],
@@ -1709,7 +2039,11 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
       foregroundColor: fg,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
       shape: const StadiumBorder(),
-      textStyle: const TextStyle(fontFamily: ProfileTheme.displayFont, fontSize: 15, fontWeight: FontWeight.w700),
+      textStyle: const TextStyle(
+        fontFamily: ProfileTheme.displayFont,
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+      ),
     );
     final prize = slot.wearWon!;
     return Row(
@@ -1726,10 +2060,19 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
               }
               if (!mounted) return;
               setState(() => slot.wearWon = null);
-              _snack(trKey(prize.kind == ChestPrizeKind.badge ? 'chestBadgeWorn' : 'chestFrameWorn'));
+              _snack(
+                trKey(
+                  prize.kind == ChestPrizeKind.badge
+                      ? 'chestBadgeWorn'
+                      : 'chestFrameWorn',
+                ),
+              );
             },
             style: style(cs.primary, cs.onPrimary),
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(trKey('shopWear'), maxLines: 1)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(trKey('shopWear'), maxLines: 1),
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -1737,7 +2080,10 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
           child: FilledButton(
             onPressed: () => setState(() => slot.wearWon = null),
             style: style(cs.primaryContainer, cs.onPrimaryContainer),
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(trKey('chestLater'), maxLines: 1)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(trKey('chestLater'), maxLines: 1),
+            ),
           ),
         ),
       ],
@@ -1784,9 +2130,19 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
                   children: [
                     Text(
                       _title(p),
-                      style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: cs.onSurface),
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
                     ),
-                    Text(_subtitle(p), style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant)),
+                    Text(
+                      _subtitle(p),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1811,7 +2167,12 @@ class _ChestScreenState extends State<ChestScreen> with TickerProviderStateMixin
 
 /// Занавес смены страницы, пока он идёт.
 class _Curtain {
-  _Curtain({required this.to, required this.spec, required this.night, required this.jump});
+  _Curtain({
+    required this.to,
+    required this.spec,
+    required this.night,
+    required this.jump,
+  });
 
   final int to;
   final SeasonCurtain spec;

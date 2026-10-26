@@ -13,14 +13,16 @@ import 'package:flutter_test/flutter_test.dart';
 /// Пока рассылки нет, экран обязан давать два пути к свежему списку: жест вниз
 /// и возврат приложения из фона. Уберут любой — вернётся та же жалоба.
 void main() {
-  final source =
-      File('lib/screens/together/watch_home_screen.dart').readAsStringSync();
+  final source = File(
+    'lib/screens/together/watch_home_screen.dart',
+  ).readAsStringSync();
 
   test('список тянется вниз', () {
     expect(
       source.contains('RefreshIndicator'),
       isTrue,
-      reason: 'Без жеста обновить раздел нечем: живых событий по watch_videos '
+      reason:
+          'Без жеста обновить раздел нечем: живых событий по watch_videos '
           'не приходит.',
     );
     expect(
@@ -34,7 +36,8 @@ void main() {
     expect(
       source.contains('didChangeAppLifecycleState'),
       isTrue,
-      reason: 'Партнёр сворачивает приложение и возвращается — список обязан '
+      reason:
+          'Партнёр сворачивает приложение и возвращается — список обязан '
           'освежиться.',
     );
     expect(

@@ -28,7 +28,10 @@ SaveButtonState saveButtonState({
 }) {
   if (done != null && jobTotal != null && jobTotal > 0) {
     return SaveButtonState(
-        SaveButtonMode.running, '$done/$jobTotal', done / jobTotal);
+      SaveButtonMode.running,
+      '$done/$jobTotal',
+      done / jobTotal,
+    );
   }
   final left = (total - saved).clamp(0, total);
   if (left == 0 && total > 0) {
@@ -103,8 +106,8 @@ class SaveSplitButton extends StatelessWidget {
           message: running
               ? trKey('islandSaving')
               : allSaved
-                  ? trKey('saveAllDoneTooltip')
-                  : trKey('saveAllTooltip'),
+              ? trKey('saveAllDoneTooltip')
+              : trKey('saveAllTooltip'),
           child: _Segment(
             key: mainKey,
             height: height,

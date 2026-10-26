@@ -19,11 +19,10 @@ enum AppThemeMode { light, dark, system }
 extension AppThemeModeX on AppThemeMode {
   /// Разрешить в конкретную яркость. Для [system] берётся текущая яркость ОС.
   Brightness resolve() => switch (this) {
-        AppThemeMode.light => Brightness.light,
-        AppThemeMode.dark => Brightness.dark,
-        AppThemeMode.system =>
-          PlatformDispatcher.instance.platformBrightness,
-      };
+    AppThemeMode.light => Brightness.light,
+    AppThemeMode.dark => Brightness.dark,
+    AppThemeMode.system => PlatformDispatcher.instance.platformBrightness,
+  };
 }
 
 /// Вариант схемы: мягкий (по умолчанию), «сочно», «точь-в-точь».
@@ -31,10 +30,10 @@ enum SchemeFlavor { soft, juicy, exact }
 
 extension SchemeFlavorX on SchemeFlavor {
   DynamicSchemeVariant get variant => switch (this) {
-        SchemeFlavor.soft => DynamicSchemeVariant.tonalSpot,
-        SchemeFlavor.juicy => DynamicSchemeVariant.vibrant,
-        SchemeFlavor.exact => DynamicSchemeVariant.fidelity,
-      };
+    SchemeFlavor.soft => DynamicSchemeVariant.tonalSpot,
+    SchemeFlavor.juicy => DynamicSchemeVariant.vibrant,
+    SchemeFlavor.exact => DynamicSchemeVariant.fidelity,
+  };
 }
 
 /// Цель палитры: за именем стоит вещь, а у вещи свой оттенок, своя светлота и
@@ -110,8 +109,9 @@ class PaletteSeason {
     if (!t.isBefore(start) && t.isBefore(end)) return t.year >= firstYear;
     // Последний закрывшийся сезон: этого года, если он уже прошёл, иначе
     // прошлого.
-    final lastEnd =
-        t.isBefore(end) ? DateTime.utc(t.year - 1, untilMonth, untilDay) : end;
+    final lastEnd = t.isBefore(end)
+        ? DateTime.utc(t.year - 1, untilMonth, untilDay)
+        : end;
     if (lastEnd.year < firstYear) return false;
     if (registeredAt == null) return true;
     return registeredAt.toUtc().isBefore(lastEnd);
@@ -156,14 +156,18 @@ class Palette {
   /// Сезон, см. [PaletteSeason]. Пусто — палитра открыта всегда.
   final PaletteSeason? season;
 
-  const Palette(this.index, this.name, this.accent,
-      {this.isPremium = false,
-      this.price = 0,
-      this.variant = DynamicSchemeVariant.tonalSpot,
-      this.darkOnly = false,
-      this.badge,
-      this.season,
-      required this.target});
+  const Palette(
+    this.index,
+    this.name,
+    this.accent, {
+    this.isPremium = false,
+    this.price = 0,
+    this.variant = DynamicSchemeVariant.tonalSpot,
+    this.darkOnly = false,
+    this.badge,
+    this.season,
+    required this.target,
+  });
 }
 
 /// Предельная насыщенность, которую sRGB даёт на этой паре «оттенок и тон».
@@ -180,9 +184,12 @@ Color paletteFill(Palette p, Brightness brightness) {
       ? t.tone
       : math.min(t.tone + 12, 88.0);
   return Color(
-      Hct.from(t.hue, _maxChroma(t.hue, _readableTone(raw)) * t.k,
-              _readableTone(raw))
-          .toInt());
+    Hct.from(
+      t.hue,
+      _maxChroma(t.hue, _readableTone(raw)) * t.k,
+      _readableTone(raw),
+    ).toInt(),
+  );
 }
 
 /// Мёртвая зона светлоты, где надпись поверх не читается НИКАКАЯ.
@@ -212,42 +219,218 @@ Color paletteInk(Palette p, Brightness brightness) {
 /// 26 палитр. Акценты разведены по оттенку и светлоте (мин. ΔE ≈ 17.7), чтобы
 /// каждая была различима и совпадала с названием. Бесплатны первые пять.
 const List<Palette> kPalettes = [
-  Palette(0, 'Розовая', Color(0xFFFF7E9B), target: PaletteTarget('лепесток шиповника', 5, 64, 0.86)),
-  Palette(1, 'Фиолетовая', Color(0xFF6E4FC0), target: PaletteTarget('спелая слива', 300, 44, 0.92)),
-  Palette(2, 'Голубая', Color(0xFF56AEE8), target: PaletteTarget('июльское небо', 240, 66, 0.88)),
-  Palette(3, 'Персиковая', Color(0xFFE8895A), target: PaletteTarget('мякоть персика', 30, 73, 1.0)),
-  Palette(4, 'Шалфейная', Color(0xFF8CAE7E), target: PaletteTarget('лист шалфея', 140, 66, 0.48)),
-  Palette(5, 'Полуночная', Color(0xFF33406E), isPremium: true, price: 30, target: PaletteTarget('небо за полночь', 270, 30, 0.78)),
-  Palette(6, 'Лавандовая', Color(0xFFCBA6E6), isPremium: true, price: 30, target: PaletteTarget('поле лаванды', 310, 70, 0.66)),
-  Palette(7, 'Вишнёвая', Color(0xFFB03A63), isPremium: true, price: 30, target: PaletteTarget('спелая вишня', 0, 45, 0.95)),
-  Palette(8, 'Мятная', Color(0xFF74D8BE), isPremium: true, price: 30, target: PaletteTarget('мятный лист', 170, 76, 0.82)),
-  Palette(9, 'Закатная', Color(0xFFFF6A47), isPremium: true, price: 30, target: PaletteTarget('закат над морем', 45, 60, 1.0)),
-  Palette(10, 'Монохром', Color(0xFF6E7178),
-      isPremium: true, price: 30, variant: DynamicSchemeVariant.neutral, target: PaletteTarget('графит', 258, 52, 0.08)),
-  Palette(11, 'Лесная', Color(0xFF276E3C), isPremium: true, price: 30, target: PaletteTarget('еловая хвоя', 150, 44, 0.9)),
-  Palette(12, 'Океан', Color(0xFF1685A2), isPremium: true, price: 30, target: PaletteTarget('океан на глубине', 220, 54, 0.92)),
-  Palette(13, 'Медовая', Color(0xFFF0A81C), isPremium: true, price: 30, target: PaletteTarget('гречишный мёд', 75, 74, 0.98)),
-  Palette(14, 'Лимонная', Color(0xFF9FCB2E), isPremium: true, price: 30, target: PaletteTarget('лимонная цедра', 110, 82, 0.94)),
-  Palette(15, 'Песочная', Color(0xFFCDBE96), isPremium: true, price: 30, target: PaletteTarget('песок у воды', 80, 82, 0.34)),
-  Palette(16, 'Северное сияние', Color(0xFF7C5CFF), isPremium: true, price: 40, target: PaletteTarget('северное сияние', 285, 54, 0.98)),
-  Palette(17, 'Бордовая', Color(0xFF7C2E38), isPremium: true, price: 30, target: PaletteTarget('бордо в бокале', 10, 32, 0.88)),
-  Palette(18, 'Бирюзовая', Color(0xFF16C2CE), isPremium: true, price: 30, target: PaletteTarget('бирюза', 195, 70, 0.96)),
-  Palette(19, 'Нордик', Color(0xFF40699E), isPremium: true, price: 30, target: PaletteTarget('фьорд', 250, 50, 0.66)),
-  Palette(20, 'Угольная бирюза', Color(0xFF1E7E70), isPremium: true, price: 30, target: PaletteTarget('малахит', 185, 46, 0.88)),
-  Palette(21, 'Кофе', Color(0xFF9C6E45), isPremium: true, price: 30, target: PaletteTarget('обжаренное зерно', 50, 44, 0.44)),
-  Palette(22, 'Тёмный лес', Color(0xFF2FA355), isPremium: true, price: 30, target: PaletteTarget('чаща', 155, 40, 0.92)),
-  Palette(23, 'Гранат', Color(0xFFE05A62), isPremium: true, price: 30, target: PaletteTarget('зерно граната', 15, 48, 0.92)),
-  Palette(24, 'Тёмный мёд', Color(0xFFC8912E), isPremium: true, price: 30, target: PaletteTarget('тёмный мёд', 68, 60, 0.92)),
+  Palette(
+    0,
+    'Розовая',
+    Color(0xFFFF7E9B),
+    target: PaletteTarget('лепесток шиповника', 5, 64, 0.86),
+  ),
+  Palette(
+    1,
+    'Фиолетовая',
+    Color(0xFF6E4FC0),
+    target: PaletteTarget('спелая слива', 300, 44, 0.92),
+  ),
+  Palette(
+    2,
+    'Голубая',
+    Color(0xFF56AEE8),
+    target: PaletteTarget('июльское небо', 240, 66, 0.88),
+  ),
+  Palette(
+    3,
+    'Персиковая',
+    Color(0xFFE8895A),
+    target: PaletteTarget('мякоть персика', 30, 73, 1.0),
+  ),
+  Palette(
+    4,
+    'Шалфейная',
+    Color(0xFF8CAE7E),
+    target: PaletteTarget('лист шалфея', 140, 66, 0.48),
+  ),
+  Palette(
+    5,
+    'Полуночная',
+    Color(0xFF33406E),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('небо за полночь', 270, 30, 0.78),
+  ),
+  Palette(
+    6,
+    'Лавандовая',
+    Color(0xFFCBA6E6),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('поле лаванды', 310, 70, 0.66),
+  ),
+  Palette(
+    7,
+    'Вишнёвая',
+    Color(0xFFB03A63),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('спелая вишня', 0, 45, 0.95),
+  ),
+  Palette(
+    8,
+    'Мятная',
+    Color(0xFF74D8BE),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('мятный лист', 170, 76, 0.82),
+  ),
+  Palette(
+    9,
+    'Закатная',
+    Color(0xFFFF6A47),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('закат над морем', 45, 60, 1.0),
+  ),
+  Palette(
+    10,
+    'Монохром',
+    Color(0xFF6E7178),
+    isPremium: true,
+    price: 30,
+    variant: DynamicSchemeVariant.neutral,
+    target: PaletteTarget('графит', 258, 52, 0.08),
+  ),
+  Palette(
+    11,
+    'Лесная',
+    Color(0xFF276E3C),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('еловая хвоя', 150, 44, 0.9),
+  ),
+  Palette(
+    12,
+    'Океан',
+    Color(0xFF1685A2),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('океан на глубине', 220, 54, 0.92),
+  ),
+  Palette(
+    13,
+    'Медовая',
+    Color(0xFFF0A81C),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('гречишный мёд', 75, 74, 0.98),
+  ),
+  Palette(
+    14,
+    'Лимонная',
+    Color(0xFF9FCB2E),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('лимонная цедра', 110, 82, 0.94),
+  ),
+  Palette(
+    15,
+    'Песочная',
+    Color(0xFFCDBE96),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('песок у воды', 80, 82, 0.34),
+  ),
+  Palette(
+    16,
+    'Северное сияние',
+    Color(0xFF7C5CFF),
+    isPremium: true,
+    price: 40,
+    target: PaletteTarget('северное сияние', 285, 54, 0.98),
+  ),
+  Palette(
+    17,
+    'Бордовая',
+    Color(0xFF7C2E38),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('бордо в бокале', 10, 32, 0.88),
+  ),
+  Palette(
+    18,
+    'Бирюзовая',
+    Color(0xFF16C2CE),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('бирюза', 195, 70, 0.96),
+  ),
+  Palette(
+    19,
+    'Нордик',
+    Color(0xFF40699E),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('фьорд', 250, 50, 0.66),
+  ),
+  Palette(
+    20,
+    'Угольная бирюза',
+    Color(0xFF1E7E70),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('малахит', 185, 46, 0.88),
+  ),
+  Palette(
+    21,
+    'Кофе',
+    Color(0xFF9C6E45),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('обжаренное зерно', 50, 44, 0.44),
+  ),
+  Palette(
+    22,
+    'Тёмный лес',
+    Color(0xFF2FA355),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('чаща', 155, 40, 0.92),
+  ),
+  Palette(
+    23,
+    'Гранат',
+    Color(0xFFE05A62),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('зерно граната', 15, 48, 0.92),
+  ),
+  Palette(
+    24,
+    'Тёмный мёд',
+    Color(0xFFC8912E),
+    isPremium: true,
+    price: 30,
+    target: PaletteTarget('тёмный мёд', 68, 60, 0.92),
+  ),
   // Макет «Б. Узор» (выбор владельца 19.10.2026): ночь хэллоуинского сундука,
   // тыквенная заливка и контуры предметов праздника по фону. Бесплатна всем,
   // кто застал Хэллоуин; сезон каждый год с 1 октября по 31 октября.
-  Palette(25, 'Хэллоуин', Color(0xFFF0924A),
-      darkOnly: true,
-      season: PaletteSeason(
-          fromMonth: 10, fromDay: 1, untilMonth: 11, untilDay: 1, firstYear: 2026),
-      badge: PaletteBadge(
-          'assets/images/themes/halloween_pumpkin.webp', Color(0xFF1E1729)),
-      target: PaletteTarget('тыква', 54, 69, 0.77)),
+  Palette(
+    25,
+    'Хэллоуин',
+    Color(0xFFF0924A),
+    darkOnly: true,
+    season: PaletteSeason(
+      fromMonth: 10,
+      fromDay: 1,
+      untilMonth: 11,
+      untilDay: 1,
+      firstYear: 2026,
+    ),
+    badge: PaletteBadge(
+      'assets/images/themes/halloween_pumpkin.webp',
+      Color(0xFF1E1729),
+    ),
+    target: PaletteTarget('тыква', 54, 69, 0.77),
+  ),
 ];
 
 /// Вариант схемы для палитры при выбранной насыщенности.
@@ -317,22 +500,23 @@ AppTheme _juiced(AppTheme t, SchemeFlavor f, Palette p) {
   //
   // Тема со своей схемой отдаёт её целиком: у «Хэллоуина» поверхности
   // ночные, а из тыквенного сида они вышли бы тёплыми коричневыми.
-  final scheme = (t.scheme ??
-          ColorScheme.fromSeed(
-            seedColor: accent,
-            brightness: t.brightness,
-            dynamicSchemeVariant: p.variant,
-          ))
-      .copyWith(
-    primary: accent,
-    onPrimary: AppThemes.onColor(accent, mode: t.brightness),
-    // Контейнер — светлая тональная подложка, а НЕ тот же акцент. Пока они
-    // совпадали, значок цветом `primary` на подложке `primaryContainer`
-    // становился цветом по цвету: в выборе типа связи иконок не было видно
-    // вовсе.
-    primaryContainer: j(t.primaryLight),
-    onPrimaryContainer: accent,
-  );
+  final scheme =
+      (t.scheme ??
+              ColorScheme.fromSeed(
+                seedColor: accent,
+                brightness: t.brightness,
+                dynamicSchemeVariant: p.variant,
+              ))
+          .copyWith(
+            primary: accent,
+            onPrimary: AppThemes.onColor(accent, mode: t.brightness),
+            // Контейнер — светлая тональная подложка, а НЕ тот же акцент. Пока они
+            // совпадали, значок цветом `primary` на подложке `primaryContainer`
+            // становился цветом по цвету: в выборе типа связи иконок не было видно
+            // вовсе.
+            primaryContainer: j(t.primaryLight),
+            onPrimaryContainer: accent,
+          );
   return AppTheme(
     index: t.index,
     name: t.name,
@@ -418,20 +602,30 @@ AppTheme buildAppTheme(
   // значки на фоне — контраст (`ink`). Оттенок у них общий, так что тема
   // остаётся собой. В тёмной заливка поднимается по тону: на чёрном фоне
   // винный тон тонет, и цвет держится светлотой, а не насыщенностью.
-  final fillTone = dark ? math.min(math.max(src.tone + 24, 58.0), 80.0) : src.tone;
+  final fillTone = dark
+      ? math.min(math.max(src.tone + 24, 58.0), 80.0)
+      : src.tone;
   final fill = _juice(
-      Color(Hct.from(src.hue, src.chroma, fillTone).toInt()), flavor);
+    Color(Hct.from(src.hue, src.chroma, fillTone).toInt()),
+    flavor,
+  );
   final acc = _juice(
-      Color(Hct.from(src.hue, math.min(src.chroma, 55), dark ? 86.0 : 36.0)
-          .toInt()),
-      flavor);
+    Color(
+      Hct.from(src.hue, math.min(src.chroma, 55), dark ? 86.0 : 36.0).toInt(),
+    ),
+    flavor,
+  );
 
-  final card = (dark && amoled) ? const Color(0xFF181818) : s.surfaceContainerHigh;
+  final card = (dark && amoled)
+      ? const Color(0xFF181818)
+      : s.surfaceContainerHigh;
   final bg1 = (dark && amoled) ? const Color(0xFF000000) : s.surface;
-  final bg2 =
-      (dark && amoled) ? const Color(0xFF000000) : s.surfaceContainerLow;
-  final muted =
-      (dark && amoled) ? const Color(0xFF222222) : s.surfaceContainerHighest;
+  final bg2 = (dark && amoled)
+      ? const Color(0xFF000000)
+      : s.surfaceContainerLow;
+  final muted = (dark && amoled)
+      ? const Color(0xFF222222)
+      : s.surfaceContainerHighest;
 
   return AppTheme(
     index: p.index,

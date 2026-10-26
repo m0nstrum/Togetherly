@@ -7,7 +7,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 
 /**
- * Зов в совместную ленту («Аня зовёт смотреть TikTok», `pb_hooks/reels_invite.pb.js`)
+ * Зов в совместную ленту («Аня зовёт смотреть TikTok», `server/internal/handler/calls.go`)
  * — из системы во Flutter, канал `love_app/reels_invite`.
  *
  * Пути два. Касание по пушу приходит интентом лаунчера с данными FCM в

@@ -11,8 +11,15 @@ const _pit = LatLng(59.9398, 30.3146);
 const _msk = LatLng(55.7520, 37.6175);
 const _ber = LatLng(52.5200, 13.4050);
 
-String _ru(double m) => formatMapDistance(m, lang: 'ru', nearby: 'Рядом', unitM: 'м', unitKm: 'км');
-String _en(double m) => formatMapDistance(m, lang: 'en', nearby: 'Nearby', unitM: 'm', unitKm: 'km');
+String _ru(double m) =>
+    formatMapDistance(m, lang: 'ru', nearby: 'Рядом', unitM: 'м', unitKm: 'км');
+String _en(double m) => formatMapDistance(
+  m,
+  lang: 'en',
+  nearby: 'Nearby',
+  unitM: 'm',
+  unitKm: 'km',
+);
 
 void main() {
   group('formatMapDistance', () {
@@ -86,14 +93,22 @@ void main() {
   group('GlobeBasis', () {
     test('центр вида попадает в центр экрана', () {
       final b = GlobeBasis(_msk.latitude, _msk.longitude);
-      final p = b.project(Vec3.fromLatLng(_msk.latitude, _msk.longitude), 300, const Offset(180, 320));
+      final p = b.project(
+        Vec3.fromLatLng(_msk.latitude, _msk.longitude),
+        300,
+        const Offset(180, 320),
+      );
       expect(p.dx, closeTo(180, 1e-6));
       expect(p.dy, closeTo(320, 1e-6));
     });
 
     test('север — вверх экрана', () {
       final b = GlobeBasis(_msk.latitude, _msk.longitude);
-      final p = b.project(Vec3.fromLatLng(_pit.latitude, _msk.longitude), 300, const Offset(180, 320));
+      final p = b.project(
+        Vec3.fromLatLng(_pit.latitude, _msk.longitude),
+        300,
+        const Offset(180, 320),
+      );
       expect(p.dy, lessThan(320));
     });
 
@@ -109,22 +124,34 @@ void main() {
 
     test('кольцо целиком внутри шапки не меняется', () {
       final ring = [
-        for (final (la, lo) in const [(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (2.0, 1.0)]) Vec3.fromLatLng(la, lo)
+        for (final (la, lo) in const [
+          (1.0, 1.0),
+          (1.0, 2.0),
+          (2.0, 2.0),
+          (2.0, 1.0),
+        ])
+          Vec3.fromLatLng(la, lo),
       ];
       expect(clipRingToCap(ring, basis, cosTheta: 0).length, ring.length);
     });
 
     test('кольцо на обратной стороне исчезает', () {
       final ring = [
-        for (final (la, lo) in const [(1.0, 179.0), (1.0, 178.0), (2.0, 178.0)]) Vec3.fromLatLng(la, lo)
+        for (final (la, lo) in const [(1.0, 179.0), (1.0, 178.0), (2.0, 178.0)])
+          Vec3.fromLatLng(la, lo),
       ];
       expect(clipRingToCap(ring, basis, cosTheta: 0), isEmpty);
     });
 
     test('кольцо поперёк горизонта обрезается по краю шапки', () {
       final ring = [
-        for (final (la, lo) in const [(-10.0, 60.0), (-10.0, 120.0), (10.0, 120.0), (10.0, 60.0)])
-          Vec3.fromLatLng(la, lo)
+        for (final (la, lo) in const [
+          (-10.0, 60.0),
+          (-10.0, 120.0),
+          (10.0, 120.0),
+          (10.0, 60.0),
+        ])
+          Vec3.fromLatLng(la, lo),
       ];
       final clipped = clipRingToCap(ring, basis, cosTheta: 0);
       expect(clipped, isNotEmpty);
@@ -132,14 +159,23 @@ void main() {
         expect(basis.depth(v), greaterThanOrEqualTo(-1e-9));
       }
       // На краю лежат по меньшей мере две точки: вход и выход.
-      expect(clipped.where((v) => basis.depth(v).abs() < 1e-6).length, greaterThanOrEqualTo(2));
+      expect(
+        clipped.where((v) => basis.depth(v).abs() < 1e-6).length,
+        greaterThanOrEqualTo(2),
+      );
     });
   });
 
   group('GlobeTransition', () {
     // Камера карты: центр между Берлином и Москвой, зум 3.
-    Offset merc(double lat, double lon) => mercatorScreen(lat, lon,
-        centerLat: 54.5, centerLon: 25.5, zoom: 3, size: const Size(360, 780));
+    Offset merc(double lat, double lon) => mercatorScreen(
+      lat,
+      lon,
+      centerLat: 54.5,
+      centerLon: 25.5,
+      zoom: 3,
+      size: const Size(360, 780),
+    );
 
     test('масштаб шара в конце приближения равен масштабу карты в центре', () {
       final r = matchRadius(zoom: 3, lat: 54.5);
@@ -154,10 +190,16 @@ void main() {
         rest: const GlobeView(lat: 55, lon: 25, radius: 520),
         target: const GlobeTarget(lat: 54.5, lon: 25.5, radius: 900),
         focus: const Offset(180, 390),
-        camera: const MercatorCamera(centerLat: 54.5, centerLon: 25.5, zoom: 3, size: Size(360, 780)),
+        camera: const MercatorCamera(
+          centerLat: 54.5,
+          centerLon: 25.5,
+          zoom: 3,
+          size: Size(360, 780),
+        ),
       );
       final v = Vec3.fromLatLng(_msk.latitude, _msk.longitude);
-      final got = t.screenAt(v, alpha: 1), want = merc(_msk.latitude, _msk.longitude);
+      final got = t.screenAt(v, alpha: 1),
+          want = merc(_msk.latitude, _msk.longitude);
       expect((got - want).distance, lessThan(1e-6));
     });
 
@@ -166,7 +208,12 @@ void main() {
         rest: const GlobeView(lat: 55, lon: 25, radius: 520),
         target: const GlobeTarget(lat: 54.5, lon: 25.5, radius: 900),
         focus: const Offset(180, 390),
-        camera: const MercatorCamera(centerLat: 54.5, centerLon: 25.5, zoom: 3, size: Size(360, 780)),
+        camera: const MercatorCamera(
+          centerLat: 54.5,
+          centerLon: 25.5,
+          zoom: 3,
+          size: Size(360, 780),
+        ),
       );
       final v = Vec3.fromLatLng(54.5, 25.5);
       expect(t.screenAt(v, alpha: 0).dx, closeTo(180, 1e-6));
@@ -178,7 +225,12 @@ void main() {
         rest: const GlobeView(lat: 55, lon: 25, radius: 520),
         target: const GlobeTarget(lat: 54.5, lon: 25.5, radius: 900),
         focus: const Offset(180, 390),
-        camera: const MercatorCamera(centerLat: 54.5, centerLon: 25.5, zoom: 3, size: Size(360, 780)),
+        camera: const MercatorCamera(
+          centerLat: 54.5,
+          centerLon: 25.5,
+          zoom: 3,
+          size: Size(360, 780),
+        ),
       );
       expect(t.viewAt(1).tilt, 0);
       expect(t.viewAt(0).tilt, greaterThan(0));

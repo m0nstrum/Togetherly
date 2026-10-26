@@ -9,8 +9,11 @@ import 'package:love_app/config/sentry_config.dart';
 /// адрес на домене, чтобы это не повторилось после правки конфига.
 void main() {
   test('DSN идёт по HTTPS', () {
-    expect(SentryConfig.dsn.startsWith('https://'), isTrue,
-        reason: 'HTTP-порт Bugsink закрыт файрволом');
+    expect(
+      SentryConfig.dsn.startsWith('https://'),
+      isTrue,
+      reason: 'HTTP-порт Bugsink закрыт файрволом',
+    );
   });
 
   test('DSN указывает на домен, а не на IP с портом', () {

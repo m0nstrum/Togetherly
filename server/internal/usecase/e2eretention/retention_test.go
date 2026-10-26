@@ -42,12 +42,14 @@ func TestRetentionPreservesHistoryKeys(t *testing.T) {
 	active := grant("active", 365*24*time.Hour)
 	revoked := grant("revoked", 31*24*time.Hour)
 	fresh := grant("recently-removed", 24*time.Hour)
+	freshLink := save("e2e_links", 5*time.Minute, map[string]any{"user_uid": uid, "mac": "m"})
+	oldLink := save("e2e_links", 20*time.Minute, map[string]any{"user_uid": uid, "mac": "m"})
 	require.NoError(t, e2eretention.Sweep(app, now))
-	for _, r := range []*core.Record{freshSAS, proof, active, fresh} {
+	for _, r := range []*core.Record{freshSAS, proof, active, fresh, freshLink} {
 		_, err := app.FindRecordById(r.Collection(), r.Id)
 		require.NoError(t, err, "must keep %s", r.Id)
 	}
-	for _, r := range []*core.Record{oldSAS, expiredProof, revoked} {
+	for _, r := range []*core.Record{oldSAS, expiredProof, revoked, oldLink} {
 		_, err := app.FindRecordById(r.Collection(), r.Id)
 		require.Error(t, err, "must remove %s", r.Id)
 	}

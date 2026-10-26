@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -21,7 +22,7 @@ type Config struct {
 	HTTPAddr string `koanf:"http_addr"`
 	// DataDir — база SQLite и файлы (pb_data).
 	DataDir string `koanf:"data_dir"`
-	// HooksDir — JS-хуки апстрима, отобранные по server/hooks.allow.
+	// HooksDir — JS-хуки (server/pb_hooks), пока не перенесены на Go.
 	HooksDir string `koanf:"hooks_dir"`
 	// PublicDir — статика (комнаты «Смотрим вместе», лендинг приглашения).
 	PublicDir string `koanf:"public_dir"`
@@ -53,6 +54,7 @@ type Config struct {
 	Backup     Backup     `koanf:"backup"`
 	WatchProxy WatchProxy `koanf:"watch_proxy"`
 	FCM        FCM        `koanf:"fcm"`
+	Invite     Invite     `koanf:"invite"`
 }
 
 // Backup — встроенные бэкапы PocketBase (zip в pb_data/backups). Cron пуст —
@@ -107,11 +109,40 @@ type TURN struct {
 	TTL    time.Duration `koanf:"ttl"`
 }
 
+// Invite — страница приглашения и проверка домена для ссылок приложения.
+// Пустые адреса магазинов не показываются, без пакета и отпечатков (или
+// appID iOS) файлы проверки домена не раздаются.
+type Invite struct {
+	Scheme         string `koanf:"scheme"`
+	PlayURL        string `koanf:"play_url"`
+	RuStoreURL     string `koanf:"rustore_url"`
+	APKURL         string `koanf:"apk_url"`
+	AndroidPackage string `koanf:"android_package"`
+	// AndroidFingerprints — SHA-256 подписей через запятую.
+	AndroidFingerprints string `koanf:"android_fingerprints"`
+	IOSAppID            string `koanf:"ios_app_id"`
+}
+
+// Fingerprints — отпечатки списком.
+func (i Invite) Fingerprints() []string {
+	var out []string
+	for _, f := range strings.Split(i.AndroidFingerprints, ",") {
+		if f = strings.TrimSpace(f); f != "" {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // Centrifugo — HTTP API для публикации изменений.
 type Centrifugo struct {
 	API     string        `koanf:"api"`
 	APIKey  string        `koanf:"api_key"`
 	Timeout time.Duration `koanf:"timeout"`
+	// TokenHMAC — общий с Centrifugo ключ подписи токенов клиентов
+	// (TETHERED_CENTRIFUGO__TOKEN_HMAC; по старинке — CENTRIFUGO_TOKEN_HMAC,
+	// его же читают оставшиеся JS-хуки).
+	TokenHMAC string `koanf:"token_hmac"`
 }
 
 // SMTP — свой почтовый сервер (вместо Gmail-релея апстрима).
@@ -154,9 +185,13 @@ func Load() (Config, error) {
 		Backup:     Backup{MaxKeep: 7},
 		WatchProxy: WatchProxy{Addr: "0.0.0.0:8443", DailyMB: 3072},
 		FCM:        FCM{TTL: 10 * time.Minute, Timeout: 10 * time.Second},
+		Invite:     Invite{Scheme: "tethered", AndroidPackage: "io.github.m0nstrum.tethered"},
 	}
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return Config{}, fmt.Errorf("config: разбор: %w", err)
+	}
+	if cfg.Centrifugo.TokenHMAC == "" {
+		cfg.Centrifugo.TokenHMAC = os.Getenv("CENTRIFUGO_TOKEN_HMAC")
 	}
 	return cfg, cfg.Validate()
 }

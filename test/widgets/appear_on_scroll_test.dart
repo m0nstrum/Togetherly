@@ -69,13 +69,8 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: MediaQuery(
-          data: MediaQueryData(
-            size: Size(400, 800),
-            disableAnimations: true,
-          ),
-          child: Scaffold(
-            body: AppearOnScroll(child: Text('без движения')),
-          ),
+          data: MediaQueryData(size: Size(400, 800), disableAnimations: true),
+          child: Scaffold(body: AppearOnScroll(child: Text('без движения'))),
         ),
       ),
     );

@@ -18,9 +18,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final layout =
-      File('android/app/src/main/res/layout/photo_day_widget.xml')
-          .readAsStringSync();
+  final layout = File(
+    'android/app/src/main/res/layout/photo_day_widget.xml',
+  ).readAsStringSync();
   final provider = File(
     'android/app/src/main/kotlin/com/togetherly/love/PhotoDayWidgetProvider.kt',
   ).readAsStringSync();
@@ -48,12 +48,18 @@ void main() {
     // Проверяем суффикс и то, что он уходит в контейнер, а не просто лежит
     // строкой: ключ, который виджет читает, а приложение не пишет, уже оставлял
     // четыре фото-виджета белыми (история ios_* ключей).
-    expect(dart.contains("'empty_title'"), isTrue,
-        reason: 'ключ читается виджетом, но никем не пишется');
+    expect(
+      dart.contains("'empty_title'"),
+      isTrue,
+      reason: 'ключ читается виджетом, но никем не пишется',
+    );
     expect(dart.contains("'empty_hint'"), isTrue);
     final i = dart.indexOf("'empty_title'");
-    expect(dart.substring(i - 400, i).contains('saveWidgetData'), isTrue,
-        reason: 'слова должны уезжать в контейнер виджета');
+    expect(
+      dart.substring(i - 400, i).contains('saveWidgetData'),
+      isTrue,
+      reason: 'слова должны уезжать в контейнер виджета',
+    );
   });
 
   test('слова переведены, а не вшиты в код', () {

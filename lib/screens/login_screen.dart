@@ -1,8 +1,7 @@
-import '../fork/ui/password_reset_email.dart'; // fork
-import '../widgets/common/app_dialog.dart'; // fork
+import '../fork/ui/password_reset_email.dart';
+import '../widgets/common/app_dialog.dart';
 import '../fork/ui/feedback.dart'; // fork (PLAN 2.2)
 import 'dart:async';
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +10,6 @@ import '../models/user_data.dart';
 import '../services/pb_auth_service.dart';
 import '../services/locale_service.dart';
 import '../utils/auth_failure.dart';
-import '../utils/email_typo.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/theme_scope.dart';
 import '../theme/profile_theme.dart';
@@ -20,7 +18,6 @@ import 'package:material3_expressive_loading_indicator/material3_expressive_load
 import 'home_screen.dart';
 import 'setup_screen.dart';
 import 'welcome_screen.dart';
-import '../fork/flags.dart'; // fork
 
 class LoginScreen extends StatefulWidget {
   final UserData userData;
@@ -45,18 +42,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = true;
   bool _resettingPassword = false;
 
-  // OAuth: PB authWithOAuth2 зависает навсегда, если юзер закрыл окно провайдера
-  // крестиком (нет сигнала отмены). Ловим возврат в приложение и снимаем спиннер.
-  AppLifecycleListener? _lifecycle;
-  bool _oauthInFlight = false;
-
   /// Версия сборки подписью внизу экрана.
   String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
-    _lifecycle = AppLifecycleListener(onResume: _onOAuthResume);
     unawaited(_loadVersion());
   }
 
@@ -66,9 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final build = info.buildNumber.trim();
       if (!mounted) return;
       setState(() {
-        _appVersion = build.isEmpty
-            ? info.version
-            : '${info.version} ($build)';
+        _appVersion = build.isEmpty ? info.version : '${info.version} ($build)';
       });
     } catch (_) {
       // Версию не достали — подписи просто не будет.
@@ -77,30 +66,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _lifecycle?.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  /// Вернулись из in-app браузера. Если OAuth-вход не завершился за грейс-период
-  /// (юзер отменил) — снимаем бесконечную загрузку. На успехе `_oauthInFlight`
-  /// уже сброшен (см. `_oauthSignIn`), поэтому ложно не срабатывает.
-  /// ⚠️ Грейс ДОЛЖЕН быть щедрым: на Android вкладка не закрывается сама, юзер
-  /// возвращается раньше, чем realtime-редирект + register дозавершатся (особенно
-  /// на медленной сети). Прежние 1500мс рубили загрузку ПОСРЕДИ успешного входа
-  /// → спиннер пропадал, казалось «сбой», хотя вход проходил. 8с покрывают успех;
-  /// истинная отмена всё равно снимется (просто чуть позже).
-  void _onOAuthResume() {
-    if (!_oauthInFlight) return;
-    Future.delayed(const Duration(seconds: 8), () {
-      if (mounted && _oauthInFlight) {
-        setState(() {
-          _isLoading = false;
-          _oauthInFlight = false;
-        });
-      }
-    });
   }
 
   Future<void> _signInWithEmail() async {
@@ -120,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final auth = PbAuthService();
-      final user = await _signInAllowingTypo(auth, email, password);
+      final user = await auth.signInWithEmail(email: email, password: password);
 
       if (user == null) {
         if (mounted) setState(() => _isLoading = false);
@@ -178,32 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// Вход, который находит аккаунт, заведённый на почту с опечаткой.
-  ///
-  /// Около 1270 аккаунтов на проде лежат на `gmail.con`, `gmai.com` и похожих.
-  /// Человек входит с правильной почтой, получает «неверный пароль» и заводит
-  /// новый пустой аккаунт, теряя пару (обращения 208, 223, 232). Если пароль не
-  /// подошёл, пробуем тот же пароль с частыми опечатками этого домена. Без
-  /// пароля так никуда не войти. Найденный аккаунт главная попросит исправить.
-  Future<Object?> _signInAllowingTypo(
-      PbAuthService auth, String email, String password) async {
-    try {
-      return await auth.signInWithEmail(email: email, password: password);
-    } catch (e) {
-      if (AuthFailure.of(e) != AuthFailure.badCredentials) rethrow;
-      if (ForkFlags.strictLogin) rethrow; // fork: чужой аккаунт с тем же паролем (UX_AUDIT A1)
-      for (final typo in emailTypoVariants(email)) {
-        try {
-          final user = await auth.signInWithEmail(email: typo, password: password);
-          if (user != null) return user;
-        } catch (_) {
-          // Нет такого аккаунта или другой пароль — пробуем следующий.
-        }
-      }
-      rethrow;
-    }
-  }
-
   /// Человеко-понятный текст ошибки входа. Приложение на PocketBase — прежние
   /// проверки строк Firebase (`wrong-password`/`invalid-credential`/…) НИКОГДА не
   /// совпадали, и юзер видел сырой `ClientException{…}` вместо понятной причины.
@@ -217,8 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthFailure.blockedConnection => s.connectionBlocked,
       AuthFailure.noConnection ||
       AuthFailure.timeout ||
-      AuthFailure.serverDown =>
-        s.serverNotResponding,
+      AuthFailure.serverDown => s.serverNotResponding,
       AuthFailure.tooManyAttempts => s.tooManyAttempts,
       // PB отвечает одинаково и на чужую почту, и на неверный пароль —
       // различить их нельзя, это защита от перебора адресов.
@@ -232,83 +173,14 @@ class _LoginScreenState extends State<LoginScreen> {
     };
   }
 
-  /// Универсальный OAuth-вход: google / apple / yandex / vk / facebook.
-  /// Логика одинаковая: есть профиль с полом → домой, иначе → setup.
-  Future<void> _oauthSignIn(String provider) async {
-    setState(() => _isLoading = true);
-    _oauthInFlight = true;
-    try {
-      final auth = PbAuthService();
-      final user = await auth.signInWithOAuth2(provider);
-      _oauthInFlight = false;
-
-      if (user == null) {
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-
-      final profile = auth.currentProfile();
-      if (profile != null &&
-          profile['displayName'] != null &&
-          profile['gender'] != null) {
-        final displayName = profile['displayName'] as String;
-        final email = profile['email'] as String? ?? '';
-        final avatarUrl = profile['avatarUrl'] as String? ?? '';
-        final genderStr = profile['gender'] as String;
-        final gender = genderStr == 'male' ? Gender.male : Gender.female;
-
-        await widget.userData.register(
-          displayName: displayName,
-          email: email,
-          gender: gender,
-          avatarUrl: avatarUrl,
-          isReturningUser: true, // Login - don't clear existing data
-        );
-
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, _, _) => HomeScreen(userData: widget.userData),
-            transitionsBuilder: (_, animation, _, child) =>
-                FadeTransition(opacity: animation, child: child),
-            transitionDuration: const Duration(milliseconds: 400),
-          ),
-        );
-      } else {
-        // No profile yet - redirect to setup for first time setup
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, _, _) => SetupScreen(userData: widget.userData),
-            transitionsBuilder: (_, animation, _, child) =>
-                FadeTransition(opacity: animation, child: child),
-            transitionDuration: const Duration(milliseconds: 400),
-          ),
-        );
-      }
-    } catch (e) {
-      _oauthInFlight = false;
-      if (mounted) setState(() => _isLoading = false);
-      // Обрыв связи предлагаем повторить прямо из сообщения: сам вход в
-      // порядке, ему просто не хватило соединения.
-      final broke = switch (AuthFailure.of(e)) {
-        AuthFailure.noConnection ||
-        AuthFailure.timeout ||
-        AuthFailure.blockedConnection => true,
-        _ => false,
-      };
-      _showError(
-        _authErrorMessage(e),
-        retry: broke ? () => _oauthSignIn(provider) : null,
-      );
-    }
-  }
-
   Future<void> _sendPasswordReset() async {
     if (_isLoading || _resettingPassword) return;
     setState(() => _resettingPassword = true);
     try {
-      final email = await forkPasswordResetEmail(context, initial: _emailController.text.trim());
+      final email = await forkPasswordResetEmail(
+        context,
+        initial: _emailController.text.trim(),
+      );
       if (email == null || !mounted) return;
       await PbAuthService().sendPasswordReset(email);
       if (!mounted) return;
@@ -327,7 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         _showError(LocaleService.current.passwordResetError);
       }
-    } finally { if (mounted) setState(() => _resettingPassword = false); }
+    } finally {
+      if (mounted) setState(() => _resettingPassword = false);
+    }
   }
 
   void _showError(String msg, {VoidCallback? retry}) {
@@ -335,8 +209,12 @@ class _LoginScreenState extends State<LoginScreen> {
     // maybeOf + mounted: _showError зовётся из catch-блоков после async-гэпа,
     // когда экран мог быть снят с дерева → ScaffoldMessenger.of делает `!` по
     // null ("Null check operator used on a null value"). См. Bugsink TypeError.
-    AppSnack.error(context, msg,
-      actionLabel: retry == null ? null : LocaleService.current.retry, onAction: retry);
+    AppSnack.error(
+      context,
+      msg,
+      actionLabel: retry == null ? null : LocaleService.current.retry,
+      onAction: retry,
+    );
   }
 
   void _goToWelcome() {
@@ -392,8 +270,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: cs.surface,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(34)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(34),
+                    ),
                   ),
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -408,7 +287,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontFamily: 'Unbounded',
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
+                              fontVariations: const [
+                                FontVariation('wght', 800),
+                              ],
                               color: cs.onSurface,
                               letterSpacing: -1,
                             ),
@@ -423,7 +304,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           keyboardType: TextInputType.emailAddress,
                           inputFormatters: [
                             FilteringTextInputFormatter.deny(
-                                RegExp(r'[а-яёА-ЯЁ]')),
+                              RegExp(r'[а-яёА-ЯЁ]'),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 18),
@@ -444,35 +326,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             _rememberMeToggle(s),
                             const Spacer(),
-                            Flexible(child: TextButton(
-                              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                              onPressed: _isLoading || _resettingPassword ? null : _sendPasswordReset,
-                              child: Text(
-                                s.forgotPassword,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: _accent,
+                            Flexible(
+                              child: TextButton(
+                                style: TextButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
+                                ),
+                                onPressed: _isLoading || _resettingPassword
+                                    ? null
+                                    : _sendPasswordReset,
+                                child: Text(
+                                  s.forgotPassword,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: _accent,
+                                  ),
                                 ),
                               ),
-                            )),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 24),
                         _primaryButton(
                           label: s.login,
                           onTap: _isLoading ? null : _signInWithEmail,
-                        ),
-                        if (!ForkFlags.emailOnlyAuth) const SizedBox(height: 26),
-                        AuthSocialRow(
-                          label: s.signInWith,
-                          onGoogle:
-                              _isLoading ? null : () => _oauthSignIn('google'),
-                          onYandex:
-                              _isLoading ? null : () => _oauthSignIn('yandex'),
-                          onApple: Platform.isIOS
-                              ? (_isLoading ? null : () => _oauthSignIn('apple'))
-                              : null,
                         ),
                         const SizedBox(height: 28),
                         // Don't have an account? Sign up
@@ -482,7 +359,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             Text(
                               '${s.noAccount} ',
                               style: TextStyle(
-                                  fontSize: 14, color: t.textSecondary),
+                                fontSize: 14,
+                                color: t.textSecondary,
+                              ),
                             ),
                             GestureDetector(
                               onTap: _isLoading ? null : _goToSetup,
@@ -505,10 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 18),
                           Text(
                             _appVersion,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: t.textMuted,
-                            ),
+                            style: TextStyle(fontSize: 12, color: t.textMuted),
                           ),
                         ],
                       ],
@@ -533,8 +409,11 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
         ),
-        child: Icon(Icons.arrow_back_rounded,
-            color: Colors.grey.shade800, size: 20),
+        child: Icon(
+          Icons.arrow_back_rounded,
+          color: Colors.grey.shade800,
+          size: 20,
+        ),
       ),
     );
   }
@@ -605,7 +484,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontFamily: 'Onest',
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                  fontVariations: const [FontVariation('wght', 700)],
                 ),
               ),
       ),

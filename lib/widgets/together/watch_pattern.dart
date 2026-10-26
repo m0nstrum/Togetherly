@@ -21,14 +21,47 @@ import '../../models/symbol_catalog.dart';
 enum WatchMotifs { kino, reels, games, computer }
 
 const Map<WatchMotifs, List<String>> _kinds = {
-  WatchMotifs.kino: ['film', 'reel', 'ticket', 'clap', 'seat', 'playbtn', 'quarter', 'half'],
-  WatchMotifs.reels: ['phone', 'stack', 'like', 'swipe', 'dots', 'phone', 'half', 'quarter'],
-  WatchMotifs.games: ['die', 'die', 'diamond', 'club', 'pad', 'hearts', 'quarter'],
+  WatchMotifs.kino: [
+    'film',
+    'reel',
+    'ticket',
+    'clap',
+    'seat',
+    'playbtn',
+    'quarter',
+    'half',
+  ],
+  WatchMotifs.reels: [
+    'phone',
+    'stack',
+    'like',
+    'swipe',
+    'dots',
+    'phone',
+    'half',
+    'quarter',
+  ],
+  WatchMotifs.games: [
+    'die',
+    'die',
+    'diamond',
+    'club',
+    'pad',
+    'hearts',
+    'quarter',
+  ],
   WatchMotifs.computer: ['key', 'key', 'window', 'cursor', 'pixels', 'quarter'],
 };
 
 /// Знаки, которые кладутся с поворотом на четверть круга.
-const Set<String> _rotating = {'quarter', 'half', 'clap', 'film', 'ticket', 'die'};
+const Set<String> _rotating = {
+  'quarter',
+  'half',
+  'clap',
+  'film',
+  'ticket',
+  'die',
+};
 
 /// Пять тонов узора от цвета карточки: сама карточка, темнее, светлее и два
 /// дальних. Оттенок и насыщенность прежние, двигается только тон HCT — сдвиги
@@ -40,11 +73,14 @@ List<Color> watchPatternTones(Color base) {
   final List<double> shifts = t < 40
       ? const [6, 12, -5, 17]
       : t > 82
-          ? const [-7, 4, -14, -21]
-          : const [-8, 6, 15, -15];
+      ? const [-7, 4, -14, -21]
+      : const [-8, 6, 15, -15];
   return [
     base,
-    for (final d in shifts) Color(Hct.from(h.hue, h.chroma, (t + d).clamp(0, 100).toDouble()).toInt()),
+    for (final d in shifts)
+      Color(
+        Hct.from(h.hue, h.chroma, (t + d).clamp(0, 100).toDouble()).toInt(),
+      ),
   ];
 }
 
@@ -62,7 +98,14 @@ int watchPatternSeed(String key) {
 /// Клетка узора: тон фона, тон знака (номера в [watchPatternTones]), знак и
 /// поворот в градусах.
 class WatchPatternCell {
-  const WatchPatternCell(this.col, this.row, this.bg, this.fg, this.kind, this.rot);
+  const WatchPatternCell(
+    this.col,
+    this.row,
+    this.bg,
+    this.fg,
+    this.kind,
+    this.rot,
+  );
 
   final int col;
   final int row;
@@ -73,18 +116,29 @@ class WatchPatternCell {
 }
 
 /// Раскладка клеток. Порядок выборок тот же, что в генераторе макета.
-List<WatchPatternCell> watchPatternCells(WatchMotifs motifs, int seed, int cols, int rows) {
+List<WatchPatternCell> watchPatternCells(
+  WatchMotifs motifs,
+  int seed,
+  int cols,
+  int rows,
+) {
   final r = math.Random(seed);
   final kinds = _kinds[motifs]!;
   final out = <WatchPatternCell>[];
   for (var j = 0; j < rows; j++) {
     for (var i = 0; i < cols; i++) {
       final bg = r.nextInt(5);
-      final others = [for (var k = 0; k < 5; k++) if (k != bg) k];
+      final others = [
+        for (var k = 0; k < 5; k++)
+          if (k != bg) k,
+      ];
       final fg = others[r.nextInt(others.length)];
       final kind = kinds[r.nextInt(kinds.length)];
-      var rot = _rotating.contains(kind) ? const [0, 90, 180, 270][r.nextInt(4)] : 0;
-      if (kind == 'die') rot = const [90, 180, 270, 360, 450, 540][r.nextInt(6)];
+      var rot = _rotating.contains(kind)
+          ? const [0, 90, 180, 270][r.nextInt(4)]
+          : 0;
+      if (kind == 'die')
+        rot = const [90, 180, 270, 360, 450, 540][r.nextInt(6)];
       out.add(WatchPatternCell(i, j, bg, fg, kind, rot));
     }
   }
@@ -96,13 +150,27 @@ final Path _diamond = MaterialShapes.diamond.toPath();
 
 /// Рисует знак в клетке со стороной [s], начало клетки в (0, 0). Все размеры —
 /// десятые доли клетки, как в макете.
-void paintWatchMotif(Canvas c, String kind, double s, int rot, Color col, Color bgColor) {
+void paintWatchMotif(
+  Canvas c,
+  String kind,
+  double s,
+  int rot,
+  Color col,
+  Color bgColor,
+) {
   final u = s / 10;
   final fg = Paint()..color = col;
   final bg = Paint()..color = bgColor;
   void rr(double x, double y, double w, double h, double r, [Paint? p]) =>
-      c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x * u, y * u, w * u, h * u), Radius.circular(r * u)), p ?? fg);
-  void ci(double x, double y, double r, [Paint? p]) => c.drawCircle(Offset(x * u, y * u), r * u, p ?? fg);
+      c.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x * u, y * u, w * u, h * u),
+          Radius.circular(r * u),
+        ),
+        p ?? fg,
+      );
+  void ci(double x, double y, double r, [Paint? p]) =>
+      c.drawCircle(Offset(x * u, y * u), r * u, p ?? fg);
   void poly(List<double> pts, [Paint? p]) {
     final path = Path()..moveTo(pts[0] * u, pts[1] * u);
     for (var i = 2; i < pts.length; i += 2) {
@@ -138,7 +206,12 @@ void paintWatchMotif(Canvas c, String kind, double s, int rot, Color col, Color 
     case 'reel': // бобина
       ci(5, 5, 4.4);
       for (var a = -90; a < 270; a += 72) {
-        ci(5 + 2.3 * math.cos(a * math.pi / 180), 5 + 2.3 * math.sin(a * math.pi / 180), .9, bg);
+        ci(
+          5 + 2.3 * math.cos(a * math.pi / 180),
+          5 + 2.3 * math.sin(a * math.pi / 180),
+          .9,
+          bg,
+        );
       }
       ci(5, 5, .6, bg);
     case 'ticket': // билет с вырезами
@@ -174,7 +247,20 @@ void paintWatchMotif(Canvas c, String kind, double s, int rot, Color col, Color 
       shape(_heart, 1.4, 1.6, 7.2, 7.2);
     case 'swipe': // стрелки свайпа вверх
       for (final d in const [0.0, 3.0]) {
-        poly([2, 5 + d, 5, 2 + d, 8, 5 + d, 8, 6.6 + d, 5, 3.6 + d, 2, 6.6 + d]);
+        poly([
+          2,
+          5 + d,
+          5,
+          2 + d,
+          8,
+          5 + d,
+          8,
+          6.6 + d,
+          5,
+          3.6 + d,
+          2,
+          6.6 + d,
+        ]);
       }
     case 'dots': // точки прогресса ленты
       rr(4.3, 1, 1.4, 2.6, .7);
@@ -335,7 +421,12 @@ class _WatchPatternState extends State<WatchPattern> {
     final ready = _pictures;
     if (ready != null) return ready;
     final s = widget.cell;
-    _cells = watchPatternCells(widget.motifs, widget.seed, widget.cols, widget.rows);
+    _cells = watchPatternCells(
+      widget.motifs,
+      widget.seed,
+      widget.cols,
+      widget.rows,
+    );
     return _pictures = [
       for (final cell in _cells)
         () {
@@ -344,7 +435,10 @@ class _WatchPatternState extends State<WatchPattern> {
           final bg = widget.tones[cell.bg];
           // Фон клетки чуть шире самой клетки: иначе между соседями при
           // дробном масштабе проступает волосяная щель.
-          c.drawRect(Rect.fromLTWH(-.4, -.4, s + .8, s + .8), Paint()..color = bg);
+          c.drawRect(
+            Rect.fromLTWH(-.4, -.4, s + .8, s + .8),
+            Paint()..color = bg,
+          );
           paintWatchMotif(c, cell.kind, s, cell.rot, widget.tones[cell.fg], bg);
           return rec.endRecording();
         }(),
@@ -431,7 +525,11 @@ class _PatternPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_PatternPainter old) =>
-      old.pictures != pictures || old.cols != cols || old.rows != rows || old.cell != cell || old.pop != pop;
+      old.pictures != pictures ||
+      old.cols != cols ||
+      old.rows != rows ||
+      old.cell != cell ||
+      old.pop != pop;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -445,7 +543,9 @@ enum WatchFxAfter { none, spin, check, plus }
 /// Цвет волны: по светлой карточке — белым, по тёмной — почти незаметно её
 /// же подписью (белая волна высветляла бы чёрную плитку целиком).
 Color watchRippleColor(Color bg, Color fg, double light) =>
-    Hct.fromInt(bg.toARGB32()).tone < 40 ? fg.withValues(alpha: .06) : Colors.white.withValues(alpha: light);
+    Hct.fromInt(bg.toARGB32()).tone < 40
+    ? fg.withValues(alpha: .06)
+    : Colors.white.withValues(alpha: light);
 
 /// Карточка с откликом. Нажал — карточка вдавливается, кнопка проседает в
 /// «печенье»; отпустил — кнопка пружинит, от пальца по карточке идёт волна,
@@ -488,11 +588,22 @@ class WatchFx extends StatefulWidget {
 }
 
 class WatchFxState extends State<WatchFx> with TickerProviderStateMixin {
-  late final AnimationController _press = AnimationController(vsync: this, duration: const Duration(milliseconds: 360));
-  late final AnimationController _spring = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-  late final AnimationController _ripple = AnimationController(vsync: this, duration: const Duration(milliseconds: 750));
-  late final AnimationController _pop =
-      AnimationController(vsync: this, duration: Duration(milliseconds: WatchFx.popWindowMs.round()));
+  late final AnimationController _press = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 360),
+  );
+  late final AnimationController _spring = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 600),
+  );
+  late final AnimationController _ripple = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 750),
+  );
+  late final AnimationController _pop = AnimationController(
+    vsync: this,
+    duration: Duration(milliseconds: WatchFx.popWindowMs.round()),
+  );
 
   Object? _pressId;
   Object? _springId;
@@ -512,7 +623,8 @@ class WatchFxState extends State<WatchFx> with TickerProviderStateMixin {
   Object? get springId => _springId;
 
   /// Итог нажатия, если он сейчас показан у кнопки [id].
-  WatchFxAfter resultFor(Object id) => _resultId == id ? _result : WatchFxAfter.none;
+  WatchFxAfter resultFor(Object id) =>
+      _resultId == id ? _result : WatchFxAfter.none;
 
   /// Растёт с каждым новым итогом: по нему плашка Плюса заново качает замок.
   int get resultGen => _resultGen;
@@ -546,7 +658,10 @@ class WatchFxState extends State<WatchFx> with TickerProviderStateMixin {
       final c = box.globalToLocal(global);
       final w = box.size.width, h = box.size.height;
       _rippleCenter = c;
-      _rippleRadius = math.sqrt(math.pow(math.max(c.dx, w - c.dx), 2) + math.pow(math.max(c.dy, h - c.dy), 2));
+      _rippleRadius = math.sqrt(
+        math.pow(math.max(c.dx, w - c.dx), 2) +
+            math.pow(math.max(c.dy, h - c.dy), 2),
+      );
     }
     _resultTimer?.cancel();
     setState(() {
@@ -562,13 +677,16 @@ class WatchFxState extends State<WatchFx> with TickerProviderStateMixin {
       _pop.forward(from: 0);
     }
     if (after != WatchFxAfter.none) {
-      _resultTimer = Timer(Duration(milliseconds: after == WatchFxAfter.check ? 1200 : 1600), () {
-        if (!mounted) return;
-        setState(() {
-          _resultId = null;
-          _result = WatchFxAfter.none;
-        });
-      });
+      _resultTimer = Timer(
+        Duration(milliseconds: after == WatchFxAfter.check ? 1200 : 1600),
+        () {
+          if (!mounted) return;
+          setState(() {
+            _resultId = null;
+            _result = WatchFxAfter.none;
+          });
+        },
+      );
     }
   }
 
@@ -576,7 +694,8 @@ class WatchFxState extends State<WatchFx> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _press.addStatusListener((s) {
-      if (s == AnimationStatus.dismissed && mounted) setState(() => _pressId = null);
+      if (s == AnimationStatus.dismissed && mounted)
+        setState(() => _pressId = null);
     });
   }
 
@@ -596,9 +715,14 @@ class WatchFxState extends State<WatchFx> with TickerProviderStateMixin {
     Widget surface = AnimatedBuilder(
       animation: _press,
       builder: (context, child) {
-        final p = Curves.easeInOutCubicEmphasized.transform(_pressId == null ? 0 : _press.value);
+        final p = Curves.easeInOutCubicEmphasized.transform(
+          _pressId == null ? 0 : _press.value,
+        );
         final focusOwnsCard = widget.onTap != null || _pressId != null;
-        return Transform.scale(scale: focusOwnsCard ? 1 - (1 - widget.pressedScale) * p : 1, child: child);
+        return Transform.scale(
+          scale: focusOwnsCard ? 1 - (1 - widget.pressedScale) * p : 1,
+          child: child,
+        );
       },
       child: ClipRRect(
         borderRadius: r,
@@ -646,12 +770,20 @@ class WatchFxState extends State<WatchFx> with TickerProviderStateMixin {
         ),
       );
     }
-    return _WatchFxScope(state: this, gen: Object.hash(_pressId, _springId, _resultId, _result, _resultGen), child: surface);
+    return _WatchFxScope(
+      state: this,
+      gen: Object.hash(_pressId, _springId, _resultId, _result, _resultGen),
+      child: surface,
+    );
   }
 }
 
 class _WatchFxScope extends InheritedWidget {
-  const _WatchFxScope({required this.state, required this.gen, required super.child});
+  const _WatchFxScope({
+    required this.state,
+    required this.gen,
+    required super.child,
+  });
 
   final WatchFxState state;
   final int gen;
@@ -663,8 +795,12 @@ class _WatchFxScope extends InheritedWidget {
 /// Волна: круг от пальца до дальнего угла карточки за 750 мс, гаснет в
 /// последние 30%.
 class _RipplePainter extends CustomPainter {
-  _RipplePainter({required this.anim, required this.center, required this.radius, required this.color})
-      : super(repaint: anim);
+  _RipplePainter({
+    required this.anim,
+    required this.center,
+    required this.radius,
+    required this.color,
+  }) : super(repaint: anim);
 
   final Animation<double> anim;
   final Offset Function() center;
@@ -676,15 +812,25 @@ class _RipplePainter extends CustomPainter {
     final t = anim.value;
     if (t <= 0 || t >= 1) return;
     final scale = Curves.easeInOutCubicEmphasized.transform(t);
-    final fade = t < .7 ? 1.0 : 1 - Curves.easeInOutCubicEmphasized.transform((t - .7) / .3);
-    canvas.drawCircle(center(), radius() * scale, Paint()..color = color.withValues(alpha: color.a * fade));
+    final fade = t < .7
+        ? 1.0
+        : 1 - Curves.easeInOutCubicEmphasized.transform((t - .7) / .3);
+    canvas.drawCircle(
+      center(),
+      radius() * scale,
+      Paint()..color = color.withValues(alpha: color.a * fade),
+    );
   }
 
   @override
-  bool shouldRepaint(_RipplePainter old) => old.color != color || old.anim != anim;
+  bool shouldRepaint(_RipplePainter old) =>
+      old.color != color || old.anim != anim;
 }
 
-final Morph _cookieMorph = Morph(MaterialShapes.circle, MaterialShapes.cookie12Sided);
+final Morph _cookieMorph = Morph(
+  MaterialShapes.circle,
+  MaterialShapes.cookie12Sided,
+);
 
 /// Круг, который на нажатии перетекает в «печенье».
 class _MorphClipper extends CustomClipper<Path> {
@@ -694,8 +840,12 @@ class _MorphClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) {
-    final unit = t <= 0 ? (Path()..addOval(const Rect.fromLTWH(0, 0, 1, 1))) : _cookieMorph.toPath(progress: t);
-    return unit.transform(Matrix4.diagonal3Values(size.width, size.height, 1).storage);
+    final unit = t <= 0
+        ? (Path()..addOval(const Rect.fromLTWH(0, 0, 1, 1)))
+        : _cookieMorph.toPath(progress: t);
+    return unit.transform(
+      Matrix4.diagonal3Values(size.width, size.height, 1).storage,
+    );
   }
 
   @override
@@ -741,13 +891,17 @@ class WatchFxButton extends StatelessWidget {
   final VoidCallback? onTap;
   final String? tooltip;
 
-  static const IconData _check = IconData(0xe668, fontFamily: SymbolCatalog.fontFamily);
+  static const IconData _check = IconData(
+    0xe668,
+    fontFamily: SymbolCatalog.fontFamily,
+  );
 
   @override
   Widget build(BuildContext context) {
     final fx = WatchFx.maybeOf(context);
     final result = fx?.resultFor(id) ?? WatchFxAfter.none;
-    final hideIcon = result == WatchFxAfter.spin || result == WatchFxAfter.check;
+    final hideIcon =
+        result == WatchFxAfter.spin || result == WatchFxAfter.check;
     const fade = Duration(milliseconds: 200);
     Widget face = SizedBox(
       width: size,
@@ -760,7 +914,11 @@ class WatchFxButton extends StatelessWidget {
             AnimatedOpacity(
               opacity: hideIcon ? 0 : 1,
               duration: fade,
-              child: AnimatedScale(scale: hideIcon ? .5 : 1, duration: fade, child: Icon(icon, size: iconSize, color: iconColor)),
+              child: AnimatedScale(
+                scale: hideIcon ? .5 : 1,
+                duration: fade,
+                child: Icon(icon, size: iconSize, color: iconColor),
+              ),
             ),
             if (after == WatchFxAfter.check)
               AnimatedOpacity(
@@ -782,7 +940,9 @@ class WatchFxButton extends StatelessWidget {
                     child: AnimatedScale(
                       scale: result == WatchFxAfter.spin ? 1 : .6,
                       duration: fade,
-                      child: result == WatchFxAfter.spin ? _ArcSpinner(color: spinColor, width: spinWidth) : const SizedBox.expand(),
+                      child: result == WatchFxAfter.spin
+                          ? _ArcSpinner(color: spinColor, width: spinWidth)
+                          : const SizedBox.expand(),
                     ),
                   ),
                 ),
@@ -795,7 +955,9 @@ class WatchFxButton extends StatelessWidget {
       face = AnimatedBuilder(
         animation: Listenable.merge([fx.press, fx.spring]),
         builder: (context, child) {
-          final p = fx.pressId == id ? Curves.easeInOutCubicEmphasized.transform(fx.press.value) : 0.0;
+          final p = fx.pressId == id
+              ? Curves.easeInOutCubicEmphasized.transform(fx.press.value)
+              : 0.0;
           double scale = 1 - .14 * p, turn = -18 * p;
           if (fx.springId == id && fx.spring.isAnimating) {
             final c = _springCurve.transform(fx.spring.value);
@@ -804,7 +966,10 @@ class WatchFxButton extends StatelessWidget {
           }
           return Transform.rotate(
             angle: turn * math.pi / 180,
-            child: Transform.scale(scale: scale, child: ClipPath(clipper: _MorphClipper(p), child: child)),
+            child: Transform.scale(
+              scale: scale,
+              child: ClipPath(clipper: _MorphClipper(p), child: child),
+            ),
           );
         },
         child: face,
@@ -821,7 +986,9 @@ class WatchFxButton extends StatelessWidget {
         onTap: tap,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTapDown: tap == null || fx == null ? null : (d) => fx.down(id, d.globalPosition),
+          onTapDown: tap == null || fx == null
+              ? null
+              : (d) => fx.down(id, d.globalPosition),
           onTapCancel: tap == null || fx == null ? null : fx.cancel,
           onTapUp: tap == null
               ? null
@@ -832,7 +999,12 @@ class WatchFxButton extends StatelessWidget {
           child: face,
         ),
       );
-      if (tooltip != null) face = Tooltip(message: tooltip!, excludeFromSemantics: true, child: face);
+      if (tooltip != null)
+        face = Tooltip(
+          message: tooltip!,
+          excludeFromSemantics: true,
+          child: face,
+        );
     }
     return face;
   }
@@ -849,8 +1021,12 @@ class _ArcSpinner extends StatefulWidget {
   State<_ArcSpinner> createState() => _ArcSpinnerState();
 }
 
-class _ArcSpinnerState extends State<_ArcSpinner> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat();
+class _ArcSpinnerState extends State<_ArcSpinner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  )..repeat();
 
   @override
   void dispose() {
@@ -862,7 +1038,10 @@ class _ArcSpinnerState extends State<_ArcSpinner> with SingleTickerProviderState
   Widget build(BuildContext context) {
     return RotationTransition(
       turns: _c,
-      child: CustomPaint(painter: _ArcPainter(widget.color, widget.width), size: Size.infinite),
+      child: CustomPaint(
+        painter: _ArcPainter(widget.color, widget.width),
+        size: Size.infinite,
+      ),
     );
   }
 }
@@ -889,14 +1068,21 @@ class _ArcPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ArcPainter old) => old.color != color || old.width != width;
+  bool shouldRepaint(_ArcPainter old) =>
+      old.color != color || old.width != width;
 }
 
 /// Плашка «Togetherly+» платной плитки. На нажатии плитки сжимается к
 /// левому краю; после — наливается цветом подписи, замок качается и
 /// выезжает стрелка: дальше откроется экран Плюса.
 class WatchPlusChip extends StatefulWidget {
-  const WatchPlusChip({super.key, required this.id, required this.label, required this.fg, required this.bg});
+  const WatchPlusChip({
+    super.key,
+    required this.id,
+    required this.label,
+    required this.fg,
+    required this.bg,
+  });
 
   final Object id;
   final String label;
@@ -907,8 +1093,12 @@ class WatchPlusChip extends StatefulWidget {
   State<WatchPlusChip> createState() => _WatchPlusChipState();
 }
 
-class _WatchPlusChipState extends State<WatchPlusChip> with SingleTickerProviderStateMixin {
-  late final AnimationController _swing = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+class _WatchPlusChipState extends State<WatchPlusChip>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _swing = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 600),
+  );
   int _seenGen = -1;
 
   @override
@@ -923,7 +1113,9 @@ class _WatchPlusChipState extends State<WatchPlusChip> with SingleTickerProvider
     const vals = [0.0, -16.0, 12.0, -5.0, 0.0];
     for (var i = 1; i < keys.length; i++) {
       if (t <= keys[i]) {
-        final u = Curves.easeInOutCubicEmphasized.transform((t - keys[i - 1]) / (keys[i] - keys[i - 1]));
+        final u = Curves.easeInOutCubicEmphasized.transform(
+          (t - keys[i - 1]) / (keys[i] - keys[i - 1]),
+        );
         return vals[i - 1] + (vals[i] - vals[i - 1]) * u;
       }
     }
@@ -936,7 +1128,8 @@ class _WatchPlusChipState extends State<WatchPlusChip> with SingleTickerProvider
     final on = fx?.resultFor(widget.id) == WatchFxAfter.plus;
     if (on && fx != null && fx.resultGen != _seenGen) {
       _seenGen = fx.resultGen;
-      if (!(MediaQuery.maybeDisableAnimationsOf(context) ?? false)) _swing.forward(from: 0);
+      if (!(MediaQuery.maybeDisableAnimationsOf(context) ?? false))
+        _swing.forward(from: 0);
     }
     const dur = Duration(milliseconds: 300);
     final ink = on ? widget.bg : widget.fg;
@@ -959,14 +1152,28 @@ class _WatchPlusChipState extends State<WatchPlusChip> with SingleTickerProvider
               alignment: const Alignment(0, -.6),
               child: child,
             ),
-            child: Icon(const IconData(0xe899, fontFamily: SymbolCatalog.fontFamily), size: 16, color: ink),
+            child: Icon(
+              const IconData(0xe899, fontFamily: SymbolCatalog.fontFamily),
+              size: 16,
+              color: ink,
+            ),
           ),
           const SizedBox(width: 4),
           Flexible(
             child: AnimatedDefaultTextStyle(
               duration: dur,
-              style: TextStyle(fontFamily: 'Onest', letterSpacing: 0, fontSize: 12, fontWeight: FontWeight.w700, color: ink),
-              child: Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              style: TextStyle(
+                fontFamily: 'Onest',
+                letterSpacing: 0,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: ink,
+              ),
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           AnimatedContainer(
@@ -978,7 +1185,11 @@ class _WatchPlusChipState extends State<WatchPlusChip> with SingleTickerProvider
               child: AnimatedOpacity(
                 opacity: on ? 1 : 0,
                 duration: const Duration(milliseconds: 200),
-                child: Icon(const IconData(0xe5c8, fontFamily: SymbolCatalog.fontFamily), size: 16, color: ink),
+                child: Icon(
+                  const IconData(0xe5c8, fontFamily: SymbolCatalog.fontFamily),
+                  size: 16,
+                  color: ink,
+                ),
               ),
             ),
           ),
@@ -989,8 +1200,14 @@ class _WatchPlusChipState extends State<WatchPlusChip> with SingleTickerProvider
     return AnimatedBuilder(
       animation: fx.press,
       builder: (context, child) {
-        final p = fx.pressId == widget.id ? Curves.easeInOutCubicEmphasized.transform(fx.press.value) : 0.0;
-        return Transform.scale(scale: 1 - .06 * p, alignment: Alignment.centerLeft, child: child);
+        final p = fx.pressId == widget.id
+            ? Curves.easeInOutCubicEmphasized.transform(fx.press.value)
+            : 0.0;
+        return Transform.scale(
+          scale: 1 - .06 * p,
+          alignment: Alignment.centerLeft,
+          child: child,
+        );
       },
       child: chip,
     );

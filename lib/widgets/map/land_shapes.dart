@@ -14,8 +14,8 @@ class LandRing {
   final double radius; // радианы
 
   LandRing(this.points)
-      : center = _centroid(points),
-        radius = _radius(points, _centroid(points));
+    : center = _centroid(points),
+      radius = _radius(points, _centroid(points));
 
   static Vec3 _centroid(List<Vec3> pts) {
     var s = const Vec3(0, 0, 0);
@@ -46,7 +46,8 @@ class LandShapes {
   static Future<List<LandRing>> coarse() => _load('assets/map/land_110m.bin');
   static Future<List<LandRing>> detailed() => _load('assets/map/land_50m.bin');
 
-  static Future<List<LandRing>> _load(String asset) => _cache[asset] ??= () async {
+  static Future<List<LandRing>> _load(String asset) =>
+      _cache[asset] ??= () async {
         final data = await rootBundle.load(asset);
         return parse(data);
       }();

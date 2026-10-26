@@ -21,10 +21,7 @@ void main() {
     }
   }
 
-  Future<String?> pumpEntry(
-    WidgetTester tester, {
-    required bool create,
-  }) async {
+  Future<String?> pumpEntry(WidgetTester tester, {required bool create}) async {
     String? done;
     await tester.pumpWidget(
       MaterialApp(
@@ -105,7 +102,9 @@ void main() {
     expect(done, '1111');
   });
 
-  testWidgets('расхождение сбрасывает ввод и показывает ошибку', (tester) async {
+  testWidgets('расхождение сбрасывает ввод и показывает ошибку', (
+    tester,
+  ) async {
     String? done;
     await tester.pumpWidget(
       MaterialApp(

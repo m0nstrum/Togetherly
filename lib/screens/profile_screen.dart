@@ -1,4 +1,4 @@
-import '../fork/identity.dart'; // fork
+import '../fork/identity.dart';
 import 'dart:async';
 import '../utils/safe_launch.dart';
 import 'package:flutter/material.dart';
@@ -88,19 +88,16 @@ import '../services/timer_service.dart';
 import '../services/widget_service.dart';
 import '../services/rewarded_ad_service.dart';
 import '../services/app_icon_service.dart';
-import '../services/coin_store.dart';
 import '../services/celebration_notification_service.dart';
 import '../services/days_together_notification_service.dart';
 import 'date_time_picker_screen.dart';
-import '../widgets/common/redeem_code_sheet.dart';
 import '../widgets/common/badge_image.dart';
 import '../widgets/common/coin_image.dart';
 import '../models/help_items.dart';
 import '../widgets/common/email_change_sheet.dart';
 import '../widgets/unfold/unfold_route.dart';
 import 'help_screen.dart';
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/flags.dart'; // fork
+import '../fork/config/endpoints.dart';
 import '../fork/system_settings.dart'; // fork: N2
 import '../fork/ui/logout_guard.dart'; // fork (UX A4)
 import '../fork/push/push_health.dart'; // fork (UX G9)
@@ -147,31 +144,13 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with RememberedTheme<ProfileScreen> {
   final RewardedAdService _rewardedAd = RewardedAdService();
-  final CoinStore _iap = sharedCoinStore;
-  bool _iapLoading = false;
 
-  // Политика и условия живут на PocketBase-VPS (Firebase Hosting гасится вместе
-  // с проектом). Раздаются из pb_public, исходники — PRIVACY_POLICY.md и
-  // TERMS_OF_USE.md в репо (регенерация: tool/gen_legal_html.py).
-  static final Uri _privacyPolicyUri = Uri.parse(Endpoints.current.privacyPolicyUrl); // fork
-  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl); // fork
-
-  /// Канал в Telegram и бот для жалоб. Обе ссылки до 16.08.2026 жили только в
-  /// переписке с поддержкой: «не могу найти ссылку на тгк» — обычный вопрос,
-  /// а бот знали лишь те, кому его присылали в ответ на жалобу.
-  static final Uri _tgChannelUri = Uri.parse('https://t.me/sandtcompany');
-  static final Uri _bugBotUri = Uri.parse('https://t.me/TogetherlyBugsBot');
-  static final Uri _boostyUri = Uri.parse('https://boosty.to/sntcompany');
-
-  /// Разовый донат картой или СБП.
-  static final Uri _donationAlertsUri = Uri.parse(
-    'https://www.donationalerts.com/r/thet1me',
+  // Политика и условия раздаёт наш сервер (server/public); адреса — из
+  // конфига сборки.
+  static final Uri _privacyPolicyUri = Uri.parse(
+    Endpoints.current.privacyPolicyUrl,
   );
-
-  /// Lava.top — приём платежей внутри страны.
-  static final Uri _lavaUri = Uri.parse(
-    'https://app.lava.top/togetherly-store?tabId=donate',
-  );
+  static final Uri _termsUri = Uri.parse(Endpoints.current.termsUrl);
 
   Color get _accent => widget.userData.themeAccent;
   Color get _accentLight => widget.userData.themeAccentLight;
@@ -242,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _notifChat = true;
 
   /// Зов порисовать: партнёр сел за холст. Пуш собирает сервер
-  /// (`pb_hooks/draw_invite.pb.js`), здесь только выключатель.
+  /// (`server/internal/handler/calls.go`), здесь только выключатель.
   bool _notifDraw = true;
 
   /// Комментарии под воспоминанием — отдельно от самой ленты.
@@ -340,10 +319,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
     _loadStats();
     _loadNotifPrefs();
-    // НЕ грузим rewarded на открытии профиля — это фоновый запрос, который
-    // в 90%+ случаев впустую (юзер не открывает магазин). Предзагрузка
-    // происходит в _showCoinShop, когда юзер осознанно идёт за коинами.
-    _initIap();
   }
 
   Future<void> _loadNotifPrefs() async {
@@ -503,23 +478,15 @@ class _ProfileScreenState extends State<ProfileScreen>
     await _openExternalUri(_termsUri);
   }
 
-  Future<void> _openTelegramChannel() async {
-    await _openExternalUri(_tgChannelUri);
-  }
-
-  Future<void> _openBugBot() async {
-    await _openExternalUri(_bugBotUri);
-  }
-
   /// Справка «Как сделать». Открывается из шапки профиля и из настроек.
   void _openHelp(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => HelpScreen(
           scheme: _cs,
-          plusInStore: PlusService.buysInStore,
           onAction: _runHelpAction,
-          onWriteUs: _openBugBot,
+          // fork: своя поддержка, не бот автора апстрима.
+          onWriteUs: _openSupportMail,
         ),
         settings: const RouteSettings(name: '/help'),
       ),
@@ -549,16 +516,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       case HelpAction.settings:
         Navigator.of(context).popUntil((r) => r.isFirst);
         _openSettings(context);
-      case HelpAction.plusSheet:
-        _openPlus(context);
-      case HelpAction.plusSite:
-        // Сюда попадают только сборки с сайта и RuStore: в Play и на iPhone
-        // справка этот ответ не показывает (см. helpItems). Отсечка ещё раз
-        // здесь: ссылка мимо биллинга в этих сборках — снятие из магазина.
-        if (Platform.isIOS || PlusService.buysInStore) return;
-        _openExternalUri(Uri.parse(PlusService.purchaseUrl));
-      case HelpAction.telegram:
-        _openTelegramChannel();
     }
   }
 
@@ -607,193 +564,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(_s.supportCopied(email))));
-  }
-
-  Future<void> _openBoosty() async {
-    await _openExternalUri(_boostyUri);
-  }
-
-  Future<void> _openDonationAlerts() async {
-    final email = widget.userData.email.trim();
-    // В sideload/веб-сборках донат = монеты: сперва M3-лист с email-подсказкой,
-    // чтобы воркер смог опознать плательщика. На Play/App Store — просто открыть.
-    if (kDonationsEnabled && email.isNotEmpty) {
-      await _showDonationAlertsSheet(email);
-    } else {
-      await _openExternalUri(_donationAlertsUri);
-    }
-  }
-
-  /// M3-лист снизу: email аккаунта + подсказка вставить его в сообщение к донату.
-  Future<void> _showDonationAlertsSheet(String email) async {
-    final cs = _cs;
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: cs.surfaceContainerLow,
-      isScrollControlled: true,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                ruEn('Донат → монеты', 'Donation → coins'),
-                style: TextStyle(
-                  fontFamily: ProfileTheme.displayFont,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 22,
-                  letterSpacing: -0.4,
-                  color: cs.onSurface,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                ruEn(
-                    'Чтобы монеты пришли автоматически, укажи в сообщении к донату свой email:',
-                    'To get coins automatically, put your email in the donation message:'),
-                style: TextStyle(
-                  fontFamily: ProfileTheme.bodyFont,
-                  fontSize: 14.5,
-                  height: 1.35,
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Material(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: email));
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(
-                        content: Text(ruEn('Email скопирован', 'Email copied')),
-                      ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            email,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: ProfileTheme.bodyFont,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Icon(Icons.copy_rounded, size: 20, color: cs.primary),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _daStep(
-                cs,
-                '1',
-                ruEn('Скопируй email кнопкой выше', 'Copy the email above'),
-              ),
-              _daStep(
-                cs,
-                '2',
-                ruEn('Вставь его в сообщение к донату',
-                    'Paste it into the donation message'),
-              ),
-              _daStep(
-                cs,
-                '3',
-                ruEn('От 50 ₽ — монеты придут сами за пару минут',
-                    'From 50 ₽ — coins arrive on their own in a couple of minutes'),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    _openExternalUri(_donationAlertsUri);
-                  },
-                  icon: const Icon(Icons.open_in_new_rounded, size: 19),
-                  label: Text(
-                    ruEn('Открыть DonationAlerts', 'Open DonationAlerts'),
-                    style: const TextStyle(
-                      fontFamily: ProfileTheme.displayFont,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _daStep(ColorScheme cs, String n, String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: cs.primaryContainer,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            n,
-            style: TextStyle(
-              fontFamily: ProfileTheme.bodyFont,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              color: cs.onPrimaryContainer,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              text,
-              style: TextStyle(
-                fontFamily: ProfileTheme.bodyFont,
-                fontSize: 14,
-                height: 1.3,
-                color: cs.onSurface,
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Future<void> _openLava() async {
-    await _openExternalUri(_lavaUri);
   }
 
   Future<void> _openExternalUri(Uri uri) async {
@@ -882,16 +652,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                         Icons.insights_rounded,
                         child: _m3Stats(context),
                       ),
-                      // Донатов на iOS нет: ссылки на Boosty, DonationAlerts
-                      // и lava.top — оплата цифрового мимо биллинга Apple,
-                      // ровно то, за что прилетел реджект 3.1.1 по 1.21.0
-                      // (111). Гейта `kDonationsEnabled` тут мало: IPA
-                      // собирается с `STORE=github`, и по флагу карточка
-                      // осталась бы видимой (как и в листе монет, стр. 3925).
-                      if (!Platform.isIOS && !ForkFlags.hideUpstreamChannels) ...[ // fork
-                        const SizedBox(height: 22),
-                        _buildDonationCard(context),
-                      ],
                       const SizedBox(height: 16),
                       SettingsGroup([
                         SettingsRow(
@@ -935,8 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 value: '${widget.userData.coins}',
                 label: trKey('shopTitle'),
                 accent: true,
-                onTap: (tile) =>
-                    _openShop(context, ShopTab.gifts, from: tile),
+                onTap: (tile) => _openShop(context, ShopTab.gifts, from: tile),
               ),
             ),
             const SizedBox(width: 10),
@@ -1463,11 +1222,13 @@ class _ProfileScreenState extends State<ProfileScreen>
     final url = outcome.ref;
     if (url == null) {
       if (mounted) {
-        _showError(uploadFailureText(
-          outcome.failure ?? UploadFailure.other,
-          _s,
-          video: false,
-        ));
+        _showError(
+          uploadFailureText(
+            outcome.failure ?? UploadFailure.other,
+            _s,
+            video: false,
+          ),
+        );
       }
       return;
     }
@@ -1629,8 +1390,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                     Text(
-                      ruEn('Двадцать вопросов и одна фигура на двоих',
-                          'Twenty questions, one shape for two'),
+                      ruEn(
+                        'Двадцать вопросов и одна фигура на двоих',
+                        'Twenty questions, one shape for two',
+                      ),
                       style: TextStyle(
                         fontFamily: ProfileTheme.bodyFont,
                         fontSize: 12,
@@ -1973,10 +1736,13 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             // Заставка при запуске (20.10.2026): кадры рядом, как палитры.
             // Заставок на сервере нет и ничего не выбрано — ряда нет вовсе.
-            if (CatalogService.instance.splashesOn().isNotEmpty || LaunchSplashService.instance.selected.isNotEmpty) ...[
+            if (CatalogService.instance.splashesOn().isNotEmpty ||
+                LaunchSplashService.instance.selected.isNotEmpty) ...[
               const SizedBox(height: 18),
               caption(trKey('splashTitle')),
-              LaunchSplashPicker(splashes: CatalogService.instance.splashesOn()),
+              LaunchSplashPicker(
+                splashes: CatalogService.instance.splashesOn(),
+              ),
             ],
           ],
         ),
@@ -2152,14 +1918,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final ok = await AppDialog.confirm(context,
+                  final ok = await AppDialog.confirm(
+                    context,
                     title: _s.customThemeDelete,
-                    message: ruEn('Удалить эту тему вместе с её цветами и фоном?', 'Delete this theme with its colors and background?'),
-                    confirmLabel: _s.delete, destructive: true,
+                    message: ruEn(
+                      'Удалить эту тему вместе с её цветами и фоном?',
+                      'Delete this theme with its colors and background?',
+                    ),
+                    confirmLabel: _s.delete,
+                    destructive: true,
                   );
                   if (!ok || !context.mounted) return;
-                  try { await ud.removeCustomThemeAt(slot); }
-                  catch (e) { if (context.mounted) ForkNotice.error(context, e); return; }
+                  try {
+                    await ud.removeCustomThemeAt(slot);
+                  } catch (e) {
+                    if (context.mounted) ForkNotice.error(context, e);
+                    return;
+                  }
                   if (mounted) setState(() {});
                 },
               ),
@@ -2219,24 +1994,29 @@ class _ProfileScreenState extends State<ProfileScreen>
             onSupport: _openSupportMail,
             onOfficial: _openOfficialMail,
             onDrawTools: _openDrawTools,
-            onTelegramChannel: _openTelegramChannel,
-            onBugBot: _openBugBot,
             onHelp: () => _openHelp(ctx),
             onChangeEmail: () async {
-              final email = await showEmailChangeSheet(ctx,
-                  scheme: _cs,
-                  initialEmail: emailTypoFix(widget.userData.email) ?? '');
+              final email = await showEmailChangeSheet(
+                ctx,
+                scheme: _cs,
+                initialEmail: emailTypoFix(widget.userData.email) ?? '',
+              );
               if (email == null) return;
               await widget.userData.setEmail(email);
               setSheetState(() {});
               if (!ctx.mounted) return;
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(trKey('emailChangeDone')),
-                behavior: SnackBarBehavior.floating,
-              ));
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(
+                  content: Text(trKey('emailChangeDone')),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
             },
-            onAbout: () => showAboutDialog(context: ctx,
-              applicationName: ForkIdentity.appName, applicationVersion: version),
+            onAbout: () => showAboutDialog(
+              context: ctx,
+              applicationName: ForkIdentity.appName,
+              applicationVersion: version,
+            ),
             onChangePassword: () => _openChangePassword(ctx),
             onLogout: () => _showLogoutDialog(ctx),
             onDeleteAccount: () => _showDeleteAccountDialog(ctx),
@@ -2411,8 +2191,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     return entries;
   }
 
-  void _openPartnerProfile(BuildContext context, _PartnerEntry e,
-      {UnfoldSourceState? from}) {
+  void _openPartnerProfile(
+    BuildContext context,
+    _PartnerEntry e, {
+    UnfoldSourceState? from,
+  }) {
     final days = _daysTogetherOf(e.connection);
     Navigator.push(
       context,
@@ -2481,40 +2264,40 @@ class _ProfileScreenState extends State<ProfileScreen>
                   fill: _cs.surfaceContainerHigh,
                   radius: 22,
                   builder: (_, friend) => GestureDetector(
-                  onTap: () =>
-                      _openPartnerProfile(context, entries[i], from: friend),
-                  child: SizedBox(
-                    width: 62,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        UnfoldShared(
-                          tag: 'avatar',
-                          radius: 28,
-                          child: AvatarWidget(
-                            uid: m.uid,
-                            liveUrl: m.avatar,
-                            name: m.name,
-                            size: 56,
-                            primary: _cs.primary,
+                    onTap: () =>
+                        _openPartnerProfile(context, entries[i], from: friend),
+                    child: SizedBox(
+                      width: 62,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          UnfoldShared(
+                            tag: 'avatar',
+                            radius: 28,
+                            child: AvatarWidget(
+                              uid: m.uid,
+                              liveUrl: m.avatar,
+                              name: m.name,
+                              size: 56,
+                              primary: _cs.primary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          m.name.isEmpty ? '—' : m.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: ProfileTheme.bodyFont,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: _cs.onSurface,
+                          const SizedBox(height: 6),
+                          Text(
+                            m.name.isEmpty ? '—' : m.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: ProfileTheme.bodyFont,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: _cs.onSurface,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   ),
                 );
               },
@@ -2565,8 +2348,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   /// Магазин на нужной вкладке: плитка «Магазин» и строка в «Отношениях»
   /// ведут к подаркам, значок у ника — к значкам, аватарка — к рамкам.
-  void _openShop(BuildContext context, ShopTab tab,
-      {UnfoldSourceState? from}) {
+  void _openShop(BuildContext context, ShopTab tab, {UnfoldSourceState? from}) {
     final paired = widget.pairData.isPaired;
     Navigator.push(
       context,
@@ -2642,78 +2424,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  /// Заметная карточка доната (как в Kadr): заголовок + текст + три кнопки.
-  /// Не сворачивается, стоит отдельным блоком над «О приложении».
-  Widget _buildDonationCard(BuildContext context) {
-    final cs = _cs;
-    TextStyle btn() => const TextStyle(
-      fontFamily: ProfileTheme.displayFont,
-      fontWeight: FontWeight.w700,
-      fontSize: 15,
-    );
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.primaryContainer.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.volunteer_activism_rounded,
-                color: cs.primary,
-                size: 22,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  _s.supportAuthors,
-                  style: TextStyle(
-                    fontFamily: ProfileTheme.displayFont,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: cs.onSurface,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _s.supportIntro,
-            style: TextStyle(
-              fontFamily: ProfileTheme.bodyFont,
-              fontSize: 13.5,
-              height: 1.35,
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _openBoosty,
-            icon: const Icon(Icons.favorite_rounded, size: 19),
-            label: Text('Boosty', style: btn()),
-          ),
-          const SizedBox(height: 10),
-          FilledButton.tonalIcon(
-            onPressed: _openDonationAlerts,
-            icon: const Icon(Icons.card_giftcard_rounded, size: 19),
-            label: Text('DonationAlerts', style: btn()),
-          ),
-          const SizedBox(height: 10),
-          FilledButton.tonalIcon(
-            onPressed: _openLava,
-            icon: const Icon(Icons.water_drop_rounded, size: 19),
-            label: Text('Lava.top', style: btn()),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ═══════════════════════════════════════════════════
   //  ВЕРХ СТРАНИЦЫ: ЛИЧНЫЙ ПРОФИЛЬ + ПАРТНЁР (M3 — см. _m3Header/_m3Stats)
   // ═══════════════════════════════════════════════════
@@ -2728,66 +2438,66 @@ class _ProfileScreenState extends State<ProfileScreen>
       fill: t.cardSurface,
       radius: 20,
       builder: (_, tile) => GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        unfoldFrom<void>(
-          tile,
-          (_) => PartnerProfileScreen(
-            theme: t,
-            groupId: widget.pairData.pairId,
-            partnerUid: widget.pairData.partnerUid,
-            partnerName: name,
-            partnerAvatarUrl: avatar,
-            daysTogether: days,
+        onTap: () => Navigator.push(
+          context,
+          unfoldFrom<void>(
+            tile,
+            (_) => PartnerProfileScreen(
+              theme: t,
+              groupId: widget.pairData.pairId,
+              partnerUid: widget.pairData.partnerUid,
+              partnerName: name,
+              partnerAvatarUrl: avatar,
+              daysTogether: days,
+            ),
+            settings: const RouteSettings(name: '/partner'),
           ),
-          settings: const RouteSettings(name: '/partner'),
         ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: t.cardSurface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: t.divider, width: 0.5),
-        ),
-        child: Row(
-          children: [
-            UnfoldShared(
-              tag: 'avatar',
-              radius: 22,
-              child: AvatarWidget(
-                uid: widget.pairData.partnerUid,
-                liveUrl: avatar,
-                name: name,
-                size: 44,
-                primary: t.primary,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: t.cardSurface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: t.divider, width: 0.5),
+          ),
+          child: Row(
+            children: [
+              UnfoldShared(
+                tag: 'avatar',
+                radius: 22,
+                child: AvatarWidget(
+                  uid: widget.pairData.partnerUid,
+                  liveUrl: avatar,
+                  name: name,
+                  size: 44,
+                  primary: t.primary,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name.isEmpty ? _s.partnerGiftsTitle : name,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: t.textPrimary,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isEmpty ? _s.partnerGiftsTitle : name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: t.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _s.openPartnerProfile,
-                    style: TextStyle(fontSize: 12.5, color: t.textSecondary),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      _s.openPartnerProfile,
+                      style: TextStyle(fontSize: 12.5, color: t.textSecondary),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: t.textMuted, size: 20),
-          ],
+              Icon(Icons.chevron_right, color: t.textMuted, size: 20),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -3212,7 +2922,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
-      if (mounted) ForkNotice.error(context, e, retry: () => _uploadAvatarFile(path));
+      if (mounted)
+        ForkNotice.error(context, e, retry: () => _uploadAvatarFile(path));
     }
   }
 
@@ -4279,7 +3990,8 @@ class _ProfileScreenState extends State<ProfileScreen>
               // Разделитель между строками, а не условие на саму строку:
               // раньше за ним пряталась первая строка списка, то есть
               // русский, и выбрать его было нельзя вовсе.
-              if (lang != LocaleService.availableLanguages.first) const SettingsDivider(),
+              if (lang != LocaleService.availableLanguages.first)
+                const SettingsDivider(),
               _languageRow(ctx, lang: lang),
             ],
           ]),
@@ -4474,67 +4186,34 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// Лист собран в M3-теме профиля, а не на старых цветах ([AppTheme]): раньше
   /// он их и использовал, поэтому все строки выглядели одинаково серыми, а
   /// выключенная награда отличалась от доступной только бледностью.
+  /// Монеты: баланс и как заработать. Покупок монет и рекламы в Tethered нет.
   void _showCoinShop(BuildContext context) {
-    // Юзер осознанно открыл магазин коинов — теперь имеет смысл
-    // предзагрузить rewarded, чтобы к тапу «Смотреть видео» он был готов.
-    _rewardedAd.load();
-    // Вторая попытка инициализации: init() из initState мог не успеть или
-    // упасть (медленная сеть, sandbox-аккаунт, StoreKit ещё не поднялся).
-    // Лист подписан на _iap, поэтому цены подтянутся прямо в открытом листе.
-    // Список паков пуст в сборках без товаров (IPA, sideload) — обращение к
-    // first там уронило бы лист монет целиком.
-    if (kCoinPacks.isNotEmpty &&
-        (!_iap.isAvailable ||
-            _iap.priceLabel(kCoinPacks.first.productId) == null)) {
-      unawaited(_initIap());
-    }
-    // Паков нет на iOS: продукты там не заведены, а вести на оплату мимо
-    // биллинга запрещает 3.1.1. Без паков не нужен и переключатель вкладок.
-    final packsVisible = !Platform.isIOS && kCoinsPurchasable && !ForkFlags.allFree; // fork: N14 — паков за деньги нет, заголовок «Заработать монеты»
-    var showPacks = false;
-
     showAppSheet<void>(
       context,
       expand: true,
       background: _cs.surfaceContainer,
-      // Лист подписан на userData: начисления (реклама/ежедневный бонус/
-      // воспоминание) идут через notifyListeners, поэтому баланс и счётчик
-      // «X/3» в открытом магазине обновляются сразу, без переоткрытия.
-      //
-      // И на _iap: загрузка продуктов из App Store/Google Play асинхронная, и
-      // раньше открытый лист на неё НЕ реагировал (setState в _initIap чинит
-      // экран профиля, а не этот модальный роут). Если магазин успевали
-      // открыть до окончания queryProductDetails — паки не отрисовывались и
-      // не появлялись, пока лист открыт. Из-за этого App Review не нашёл
-      // покупки и отклонил сборку (Guideline 2.1(b), 1.16.2).
-      builder: (sheetCtx) => StatefulBuilder(
-        builder: (sheetCtx, setSheet) => ListenableBuilder(
-          listenable: Listenable.merge([widget.userData, _iap]),
-          builder: (ctx, _) => Theme(
-            data: ProfileTheme.data(_cs),
-            child: SheetScaffold(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                    child: _coinBalanceHero(
-                      packsVisible: packsVisible,
-                      showPacks: showPacks,
-                      onTab: (packs) => setSheet(() => showPacks = packs),
-                    ),
+      // Лист подписан на userData: начисления (ежедневный бонус, воспоминание)
+      // идут через notifyListeners, и баланс в открытом листе обновляется сразу.
+      builder: (sheetCtx) => ListenableBuilder(
+        listenable: widget.userData,
+        builder: (ctx, _) => Theme(
+          data: ProfileTheme.data(_cs),
+          child: SheetScaffold(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                  child: _coinBalanceHero(),
+                ),
+                const SizedBox(height: 14),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                    children: _coinEarnTab(ctx),
                   ),
-                  const SizedBox(height: 14),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
-                      children: showPacks
-                          ? _coinPacksTab(ctx)
-                          : _coinEarnTab(ctx),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -4542,13 +4221,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  /// Шапка магазина: баланс крупно на тональной подложке и переключатель
-  /// «Заработать / Купить».
-  Widget _coinBalanceHero({
-    required bool packsVisible,
-    required bool showPacks,
-    required ValueChanged<bool> onTab,
-  }) {
+  /// Шапка листа монет: баланс крупно на тональной подложке.
+  Widget _coinBalanceHero() {
     final cs = _cs;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
@@ -4564,9 +4238,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            // На iPhone это не магазин: паков нет, покупка недоступна, и
-            // «Coin Shop» обещает витрину, которой там не будет.
-            packsVisible ? _s.coinShopTitle : _s.coinEarnTitle,
+            _s.coinEarnTitle,
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
@@ -4594,52 +4266,13 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            packsVisible ? _s.coinShopSubtitle : _s.coinEarnSubtitle,
+            _s.coinEarnSubtitle,
             style: TextStyle(
               fontSize: 12.5,
               color: cs.onPrimaryContainer.withValues(alpha: 0.78),
             ),
           ),
-          if (packsVisible) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _coinTab(_s.earnCoinsSection, !showPacks, () => onTab(false)),
-                const SizedBox(width: 8),
-                _coinTab(
-                  _s.coinPacksSectionTitle,
-                  showPacks,
-                  () => onTab(true),
-                ),
-              ],
-            ),
-          ],
         ],
-      ),
-    );
-  }
-
-  Widget _coinTab(String label, bool active, VoidCallback onTap) {
-    final cs = _cs;
-    return Material(
-      color: active
-          ? cs.primary
-          : cs.onPrimaryContainer.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(999),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: active ? cs.onPrimary : cs.onPrimaryContainer,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -4710,24 +4343,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                   }
                 },
         ),
-      ],
-      // fork: N7 — рекламы в форке нет, строки «Смотреть видео» тоже
-      if (!ForkFlags.allFree) ...[
-      const SizedBox(height: 10),
-      // Реклама: счётчик показов за сегодня + сумма награды
-      _coinEarnRow(
-        icon: Icons.play_circle_rounded,
-        title: _s.watchAdTitle,
-        subtitle: _s.watchAdSubtitle,
-        reward: 3,
-        counter:
-            '${widget.userData.adRewardsToday}/${UserData.adRewardsDailyLimit}',
-        onTap: widget.userData.adRewardsRemaining == 0
-            ? null
-            // Лист НЕ закрываем: он подписан на userData, поэтому после
-            // начисления баланс и счётчик обновятся прямо здесь.
-            : () async => _watchRewardedAd(),
-      ),
       ],
       const SizedBox(height: 10),
       // Недоступное вручную — цели, а не мусор: показываем приглушённо.
@@ -4870,327 +4485,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  /// Вкладка «Купить»: паки сеткой 2×2 и служебные строки.
-  List<Widget> _coinPacksTab(BuildContext ctx) {
-    final cs = _cs;
-    // Выгодным считаем пак с лучшей ценой за монету. Считать это в UI дешевле,
-    // чем держать флаг в каталоге и забыть обновить его при смене цен.
-    final best = _bestValuePack();
-    return [
-      GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.15,
-        children: kCoinPacks.map((pack) {
-          final priceLabel = _iap.priceLabel(pack.productId);
-          final highlighted = pack.productId == best;
-          return Material(
-            color: highlighted ? cs.primary : cs.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(26),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: _iapLoading || _iap.isLoading
-                  ? null
-                  : () async {
-                      Navigator.pop(ctx);
-                      await _buyCoins(pack.productId);
-                    },
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${pack.coins}',
-                                style: TextStyle(
-                                  fontFamily: ProfileTheme.displayFont,
-                                  fontSize: 28,
-                                  height: 1.0,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -1,
-                                  color: highlighted
-                                      ? cs.onPrimary
-                                      : cs.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _s.coinPackTitle(pack.coins),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: highlighted
-                                      ? cs.onPrimary.withValues(alpha: 0.8)
-                                      : cs.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        CoinImage(side: 22),
-                      ],
-                    ),
-                    const Spacer(),
-                    Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: highlighted
-                            ? cs.primaryContainer
-                            : cs.secondaryContainer,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      alignment: Alignment.center,
-                      child: priceLabel == null
-                          // Цены приезжают из магазина асинхронно; пока их нет,
-                          // показываем ожидание, а не многоточие-заглушку.
-                          ? SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: highlighted
-                                    ? cs.onPrimaryContainer
-                                    : cs.onSecondaryContainer,
-                              ),
-                            )
-                          : Text(
-                              priceLabel,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: highlighted
-                                    ? cs.onPrimaryContainer
-                                    : cs.onSecondaryContainer,
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-      // Код из телеграм-бота — только там, где своего биллинга нет.
-      //
-      // В сборке Play и на iPhone эта строка вела мимо кассы магазина: у
-      // Google это нарушение политики платежей, у Apple — 3.1.1, то самое, за
-      // что уже прилетал реджект по пакам монет.
-      //
-      // Одного `kDonationsEnabled` мало: IPA собирается с `STORE=github`, и по
-      // флагу строка осталась бы видимой на iPhone. Поэтому iOS исключён явно.
-      if (kDonationsEnabled && !Platform.isIOS && !ForkFlags.hideUpstreamChannels) ...[ // fork: M12
-        const SizedBox(height: 14),
-        _coinEarnRow(
-          icon: Icons.confirmation_number_rounded,
-          title: _s.redeemCodeTitle,
-          subtitle: _s.redeemCodeSubtitle,
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: cs.onSurfaceVariant,
-            size: 22,
-          ),
-          onTap: () {
-            Navigator.pop(ctx);
-            _askRedeemCode();
-          },
-        ),
-      ],
-      // «Восстановить покупки» имеет смысл только там, где покупки есть. На
-      // iPhone их нет вовсе (продуктов в App Store Connect не заведено), в
-      // sideload — тоже, и строка обещала бы несуществующее.
-      if (kCoinsPurchasable && !Platform.isIOS && !ForkFlags.allFree) ...[ // fork: M12
-        const SizedBox(height: 10),
-        _coinEarnRow(
-          icon: Icons.restore_rounded,
-          title: _s.restorePurchasesTitle,
-          subtitle: _s.coinEarnSubtitle,
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: cs.onSurfaceVariant,
-            size: 22,
-          ),
-          onTap: () {
-            Navigator.pop(ctx);
-            _restorePurchases();
-          },
-        ),
-      ],
-    ];
-  }
-
-  /// Пак с наименьшей ценой за монету. Пока магазин не отдал цены, выгодным
-  /// считаем ничего — подсветка появится вместе с ценниками.
-  String? _bestValuePack() {
-    String? best;
-    double bestRate = double.infinity;
-    for (final pack in kCoinPacks) {
-      final price = _iap.priceValue(pack.productId);
-      if (price == null || price <= 0 || pack.coins <= 0) continue;
-      final rate = price / pack.coins;
-      if (rate < bestRate) {
-        bestRate = rate;
-        best = pack.productId;
-      }
-    }
-    return best;
-  }
-
-  Future<void> _initIap() async {
-    await _iap.init(
-      onGrantCoins:
-          ({required String productId, required String purchaseToken}) =>
-              widget.userData.purchaseCoins(
-                productId: productId,
-                purchaseToken: purchaseToken,
-              ),
-    );
-    if (mounted) setState(() {});
-  }
-
-  /// Ввод кода пополнения из телеграм-бота.
-  Future<void> _askRedeemCode() async {
-    final code = await RedeemCodeSheet.show(context);
-    if (code == null || code.trim().isEmpty || !mounted) return;
-
-    final awarded = await widget.userData.redeemCode(code.trim());
-    if (!mounted) return;
-    final text = awarded == null
-        ? _s.redeemCodeFailed
-        : (awarded > 0 ? _s.redeemCodeDone(awarded) : _s.redeemCodeAlready);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  Future<void> _restorePurchases() async {
-    setState(() => _iapLoading = true);
-    try {
-      await _iap.restorePurchases();
-      // После восстановления подтягиваем актуальный баланс с сервера
-      await widget.userData.refreshCoinsFromServer();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_s.restorePurchasesSuccess),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_s.restorePurchasesError),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _iapLoading = false);
-    }
-  }
-
-  Future<void> _buyCoins(String productId) async {
-    if (_iapLoading) return;
-    setState(() => _iapLoading = true);
-
-    final result = await _iap.buy(productId);
-
-    if (!mounted) return;
-    setState(() => _iapLoading = false);
-
-    String message;
-    switch (result.status) {
-      case IapStatus.success:
-        message = _s.coinPurchaseSuccessAmount(result.coins);
-      case IapStatus.pending:
-        message = _s.coinPurchasePending;
-      case IapStatus.cancelled:
-        return; // тихо игнорируем отмену
-      case IapStatus.error:
-        message = _s.coinPurchaseError;
-    }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  Future<void> _watchRewardedAd() async {
-    if (!_rewardedAd.isReady) {
-      _rewardedAd.load();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_s.adNotReady),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-    final uid = widget.userData.uid;
-    if (uid.isEmpty) return;
-    final earned = await _rewardedAd.show(uid: uid);
-    unawaited(_rewardedAd.load());
-    if (!mounted) return;
-    if (!earned) {
-      await showAdNotEarned(context);
-      return;
-    }
-    // Монеты за ролик показываем, когда экран рекламы уже закрылся.
-    await untilAppVisible();
-    if (!mounted) return;
-
-    // Начисление авторитетное для ОБЕИХ сетей: и Яндекс, и AdMob на PocketBase
-    // идут через серверный роут /api/coins/ad-reward (Google-SSV нет ни у той,
-    // ни у другой). Сервер вернул реальный баланс и сам увеличил суточный
-    // счётчик — применяем точно, без оптимистичного угадывания (иначе «X/3»
-    // откатывался к нулю при синке профиля). Если сервер не начислил (дневной
-    // лимит) — не рисуем фейк; если не ответил (null) — тянем правду с сервера.
-    final serverCoins = _rewardedAd.lastServerCoins;
-    if (serverCoins != null) {
-      widget.userData.applyServerAdReward(
-        coins: serverCoins,
-        granted: _rewardedAd.lastRewardGranted,
-      );
-      if (mounted) {
-        if (_rewardedAd.lastRewardGranted) {
-          CoinRewardToast.show(
-            context,
-            amount: UserData.adRewardAmount,
-            label: _s.watchAdTitle,
-          );
-        } else if (_rewardedAd.lastRateLimited) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_s.adRewardLimitReached),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } else {
-      await widget.userData.refreshCoinsFromServer();
-    }
-    if (mounted) setState(() {});
-  }
-
   // null = предпросмотр запрошен, false = отмена, true = куплено
   /// Лист покупки темы.
   ///
@@ -5204,11 +4498,15 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// (327 падений в Bugsink на 1.16.3–1.17.0).
   /// Исходы листа: `buy` — куплено за монеты, `trial` — взята проба за
   /// рекламу, `preview` — просто посмотреть, `cancel` — отказ.
-  Future<String?> _confirmPurchaseTheme(BuildContext context, AppTheme t) async {
+  Future<String?> _confirmPurchaseTheme(
+    BuildContext context,
+    AppTheme t,
+  ) async {
     final canAfford = widget.userData.coins >= t.price;
     // Проба даётся не всем темам: открыть за рекламу все двадцать пять значит
     // заменить покупку. Список витринных живёт в kAdTrialThemes.
-    final trialOffered = kAdTrialThemes.contains(t.index) &&
+    final trialOffered =
+        kAdTrialThemes.contains(t.index) &&
         widget.userData.adGrants.canTake(AdGrantKind.theme, DateTime.now());
     final themeName = paletteDisplayName(t.index);
     final cs = ProfileTheme.themeFor(_t).colorScheme;
@@ -5329,7 +4627,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   height: 56,
                   child: FilledButton.tonalIcon(
                     onPressed: () => Navigator.pop(ctx, 'trial'),
-                    icon: const Icon(Icons.play_circle_outline_rounded, size: 20),
+                    icon: const Icon(
+                      Icons.play_circle_outline_rounded,
+                      size: 20,
+                    ),
                     label: Text(strings.adTrialTheme),
                     style: FilledButton.styleFrom(
                       backgroundColor: cs.tertiaryContainer,
@@ -5342,7 +4643,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
                 ),
-              ],              const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 8),
               SizedBox(
                 height: 56,
                 child: FilledButton.tonalIcon(
@@ -5416,27 +4718,38 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     }
 
-    final res = await widget.userData.takeAdGrant(AdGrantKind.theme, '$themeIndex');
+    final res = await widget.userData.takeAdGrant(
+      AdGrantKind.theme,
+      '$themeIndex',
+    );
     await untilAppVisible();
     if (!mounted) return res.kind == AdGrantOutcome.ok;
     switch (res.kind) {
       case AdGrantOutcome.ok:
-        messenger.showSnackBar(SnackBar(
-          content: Text(_s.adTrialTaken),
-          behavior: SnackBarBehavior.floating,
-        ));
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(_s.adTrialTaken),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         setState(() {});
         return true;
       case AdGrantOutcome.cooldown:
-        messenger.showSnackBar(SnackBar(
-          content: Text(_s.adTrialCooldown.replaceAll('{days}', '${res.days}')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              _s.adTrialCooldown.replaceAll('{days}', '${res.days}'),
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       case AdGrantOutcome.rateLimited:
-        messenger.showSnackBar(SnackBar(
-          content: Text(_s.adRewardLimitReached),
-          behavior: SnackBarBehavior.floating,
-        ));
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(_s.adRewardLimitReached),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       case AdGrantOutcome.failed:
         break;
     }
@@ -5458,9 +4771,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     final res = await showChangePasswordSheet(context, scheme: _cs);
     if (!context.mounted) return;
     if (res == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_s.passwordChanged)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_s.passwordChanged)));
       return;
     }
     if (res == 'mail') await _sendPasswordReset(context);
@@ -5469,9 +4782,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _sendPasswordReset(BuildContext context) async {
     final email = (PbAuthService().currentProfile()?['email'] ?? '').toString();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_s.passwordResetError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_s.passwordResetError)));
       return;
     }
     final ok = await AppDialog.confirm(
@@ -5493,9 +4806,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          content: Text(e is ClientException && e.statusCode == 429
-              ? _s.tooManyAttempts
-              : _s.passwordResetError),
+          content: Text(
+            e is ClientException && e.statusCode == 429
+                ? _s.tooManyAttempts
+                : _s.passwordResetError,
+          ),
         ),
       );
     }
@@ -5570,14 +4885,16 @@ class _ProfileScreenState extends State<ProfileScreen>
       debugPrint('deleteAccount error: $e');
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop(); // закрыть индикатор
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(
-        // fork: A14 — при 401 просим войти заново, а не общая ошибка
-        content: Text(ForkFailure.of(e) == ForkFailure.session
-            ? _s.deleteAccountReauth
-            : _s.deleteAccountError),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          // fork: A14 — при 401 просим войти заново, а не общая ошибка
+          content: Text(
+            ForkFailure.of(e) == ForkFailure.session
+                ? _s.deleteAccountReauth
+                : _s.deleteAccountError,
+          ),
+        ),
+      );
     }
   }
 }

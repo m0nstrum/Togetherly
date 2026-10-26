@@ -27,6 +27,7 @@ class WishesCard extends StatelessWidget {
     required this.partnerName,
     this.myAvatarUrl,
     this.partnerAvatarUrl,
+    this.onOpenMemory,
   });
 
   final AppTheme theme;
@@ -37,6 +38,9 @@ class WishesCard extends StatelessWidget {
   final String partnerName;
   final String? myAvatarUrl;
   final String? partnerAvatarUrl;
+
+  /// fork: открыть воспоминание сбывшегося (docs/WISHLIST.md).
+  final void Function(String memoryId)? onOpenMemory;
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +64,14 @@ class WishesCard extends StatelessWidget {
           child: UnfoldSource(
             fill: cs.surfaceContainerHigh,
             radius: 28,
-            builder: (_, card) => _card(context, cs, ru,
-                dreaming: dreaming, doneCount: doneCount, card: card),
+            builder: (_, card) => _card(
+              context,
+              cs,
+              ru,
+              dreaming: dreaming,
+              doneCount: doneCount,
+              card: card,
+            ),
           ),
         );
       },
@@ -76,69 +86,77 @@ class WishesCard extends StatelessWidget {
     required int doneCount,
     required UnfoldSourceState card,
   }) {
-        return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InkWell(
-                onTap: () => _open(context, from: card),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        ruEn('Хочу с тобой', 'Want with you'),
-                        style: AppFonts.unbounded(
-                            size: 17, weight: 600, color: cs.onSurface),
-                      ),
-                    ),
-                    Text(
-                      ruEn('Все →', 'All →'),
-                      style: AppFonts.onest(
-                          size: 14, weight: 700, color: cs.primary),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (dreaming.isEmpty)
-                _EmptyRow(
-                    scheme: cs,
-                    ru: ru,
-                    onTap: () => _open(context, from: card))
-              else
-                for (final wish in dreaming.take(2))
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _Row(
-                      wish: wish,
-                      scheme: cs,
-                      author: _nameOf(wish.authorUid),
-                      onTap: () => _open(context, from: card),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => _open(context, from: card),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    ruEn('Хочу с тобой', 'Want with you'),
+                    style: AppFonts.unbounded(
+                      size: 17,
+                      weight: 600,
+                      color: cs.onSurface,
                     ),
                   ),
-              if (doneCount > 0) ...[
-                Divider(color: cs.outlineVariant, height: 13),
-                InkWell(
-                  onTap: () => _open(context, fulfilled: true, from: card),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Text(
-                      ruEn('$doneCount уже сбылось — посмотреть',
-                          '$doneCount already came true — see them'),
-                      style:
-                          AppFonts.onest(size: 12.5, color: cs.onSurfaceVariant),
-                    ),
+                ),
+                Text(
+                  ruEn('Все →', 'All →'),
+                  style: AppFonts.onest(
+                    size: 14,
+                    weight: 700,
+                    color: cs.primary,
                   ),
                 ),
               ],
-            ],
+            ),
           ),
-        );
+          const SizedBox(height: 12),
+          if (dreaming.isEmpty)
+            _EmptyRow(
+              scheme: cs,
+              ru: ru,
+              onTap: () => _open(context, from: card),
+            )
+          else
+            for (final wish in dreaming.take(2))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _Row(
+                  wish: wish,
+                  scheme: cs,
+                  author: _nameOf(wish.authorUid),
+                  onTap: () => _open(context, from: card),
+                ),
+              ),
+          if (doneCount > 0) ...[
+            Divider(color: cs.outlineVariant, height: 13),
+            InkWell(
+              onTap: () => _open(context, fulfilled: true, from: card),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  ruEn(
+                    '$doneCount уже сбылось — посмотреть',
+                    '$doneCount already came true — see them',
+                  ),
+                  style: AppFonts.onest(size: 12.5, color: cs.onSurfaceVariant),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   String _nameOf(String uid) {
@@ -147,8 +165,11 @@ class WishesCard extends StatelessWidget {
     return '';
   }
 
-  void _open(BuildContext context,
-      {bool fulfilled = false, UnfoldSourceState? from}) {
+  void _open(
+    BuildContext context, {
+    bool fulfilled = false,
+    UnfoldSourceState? from,
+  }) {
     Navigator.of(context).push(
       unfoldFrom<void>(
         from,
@@ -162,6 +183,7 @@ class WishesCard extends StatelessWidget {
           myAvatarUrl: myAvatarUrl,
           partnerAvatarUrl: partnerAvatarUrl,
           openFulfilled: fulfilled,
+          onOpenMemory: onOpenMemory,
         ),
       ),
     );
@@ -200,8 +222,11 @@ class _Row extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: SymbolIcon(wish.iconName,
-                size: 20, color: scheme.onPrimaryContainer),
+            child: SymbolIcon(
+              wish.iconName,
+              size: 20,
+              color: scheme.onPrimaryContainer,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -213,7 +238,10 @@ class _Row extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.unbounded(
-                      size: 15, weight: 600, color: scheme.onSurface),
+                    size: 15,
+                    weight: 600,
+                    color: scheme.onSurface,
+                  ),
                 ),
                 if (subtitle.isNotEmpty)
                   Text(
@@ -221,7 +249,9 @@ class _Row extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.onest(
-                        size: 12.5, color: scheme.onSurfaceVariant),
+                      size: 12.5,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
               ],
             ),
@@ -257,17 +287,24 @@ class _EmptyRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: SymbolIcon('auto_awesome',
-                size: 20, color: scheme.onPrimaryContainer),
+            child: SymbolIcon(
+              'auto_awesome',
+              size: 20,
+              color: scheme.onPrimaryContainer,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               ruEn(
-                  'Что посмотреть, куда съездить, где поесть — соберите список на двоих.',
-                  'What to watch, where to go, where to eat — start a list for two.'),
+                'Что посмотреть, куда съездить, где поесть — соберите список на двоих.',
+                'What to watch, where to go, where to eat — start a list for two.',
+              ),
               style: AppFonts.onest(
-                  size: 13, height: 1.4, color: scheme.onSurfaceVariant),
+                size: 13,
+                height: 1.4,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],

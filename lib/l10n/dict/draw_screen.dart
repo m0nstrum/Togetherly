@@ -691,7 +691,8 @@ const Map<String, Map<String, String>> drawScreenStrings = {
     'pt': 'Um bloco é um dia; as faixas dentro são o que vocês fizeram',
     'it': 'Un blocco è un giorno; le fasce dentro sono ciò che avete fatto',
     'es': 'Un bloque es un día; las franjas dentro son lo que hicisteis',
-    'fr': 'Un bloc, c’est un jour ; les bandes à l’intérieur, ce que vous avez fait',
+    'fr':
+        'Un bloc, c’est un jour ; les bandes à l’intérieur, ce que vous avez fait',
     'de': 'Ein Block ist ein Tag, die Streifen darin sind, was ihr getan habt',
   },
   'moodVesselSummary': {

@@ -70,7 +70,8 @@ class CanvasImageCache extends ChangeNotifier {
     while (DateTime.now().isBefore(until)) {
       final waiting = [
         for (final key in keys)
-          if (!_ready.containsKey(key) && (_failures[key] ?? 0) < _maxAttempts) key,
+          if (!_ready.containsKey(key) && (_failures[key] ?? 0) < _maxAttempts)
+            key,
       ];
       if (waiting.isEmpty) return;
       for (final key in waiting) {
@@ -153,8 +154,9 @@ class CanvasImageCache extends ChangeNotifier {
     // рвущейся связи он идёт секундами.
     if (PbMediaService().isPbRef(key)) {
       try {
-        final hit =
-            await OfflineImageCacheManager.instance.getFileFromCache('v2|$key');
+        final hit = await OfflineImageCacheManager.instance.getFileFromCache(
+          'v2|$key',
+        );
         final file = hit?.file;
         if (file != null && await file.exists() && await file.length() > 0) {
           return _sized(FileImage(File(file.path)));
@@ -165,28 +167,31 @@ class CanvasImageCache extends ChangeNotifier {
     }
     // pb:// — защищённый файл PocketBase: адрес живёт с file-токеном, и
     // добывается он асинхронно.
-    final resolved =
-        PbMediaService().isPbRef(key) ? await PbMediaService().resolveUrlAuthed(key) : key;
+    final resolved = PbMediaService().isPbRef(key)
+        ? await PbMediaService().resolveUrlAuthed(key)
+        : key;
     if (resolved == null || resolved.isEmpty) return null;
     if (!resolved.startsWith('http')) return null;
-    return _sized(CachedNetworkImageProvider(
-      resolved,
-      // Ключ по исходной ссылке — тот же, что у `StorageImage`: смена токена не
-      // должна сбрасывать уже скачанный файл.
-      cacheKey: 'v2|$key',
-      cacheManager: OfflineImageCacheManager.instance,
-    ));
+    return _sized(
+      CachedNetworkImageProvider(
+        resolved,
+        // Ключ по исходной ссылке — тот же, что у `StorageImage`: смена токена не
+        // должна сбрасывать уже скачанный файл.
+        cacheKey: 'v2|$key',
+        cacheManager: OfflineImageCacheManager.instance,
+      ),
+    );
   }
 
   /// Заливка и так режется до 1600 при создании, а вставленное фото приходит с
   /// камеры в 4000 — это 48 МБ в памяти на одну картинку.
   ImageProvider _sized(ImageProvider provider) => ResizeImage(
-        provider,
-        width: decodeSide,
-        height: decodeSide,
-        policy: ResizeImagePolicy.fit,
-        allowUpscaling: false,
-      );
+    provider,
+    width: decodeSide,
+    height: decodeSide,
+    policy: ResizeImagePolicy.fit,
+    allowUpscaling: false,
+  );
 
   Future<ui.Image?> _resolve(ImageProvider provider) {
     final completer = Completer<ui.Image?>();

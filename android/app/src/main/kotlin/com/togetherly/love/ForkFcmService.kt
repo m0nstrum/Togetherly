@@ -17,7 +17,7 @@ import com.google.firebase.messaging.RemoteMessage
 import dev.fluttercommunity.workmanager.BackgroundWorker
 
 /**
- * fork: FCM как будильник (docs/fork/PLAN.md, S12).
+ * fork: FCM как будильник (docs/history/PLAN.md, S12).
  *
  * В пуше нет ничего, кроме `{type: "sync", event: <id>}`: текст, имена и
  * id пары в Google не уходят. Пуш будит Dart разовой задачей workmanager

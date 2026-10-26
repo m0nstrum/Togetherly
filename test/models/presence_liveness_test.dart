@@ -9,28 +9,40 @@ void main() {
   group('кто в сети', () {
     test('свежий удар по каналу — в сети', () {
       expect(
-        PresenceLiveness.isOnline(channelBeatMs: ago(const Duration(seconds: 5)), nowMs: now),
+        PresenceLiveness.isOnline(
+          channelBeatMs: ago(const Duration(seconds: 5)),
+          nowMs: now,
+        ),
         isTrue,
       );
     });
 
     test('один пропущенный удар не гасит точку', () {
       expect(
-        PresenceLiveness.isOnline(channelBeatMs: ago(const Duration(seconds: 30)), nowMs: now),
+        PresenceLiveness.isOnline(
+          channelBeatMs: ago(const Duration(seconds: 30)),
+          nowMs: now,
+        ),
         isTrue,
       );
     });
 
     test('минута тишины — офлайн', () {
       expect(
-        PresenceLiveness.isOnline(channelBeatMs: ago(const Duration(minutes: 1)), nowMs: now),
+        PresenceLiveness.isOnline(
+          channelBeatMs: ago(const Duration(minutes: 1)),
+          nowMs: now,
+        ),
         isFalse,
       );
     });
 
     test('партнёр на старой сборке виден по отметке в базе', () {
       expect(
-        PresenceLiveness.isOnline(storedSeenMs: ago(const Duration(seconds: 10)), nowMs: now),
+        PresenceLiveness.isOnline(
+          storedSeenMs: ago(const Duration(seconds: 10)),
+          nowMs: now,
+        ),
         isTrue,
       );
     });
@@ -83,7 +95,9 @@ void main() {
     test('минуту спустя — рано', () {
       expect(
         PresenceLiveness.shouldWriteLastSeen(
-            writtenAtMs: ago(const Duration(minutes: 1)), nowMs: now),
+          writtenAtMs: ago(const Duration(minutes: 1)),
+          nowMs: now,
+        ),
         isFalse,
       );
     });
@@ -91,7 +105,9 @@ void main() {
     test('через пять минут — пора', () {
       expect(
         PresenceLiveness.shouldWriteLastSeen(
-            writtenAtMs: ago(const Duration(minutes: 5)), nowMs: now),
+          writtenAtMs: ago(const Duration(minutes: 5)),
+          nowMs: now,
+        ),
         isTrue,
       );
     });

@@ -43,14 +43,14 @@ class MissWidgetCard extends StatelessWidget {
   Color _c(String role, Color fallback) => roles[role] ?? fallback;
 
   TextStyle _num(double px, Color color) => TextStyle(
-        fontFamily: 'Unbounded',
-        fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
-        fontSize: px,
-        height: 1,
-        letterSpacing: -px * 0.04,
-        color: color,
-      );
+    fontFamily: 'Unbounded',
+    fontWeight: FontWeight.w800,
+    fontVariations: const [FontVariation('wght', 800)],
+    fontSize: px,
+    height: 1,
+    letterSpacing: -px * 0.04,
+    color: color,
+  );
 
   TextStyle _text(double px, Color color, {FontWeight w = FontWeight.w600}) =>
       TextStyle(
@@ -94,13 +94,19 @@ class MissWidgetCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(sentToday ? Icons.check_rounded : Icons.favorite_rounded,
-              size: height * 0.4, color: ink),
+          Icon(
+            sentToday ? Icons.check_rounded : Icons.favorite_rounded,
+            size: height * 0.4,
+            color: ink,
+          ),
           const SizedBox(width: 8),
           Flexible(
-            child: Text(sendLabel,
-                style: _text(height * 0.34, ink, w: FontWeight.w700),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              sendLabel,
+              style: _text(height * 0.34, ink, w: FontWeight.w700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -115,57 +121,62 @@ class MissWidgetCard extends StatelessWidget {
     required double numSize,
     required Color background,
     required Color ink,
-  }) =>
-      Expanded(
-        // Высота плитки зависит от того, где карточку рисуют: на столе места
-        // больше, в каталоге приложения — меньше. Поэтому аватар, кегли и
-        // отступы считаются от неё, а число ужимается под остаток. Раньше
-        // всё было жёстким, и четырёхзначный счёт вылезал на подпись
-        // «Сегодня» (снимок 20.09.2026).
-        child: LayoutBuilder(
-          builder: (context, c) {
-            final tight = c.maxHeight < 56;
-            final faceSize = tight ? 16.0 : 22.0;
-            final pad = tight ? 8.0 : 12.0;
-            final gap = tight ? 2.0 : 6.0;
-            return Container(
-              padding: EdgeInsets.symmetric(horizontal: pad, vertical: tight ? 6 : 10),
-              decoration: BoxDecoration(
-                color: background,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  }) => Expanded(
+    // Высота плитки зависит от того, где карточку рисуют: на столе места
+    // больше, в каталоге приложения — меньше. Поэтому аватар, кегли и
+    // отступы считаются от неё, а число ужимается под остаток. Раньше
+    // всё было жёстким, и четырёхзначный счёт вылезал на подпись
+    // «Сегодня» (снимок 20.09.2026).
+    child: LayoutBuilder(
+      builder: (context, c) {
+        final tight = c.maxHeight < 56;
+        final faceSize = tight ? 16.0 : 22.0;
+        final pad = tight ? 8.0 : 12.0;
+        final gap = tight ? 2.0 : 6.0;
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: pad,
+            vertical: tight ? 6 : 10,
+          ),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      if (face != null)
-                        SizedBox(width: faceSize, height: faceSize, child: face),
-                      if (face != null) SizedBox(width: tight ? 5 : 7),
-                      Expanded(
-                        child: Text(name,
-                            style: _text(tight ? 10 : 11.5, ink, w: FontWeight.w700),
-                            maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: gap),
+                  if (face != null)
+                    SizedBox(width: faceSize, height: faceSize, child: face),
+                  if (face != null) SizedBox(width: tight ? 5 : 7),
                   Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(count, style: _num(numSize, ink), maxLines: 1),
-                      ),
+                    child: Text(
+                      name,
+                      style: _text(tight ? 10 : 11.5, ink, w: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        ),
-      );
+              SizedBox(height: gap),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(count, style: _num(numSize, ink), maxLines: 1),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
 
   Widget _small(ColorScheme cs) {
     final ink = _c('onSurface', cs.onSurface);
@@ -180,9 +191,12 @@ class MissWidgetCard extends StatelessWidget {
               SizedBox(width: 26, height: 26, child: partnerFace),
             if (partnerFace != null) const SizedBox(width: 8),
             Expanded(
-              child: Text(partnerName,
-                  style: _text(12, _c('onSurfaceVariant', cs.onSurfaceVariant)),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: Text(
+                partnerName,
+                style: _text(12, _c('onSurfaceVariant', cs.onSurfaceVariant)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -191,19 +205,29 @@ class MissWidgetCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(my, style: _num(missCountSize(myCount, base: 30), ink),
-                maxLines: 1),
+            Text(
+              my,
+              style: _num(missCountSize(myCount, base: 30), ink),
+              maxLines: 1,
+            ),
             const SizedBox(width: 8),
             Flexible(
-              child: Text('/ ${missCountText(partnerCount)}',
-                  style: _text(13, soft, w: FontWeight.w700),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: Text(
+                '/ ${missCountText(partnerCount)}',
+                style: _text(13, soft, w: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 2),
-        Text(whenLabel, style: _text(10.5, soft), maxLines: 1,
-            overflow: TextOverflow.ellipsis),
+        Text(
+          whenLabel,
+          style: _text(10.5, soft),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         const SizedBox(height: 8),
         _button(cs, height: 40),
       ],
@@ -224,21 +248,25 @@ class MissWidgetCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _tile(cs,
-                  face: myFace,
-                  name: meLabel,
-                  count: my,
-                  numSize: numSize,
-                  background: _c('primaryContainer', cs.primaryContainer),
-                  ink: _c('onPrimaryContainer', cs.onPrimaryContainer)),
+              _tile(
+                cs,
+                face: myFace,
+                name: meLabel,
+                count: my,
+                numSize: numSize,
+                background: _c('primaryContainer', cs.primaryContainer),
+                ink: _c('onPrimaryContainer', cs.onPrimaryContainer),
+              ),
               const SizedBox(width: 10),
-              _tile(cs,
-                  face: partnerFace,
-                  name: partnerName,
-                  count: partner,
-                  numSize: numSize,
-                  background: _c('tertiaryContainer', cs.tertiaryContainer),
-                  ink: _c('onTertiaryContainer', cs.onTertiaryContainer)),
+              _tile(
+                cs,
+                face: partnerFace,
+                name: partnerName,
+                count: partner,
+                numSize: numSize,
+                background: _c('tertiaryContainer', cs.tertiaryContainer),
+                ink: _c('onTertiaryContainer', cs.onTertiaryContainer),
+              ),
             ],
           ),
         ),
@@ -246,9 +274,12 @@ class MissWidgetCard extends StatelessWidget {
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(whenLabel,
-                style: _text(11, _c('outline', cs.outline)),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              whenLabel,
+              style: _text(11, _c('outline', cs.outline)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
         const SizedBox(height: 8),
@@ -270,8 +301,12 @@ class MissWidgetCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(sendLabel, style: _text(14, ink, w: FontWeight.w700),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                sendLabel,
+                style: _text(14, ink, w: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 2),
               Text(
                 [
@@ -294,8 +329,11 @@ class MissWidgetCard extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: Icon(sentToday ? Icons.check_rounded : Icons.favorite_rounded,
-              size: 20, color: _c('primary', cs.primary)),
+          child: Icon(
+            sentToday ? Icons.check_rounded : Icons.favorite_rounded,
+            size: 20,
+            color: _c('primary', cs.primary),
+          ),
         ),
       ],
     );

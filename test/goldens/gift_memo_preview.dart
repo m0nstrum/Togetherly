@@ -49,8 +49,12 @@ void main() {
     final cs = ProfileTheme.schemeFor(AppThemes.pink);
     final key = GlobalKey();
     const gift = Gift(
-        key: 'hug', price: 15, engine: GiftEngine.response,
-        titleRu: 'Обнимашка', titleEn: 'Hug');
+      key: 'hug',
+      price: 15,
+      engine: GiftEngine.response,
+      titleRu: 'Обнимашка',
+      titleEn: 'Hug',
+    );
     final year = DateTime.now().year;
     final memos = [
       GiftMemo(
@@ -63,55 +67,65 @@ void main() {
         date: DateTime(year, 9, 12, 19),
       ),
       GiftMemo(
-          giftKey: 'hug',
-          sentAt: DateTime(year, 8, 3),
-          senderUid: 'sasha',
-          note: 'Это тебе просто так.'),
-      GiftMemo(giftKey: 'hug', sentAt: DateTime(2025, 12, 31), senderUid: 'chest'),
+        giftKey: 'hug',
+        sentAt: DateTime(year, 8, 3),
+        senderUid: 'sasha',
+        note: 'Это тебе просто так.',
+      ),
+      GiftMemo(
+        giftKey: 'hug',
+        sentAt: DateTime(2025, 12, 31),
+        senderUid: 'chest',
+      ),
     ];
 
     Widget phone(double w) => Container(
-          width: w,
-          height: 700,
-          margin: const EdgeInsets.all(12),
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(28)),
-          child: Material(
-            color: cs.surfaceContainerLow,
-            child: SheetScaffold(
-              child: GiftMemoList(
-                gift: gift,
-                memos: memos,
-                myUid: 'me',
-                shelfOwnerUid: 'me',
-                counterpartName: 'Саша',
-                scheme: cs,
-                ru: true,
-                strings: LocaleService.current,
-              ),
-            ),
-          ),
-        );
-
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ProfileTheme.data(cs),
-      home: RepaintBoundary(
-        key: key,
-        child: ColoredBox(
-          color: const Color(0xFF171210),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [phone(393), phone(320)],
+      width: w,
+      height: 700,
+      margin: const EdgeInsets.all(12),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Material(
+        color: cs.surfaceContainerLow,
+        child: SheetScaffold(
+          child: GiftMemoList(
+            gift: gift,
+            memos: memos,
+            myUid: 'me',
+            shelfOwnerUid: 'me',
+            counterpartName: 'Саша',
+            scheme: cs,
+            ru: true,
+            strings: LocaleService.current,
           ),
         ),
       ),
-    ));
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ProfileTheme.data(cs),
+        home: RepaintBoundary(
+          key: key,
+          child: ColoredBox(
+            color: const Color(0xFF171210),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [phone(393), phone(320)],
+            ),
+          ),
+        ),
+      ),
+    );
     await tester.runAsync(() async {
       await precacheImage(
-          const AssetImage('assets/images/gifts/hug.webp'), key.currentContext!);
+        const AssetImage('assets/images/gifts/hug.webp'),
+        key.currentContext!,
+      );
       await Future<void>.delayed(const Duration(milliseconds: 300));
     });
     await tester.pump(const Duration(milliseconds: 500));
@@ -122,8 +136,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 1.5);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/gift_memo.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/gift_memo.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }

@@ -58,11 +58,15 @@ class CatalogService extends ChangeNotifier {
   /// Заставки при запуске (kind='splash'), что идут сегодня, по `sort`.
   List<LaunchSplash> splashesOn([DateTime? now]) {
     final day = now ?? DateTime.now();
-    return [for (final s in _splashes) if (s.isOn(day)) s];
+    return [
+      for (final s in _splashes)
+        if (s.isOn(day)) s,
+    ];
   }
 
   /// Фон, который идёт сегодня по часам человека; null — обычная главная.
-  SeasonBackdrop? activeBackdrop([DateTime? now]) => SeasonBackdrop.activeOf(_backdrops, now ?? DateTime.now());
+  SeasonBackdrop? activeBackdrop([DateTime? now]) =>
+      SeasonBackdrop.activeOf(_backdrops, now ?? DateTime.now());
 
   /// Значки профиля из каталога (kind='badge'), по полю `sort`. Зашитых в
   /// сборку значков нет: пока каталог не загружен ни разу, список пуст.
@@ -105,7 +109,8 @@ class CatalogService extends ChangeNotifier {
 
   /// Разобрать строки каталога, как их отдаёт сервер, — только для тестов.
   @visibleForTesting
-  void debugApply(List rows, {String appVersion = '9.9.9'}) => _apply(rows, appVersion);
+  void debugApply(List rows, {String appVersion = '9.9.9'}) =>
+      _apply(rows, appVersion);
 
   /// Подставить живые картинки подарков и сундука без сети — только для тестов.
   @visibleForTesting
@@ -137,7 +142,8 @@ class CatalogService extends ChangeNotifier {
   Set<String> get pairOwned => _pairOwned;
 
   void updatePairOwned(Set<String> keys) {
-    if (_pairOwned.length == keys.length && _pairOwned.containsAll(keys)) return;
+    if (_pairOwned.length == keys.length && _pairOwned.containsAll(keys))
+      return;
     _pairOwned = Set.unmodifiable(keys);
     notifyListeners();
   }
@@ -299,13 +305,15 @@ class CatalogService extends ChangeNotifier {
         final anim = MascotAnim.fromCatalog(row, unlock: unlock);
         if (anim != null) {
           anims[anim.id] = anim;
-          mascots.add(Mascot.fromCatalog(
-            id: anim.id,
-            nameRu: anim.nameRu,
-            nameEn: anim.nameEn,
-            url: anim.sheetUrl,
-            unlock: unlock,
-          ));
+          mascots.add(
+            Mascot.fromCatalog(
+              id: anim.id,
+              nameRu: anim.nameRu,
+              nameEn: anim.nameEn,
+              url: anim.sheetUrl,
+              unlock: unlock,
+            ),
+          );
         }
         continue;
       }
@@ -323,17 +331,19 @@ class CatalogService extends ChangeNotifier {
       }
       if (moods.isEmpty) continue;
 
-      packs.add(MoodPack(
-        id: row['id'] as String? ?? '',
-        isFree: row['is_free'] as bool? ?? true,
-        nameRu: row['name_ru'] as String? ?? '',
-        nameEn: row['name_en'] as String? ?? '',
-        moods: moods,
-        tileGradient: _parseGradient(data['tileGradient']),
-        unlock: _parseUnlock(row, data),
-        author: (data['author'] as String? ?? '').trim(),
-        sort: (row['sort'] as num?)?.toInt() ?? 500,
-      ));
+      packs.add(
+        MoodPack(
+          id: row['id'] as String? ?? '',
+          isFree: row['is_free'] as bool? ?? true,
+          nameRu: row['name_ru'] as String? ?? '',
+          nameEn: row['name_en'] as String? ?? '',
+          moods: moods,
+          tileGradient: _parseGradient(data['tileGradient']),
+          unlock: _parseUnlock(row, data),
+          author: (data['author'] as String? ?? '').trim(),
+          sort: (row['sort'] as num?)?.toInt() ?? 500,
+        ),
+      );
     }
 
     _remotePacks = List.unmodifiable(packs);
@@ -344,7 +354,9 @@ class CatalogService extends ChangeNotifier {
     _giftArt = Map.unmodifiable(giftArt);
     GiftCatalog.registerSeasonal({
       for (final a in giftArt.values)
-        if (a.set.isNotEmpty && GiftCatalog.all.every((g) => g.key != a.key) && GiftCatalog.chest.every((g) => g.key != a.key))
+        if (a.set.isNotEmpty &&
+            GiftCatalog.all.every((g) => g.key != a.key) &&
+            GiftCatalog.chest.every((g) => g.key != a.key))
           a.key: Gift(
             key: a.key,
             price: 0,

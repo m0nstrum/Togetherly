@@ -60,8 +60,12 @@ void main() {
       }
     }
 
-    expect(offenders, isEmpty,
-        reason: 'Material со shape и borderRadius разом валит экран в отладке: '
-            '${offenders.join(', ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Material со shape и borderRadius разом валит экран в отладке: '
+          '${offenders.join(', ')}',
+    );
   });
 }

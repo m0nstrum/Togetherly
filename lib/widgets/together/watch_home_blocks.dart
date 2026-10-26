@@ -77,7 +77,12 @@ class _BalancedText extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: SizedBox(
             width: width.clamp(0, max),
-            child: Text(text, style: style, maxLines: maxLines, overflow: maxLines == null ? null : TextOverflow.ellipsis),
+            child: Text(
+              text,
+              style: style,
+              maxLines: maxLines,
+              overflow: maxLines == null ? null : TextOverflow.ellipsis,
+            ),
           ),
         );
       },
@@ -116,7 +121,12 @@ class WatchLead extends StatelessWidget {
 /// Кегль, при котором самое длинное слово [text] встаёт в [maxWidth] целиком.
 /// Unbounded широкий, и на 320 точках с крупным шрифтом «Совместная» и
 /// «Смотреть» рвались посреди слова.
-double _fitSize(BuildContext context, String text, TextStyle style, double? maxWidth) {
+double _fitSize(
+  BuildContext context,
+  String text,
+  TextStyle style,
+  double? maxWidth,
+) {
   // Мерить тем же стилем, каким нарисует Text: он сливается с темой, а у M3
   // там разрядка 0.25 — без неё слово мерилось уже, чем выходило на экране.
   final full = DefaultTextStyle.of(context).style.merge(style);
@@ -129,7 +139,10 @@ double _fitSize(BuildContext context, String text, TextStyle style, double? maxW
     var w = 0.0;
     for (final word in words) {
       final tp = TextPainter(
-        text: TextSpan(text: word, style: full.copyWith(fontSize: s)),
+        text: TextSpan(
+          text: word,
+          style: full.copyWith(fontSize: s),
+        ),
         textDirection: TextDirection.ltr,
         textScaler: scaler,
         maxLines: 1,
@@ -156,8 +169,10 @@ class _FitTitle extends StatelessWidget {
   final double? maxWidth;
 
   @override
-  Widget build(BuildContext context) =>
-      Text(text, style: style.copyWith(fontSize: _fitSize(context, text, style, maxWidth)));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: style.copyWith(fontSize: _fitSize(context, text, style, maxWidth)),
+  );
 }
 
 TextStyle _title(double size, Color color) => TextStyle(
@@ -170,8 +185,13 @@ TextStyle _title(double size, Color color) => TextStyle(
   color: color,
 );
 
-TextStyle _body(double size, Color color) =>
-    TextStyle(fontFamily: 'Onest', letterSpacing: 0, fontSize: size, height: 1.45, color: color);
+TextStyle _body(double size, Color color) => TextStyle(
+  fontFamily: 'Onest',
+  letterSpacing: 0,
+  fontSize: size,
+  height: 1.45,
+  color: color,
+);
 
 /// Главная карточка: смотреть кино с партнёром. Нажимается вся; откликается
 /// кнопка «играть». Узор — колонка кино справа во всю высоту.
@@ -223,10 +243,22 @@ class WatchKinoCard extends StatelessWidget {
       decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
       // Заглушка с буквой красится этим цветом: основной цвет темы совпал
       // бы с карточкой, и без фото аватарки не было бы видно.
-      child: AvatarWidget(uid: uid, liveUrl: url, name: name, size: 46, primary: on, showFrame: false),
+      child: AvatarWidget(
+        uid: uid,
+        liveUrl: url,
+        name: name,
+        size: 46,
+        primary: on,
+        showFrame: false,
+      ),
     );
     final content = Padding(
-      padding: const EdgeInsets.fromLTRB(_pad, _pad, _patternWidth + 16, _pad + _play + 16),
+      padding: const EdgeInsets.fromLTRB(
+        _pad,
+        _pad,
+        _patternWidth + 16,
+        _pad + _play + 16,
+      ),
       child: LayoutBuilder(
         builder: (context, c) {
           final titleStyle = _title(21, on);
@@ -240,14 +272,20 @@ class WatchKinoCard extends StatelessWidget {
                 child: Stack(
                   children: [
                     avatar(myUid, myAvatar, myName),
-                    if (partnerUid.isNotEmpty) Positioned(left: 36, child: avatar(partnerUid, partnerAvatar, partnerName)),
+                    if (partnerUid.isNotEmpty)
+                      Positioned(
+                        left: 36,
+                        child: avatar(partnerUid, partnerAvatar, partnerName),
+                      ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               _BalancedText(
                 title,
-                titleStyle.copyWith(fontSize: _fitSize(context, title, titleStyle, c.maxWidth)),
+                titleStyle.copyWith(
+                  fontSize: _fitSize(context, title, titleStyle, c.maxWidth),
+                ),
                 maxLines: 3,
               ),
               const SizedBox(height: 8),
@@ -263,7 +301,8 @@ class WatchKinoCard extends StatelessWidget {
         color: fill,
         radius: 32,
         rippleColor: watchRippleColor(fill, on, .3),
-        onTap: onTap, // fork (UX V4): серая карточка отвечает сообщением, а не молчит
+        onTap:
+            onTap, // fork (UX V4): серая карточка отвечает сообщением, а не молчит
         focusId: 'play',
         after: WatchFxAfter.spin,
         semanticLabel: title,
@@ -275,9 +314,18 @@ class WatchKinoCard extends StatelessWidget {
               right: 0,
               bottom: 0,
               width: _patternWidth,
-              child: WatchPattern(motifs: WatchMotifs.kino, seed: seed, tones: watchPatternTones(fill), cols: 3, rows: 8),
+              child: WatchPattern(
+                motifs: WatchMotifs.kino,
+                seed: seed,
+                tones: watchPatternTones(fill),
+                cols: 3,
+                rows: 8,
+              ),
             ),
-            ConstrainedBox(constraints: const BoxConstraints(minHeight: 272), child: content),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 272),
+              child: content,
+            ),
             Positioned(
               left: _pad,
               bottom: _pad,
@@ -285,7 +333,10 @@ class WatchKinoCard extends StatelessWidget {
                 id: 'play',
                 size: _play,
                 color: on,
-                icon: const IconData(0xe037, fontFamily: SymbolCatalog.fontFamily),
+                icon: const IconData(
+                  0xe037,
+                  fontFamily: SymbolCatalog.fontFamily,
+                ),
                 iconSize: 36,
                 iconColor: fill,
                 spinColor: fill,
@@ -331,7 +382,9 @@ class WatchReelsTile extends StatelessWidget {
     // Иконки идут внахлёст: на узкой плитке нахлёст глубже, чем правый край.
     final room = titleWidth;
     final last = ReelsSource.values.length - 1;
-    final logoStep = room == null || last <= 0 ? 24.0 : ((room - 34) / last).clamp(14.0, 24.0);
+    final logoStep = room == null || last <= 0
+        ? 24.0
+        : ((room - 34) / last).clamp(14.0, 24.0);
     final body = Padding(
       padding: const EdgeInsets.fromLTRB(16, 104, 16, 16),
       child: Column(
@@ -347,10 +400,18 @@ class WatchReelsTile extends StatelessWidget {
                     left: i * logoStep,
                     child: Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(11)),
+                      decoration: BoxDecoration(
+                        color: bg,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(9),
-                        child: Image.asset(s.icon, width: 30, height: 30, cacheWidth: 90),
+                        child: Image.asset(
+                          s.icon,
+                          width: 30,
+                          height: 30,
+                          cacheWidth: 90,
+                        ),
                       ),
                     ),
                   ),
@@ -385,7 +446,13 @@ class WatchReelsTile extends StatelessWidget {
             left: 0,
             right: 0,
             height: 120,
-            child: WatchPattern(motifs: WatchMotifs.reels, seed: seed + 10, tones: watchPatternTones(bg), cols: 4, rows: 3),
+            child: WatchPattern(
+              motifs: WatchMotifs.reels,
+              seed: seed + 10,
+              tones: watchPatternTones(bg),
+              cols: 4,
+              rows: 3,
+            ),
           ),
           body,
         ],
@@ -397,7 +464,14 @@ class WatchReelsTile extends StatelessWidget {
 /// Играть вместе: откроется сайт с играми. Узор — квадрат в правом верхнем
 /// углу напротив значка.
 class WatchGamesTile extends StatelessWidget {
-  const WatchGamesTile({super.key, required this.title, required this.text, required this.onTap, this.titleWidth, this.seed = 1});
+  const WatchGamesTile({
+    super.key,
+    required this.title,
+    required this.text,
+    required this.onTap,
+    this.titleWidth,
+    this.seed = 1,
+  });
 
   /// Ширина под заголовок, см. [_FitTitle].
   final double? titleWidth;
@@ -429,8 +503,17 @@ class WatchGamesTile extends StatelessWidget {
             width: 72,
             height: 72,
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(28)),
-              child: WatchPattern(motifs: WatchMotifs.games, seed: seed + 20, tones: watchPatternTones(bg), cols: 2, rows: 2, cell: 36),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(28),
+              ),
+              child: WatchPattern(
+                motifs: WatchMotifs.games,
+                seed: seed + 20,
+                tones: watchPatternTones(bg),
+                cols: 2,
+                rows: 2,
+                cell: 36,
+              ),
             ),
           ),
           Padding(
@@ -443,7 +526,10 @@ class WatchGamesTile extends StatelessWidget {
                   id: 'games',
                   size: 44,
                   color: fg.withValues(alpha: 0.12),
-                  icon: const IconData(0xea28, fontFamily: SymbolCatalog.fontFamily),
+                  icon: const IconData(
+                    0xea28,
+                    fontFamily: SymbolCatalog.fontFamily,
+                  ),
                   iconSize: 22,
                   iconColor: fg,
                   spinColor: fg,
@@ -510,7 +596,13 @@ class WatchComputerTile extends StatelessWidget {
     // иначе «компьютера» не встаёт в строку и самым мелким кеглем.
     final strip = titleWidth != null && titleWidth! < 110 ? 24.0 : 40.0;
     final labelWidth = titleWidth == null ? null : titleWidth! - strip;
-    Widget action(Object id, IconData icon, String tip, WatchFxAfter after, VoidCallback? onTap) => Opacity(
+    Widget action(
+      Object id,
+      IconData icon,
+      String tip,
+      WatchFxAfter after,
+      VoidCallback? onTap,
+    ) => Opacity(
       opacity: onTap == null ? 0.5 : 1,
       child: WatchFxButton(
         id: id,
@@ -537,12 +629,22 @@ class WatchComputerTile extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(const IconData(0xe5d5, fontFamily: SymbolCatalog.fontFamily), size: 18, color: fg),
+            Icon(
+              const IconData(0xe5d5, fontFamily: SymbolCatalog.fontFamily),
+              size: 18,
+              color: fg,
+            ),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
                 s.watchCodeRetry,
-                style: TextStyle(fontFamily: 'Onest', letterSpacing: 0, fontSize: 14, fontWeight: FontWeight.w700, color: fg),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  letterSpacing: 0,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: fg,
+                ),
               ),
             ),
           ],
@@ -552,7 +654,10 @@ class WatchComputerTile extends StatelessWidget {
       codeText = FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
-        child: Text(code, style: _title(19, fg).copyWith(height: 1, letterSpacing: 0.4)),
+        child: Text(
+          code,
+          style: _title(19, fg).copyWith(height: 1, letterSpacing: 0.4),
+        ),
       );
     }
     return WatchFx(
@@ -567,7 +672,13 @@ class WatchComputerTile extends StatelessWidget {
             right: 0,
             bottom: 0,
             width: strip,
-            child: WatchPattern(motifs: WatchMotifs.computer, seed: seed + 30, tones: watchPatternTones(bg), cols: 1, rows: 4),
+            child: WatchPattern(
+              motifs: WatchMotifs.computer,
+              seed: seed + 30,
+              tones: watchPatternTones(bg),
+              cols: 1,
+              rows: 4,
+            ),
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16 + strip, 16),
@@ -575,7 +686,11 @@ class WatchComputerTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _FitTitle(s.watchFromComputer, _body(12, fg.withValues(alpha: 0.8)), labelWidth),
+                _FitTitle(
+                  s.watchFromComputer,
+                  _body(12, fg.withValues(alpha: 0.8)),
+                  labelWidth,
+                ),
                 const SizedBox(height: 8),
                 codeText,
                 const SizedBox(height: 16),
@@ -585,10 +700,26 @@ class WatchComputerTile extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    action('copy', const IconData(0xe14d, fontFamily: SymbolCatalog.fontFamily), s.copyLink, WatchFxAfter.check,
-                        code.isEmpty ? null : onCopy),
-                    action('open', const IconData(0xe89e, fontFamily: SymbolCatalog.fontFamily), s.watchOpenOnSite, WatchFxAfter.spin,
-                        code.isEmpty ? null : onOpenSite),
+                    action(
+                      'copy',
+                      const IconData(
+                        0xe14d,
+                        fontFamily: SymbolCatalog.fontFamily,
+                      ),
+                      s.copyLink,
+                      WatchFxAfter.check,
+                      code.isEmpty ? null : onCopy,
+                    ),
+                    action(
+                      'open',
+                      const IconData(
+                        0xe89e,
+                        fontFamily: SymbolCatalog.fontFamily,
+                      ),
+                      s.watchOpenOnSite,
+                      WatchFxAfter.spin,
+                      code.isEmpty ? null : onOpenSite,
+                    ),
                   ],
                 ),
               ],
@@ -605,19 +736,28 @@ class WatchComputerTile extends StatelessWidget {
 /// `IntrinsicHeight`, а ширину под заголовки считает [LayoutBuilder] снаружи
 /// него — внутри он запрещён.
 class WatchBento extends StatelessWidget {
-  const WatchBento({super.key, this.reels, this.games, required this.computer}); // fork: games необязателен
+  const WatchBento({
+    super.key,
+    this.reels,
+    this.games,
+    required this.computer,
+  }); // fork: games необязателен
 
   /// null — ленты на этом телефоне нет.
   final Widget Function(double titleWidth)? reels;
+
   /// null — игр нет (fork: пустой GAMES_URL).
   final Widget Function(double titleWidth)? games;
   final Widget Function(double titleWidth) computer;
 
   /// fork: игры и компьютер рядом; без игр компьютер на всю ширину.
   List<Widget> _gamesAndComputer(double title) => [
-        if (games != null) ...[Expanded(child: games!(title)), const SizedBox(width: _gap)],
-        Expanded(child: computer(title)),
-      ];
+    if (games != null) ...[
+      Expanded(child: games!(title)),
+      const SizedBox(width: _gap),
+    ],
+    Expanded(child: computer(title)),
+  ];
 
   static const double _gap = 8;
   static const double _pad = 16;
@@ -642,7 +782,7 @@ class WatchBento extends StatelessWidget {
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: _gamesAndComputer(title), // fork
+                  children: _gamesAndComputer(title),
                 ),
               ),
             ],
@@ -653,7 +793,7 @@ class WatchBento extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: reelsTile == null
-                ? _gamesAndComputer(title) // fork
+                ? _gamesAndComputer(title)
                 : [
                     Expanded(child: reelsTile),
                     const SizedBox(width: _gap),
@@ -662,8 +802,14 @@ class WatchBento extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // fork: без игр колонку целиком занимает компьютер.
-                          if (games != null) ...[Expanded(child: games!(title)), const SizedBox(height: _gap)],
-                          if (games != null) computer(title) else Expanded(child: computer(title)),
+                          if (games != null) ...[
+                            Expanded(child: games!(title)),
+                            const SizedBox(height: _gap),
+                          ],
+                          if (games != null)
+                            computer(title)
+                          else
+                            Expanded(child: computer(title)),
                         ],
                       ),
                     ),
@@ -707,7 +853,10 @@ class WatchSectionHeader extends StatelessWidget {
               height: 26,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(999)),
+              decoration: BoxDecoration(
+                color: cs.secondaryContainer,
+                borderRadius: BorderRadius.circular(999),
+              ),
               child: Text(
                 '$count',
                 style: TextStyle(

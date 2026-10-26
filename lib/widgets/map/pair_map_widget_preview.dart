@@ -62,13 +62,19 @@ class _PairMapWidgetPreviewState extends State<PairMapWidgetPreview> {
 
   Future<Map<MapWidgetSize, Uint8List>> _demoImages() {
     final cs = ProfileTheme.themeFor(widget.theme).colorScheme;
-    final key = '${widget.theme.fillColor.toARGB32()}|${cs.brightness}|${widget.myName}|${widget.partnerName}';
+    final key =
+        '${widget.theme.fillColor.toARGB32()}|${cs.brightness}|${widget.myName}|${widget.partnerName}';
     final now = DateTime.now().millisecondsSinceEpoch;
     return _demo[key] ??= renderPairMapWidgets(
       PairMapWidgetInput(
         paired: true,
         me: LivePoint(lat: 47.0245, lng: 28.8325, accuracy: 10, updatedAt: now),
-        partner: LivePoint(lat: 52.52, lng: 13.405, accuracy: 10, updatedAt: now - 5 * 60000),
+        partner: LivePoint(
+          lat: 52.52,
+          lng: 13.405,
+          accuracy: 10,
+          updatedAt: now - 5 * 60000,
+        ),
         myName: widget.myName,
         partnerName: widget.partnerName.isEmpty ? '♥' : widget.partnerName,
         scheme: cs,
@@ -91,14 +97,20 @@ class _PairMapWidgetPreviewState extends State<PairMapWidgetPreview> {
           future: _rendered,
           builder: (context, file) {
             final f = file.data;
-            if (f != null) return Image.file(f, fit: BoxFit.cover, gaplessPlayback: true);
-            if (file.connectionState != ConnectionState.done) return _placeholder();
+            if (f != null)
+              return Image.file(f, fit: BoxFit.cover, gaplessPlayback: true);
+            if (file.connectionState != ConnectionState.done)
+              return _placeholder();
             return FutureBuilder<Map<MapWidgetSize, Uint8List>>(
               future: _demoImages(),
               builder: (context, demo) {
                 final bytes = demo.data?[s];
                 if (bytes == null) return _placeholder();
-                return Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true);
+                return Image.memory(
+                  bytes,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                );
               },
             );
           },
@@ -107,6 +119,7 @@ class _PairMapWidgetPreviewState extends State<PairMapWidgetPreview> {
     );
   }
 
-  Widget _placeholder() =>
-      ColoredBox(color: ProfileTheme.themeFor(widget.theme).colorScheme.surfaceContainerHigh);
+  Widget _placeholder() => ColoredBox(
+    color: ProfileTheme.themeFor(widget.theme).colorScheme.surfaceContainerHigh,
+  );
 }

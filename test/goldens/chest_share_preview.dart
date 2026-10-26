@@ -24,7 +24,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> _loadFont(String family, String path) async {
   final file = File(path);
   if (!file.existsSync()) return;
-  final loader = FontLoader(family)..addFont(file.readAsBytes().then(ByteData.sublistView));
+  final loader = FontLoader(family)
+    ..addFont(file.readAsBytes().then(ByteData.sublistView));
   await loader.load();
 }
 
@@ -36,13 +37,33 @@ void main() {
     await LocaleService.instance.init();
     await _loadFont('Onest', 'assets/fonts/Onest.ttf');
     await _loadFont('Unbounded', 'assets/fonts/Unbounded.ttf');
-    final webp = File('${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_chest/chest_open/lg.webp');
+    final webp = File(
+      '${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_chest/chest_open/lg.webp',
+    );
     if (webp.existsSync()) ChestFrames.debugPut(_open, webp.readAsBytesSync());
   });
 
   final cases = {
-    'plus7': ('Togetherly+ на 7 дней', const ChestPrize(key: 'plus7', kind: ChestPrizeKind.plusTrial, weight: 10, tier: ChestTier.rare), 'Шанс 1%'),
-    'teddy': ('Подарок «Мишка»', const ChestPrize(key: 'teddy', kind: ChestPrizeKind.gift, weight: 20, tier: ChestTier.rare), 'Шанс 2%'),
+    'plus7': (
+      'Togetherly+ на 7 дней',
+      const ChestPrize(
+        key: 'plus7',
+        kind: ChestPrizeKind.plusTrial,
+        weight: 10,
+        tier: ChestTier.rare,
+      ),
+      'Шанс 1%',
+    ),
+    'teddy': (
+      'Подарок «Мишка»',
+      const ChestPrize(
+        key: 'teddy',
+        kind: ChestPrizeKind.gift,
+        weight: 20,
+        tier: ChestTier.rare,
+      ),
+      'Шанс 2%',
+    ),
   };
 
   for (final b in Brightness.values) {
@@ -55,37 +76,46 @@ void main() {
         addTearDown(tester.view.reset);
         final key = GlobalKey();
         final (tierKey, strong) = chestShareTier(e.value.$2);
-        await tester.pumpWidget(MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ProfileTheme.data(cs),
-          home: Align(
-            alignment: Alignment.topLeft,
-            child: RepaintBoundary(
-              key: key,
-              child: ChestShareCard(
-                prize: e.value.$2,
-                title: e.value.$1,
-                tierLabel: tierKey == 'chestTierTop' ? 'Главный приз' : 'Редкий приз',
-                strongTier: strong,
-                chance: e.value.$3,
-                scheme: cs,
-                fill: theme.fillColor,
-                openUrl: _open,
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ProfileTheme.data(cs),
+            home: Align(
+              alignment: Alignment.topLeft,
+              child: RepaintBoundary(
+                key: key,
+                child: ChestShareCard(
+                  prize: e.value.$2,
+                  title: e.value.$1,
+                  tierLabel: tierKey == 'chestTierTop'
+                      ? 'Главный приз'
+                      : 'Редкий приз',
+                  strongTier: strong,
+                  chance: e.value.$3,
+                  scheme: cs,
+                  fill: theme.fillColor,
+                  openUrl: _open,
+                ),
               ),
             ),
           ),
-        ));
+        );
         // Кадры анимации и картинки подарка декодируются вне тестовых часов.
         for (var i = 0; i < 6; i++) {
-          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 300)),
+          );
           await tester.pump();
         }
         await tester.runAsync(() async {
-          final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          final boundary =
+              key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
           final image = await boundary.toImage(pixelRatio: 2);
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
           Directory('build/chest-share').createSync(recursive: true);
-          File('build/chest-share/${e.key}-${b.name}.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+          File(
+            'build/chest-share/${e.key}-${b.name}.png',
+          ).writeAsBytesSync(bytes!.buffer.asUint8List());
         });
       });
     }

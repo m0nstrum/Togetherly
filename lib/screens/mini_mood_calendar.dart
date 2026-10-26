@@ -48,7 +48,8 @@ class _MiniMoodCalendarState extends State<MiniMoodCalendar> {
   final DateTime _mountedAt = DateTime.now();
 
   Duration _spawnDelay(int index) {
-    if (DateTime.now().difference(_mountedAt) > const Duration(milliseconds: 500)) {
+    if (DateTime.now().difference(_mountedAt) >
+        const Duration(milliseconds: 500)) {
       return Duration.zero;
     }
     final first = _scrollController.hasClients
@@ -58,6 +59,7 @@ class _MiniMoodCalendarState extends State<MiniMoodCalendar> {
     if (place < 0 || place > 6) return Duration.zero;
     return Duration(milliseconds: 45 * place);
   }
+
   late DateTime _today;
   late DateTime _todayNorm;
   Timer? _midnightTimer;
@@ -240,17 +242,17 @@ class _MiniMoodCalendarState extends State<MiniMoodCalendar> {
                         children: [
                           Icon(
                             Icons.today_rounded,
-                            color: AppThemes.onColor(widget.theme.fillColor,
-                                mode: widget.theme.brightness),
+                            color: AppThemes.onColor(
+                              widget.theme.fillColor,
+                              mode: widget.theme.brightness,
+                            ),
                             size: 14,
                           ),
                           const SizedBox(width: 5),
                           Text(
                             LocaleService.current.todayLabel,
                             style: TextStyle(
-                              color: AppThemes.onColor(
-                                widget.theme.fillColor,
-                              ),
+                              color: AppThemes.onColor(widget.theme.fillColor),
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
@@ -296,7 +298,10 @@ class _SpawnInState extends State<_SpawnIn>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 420));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
@@ -321,16 +326,16 @@ class _SpawnInState extends State<_SpawnIn>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _ctrl,
-        builder: (context, child) {
-          final t = _ctrl.value;
-          return Opacity(
-            opacity: t.clamp(0.0, 1.0) < 0.5 ? (t / 0.5).clamp(0.0, 1.0) : 1.0,
-            child: Transform.scale(scale: 0.86 + 0.14 * t, child: child),
-          );
-        },
-        child: widget.child,
+    animation: _ctrl,
+    builder: (context, child) {
+      final t = _ctrl.value;
+      return Opacity(
+        opacity: t.clamp(0.0, 1.0) < 0.5 ? (t / 0.5).clamp(0.0, 1.0) : 1.0,
+        child: Transform.scale(scale: 0.86 + 0.14 * t, child: child),
       );
+    },
+    child: widget.child,
+  );
 }
 
 class _DayCell extends StatefulWidget {
@@ -552,8 +557,8 @@ class _DayCellState extends State<_DayCell> with TickerProviderStateMixin {
     final Color cardBg = isToday
         ? widget.theme.timerDialBackground
         : (widget.theme.isDark
-            ? widget.theme.cardSurface
-            : Colors.white.withOpacity(0.75));
+              ? widget.theme.cardSurface
+              : Colors.white.withOpacity(0.75));
 
     // Число дня красится акцентом темы (`primary`): в светлой это винный или
     // розовый тон на белой плитке, в тёмной — светлый. Раньше здесь стоял
@@ -565,11 +570,15 @@ class _DayCellState extends State<_DayCell> with TickerProviderStateMixin {
     // Текст поверх заливки «сегодня» (слой 2). Фон этого слоя = navActiveIcon,
     // поэтому цвет берём контрастным именно к нему: на тёмной теме заливка
     // светлая → текст тёмный, на светлых темах → белый (как было).
-    final Color fillTextColor = AppThemes.onColor(widget.theme.fillColor,
-        mode: widget.theme.brightness);
+    final Color fillTextColor = AppThemes.onColor(
+      widget.theme.fillColor,
+      mode: widget.theme.brightness,
+    );
 
     return GestureDetector(
-      onTap: isFuture || widget.onTap == null ? null : () => widget.onTap!(widget.date),
+      onTap: isFuture || widget.onTap == null
+          ? null
+          : () => widget.onTap!(widget.date),
       child: Transform.scale(
         scale: _newDayScaleAnimation?.value ?? 1.0,
         child: AnimatedContainer(
@@ -628,14 +637,15 @@ class _DayCellState extends State<_DayCell> with TickerProviderStateMixin {
                         Center(
                           child: Text(
                             widget.date.day.toString(),
-                            style: const TextStyle(
-                              fontFamily: ProfileTheme.displayFont,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              height: 1.1,
-                            ).copyWith(
-                              color: isToday ? Colors.white : baseNumColor,
-                            ),
+                            style:
+                                const TextStyle(
+                                  fontFamily: ProfileTheme.displayFont,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.1,
+                                ).copyWith(
+                                  color: isToday ? Colors.white : baseNumColor,
+                                ),
                           ),
                         ),
                         const SizedBox(height: 4),

@@ -52,12 +52,17 @@ class ForkPairCall {
             (groupId.isNotEmpty && groupId == _group))) {
       return Future.value(current);
     }
-    return _binding ??= _bind(groupId, room).whenComplete(() => _binding = null);
+    return _binding ??= _bind(
+      groupId,
+      room,
+    ).whenComplete(() => _binding = null);
   }
 
   Future<WatchVoiceService?> _bind(String groupId, String room) async {
     try {
-      final code = room.isNotEmpty ? room : await WatchRoomService.roomCode(groupId);
+      final code = room.isNotEmpty
+          ? room
+          : await WatchRoomService.roomCode(groupId);
       final me = PocketBaseService().userId ?? '';
       if (code.isEmpty || me.isEmpty) return null;
       await unbind();
@@ -91,7 +96,9 @@ class ForkPairCall {
         ScaffoldMessenger.maybeOf(ctx)?.showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            content: Text(voiceStageText(VoiceStage.failed, VoiceProblem.noChannel)),
+            content: Text(
+              voiceStageText(VoiceStage.failed, VoiceProblem.noChannel),
+            ),
           ),
         );
       }
@@ -164,20 +171,22 @@ class ForkPairCall {
       return;
     }
     _overlay = OverlayEntry(
-      builder: (_) => ForkPipHideChrome(child: ValueListenableBuilder<WatchVoiceService?>(
-        valueListenable: voice,
-        builder: (_, v, _) => Stack(
-          children: [
-            ForkIncomingCall(voice: v, onAnswer: () async => v?.start()),
-            ForkVoiceStatus(
-              voice: v,
-              partnerName: partnerName,
-              onRetry: () async => v?.start(),
-              navigator: LoveApp.rootNavigatorKey.currentState,
-            ),
-          ],
+      builder: (_) => ForkPipHideChrome(
+        child: ValueListenableBuilder<WatchVoiceService?>(
+          valueListenable: voice,
+          builder: (_, v, _) => Stack(
+            children: [
+              ForkIncomingCall(voice: v, onAnswer: () async => v?.start()),
+              ForkVoiceStatus(
+                voice: v,
+                partnerName: partnerName,
+                onRetry: () async => v?.start(),
+                navigator: LoveApp.rootNavigatorKey.currentState,
+              ),
+            ],
+          ),
         ),
-      )),
+      ),
     );
     overlay.insert(_overlay!);
   }

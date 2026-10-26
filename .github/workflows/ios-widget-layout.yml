@@ -8,7 +8,18 @@ name: iOS → раскладка парного виджета
 # в картинку при разных пропорциях снимков и меряет ширину половин. Симулятор
 # и подпись не нужны, круг — пара минут.
 on:
+  # Только main и PR: push в рабочую ветку проверяет её PR.
   push:
+    branches: [main]
+    paths:
+      - 'ios/TogetherlyWidget/LoveWidget.swift'
+      - 'ios/TogetherlyWidget/YearWidgets.swift'
+      - 'ios/TogetherlyWidget/TogetherWidget.swift'
+      - 'ios/TogetherlyWidget/MissWidget.swift'
+      - 'ios/TogetherlyWidget/MascotWidget.swift'
+      - 'tool/widget_layout/**'
+      - '.github/workflows/ios-widget-layout.yml'
+  pull_request:
     paths:
       - 'ios/TogetherlyWidget/LoveWidget.swift'
       - 'ios/TogetherlyWidget/YearWidgets.swift'

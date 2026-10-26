@@ -90,19 +90,24 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
       setState(() => _loading = false);
       return;
     }
-    _sub = MemoryRepository.instance.watch(widget.groupId).listen((list) {
-      if (!mounted) return;
-      setState(() {
-        _photos = photosFromMemories(list);
-        _loading = false;
-      });
-    }, onError: (Object e) {
-      if (!mounted) return;
-      setState(() {
-        _error = ForkFailure.of(e).text;
-        _loading = false;
-      });
-    });
+    _sub = MemoryRepository.instance
+        .watch(widget.groupId)
+        .listen(
+          (list) {
+            if (!mounted) return;
+            setState(() {
+              _photos = photosFromMemories(list);
+              _loading = false;
+            });
+          },
+          onError: (Object e) {
+            if (!mounted) return;
+            setState(() {
+              _error = ForkFailure.of(e).text;
+              _loading = false;
+            });
+          },
+        );
   }
 
   void _toggle(String url) {
@@ -159,17 +164,25 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
                         children: [
                           Text(
                             LocaleService.current.memoryLane,
-                            style: AppFonts.onest(size: 18, weight: 700, color: t.primary),
+                            style: AppFonts.onest(
+                              size: 18,
+                              weight: 700,
+                              color: t.primary,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             widget.maxCount == 1
                                 ? LocaleService.current.selectOnePhoto
                                 : remaining == 0
-                                    ? LocaleService.current.maxSelected
-                                    : LocaleService.current
-                                        .selectUpToPhotos(remaining),
-                            style: AppFonts.onest(size: 12, color: t.textSecondary),
+                                ? LocaleService.current.maxSelected
+                                : LocaleService.current.selectUpToPhotos(
+                                    remaining,
+                                  ),
+                            style: AppFonts.onest(
+                              size: 12,
+                              color: t.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -186,7 +199,11 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
                         ),
                         child: Text(
                           '${_selected.length}/${widget.maxCount}',
-                          style: AppFonts.onest(size: 12, weight: 700, color: t.primary),
+                          style: AppFonts.onest(
+                            size: 12,
+                            weight: 700,
+                            color: t.primary,
+                          ),
                         ),
                       ),
                   ],
@@ -215,8 +232,9 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
                       child: Text(
                         _selected.isEmpty
                             ? LocaleService.current.selectPhotosPrompt
-                            : LocaleService.current
-                                .addWithCount(_selected.length),
+                            : LocaleService.current.addWithCount(
+                                _selected.length,
+                              ),
                         style: AppFonts.onest(size: 15, weight: 700),
                       ),
                     ),
@@ -248,8 +266,7 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.photo_library_outlined,
-                size: 48, color: t.textMuted),
+            Icon(Icons.photo_library_outlined, size: 48, color: t.textMuted),
             const SizedBox(height: 12),
             Text(
               LocaleService.current.noPhotosInMemoryLane,
@@ -275,8 +292,7 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
       itemBuilder: (context, index) {
         final photo = photos[index];
         final isSelected = _selected.contains(photo.url);
-        final isAlreadyUsed =
-            widget.alreadySelected.contains(photo.url);
+        final isAlreadyUsed = widget.alreadySelected.contains(photo.url);
         final atMax = _selected.length >= widget.maxCount;
         final disabled = !isSelected && atMax;
 
@@ -289,18 +305,14 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
                 imageUrl: photo.url,
                 fit: BoxFit.cover,
                 memCacheWidth: 300,
-                placeholder: (_, __) => Container(
-                  color: t.surfaceMuted,
-                ),
+                placeholder: (_, __) => Container(color: t.surfaceMuted),
                 errorWidget: (_, __, ___) => Container(
                   color: t.surfaceMuted,
-                  child: Icon(Icons.broken_image_rounded,
-                      color: t.textMuted),
+                  child: Icon(Icons.broken_image_rounded, color: t.textMuted),
                 ),
               ),
               // Dim if at max and not selected
-              if (disabled)
-                Container(color: Colors.white.withOpacity(0.5)),
+              if (disabled) Container(color: Colors.white.withOpacity(0.5)),
               // Selection overlay
               if (isSelected)
                 Container(
@@ -324,8 +336,11 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
                             color: t.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.check_rounded,
-                              size: 14, color: Colors.white),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                         )
                       : Container(
                           key: const ValueKey('unchecked'),
@@ -334,10 +349,7 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.25),
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 1.5,
-                            ),
+                            border: Border.all(color: Colors.white, width: 1.5),
                           ),
                         ),
                 ),
@@ -348,15 +360,21 @@ class _MemoryPhotoPickerState extends State<MemoryPhotoPicker> {
                   bottom: 4,
                   left: 4,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       LocaleService.current.inWidget,
-                      style: AppFonts.onest(size: 9, weight: 600, color: Colors.white),
+                      style: AppFonts.onest(
+                        size: 9,
+                        weight: 600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),

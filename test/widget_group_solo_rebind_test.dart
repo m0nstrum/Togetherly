@@ -21,16 +21,27 @@ void main() {
   test('привязка к solo уступает появившейся паре', () {
     final storedCheck = body.indexOf('if (!stored.isNullOrEmpty())');
     expect(storedCheck, greaterThan(-1));
-    final storedBranch = body.substring(storedCheck, body.indexOf('return stored'));
-    expect(storedBranch, contains('SOLO'),
-        reason: 'сохранённую заглушку solo надо перепроверять');
-    expect(storedBranch, contains('_latest_group'),
-        reason: 'и перепривязывать к текущей паре');
+    final storedBranch = body.substring(
+      storedCheck,
+      body.indexOf('return stored'),
+    );
+    expect(
+      storedBranch,
+      contains('SOLO'),
+      reason: 'сохранённую заглушку solo надо перепроверять',
+    );
+    expect(
+      storedBranch,
+      contains('_latest_group'),
+      reason: 'и перепривязывать к текущей паре',
+    );
   });
 
   test('заглушка названа так же, как её пишет приложение', () {
     expect(src, contains('const val SOLO = "solo"'));
-    final dart = File('lib/services/home_widget_service.dart').readAsStringSync();
+    final dart = File(
+      'lib/services/home_widget_service.dart',
+    ).readAsStringSync();
     expect(dart, contains("groupId.isEmpty ? 'solo' : groupId"));
   });
 }

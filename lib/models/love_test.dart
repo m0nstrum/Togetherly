@@ -42,8 +42,8 @@ const List<int> kLoveWeights = [0, 33, 67, 100];
 
 /// Подписи градаций в том же порядке, что и веса.
 List<String> get kLoveAnswers => [
-      for (var i = 0; i < kLoveWeights.length; i++) trKey('love_answer_$i'),
-    ];
+  for (var i = 0; i < kLoveWeights.length; i++) trKey('love_answer_$i'),
+];
 
 class LoveQuestion {
   const LoveQuestion(this.key, this.facet);
@@ -66,8 +66,11 @@ class LoveQuestion {
 /// «Мне нравится он такой, какой есть» про свою девушку (обращения 154 и 172).
 final RegExp _genderMark = RegExp(r'\{([pi]):([^|{}]*)\|([^|{}]*)\}');
 
-String genderize(String s,
-    {required bool partnerFemale, required bool meFemale}) {
+String genderize(
+  String s, {
+  required bool partnerFemale,
+  required bool meFemale,
+}) {
   return s.replaceAllMapped(_genderMark, (m) {
     final female = m.group(1) == 'p' ? partnerFemale : meFemale;
     return female ? m.group(3)! : m.group(2)!;
@@ -207,13 +210,12 @@ const List<LoveQuestion> kLoveBank = [
   LoveQuestion('love_q78', LoveFacet.acceptance),
   LoveQuestion('love_q79', LoveFacet.acceptance),
   LoveQuestion('love_q80', LoveFacet.acceptance),
-
 ];
 
 /// Результат: шесть оценок 0…100, общее число и когда проходили.
 class LoveTestResult {
   LoveTestResult({required Map<LoveFacet, int> facets, required this.takenAt})
-      : facets = Map.unmodifiable(facets);
+    : facets = Map.unmodifiable(facets);
 
   final Map<LoveFacet, int> facets;
   final DateTime takenAt;
@@ -240,10 +242,10 @@ class LoveTestResult {
   }
 
   Map<String, dynamic> toMap() => {
-        'facets': {for (final f in LoveFacet.values) f.name: of(f)},
-        'total': total,
-        'takenAt': takenAt.toUtc().toIso8601String(),
-      };
+    'facets': {for (final f in LoveFacet.values) f.name: of(f)},
+    'total': total,
+    'takenAt': takenAt.toUtc().toIso8601String(),
+  };
 
   /// Читает запись, сделанную любой сборкой. Битое поле — ноль, не исключение:
   /// экран статистики не должен падать из-за одной кривой записи.
@@ -261,7 +263,8 @@ class LoveTestResult {
     }
     return LoveTestResult(
       facets: facets,
-      takenAt: DateTime.tryParse('${map['takenAt']}')?.toLocal() ??
+      takenAt:
+          DateTime.tryParse('${map['takenAt']}')?.toLocal() ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
@@ -351,7 +354,10 @@ Map<String, dynamic> loveTestPayload(
 Set<String> loveLastRoundKeys(Map<String, dynamic> map) {
   final raw = map['round'];
   if (raw is! List) return const {};
-  return {for (final k in raw) if (k is String && k.isNotEmpty) k};
+  return {
+    for (final k in raw)
+      if (k is String && k.isNotEmpty) k,
+  };
 }
 
 /// Прошлые прохождения из записи, от старого к свежему. Пусто у записи,

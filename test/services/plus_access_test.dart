@@ -24,7 +24,11 @@ void main() {
       );
       expect(
         PlusAccess.ownsIcon(
-            id: granted, plus: false, owned: {}, granted: {granted}),
+          id: granted,
+          plus: false,
+          owned: {},
+          granted: {granted},
+        ),
         isTrue,
       );
     });
@@ -47,14 +51,23 @@ void main() {
     test('Выданный вручную наградной остаётся доступным', () {
       expect(
         PlusAccess.ownsIcon(
-            id: granted, plus: true, owned: {}, granted: {granted}),
+          id: granted,
+          plus: true,
+          owned: {},
+          granted: {granted},
+        ),
         isTrue,
       );
     });
 
     test('Неизвестный id не открывается ничем', () {
       expect(
-        PlusAccess.ownsIcon(id: 'нет-такого', plus: true, owned: {}, granted: {}),
+        PlusAccess.ownsIcon(
+          id: 'нет-такого',
+          plus: true,
+          owned: {},
+          granted: {},
+        ),
         isFalse,
       );
     });
@@ -64,12 +77,18 @@ void main() {
     test('Бесплатные доступны без всего', () {
       expect(
         PlusAccess.ownsBackground(
-            id: CanvasBackground.plain, plus: false, owned: {}),
+          id: CanvasBackground.plain,
+          plus: false,
+          owned: {},
+        ),
         isTrue,
       );
       expect(
         PlusAccess.ownsBackground(
-            id: CanvasBackground.grid, plus: false, owned: {}),
+          id: CanvasBackground.grid,
+          plus: false,
+          owned: {},
+        ),
         isTrue,
       );
     });
@@ -77,7 +96,10 @@ void main() {
     test('Платный без Plus и без покупки закрыт', () {
       expect(
         PlusAccess.ownsBackground(
-            id: CanvasBackground.stars, plus: false, owned: {}),
+          id: CanvasBackground.stars,
+          plus: false,
+          owned: {},
+        ),
         isFalse,
       );
     });
@@ -95,16 +117,18 @@ void main() {
     test('Купленный за монеты остаётся доступным без Plus', () {
       expect(
         PlusAccess.ownsBackground(
-            id: CanvasBackground.film,
-            plus: false,
-            owned: {CanvasBackground.film.name}),
+          id: CanvasBackground.film,
+          plus: false,
+          owned: {CanvasBackground.film.name},
+        ),
         isTrue,
       );
     });
 
     test('В каталоге есть и бесплатные, и платные', () {
-      final prices =
-          CanvasBackground.values.map((b) => kCanvasBackgrounds[b]!.price);
+      final prices = CanvasBackground.values.map(
+        (b) => kCanvasBackgrounds[b]!.price,
+      );
       expect(prices.any((p) => p == 0), isTrue);
       expect(prices.any((p) => p > 0), isTrue);
     });
@@ -120,14 +144,19 @@ void main() {
     });
 
     test('Потолок не выше того, что примет сервер', () {
-      expect(PlusAccess.memoryFileLimit(plus: true),
-          lessThanOrEqualTo(PlusAccess.serverFileLimit));
+      expect(
+        PlusAccess.memoryFileLimit(plus: true),
+        lessThanOrEqualTo(PlusAccess.serverFileLimit),
+      );
     });
 
     test('Файл ровно по границе проходит, на байт больше — нет', () {
       final limit = PlusAccess.memoryFileLimit(plus: false);
       expect(PlusAccess.fitsMemoryLimit(bytes: limit, plus: false), isTrue);
-      expect(PlusAccess.fitsMemoryLimit(bytes: limit + 1, plus: false), isFalse);
+      expect(
+        PlusAccess.fitsMemoryLimit(bytes: limit + 1, plus: false),
+        isFalse,
+      );
       expect(PlusAccess.fitsMemoryLimit(bytes: limit + 1, plus: true), isTrue);
     });
   });
@@ -159,7 +188,9 @@ void main() {
     test('Круг снимает кто угодно', () {
       expect(
         PlusAccess.ownsNoteShape(
-            id: PlusAccess.freeNoteShape, gate: PlusGate.locked),
+          id: PlusAccess.freeNoteShape,
+          gate: PlusGate.locked,
+        ),
         isTrue,
       );
     });
@@ -189,7 +220,11 @@ void main() {
 
   group('Совместная лента: запускает купивший, партнёр входит по зову', () {
     ReelsEntry e(PlusGate mine, {bool partner = false, bool invited = false}) =>
-        PlusAccess.reelsEntry(mine: mine, partnerPlus: partner, invited: invited);
+        PlusAccess.reelsEntry(
+          mine: mine,
+          partnerPlus: partner,
+          invited: invited,
+        );
     test('свой Плюс — запускаю', () {
       expect(e(PlusGate.open), ReelsEntry.start);
       expect(e(PlusGate.open, invited: true), ReelsEntry.start);

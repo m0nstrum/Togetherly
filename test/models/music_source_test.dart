@@ -4,11 +4,15 @@ import 'package:love_app/models/music_source.dart';
 /// Откуда трек: свой файл играет в приложении, ссылка открывается в сервисе.
 void main() {
   test('стриминговые сервисы узнаются по адресу', () {
-    expect(musicSourceOf('https://music.yandex.ru/album/1/track/2').name,
-        'Яндекс Музыка');
+    expect(
+      musicSourceOf('https://music.yandex.ru/album/1/track/2').name,
+      'Яндекс Музыка',
+    );
     expect(musicSourceOf('https://open.spotify.com/track/x').name, 'Spotify');
-    expect(musicSourceOf('https://music.youtube.com/watch?v=1').name,
-        'YouTube Music');
+    expect(
+      musicSourceOf('https://music.youtube.com/watch?v=1').name,
+      'YouTube Music',
+    );
     expect(musicSourceOf('https://youtu.be/abc').name, 'YouTube');
     expect(musicSourceOf('https://vk.com/audio123').name, 'VK Музыка');
   });

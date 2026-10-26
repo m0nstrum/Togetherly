@@ -13,7 +13,7 @@ import '../../theme/profile_theme.dart';
 import '../locale_service.dart';
 import 'map_palette.dart';
 import 'map_style.dart';
-import '../../fork/config/endpoints.dart'; // fork
+import '../../fork/config/endpoints.dart';
 
 /// Векторные тайлы OpenFreeMap: бесплатно, без ключа, без лимитов.
 ///
@@ -24,8 +24,8 @@ import '../../fork/config/endpoints.dart'; // fork
 class MapTiles {
   MapTiles._();
 
-  static final _tileJson = Endpoints.current.mapTileJsonUrl; // fork
-  static final _fallback = Endpoints.current.mapTilesFallback; // fork
+  static final _tileJson = Endpoints.current.mapTileJsonUrl;
+  static final _fallback = Endpoints.current.mapTilesFallback;
   static const _prefKey = 'ofm_tiles_template';
   static const _prefAt = 'ofm_tiles_template_at';
   static const maxZoom = 14;
@@ -36,7 +36,7 @@ class MapTiles {
   static final Map<String, vtr.Theme> _themes = {};
 
   static const Map<String, String> headers = {
-    'User-Agent': 'Tethered (io.github.m0nstrum.tethered)', // fork
+    'User-Agent': 'Tethered (io.github.m0nstrum.tethered)',
   };
 
   /// Адрес тайлов, который можно отдать слою прямо сейчас.
@@ -45,9 +45,13 @@ class MapTiles {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cached = prefs.getString(_prefKey);
-      _template = cached != null && Endpoints.current.isOwnMapUrl(cached) ? cached : null; // fork: M10
+      _template = cached != null && Endpoints.current.isOwnMapUrl(cached)
+          ? cached
+          : null; // fork: M10
       final at = prefs.getInt(_prefAt) ?? 0;
-      final stale = DateTime.now().millisecondsSinceEpoch - at > const Duration(days: 1).inMilliseconds;
+      final stale =
+          DateTime.now().millisecondsSinceEpoch - at >
+          const Duration(days: 1).inMilliseconds;
       if (_template == null) {
         await _refresh();
       } else if (stale) {
@@ -58,32 +62,34 @@ class MapTiles {
   }
 
   static Future<void> _refresh() => _refreshing ??= () async {
-        try {
-          final res = await http
-              .get(Uri.parse(_tileJson), headers: headers)
-              .timeout(const Duration(seconds: 8));
-          if (res.statusCode != 200) return;
-          final tiles = (jsonDecode(res.body) as Map<String, dynamic>)['tiles'];
-          if (tiles is List && tiles.isNotEmpty && tiles.first is String) {
-            final raw = tiles.first as String;
-            final candidate = raw.startsWith('/')
-                ? '${Uri.parse(_tileJson).origin}$raw' : raw;
-            // fork: M10 never trust an external source from old or new TileJSON.
-            if (!Endpoints.current.isOwnMapUrl(candidate)) return;
-            _template = candidate;
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString(_prefKey, _template!);
-            await prefs.setInt(_prefAt, DateTime.now().millisecondsSinceEpoch);
-          }
-        } catch (_) {
-          // Нет сети — остаёмся на прошлом адресе.
-        } finally {
-          _refreshing = null;
-        }
-      }();
+    try {
+      final res = await http
+          .get(Uri.parse(_tileJson), headers: headers)
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode != 200) return;
+      final tiles = (jsonDecode(res.body) as Map<String, dynamic>)['tiles'];
+      if (tiles is List && tiles.isNotEmpty && tiles.first is String) {
+        final raw = tiles.first as String;
+        final candidate = raw.startsWith('/')
+            ? '${Uri.parse(_tileJson).origin}$raw'
+            : raw;
+        // fork: M10 never trust an external source from old or new TileJSON.
+        if (!Endpoints.current.isOwnMapUrl(candidate)) return;
+        _template = candidate;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_prefKey, _template!);
+        await prefs.setInt(_prefAt, DateTime.now().millisecondsSinceEpoch);
+      }
+    } catch (_) {
+      // Нет сети — остаёмся на прошлом адресе.
+    } finally {
+      _refreshing = null;
+    }
+  }();
 
   static Future<Map<String, dynamic>> _baseStyle() async => _base ??=
-      jsonDecode(await rootBundle.loadString('assets/map/base_style.json')) as Map<String, dynamic>;
+      jsonDecode(await rootBundle.loadString('assets/map/base_style.json'))
+          as Map<String, dynamic>;
 
   /// Цвета карты для темы приложения.
   static MapPalette paletteOf(AppTheme t) =>
@@ -95,7 +101,9 @@ class MapTiles {
     final key = '${p.key}-$lang';
     final ready = _themes[key];
     if (ready != null) return ready;
-    final theme = vtr.ThemeReader().read(buildMapStyle(await _baseStyle(), p, lang: lang));
+    final theme = vtr.ThemeReader().read(
+      buildMapStyle(await _baseStyle(), p, lang: lang),
+    );
     if (_themes.length > 8) _themes.remove(_themes.keys.first);
     return _themes[key] = theme;
   }
@@ -135,7 +143,10 @@ class _ThemedMapLayerState extends State<ThemedMapLayer> {
   Future<void> _load() async {
     final palette = MapTiles.paletteOf(widget.theme);
     _key = palette.key;
-    final results = await Future.wait([MapTiles.themeFor(palette), MapTiles.template()]);
+    final results = await Future.wait([
+      MapTiles.themeFor(palette),
+      MapTiles.template(),
+    ]);
     if (!mounted || palette.key != _key) return;
     setState(() {
       _theme = results[0] as vtr.Theme;
@@ -170,4 +181,3 @@ class _ThemedMapLayerState extends State<ThemedMapLayer> {
 
 /// Цвет фона `MapOptions` под подложку: тот же, что у суши.
 Color mapBackground(AppTheme t) => MapTiles.paletteOf(t).land;
-

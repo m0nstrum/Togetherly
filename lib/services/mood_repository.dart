@@ -32,8 +32,9 @@ class MoodRepository {
 
   /// Живой список настроений [uid] в группе (новые сверху — сортировка в
   /// [PbRealtimeService.watchMoods] по timestamp DESC).
-  Stream<List<MoodEntry>> watch(String groupId, String uid) =>
-      _rt.watchMoods(groupId, uid).map((recs) => recs.map(MoodEntry.fromPb).toList());
+  Stream<List<MoodEntry>> watch(String groupId, String uid) => _rt
+      .watchMoods(groupId, uid)
+      .map((recs) => recs.map(MoodEntry.fromPb).toList());
 
   /// Разовая загрузка настроений [uid] (для нестриминговых путей при нужде).
   Future<List<MoodEntry>> load(String groupId, String uid) async {
@@ -80,12 +81,13 @@ class MoodRepository {
       },
     });
     return MoodEntry(
-        id: id,
-        moodId: moodId,
-        imagePath: imagePath,
-        label: label,
-        timestamp: timestamp,
-        zone: zone);
+      id: id,
+      moodId: moodId,
+      imagePath: imagePath,
+      label: label,
+      timestamp: timestamp,
+      zone: zone,
+    );
   }
 
   /// Удаляет запись настроения по id: оптимистично из кэша + в очередь.

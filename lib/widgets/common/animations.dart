@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/physics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -432,7 +431,7 @@ class NavBarItem extends StatefulWidget {
   final String label;
   final bool isActive;
   final bool showBadge;
-   final Color activeColor;
+  final Color activeColor;
   final Color activeBg;
   final Color inactiveColor;
   final Color badgeColor;
@@ -445,7 +444,7 @@ class NavBarItem extends StatefulWidget {
     required this.index,
     required this.label,
     required this.isActive,
-     required this.activeColor,
+    required this.activeColor,
     required this.activeBg,
     required this.inactiveColor,
     required this.badgeColor,
@@ -468,10 +467,7 @@ class _NavBarItemState extends State<NavBarItem>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: Motion.medium4,
-    );
+    _ctrl = AnimationController(vsync: this, duration: Motion.medium4);
     _scale = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween(
@@ -518,97 +514,101 @@ class _NavBarItemState extends State<NavBarItem>
       onTap: _handleTap,
       excludeSemantics: true,
       child: Tooltip(
-      message: widget.label,
-      excludeFromSemantics: true,
-      child: GestureDetector(
-      onTap: _handleTap,
-      behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(
-        scale: _scale,
-        child: AnimatedContainer(
-          duration: Motion.medium1,
-          curve: Curves.easeOutCubic,
-          // fork (UI_AUDIT): палец не промахивается, подпись активного влезает.
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
-          decoration: BoxDecoration(
-            color: widget.isActive ? widget.activeBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
+        message: widget.label,
+        excludeFromSemantics: true,
+        child: GestureDetector(
+          onTap: _handleTap,
+          behavior: HitTestBehavior.opaque,
+          child: ScaleTransition(
+            scale: _scale,
+            child: AnimatedContainer(
+              duration: Motion.medium1,
+              curve: Curves.easeOutCubic,
+              // fork (UI_AUDIT): палец не промахивается, подпись активного влезает.
+              constraints: const BoxConstraints(minHeight: 48),
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+              decoration: BoxDecoration(
+                color: widget.isActive ? widget.activeBg : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
                 children: [
-                  AnimatedSwitcher(
-                    duration: Motion.medium1,
-                    transitionBuilder: (child, anim) => ScaleTransition(
-                      scale: CurvedAnimation(
-                        parent: anim,
-                        curve: Curves.easeOutBack,
-                      ),
-                      child: FadeTransition(opacity: anim, child: child),
-                    ),
-                    child: widget.svgIcon != null
-                        ? _SvgIconBuilder(
-                            svgString: widget.svgIcon!,
-                            size: widget.isActive ? 28 : 24,
-                             color: widget.isActive
-                                ? widget.activeColor
-                                : widget.inactiveColor,
-                          )
-                        : Icon(
-                            widget.icon,
-                            key: ValueKey('${widget.index}_${widget.isActive}'),
-                            color: widget.isActive
-                                ? widget.activeColor
-                                : widget.inactiveColor,
-                            size: widget.isActive ? 28 : 24,
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: Motion.medium1,
+                        transitionBuilder: (child, anim) => ScaleTransition(
+                          scale: CurvedAnimation(
+                            parent: anim,
+                            curve: Curves.easeOutBack,
                           ),
+                          child: FadeTransition(opacity: anim, child: child),
+                        ),
+                        child: widget.svgIcon != null
+                            ? _SvgIconBuilder(
+                                svgString: widget.svgIcon!,
+                                size: widget.isActive ? 28 : 24,
+                                color: widget.isActive
+                                    ? widget.activeColor
+                                    : widget.inactiveColor,
+                              )
+                            : Icon(
+                                widget.icon,
+                                key: ValueKey(
+                                  '${widget.index}_${widget.isActive}',
+                                ),
+                                color: widget.isActive
+                                    ? widget.activeColor
+                                    : widget.inactiveColor,
+                                size: widget.isActive ? 28 : 24,
+                              ),
+                      ),
+                      const SizedBox(height: 3),
+                      AnimatedDefaultTextStyle(
+                        duration: Motion.medium1,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: widget.isActive
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: widget.isActive
+                              ? widget.activeColor
+                              : widget.inactiveColor,
+                        ),
+                        child:
+                            widget
+                                .isActive // fork: подпись активного пункта
+                            ? Text(
+                                widget.label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 3),
-                  AnimatedDefaultTextStyle(
-                    duration: Motion.medium1,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: widget.isActive
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: widget.isActive
-                          ? widget.activeColor
-                          : widget.inactiveColor,
+                  if (widget.showBadge)
+                    Positioned(
+                      top: -2,
+                      right: -4,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          color: widget.badgeColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                      ),
                     ),
-                    child: widget.isActive // fork: подпись активного пункта
-                        ? Text(
-                            widget.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
                 ],
               ),
-              if (widget.showBadge)
-                Positioned(
-                  top: -2,
-                  right: -4,
-                  child: Container(
-                    width: 9,
-                    height: 9,
-                    decoration: BoxDecoration(
-                      color: widget.badgeColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
-      ),
-      ), // fork: GestureDetector
+        ), // fork: GestureDetector
       ), // fork: Tooltip
     );
   }
@@ -807,10 +807,7 @@ class _HeartAnimationState extends State<HeartAnimation>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: Motion.long4,
-    );
+    _ctrl = AnimationController(vsync: this, duration: Motion.long4);
     _scale = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween(

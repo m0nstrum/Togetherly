@@ -85,69 +85,87 @@ bool forkSealBlocked(String groupId) {
 
 /// Короткая подпись — в пузырь и плашку.
 String forkLockedShort(ForkLockedWhy why) => switch (why) {
-      ForkLockedWhy.starting =>
-        ruEn('Открываем шифрование…', 'Opening encryption…'),
-      ForkLockedWhy.notStarted =>
-        ruEn('Шифрование не запустилось', 'Encryption did not start'),
-      ForkLockedWhy.needsRestore =>
-        ruEn('Нужно восстановить ключи', 'Restore your keys'),
-      ForkLockedWhy.waitingPartner =>
-        ruEn('У партнёра ещё нет ключей', 'Partner has no keys yet'),
-      ForkLockedWhy.waitingKey =>
-        ruEn('Ждём ключ от партнёра', 'Waiting for partner’s key'),
-      ForkLockedWhy.tampered =>
-        ruEn('Ключи не сходятся', 'Keys do not match'),
-      ForkLockedWhy.oldKey =>
-        ruEn('Закрыто старым ключом', 'Locked with an old key'),
-    };
+  ForkLockedWhy.starting => ruEn(
+    'Открываем шифрование…',
+    'Opening encryption…',
+  ),
+  ForkLockedWhy.notStarted => ruEn(
+    'Шифрование не запустилось',
+    'Encryption did not start',
+  ),
+  ForkLockedWhy.needsRestore => ruEn(
+    'Нужно восстановить ключи',
+    'Restore your keys',
+  ),
+  ForkLockedWhy.waitingPartner => ruEn(
+    'У партнёра ещё нет ключей',
+    'Partner has no keys yet',
+  ),
+  ForkLockedWhy.waitingKey => ruEn(
+    'Ждём ключ от партнёра',
+    'Waiting for partner’s key',
+  ),
+  ForkLockedWhy.tampered => ruEn('Ключи не сходятся', 'Keys do not match'),
+  ForkLockedWhy.oldKey => ruEn(
+    'Закрыто старым ключом',
+    'Locked with an old key',
+  ),
+};
 
 /// Объяснение — в лист.
 String forkLockedLong(ForkLockedWhy why) => switch (why) {
-      ForkLockedWhy.starting => ruEn(
-          'Приложение только запустилось и поднимает ключи. Обычно это пара '
-              'секунд — сообщение откроется само.',
-          'The app has just started and is loading keys. It usually takes a '
-              'couple of seconds — the message will open on its own.'),
-      ForkLockedWhy.notStarted => ruEn(
-          'На этом телефоне не поднялось шифрование, поэтому записи пары не '
-              'открываются и не отправляются. Чаще всего помогает повтор; если нет '
-              '— перезапустите приложение.',
-          'Encryption did not start on this phone, so pair records can’t be '
-              'opened or sent. Retrying usually helps; if not, restart the app.'),
-      ForkLockedWhy.needsRestore => ruEn(
-          'Это новый телефон или переустановка: ключи лежат в зашифрованном '
-              'бэкапе. Введите фразу или пароль — история откроется.',
-          'This is a new phone or a reinstall: your keys are in the encrypted '
-              'backup. Enter your phrase or password to open your history.'),
-      ForkLockedWhy.waitingPartner => ruEn(
-          'У партнёра ещё нет ключей шифрования — обычно у него старая версия '
-              'или он давно не открывал приложение. Как только откроет, ключ '
-              'придёт сам.',
-          'Your partner has no encryption keys yet — usually an old version or '
-              'the app hasn’t been opened in a while. The key arrives once they '
-              'open it.'),
-      ForkLockedWhy.waitingKey => ruEn(
-          'Ключ пары выдаёт телефон партнёра. Попросите партнёра открыть '
-              'приложение — ключ придёт сам, ничего нажимать не нужно.',
-          'Your partner’s phone hands out the pair key. Ask your partner to '
-              'open the app — the key arrives on its own.'),
-      ForkLockedWhy.tampered => ruEn(
-          'Ключи на сервере не сходятся с теми, что вы сверяли. Пока это так, '
-              'ключ пары не выдаётся. Сверьте эмодзи с партнёром заново в '
-              'настройках шифрования.',
-          'The keys on the server don’t match the ones you verified. Until this '
-              'is fixed, the pair key is not handed out. Re-verify emoji with '
-              'your partner in encryption settings.'),
-      ForkLockedWhy.oldKey => ruEn(
-          'Сообщение закрыто ключом, которого на этом телефоне нет: обычно оно '
-              'пришло до переустановки или смены ключей. Если ключи были в '
-              'бэкапе, восстановите их; иначе его не открыть — так и задумано: '
-              'сервер прочитать его не может.',
-          'This message is locked with a key this phone doesn’t have — usually '
-              'it came before a reinstall or a key change. If your keys were '
-              'backed up, restore them; otherwise it can’t be opened — by '
-              'design, the server can’t read it either.'),
-    };
+  ForkLockedWhy.starting => ruEn(
+    'Приложение только запустилось и поднимает ключи. Обычно это пара '
+        'секунд — сообщение откроется само.',
+    'The app has just started and is loading keys. It usually takes a '
+        'couple of seconds — the message will open on its own.',
+  ),
+  ForkLockedWhy.notStarted => ruEn(
+    'На этом телефоне не поднялось шифрование, поэтому записи пары не '
+        'открываются и не отправляются. Чаще всего помогает повтор; если нет '
+        '— перезапустите приложение.',
+    'Encryption did not start on this phone, so pair records can’t be '
+        'opened or sent. Retrying usually helps; if not, restart the app.',
+  ),
+  ForkLockedWhy.needsRestore => ruEn(
+    'Это новый телефон или переустановка: ключи лежат в зашифрованном '
+        'бэкапе. Введите фразу или пароль — история откроется.',
+    'This is a new phone or a reinstall: your keys are in the encrypted '
+        'backup. Enter your phrase or password to open your history.',
+  ),
+  ForkLockedWhy.waitingPartner => ruEn(
+    'У партнёра ещё нет ключей шифрования — обычно у него старая версия '
+        'или он давно не открывал приложение. Как только откроет, ключ '
+        'придёт сам.',
+    'Your partner has no encryption keys yet — usually an old version or '
+        'the app hasn’t been opened in a while. The key arrives once they '
+        'open it.',
+  ),
+  ForkLockedWhy.waitingKey => ruEn(
+    'Ключ пары выдаёт телефон партнёра. Попросите партнёра открыть '
+        'приложение — ключ придёт сам, ничего нажимать не нужно.',
+    'Your partner’s phone hands out the pair key. Ask your partner to '
+        'open the app — the key arrives on its own.',
+  ),
+  ForkLockedWhy.tampered => ruEn(
+    'Ключи на сервере не сходятся с теми, что вы сверяли. Пока это так, '
+        'ключ пары не выдаётся. Сверьте эмодзи с партнёром заново в '
+        'настройках шифрования.',
+    'The keys on the server don’t match the ones you verified. Until this '
+        'is fixed, the pair key is not handed out. Re-verify emoji with '
+        'your partner in encryption settings.',
+  ),
+  ForkLockedWhy.oldKey => ruEn(
+    'Сообщение закрыто ключом, которого на этом телефоне нет: обычно оно '
+        'пришло до переустановки или смены ключей. Если ключи были в '
+        'бэкапе, восстановите их; иначе его не открыть — так и задумано: '
+        'сервер прочитать его не может.',
+    'This message is locked with a key this phone doesn’t have — usually '
+        'it came before a reinstall or a key change. If your keys were '
+        'backed up, restore them; otherwise it can’t be opened — by '
+        'design, the server can’t read it either.',
+  ),
+};
 
 /// Лист «почему не открылось» с действием, которое правда помогает.
 /// [navigator] — когда [context] выше навигатора (плашка поверх приложения).
@@ -195,13 +213,22 @@ Future<void> showForkLockedSheet(
                   final destinationContext = nav.context;
                   if (!destinationContext.mounted) return;
                   final m = ScaffoldMessenger.maybeOf(destinationContext);
-                  m?.showSnackBar(SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    content: Text(ok
-                        ? ruEn('Шифрование запустилось', 'Encryption started')
-                        : ruEn('Снова не вышло — перезапустите приложение',
-                            'Failed again — restart the app')),
-                  ));
+                  m?.showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      content: Text(
+                        ok
+                            ? ruEn(
+                                'Шифрование запустилось',
+                                'Encryption started',
+                              )
+                            : ruEn(
+                                'Снова не вышло — перезапустите приложение',
+                                'Failed again — restart the app',
+                              ),
+                      ),
+                    ),
+                  );
                 },
               )
             else if (why == ForkLockedWhy.needsRestore ||
@@ -211,7 +238,9 @@ Future<void> showForkLockedSheet(
                 label: Text(ruEn('Восстановить ключи', 'Restore keys')),
                 onPressed: () {
                   Navigator.pop(ctx);
-                  nav.push(forkE2ERoute<void>(context, const ForkE2ERestoreScreen()));
+                  nav.push(
+                    forkE2ERoute<void>(context, const ForkE2ERestoreScreen()),
+                  );
                 },
               )
             else

@@ -8,9 +8,13 @@ import '../pocketbase_service.dart';
 
 /// Зов в совместную ленту (решение 05.10.2026): ленту запускает тот, у кого
 /// Togetherly+, партнёру приходит пуш «Аня зовёт смотреть TikTok», и он
-/// входит без своего Плюса. Сервер — `pb_hooks/reels_invite.pb.js`.
+/// входит без своего Плюса. Сервер — `server/internal/handler/calls.go`.
 class ReelsInvite {
-  const ReelsInvite({required this.groupId, required this.source, this.name = ''});
+  const ReelsInvite({
+    required this.groupId,
+    required this.source,
+    this.name = '',
+  });
 
   final String groupId;
   final ReelsSource source;
@@ -26,8 +30,13 @@ class ReelsInvite {
     if (raw.containsKey('kind') && raw['kind'] != 'reels') return null;
     final feed = '${raw['feed'] ?? ''}';
     final group = '${raw['group'] ?? groupId}';
-    if (group.isEmpty || !ReelsSource.values.any((s) => s.key == feed)) return null;
-    return ReelsInvite(groupId: group, source: ReelsSource.byKey(feed), name: '${raw['name'] ?? ''}'.trim());
+    if (group.isEmpty || !ReelsSource.values.any((s) => s.key == feed))
+      return null;
+    return ReelsInvite(
+      groupId: group,
+      source: ReelsSource.byKey(feed),
+      name: '${raw['name'] ?? ''}'.trim(),
+    );
   }
 
   /// Запустил ленту — позвать партнёра. Сервер сам решает, не рано ли
@@ -35,12 +44,35 @@ class ReelsInvite {
   static Future<void> send(String groupId, ReelsSource source) async {
     if (groupId.isEmpty) return;
     try {
-      await PocketBaseService()
-          .pb
-          .send('/api/reels/invite', method: 'POST', body: {'group_id': groupId, 'feed': source.key})
+      await PocketBaseService().pb
+          .send(
+            '/api/reels/invite',
+            method: 'POST',
+            body: {'group_id': groupId, 'feed': source.key},
+          )
           .timeout(const Duration(seconds: 8));
     } catch (e) {
       debugPrint('ReelsInvite: зов не ушёл: $e');
+    }
+  }
+
+  /// D2: кнопка «Позвать партнёра» в ленте. 'sent' — пуш ушёл, 'soon' —
+  /// звали меньше минуты назад, 'fail' — сервер не ответил или отказал.
+  static Future<String> again(String groupId, ReelsSource source) async {
+    if (groupId.isEmpty) return 'fail';
+    try {
+      final r = await PocketBaseService().pb
+          .send<Map<String, dynamic>>(
+            '/api/reels/invite',
+            method: 'POST',
+            body: {'group_id': groupId, 'feed': source.key, 'again': true},
+          )
+          .timeout(const Duration(seconds: 8));
+      if (r['sent'] == true) return 'sent';
+      return r['why'] == 'too soon' ? 'soon' : 'fail';
+    } catch (e) {
+      debugPrint('ReelsInvite: зов кнопкой не ушёл: $e');
+      return 'fail';
     }
   }
 
@@ -48,9 +80,12 @@ class ReelsInvite {
   static Future<void> stop(String groupId) async {
     if (groupId.isEmpty) return;
     try {
-      await PocketBaseService()
-          .pb
-          .send('/api/reels/invite', method: 'POST', body: {'group_id': groupId, 'stop': true})
+      await PocketBaseService().pb
+          .send(
+            '/api/reels/invite',
+            method: 'POST',
+            body: {'group_id': groupId, 'stop': true},
+          )
           .timeout(const Duration(seconds: 8));
     } catch (_) {}
   }
@@ -59,8 +94,7 @@ class ReelsInvite {
   static Future<ReelsInvite?> active(String groupId) async {
     if (groupId.isEmpty) return null;
     try {
-      final res = await PocketBaseService()
-          .pb
+      final res = await PocketBaseService().pb
           .send('/api/reels/active', query: {'group_id': groupId})
           .timeout(const Duration(seconds: 8));
       return parse(res, groupId: groupId);
@@ -80,13 +114,14 @@ class ReelsInviteBus {
 
   static const _channel = MethodChannel('love_app/reels_invite');
 
-  final _ctrl = StreamController<({ReelsInvite invite, bool opened})>.broadcast();
+  final _ctrl =
+      StreamController<({ReelsInvite invite, bool opened})>.broadcast();
   Stream<({ReelsInvite invite, bool opened})> get invites => _ctrl.stream;
   bool _wired = false;
 
-  /// Зов, пришедший не через мост FCM (lib/fork/push_relay.dart). // fork
-  void deliver(ReelsInvite invite, {bool opened = false}) => // fork
-      _ctrl.add((invite: invite, opened: opened)); // fork
+  /// Зов, пришедший не через мост FCM (lib/fork/push_relay.dart).
+  void deliver(ReelsInvite invite, {bool opened = false}) =>
+      _ctrl.add((invite: invite, opened: opened));
 
   /// Подключить канал и забрать касание, которым запустили приложение.
   Future<void> init() async {
@@ -95,7 +130,8 @@ class ReelsInviteBus {
       _channel.setMethodCallHandler((call) async {
         if (call.method != 'opened' && call.method != 'arrived') return null;
         final invite = ReelsInvite.parse(call.arguments);
-        if (invite != null) _ctrl.add((invite: invite, opened: call.method == 'opened'));
+        if (invite != null)
+          _ctrl.add((invite: invite, opened: call.method == 'opened'));
         return null;
       });
     }

@@ -23,16 +23,32 @@ void main() {
 
   group('адрес ролика', () {
     test('у каждой площадки свой, а не Shorts', () {
-      expect(ReelLink.parse('shorts:aqz-KE-bpKQ')!.url, 'https://youtube.com/shorts/aqz-KE-bpKQ');
-      expect(ReelLink.parse('tiktok:7425816398148013344')!.url, 'https://www.tiktok.com/@/video/7425816398148013344');
-      expect(ReelLink.parse('rutube:1ee26921edb653d7c94c65f9281ad20e')!.url,
-          'https://rutube.ru/shorts/1ee26921edb653d7c94c65f9281ad20e/');
-      expect(ReelLink.parse('vk:-220754053_456239310_abcdef0123')!.url, 'https://vk.com/clip-220754053_456239310');
-      expect(ReelLink.parse('dzen:vMcd34Fq0AaS')!.url, 'https://dzen.ru/embed/vMcd34Fq0AaS');
+      expect(
+        ReelLink.parse('shorts:aqz-KE-bpKQ')!.url,
+        'https://youtube.com/shorts/aqz-KE-bpKQ',
+      );
+      expect(
+        ReelLink.parse('tiktok:7425816398148013344')!.url,
+        'https://www.tiktok.com/@/video/7425816398148013344',
+      );
+      expect(
+        ReelLink.parse('rutube:1ee26921edb653d7c94c65f9281ad20e')!.url,
+        'https://rutube.ru/shorts/1ee26921edb653d7c94c65f9281ad20e/',
+      );
+      expect(
+        ReelLink.parse('vk:-220754053_456239310_abcdef0123')!.url,
+        'https://vk.com/clip-220754053_456239310',
+      );
+      expect(
+        ReelLink.parse('dzen:vMcd34Fq0AaS')!.url,
+        'https://dzen.ru/embed/vMcd34Fq0AaS',
+      );
     });
 
     test('страница строит те же адреса (reels.js, watchUrl)', () {
-      final js = File('pocketbase/pb_public/watch/reels/reels.js').readAsStringSync();
+      final js = File(
+        'pocketbase/pb_public/watch/reels/reels.js',
+      ).readAsStringSync();
       for (final part in [
         "'https://www.tiktok.com/@/video/' + id",
         "'https://rutube.ru/shorts/' + id + '/'",
@@ -46,18 +62,34 @@ void main() {
     });
 
     test('хеш ВК в адрес не попадает', () {
-      expect(ReelLink.parse('vk:-1_2_deadbeef')!.url.contains('deadbeef'), isFalse);
+      expect(
+        ReelLink.parse('vk:-1_2_deadbeef')!.url.contains('deadbeef'),
+        isFalse,
+      );
     });
 
     test('обложку без запроса знает только YouTube', () {
-      expect(ReelLink.parse('shorts:aqz-KE-bpKQ')!.knownThumb, 'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg');
-      expect(ReelLink.parse('rutube:1ee26921edb653d7c94c65f9281ad20e')!.knownThumb, isNull);
+      expect(
+        ReelLink.parse('shorts:aqz-KE-bpKQ')!.knownThumb,
+        'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg',
+      );
+      expect(
+        ReelLink.parse('rutube:1ee26921edb653d7c94c65f9281ad20e')!.knownThumb,
+        isNull,
+      );
     });
 
     test('данные спрашиваем у тех, кто их отдаёт', () {
-      expect(ReelLink.parse('shorts:aqz-KE-bpKQ')!.metaUri!.host, 'www.youtube.com');
-      expect(ReelLink.parse('rutube:1ee26921edb653d7c94c65f9281ad20e')!.metaUri!.path,
-          '/api/video/1ee26921edb653d7c94c65f9281ad20e/');
+      expect(
+        ReelLink.parse('shorts:aqz-KE-bpKQ')!.metaUri!.host,
+        'www.youtube.com',
+      );
+      expect(
+        ReelLink.parse(
+          'rutube:1ee26921edb653d7c94c65f9281ad20e',
+        )!.metaUri!.path,
+        '/api/video/1ee26921edb653d7c94c65f9281ad20e/',
+      );
       expect(ReelLink.parse('vk:-1_2_3abc')!.metaUri, isNull);
       expect(ReelLink.parse('dzen:vMcd34Fq0AaS')!.metaUri, isNull);
     });
@@ -86,8 +118,34 @@ void main() {
 
     test('чужая форма ответа даёт пустые поля', () {
       expect(ReelMeta.fromJson('ratelimit triggered').title, isNull);
-      expect(ReelMeta.fromJson({'title': '  ', 'author': 'строкой'}).title, isNull);
+      expect(
+        ReelMeta.fromJson({'title': '  ', 'author': 'строкой'}).title,
+        isNull,
+      );
       expect(ReelMeta.fromJson({'author': 'строкой'}).author, isNull);
+    });
+  });
+
+  group('B6: TikTok в воспоминаниях', () {
+    test('адрес — с ником автора из oEmbed, без него — прежний', () {
+      final link = ReelLink.parse('tiktok:7400000000000000001')!;
+      final meta = ReelMeta.fromJson({'author_unique_id': 'cat.lover_1'});
+      expect(meta.handle, 'cat.lover_1');
+      expect(
+        link.urlWith(meta),
+        'https://www.tiktok.com/@cat.lover_1/video/7400000000000000001',
+      );
+      expect(link.urlWith(ReelMeta.empty), link.url);
+    });
+
+    test('чужие символы в нике отбрасываются', () {
+      expect(ReelMeta.fromJson({'author_unique_id': 'a/../b'}).handle, isNull);
+      expect(ReelMeta.fromJson({'author_unique_id': 'x?y=1'}).handle, isNull);
+    });
+
+    test('ник не меняет адрес других площадок', () {
+      final link = ReelLink.parse('shorts:abcdefghijk')!;
+      expect(link.urlWith(const ReelMeta(handle: 'x')), link.url);
     });
   });
 }

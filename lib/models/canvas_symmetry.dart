@@ -55,10 +55,7 @@ DrawPoint _rotate(DrawPoint p, double angle, double aspect) {
   );
 }
 
-List<DrawPoint> _map(
-  List<DrawPoint> points,
-  DrawPoint Function(DrawPoint) f,
-) =>
+List<DrawPoint> _map(List<DrawPoint> points, DrawPoint Function(DrawPoint) f) =>
     [
       for (final p in points)
         () {

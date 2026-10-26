@@ -56,10 +56,13 @@ String memoriesText(List<Memory> memories, List<ArchiveEntry> entries) {
   final b = StringBuffer()..writeln('=== ВОСПОМИНАНИЯ ===');
   for (final m in memories) {
     final d = m.createdAt;
-    b.writeln('[${m.typeEmoji} ${m.typeLabel}] '
-        '${_two(d.day)}.${_two(d.month)}.${d.year} — ${m.authorName}');
+    b.writeln(
+      '[${m.typeEmoji} ${m.typeLabel}] '
+      '${_two(d.day)}.${_two(d.month)}.${d.year} — ${m.authorName}',
+    );
     if (m.title?.trim().isNotEmpty ?? false) b.writeln('Название: ${m.title}');
-    if (m.caption?.trim().isNotEmpty ?? false) b.writeln('Заметка: ${m.caption}');
+    if (m.caption?.trim().isNotEmpty ?? false)
+      b.writeln('Заметка: ${m.caption}');
     if (m.locationName?.trim().isNotEmpty ?? false) {
       b.writeln('Место: ${m.locationName}');
     }

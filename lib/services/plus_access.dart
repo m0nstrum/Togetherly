@@ -55,7 +55,11 @@ class PlusAccess {
   /// партнёр входит по его зову и без своего Плюса. [mine] — свой [gate],
   /// [partnerPlus] — флаг из карточки виджета партнёра (ставит сервер),
   /// [invited] — партнёр сейчас зовёт (`/api/reels/active` или пуш).
-  static ReelsEntry reelsEntry({required PlusGate mine, required bool partnerPlus, required bool invited}) {
+  static ReelsEntry reelsEntry({
+    required PlusGate mine,
+    required bool partnerPlus,
+    required bool invited,
+  }) {
     if (mine == PlusGate.open) return ReelsEntry.start;
     if (invited) return ReelsEntry.join;
     if (partnerPlus) return ReelsEntry.askPartner;

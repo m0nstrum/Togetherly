@@ -11,27 +11,40 @@ class _Leaf {
   final bool strike;
   final bool mono;
   final bool underline; // = ссылка
-  _Leaf(this.text, this.bold, this.italic, this.strike, this.mono, this.underline);
+  _Leaf(
+    this.text,
+    this.bold,
+    this.italic,
+    this.strike,
+    this.mono,
+    this.underline,
+  );
   @override
   String toString() =>
       '"$text"${bold ? " b" : ""}${italic ? " i" : ""}${strike ? " s" : ""}'
       '${mono ? " m" : ""}${underline ? " u" : ""}';
 }
 
-List<_Leaf> _flatten(List<InlineSpan> spans, [TextStyle inherited = const TextStyle()]) {
+List<_Leaf> _flatten(
+  List<InlineSpan> spans, [
+  TextStyle inherited = const TextStyle(),
+]) {
   final out = <_Leaf>[];
   void walk(InlineSpan span, TextStyle acc) {
     if (span is TextSpan) {
       final merged = acc.merge(span.style);
       if (span.text != null && span.text!.isNotEmpty) {
-        out.add(_Leaf(
-          span.text!,
-          (merged.fontWeight?.index ?? FontWeight.w400.index) >= FontWeight.w700.index,
-          merged.fontStyle == FontStyle.italic,
-          merged.decoration == TextDecoration.lineThrough,
-          merged.fontFamily == 'monospace',
-          merged.decoration == TextDecoration.underline,
-        ));
+        out.add(
+          _Leaf(
+            span.text!,
+            (merged.fontWeight?.index ?? FontWeight.w400.index) >=
+                FontWeight.w700.index,
+            merged.fontStyle == FontStyle.italic,
+            merged.decoration == TextDecoration.lineThrough,
+            merged.fontFamily == 'monospace',
+            merged.decoration == TextDecoration.underline,
+          ),
+        );
       }
       for (final c in span.children ?? const <InlineSpan>[]) {
         walk(c, merged);
@@ -46,8 +59,8 @@ List<_Leaf> _flatten(List<InlineSpan> spans, [TextStyle inherited = const TextSt
 }
 
 List<_Leaf> _parse(String text) => _flatten(
-      MdMessageText.buildSpans(text, const TextStyle(color: Color(0xFF000000))),
-    );
+  MdMessageText.buildSpans(text, const TextStyle(color: Color(0xFF000000))),
+);
 
 void main() {
   test('обычный текст — один лист без начертаний', () {
@@ -124,14 +137,17 @@ void main() {
     expect(r.every((e) => !e.bold), true);
   });
 
-  testWidgets('виджет строится и переживает пересборку (без утечки жестов)',
-      (tester) async {
+  testWidgets('виджет строится и переживает пересборку (без утечки жестов)', (
+    tester,
+  ) async {
     Widget wrap(String t) => MaterialApp(
-          home: Scaffold(
-            body: MdMessageText(t, style: const TextStyle(fontSize: 15)),
-          ),
-        );
-    await tester.pumpWidget(wrap('привет **мир** и [ссылка](https://example.com)'));
+      home: Scaffold(
+        body: MdMessageText(t, style: const TextStyle(fontSize: 15)),
+      ),
+    );
+    await tester.pumpWidget(
+      wrap('привет **мир** и [ссылка](https://example.com)'),
+    );
     expect(find.byType(MdMessageText), findsOneWidget);
     // Пересборка с другим текстом — прошлые recognizer'ы освобождаются в build.
     await tester.pumpWidget(wrap('другой текст без разметки'));

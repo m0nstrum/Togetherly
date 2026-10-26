@@ -19,11 +19,7 @@ dependencies:
   characters: ^1.4.0 # графемы для безопасной работы с эмодзи (utils/safe_text)
   shared_preferences: ^2.3.4
   crypto: ^3.0.7 # SHA-256 для PIN секретных воспоминаний (secret_pin_service)
-  # Нативный вход через Apple: системный диалог вместо веб-страницы.
-  # Через браузер вход отказывал у части людей — SFSafariViewController не мог
-  # загрузить appleid.apple.com (77 обрывов против 33 входов за сутки).
-  sign_in_with_apple: ^6.1.4
-  # fork: google_sign_in убран — в коде не использовался, вход только по почте.
+  # fork: google_sign_in и sign_in_with_apple убраны — вход только по почте.
   sentry_flutter: ^9.0.0
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.1.4
@@ -110,9 +106,8 @@ dependencies:
   video_player: ^2.9.2
   # Экраны на 90 и 120 Гц: Android по умолчанию отдаёт приложению 60.
   flutter_displaymode: ^0.6.0
-  in_app_update: ^4.2.3
   # fork: google_mobile_ads и yandex_mobileads убраны — рекламы нет
-  # (docs/fork/PLAN.md, решение 1).
+  # (docs/history/PLAN.md, решение 1).
   # app_tracking_transparency убран: приложение не отслеживает пользователей,
   # реклама неперсональная (App Privacy → Tracking = None). См. main.dart.
   # fork: in_app_purchase убран — покупок нет (решение 1).
@@ -136,7 +131,7 @@ dependencies:
   visibility_detector: ^0.4.0+2
   image: ^4.8.0
   camera: ^0.12.0+2
-  # fork: E2E (docs/fork/E2E.md) — libsodium; пакет сам собирает её из исходников.
+  # fork: E2E (docs/E2E.md) — libsodium; пакет сам собирает её из исходников.
   sodium: ^4.0.3
   battery_plus: ^7.1.2 # fork: заряд телефона партнёру (lib/fork/battery)
 
@@ -189,7 +184,7 @@ flutter:
     # не константой в коде: 4334 записи в Dart раздували бы сборку исходника,
     # а нужны они только на экране выбора.
     - assets/symbols/material_symbols.json
-    # fork: E2E — список слов BIP39 и словарь утёкших паролей (docs/fork/E2E.md §7).
+    # fork: E2E — список слов BIP39 и словарь утёкших паролей (docs/E2E.md §7).
     - assets/fork/bip39_english.txt
     - assets/fork/leaked_passwords.bloom
     # Карта «Где мы»: базовый стиль подложки и контуры суши для глобуса

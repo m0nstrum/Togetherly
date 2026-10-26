@@ -8,6 +8,8 @@ import 'package:love_app/services/locale_service.dart';
 /// и единица («0 jour», «1 jour», «2 jours»). Первое число месяца пишется
 /// «1er», остальные обычными цифрами.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings fr;
 
   setUp(() {

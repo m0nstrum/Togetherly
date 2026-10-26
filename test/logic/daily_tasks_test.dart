@@ -27,19 +27,26 @@ void main() {
     });
 
     test('назавтра набор меняется', () {
-      final today = dailyTasksFor(day: day, pairId: 'g1').map((t) => t.id).toSet();
+      final today = dailyTasksFor(
+        day: day,
+        pairId: 'g1',
+      ).map((t) => t.id).toSet();
       final tomorrow = dailyTasksFor(
-              day: day.add(const Duration(days: 1)), pairId: 'g1')
-          .map((t) => t.id)
-          .toSet();
+        day: day.add(const Duration(days: 1)),
+        pairId: 'g1',
+      ).map((t) => t.id).toSet();
       expect(today, isNot(tomorrow));
     });
 
     test('время суток на набор не влияет', () {
       final morning = dailyTasksFor(
-          day: DateTime.utc(2026, 10, 2, 7), pairId: 'g1');
+        day: DateTime.utc(2026, 10, 2, 7),
+        pairId: 'g1',
+      );
       final evening = dailyTasksFor(
-          day: DateTime.utc(2026, 10, 2, 23), pairId: 'g1');
+        day: DateTime.utc(2026, 10, 2, 23),
+        pairId: 'g1',
+      );
       expect(morning.map((t) => t.id), evening.map((t) => t.id));
     });
 
@@ -58,12 +65,17 @@ void main() {
   group('DailyTaskProgress', () {
     test('вчерашний прогресс на сегодня не переносится', () {
       final old = DailyTaskProgress(
-          date: '2026-10-01', done: const {'photo_now'});
+        date: '2026-10-01',
+        done: const {'photo_now'},
+      );
       expect(old.doneOn(day), isEmpty);
     });
 
     test('сегодняшний прогресс читается', () {
-      final p = DailyTaskProgress(date: '2026-10-02', done: const {'photo_now'});
+      final p = DailyTaskProgress(
+        date: '2026-10-02',
+        done: const {'photo_now'},
+      );
       expect(p.doneOn(day), {'photo_now'});
     });
 
@@ -80,8 +92,9 @@ void main() {
 
     test('пин чужого типа ничего не закрывает', () {
       final tasks = dailyTasksFor(day: day, pairId: 'g1');
-      final missing = MemoryType.values
-          .firstWhere((t) => tasks.every((task) => task.type != t));
+      final missing = MemoryType.values.firstWhere(
+        (t) => tasks.every((task) => task.type != t),
+      );
       expect(
         closeByMemory(tasks: tasks, alreadyDone: const {}, type: missing),
         isNull,
@@ -115,10 +128,13 @@ void main() {
     // задания не отмечаются».
     test('закрывает своё задание, даже если тип пина другой', () {
       final tasks = dailyTasksFor(day: day, pairId: 'g1');
-      final target = tasks.firstWhere((t) => t.type == MemoryType.text,
-          orElse: () => tasks.first);
-      final other = MemoryType.values
-          .firstWhere((t) => tasks.every((task) => task.type != t));
+      final target = tasks.firstWhere(
+        (t) => t.type == MemoryType.text,
+        orElse: () => tasks.first,
+      );
+      final other = MemoryType.values.firstWhere(
+        (t) => tasks.every((task) => task.type != t),
+      );
       final closed = closeByMemory(
         tasks: tasks,
         alreadyDone: const {},
@@ -171,7 +187,9 @@ void main() {
   group('порядок по дням', () {
     final start = DateTime.utc(2026, 9, 28);
     DailyTaskDay dayAt(int i, [String pair = 'g1']) => dailyTaskDayFor(
-        day: start.add(Duration(days: i)), pairId: pair);
+      day: start.add(Duration(days: i)),
+      pairId: pair,
+    );
 
     test('пока не пройден каталог, задание не повторяется', () {
       // Три основных плюс бонус в день: 400 заданий хватает на сто дней.

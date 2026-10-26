@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:love_app/screens/home/home_action_buttons.dart';
 import 'package:love_app/screens/home/home_bottom_nav.dart';
 import 'package:love_app/theme/app_theme.dart';
@@ -16,21 +17,29 @@ void main() {
 
   final theme = AppThemes.byIndex(0);
 
-  Future<void> render(WidgetTester tester, Widget child,
-      {double width = 320, double scale = 1.3}) async {
+  Future<void> render(
+    WidgetTester tester,
+    Widget child, {
+    double width = 320,
+    double scale = 1.3,
+  }) async {
     tester.view.physicalSize = Size(width * 3, 640 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(
-          size: Size(width, 640),
-          textScaler: TextScaler.linear(scale),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: Size(width, 640),
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: Scaffold(
+            body: Align(alignment: Alignment.bottomCenter, child: child),
+          ),
         ),
-        child: Scaffold(body: Align(alignment: Alignment.bottomCenter, child: child)),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -83,12 +92,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // Кнопка Wallet пятой в ряду. На главной ряд живёт внутри отступов 24 с
-  // двух сторон, поэтому на экране 320 dp ему достаётся 272 — это и есть
-  // самый тесный случай.
+  // На главной ряд живёт внутри отступов 24 с двух сторон, поэтому на
+  // экране 320 dp ему достаётся 272 — это и есть самый тесный случай.
   for (final width in [272.0, 320.0, 345.0]) {
-    testWidgets('ряд из пяти с Wallet помещается в ${width.toInt()} dp',
-        (tester) async {
+    testWidgets('ряд из четырёх помещается в ${width.toInt()} dp', (
+      tester,
+    ) async {
       var tapped = false;
       await render(
         tester,
@@ -101,14 +110,13 @@ void main() {
             onDraw: () {},
             onMood: () {},
             onCalendar: () {},
-            onPost: () {},
-            onWallet: () => tapped = true,
+            onPost: () => tapped = true,
           ),
         ),
       );
       expect(tester.takeException(), isNull);
-      await tester.tap(find.bySemanticsLabel('Togetherly Wallet'));
-      expect(tapped, isTrue, reason: 'кнопка Wallet не нажимается');
+      await tester.tap(find.byType(SvgPicture).last);
+      expect(tapped, isTrue, reason: 'крайняя кнопка не нажимается');
     });
   }
 }

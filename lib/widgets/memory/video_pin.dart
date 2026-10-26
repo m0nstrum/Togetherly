@@ -80,7 +80,8 @@ class VideoPin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = LocaleService.current;
-    final vertical = videoPinAspect(url, hasThumb: thumbUrl?.isNotEmpty == true) < 1;
+    final vertical =
+        videoPinAspect(url, hasThumb: thumbUrl?.isNotEmpty == true) < 1;
     final name = title?.trim().isNotEmpty == true ? title!.trim() : s.video;
     final cap = caption?.trim() ?? '';
     return Column(
@@ -157,30 +158,30 @@ class VideoPin extends StatelessWidget {
   }
 
   Widget _platformPill() => Container(
-        height: 28,
-        padding: const EdgeInsets.only(left: 7, right: 10),
-        decoration: BoxDecoration(
-          color: scheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(14),
+    height: 28,
+    padding: const EdgeInsets.only(left: 7, right: 10),
+    decoration: BoxDecoration(
+      color: scheme.secondaryContainer,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(platformIcon, size: 16, color: scheme.onSecondaryContainer),
+        const SizedBox(width: 4),
+        Text(
+          platformName,
+          style: TextStyle(
+            fontFamily: 'Onest',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            height: 1,
+            color: scheme.onSecondaryContainer,
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(platformIcon, size: 16, color: scheme.onSecondaryContainer),
-            const SizedBox(width: 4),
-            Text(
-              platformName,
-              style: TextStyle(
-                fontFamily: 'Onest',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 1,
-                color: scheme.onSecondaryContainer,
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 
   Widget _playButton() {
     final onFill = AppThemes.onColor(fill, mode: scheme.brightness);
@@ -201,7 +202,10 @@ class VideoPin extends StatelessWidget {
   Widget _titlePill(String name, bool vertical) {
     final who = author?.trim() ?? '';
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14, vertical: vertical ? 10 : 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: vertical ? 10 : 8,
+      ),
       decoration: BoxDecoration(
         color: scheme.inverseSurface,
         borderRadius: BorderRadius.circular(20),

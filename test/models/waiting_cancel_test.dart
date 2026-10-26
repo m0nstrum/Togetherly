@@ -12,11 +12,8 @@ import 'package:love_app/models/connection.dart';
 /// Заглушка живёт и в локальном json, поэтому её надо стирать: иначе после
 /// перезапуска «Ждём человека» вернулось бы на экран уже без самой пары.
 void main() {
-  Connection waitingConn() => Connection(
-        id: 'c1',
-        isPaired: true,
-        pairId: 'grp1',
-      )
+  Connection waitingConn() =>
+      Connection(id: 'c1', isPaired: true, pairId: 'grp1')
         ..waitingFlag = true
         ..placeholderName = 'Дима'
         ..placeholderAvatar = 'pb://media/x/y.jpg'

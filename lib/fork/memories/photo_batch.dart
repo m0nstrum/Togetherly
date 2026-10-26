@@ -1,5 +1,5 @@
 /// Заливка набора фото в воспоминание без молчаливых потерь
-/// (docs/fork/UX_AUDIT.md, D1/D6): если часть не залилась, человеку говорят
+/// (docs/history/UX_AUDIT.md, D1/D6): если часть не залилась, человеку говорят
 /// «загружено N из M» и дают повторить или не сохранять запись.
 library;
 
@@ -57,7 +57,8 @@ class PhotoBatch {
       if (refs[i] != null) continue;
       final outcome = await uploader(paths[i], i);
       refs[i] = outcome.ref;
-      if (outcome.ref == null) failure ??= outcome.failure ?? UploadFailure.other;
+      if (outcome.ref == null)
+        failure ??= outcome.failure ?? UploadFailure.other;
     }
     return PhotoBatch._(paths, refs, failure);
   }
@@ -99,10 +100,7 @@ Future<bool?> _askRetry(BuildContext context, PhotoBatch batch) {
         ),
       ),
       content: Text(
-        '$reason\n\n${ruEn(
-          'Запись не сохранится без остальных фото. Повторить заливку или не сохранять запись? Введённое останется в форме.',
-          'The memory won’t be saved without the rest. Retry the upload or don’t save? What you typed stays in the form.',
-        )}',
+        '$reason\n\n${ruEn('Запись не сохранится без остальных фото. Повторить заливку или не сохранять запись? Введённое останется в форме.', 'The memory won’t be saved without the rest. Retry the upload or don’t save? What you typed stays in the form.')}',
       ),
       actions: [
         TextButton(

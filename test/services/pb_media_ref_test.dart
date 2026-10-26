@@ -19,14 +19,18 @@ void main() {
     test('легаси-домен понимается так же', () {
       // Ссылки с duckdns разосланы людьми и живут в старых записях.
       expect(
-        pbRefFromUrl('https://togetherly.duckdns.org/api/files/media/x1/y.webp'),
+        pbRefFromUrl(
+          'https://togetherly.duckdns.org/api/files/media/x1/y.webp',
+        ),
         'pb://media/x1/y.webp',
       );
     });
 
     test('хвост с токеном отбрасывается — токен всё равно протух', () {
       expect(
-        pbRefFromUrl('https://togetherly.day/api/files/media/a/b.png?token=old'),
+        pbRefFromUrl(
+          'https://togetherly.day/api/files/media/a/b.png?token=old',
+        ),
         'pb://media/a/b.png',
       );
     });
@@ -39,17 +43,25 @@ void main() {
     });
 
     test('чужой домен не трогаем', () {
-      expect(pbRefFromUrl('https://example.com/api/files/media/a/b.jpg'), isNull);
+      expect(
+        pbRefFromUrl('https://example.com/api/files/media/a/b.jpg'),
+        isNull,
+      );
     });
 
     test('не файловый путь не трогаем', () {
       expect(pbRefFromUrl('https://togetherly.day/watch/room/'), isNull);
-      expect(pbRefFromUrl('https://togetherly.day/api/collections/media/records'),
-          isNull);
+      expect(
+        pbRefFromUrl('https://togetherly.day/api/collections/media/records'),
+        isNull,
+      );
     });
 
     test('обрезанный путь не превращается в мусорную ссылку', () {
-      expect(pbRefFromUrl('https://togetherly.day/api/files/media/only-id'), isNull);
+      expect(
+        pbRefFromUrl('https://togetherly.day/api/files/media/only-id'),
+        isNull,
+      );
       expect(pbRefFromUrl('https://togetherly.day/api/files/'), isNull);
     });
 

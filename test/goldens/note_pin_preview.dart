@@ -41,66 +41,80 @@ void main() {
       addTearDown(tester.view.reset);
 
       Widget card(NotePin pin) => Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
-            decoration: BoxDecoration(
-              color: theme.cardSurface,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: pin,
-          );
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
+        decoration: BoxDecoration(
+          color: theme.cardSurface,
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: pin,
+      );
 
       Widget body(String text, TextStyle style) => Text(
-            text,
-            style: style,
-            maxLines: 14,
-            overflow: TextOverflow.ellipsis,
-          );
+        text,
+        style: style,
+        maxLines: 14,
+        overflow: TextOverflow.ellipsis,
+      );
 
-      await tester.pumpWidget(MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ProfileTheme.data(cs),
-        home: RepaintBoundary(
-          key: key,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Container(
-              color: b == Brightness.light ? const Color(0xFFFFE8DC) : cs.surface,
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  card(NotePin(
-                    scheme: cs,
-                    fill: theme.fillColor,
-                    body: 'Возвращаюсь домой, купи мандаринов',
-                    bodyBuilder: body,
-                  )),
-                  card(NotePin(
-                    scheme: cs,
-                    fill: theme.fillColor,
-                    title: 'Список на выходные',
-                    body: 'Забрать посылку\nКупить подарок маме\nЗаписаться на стрижку',
-                    bodyBuilder: body,
-                  )),
-                  card(NotePin(
-                    scheme: cs,
-                    fill: theme.fillColor,
-                    body: '',
-                    bodyBuilder: body,
-                  )),
-                ],
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ProfileTheme.data(cs),
+          home: RepaintBoundary(
+            key: key,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                color: b == Brightness.light
+                    ? const Color(0xFFFFE8DC)
+                    : cs.surface,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    card(
+                      NotePin(
+                        scheme: cs,
+                        fill: theme.fillColor,
+                        body: 'Возвращаюсь домой, купи мандаринов',
+                        bodyBuilder: body,
+                      ),
+                    ),
+                    card(
+                      NotePin(
+                        scheme: cs,
+                        fill: theme.fillColor,
+                        title: 'Список на выходные',
+                        body:
+                            'Забрать посылку\nКупить подарок маме\nЗаписаться на стрижку',
+                        bodyBuilder: body,
+                      ),
+                    ),
+                    card(
+                      NotePin(
+                        scheme: cs,
+                        fill: theme.fillColor,
+                        body: '',
+                        bodyBuilder: body,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       await tester.runAsync(() async {
-        final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final boundary =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
         Directory('build/note-pin').createSync(recursive: true);
-        File('build/note-pin/${b.name}.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+        File(
+          'build/note-pin/${b.name}.png',
+        ).writeAsBytesSync(bytes!.buffer.asUint8List());
       });
     });
   }

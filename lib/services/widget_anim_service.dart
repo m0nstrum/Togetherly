@@ -14,7 +14,7 @@ import 'pocketbase_service.dart';
 /// анимированный drawable. Кадры покадрово подсовывает нативная сторона — значит
 /// ей нужны именно кадры.
 ///
-/// Готовит их сервер (`pb_hooks/widget_anim.pb.js` + `tools/widget_anim.py`): из
+/// Готовит их сервер (server/internal/usecase/widgetanim, ffmpeg): из
 /// файла собирается одна картинка-раскадровка 6×3 по 300 px и манифест к ней.
 /// Телефон только скачивает результат — разбирать видео на слабом аппарате
 /// нельзя, `MediaMetadataRetriever` там тратит 100–200 мс на кадр и пульс
@@ -66,13 +66,13 @@ class WidgetAnimManifest {
   }
 
   Map<String, Object> toJson() => {
-        'cols': cols,
-        'rows': rows,
-        'cell': cell,
-        'frames': frames,
-        'step_ms': stepMs,
-        'source': source,
-      };
+    'cols': cols,
+    'rows': rows,
+    'cell': cell,
+    'frames': frames,
+    'step_ms': stepMs,
+    'source': source,
+  };
 }
 
 class WidgetAnimService {
@@ -95,7 +95,13 @@ class WidgetAnimService {
   /// снимок не идёт никуда: он дал бы восемнадцать одинаковых кадров. Проверка
   /// живёт здесь, потому что системный выбор файла отдаёт всё вперемешку —
   /// в галерее гифка лежит среди фотографий.
-  static const List<String> videoExt = ['.mp4', '.mov', '.m4v', '.webm', '.3gp'];
+  static const List<String> videoExt = [
+    '.mp4',
+    '.mov',
+    '.m4v',
+    '.webm',
+    '.3gp',
+  ];
   static const List<String> animExt = ['.gif', '.webp'];
 
   static bool isSupportedSource(String path) {
@@ -183,7 +189,10 @@ class WidgetAnimService {
     try {
       final path = await HomeWidget.getWidgetData<String>(keyPath);
       final manifest = await HomeWidget.getWidgetData<String>(keyManifest);
-      if (path == null || path.isEmpty || manifest == null || manifest.isEmpty) {
+      if (path == null ||
+          path.isEmpty ||
+          manifest == null ||
+          manifest.isEmpty) {
         return false;
       }
       return File(path).existsSync();
@@ -234,8 +243,15 @@ class WidgetAnimService {
   }
 
   /// Границы клетки в атласе: слева, сверху, ширина, высота.
-  static ({int left, int top, int size}) cellRect(WidgetAnimManifest m, int index) {
+  static ({int left, int top, int size}) cellRect(
+    WidgetAnimManifest m,
+    int index,
+  ) {
     final i = m.cols <= 0 ? 0 : index % (m.cols * m.rows);
-    return (left: (i % m.cols) * m.cell, top: (i ~/ m.cols) * m.cell, size: m.cell);
+    return (
+      left: (i % m.cols) * m.cell,
+      top: (i ~/ m.cols) * m.cell,
+      size: m.cell,
+    );
   }
 }

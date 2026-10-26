@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
-import '../../fork/config/endpoints.dart'; // fork
+import '../../fork/config/endpoints.dart';
 
 /// Посредник для TikTok, пока открыты «Ленты вдвоём».
 ///
@@ -16,8 +16,13 @@ import '../../fork/config/endpoints.dart'; // fork
 class ReelsProxy {
   ReelsProxy._();
 
-  static final String _url = Endpoints.current.reelsProxyUrl; // fork: пусто — без прокси
-  static const List<String> _hosts = ['tiktok.com', 'www.tiktok.com', 'm.tiktok.com'];
+  static final String _url =
+      Endpoints.current.reelsProxyUrl; // fork: пусто — без прокси
+  static const List<String> _hosts = [
+    'tiktok.com',
+    'www.tiktok.com',
+    'm.tiktok.com',
+  ];
   static bool _on = false;
 
   /// Включён ли посредник сейчас. Уходит в отчёт о застрявшей ленте.
@@ -40,7 +45,12 @@ class ReelsProxy {
     if (known != null) return known;
     try {
       final res = await http
-          .get(Uri.parse('https://www.tiktok.com/@tiktok/video/7654645616496168200'), headers: {'User-Agent': _desktopUa})
+          .get(
+            Uri.parse(
+              'https://www.tiktok.com/@tiktok/video/7654645616496168200',
+            ),
+            headers: {'User-Agent': _desktopUa},
+          )
           .timeout(const Duration(seconds: 12));
       return _blocked = res.body.contains('ru_cross_border_block');
     } catch (_) {
@@ -55,24 +65,35 @@ class ReelsProxy {
   /// Включить посредника, если TikTok с этого адреса закрыт. Где он открыт,
   /// ходим напрямую: лишний круг через Францию только замедлял бы плеер.
   static Future<void> enable() async {
-    if (_url.isEmpty) return; // fork
+    if (_url.isEmpty) return;
     if (!await _isBlocked()) return;
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
         // «Только эти хосты через посредника» — обратный список обхода.
-        final ok = await WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE) &&
-            await WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE_REVERSE_BYPASS);
+        final ok =
+            await WebViewFeature.isFeatureSupported(
+              WebViewFeature.PROXY_OVERRIDE,
+            ) &&
+            await WebViewFeature.isFeatureSupported(
+              WebViewFeature.PROXY_OVERRIDE_REVERSE_BYPASS,
+            );
         if (!ok) {
           lastError = 'android: proxy override unsupported';
           return;
         }
         await ProxyController.instance().setProxyOverride(
-          settings: ProxySettings(proxyRules: [ProxyRule(url: _url)], bypassRules: _hosts, reverseBypassEnabled: true),
+          settings: ProxySettings(
+            proxyRules: [ProxyRule(url: _url)],
+            bypassRules: _hosts,
+            reverseBypassEnabled: true,
+          ),
         );
       } else if (defaultTargetPlatform == TargetPlatform.iOS) {
         // iOS 17+: правило с `matchDomains` касается только этих доменов.
         await ProxyController.instance().setProxyOverride(
-          settings: ProxySettings(proxyRules: [ProxyRule(url: _url, matchDomains: _hosts)]),
+          settings: ProxySettings(
+            proxyRules: [ProxyRule(url: _url, matchDomains: _hosts)],
+          ),
         );
       } else {
         return;

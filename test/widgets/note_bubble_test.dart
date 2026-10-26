@@ -11,24 +11,27 @@ ChatMsg _note({
   String uid = 'her',
   int seenAt = 0,
   String shape = 'heart',
-}) =>
-    ChatMsg(
-      id: id,
-      uid: uid,
-      name: 'Аня',
-      text: '',
-      ts: DateTime(2026, 8, 21, 14, 31).millisecondsSinceEpoch,
-      noteUrl: '/tmp/note.mp4',
-      noteMs: 9000,
-      noteShape: shape,
-      noteSeenAt: seenAt == 0 ? null : seenAt,
-    );
+}) => ChatMsg(
+  id: id,
+  uid: uid,
+  name: 'Аня',
+  text: '',
+  ts: DateTime(2026, 8, 21, 14, 31).millisecondsSinceEpoch,
+  noteUrl: '/tmp/note.mp4',
+  noteMs: 9000,
+  noteShape: shape,
+  noteSeenAt: seenAt == 0 ? null : seenAt,
+);
 
 Future<void> _pump(WidgetTester tester, Widget child) async {
-  await tester.pumpWidget(MaterialApp(
-    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink)),
-    home: Scaffold(body: Center(child: child)),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
+      ),
+      home: Scaffold(body: Center(child: child)),
+    ),
+  );
   await tester.pump(const Duration(milliseconds: 50));
 }
 
@@ -38,8 +41,9 @@ void main() {
     VisibilityDetectorController.instance.updateInterval = Duration.zero;
   });
 
-  testWidgets('чужая непросмотренная фигурка показывает точку и длительность',
-      (tester) async {
+  testWidgets('чужая непросмотренная фигурка показывает точку и длительность', (
+    tester,
+  ) async {
     await _pump(
       tester,
       NoteBubble(
@@ -53,15 +57,18 @@ void main() {
     expect(find.text('0:09'), findsOneWidget);
     expect(find.text('14:31'), findsOneWidget);
     // Точка непросмотренного — маленький круг рядом со временем.
-    final dots = tester.widgetList<Container>(find.byType(Container)).where((c) {
+    final dots = tester.widgetList<Container>(find.byType(Container)).where((
+      c,
+    ) {
       final d = c.decoration;
       return d is BoxDecoration && d.shape == BoxShape.circle;
     });
     expect(dots, isNotEmpty);
   });
 
-  testWidgets('просмотренная чужая фигурка точку не показывает',
-      (tester) async {
+  testWidgets('просмотренная чужая фигурка точку не показывает', (
+    tester,
+  ) async {
     await _pump(
       tester,
       NoteBubble(
@@ -72,7 +79,9 @@ void main() {
         autoplay: false,
       ),
     );
-    final dots = tester.widgetList<Container>(find.byType(Container)).where((c) {
+    final dots = tester.widgetList<Container>(find.byType(Container)).where((
+      c,
+    ) {
       final d = c.decoration;
       return d is BoxDecoration && d.shape == BoxShape.circle;
     });
@@ -118,31 +127,31 @@ void main() {
       required void Function() onToggle,
       required void Function() onStart,
       required void Function({required bool cancelled, required bool locked})
-          onEnd,
+      onEnd,
       required void Function(VoiceGesture) onGesture,
-    }) =>
-        _pump(
-          tester,
-          SendMicButton(
-            hasText: false,
-            editing: false,
-            noteMode: true,
-            noteShape: kNoteShapes.first,
-            onModeToggle: onToggle,
-            handsFree: true,
-            primary: Colors.pink,
-            onPrimary: Colors.white,
-            idleBackground: Colors.grey,
-            idleForeground: Colors.black,
-            onSend: () {},
-            onRecordStart: onStart,
-            onRecordGesture: onGesture,
-            onRecordEnd: onEnd,
-          ),
-        );
+    }) => _pump(
+      tester,
+      SendMicButton(
+        hasText: false,
+        editing: false,
+        noteMode: true,
+        noteShape: kNoteShapes.first,
+        onModeToggle: onToggle,
+        handsFree: true,
+        primary: Colors.pink,
+        onPrimary: Colors.white,
+        idleBackground: Colors.grey,
+        idleForeground: Colors.black,
+        onSend: () {},
+        onRecordStart: onStart,
+        onRecordGesture: onGesture,
+        onRecordEnd: onEnd,
+      ),
+    );
 
-    testWidgets('тап меняет режим и НЕ трогает камеру с микрофоном',
-        (tester) async {
+    testWidgets('тап меняет режим и НЕ трогает камеру с микрофоном', (
+      tester,
+    ) async {
       var toggled = 0, started = 0, ended = 0;
       await pumpButton(
         tester,
@@ -160,8 +169,9 @@ void main() {
       expect(toggled, 1);
     });
 
-    testWidgets('удержание начинает съёмку, а палец можно убрать',
-        (tester) async {
+    testWidgets('удержание начинает съёмку, а палец можно убрать', (
+      tester,
+    ) async {
       var toggled = 0, started = 0;
       bool? endedCancelled;
       bool? endedLocked;
@@ -176,8 +186,9 @@ void main() {
         onGesture: (_) {},
       );
 
-      final gesture = await tester
-          .startGesture(tester.getCenter(find.byType(SendMicButton)));
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(SendMicButton)),
+      );
       await tester.pump(const Duration(milliseconds: 500));
       expect(started, 1, reason: 'после порога удержания съёмка уже идёт');
       await gesture.up();
@@ -185,8 +196,11 @@ void main() {
 
       expect(toggled, 0, reason: 'удержание — это съёмка, а не переключение');
       expect(endedCancelled, isFalse);
-      expect(endedLocked, isTrue,
-          reason: 'палец убрали, а съёмка продолжается — отправят кнопкой');
+      expect(
+        endedLocked,
+        isTrue,
+        reason: 'палец убрали, а съёмка продолжается — отправят кнопкой',
+      );
     });
 
     testWidgets('запись не начинается раньше порога', (tester) async {
@@ -199,8 +213,9 @@ void main() {
         onGesture: (_) {},
       );
 
-      final gesture = await tester
-          .startGesture(tester.getCenter(find.byType(SendMicButton)));
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(SendMicButton)),
+      );
       await tester.pump(const Duration(milliseconds: 120));
       expect(started, 0, reason: 'сто двадцать миллисекунд — это ещё тап');
       await gesture.up();

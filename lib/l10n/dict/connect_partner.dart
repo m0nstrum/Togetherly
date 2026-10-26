@@ -329,11 +329,15 @@ const Map<String, Map<String, String>> connectPartnerStrings = {
   'inviteSessionLost': {
     'ru': 'Нет связи с аккаунтом. Войдите заново, чтобы получить код',
     'en': 'Lost connection to your account. Sign in again to get a code',
-    'pt': 'Perdemos a conexão com sua conta. Entre de novo para obter um código',
+    'pt':
+        'Perdemos a conexão com sua conta. Entre de novo para obter um código',
     'it': 'Collegamento all’account perso. Accedi di nuovo per avere un codice',
-    'es': 'Se perdió la conexión con tu cuenta. Vuelve a iniciar sesión para obtener un código',
-    'fr': 'Le lien avec ton compte est perdu. Reconnecte-toi pour obtenir un code',
-    'de': 'Die Verbindung zu deinem Konto ist weg. Melde dich neu an, um einen Code zu bekommen',
+    'es':
+        'Se perdió la conexión con tu cuenta. Vuelve a iniciar sesión para obtener un código',
+    'fr':
+        'Le lien avec ton compte est perdu. Reconnecte-toi pour obtenir un code',
+    'de':
+        'Die Verbindung zu deinem Konto ist weg. Melde dich neu an, um einen Code zu bekommen',
   },
   'inviteSignInAgain': {
     'ru': 'Войти заново',
@@ -917,13 +921,20 @@ const Map<String, Map<String, String>> connectPartnerStrings = {
     'de': 'Scanner nicht verfügbar',
   },
   'qrScannerUnavailableHint': {
-    'ru': 'На этом телефоне нет сервисов Google, распознать код нечем. Введите код партнёра руками — это те же шесть символов.',
-    'en': 'This phone has no Google services, so there is nothing to read the code with. Enter your partner\'s six-character code by hand.',
-    'pt': 'Este telefone não tem serviços do Google. Digite o código de seis caracteres do seu par.',
-    'it': 'Su questo telefono non ci sono i servizi Google. Inserisci a mano il codice di sei caratteri del partner.',
-    'es': 'Este teléfono no tiene servicios de Google. Escribe a mano el código de seis caracteres de tu pareja.',
-    'fr': 'Ce téléphone n’a pas les services Google. Saisis à la main le code à six caractères du partenaire.',
-    'de': 'Auf diesem Telefon fehlen die Google-Dienste. Gib den sechsstelligen Code deiner Hälfte von Hand ein.',
+    'ru':
+        'На этом телефоне нет сервисов Google, распознать код нечем. Введите код партнёра руками — это те же шесть символов.',
+    'en':
+        'This phone has no Google services, so there is nothing to read the code with. Enter your partner\'s six-character code by hand.',
+    'pt':
+        'Este telefone não tem serviços do Google. Digite o código de seis caracteres do seu par.',
+    'it':
+        'Su questo telefono non ci sono i servizi Google. Inserisci a mano il codice di sei caratteri del partner.',
+    'es':
+        'Este teléfono no tiene servicios de Google. Escribe a mano el código de seis caracteres de tu pareja.',
+    'fr':
+        'Ce téléphone n’a pas les services Google. Saisis à la main le code à six caractères du partenaire.',
+    'de':
+        'Auf diesem Telefon fehlen die Google-Dienste. Gib den sechsstelligen Code deiner Hälfte von Hand ein.',
   },
   'qrEnterCodeManually': {
     'ru': 'Ввести код руками',

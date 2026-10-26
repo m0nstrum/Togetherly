@@ -7,8 +7,11 @@ import 'package:material3_expressive_loading_indicator/material3_expressive_load
 /// распрямляется к финишу. На статистику («сколько достижений собрано») её
 /// вешать нельзя — там обычная полоса.
 void main() {
-  Widget host(Widget child) =>
-      MaterialApp(home: Scaffold(body: Center(child: SizedBox(width: 240, child: child))));
+  Widget host(Widget child) => MaterialApp(
+    home: Scaffold(
+      body: Center(child: SizedBox(width: 240, child: child)),
+    ),
+  );
 
   group('Амплитуда', () {
     test('На старте волна уже видна', () {

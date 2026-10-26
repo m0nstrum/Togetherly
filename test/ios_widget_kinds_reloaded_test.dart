@@ -18,8 +18,10 @@ void main() {
   test('каждый kind виджета есть в приложении', () {
     final dir = Directory('ios/TogetherlyWidget');
     final kinds = <String, String>{};
-    final re = RegExp(r'(?:StaticConfiguration|AppIntentConfiguration)'
-        r'\(\s*kind:\s*"([^"]+)"');
+    final re = RegExp(
+      r'(?:StaticConfiguration|AppIntentConfiguration)'
+      r'\(\s*kind:\s*"([^"]+)"',
+    );
     for (final file in dir.listSync().whereType<File>()) {
       if (!file.path.endsWith('.swift')) continue;
       final name = file.uri.pathSegments.last;
@@ -27,8 +29,11 @@ void main() {
         kinds[m.group(1)!] = name;
       }
     }
-    expect(kinds.length, greaterThanOrEqualTo(20),
-        reason: 'Разобрано подозрительно мало виджетов: ${kinds.length}');
+    expect(
+      kinds.length,
+      greaterThanOrEqualTo(20),
+      reason: 'Разобрано подозрительно мало виджетов: ${kinds.length}',
+    );
 
     final dart = Directory('lib')
         .listSync(recursive: true)
@@ -41,9 +46,13 @@ void main() {
     kinds.forEach((kind, file) {
       if (!dart.contains(kind)) orphans.add('$kind ($file)');
     });
-    expect(orphans, isEmpty,
-        reason: 'Эти виджеты никто не будит, они покажут старые данные:\n'
-            '${orphans.join('\n')}');
+    expect(
+      orphans,
+      isEmpty,
+      reason:
+          'Эти виджеты никто не будит, они покажут старые данные:\n'
+          '${orphans.join('\n')}',
+    );
   });
 
   test('дни вместе считает само расширение, а не готовое число из Dart', () {
@@ -52,18 +61,30 @@ void main() {
     // приложение открывали последний раз (жалоба 19.08.2026). Тем же приёмом
     // уже живут таймер и кольцо года — расширение считает дни от метки
     // времени старта и обновляется по своему расписанию, без приложения.
-    final together =
-        File('ios/TogetherlyWidget/TogetherWidget.swift').readAsStringSync();
-    final lock =
-        File('ios/TogetherlyWidget/LockScreenWidgets.swift').readAsStringSync();
-    expect(together.contains('together_\\(g)_start_ms'), isTrue,
-        reason: 'Виджет «Вместе» читает метку времени старта');
-    expect(lock.contains('together_\\(g)_start_ms'), isTrue,
-        reason: 'Экран блокировки читает метку времени старта');
+    final together = File(
+      'ios/TogetherlyWidget/TogetherWidget.swift',
+    ).readAsStringSync();
+    final lock = File(
+      'ios/TogetherlyWidget/LockScreenWidgets.swift',
+    ).readAsStringSync();
+    expect(
+      together.contains('together_\\(g)_start_ms'),
+      isTrue,
+      reason: 'Виджет «Вместе» читает метку времени старта',
+    );
+    expect(
+      lock.contains('together_\\(g)_start_ms'),
+      isTrue,
+      reason: 'Экран блокировки читает метку времени старта',
+    );
 
-    final dart =
-        File('lib/services/home_widget_service.dart').readAsStringSync();
-    expect(dart.contains("'together_\${g}_start_ms'"), isTrue,
-        reason: 'Метку кладёт syncTogether');
+    final dart = File(
+      'lib/services/home_widget_service.dart',
+    ).readAsStringSync();
+    expect(
+      dart.contains("'together_\${g}_start_ms'"),
+      isTrue,
+      reason: 'Метку кладёт syncTogether',
+    );
   });
 }

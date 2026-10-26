@@ -56,24 +56,26 @@ class GiftImage extends StatelessWidget {
         child: stillAsset != null && !animated
             ? still
             : ListenableBuilder(
-          listenable: CatalogService.instance,
-          builder: (context, _) {
-            final url = CatalogService.instance.giftArt(giftKey)?.urlFor(side, animated: animated);
-            if (url == null) return still;
-            return CachedNetworkImage(
-              cacheManager: OfflineImageCacheManager.instance,
-              imageUrl: url,
-              width: full,
-              height: full,
-              memCacheWidth: decode,
-              memCacheHeight: decode,
-              fit: BoxFit.contain,
-              fadeInDuration: Duration.zero,
-              placeholder: (_, _) => still,
-              errorWidget: (_, _, _) => still,
-            );
-          },
-        ),
+                listenable: CatalogService.instance,
+                builder: (context, _) {
+                  final url = CatalogService.instance
+                      .giftArt(giftKey)
+                      ?.urlFor(side, animated: animated);
+                  if (url == null) return still;
+                  return CachedNetworkImage(
+                    cacheManager: OfflineImageCacheManager.instance,
+                    imageUrl: url,
+                    width: full,
+                    height: full,
+                    memCacheWidth: decode,
+                    memCacheHeight: decode,
+                    fit: BoxFit.contain,
+                    fadeInDuration: Duration.zero,
+                    placeholder: (_, _) => still,
+                    errorWidget: (_, _, _) => still,
+                  );
+                },
+              ),
       ),
     );
   }

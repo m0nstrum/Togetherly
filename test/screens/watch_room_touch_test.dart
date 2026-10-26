@@ -10,7 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 // room_exit_ad_wiring_test.dart.
 void main() {
   test('браузер комнаты забирает касания сразу', () {
-    final src = File('lib/screens/together/watch_room_screen.dart').readAsStringSync();
+    final src = File(
+      'lib/screens/together/watch_room_screen.dart',
+    ).readAsStringSync();
     final web = src.substring(src.indexOf('InAppWebView('));
     expect(web.substring(0, 900), contains('EagerGestureRecognizer'));
   });

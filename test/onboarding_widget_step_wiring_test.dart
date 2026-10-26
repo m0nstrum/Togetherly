@@ -8,9 +8,12 @@ import 'package:love_app/services/home_widget_service.dart';
 /// закрывался ни у кого. Разъедутся имена ключа в Swift и Dart — шаг снова
 /// молча повиснет, ошибки при этом не будет нигде.
 void main() {
-  final store = File('ios/TogetherlyWidget/SharedStore.swift').readAsStringSync();
-  final bundle =
-      File('ios/TogetherlyWidget/TogetherlyWidgetBundle.swift').readAsStringSync();
+  final store = File(
+    'ios/TogetherlyWidget/SharedStore.swift',
+  ).readAsStringSync();
+  final bundle = File(
+    'ios/TogetherlyWidget/TogetherlyWidgetBundle.swift',
+  ).readAsStringSync();
   final home = File('lib/screens/home_screen.dart').readAsStringSync();
 
   test('ключ отметки одинаков в расширении и в приложении', () {
@@ -53,5 +56,6 @@ void main() {
 }
 
 extension on String {
-  int allMatchesIn(String text) => RegExp(RegExp.escape(this)).allMatches(text).length;
+  int allMatchesIn(String text) =>
+      RegExp(RegExp.escape(this)).allMatches(text).length;
 }

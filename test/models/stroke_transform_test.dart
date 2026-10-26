@@ -13,23 +13,23 @@ import 'package:love_app/models/stroke_transform.dart';
 const _canvas = Size(400, 500); // намеренно НЕ квадрат
 
 DrawStroke _line() => const DrawStroke(
-      id: 's1',
-      userId: 'u1',
-      colorValue: 0xFF000000,
-      strokeWidth: 4,
-      orderIndex: 0,
-      points: [DrawPoint(0.2, 0.2), DrawPoint(0.6, 0.2)],
-    );
+  id: 's1',
+  userId: 'u1',
+  colorValue: 0xFF000000,
+  strokeWidth: 4,
+  orderIndex: 0,
+  points: [DrawPoint(0.2, 0.2), DrawPoint(0.6, 0.2)],
+);
 
 DrawStroke _circle() => const DrawStroke(
-      id: 's2',
-      userId: 'u1',
-      colorValue: 0xFF000000,
-      strokeWidth: 4,
-      orderIndex: 1,
-      shapeType: DrawShapeType.circle,
-      points: [DrawPoint(0.2, 0.2), DrawPoint(0.6, 0.6)],
-    );
+  id: 's2',
+  userId: 'u1',
+  colorValue: 0xFF000000,
+  strokeWidth: 4,
+  orderIndex: 1,
+  shapeType: DrawShapeType.circle,
+  points: [DrawPoint(0.2, 0.2), DrawPoint(0.6, 0.6)],
+);
 
 void main() {
   group('габарит', () {
@@ -107,17 +107,16 @@ void main() {
   group('масштаб', () {
     test('вдвое крупнее — вдвое шире габарит', () {
       final before = strokeBounds(_line(), _canvas);
-      final after = strokeBounds(
-        scaleStroke(_line(), 2.0, _canvas),
-        _canvas,
-      );
+      final after = strokeBounds(scaleStroke(_line(), 2.0, _canvas), _canvas);
       expect(after.width, closeTo(before.width * 2, 0.5));
     });
 
     test('центр остаётся на месте', () {
       final before = strokeBounds(_line(), _canvas).center;
-      final after = strokeBounds(scaleStroke(_line(), 2.0, _canvas), _canvas)
-          .center;
+      final after = strokeBounds(
+        scaleStroke(_line(), 2.0, _canvas),
+        _canvas,
+      ).center;
       expect(after.dx, closeTo(before.dx, 0.5));
       expect(after.dy, closeTo(before.dy, 0.5));
     });
@@ -132,8 +131,11 @@ void main() {
     test('на девяносто градусов горизонталь встаёт вертикалью', () {
       final turned = rotateStroke(_line(), math.pi / 2, _canvas);
       final r = strokeBounds(turned, _canvas);
-      expect(r.height, greaterThan(r.width),
-          reason: 'линия осталась горизонтальной');
+      expect(
+        r.height,
+        greaterThan(r.width),
+        reason: 'линия осталась горизонтальной',
+      );
     });
 
     test('поворот не сплющивает: длина сохраняется на неквадратном холсте', () {

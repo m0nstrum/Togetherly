@@ -9,11 +9,7 @@ import '../../services/locale_service.dart';
 /// и без того длинный календарь ещё на экран. Карточки одной ширины, чтобы
 /// край следующей выглядывал и было понятно, что лента листается.
 class CycleTipsStrip extends StatelessWidget {
-  const CycleTipsStrip({
-    super.key,
-    required this.scheme,
-    required this.accent,
-  });
+  const CycleTipsStrip({super.key, required this.scheme, required this.accent});
 
   final ColorScheme scheme;
 
@@ -89,7 +85,10 @@ class _TipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Подложка значка — тот же красный, что у отметки месячных, но разбавленный
     // поверхностью: сплошной цвет семь раз подряд кричал бы на весь календарь.
-    final iconBg = Color.alphaBlend(accent.withValues(alpha: 0.14), scheme.surface);
+    final iconBg = Color.alphaBlend(
+      accent.withValues(alpha: 0.14),
+      scheme.surface,
+    );
 
     return Container(
       width: width,

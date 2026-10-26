@@ -28,8 +28,10 @@ void main() {
     final cache = StrokeLayerCache();
     final picture = _picture();
     cache.save(picture, revision: 7, size: size, prefixCount: 40);
-    expect(cache.prefixFor(revision: 7, available: 40, size: size),
-        same(picture));
+    expect(
+      cache.prefixFor(revision: 7, available: 40, size: size),
+      same(picture),
+    );
     expect(cache.prefixCount, 40);
   });
 
@@ -37,32 +39,45 @@ void main() {
     final cache = StrokeLayerCache();
     final picture = _picture();
     cache.save(picture, revision: 7, size: size, prefixCount: 100);
-    expect(cache.prefixFor(revision: 7, available: 130, size: size),
-        same(picture),
-        reason: 'ради этого случая всё и затевалось: рисование не пересобирает слой');
+    expect(
+      cache.prefixFor(revision: 7, available: 130, size: size),
+      same(picture),
+      reason:
+          'ради этого случая всё и затевалось: рисование не пересобирает слой',
+    );
   });
 
   test('штрихов стало меньше — слой не годится', () {
     final cache = StrokeLayerCache();
     cache.save(_picture(), revision: 7, size: size, prefixCount: 100);
-    expect(cache.prefixFor(revision: 7, available: 90, size: size), isNull,
-        reason: 'отменили штрих: часть картинки уже неверна');
+    expect(
+      cache.prefixFor(revision: 7, available: 90, size: size),
+      isNull,
+      reason: 'отменили штрих: часть картинки уже неверна',
+    );
   });
 
   test('ревизия основы сменилась — слой не годится', () {
     final cache = StrokeLayerCache();
     cache.save(_picture(), revision: 7, size: size, prefixCount: 100);
-    expect(cache.prefixFor(revision: 8, available: 130, size: size), isNull,
-        reason: 'состав поменялся не дописыванием в конец');
+    expect(
+      cache.prefixFor(revision: 8, available: 130, size: size),
+      isNull,
+      reason: 'состав поменялся не дописыванием в конец',
+    );
   });
 
   test('другой размер холста — слой не годится', () {
     final cache = StrokeLayerCache();
     cache.save(_picture(), revision: 7, size: size, prefixCount: 10);
     expect(
-        cache.prefixFor(
-            revision: 7, available: 10, size: const ui.Size(200, 200)),
-        isNull);
+      cache.prefixFor(
+        revision: 7,
+        available: 10,
+        size: const ui.Size(200, 200),
+      ),
+      isNull,
+    );
   });
 
   test('сброс убирает слой', () {
@@ -75,8 +90,9 @@ void main() {
 
   test('пустой кэш ничего не отдаёт', () {
     expect(
-        StrokeLayerCache().prefixFor(revision: 0, available: 0, size: size),
-        isNull);
+      StrokeLayerCache().prefixFor(revision: 0, available: 0, size: size),
+      isNull,
+    );
   });
 
   test('повторное сохранение той же картинки её не разрушает', () {
@@ -84,8 +100,10 @@ void main() {
     final picture = _picture();
     cache.save(picture, revision: 1, size: size, prefixCount: 3);
     cache.save(picture, revision: 2, size: size, prefixCount: 5);
-    expect(cache.prefixFor(revision: 2, available: 5, size: size),
-        same(picture),
-        reason: 'иначе слой освободили бы и тут же отдали освобождённым');
+    expect(
+      cache.prefixFor(revision: 2, available: 5, size: size),
+      same(picture),
+      reason: 'иначе слой освободили бы и тут же отдали освобождённым',
+    );
   });
 }

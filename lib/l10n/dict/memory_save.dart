@@ -30,11 +30,16 @@ const Map<String, Map<String, String>> memorySaveStrings = {
   'momentPlayFailed': {
     'ru': 'Не получилось включить трек. Проверьте сеть и нажмите ещё раз.',
     'en': 'Couldn’t play the track. Check your connection and tap again.',
-    'de': 'Der Titel ließ sich nicht abspielen. Prüfe die Verbindung und tippe erneut.',
-    'fr': 'Impossible de lire le morceau. Vérifie ta connexion et touche à nouveau.',
-    'es': 'No se pudo reproducir la canción. Revisa la conexión y toca otra vez.',
-    'it': 'Impossibile riprodurre il brano. Controlla la connessione e tocca di nuovo.',
-    'pt': 'Não foi possível tocar a faixa. Verifique a conexão e toque de novo.',
+    'de':
+        'Der Titel ließ sich nicht abspielen. Prüfe die Verbindung und tippe erneut.',
+    'fr':
+        'Impossible de lire le morceau. Vérifie ta connexion et touche à nouveau.',
+    'es':
+        'No se pudo reproducir la canción. Revisa la conexión y toca otra vez.',
+    'it':
+        'Impossibile riprodurre il brano. Controlla la connessione e tocca di nuovo.',
+    'pt':
+        'Não foi possível tocar a faixa. Verifique a conexão e toque de novo.',
   },
   // Лист сохранения из просмотра кадра: кнопка качает один кадр, стрелка
   // предлагает всю запись или всю ленту.
@@ -380,10 +385,13 @@ const Map<String, Map<String, String>> memorySaveStrings = {
     'ru': 'Нет доступа к галерее. Разрешите его в настройках телефона.',
     'en': 'No access to the gallery. Allow it in your phone settings.',
     'pt': 'Sem acesso à galeria. Permita nas configurações do telefone.',
-    'it': 'Nessun accesso alla galleria. Consentilo nelle impostazioni del telefono.',
+    'it':
+        'Nessun accesso alla galleria. Consentilo nelle impostazioni del telefono.',
     'es': 'Sin acceso a la galería. Permítelo en los ajustes del teléfono.',
-    'fr': 'Pas d’accès à la galerie. Autorisez-le dans les réglages du téléphone.',
-    'de': 'Kein Zugriff auf die Galerie. Erlaube ihn in den Telefoneinstellungen.',
+    'fr':
+        'Pas d’accès à la galerie. Autorisez-le dans les réglages du téléphone.',
+    'de':
+        'Kein Zugriff auf die Galerie. Erlaube ihn in den Telefoneinstellungen.',
   },
   'saveNothingLeft': {
     'ru': 'Всё уже в галерее',
@@ -514,7 +522,8 @@ const Map<String, Map<String, String>> memorySaveStrings = {
     'pt': 'Na galeria, qualquer pessoa que veja as suas fotos vai ver isto.',
     'it': 'In galleria lo vedrà chiunque scorra le tue foto.',
     'es': 'En la galería lo verá cualquiera que pase tus fotos.',
-    'fr': 'Dans la galerie, toute personne qui fait défiler vos photos le verra.',
+    'fr':
+        'Dans la galerie, toute personne qui fait défiler vos photos le verra.',
     'de': 'In der Galerie sieht es jeder, der durch deine Fotos wischt.',
   },
   'adultSave': {

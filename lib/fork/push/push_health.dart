@@ -66,16 +66,19 @@ class PushHealth {
 
   /// Спокойная строка о пути доставки.
   String get routeText => switch (route) {
-        PushRoute.fcm => ruEn(
-            'Доставка: пуши Google — приложению не нужно быть открытым',
-            'Delivery: Google push — the app doesn’t need to be open'),
-        PushRoute.socket => ruEn(
-            'Доставка: фоновое соединение (строка «на связи» в шторке)',
-            'Delivery: background connection (the “connected” line in the shade)'),
-        PushRoute.apns => ruEn(
-            'Доставка: системные пуши Apple',
-            'Delivery: Apple push notifications'),
-      };
+    PushRoute.fcm => ruEn(
+      'Доставка: пуши Google — приложению не нужно быть открытым',
+      'Delivery: Google push — the app doesn’t need to be open',
+    ),
+    PushRoute.socket => ruEn(
+      'Доставка: фоновое соединение (строка «на связи» в шторке)',
+      'Delivery: background connection (the “connected” line in the shade)',
+    ),
+    PushRoute.apns => ruEn(
+      'Доставка: системные пуши Apple',
+      'Delivery: Apple push notifications',
+    ),
+  };
 
   static Future<PushHealth> check() async {
     bool? enabled;
@@ -84,12 +87,14 @@ class PushHealth {
       if (Platform.isAndroid) {
         enabled = await plugin
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
+              AndroidFlutterLocalNotificationsPlugin
+            >()
             ?.areNotificationsEnabled();
       } else if (Platform.isIOS) {
         final p = await plugin
             .resolvePlatformSpecificImplementation<
-                IOSFlutterLocalNotificationsPlugin>()
+              IOSFlutterLocalNotificationsPlugin
+            >()
             ?.checkPermissions();
         enabled = p?.isEnabled;
       }
@@ -99,8 +104,10 @@ class PushHealth {
     if (!Platform.isAndroid) {
       return PushHealth(systemEnabled: enabled, route: PushRoute.apns);
     }
-    await FcmService.instance.settled
-        .timeout(const Duration(seconds: 5), onTimeout: () {});
+    await FcmService.instance.settled.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {},
+    );
     if (FcmService.instance.ready) {
       return PushHealth(systemEnabled: enabled, route: PushRoute.fcm);
     }
@@ -122,7 +129,8 @@ class PushHealthTile extends StatefulWidget {
   State<PushHealthTile> createState() => _PushHealthTileState();
 }
 
-class _PushHealthTileState extends State<PushHealthTile> with WidgetsBindingObserver {
+class _PushHealthTileState extends State<PushHealthTile>
+    with WidgetsBindingObserver {
   PushHealth? _health;
 
   @override
@@ -158,15 +166,19 @@ class _PushHealthTileState extends State<PushHealthTile> with WidgetsBindingObse
       return ForkStatusBar(
         text: problem,
         tone: ForkStatusTone.warning,
-        actionLabel: settings ? ruEn('Открыть настройки', 'Open settings') : null,
+        actionLabel: settings
+            ? ruEn('Открыть настройки', 'Open settings')
+            : null,
         onAction: settings
             ? () async {
                 final ok = await openSystemNotificationSettings();
                 if (!ok && context.mounted) {
                   ForkNotice.info(
                     context,
-                    ruEn('Откройте настройки телефона → Уведомления',
-                        'Open phone settings → Notifications'),
+                    ruEn(
+                      'Откройте настройки телефона → Уведомления',
+                      'Open phone settings → Notifications',
+                    ),
                   );
                 }
               }
@@ -178,8 +190,8 @@ class _PushHealthTileState extends State<PushHealthTile> with WidgetsBindingObse
       child: Text(
         h.routeText,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }

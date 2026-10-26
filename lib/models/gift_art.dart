@@ -44,14 +44,18 @@ class GiftArt {
   String? urlFor(double logicalSize, {bool animated = true}) {
     if (!animated) return stillUrl ?? smUrl ?? lgUrl;
     if (logicalSize > 160 && xlUrl != null) return xlUrl;
-    return logicalSize <= 64 ? (smUrl ?? lgUrl ?? stillUrl) : (lgUrl ?? smUrl ?? stillUrl);
+    return logicalSize <= 64
+        ? (smUrl ?? lgUrl ?? stillUrl)
+        : (lgUrl ?? smUrl ?? stillUrl);
   }
 
   /// Строка каталога → картинки. Чужой вид, выключенная запись, пустой ключ
   /// или ни одной ссылки — null: кривая запись не должна ломать магазин.
   static GiftArt? fromCatalog(Map<String, dynamic> row) {
     final kind = row['kind'];
-    if ((kind != 'gift' && kind != 'art' && kind != 'ailment') || row['enabled'] == false) return null;
+    if ((kind != 'gift' && kind != 'art' && kind != 'ailment') ||
+        row['enabled'] == false)
+      return null;
     final data = row['data'];
     if (data is! Map) return null;
     final key = '${data['key'] ?? ''}'.trim();
@@ -74,7 +78,8 @@ class GiftArt {
       titleRu: '${row['name_ru'] ?? ''}',
       titleEn: '${row['name_en'] ?? ''}',
     );
-    if (art.smUrl == null && art.lgUrl == null && art.stillUrl == null) return null;
+    if (art.smUrl == null && art.lgUrl == null && art.stillUrl == null)
+      return null;
     return art;
   }
 }

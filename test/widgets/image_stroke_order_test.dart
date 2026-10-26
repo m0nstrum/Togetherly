@@ -18,10 +18,9 @@ const _size = Size(40, 40);
 
 Future<ui.Image> _solid(Color color) async {
   final recorder = ui.PictureRecorder();
-  Canvas(recorder).drawRect(
-    Offset.zero & const Size(8, 8),
-    Paint()..color = color,
-  );
+  Canvas(
+    recorder,
+  ).drawRect(Offset.zero & const Size(8, 8), Paint()..color = color);
   final picture = recorder.endRecording();
   final image = await picture.toImage(8, 8);
   picture.dispose();
@@ -35,7 +34,10 @@ Future<Color> _centerColor(
 ) async {
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
-  canvas.drawRect(Offset.zero & _size, Paint()..color = const Color(0xFFFFFFFF));
+  canvas.drawRect(
+    Offset.zero & _size,
+    Paint()..color = const Color(0xFFFFFFFF),
+  );
   paintStrokeRange(canvas, strokes, _size, imageOf: imageOf);
   final picture = recorder.endRecording();
   final image = await picture.toImage(40, 40);
@@ -52,50 +54,52 @@ Future<Color> _centerColor(
 }
 
 DrawStroke _fill(int order) => DrawStroke(
-      id: 'fill_$order',
-      userId: 'u1',
-      colorValue: 0xFF000000,
-      strokeWidth: 0,
-      points: const [],
-      orderIndex: order,
-      imageUrl: 'file:///fake.png',
-      imageX: 0.5,
-      imageY: 0.5,
-      imageWidth: 1.0,
-      imageHeight: 1.0,
-      imageRotation: 0,
-    );
+  id: 'fill_$order',
+  userId: 'u1',
+  colorValue: 0xFF000000,
+  strokeWidth: 0,
+  points: const [],
+  orderIndex: order,
+  imageUrl: 'file:///fake.png',
+  imageX: 0.5,
+  imageY: 0.5,
+  imageWidth: 1.0,
+  imageHeight: 1.0,
+  imageRotation: 0,
+);
 
 DrawStroke _brush(int order) => DrawStroke(
-      id: 'brush_$order',
-      userId: 'u1',
-      colorValue: 0xFFFF0000,
-      strokeWidth: 12,
-      points: const [DrawPoint(0.1, 0.5), DrawPoint(0.9, 0.5)],
-      orderIndex: order,
-    );
+  id: 'brush_$order',
+  userId: 'u1',
+  colorValue: 0xFFFF0000,
+  strokeWidth: 12,
+  points: const [DrawPoint(0.1, 0.5), DrawPoint(0.9, 0.5)],
+  orderIndex: order,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('мазок поверх заливки виден', () async {
     final black = await _solid(const Color(0xFF000000));
-    final color = await _centerColor(
-      [_fill(0), _brush(1)],
-      (_) => black,
+    final color = await _centerColor([_fill(0), _brush(1)], (_) => black);
+    expect(
+      color.r,
+      greaterThan(0.7),
+      reason: 'кисть должна лежать поверх пятна',
     );
-    expect(color.r, greaterThan(0.7), reason: 'кисть должна лежать поверх пятна');
     expect(color.g, lessThan(0.3));
     black.dispose();
   });
 
   test('заливка поверх мазка закрывает его', () async {
     final black = await _solid(const Color(0xFF000000));
-    final color = await _centerColor(
-      [_brush(0), _fill(1)],
-      (_) => black,
+    final color = await _centerColor([_brush(0), _fill(1)], (_) => black);
+    expect(
+      color.r,
+      lessThan(0.1),
+      reason: 'пятно нарисовано позже — оно сверху',
     );
-    expect(color.r, lessThan(0.1), reason: 'пятно нарисовано позже — оно сверху');
     black.dispose();
   });
 

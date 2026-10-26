@@ -2,7 +2,7 @@
 // жили в hotpath (Postgres) и которые JS-хуки зовут по /internal/*.
 //
 // Форк держит группы в PocketBase, поэтому сохранение записи само запускает
-// хуки (groups_membership ведёт users.group_ids) и рассылку в Centrifugo —
+// хуки (bindMembership ведёт users.group_ids) и рассылку в Centrifugo —
 // то, что hotpath делал руками в `_после_правки_пары`.
 package pairs
 
@@ -31,7 +31,7 @@ const groupsCol = "groups"
 // ErrNotFound — пары нет.
 var ErrNotFound = errors.New("pairs: пара не найдена")
 
-// AcceptInput — приём кода приглашения (тело /internal/pair-accept).
+// AcceptInput — приём кода приглашения.
 type AcceptInput struct {
 	OwnerUID    string `json:"owner_uid"`
 	MyUID       string `json:"my_uid"`
@@ -42,7 +42,7 @@ type AcceptInput struct {
 	MyAvatar    string `json:"my_avatar"`
 }
 
-// AcceptResult — ответ hotpath, который invite.pb.js отдаёт клиенту как есть.
+// AcceptResult — ответ hotpath, который handler.InviteAccept отдаёт клиенту как есть.
 type AcceptResult struct {
 	Success  bool   `json:"success"`
 	Message  string `json:"message"`

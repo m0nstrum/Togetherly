@@ -23,17 +23,19 @@ void main() {
       myName: 'Саша',
       partnerName: 'Аня',
     );
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: SizedBox(
-            width: 360,
-            height: 360,
-            child: PostcardCard(templateId: id, days: 431, blocks: blocks),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              height: 360,
+              child: PostcardCard(templateId: id, days: 431, blocks: blocks),
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -45,10 +47,7 @@ void main() {
   }
 
   testWidgets('Число дней видно на билете, чеке и посылке', (tester) async {
-    for (final id in [
-      PostcardTemplateId.ticket,
-      PostcardTemplateId.receipt,
-    ]) {
+    for (final id in [PostcardTemplateId.ticket, PostcardTemplateId.receipt]) {
       await pumpCard(tester, id);
       expect(find.text('431'), findsOneWidget, reason: id.name);
     }
@@ -59,8 +58,11 @@ void main() {
     expect(find.text('Саша → Аня'), findsOneWidget);
 
     await pumpCard(tester, PostcardTemplateId.parcel);
-    expect(find.text('Аня'), findsOneWidget,
-        reason: 'посылка адресуется партнёру');
+    expect(
+      find.text('Аня'),
+      findsOneWidget,
+      reason: 'посылка адресуется партнёру',
+    );
   });
 
   test('Новые шаблоны попали в список выбора', () {
@@ -68,6 +70,10 @@ void main() {
     for (final id in paper) {
       expect(ids, contains(id), reason: id.name);
     }
-    expect(PostcardTemplate.all.length, 8, reason: 'четыре старых и четыре новых');
+    expect(
+      PostcardTemplate.all.length,
+      8,
+      reason: 'четыре старых и четыре новых',
+    );
   });
 }

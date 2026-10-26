@@ -12,20 +12,19 @@ Memory _memory(
   bool secret = false,
   bool sealed = false,
   DateTime? openAt,
-}) =>
-    Memory(
-      id: id,
-      groupId: 'g',
-      authorUid: 'u',
-      authorName: 'Аня',
-      authorAvatar: '',
-      type: MemoryType.text,
-      createdAt: at,
-      caption: 'запись $id',
-      isSecret: secret,
-      sealed: sealed,
-      openAt: openAt,
-    );
+}) => Memory(
+  id: id,
+  groupId: 'g',
+  authorUid: 'u',
+  authorName: 'Аня',
+  authorAvatar: '',
+  type: MemoryType.text,
+  createdAt: at,
+  caption: 'запись $id',
+  isSecret: secret,
+  sealed: sealed,
+  openAt: openAt,
+);
 
 void main() {
   final now = DateTime(2026, 8, 18);
@@ -64,28 +63,40 @@ void main() {
 
     test('запечатанная капсула в книгу не идёт', () {
       final all = [
-        _memory('капсула', DateTime(2026, 5, 1),
-            sealed: true, openAt: DateTime(2027, 1, 1)),
+        _memory(
+          'капсула',
+          DateTime(2026, 5, 1),
+          sealed: true,
+          openAt: DateTime(2027, 1, 1),
+        ),
         _memory('обычная', DateTime(2026, 5, 2)),
       ];
-      final picked =
-          memoriesForBook(all, secretUnlocked: true, now: now);
+      final picked = memoriesForBook(all, secretUnlocked: true, now: now);
       expect(picked.map((m) => m.id), ['обычная']);
     });
 
     test('раскрывшаяся капсула — обычная запись', () {
       final all = [
-        _memory('раскрылась', DateTime(2026, 5, 1),
-            sealed: true, openAt: DateTime(2026, 6, 1)),
+        _memory(
+          'раскрылась',
+          DateTime(2026, 5, 1),
+          sealed: true,
+          openAt: DateTime(2026, 6, 1),
+        ),
       ];
-      expect(memoriesForBook(all, secretUnlocked: false, now: now),
-          hasLength(1));
+      expect(
+        memoriesForBook(all, secretUnlocked: false, now: now),
+        hasLength(1),
+      );
     });
 
     test('секретные попадают только при снятом замке', () {
       final all = [_memory('тайна', DateTime(2026, 5, 1), secret: true)];
       expect(memoriesForBook(all, secretUnlocked: false, now: now), isEmpty);
-      expect(memoriesForBook(all, secretUnlocked: true, now: now), hasLength(1));
+      expect(
+        memoriesForBook(all, secretUnlocked: true, now: now),
+        hasLength(1),
+      );
     });
 
     // Обращение 256 (11.10.2026), решение владельца: «пусть переключатель
@@ -94,14 +105,18 @@ void main() {
       final hot = _memory('18+', DateTime(2026, 5, 1))..isAdult = true;
       final all = [hot, _memory('обычная', DateTime(2026, 5, 2))];
       expect(
-          memoriesForBook(all, secretUnlocked: false, now: now)
-              .map((m) => m.id),
-          ['обычная']);
+        memoriesForBook(all, secretUnlocked: false, now: now).map((m) => m.id),
+        ['обычная'],
+      );
       expect(
-          memoriesForBook(all,
-                  secretUnlocked: false, includeAdult: true, now: now)
-              .map((m) => m.id),
-          ['18+', 'обычная']);
+        memoriesForBook(
+          all,
+          secretUnlocked: false,
+          includeAdult: true,
+          now: now,
+        ).map((m) => m.id),
+        ['18+', 'обычная'],
+      );
     });
 
     test('книга читается от старого к новому', () {
@@ -110,8 +125,10 @@ void main() {
         _memory('первая', DateTime(2026, 5, 1)),
         _memory('вторая', DateTime(2026, 5, 2)),
       ];
-      expect(memoriesForBook(all, secretUnlocked: false, now: now)
-          .map((m) => m.id), ['первая', 'вторая', 'третья']);
+      expect(
+        memoriesForBook(all, secretUnlocked: false, now: now).map((m) => m.id),
+        ['первая', 'вторая', 'третья'],
+      );
     });
   });
 
@@ -153,8 +170,10 @@ void main() {
         _memory('поздняя', DateTime(2026, 5, 9)),
         _memory('ранняя', DateTime(2026, 5, 2)),
       ]);
-      expect(days.map((d) => d.day),
-          [DateTime(2026, 5, 2), DateTime(2026, 5, 9)]);
+      expect(days.map((d) => d.day), [
+        DateTime(2026, 5, 2),
+        DateTime(2026, 5, 9),
+      ]);
     });
 
     test('пустой список глав не рождает', () {

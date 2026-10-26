@@ -226,8 +226,8 @@ class AchievementSheetBody extends StatelessWidget {
           LayoutBuilder(
             builder: (context, box) {
               const gap = 6.0;
-              final fit = (box.maxWidth - gap * (shown.length - 1)) /
-                  shown.length;
+              final fit =
+                  (box.maxWidth - gap * (shown.length - 1)) / shown.length;
               final size = fit.clamp(24.0, 44.0);
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -408,10 +408,8 @@ class _AchievementHeroState extends State<_AchievementHero>
           ),
           AnimatedBuilder(
             animation: _art,
-            builder: (_, child) => Transform.scale(
-              scale: math.max(0, _art.value),
-              child: child,
-            ),
+            builder: (_, child) =>
+                Transform.scale(scale: math.max(0, _art.value), child: child),
             child: AchievementArt(a, side: _side * 0.84),
           ),
         ],

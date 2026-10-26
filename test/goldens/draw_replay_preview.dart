@@ -24,18 +24,18 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 DrawStroke _arc(int index, int color) => DrawStroke(
-      id: '$index',
-      userId: 'u',
-      colorValue: color,
-      strokeWidth: 8,
-      points: List.generate(24, (i) {
-        final a = (i / 24) * math.pi + index * 0.4;
-        return DrawPoint(0.5 + 0.32 * math.cos(a), 0.5 + 0.32 * math.sin(a));
-      }),
-      isEraser: false,
-      isFilledShape: false,
-      orderIndex: index,
-    );
+  id: '$index',
+  userId: 'u',
+  colorValue: color,
+  strokeWidth: 8,
+  points: List.generate(24, (i) {
+    final a = (i / 24) * math.pi + index * 0.4;
+    return DrawPoint(0.5 + 0.32 * math.cos(a), 0.5 + 0.32 * math.sin(a));
+  }),
+  isEraser: false,
+  isFilledShape: false,
+  orderIndex: index,
+);
 
 void main() {
   testWidgets('повтор рисования', (tester) async {
@@ -82,8 +82,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
-      File('${dir.path}/replay.png')
-          .writeAsBytesSync(bytes!.buffer.asUint8List());
+      File(
+        '${dir.path}/replay.png',
+      ).writeAsBytesSync(bytes!.buffer.asUint8List());
     });
     stdout.writeln('снимок: build/draw-panel/replay.png');
   });

@@ -2,8 +2,8 @@
 ///
 /// Просьба из чата 25.09.2026: «А есть восстановление серии как в ТикТоке?».
 /// Возвращать можно за каждый обрыв, сколько угодно раз, но не позже трёх
-/// дней после него. Правило повторяет серверное (`_возврат_серии` в
-/// pocketbase/hotpath/hotpath.py): кнопка появляется только там, где сервер
+/// дней после него. Правило повторяет серверное (`RestoreStreak` в
+/// server/internal/usecase/groupops): кнопка появляется только там, где сервер
 /// согласится вернуть серию.
 library;
 
@@ -25,7 +25,10 @@ class StreakRestoreOffer {
 /// в единицу — прежнее число сервер положил в `lost`. Пара ещё не вернулась —
 /// последний общий день позавчера или раньше, на экране 0, а в записи
 /// прежнее число.
-StreakRestoreOffer? streakRestoreOffer(Map<String, dynamic>? entry, DateTime now) {
+StreakRestoreOffer? streakRestoreOffer(
+  Map<String, dynamic>? entry,
+  DateTime now,
+) {
   if (entry == null) return null;
   final s = _int(entry['s']);
   final lost = _int(entry['lost']);

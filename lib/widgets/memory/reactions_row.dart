@@ -101,8 +101,11 @@ class AddReactionButton extends StatelessWidget {
         child: SizedBox(
           width: height,
           height: height,
-          child: Icon(Icons.add_reaction_outlined,
-              size: height * 0.5, color: theme.textSecondary),
+          child: Icon(
+            Icons.add_reaction_outlined,
+            size: height * 0.5,
+            color: theme.textSecondary,
+          ),
         ),
       ),
     );
@@ -142,9 +145,10 @@ Future<String?> showReactionPicker(BuildContext context, AppTheme theme) {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppFonts.onest(
-                                size: 12.5,
-                                weight: 600,
-                                color: theme.textPrimary),
+                              size: 12.5,
+                              weight: 600,
+                              color: theme.textPrimary,
+                            ),
                           ),
                         ],
                       ),

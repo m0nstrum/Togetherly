@@ -11,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Ряд «Заставка при запуске» в «Оформлении»: влезает на 320 точек с
 /// крупным шрифтом, нажатие выбирает заставку и скачивает её.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   final splash = LaunchSplash.fromCatalog({
     'kind': 'splash',
     'data': {
@@ -34,7 +36,10 @@ void main() {
       'layers': [
         {'sprite': 'door', 'fill': true, 'under': true},
       ],
-      'files': {'door': 'https://x/door_a.webp', 'still': 'https://x/still_a.webp'},
+      'files': {
+        'door': 'https://x/door_a.webp',
+        'still': 'https://x/still_a.webp',
+      },
     },
   })!;
 
@@ -49,27 +54,39 @@ void main() {
   });
   tearDown(() => root.deleteSync(recursive: true));
 
-  Future<void> pump(WidgetTester tester, AppLanguage lang, {double width = 320, double scale = 1.3}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    AppLanguage lang, {
+    double width = 320,
+    double scale = 1.3,
+  }) async {
     LocaleService.instance.setLanguage(lang);
     tester.view.physicalSize = Size(width, 700);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(size: Size(width, 700), textScaler: TextScaler.linear(scale)),
-        child: Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LaunchSplashPicker(splashes: [splash]),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: Size(width, 700),
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: LaunchSplashPicker(splashes: [splash]),
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
   for (final lang in const [AppLanguage.ru, AppLanguage.de, AppLanguage.zh]) {
-    testWidgets('на 320 точках с шрифтом 1.3 без переполнений (${lang.code})', (tester) async {
+    testWidgets('на 320 точках с шрифтом 1.3 без переполнений (${lang.code})', (
+      tester,
+    ) async {
       await pump(tester, lang);
       expect(tester.takeException(), isNull);
       expect(find.byType(LaunchSplashPicker), findsOneWidget);
@@ -83,15 +100,29 @@ void main() {
     expect(find.text('1,8 с'), findsOneWidget);
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
     final check = tester.getCenter(find.byIcon(Icons.check_rounded));
-    expect(tester.getRect(find.text('Без заставки')).left, lessThan(check.dx), reason: 'галочка на первом кадре');
+    expect(
+      tester.getRect(find.text('Без заставки')).left,
+      lessThan(check.dx),
+      reason: 'галочка на первом кадре',
+    );
   });
 
-  testWidgets('сезон кончился — галочка на «Без заставки», а не нигде', (tester) async {
+  testWidgets('сезон кончился — галочка на «Без заставки», а не нигде', (
+    tester,
+  ) async {
     await tester.runAsync(() => LaunchSplashService.instance.select(splash));
     LocaleService.instance.setLanguage(AppLanguage.ru);
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: LaunchSplashPicker(splashes: []))));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: LaunchSplashPicker(splashes: [])),
+      ),
+    );
     await tester.pump();
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget, reason: 'выбранной заставки в ряду нет, а «Без заставки» не отмечена');
+    expect(
+      find.byIcon(Icons.check_rounded),
+      findsOneWidget,
+      reason: 'выбранной заставки в ряду нет, а «Без заставки» не отмечена',
+    );
   });
 
   testWidgets('нажатие выбирает заставку и скачивает её', (tester) async {
@@ -101,7 +132,9 @@ void main() {
     // У скачивания много шагов, и каждому нужен кадр.
     final next = find.text('Сыграет при следующем запуске');
     for (var i = 0; i < 100 && next.evaluate().isEmpty; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
       await tester.pump();
     }
     expect(LaunchSplashService.instance.selected, 'hw_key');
@@ -109,7 +142,9 @@ void main() {
     expect(next, findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('splash-tile-none')));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
     await tester.pump();
     expect(LaunchSplashService.instance.selected, '');
   });

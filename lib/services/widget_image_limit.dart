@@ -66,12 +66,16 @@ Uint8List? shrinkToJpeg(Uint8List bytes, int maxSide, {int quality = 85}) {
   try {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) return null;
-    final longest = decoded.width > decoded.height ? decoded.width : decoded.height;
+    final longest = decoded.width > decoded.height
+        ? decoded.width
+        : decoded.height;
     final frame = longest > maxSide
-        ? img.copyResize(decoded,
+        ? img.copyResize(
+            decoded,
             width: decoded.width >= decoded.height ? maxSide : null,
             height: decoded.height > decoded.width ? maxSide : null,
-            interpolation: img.Interpolation.average)
+            interpolation: img.Interpolation.average,
+          )
         : decoded;
     return Uint8List.fromList(img.encodeJpg(frame, quality: quality));
   } catch (_) {

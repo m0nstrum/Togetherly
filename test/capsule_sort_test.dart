@@ -21,8 +21,9 @@ void main() {
     test('Открывшаяся сегодня капсула идёт выше вчерашней записи', () {
       final order = compareMemories(
         MemorySort.eventDate,
-        aEvent: longAgo, aOpenAt: today,     // капсула, запечатана в марте
-        bEvent: yesterday,                        // обычное воспоминание
+        aEvent: longAgo,
+        aOpenAt: today, // капсула, запечатана в марте
+        bEvent: yesterday, // обычное воспоминание
       );
       expect(order, lessThan(0), reason: 'капсула должна быть первой');
     });
@@ -30,7 +31,8 @@ void main() {
     test('Ещё запечатанная капсула наверх не лезет', () {
       final order = compareMemories(
         MemorySort.eventDate,
-        aEvent: longAgo, aOpenAt: DateTime(2027, 1, 1),   // откроется через год
+        aEvent: longAgo,
+        aOpenAt: DateTime(2027, 1, 1), // откроется через год
         bEvent: yesterday,
       );
       expect(order, greaterThan(0), reason: 'до срока капсула на своём месте');
@@ -39,8 +41,11 @@ void main() {
     test('То же правило работает и при сортировке по дате добавления', () {
       final order = compareMemories(
         MemorySort.addedAt,
-        aEvent: longAgo, aAdded: longAgo, aOpenAt: today,
-        bEvent: yesterday, bAdded: yesterday,
+        aEvent: longAgo,
+        aAdded: longAgo,
+        aOpenAt: today,
+        bEvent: yesterday,
+        bAdded: yesterday,
       );
       expect(order, lessThan(0));
     });

@@ -1,6 +1,6 @@
-import '../../../dict_strings.dart' show ruEn; // fork
-import '../../../widgets/common/app_dialog.dart'; // fork
-import '../../../fork/ui/feedback.dart'; // fork
+import '../../../dict_strings.dart' show ruEn;
+import '../../../widgets/common/app_dialog.dart';
+import '../../../fork/ui/feedback.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -38,8 +38,22 @@ const List<IconData> kRelIcons = [
   Icons.auto_awesome_rounded,
 ];
 const List<String> kRelEmojis = [
-  '❤️', '💍', '🤝', '👯', '⭐', '🔥', '🐾', '🎵', '🎮', '☕', '🎂', '✈️',
-  '🎨', '🏆', '🌿', '✨',
+  '❤️',
+  '💍',
+  '🤝',
+  '👯',
+  '⭐',
+  '🔥',
+  '🐾',
+  '🎵',
+  '🎮',
+  '☕',
+  '🎂',
+  '✈️',
+  '🎨',
+  '🏆',
+  '🌿',
+  '✨',
 ];
 
 /// Значок своего типа связи по сохранённому значению.
@@ -77,37 +91,44 @@ IconData relIconForType(RelationshipType type, {String customEmoji = ''}) {
 //  Общие куски M3-листа снизу (хват, заголовок, строка-опция)
 // ─────────────────────────────────────────────────────────────────────────────
 Widget sheetHandle(ColorScheme cs) => Center(
-      child: Container(
-        width: 40,
-        height: 4,
-        margin: const EdgeInsets.only(bottom: 22),
-        decoration: BoxDecoration(
-            color: cs.onSurfaceVariant.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(2)),
-      ),
-    );
+  child: Container(
+    width: 40,
+    height: 4,
+    margin: const EdgeInsets.only(bottom: 22),
+    decoration: BoxDecoration(
+      color: cs.onSurfaceVariant.withValues(alpha: 0.35),
+      borderRadius: BorderRadius.circular(2),
+    ),
+  ),
+);
 
 Widget sheetHeader(ColorScheme cs, String title, [String subtitle = '']) =>
     Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontFamily: 'Unbounded',
-                fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                fontSize: 22,
-                color: cs.onSurface)),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Unbounded',
+            fontWeight: FontWeight.w700,
+            fontVariations: const [FontVariation('wght', 700)],
+            fontSize: 22,
+            color: cs.onSurface,
+          ),
+        ),
         if (subtitle.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text(subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontFamily: 'Onest',
-        fontVariations: const [FontVariation('wght', 400)],
-                  fontSize: 14,
-                  color: cs.onSurfaceVariant)),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Onest',
+              fontVariations: const [FontVariation('wght', 400)],
+              fontSize: 14,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
         ],
         const SizedBox(height: 22),
       ],
@@ -139,8 +160,9 @@ Widget typeSheetOption({
               height: 50,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(16)),
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Icon(icon, color: cs.primary, size: 25),
             ),
             const SizedBox(width: 14),
@@ -148,35 +170,46 @@ Widget typeSheetOption({
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontFamily: 'Onest',
-                          fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                          fontSize: 16,
-                          color: selected
-                              ? cs.onSecondaryContainer
-                              : cs.onSurface)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Onest',
+                      fontWeight: FontWeight.w700,
+                      fontVariations: const [FontVariation('wght', 700)],
+                      fontSize: 16,
+                      color: selected ? cs.onSecondaryContainer : cs.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontFamily: 'Onest',
-        fontVariations: const [FontVariation('wght', 400)],
-                          fontSize: 12.5,
-                          color: cs.onSurfaceVariant)),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Onest',
+                      fontVariations: const [FontVariation('wght', 400)],
+                      fontSize: 12.5,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             trailing ??
                 (selected
-                    ? Icon(Icons.check_circle_rounded, color: cs.primary, size: 24)
-                    : Icon(Icons.chevron_right_rounded,
-                        color: cs.onSurfaceVariant, size: 22)),
+                    ? Icon(
+                        Icons.check_circle_rounded,
+                        color: cs.primary,
+                        size: 24,
+                      )
+                    : Icon(
+                        Icons.chevron_right_rounded,
+                        color: cs.onSurfaceVariant,
+                        size: 22,
+                      )),
           ],
         ),
       ),
@@ -203,120 +236,181 @@ void showRelationshipTypeSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
     ),
-    builder: (sheetCtx) => StatefulBuilder(builder: (ctx, setSheet) {
-      final customTypes = pair.customRelationshipTypes;
-      void pick(RelationshipType type, {String label = '', String emoji = ''}) {
-        pair.setRelationshipType(type, label: label, emoji: emoji);
-        Navigator.of(sheetCtx).pop();
-        onChanged();
-      }
+    builder: (sheetCtx) => StatefulBuilder(
+      builder: (ctx, setSheet) {
+        final customTypes = pair.customRelationshipTypes;
+        void pick(
+          RelationshipType type, {
+          String label = '',
+          String emoji = '',
+        }) {
+          pair.setRelationshipType(type, label: label, emoji: emoji);
+          Navigator.of(sheetCtx).pop();
+          onChanged();
+        }
 
-      Widget builtin(RelationshipType type, IconData icon, String title,
-              String subtitle) =>
-          typeSheetOption(
-              cs: cs,
-              icon: icon,
-              title: title,
-              subtitle: subtitle,
-              selected: pair.relationshipType == type,
-              onTap: () => pick(type));
+        Widget builtin(
+          RelationshipType type,
+          IconData icon,
+          String title,
+          String subtitle,
+        ) => typeSheetOption(
+          cs: cs,
+          icon: icon,
+          title: title,
+          subtitle: subtitle,
+          selected: pair.relationshipType == type,
+          onTap: () => pick(type),
+        );
 
-      return SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(sheetCtx).size.height * 0.85),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                sheetHandle(cs),
-                sheetHeader(cs, s.relationshipStatus, s.chooseHowToConnect),
-                builtin(RelationshipType.couple, Icons.favorite_rounded,
-                    s.inLoveStatus, s.perfectForCouples),
-                builtin(RelationshipType.married, Icons.diamond_rounded,
-                    s.married, s.forMarriedPartners),
-                builtin(RelationshipType.friends, Icons.handshake_rounded,
-                    s.friends, s.connectWithBestFriend),
-                builtin(RelationshipType.buddies, Icons.groups_rounded,
-                    s.bestBuddies, s.forInseparableCompanions),
-                ...customTypes.map((entry) {
-                  final selected =
-                      pair.relationshipType == RelationshipType.custom &&
-                          pair.relationshipLabel == entry['label'];
-                  return typeSheetOption(
-                    cs: cs,
-                    icon: relIconForEmoji(entry['emoji'] ?? ''),
-                    title: entry['label'] ?? s.custom,
-                    subtitle: s.yourCustomType,
-                    selected: selected,
-                    onTap: () => pick(RelationshipType.custom,
+        return SafeArea(
+          top: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetCtx).size.height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  sheetHandle(cs),
+                  sheetHeader(cs, s.relationshipStatus, s.chooseHowToConnect),
+                  builtin(
+                    RelationshipType.couple,
+                    Icons.favorite_rounded,
+                    s.inLoveStatus,
+                    s.perfectForCouples,
+                  ),
+                  builtin(
+                    RelationshipType.married,
+                    Icons.diamond_rounded,
+                    s.married,
+                    s.forMarriedPartners,
+                  ),
+                  builtin(
+                    RelationshipType.friends,
+                    Icons.handshake_rounded,
+                    s.friends,
+                    s.connectWithBestFriend,
+                  ),
+                  builtin(
+                    RelationshipType.buddies,
+                    Icons.groups_rounded,
+                    s.bestBuddies,
+                    s.forInseparableCompanions,
+                  ),
+                  ...customTypes.map((entry) {
+                    final selected =
+                        pair.relationshipType == RelationshipType.custom &&
+                        pair.relationshipLabel == entry['label'];
+                    return typeSheetOption(
+                      cs: cs,
+                      icon: relIconForEmoji(entry['emoji'] ?? ''),
+                      title: entry['label'] ?? s.custom,
+                      subtitle: s.yourCustomType,
+                      selected: selected,
+                      onTap: () => pick(
+                        RelationshipType.custom,
                         label: entry['label'] ?? '',
-                        emoji: entry['emoji'] ?? ''),
-                    trailing: IconButton(
-                      tooltip: selected
-                          ? ruEn('Сначала выберите другой тип связи', 'Choose another relationship type first')
-                          : ruEn('Удалить тип связи', 'Delete relationship type'),
-                      onPressed: selected ? null : () async {
-                        final ok = await AppDialog.confirm(ctx,
-                          title: ruEn('Удалить тип связи?', 'Delete relationship type?'),
-                          message: entry['label'] ?? s.custom,
-                          confirmLabel: s.delete, destructive: true,
-                        );
-                        if (!ok || !ctx.mounted) return;
-                        if (pair.relationshipType == RelationshipType.custom &&
-                            pair.relationshipLabel == entry['label']) return;
-                        try {
-                          await pair.deleteCustomRelationshipType(entry['id'] ?? '');
-                        if (ctx.mounted) setSheet(() {});
-                        onChanged();
-                        } catch (e) {
-                          if (ctx.mounted) ForkNotice.error(ctx, e);
-                        }
-                      },
-                      icon: Icon(Icons.delete_outline_rounded, size: 22,
-                        color: selected ? cs.onSurfaceVariant : cs.error),
-                    ),
-                  );
-                }),
-                const SizedBox(height: 4),
-                PressableScale(
-                  onTap: () {
-                    Navigator.of(sheetCtx).pop();
-                    showAddCustomRelTypeSheet(context,
-                        pair: pair, theme: theme, onChanged: onChanged);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_rounded,
-                            size: 20, color: cs.onPrimaryContainer),
-                        const SizedBox(width: 8),
-                        Text(s.addCustomStatus,
+                        emoji: entry['emoji'] ?? '',
+                      ),
+                      trailing: IconButton(
+                        tooltip: selected
+                            ? ruEn(
+                                'Сначала выберите другой тип связи',
+                                'Choose another relationship type first',
+                              )
+                            : ruEn(
+                                'Удалить тип связи',
+                                'Delete relationship type',
+                              ),
+                        onPressed: selected
+                            ? null
+                            : () async {
+                                final ok = await AppDialog.confirm(
+                                  ctx,
+                                  title: ruEn(
+                                    'Удалить тип связи?',
+                                    'Delete relationship type?',
+                                  ),
+                                  message: entry['label'] ?? s.custom,
+                                  confirmLabel: s.delete,
+                                  destructive: true,
+                                );
+                                if (!ok || !ctx.mounted) return;
+                                if (pair.relationshipType ==
+                                        RelationshipType.custom &&
+                                    pair.relationshipLabel == entry['label'])
+                                  return;
+                                try {
+                                  await pair.deleteCustomRelationshipType(
+                                    entry['id'] ?? '',
+                                  );
+                                  if (ctx.mounted) setSheet(() {});
+                                  onChanged();
+                                } catch (e) {
+                                  if (ctx.mounted) ForkNotice.error(ctx, e);
+                                }
+                              },
+                        icon: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 22,
+                          color: selected ? cs.onSurfaceVariant : cs.error,
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 4),
+                  PressableScale(
+                    onTap: () {
+                      Navigator.of(sheetCtx).pop();
+                      showAddCustomRelTypeSheet(
+                        context,
+                        pair: pair,
+                        theme: theme,
+                        onChanged: onChanged,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_rounded,
+                            size: 20,
+                            color: cs.onPrimaryContainer,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            s.addCustomStatus,
                             style: TextStyle(
-                                fontFamily: 'Onest',
-                                fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                                fontSize: 15,
-                                color: cs.onPrimaryContainer)),
-                      ],
+                              fontFamily: 'Onest',
+                              fontWeight: FontWeight.w700,
+                              fontVariations: const [
+                                FontVariation('wght', 700),
+                              ],
+                              fontSize: 15,
+                              color: cs.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    }),
+        );
+      },
+    ),
   );
 }
 
@@ -347,7 +441,11 @@ void showAddCustomRelTypeSheet(
         top: false,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
-              20, 14, 20, 20 + MediaQuery.of(sheetCtx).viewInsets.bottom),
+            20,
+            14,
+            20,
+            20 + MediaQuery.of(sheetCtx).viewInsets.bottom,
+          ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -375,9 +473,11 @@ void showAddCustomRelTypeSheet(
                             color: sel ? cs.primary : cs.surfaceContainerHigh,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Icon(kRelIcons[i],
-                              size: 24,
-                              color: sel ? cs.onPrimary : cs.onSurfaceVariant),
+                          child: Icon(
+                            kRelIcons[i],
+                            size: 24,
+                            color: sel ? cs.onPrimary : cs.onSurfaceVariant,
+                          ),
                         ),
                       );
                     }),
@@ -394,8 +494,9 @@ void showAddCustomRelTypeSheet(
                                   ? 'favorite'
                                   : customSymbol,
                             ),
-                            settings:
-                                const RouteSettings(name: '/symbol_picker'),
+                            settings: const RouteSettings(
+                              name: '/symbol_picker',
+                            ),
                           ),
                         );
                         if (picked == null || !ctx.mounted) return;
@@ -449,10 +550,11 @@ void showAddCustomRelTypeSheet(
                       foregroundColor: cs.onPrimary,
                       shape: const StadiumBorder(),
                       textStyle: const TextStyle(
-                          fontFamily: 'Onest',
-                          fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                          fontSize: 16),
+                        fontFamily: 'Onest',
+                        fontWeight: FontWeight.w700,
+                        fontVariations: const [FontVariation('wght', 700)],
+                        fontSize: 16,
+                      ),
                     ),
                     onPressed: () async {
                       final label = labelCtrl.text.trim();
@@ -470,8 +572,12 @@ void showAddCustomRelTypeSheet(
                       if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
                       if (!context.mounted) return;
                       onChanged();
-                      showRelationshipTypeSheet(context,
-                          pair: pair, theme: theme, onChanged: onChanged);
+                      showRelationshipTypeSheet(
+                        context,
+                        pair: pair,
+                        theme: theme,
+                        onChanged: onChanged,
+                      );
                     },
                     child: Text(s.add),
                   ),

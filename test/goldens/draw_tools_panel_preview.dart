@@ -254,8 +254,9 @@ void main() {
       final image = await sideBoundary.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
-      File('${dir.path}/panel-side.png')
-          .writeAsBytesSync(bytes!.buffer.asUint8List());
+      File(
+        '${dir.path}/panel-side.png',
+      ).writeAsBytesSync(bytes!.buffer.asUint8List());
     });
     stdout.writeln('снимок: build/draw-panel/panel-side.png');
   });

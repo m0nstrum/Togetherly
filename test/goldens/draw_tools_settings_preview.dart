@@ -58,8 +58,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
-      File('${dir.path}/tools-settings.png')
-          .writeAsBytesSync(bytes!.buffer.asUint8List());
+      File(
+        '${dir.path}/tools-settings.png',
+      ).writeAsBytesSync(bytes!.buffer.asUint8List());
     });
     stdout.writeln('снимок: build/draw-panel/tools-settings.png');
   });

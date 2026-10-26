@@ -72,24 +72,29 @@ void main() {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Text('СЕЙЧАС',
-                            style: TextStyle(
-                                fontFamily: 'Onest',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'СЕЙЧАС',
+                          style: TextStyle(
+                            fontFamily: 'Onest',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       Expanded(
-                        child: Text('ЗАЛИВКА ТЕМНЕЕ, ТЕКСТ БЕЛЫЙ',
-                            style: TextStyle(
-                                fontFamily: 'Onest',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'ЗАЛИВКА ТЕМНЕЕ, ТЕКСТ БЕЛЫЙ',
+                          style: TextStyle(
+                            fontFamily: 'Onest',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                for (final p in light.take(20))
-                  _PaletteRow(palette: p),
+                for (final p in light.take(20)) _PaletteRow(palette: p),
               ],
             ),
           ),
@@ -104,8 +109,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 1.6);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/fill-ink.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/fill-ink.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }
@@ -122,45 +128,55 @@ class _PaletteRow extends StatelessWidget {
     final deep = darkened(now, 47);
 
     Widget chip(Color fill, Color ink, String note) => Expanded(
-          child: Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: fill,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    palette.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontFamily: 'Unbounded',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: ink),
-                  ),
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                palette.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Unbounded',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: ink,
                 ),
-                Text(note,
-                    style: TextStyle(
-                        fontFamily: 'Onest',
-                        fontSize: 11,
-                        color: ink.withValues(alpha: 0.8))),
-              ],
+              ),
             ),
-          ),
-        );
+            Text(
+              note,
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 11,
+                color: ink.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          chip(now, AppThemes.onColor(now),
-              contrastRatio(AppThemes.onColor(now), now).toStringAsFixed(1)),
-          chip(deep, Colors.white,
-              contrastRatio(Colors.white, deep).toStringAsFixed(1)),
+          chip(
+            now,
+            AppThemes.onColor(now),
+            contrastRatio(AppThemes.onColor(now), now).toStringAsFixed(1),
+          ),
+          chip(
+            deep,
+            Colors.white,
+            contrastRatio(Colors.white, deep).toStringAsFixed(1),
+          ),
         ],
       ),
     );

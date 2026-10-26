@@ -7,7 +7,11 @@
 /// без новой рекламы. Сервер по тому же номеру второй раз не разыгрывает: если
 /// приз уже выпал, он отдаёт его же.
 class ChestPending {
-  const ChestPending({required this.openId, required this.fromJar, required this.at});
+  const ChestPending({
+    required this.openId,
+    required this.fromJar,
+    required this.at,
+  });
 
   final String openId;
   final bool fromJar;
@@ -19,7 +23,11 @@ class ChestPending {
 
   static final RegExp _id = RegExp(r'^[a-z0-9]{15}$');
 
-  Map<String, Object> toJson() => {'id': openId, 'jar': fromJar, 'at': at.millisecondsSinceEpoch};
+  Map<String, Object> toJson() => {
+    'id': openId,
+    'jar': fromJar,
+    'at': at.millisecondsSinceEpoch,
+  };
 
   /// null — записи нет, она кривая или протухла.
   static ChestPending? fromJson(Object? raw, {required DateTime now}) {

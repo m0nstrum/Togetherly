@@ -21,19 +21,25 @@ void main() {
   setUp(() {
     original = ChestService.catalogRefresh;
     GiftCatalog.registerSeasonal(const {});
-    PocketBaseService().debugUse(PocketBase(
-      'https://togetherly.day',
-      httpClientFactory: () => MockClient((req) async => http.Response.bytes(
-            utf8.encode(jsonEncode({
-              'ok': true,
-              'repeated': false,
-              'prize': {'key': 'cocoa', 'kind': 'gift', 'amount': 0},
-              'left': 2,
-            })),
+    PocketBaseService().debugUse(
+      PocketBase(
+        'https://togetherly.day',
+        httpClientFactory: () => MockClient(
+          (req) async => http.Response.bytes(
+            utf8.encode(
+              jsonEncode({
+                'ok': true,
+                'repeated': false,
+                'prize': {'key': 'cocoa', 'kind': 'gift', 'amount': 0},
+                'left': 2,
+              }),
+            ),
             200,
             headers: {'content-type': 'application/json; charset=utf-8'},
-          )),
-    ));
+          ),
+        ),
+      ),
+    );
   });
 
   tearDown(() {
@@ -56,19 +62,32 @@ void main() {
       });
     };
 
-    final res = await ChestService.instance.open(openId: 'abcdefghijklmno', groupId: 'g');
+    final res = await ChestService.instance.open(
+      openId: 'abcdefghijklmno',
+      groupId: 'g',
+    );
 
-    expect(res.ok, isTrue, reason: 'Сервер приз выдал — «не открылся» здесь врёт');
+    expect(
+      res.ok,
+      isTrue,
+      reason: 'Сервер приз выдал — «не открылся» здесь врёт',
+    );
     expect(res.prize?.key, 'cocoa');
     expect(refreshed, 1);
   });
 
-  test('подарка нет и в свежем каталоге — приложение честно говорит о сбое', () async {
-    ChestService.catalogRefresh = () async {};
+  test(
+    'подарка нет и в свежем каталоге — приложение честно говорит о сбое',
+    () async {
+      ChestService.catalogRefresh = () async {};
 
-    final res = await ChestService.instance.open(openId: 'abcdefghijklmno', groupId: 'g');
+      final res = await ChestService.instance.open(
+        openId: 'abcdefghijklmno',
+        groupId: 'g',
+      );
 
-    expect(res.ok, isFalse);
-    expect(res.error, 'unknown_prize');
-  });
+      expect(res.ok, isFalse);
+      expect(res.error, 'unknown_prize');
+    },
+  );
 }

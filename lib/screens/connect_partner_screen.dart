@@ -41,7 +41,7 @@ import '../widgets/common/stable_stream_builder.dart';
 import '../widgets/unfold/unfold_route.dart';
 import '../utils/invite_code.dart';
 import '../widgets/common/badge_image.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 import '../dict_strings.dart' show ruEn; // fork (UX A12)
 
 class ConnectPartnerScreen extends StatefulWidget {
@@ -87,6 +87,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
   Map<String, int> _shapeIdx = {};
   late AnimationController _pulseController;
   StreamSubscription? _deepLinkSub;
+
   /// Опрос статуса заявки на второе место (пока её не подтвердили).
   Timer? _approvalTimer;
 
@@ -185,19 +186,20 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
       if (member.uid.isEmpty) continue;
       // Онлайн-статус — живой PB-презенс (heartbeat+TTL).
       if (!_presenceSubs.containsKey(member.uid)) {
-        _presenceSubs[member.uid] =
-            PresenceService().watchOnline(member.uid).listen((online) {
-          if (mounted) {
-            setState(() => _partnerOnlineStatus[member.uid] = online);
-          }
-        });
+        _presenceSubs[member.uid] = PresenceService()
+            .watchOnline(member.uid)
+            .listen((online) {
+              if (mounted) {
+                setState(() => _partnerOnlineStatus[member.uid] = online);
+              }
+            });
       }
       // Togetherly+ — разово из карточки виджета партнёра.
       if (!_plusLoadedUids.contains(member.uid)) {
         _plusLoadedUids.add(member.uid);
-        PbDataService()
-            .loadWidget(widget.pairData.pairId, member.uid)
-            .then((rec) {
+        PbDataService().loadWidget(widget.pairData.pairId, member.uid).then((
+          rec,
+        ) {
           if (!mounted || rec == null) return;
           final has = WidgetData.fromPb(rec).plus;
           if (has) setState(() => _partnerPlus[member.uid] = true);
@@ -268,8 +270,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
             // места, — а не карточка партнёра с пустотой вместо человека.
             child: pair.isPaired
                 ? (pair.waitingMode
-                    ? _buildWaitingContent()
-                    : _buildConnectedContent())
+                      ? _buildWaitingContent()
+                      : _buildConnectedContent())
                 : _buildInviteContent(),
           ),
         ],
@@ -364,9 +366,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
   Widget _buildWaitingContent() {
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 120),
-      children: [
-        WaitingCard(pair: pair, theme: widget.theme),
-      ],
+      children: [WaitingCard(pair: pair, theme: widget.theme)],
     );
   }
 
@@ -461,7 +461,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
 
     Future<void> activate(int rawIdx, int dir) async {
       if (n == 0) return;
-      final idx = ((rawIdx % n) + n) % n; // круговой индекс (бесконечная прокрутка)
+      final idx =
+          ((rawIdx % n) + n) % n; // круговой индекс (бесконечная прокрутка)
       if (idx == activeIdx && !isSolo) return;
       if (mounted) setState(() => _carDir = dir);
       final mi = mgr.connections.indexOf(conns[idx]);
@@ -516,7 +517,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                           transitionBuilder: _carouselTransition,
                           child: KeyedSubtree(
                             key: ValueKey(
-                                'center-$isSolo-${active?.id ?? 'none'}'),
+                              'center-$isSolo-${active?.id ?? 'none'}',
+                            ),
                             child: _centerPill(active, cs, isSolo),
                           ),
                         ),
@@ -564,9 +566,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
           shape: BoxShape.circle,
           color: active ? cs.secondaryContainer : cs.surfaceContainerHigh,
         ),
-        child: Icon(Icons.person_rounded,
-            size: 21,
-            color: active ? cs.onSecondaryContainer : cs.onSurfaceVariant),
+        child: Icon(
+          Icons.person_rounded,
+          size: 21,
+          color: active ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -578,7 +582,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
         width: 52,
         height: 52,
         decoration: BoxDecoration(
-            shape: BoxShape.circle, color: cs.surfaceContainerHigh),
+          shape: BoxShape.circle,
+          color: cs.surfaceContainerHigh,
+        ),
         child: Icon(Icons.add_rounded, size: 21, color: cs.onSurfaceVariant),
       ),
     );
@@ -604,27 +610,34 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
 
   Widget _peekCircle(Connection c, ColorScheme cs) {
     final initial = (c.isPaired ? c.partnerName : '?').firstGraphemeUpper('?');
-    final photo =
-        (c.isPaired && c.partners.isNotEmpty) ? c.partners.first.avatar : '';
+    final photo = (c.isPaired && c.partners.isNotEmpty)
+        ? c.partners.first.avatar
+        : '';
     return Container(
       width: 44,
       height: 44,
-      decoration:
-          BoxDecoration(shape: BoxShape.circle, color: cs.surfaceContainerHigh),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: cs.surfaceContainerHigh,
+      ),
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
       child: !c.isPaired
           ? Container(
               width: 9,
               height: 9,
-              decoration:
-                  BoxDecoration(color: cs.primary, shape: BoxShape.circle))
+              decoration: BoxDecoration(
+                color: cs.primary,
+                shape: BoxShape.circle,
+              ),
+            )
           : (photo.isNotEmpty
-              ? StorageImage(
-                  imageUrl: photo,
-                  fit: BoxFit.cover,
-                  errorWidget: (a, b, e) => _letterBox(initial, cs))
-              : _letterBox(initial, cs)),
+                ? StorageImage(
+                    imageUrl: photo,
+                    fit: BoxFit.cover,
+                    errorWidget: (a, b, e) => _letterBox(initial, cs),
+                  )
+                : _letterBox(initial, cs)),
     );
   }
 
@@ -641,23 +654,28 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     final bg = highlighted ? cs.secondaryContainer : cs.surfaceContainerHigh;
     final fg = highlighted ? cs.onSecondaryContainer : cs.onSurfaceVariant;
     final nameStyle = TextStyle(
-        fontFamily: 'Onest',
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-        color: fg);
+      fontFamily: 'Onest',
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      fontVariations: const [FontVariation('wght', 700)],
+      color: fg,
+    );
     final dot = Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-            color: c.isPaired ? const Color(0xFF16A34A) : cs.primary,
-            shape: BoxShape.circle));
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: c.isPaired ? const Color(0xFF16A34A) : cs.primary,
+        shape: BoxShape.circle,
+      ),
+    );
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: Container(
-        decoration:
-            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(26)),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(26),
+        ),
         clipBehavior: Clip.antiAlias,
         child: LayoutBuilder(
           builder: (context, box) {
@@ -678,10 +696,13 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                         dot,
                         const SizedBox(width: dotGap),
                         Flexible(
-                            child: Text(name,
-                                maxLines: 1,
-                                softWrap: false,
-                                style: nameStyle)),
+                          child: Text(
+                            name,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: nameStyle,
+                          ),
+                        ),
                       ],
                     )
                   : Row(
@@ -700,13 +721,16 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
 
   Widget _letterBox(String initial, ColorScheme cs) {
     return Center(
-      child: Text(initial,
-          style: TextStyle(
-              fontFamily: 'Unbounded',
-              fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-              fontSize: 18,
-              color: cs.primary)),
+      child: Text(
+        initial,
+        style: TextStyle(
+          fontFamily: 'Unbounded',
+          fontWeight: FontWeight.w700,
+          fontVariations: const [FontVariation('wght', 700)],
+          fontSize: 18,
+          color: cs.primary,
+        ),
+      ),
     );
   }
 
@@ -728,7 +752,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: EdgeInsets.fromLTRB(
-                20, 10, 20, MediaQuery.of(context).padding.bottom + 100),
+              20,
+              10,
+              20,
+              MediaQuery.of(context).padding.bottom + 100,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -763,7 +791,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     // с профилем у тех, кто ввёл одну годовщину.
     final relTimer =
         widget.timerService?.systemTimer ?? widget.timerService?.defaultTimer;
-    final days = coupleDaysTogether(
+    final days =
+        coupleDaysTogether(
           timerStart: relTimer?.startDate,
           groupStart: pair.startDate,
           anniversary: pair.anniversaryDate,
@@ -792,13 +821,22 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 width: 116,
                 child: Column(
                   children: [
-                    _heroAvatar(92, partner?.uid ?? '',
-                        partner?.avatar ?? '', partner?.name ?? '?', cs),
+                    _heroAvatar(
+                      92,
+                      partner?.uid ?? '',
+                      partner?.avatar ?? '',
+                      partner?.name ?? '?',
+                      cs,
+                    ),
                     const SizedBox(height: 12),
                     Expanded(
-                      child: _statTile(cs, '$days',
-                          LocaleService.current.daysTogetherStat,
-                          bg: cs.tertiaryContainer, fg: cs.onTertiaryContainer),
+                      child: _statTile(
+                        cs,
+                        '$days',
+                        LocaleService.current.daysTogetherStat,
+                        bg: cs.tertiaryContainer,
+                        fg: cs.onTertiaryContainer,
+                      ),
                     ),
                   ],
                 ),
@@ -814,13 +852,15 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                       child: _chipTile(
                         cs,
                         leading: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                                color: online
-                                    ? const Color(0xFF16A34A)
-                                    : cs.onSurfaceVariant,
-                                shape: BoxShape.circle)),
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: online
+                                ? const Color(0xFF16A34A)
+                                : cs.onSurfaceVariant,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                         text: online
                             ? LocaleService.current.online
                             : LocaleService.current.offline,
@@ -834,14 +874,24 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                       child: _chipTile(
                         cs,
                         leading: Icon(
-                            relIconForType(pair.relationshipType,
-                                customEmoji: pair.relationshipEmoji),
-                            size: 16,
-                            color: cs.onPrimaryContainer),
+                          relIconForType(
+                            pair.relationshipType,
+                            customEmoji: pair.relationshipEmoji,
+                          ),
+                          size: 16,
+                          color: cs.onPrimaryContainer,
+                        ),
                         text: pair.relationshipLabel,
                         bg: cs.primaryContainer,
                         fg: cs.onPrimaryContainer,
-                        onTap: () => showRelationshipTypeSheet(context, pair: pair, theme: widget.theme, onChanged: () { if (mounted) setState(() {}); }),
+                        onTap: () => showRelationshipTypeSheet(
+                          context,
+                          pair: pair,
+                          theme: widget.theme,
+                          onChanged: () {
+                            if (mounted) setState(() {});
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -861,18 +911,18 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
   // «Печенька» с фото партнёра, без подложки — сама фигура.
   // Смена данных ВНУТРИ неподвижного блока: проявление + лёгкий зум (как код).
   Widget _swap(Object k, Widget child) => AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeIn,
-        transitionBuilder: (c, a) => FadeTransition(
-          opacity: a,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.94, end: 1.0).animate(a),
-            child: c,
-          ),
-        ),
-        child: KeyedSubtree(key: ValueKey(k), child: child),
-      );
+    duration: const Duration(milliseconds: 300),
+    switchInCurve: Curves.easeOutCubic,
+    switchOutCurve: Curves.easeIn,
+    transitionBuilder: (c, a) => FadeTransition(
+      opacity: a,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.94, end: 1.0).animate(a),
+        child: c,
+      ),
+    ),
+    child: KeyedSubtree(key: ValueKey(k), child: child),
+  );
 
   // Аватар в уникальной форме партнёра (по uid); при смене формы — морф.
   int _shapeIndexFor(String uid) =>
@@ -895,12 +945,18 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     if (uid.isEmpty) return;
     final next = (_shapeIndexFor(uid) + 1) % kAvatarShapes.length;
     setState(() => _shapeIdx = {..._shapeIdx, uid: next});
-    SharedPreferences.getInstance()
-        .then((p) => p.setInt('avatar_shape_$uid', next));
+    SharedPreferences.getInstance().then(
+      (p) => p.setInt('avatar_shape_$uid', next),
+    );
   }
 
   Widget _heroAvatar(
-      double size, String uid, String photo, String name, ColorScheme cs) {
+    double size,
+    String uid,
+    String photo,
+    String name,
+    ColorScheme cs,
+  ) {
     final idx = _shapeIndexFor(uid);
     return Center(
       child: PressableScale(
@@ -909,28 +965,36 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
           uid: uid,
           size: size,
           child: MorphAvatar(
-          size: size,
-          shapeKey: '$uid-$idx',
-          shape: kAvatarShapes[idx],
-          child: photo.isNotEmpty
-              ? StorageImage(
-                  imageUrl: photo,
-                  fit: BoxFit.cover,
-                  errorWidget: (c, u, e) => _heroInitial(name, cs))
-              : _heroInitial(name, cs),
-        ),
+            size: size,
+            shapeKey: '$uid-$idx',
+            shape: kAvatarShapes[idx],
+            child: photo.isNotEmpty
+                ? StorageImage(
+                    imageUrl: photo,
+                    fit: BoxFit.cover,
+                    errorWidget: (c, u, e) => _heroInitial(name, cs),
+                  )
+                : _heroInitial(name, cs),
+          ),
         ),
       ),
     );
   }
 
-  Widget _statTile(ColorScheme cs, String number, String caption,
-      {required Color bg, required Color fg}) {
+  Widget _statTile(
+    ColorScheme cs,
+    String number,
+    String caption, {
+    required Color bg,
+    required Color fg,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(28)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(28),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -940,28 +1004,34 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(number,
-                  maxLines: 1,
-                  style: TextStyle(
-                      fontFamily: 'Unbounded',
-                      fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
-                      fontSize: 36,
-                      height: 0.95,
-                      letterSpacing: -1.5,
-                      color: fg)),
+              child: Text(
+                number,
+                maxLines: 1,
+                style: TextStyle(
+                  fontFamily: 'Unbounded',
+                  fontWeight: FontWeight.w800,
+                  fontVariations: const [FontVariation('wght', 800)],
+                  fontSize: 36,
+                  height: 0.95,
+                  letterSpacing: -1.5,
+                  color: fg,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 2),
-          Text(caption,
-              maxLines: 2,
-              style: TextStyle(
-                  fontFamily: 'Onest',
-                  fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)],
-                  fontSize: 12,
-                  height: 1.1,
-                  color: fg)),
+          Text(
+            caption,
+            maxLines: 2,
+            style: TextStyle(
+              fontFamily: 'Onest',
+              fontWeight: FontWeight.w600,
+              fontVariations: const [FontVariation('wght', 600)],
+              fontSize: 12,
+              height: 1.1,
+              color: fg,
+            ),
+          ),
         ],
       ),
     );
@@ -972,8 +1042,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 16, 14, 16),
       decoration: BoxDecoration(
-          color: cs.secondaryContainer,
-          borderRadius: BorderRadius.circular(28)),
+        color: cs.secondaryContainer,
+        borderRadius: BorderRadius.circular(28),
+      ),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -995,16 +1066,19 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.bottomLeft,
-                        child: Text(title,
-                            maxLines: 1,
-                            style: TextStyle(
-                                fontFamily: 'Unbounded',
-                                fontWeight: FontWeight.w800,
-                                fontVariations: const [FontVariation('wght', 800)],
-                                fontSize: 44,
-                                height: 1.0,
-                                letterSpacing: -1.5,
-                                color: cs.onPrimaryContainer)),
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontFamily: 'Unbounded',
+                            fontWeight: FontWeight.w800,
+                            fontVariations: const [FontVariation('wght', 800)],
+                            fontSize: 44,
+                            height: 1.0,
+                            letterSpacing: -1.5,
+                            color: cs.onPrimaryContainer,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1027,31 +1101,34 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 onPressed: () => _renamePartnerByUid(badgeUid),
                 tooltip: LocaleService.current.renamePartner,
                 visualDensity: VisualDensity.compact,
-                icon: Icon(Icons.edit_rounded,
-                    size: 18, color: cs.onSecondaryContainer.withValues(alpha: 0.7)),
+                icon: Icon(
+                  Icons.edit_rounded,
+                  size: 18,
+                  color: cs.onSecondaryContainer.withValues(alpha: 0.7),
+                ),
               ),
             ),
           if (badgeUid != null && (_partnerPlus[badgeUid] ?? false))
-            Positioned(
-              top: 0,
-              left: 0,
-              child: PlusBadge(theme: widget.theme),
-            ),
+            Positioned(top: 0, left: 0, child: PlusBadge(theme: widget.theme)),
         ],
       ),
     );
   }
 
-  Widget _chipTile(ColorScheme cs,
-      {required Widget leading,
-      required String text,
-      required Color bg,
-      required Color fg,
-      VoidCallback? onTap}) {
+  Widget _chipTile(
+    ColorScheme cs, {
+    required Widget leading,
+    required String text,
+    required Color bg,
+    required Color fg,
+    VoidCallback? onTap,
+  }) {
     final tile = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(22),
+      ),
       child: _swap(
         'chip-$text',
         Row(
@@ -1059,15 +1136,18 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
             leading,
             const SizedBox(width: 8),
             Flexible(
-              child: Text(text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      fontFamily: 'Onest',
-                      fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                      fontSize: 14,
-                      color: fg)),
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontWeight: FontWeight.w700,
+                  fontVariations: const [FontVariation('wght', 700)],
+                  fontSize: 14,
+                  color: fg,
+                ),
+              ),
             ),
           ],
         ),
@@ -1081,8 +1161,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 20, 12),
       decoration: BoxDecoration(
-          color: cs.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(26)),
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(26),
+      ),
       child: Row(
         children: [
           Container(
@@ -1090,7 +1171,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-                color: cs.primary, borderRadius: BorderRadius.circular(16)),
+              color: cs.primary,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Icon(Icons.event_rounded, size: 24, color: cs.onPrimary),
           ),
           const SizedBox(width: 14),
@@ -1098,42 +1181,52 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
             child: _swap(
               'anniv-$daysUntil',
               today
-                  ? Text(LocaleService.current.anniversaryTodayTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                  ? Text(
+                      LocaleService.current.anniversaryTodayTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
                         fontFamily: 'Unbounded',
                         fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                        fontVariations: const [FontVariation('wght', 700)],
                         fontSize: 15,
-                        color: cs.onSurface))
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text('$daysUntil',
+                        color: cs.onSurface,
+                      ),
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '$daysUntil',
                           style: TextStyle(
-                              fontFamily: 'Unbounded',
-                              fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
-                              fontSize: 23,
-                              letterSpacing: -0.5,
-                              color: cs.onSurface)),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
+                            fontFamily: 'Unbounded',
+                            fontWeight: FontWeight.w800,
+                            fontVariations: const [FontVariation('wght', 800)],
+                            fontSize: 23,
+                            letterSpacing: -0.5,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
                             LocaleService.current.daysUntilAnniversary,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                                fontFamily: 'Onest',
-                                fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)],
-                                fontSize: 14,
-                                color: cs.onSurfaceVariant)),
-                      ),
-                    ],
-                  ),
+                              fontFamily: 'Onest',
+                              fontWeight: FontWeight.w600,
+                              fontVariations: const [
+                                FontVariation('wght', 600),
+                              ],
+                              fontSize: 14,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ],
@@ -1150,7 +1243,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
         style: TextStyle(
           fontFamily: 'Unbounded',
           fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+          fontVariations: const [FontVariation('wght', 700)],
           fontSize: 26,
           color: cs.onPrimary,
         ),
@@ -1179,7 +1272,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 fontFamily: 'Onest',
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                fontVariations: const [FontVariation('wght', 700)],
                 letterSpacing: 2,
                 color: cs.onSurfaceVariant,
               ),
@@ -1211,7 +1304,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                                   fontFamily: 'Onest',
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                                  fontVariations: const [
+                                    FontVariation('wght', 700),
+                                  ],
                                   color: cs.onSurface,
                                 ),
                               ),
@@ -1224,7 +1319,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                             m.name,
                             style: TextStyle(
                               fontFamily: 'Onest',
-        fontVariations: const [FontVariation('wght', 400)],
+                              fontVariations: const [
+                                FontVariation('wght', 400),
+                              ],
                               fontSize: 11.5,
                               color: cs.onSurfaceVariant,
                             ),
@@ -1236,8 +1333,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     tooltip: ruEn('Переименовать', 'Rename'),
                     onPressed: () => _showRenameDialog(m),
                     visualDensity: VisualDensity.compact,
-                    icon: Icon(Icons.edit_rounded,
-                        size: 18, color: cs.onSurfaceVariant),
+                    icon: Icon(
+                      Icons.edit_rounded,
+                      size: 18,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                   _buildPresenceBadge(m.uid),
                 ],
@@ -1300,7 +1400,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 fontFamily: 'Onest',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                fontVariations: const [FontVariation('wght', 700)],
                 color: cs.onError,
               ),
             ),
@@ -1360,7 +1460,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: EdgeInsets.fromLTRB(
-                20, 10, 20, MediaQuery.of(context).padding.bottom + 100),
+              20,
+              10,
+              20,
+              MediaQuery.of(context).padding.bottom + 100,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -1389,8 +1493,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
   }
 
   Widget _heroCode(ColorScheme cs, bool loading) {
-    final myInitial =
-        (widget.userData?.displayName ?? '').firstGraphemeUpper('Я');
+    final myInitial = (widget.userData?.displayName ?? '').firstGraphemeUpper(
+      'Я',
+    );
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 26, 24, 30),
       decoration: BoxDecoration(
@@ -1417,9 +1522,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 child: DashedRing(
                   size: 64,
                   color: cs.onPrimaryContainer.withValues(alpha: 0.42),
-                  child: Icon(Icons.add_rounded,
-                      size: 26,
-                      color: cs.onPrimaryContainer.withValues(alpha: 0.55)),
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 26,
+                    color: cs.onPrimaryContainer.withValues(alpha: 0.55),
+                  ),
                 ),
               ),
             ],
@@ -1431,7 +1538,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
               fontFamily: 'Onest',
               fontSize: 11,
               fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+              fontVariations: const [FontVariation('wght', 700)],
               letterSpacing: 2.4,
               color: cs.onPrimaryContainer.withValues(alpha: 0.66),
             ),
@@ -1448,10 +1555,16 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
             ),
           const SizedBox(height: 18),
           GestureDetector(
-            onTap: () => showRelationshipTypeSheet(context, pair: pair, theme: widget.theme, onChanged: () { if (mounted) setState(() {}); }),
+            onTap: () => showRelationshipTypeSheet(
+              context,
+              pair: pair,
+              theme: widget.theme,
+              onChanged: () {
+                if (mounted) setState(() {});
+              },
+            ),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               decoration: BoxDecoration(
                 color: cs.onPrimaryContainer.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(999),
@@ -1462,8 +1575,10 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                   // Значок, а не эмодзи: тот красится системой и в тёмной теме
                   // светится ярче самой подписи.
                   Icon(
-                    relIconForType(pair.relationshipType,
-                        customEmoji: pair.relationshipEmoji),
+                    relIconForType(
+                      pair.relationshipType,
+                      customEmoji: pair.relationshipEmoji,
+                    ),
                     size: 17,
                     color: cs.onPrimaryContainer,
                   ),
@@ -1474,14 +1589,16 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                       fontFamily: 'Onest',
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                      fontVariations: const [FontVariation('wght', 700)],
                       color: cs.onPrimaryContainer,
                     ),
                   ),
                   const SizedBox(width: 3),
-                  Icon(Icons.expand_more_rounded,
-                      size: 18,
-                      color: cs.onPrimaryContainer.withValues(alpha: 0.6)),
+                  Icon(
+                    Icons.expand_more_rounded,
+                    size: 18,
+                    color: cs.onPrimaryContainer.withValues(alpha: 0.6),
+                  ),
                 ],
               ),
             ),
@@ -1543,8 +1660,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
         _circleButton(
           cs: cs,
           onTap: hasCode ? _handleShare : null,
-          child: Icon(Icons.ios_share_rounded,
-              size: 22, color: cs.onSecondaryContainer),
+          child: Icon(
+            Icons.ios_share_rounded,
+            size: 22,
+            color: cs.onSecondaryContainer,
+          ),
         ),
         const SizedBox(width: 10),
         _circleButton(
@@ -1554,11 +1674,16 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
           child: _generating
               ? ExpressiveLoadingIndicator(
                   color: cs.primary,
-                  constraints:
-                      const BoxConstraints.tightFor(width: 28, height: 28),
+                  constraints: const BoxConstraints.tightFor(
+                    width: 28,
+                    height: 28,
+                  ),
                 )
-              : Icon(Icons.refresh_rounded,
-                  size: 22, color: cs.onSecondaryContainer),
+              : Icon(
+                  Icons.refresh_rounded,
+                  size: 22,
+                  color: cs.onSecondaryContainer,
+                ),
         ),
       ],
     );
@@ -1592,8 +1717,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     return UnfoldSource(
       fill: cs.secondaryContainer,
       radius: 28,
-      builder: (_, tile) => _chatTileBody(cs,
-          locked: false, onTap: () => _openChat(from: tile)),
+      builder: (_, tile) =>
+          _chatTileBody(cs, locked: false, onTap: () => _openChat(from: tile)),
     );
   }
 
@@ -1671,8 +1796,10 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     margin: const EdgeInsets.only(right: 8),
                     width: 10,
                     height: 10,
-                    decoration:
-                        BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: cs.primary,
+                      shape: BoxShape.circle,
+                    ),
                   );
                 },
               ),
@@ -1756,7 +1883,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
               style: TextStyle(
                 fontFamily: 'Onest',
                 fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                fontVariations: const [FontVariation('wght', 700)],
                 fontSize: 15,
                 color: fg,
               ),
@@ -1791,8 +1918,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     color: cs.tertiaryContainer,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Icon(Icons.keyboard_rounded,
-                      color: cs.onTertiaryContainer, size: 24),
+                  child: Icon(
+                    Icons.keyboard_rounded,
+                    color: cs.onTertiaryContainer,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1801,7 +1931,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     style: TextStyle(
                       fontFamily: 'Onest',
                       fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
+                      fontVariations: const [FontVariation('wght', 700)],
                       fontSize: 15.5,
                       color: cs.onSurface,
                     ),
@@ -1810,8 +1940,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 AnimatedRotation(
                   turns: open ? 0.5 : 0,
                   duration: const Duration(milliseconds: 240),
-                  child: Icon(Icons.expand_more_rounded,
-                      color: cs.onSurfaceVariant, size: 26),
+                  child: Icon(
+                    Icons.expand_more_rounded,
+                    color: cs.onSurfaceVariant,
+                    size: 26,
+                  ),
                 ),
               ],
             ),
@@ -1943,7 +2076,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                   child: Text(
                     LocaleService.current.ok,
                     style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -2470,7 +2605,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
           pairData: widget.pairData,
           theme: widget.theme,
           userData: widget.userData,
-          myDisplayName: widget.userData?.displayName ??
+          myDisplayName:
+              widget.userData?.displayName ??
               (PbAuthService().currentProfile()?['displayName'] as String?) ??
               'Me',
           timerStart: widget.timerService?.systemTimer?.startDate,
@@ -2500,15 +2636,19 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
             Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.chat_bubble_rounded,
-                    color: Colors.white, size: 24),
+                const Icon(
+                  Icons.chat_bubble_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
                 // Красная точка непрочитанных
                 Positioned(
                   right: -3,
                   top: -3,
                   child: StableStreamBuilder<bool>(
-                    create: () => ChatService.instance
-                        .watchHasUnread(widget.pairData.pairId),
+                    create: () => ChatService.instance.watchHasUnread(
+                      widget.pairData.pairId,
+                    ),
                     keys: [widget.pairData.pairId],
                     builder: (context, snap) {
                       if (snap.data != true) return const SizedBox.shrink();
@@ -2537,8 +2677,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 ),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                color: Colors.white70, size: 16),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white70,
+              size: 16,
+            ),
           ],
         ),
       ),
@@ -2687,9 +2830,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
       // Показываем реальную причину (истёкшая сессия, свой код, группа полна),
       // а не всегда «код не найден» — иначе диагностировать нечего.
       final msg = pair.lastAcceptMessage;
-      _showSnack((msg != null && msg.isNotEmpty)
-          ? msg
-          : LocaleService.current.codeNotFound);
+      _showSnack(
+        (msg != null && msg.isNotEmpty)
+            ? msg
+            : LocaleService.current.codeNotFound,
+      );
     }
   }
 
@@ -2719,9 +2864,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
     if (shownCode.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_sessionLost
-              ? LocaleService.current.inviteSessionLost
-              : LocaleService.current.inviteCodeNotReady),
+          content: Text(
+            _sessionLost
+                ? LocaleService.current.inviteSessionLost
+                : LocaleService.current.inviteCodeNotReady,
+          ),
         ),
       );
       return;
@@ -2789,7 +2936,7 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                   fontFamily: 'Unbounded',
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
-        fontVariations: const [FontVariation('wght', 800)],
+                  fontVariations: const [FontVariation('wght', 800)],
                   color: cs.primary,
                   letterSpacing: 6,
                 ),
@@ -2826,10 +2973,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                           side: BorderSide(color: cs.outlineVariant),
                           shape: const StadiumBorder(),
                           textStyle: const TextStyle(
-                              fontFamily: 'Onest',
-                              fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                              fontSize: 15),
+                            fontFamily: 'Onest',
+                            fontWeight: FontWeight.w700,
+                            fontVariations: const [FontVariation('wght', 700)],
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ),
@@ -2845,10 +2993,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                           foregroundColor: cs.onPrimary,
                           shape: const StadiumBorder(),
                           textStyle: const TextStyle(
-                              fontFamily: 'Onest',
-                              fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                              fontSize: 15),
+                            fontFamily: 'Onest',
+                            fontWeight: FontWeight.w700,
+                            fontVariations: const [FontVariation('wght', 700)],
+                            fontSize: 15,
+                          ),
                         ),
                         child: Text(s.done),
                       ),
@@ -2901,15 +3050,21 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
       ),
       builder: (sheetCtx) {
-        Future<void> create(RelationshipType type,
-            {String customLabel = '', String customEmoji = ''}) async {
+        Future<void> create(
+          RelationshipType type, {
+          String customLabel = '',
+          String customEmoji = '',
+        }) async {
           if (_creatingConnection) return;
           _creatingConnection = true;
           Navigator.of(sheetCtx).pop();
           _resetCodeInput();
           try {
             await pair.manager.addNewConnection(
-                type: type, customLabel: customLabel, customEmoji: customEmoji);
+              type: type,
+              customLabel: customLabel,
+              customEmoji: customEmoji,
+            );
             if (!mounted) return;
             setState(() {});
             _showSnack(s.newConnectionAdded);
@@ -2922,7 +3077,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
           top: false,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(sheetCtx).size.height * 0.85),
+              maxHeight: MediaQuery.of(sheetCtx).size.height * 0.85,
+            ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
               child: Column(
@@ -2931,39 +3087,51 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 children: [
                   sheetHandle(cs),
                   sheetHeader(
-                      cs, s.addNewConnection, s.chooseTypeForConnection),
+                    cs,
+                    s.addNewConnection,
+                    s.chooseTypeForConnection,
+                  ),
                   typeSheetOption(
-                      cs: cs,
-                      icon: Icons.favorite_rounded,
-                      title: s.inLoveStatus,
-                      subtitle: s.perfectForCouples,
-                      onTap: () => create(RelationshipType.couple)),
+                    cs: cs,
+                    icon: Icons.favorite_rounded,
+                    title: s.inLoveStatus,
+                    subtitle: s.perfectForCouples,
+                    onTap: () => create(RelationshipType.couple),
+                  ),
                   typeSheetOption(
-                      cs: cs,
-                      icon: Icons.diamond_rounded,
-                      title: s.married,
-                      subtitle: s.forMarriedPartners,
-                      onTap: () => create(RelationshipType.married)),
+                    cs: cs,
+                    icon: Icons.diamond_rounded,
+                    title: s.married,
+                    subtitle: s.forMarriedPartners,
+                    onTap: () => create(RelationshipType.married),
+                  ),
                   typeSheetOption(
-                      cs: cs,
-                      icon: Icons.handshake_rounded,
-                      title: s.friends,
-                      subtitle: s.connectWithBestFriend,
-                      onTap: () => create(RelationshipType.friends)),
+                    cs: cs,
+                    icon: Icons.handshake_rounded,
+                    title: s.friends,
+                    subtitle: s.connectWithBestFriend,
+                    onTap: () => create(RelationshipType.friends),
+                  ),
                   typeSheetOption(
-                      cs: cs,
-                      icon: Icons.groups_rounded,
-                      title: s.bestBuddies,
-                      subtitle: s.forInseparableCompanions,
-                      onTap: () => create(RelationshipType.buddies)),
-                  ...allCustomTypes.values.map((ct) => typeSheetOption(
+                    cs: cs,
+                    icon: Icons.groups_rounded,
+                    title: s.bestBuddies,
+                    subtitle: s.forInseparableCompanions,
+                    onTap: () => create(RelationshipType.buddies),
+                  ),
+                  ...allCustomTypes.values.map(
+                    (ct) => typeSheetOption(
                       cs: cs,
                       icon: relIconForEmoji(ct['emoji'] ?? ''),
                       title: ct['label'] ?? s.custom,
                       subtitle: s.yourCustomType,
-                      onTap: () => create(RelationshipType.custom,
-                          customLabel: ct['label'] ?? '',
-                          customEmoji: ct['emoji'] ?? ''))),
+                      onTap: () => create(
+                        RelationshipType.custom,
+                        customLabel: ct['label'] ?? '',
+                        customEmoji: ct['emoji'] ?? '',
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -3023,8 +3191,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                   shape: const StadiumBorder(),
                   leading: CircleAvatar(
                     backgroundColor: cs.secondaryContainer,
-                    child: Icon(Icons.edit_rounded,
-                        size: 20, color: cs.onSecondaryContainer),
+                    child: Icon(
+                      Icons.edit_rounded,
+                      size: 20,
+                      color: cs.onSecondaryContainer,
+                    ),
                   ),
                   title: Text(
                     s.renamePartner,
@@ -3044,8 +3215,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                 shape: const StadiumBorder(),
                 leading: CircleAvatar(
                   backgroundColor: cs.errorContainer,
-                  child: Icon(Icons.link_off_rounded,
-                      size: 20, color: cs.onErrorContainer),
+                  child: Icon(
+                    Icons.link_off_rounded,
+                    size: 20,
+                    color: cs.onErrorContainer,
+                  ),
                 ),
                 title: Text(
                   s.deleteConnectionAction,
@@ -3093,8 +3267,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 26),
                     decoration: BoxDecoration(
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(2)),
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
                 Center(
@@ -3102,36 +3277,45 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                     width: 78,
                     height: 78,
                     decoration: BoxDecoration(
-                        color: cs.errorContainer, shape: BoxShape.circle),
-                    child: Icon(Icons.link_off_rounded,
-                        size: 38, color: cs.onErrorContainer),
+                      color: cs.errorContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.link_off_rounded,
+                      size: 38,
+                      color: cs.onErrorContainer,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 22),
                 Text(
                   name.isEmpty
                       ? LocaleService.current.deleteConnection
-                      : LocaleService.current.deleteConnectionWith
-                          .replaceAll('{name}', name),
+                      : LocaleService.current.deleteConnectionWith.replaceAll(
+                          '{name}',
+                          name,
+                        ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontFamily: 'Unbounded',
-                      fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-                      fontSize: 23,
-                      height: 1.15,
-                      color: cs.onSurface),
+                    fontFamily: 'Unbounded',
+                    fontWeight: FontWeight.w700,
+                    fontVariations: const [FontVariation('wght', 700)],
+                    fontSize: 23,
+                    height: 1.15,
+                    color: cs.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   LocaleService.current.deleteConnectionDesc,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontFamily: 'Onest',
-        fontVariations: const [FontVariation('wght', 400)],
-                      fontSize: 15,
-                      height: 1.42,
-                      color: cs.onSurfaceVariant),
+                    fontFamily: 'Onest',
+                    fontVariations: const [FontVariation('wght', 400)],
+                    fontSize: 15,
+                    height: 1.42,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 SizedBox(
@@ -3142,16 +3326,19 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                       foregroundColor: cs.onError,
                       shape: const StadiumBorder(),
                       textStyle: const TextStyle(
-                          fontFamily: 'Onest',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],),
+                        fontFamily: 'Onest',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        fontVariations: const [FontVariation('wght', 700)],
+                      ),
                     ),
                     // Закрываем ДО сетевого removeConnection: после pop кнопки
                     // нет — двойной тап и лишний pop нижнего экрана невозможны.
                     onPressed: () async {
                       Navigator.of(sheetCtx).pop();
-                      final ok = await pair.manager.removeConnection(connectionId);
+                      final ok = await pair.manager.removeConnection(
+                        connectionId,
+                      );
                       if (!mounted) return;
                       // fork (UX A12): сервер не распустил пару — связь цела.
                       if (!ok) {
@@ -3173,10 +3360,11 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
                       foregroundColor: cs.onSurfaceVariant,
                       shape: const StadiumBorder(),
                       textStyle: const TextStyle(
-                          fontFamily: 'Onest',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-        fontVariations: const [FontVariation('wght', 600)],),
+                        fontFamily: 'Onest',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontVariations: const [FontVariation('wght', 600)],
+                      ),
                     ),
                     onPressed: () => Navigator.of(sheetCtx).pop(),
                     child: Text(LocaleService.current.cancel),
@@ -3196,10 +3384,8 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
       title: LocaleService.current.disconnectQuestion,
       // fork (UX A12): говорим и про историю пары — она в новую пару не
       // переедет, а вернуть распавшуюся пару нельзя.
-      message: '${LocaleService.current.disconnectDesc}\n\n${ruEn(
-        'Переписка, воспоминания и рисунки этой пары перестанут открываться в приложении — у вас и у партнёра. С новой парой всё начнётся заново.',
-        'Chat, memories and drawings of this pair will no longer open in the app — for you and your partner. A new pair starts from scratch.',
-      )}',
+      message:
+          '${LocaleService.current.disconnectDesc}\n\n${ruEn('Переписка, воспоминания и рисунки этой пары перестанут открываться в приложении — у вас и у партнёра. С новой парой всё начнётся заново.', 'Chat, memories and drawings of this pair will no longer open in the app — for you and your partner. A new pair starts from scratch.')}',
       confirmLabel: LocaleService.current.disconnect,
       destructive: true,
     );
@@ -3212,9 +3398,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
 
   /// fork (UX A12): пара не распалась — и это видно, а не «свободен» молча.
   String get _unpairFailed => ruEn(
-        'Не получилось отключиться: сервер не ответил. Пара осталась как была — попробуйте ещё раз.',
-        'Couldn’t disconnect: the server didn’t respond. The pair is unchanged — try again.',
-      );
+    'Не получилось отключиться: сервер не ответил. Пара осталась как была — попробуйте ещё раз.',
+    'Couldn’t disconnect: the server didn’t respond. The pair is unchanged — try again.',
+  );
 }
 
 // ═══════════════════════════════════════════════════
@@ -3234,7 +3420,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   /// камеры. Показываем понятное окно вместо чёрного экрана.
   bool _cameraFailed = false;
 
-
   /// Строка из кода: сканер отдаёт либо шесть символов, либо ссылку-приглашение.
   void _onScanned(String raw) {
     if (_codeDetected) return;
@@ -3245,7 +3430,10 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     // fork: секрет приглашения во фрагменте (E2E.md §6.2) — в E2E, не в код.
     final hash = code.indexOf('#');
     if (hash >= 0) {
-      ForkE2E.rememberFragment(code.substring(0, hash), code.substring(hash + 1));
+      ForkE2E.rememberFragment(
+        code.substring(0, hash),
+        code.substring(hash + 1),
+      );
       code = code.substring(0, hash);
     }
     if (code.length != 6) return;
@@ -3294,8 +3482,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.qr_code_scanner_rounded,
-                size: 56, color: Colors.white54),
+            const Icon(
+              Icons.qr_code_scanner_rounded,
+              size: 56,
+              color: Colors.white54,
+            ),
             const SizedBox(height: 18),
             Text(
               s.qrScannerUnavailable,
@@ -3326,12 +3517,16 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 foregroundColor: Colors.black,
                 shape: const StadiumBorder(),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 26, vertical: 14),
+                  horizontal: 26,
+                  vertical: 14,
+                ),
               ),
               child: Text(
                 s.qrEnterCodeManually,
                 style: const TextStyle(
-                    fontSize: 14.5, fontWeight: FontWeight.w700),
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],

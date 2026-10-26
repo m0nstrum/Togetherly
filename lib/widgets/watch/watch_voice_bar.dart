@@ -1,4 +1,4 @@
-import '../../dict_strings.dart' show ruEn; // fork
+import '../../dict_strings.dart' show ruEn;
 import 'package:flutter/material.dart';
 
 import '../../models/watch_voice_ui.dart';
@@ -54,8 +54,9 @@ class WatchVoiceBar extends StatelessWidget {
                 icon: bar.callEndsTalk
                     ? Icons.call_end_rounded
                     : Icons.call_rounded,
-                tooltip:
-                    bar.callEndsTalk ? s.watchVoiceHangUp : s.watchVoiceCall,
+                tooltip: bar.callEndsTalk
+                    ? s.watchVoiceHangUp
+                    : s.watchVoiceCall,
                 busy: bar.busy,
                 danger: bar.callEndsTalk,
                 active: !bar.callEndsTalk,
@@ -123,13 +124,13 @@ class _Round extends StatelessWidget {
     final bg = danger
         ? cs.errorContainer
         : active
-            ? cs.primaryContainer
-            : cs.surfaceContainerHighest;
+        ? cs.primaryContainer
+        : cs.surfaceContainerHighest;
     final fg = danger
         ? cs.onErrorContainer
         : active
-            ? cs.onPrimaryContainer
-            : cs.onSurfaceVariant;
+        ? cs.onPrimaryContainer
+        : cs.onSurfaceVariant;
 
     return Tooltip(
       message: tooltip,
@@ -145,8 +146,10 @@ class _Round extends StatelessWidget {
             child: busy
                 ? Padding(
                     padding: const EdgeInsets.all(12),
-                    child:
-                        CircularProgressIndicator(strokeWidth: 2.4, color: fg),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: fg,
+                    ),
                   )
                 : Icon(icon, size: 22, color: fg),
           ),

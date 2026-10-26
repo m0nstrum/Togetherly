@@ -10,16 +10,25 @@ import 'package:love_app/services/watch_voice_service.dart';
 void main() {
   test('у каждой стадии и причины — свой текст', () {
     final seen = <String>{};
-    for (final s in VoiceStage.values.where((s) => s != VoiceStage.idle && s != VoiceStage.failed)) {
+    for (final s in VoiceStage.values.where(
+      (s) => s != VoiceStage.idle && s != VoiceStage.failed,
+    )) {
       seen.add(voiceStageText(s, null, name: 'Аня'));
     }
     for (final p in VoiceProblem.values) {
       seen.add(voiceStageText(VoiceStage.failed, p, name: 'Аня'));
     }
-    expect(seen.length, VoiceStage.values.length - 2 + VoiceProblem.values.length);
+    expect(
+      seen.length,
+      VoiceStage.values.length - 2 + VoiceProblem.values.length,
+    );
     expect(voiceStageText(VoiceStage.idle, null), isEmpty);
     expect(
-      voiceStageText(VoiceStage.live, null, talked: const Duration(seconds: 75)),
+      voiceStageText(
+        VoiceStage.live,
+        null,
+        talked: const Duration(seconds: 75),
+      ),
       contains('1:15'),
     );
   });
@@ -54,17 +63,22 @@ void main() {
     expect(voice.stage, VoiceStage.idle);
   });
 
-  testWidgets('«не ответил» закрывается крестиком, без нового звонка',
-      (t) async {
+  testWidgets('«не ответил» закрывается крестиком, без нового звонка', (
+    t,
+  ) async {
     final voice = WatchVoiceService(channel: WatchChannel('r', 'me'), me: 'me');
     var retried = 0;
-    await t.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Stack(children: [
-          ForkVoiceStatus(voice: voice, onRetry: () async => retried++),
-        ]),
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            children: [
+              ForkVoiceStatus(voice: voice, onRetry: () async => retried++),
+            ],
+          ),
+        ),
       ),
-    ));
+    );
     voice.debugStage(VoiceStage.failed, VoiceProblem.noAnswer);
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.byIcon(Icons.close_rounded));
@@ -73,17 +87,25 @@ void main() {
     expect(retried, 0);
   });
 
-  testWidgets('касание по плашке — звонок на весь экран, «свернуть» — назад',
-      (t) async {
+  testWidgets('касание по плашке — звонок на весь экран, «свернуть» — назад', (
+    t,
+  ) async {
     final voice = WatchVoiceService(channel: WatchChannel('r', 'me'), me: 'me');
-    await t.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Stack(children: [
-          ForkVoiceStatus(
-              voice: voice, partnerName: 'Аня', onRetry: () async {}),
-        ]),
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            children: [
+              ForkVoiceStatus(
+                voice: voice,
+                partnerName: 'Аня',
+                onRetry: () async {},
+              ),
+            ],
+          ),
+        ),
       ),
-    ));
+    );
     voice.debugStage(VoiceStage.calling);
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.textContaining('Calling'));
@@ -98,8 +120,11 @@ void main() {
     await t.pump(const Duration(milliseconds: 400));
     expect(find.byType(ForkCallScreen), findsNothing);
     expect(ForkCallScreen.visible.value, isFalse);
-    expect(find.textContaining('Calling'), findsOneWidget,
-        reason: 'свернули — плашка снова видна, звонок идёт');
+    expect(
+      find.textContaining('Calling'),
+      findsOneWidget,
+      reason: 'свернули — плашка снова видна, звонок идёт',
+    );
 
     // Звонок кончился, пока экран открыт, — экран закрывается сам.
     await t.tap(find.textContaining('Calling'));

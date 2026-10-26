@@ -15,14 +15,24 @@ import 'package:love_app/models/coloring_clamp.dart';
 void main() {
   group('обычный лист', () {
     test('точка на своей половине остаётся на месте', () {
-      expect(coloringClampX(100, width: 1000, strokeWidth: 10, left: true), 100);
-      expect(coloringClampX(900, width: 1000, strokeWidth: 10, left: false), 900);
+      expect(
+        coloringClampX(100, width: 1000, strokeWidth: 10, left: true),
+        100,
+      );
+      expect(
+        coloringClampX(900, width: 1000, strokeWidth: 10, left: false),
+        900,
+      );
     });
 
     test('точка на чужой половине прижимается к своему краю', () {
       final x = coloringClampX(900, width: 1000, strokeWidth: 10, left: true);
       expect(x, lessThan(500), reason: 'левый не должен заходить за середину');
-      expect(x, greaterThan(400), reason: 'и прижимается вплотную, а не в угол');
+      expect(
+        x,
+        greaterThan(400),
+        reason: 'и прижимается вплотную, а не в угол',
+      );
 
       final y = coloringClampX(100, width: 1000, strokeWidth: 10, left: false);
       expect(y, greaterThan(500));
@@ -52,7 +62,10 @@ void main() {
 
     test('отрицательная и запредельная точка не ломают правило', () {
       expect(coloringClampX(-40, width: 1000, strokeWidth: 10, left: true), 0);
-      expect(coloringClampX(5000, width: 1000, strokeWidth: 10, left: false), 1000);
+      expect(
+        coloringClampX(5000, width: 1000, strokeWidth: 10, left: false),
+        1000,
+      );
     });
   });
 }

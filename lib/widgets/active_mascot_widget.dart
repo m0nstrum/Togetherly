@@ -283,7 +283,8 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
   void _onScaleEnd(ScaleEndDetails _) {
     _isInteracting = false;
     final started = _gestureStartedAt;
-    final tap = started != null &&
+    final tap =
+        started != null &&
         mascotGestureIsTap(
           travel: _travel,
           held: DateTime.now().difference(started),
@@ -373,78 +374,84 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
       builder: (ctx) => SafeArea(
         child: StatefulBuilder(
           builder: (ctx, setSheetState) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: widget.theme.divider,
-                borderRadius: BorderRadius.circular(2),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: widget.theme.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            // Размер: щипок двумя пальцами по маскоту работал и раньше, но о нём
-            // никто не догадывался. Ползунок делает ту же настройку явной, а
-            // масштаб уезжает партнёру тем же путём (`mascot_scale` группы).
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-              child: Row(
-                children: [
-                  Icon(Icons.photo_size_select_small_rounded,
-                      size: 18, color: widget.theme.textMuted),
-                  Expanded(
-                    child: Slider(
-                      value: _scale.clamp(_kMinScale, _kMaxScale),
-                      min: _kMinScale,
-                      max: _kMaxScale,
-                      // Шаг заметен глазу и не даёт промахнуться пальцем мимо
-                      // «того же самого» размера.
-                      divisions: 16,
-                      label: '${(_scale * 100).round()}%',
-                      onChanged: (v) {
-                        setSheetState(() {});
-                        setState(() => _scale = v);
-                      },
-                      onChangeEnd: (_) {
-                        HapticFeedback.selectionClick();
-                        _scheduleSync();
-                      },
+              const SizedBox(height: 16),
+              // Размер: щипок двумя пальцами по маскоту работал и раньше, но о нём
+              // никто не догадывался. Ползунок делает ту же настройку явной, а
+              // масштаб уезжает партнёру тем же путём (`mascot_scale` группы).
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.photo_size_select_small_rounded,
+                      size: 18,
+                      color: widget.theme.textMuted,
                     ),
-                  ),
-                  Icon(Icons.photo_size_select_large_rounded,
-                      size: 22, color: widget.theme.textMuted),
-                ],
+                    Expanded(
+                      child: Slider(
+                        value: _scale.clamp(_kMinScale, _kMaxScale),
+                        min: _kMinScale,
+                        max: _kMaxScale,
+                        // Шаг заметен глазу и не даёт промахнуться пальцем мимо
+                        // «того же самого» размера.
+                        divisions: 16,
+                        label: '${(_scale * 100).round()}%',
+                        onChanged: (v) {
+                          setSheetState(() {});
+                          setState(() => _scale = v);
+                        },
+                        onChangeEnd: (_) {
+                          HapticFeedback.selectionClick();
+                          _scheduleSync();
+                        },
+                      ),
+                    ),
+                    Icon(
+                      Icons.photo_size_select_large_rounded,
+                      size: 22,
+                      color: widget.theme.textMuted,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.photo_library_outlined,
-                color: widget.theme.primary,
+              ListTile(
+                leading: Icon(
+                  Icons.photo_library_outlined,
+                  color: widget.theme.primary,
+                ),
+                title: Text(LocaleService.current.goToGallery),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  widget.onOpenGallery();
+                },
               ),
-              title: Text(LocaleService.current.goToGallery),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                widget.onOpenGallery();
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.visibility_off_outlined,
-                color: widget.theme.textMuted,
+              ListTile(
+                leading: Icon(
+                  Icons.visibility_off_outlined,
+                  color: widget.theme.textMuted,
+                ),
+                title: Text(LocaleService.current.hide),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  setState(() => _hidden = true);
+                  mascotHiddenNotifier.value = true;
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool(_kHiddenKey, true);
+                },
               ),
-              title: Text(LocaleService.current.hide),
-              onTap: () async {
-                Navigator.of(ctx).pop();
-                setState(() => _hidden = true);
-                mascotHiddenNotifier.value = true;
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool(_kHiddenKey, true);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
+              const SizedBox(height: 8),
+            ],
           ),
         ),
       ),
@@ -548,7 +555,7 @@ class _MascotImage extends StatelessWidget {
     }
     if (mascot.catalogUrl != null) {
       return CachedNetworkImage(
-      cacheManager: OfflineImageCacheManager.instance,
+        cacheManager: OfflineImageCacheManager.instance,
         imageUrl: mascot.catalogUrl!,
         fit: BoxFit.contain,
         placeholder: (_, __) => const SizedBox.shrink(),

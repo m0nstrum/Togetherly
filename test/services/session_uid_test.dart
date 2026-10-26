@@ -25,15 +25,18 @@ void main() {
   });
 
   test('есть запись — берём её id', () {
-    expect(sessionUidOf(token: _token({'id': 'from-token'}), recordId: 'u1'),
-        'u1');
+    expect(
+      sessionUidOf(token: _token({'id': 'from-token'}), recordId: 'u1'),
+      'u1',
+    );
   });
 
   test('записи нет, токен жив — достаём id из токена', () {
     expect(
-        sessionUidOf(token: _token({'id': 'from-token'}), recordId: null),
-        'from-token',
-        reason: 'полумёртвая сессия: запросы идут, а record не восстановился');
+      sessionUidOf(token: _token({'id': 'from-token'}), recordId: null),
+      'from-token',
+      reason: 'полумёртвая сессия: запросы идут, а record не восстановился',
+    );
   });
 
   test('записи нет и в токене пусто — не знаем, трогать нельзя', () {

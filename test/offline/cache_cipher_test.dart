@@ -69,31 +69,39 @@ void main() {
       final path = '${tmp.path}/enc.db';
       final store = stringMapStoreFactory.store('col_chat_messages');
 
-      final db = await databaseFactoryIo.openDatabase(path,
-          codec: CacheCipher.codec(key));
+      final db = await databaseFactoryIo.openDatabase(
+        path,
+        codec: CacheCipher.codec(key),
+      );
       await store.record('m1').put(db, {'text': 'привет'});
       await db.close();
 
-      final reopened = await databaseFactoryIo.openDatabase(path,
-          codec: CacheCipher.codec(key));
+      final reopened = await databaseFactoryIo.openDatabase(
+        path,
+        codec: CacheCipher.codec(key),
+      );
       expect((await store.record('m1').get(reopened))?['text'], 'привет');
       await reopened.close();
 
       await expectLater(
-        databaseFactoryIo.openDatabase(path,
-            codec: CacheCipher.codec(CacheCipher.generateKey())),
+        databaseFactoryIo.openDatabase(
+          path,
+          codec: CacheCipher.codec(CacheCipher.generateKey()),
+        ),
         throwsA(anything),
       );
     });
 
     test('На диске файла базы нет открытого текста сообщения', () async {
       final path = '${tmp.path}/ondisk.db';
-      final db = await databaseFactoryIo.openDatabase(path,
-          codec: CacheCipher.codec(CacheCipher.generateKey()));
-      await stringMapStoreFactory
-          .store('col_chat_messages')
-          .record('m1')
-          .put(db, {'text': 'совершенно секретно', 'user_name': 'Саша'});
+      final db = await databaseFactoryIo.openDatabase(
+        path,
+        codec: CacheCipher.codec(CacheCipher.generateKey()),
+      );
+      await stringMapStoreFactory.store('col_chat_messages').record('m1').put(
+        db,
+        {'text': 'совершенно секретно', 'user_name': 'Саша'},
+      );
       await db.close();
 
       final raw = await File(path).readAsString();
@@ -125,11 +133,16 @@ void main() {
       );
 
       expect(moved, isTrue);
-      expect(await File(plain).exists(), isFalse,
-          reason: 'открытый файл обязан исчезнуть, иначе утечка остаётся');
+      expect(
+        await File(plain).exists(),
+        isFalse,
+        reason: 'открытый файл обязан исчезнуть, иначе утечка остаётся',
+      );
 
-      final db =
-          await databaseFactoryIo.openDatabase(enc, codec: CacheCipher.codec(key));
+      final db = await databaseFactoryIo.openDatabase(
+        enc,
+        codec: CacheCipher.codec(key),
+      );
       expect((await messages.record('m1').get(db))?['text'], 'скучаю');
       expect((await outbox.record(1).get(db))?['op'], 'chatUpsert');
       expect((await meta.record('_owner').get(db))?['uid'], 'u1');
@@ -161,8 +174,11 @@ void main() {
       );
 
       expect(moved, isFalse);
-      expect(await File(plain).exists(), isFalse,
-          reason: 'нечитаемый открытый кэш всё равно уносим с диска');
+      expect(
+        await File(plain).exists(),
+        isFalse,
+        reason: 'нечитаемый открытый кэш всё равно уносим с диска',
+      );
     });
   });
 }

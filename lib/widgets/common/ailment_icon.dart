@@ -13,7 +13,13 @@ import '../../services/offline/media_view_cache.dart';
 /// (`assets/images/ailments/<id>.webp`). Незнакомый сборке id (новое
 /// самочувствие, заведённое позже) — прежний эмодзи.
 class AilmentIcon extends StatelessWidget {
-  const AilmentIcon({super.key, required this.id, required this.emoji, this.size = 28, this.animated = true});
+  const AilmentIcon({
+    super.key,
+    required this.id,
+    required this.emoji,
+    this.size = 28,
+    this.animated = true,
+  });
 
   final String id;
 
@@ -24,8 +30,22 @@ class AilmentIcon extends StatelessWidget {
 
   /// Самочувствия, чей неподвижный кадр есть в сборке.
   static const Set<String> bundled = {
-    'unwell', 'headache', 'heartburn', 'nausea', 'cold', 'fever', 'stomach', 'throat',
-    'cough', 'tooth', 'back', 'cramps', 'dizzy', 'fatigue', 'insomnia', 'allergy',
+    'unwell',
+    'headache',
+    'heartburn',
+    'nausea',
+    'cold',
+    'fever',
+    'stomach',
+    'throat',
+    'cough',
+    'tooth',
+    'back',
+    'cramps',
+    'dizzy',
+    'fatigue',
+    'insomnia',
+    'allergy',
   };
 
   @override
@@ -47,8 +67,12 @@ class AilmentIcon extends StatelessWidget {
       child: ListenableBuilder(
         listenable: CatalogService.instance,
         builder: (context, _) {
-          final still = !animated || (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
-          final url = CatalogService.instance.ailmentArt(id)?.urlFor(size, animated: !still);
+          final still =
+              !animated ||
+              (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+          final url = CatalogService.instance
+              .ailmentArt(id)
+              ?.urlFor(size, animated: !still);
           if (url == null) return fallback;
           return CachedNetworkImage(
             cacheManager: OfflineImageCacheManager.instance,
@@ -66,5 +90,7 @@ class AilmentIcon extends StatelessWidget {
     );
   }
 
-  Widget _emoji() => Center(child: Text(emoji, style: TextStyle(fontSize: size * 0.64)));
+  Widget _emoji() => Center(
+    child: Text(emoji, style: TextStyle(fontSize: size * 0.64)),
+  );
 }

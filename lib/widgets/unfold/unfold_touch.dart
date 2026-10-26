@@ -74,8 +74,11 @@ abstract final class UnfoldTouch {
   static RenderPointerListener? _hit(PointerDownEvent event) {
     final result = HitTestResult();
     try {
-      WidgetsBinding.instance
-          .hitTestInView(result, event.position, event.viewId);
+      WidgetsBinding.instance.hitTestInView(
+        result,
+        event.position,
+        event.viewId,
+      );
     } catch (_) {
       return null;
     }
@@ -200,14 +203,17 @@ abstract final class UnfoldTouch {
       if (box.shape != BoxShape.circle && box.borderRadius == null) return null;
     } else if (box is RenderPhysicalShape) {
       final clipper = box.clipper;
-      if (clipper is ShapeBorderClipper) raw = _radiusOfShape(clipper.shape, half);
+      if (clipper is ShapeBorderClipper)
+        raw = _radiusOfShape(clipper.shape, half);
     } else if (box is RenderClipPath) {
       final clipper = box.clipper;
-      if (clipper is ShapeBorderClipper) raw = _radiusOfShape(clipper.shape, half);
+      if (clipper is ShapeBorderClipper)
+        raw = _radiusOfShape(clipper.shape, half);
     } else if (box is RenderDecoratedBox) {
       final decoration = box.decoration;
       if (decoration is BoxDecoration) {
-        final visible = decoration.color != null ||
+        final visible =
+            decoration.color != null ||
             decoration.gradient != null ||
             decoration.image != null ||
             decoration.border != null;
@@ -215,7 +221,7 @@ abstract final class UnfoldTouch {
         raw = decoration.shape == BoxShape.circle
             ? half
             : (decoration.borderRadius?.resolve(TextDirection.ltr).topLeft.x ??
-                0);
+                  0);
       } else if (decoration is ShapeDecoration) {
         raw = _radiusOfShape(decoration.shape, half);
       }
@@ -253,11 +259,12 @@ abstract final class UnfoldTouch {
       seen++;
       if (node is RenderImage && node.hasSize && node.image != null) {
         final rect = MatrixUtils.transformRect(
-            node.getTransformTo(null), Offset.zero & node.size);
+          node.getTransformTo(null),
+          Offset.zero & node.size,
+        );
         // Картинка под самым пальцем важнее самой большой: в карточке рядом
         // с обложкой стоит аватар.
-        final score =
-            rect.width * rect.height * (rect.contains(at) ? 1000 : 1);
+        final score = rect.width * rect.height * (rect.contains(at) ? 1000 : 1);
         if (score > bestScore) {
           bestScore = score;
           best = node;
@@ -286,7 +293,8 @@ abstract final class UnfoldTouch {
     for (var depth = 0; depth < 10 && above != null; depth++) {
       if (above is RenderBox && above.hasSize) {
         if (_area(above) > own * 1.3) break;
-        final clips = above is RenderClipRRect ||
+        final clips =
+            above is RenderClipRRect ||
             above is RenderClipOval ||
             above is RenderClipPath ||
             above is RenderPhysicalShape ||
@@ -344,7 +352,9 @@ Rect? _placeOf(RenderBox box, RenderObject? ancestor) {
   if (ancestor != null && !ancestor.attached) return null;
   try {
     return MatrixUtils.transformRect(
-        box.getTransformTo(ancestor), Offset.zero & box.size);
+      box.getTransformTo(ancestor),
+      Offset.zero & box.size,
+    );
   } catch (_) {
     // Нажатый элемент живёт вне навигатора (плашка поверх приложения):
     // места в его координатах нет, экран откроется без роста.
@@ -378,7 +388,9 @@ class UnfoldSpot {
     }
     if (node is! RenderRepaintBoundary || !node.attached) return null;
     final crop = MatrixUtils.transformRect(
-        _box.getTransformTo(node), Offset.zero & _box.size);
+      _box.getTransformTo(node),
+      Offset.zero & _box.size,
+    );
     return unfoldSnapshot(node, crop, pixelRatio);
   }
 }
@@ -389,7 +401,10 @@ class UnfoldSpot {
 /// отладке отказывает, пока тот ждёт перерисовки (кнопка подсвечена). Здесь
 /// берётся последний нарисованный слой и только нужный кусок.
 ui.Image? unfoldSnapshot(
-    RenderRepaintBoundary boundary, Rect crop, double pixelRatio) {
+  RenderRepaintBoundary boundary,
+  Rect crop,
+  double pixelRatio,
+) {
   if (!boundary.attached || crop.isEmpty) return null;
   try {
     // Слой открыт только наследникам отрисовки.

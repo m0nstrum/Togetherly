@@ -30,11 +30,16 @@ import (
 	wproxy "github.com/m0nstrum/togetherly/server/internal/infrastructure/watchproxy"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/account"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/e2eretention"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/groupops"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/meta"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/movies"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/music"
+	pushes "github.com/m0nstrum/togetherly/server/internal/usecase/notify"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/pairs"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/records"
 	"github.com/m0nstrum/togetherly/server/internal/usecase/ring"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/stats"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/widgetanim"
 
 	// Миграции регистрируются в init().
 	_ "github.com/m0nstrum/togetherly/server/internal/migrations"
@@ -69,6 +74,8 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	pub := centrifugo.New(cfg.Centrifugo.API, cfg.Centrifugo.APIKey, cfg.Centrifugo.Timeout)
 	bindRealtime(app, pub, mx.Published, cfg.Centrifugo.Timeout, log)
 	bindCapsules(app, time.Now, log)
+	bindHeld(app, time.Now, log)
+	bindMemoryDates(app, time.Now)
 	bindGuards(app)
 	bindE2EGuards(app)
 	app.Cron().MustAdd("e2e_retention", "17 * * * *", func() {
@@ -77,6 +84,7 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		}
 	})
 	bindAllFree(app)
+	handler.EmailCaseLogin(app)
 	acc := bindAccount(app, log)
 	gateway := meta.New(safefetch.New(safefetch.Options{}), 64<<20, time.Now)
 	maps := meta.New(safefetch.New(safefetch.Options{MaxBytes: 8 << 20}), 64<<20, time.Now)
@@ -101,6 +109,10 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 	proxyInfo := bindWatchProxy(app, cfg, mx, log)
 
 	turn := ice.TURN{Host: cfg.TURN.Host, Port: cfg.TURN.Port, Secret: cfg.TURN.Secret, TTL: cfg.TURN.TTL}
+	groups := groupops.New(app, time.Now)
+	anim := widgetanim.New(app)
+	// Добор раскадровок, до которых клиент не дозвался.
+	app.Cron().MustAdd("widgetAnimSweep", "*/10 * * * *", func() { anim.Sweep(context.Background()) })
 	ringer := ring.New(ringPairs{app}, ringPublisher{notify}, ring.Options{}, time.Now)
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.GET("/api/fork/realtime-key", func(event *core.RequestEvent) error {
@@ -113,8 +125,29 @@ func Configure(app core.App, cfg config.Config, log *slog.Logger) {
 		handler.Ring(e.Router, ringer, log)
 		handler.ScheduleDelete(e.Router, acc, time.Now, log)
 		handler.MapTiles(e.Router, maps, &handler.IPLimiter{Max: 600, Window: time.Minute})
-		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute}, log)
+		// Адреса вне белого списка (превью ссылок, картинки из заметок) —
+		// не больше 300 в час на аккаунт: человеку хватает с запасом.
+		handler.Meta(e.Router, gateway, &handler.IPLimiter{Max: 120, Window: time.Minute},
+			&handler.IPLimiter{Max: 300, Window: time.Hour}, log)
 		handler.Movies(e.Router, films, log)
+		handler.UserCard(e.Router)
+		handler.Group(e.Router, groups, log)
+		handler.WidgetAnim(e.Router, anim)
+		handler.Calls(e.Router, pushes.New(app, notify, time.Now), time.Now)
+		handler.InviteAccept(e.Router, pairs.New(app), log)
+		handler.CoupleStats(e.Router, stats.New(app), time.Now, log)
+		handler.Waiting(e.Router, pairs.New(app), time.Now, log)
+		handler.InviteWeb(e.Router, handler.InvitePage{
+			AppName: cfg.AppName, Scheme: cfg.Invite.Scheme,
+			PlayURL: cfg.Invite.PlayURL, RuStoreURL: cfg.Invite.RuStoreURL, APKURL: cfg.Invite.APKURL,
+			AndroidPackage: cfg.Invite.AndroidPackage, AndroidFingerprints: cfg.Invite.Fingerprints(),
+			IOSAppID: cfg.Invite.IOSAppID,
+		})
+		handler.RealtimeTokens(e.Router, cfg.Centrifugo.TokenHMAC)
+		handler.WatchRooms(e.Router, cfg.Centrifugo.TokenHMAC, pub)
+		handler.PasswordReset(e.Router, time.Now, log)
+		handler.EmailChange(e.Router, time.Now, log)
+		handler.Music(e.Router, music.New(safefetch.New(safefetch.Options{Timeout: 8 * time.Second, MaxBytes: 1 << 20})), log)
 		handler.WatchProxy(e.Router, proxyInfo)
 		if _, err := os.Stat(cfg.PublicDir); err == nil {
 			e.Router.GET("/{path...}", apis.Static(os.DirFS(cfg.PublicDir), false))
@@ -224,7 +257,7 @@ func bindCompat(app core.App, addr string, pub handler.Publisher, log *slog.Logg
 	if addr == "" {
 		return
 	}
-	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), pub, log), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: handler.Compat(pairs.New(app), records.New(app), pushes.New(app, pub, time.Now), log), ReadHeaderTimeout: 5 * time.Second}
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -249,6 +282,10 @@ func bindRealtime(app core.App, pub *centrifugo.Publisher, observe func(error), 
 		return
 	}
 	publish := func(ev realtime.Event, rec *core.Record) {
+		ev, ok := heldEvent(ev, rec)
+		if !ok {
+			return
+		}
 		r := recordAdapter{rec}
 		channels := realtime.Channels(r)
 		if len(channels) == 0 {

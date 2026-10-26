@@ -18,17 +18,16 @@ List<DrawStroke> strokesUnderFinger(
   required int layer,
   double reach = 12,
   Set<String> skip = const {},
-}) =>
-    [
-      for (final s in strokes)
-        if (s.layer == layer &&
-            !s.isImageStroke &&
-            !s.isEraser &&
-            !s.id.startsWith('live_') &&
-            !skip.contains(s.id) &&
-            strokeHitAt(s, point, canvas, tolerance: reach))
-          s,
-    ];
+}) => [
+  for (final s in strokes)
+    if (s.layer == layer &&
+        !s.isImageStroke &&
+        !s.isEraser &&
+        !s.id.startsWith('live_') &&
+        !skip.contains(s.id) &&
+        strokeHitAt(s, point, canvas, tolerance: reach))
+      s,
+];
 
 /// Вставка с прижатием индекса к длине списка: история отмены могла
 /// укоротиться, пока линия лежала стёртой.

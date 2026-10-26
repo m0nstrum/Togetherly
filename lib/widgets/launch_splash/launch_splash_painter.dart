@@ -14,7 +14,11 @@ import '../../models/launch_splash.dart';
 /// экране она растягивается по ширине и встаёт по середине высоты; ночь и
 /// слои во весь экран (дверь) закрывают его целиком.
 class LaunchSplashPainter extends CustomPainter {
-  LaunchSplashPainter({required this.splash, required this.images, required this.ms}) : super(repaint: ms);
+  LaunchSplashPainter({
+    required this.splash,
+    required this.images,
+    required this.ms,
+  }) : super(repaint: ms);
 
   final LaunchSplash splash;
 
@@ -39,7 +43,10 @@ class LaunchSplashPainter extends CustomPainter {
       if (layer.under) _layer(canvas, size, layer, k, top, now);
     }
     if (window.scale > 0) {
-      canvas.drawPath(_windowPath(window, k, top), Paint()..blendMode = BlendMode.clear);
+      canvas.drawPath(
+        _windowPath(window, k, top),
+        Paint()..blendMode = BlendMode.clear,
+      );
     }
     canvas.restore();
 
@@ -50,12 +57,18 @@ class LaunchSplashPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeJoin = StrokeJoin.round
         ..isAntiAlias = true;
-      canvas.drawPath(path, stroke
-        ..strokeWidth = splash.window.frameWidth * k
-        ..color = const Color(0xFFFFFFFF));
-      canvas.drawPath(path, stroke
-        ..strokeWidth = splash.window.inkWidth * k
-        ..color = splash.window.ink);
+      canvas.drawPath(
+        path,
+        stroke
+          ..strokeWidth = splash.window.frameWidth * k
+          ..color = const Color(0xFFFFFFFF),
+      );
+      canvas.drawPath(
+        path,
+        stroke
+          ..strokeWidth = splash.window.inkWidth * k
+          ..color = splash.window.ink,
+      );
     }
 
     for (final layer in splash.layers) {
@@ -71,7 +84,14 @@ class LaunchSplashPainter extends CustomPainter {
     return splash.window.path.transform(matrix.storage);
   }
 
-  void _layer(Canvas canvas, Size size, SplashLayer layer, double k, double top, double now) {
+  void _layer(
+    Canvas canvas,
+    Size size,
+    SplashLayer layer,
+    double k,
+    double top,
+    double now,
+  ) {
     final sprite = splash.sprites[layer.sprite];
     if (sprite == null) return;
     final paint = Paint()..filterQuality = FilterQuality.medium;
@@ -83,9 +103,11 @@ class LaunchSplashPainter extends CustomPainter {
     }
     final pose = splashPoseAt(layer.track, splash.step, now);
     if (pose.opacity <= 0 || pose.scale <= 0) return;
-    final image = images[sprite.frames[pose.frame.clamp(0, sprite.frames.length - 1)]];
+    final image =
+        images[sprite.frames[pose.frame.clamp(0, sprite.frames.length - 1)]];
     if (image == null) return;
-    if (pose.opacity < 1) paint.color = Color.fromRGBO(255, 255, 255, pose.opacity);
+    if (pose.opacity < 1)
+      paint.color = Color.fromRGBO(255, 255, 255, pose.opacity);
     canvas.save();
     canvas.translate(k * pose.x, top + k * pose.y);
     canvas.scale(k * pose.scale);
@@ -94,7 +116,8 @@ class LaunchSplashPainter extends CustomPainter {
     canvas.restore();
   }
 
-  Rect _whole(ui.Image image) => Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+  Rect _whole(ui.Image image) =>
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
 
   @override
   bool shouldRepaint(LaunchSplashPainter old) =>

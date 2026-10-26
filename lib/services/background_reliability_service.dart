@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dict_strings.dart' show ruEn;
 import '../widgets/common/app_dialog.dart';
-import 'fcm_service.dart'; // fork
+import 'fcm_service.dart';
 
 /// Надёжность мгновенной фоновой доставки БЕЗ FCM.
 ///
@@ -50,7 +50,10 @@ class BackgroundReliabilityService {
     if (await isExempt()) return;
     // fork (UX G15): с рабочими пушами Google фоновая связь не нужна, и просить
     // «без ограничений батареи» незачем. Токен приезжает не сразу — ждём вердикт.
-    await FcmService.instance.settled.timeout(const Duration(seconds: 8), onTimeout: () {});
+    await FcmService.instance.settled.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {},
+    );
     if (FcmService.instance.ready) return;
 
     final prefs = await SharedPreferences.getInstance();
@@ -86,18 +89,21 @@ class BackgroundReliabilityService {
   Future<bool> _showDialog(BuildContext context) async {
     return AppDialog.confirm(
       context,
-      title: ruEn('Мгновенные уведомления и виджеты',
-          'Instant notifications & widgets'),
+      title: ruEn(
+        'Мгновенные уведомления и виджеты',
+        'Instant notifications & widgets',
+      ),
       message: ruEn(
-          'Чтобы сообщения, «я скучаю» и виджеты обновлялись сразу — даже '
-              'когда приложение закрыто — разрешите Togetherly работать в '
-              'фоне без ограничений батареи.\n\nБез этого Android усыпляет '
-              'связь, и всё приходит только при открытии приложения.',
-          'To get messages, “miss you” and widget updates instantly — even '
-              'when the app is closed — allow Togetherly to run in the '
-              'background without battery limits.\n\nOtherwise Android '
-              'suspends the connection and everything only arrives when you '
-              'open the app.'),
+        'Чтобы сообщения, «я скучаю» и виджеты обновлялись сразу — даже '
+            'когда приложение закрыто — разрешите Togetherly работать в '
+            'фоне без ограничений батареи.\n\nБез этого Android усыпляет '
+            'связь, и всё приходит только при открытии приложения.',
+        'To get messages, “miss you” and widget updates instantly — even '
+            'when the app is closed — allow Togetherly to run in the '
+            'background without battery limits.\n\nOtherwise Android '
+            'suspends the connection and everything only arrives when you '
+            'open the app.',
+      ),
       confirmLabel: ruEn('Разрешить', 'Allow'),
       cancelLabel: ruEn('Позже', 'Later'),
       icon: Icons.bolt_rounded,

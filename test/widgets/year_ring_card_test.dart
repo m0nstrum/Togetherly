@@ -17,9 +17,9 @@ import 'package:love_app/widgets/year_ring_card.dart';
 void main() {
   setUpAll(() async {
     final loader = FontLoader('Onest')
-      ..addFont(File('assets/fonts/Onest.ttf')
-          .readAsBytes()
-          .then(ByteData.sublistView));
+      ..addFont(
+        File('assets/fonts/Onest.ttf').readAsBytes().then(ByteData.sublistView),
+      );
     await loader.load();
   });
 
@@ -58,61 +58,77 @@ void main() {
   for (final small in [false, true]) {
     for (final (texts, days, left, months, memories) in cases) {
       testWidgets(
-          '${small ? '2×2' : '4×2'}: $days дней, $memories воспоминаний, '
-          '«${texts.untilAnniversary}»', (tester) async {
-        tester.view.physicalSize = const Size(400 * 3, 300 * 3);
-        tester.view.devicePixelRatio = 3;
-        addTearDown(tester.view.reset);
+        '${small ? '2×2' : '4×2'}: $days дней, $memories воспоминаний, '
+        '«${texts.untilAnniversary}»',
+        (tester) async {
+          tester.view.physicalSize = const Size(400 * 3, 300 * 3);
+          tester.view.devicePixelRatio = 3;
+          addTearDown(tester.view.reset);
 
-        await tester.pumpWidget(MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: small ? 158 : 338,
-                child: YearRingCard(
-                  small: small,
-                  colors: colors,
-                  texts: texts,
-                  daysTotal: days,
-                  daysLeft: left,
-                  months: months,
-                  memories: memories,
-                  progress: 0.53,
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: SizedBox(
+                    width: small ? 158 : 338,
+                    child: YearRingCard(
+                      small: small,
+                      colors: colors,
+                      texts: texts,
+                      daysTotal: days,
+                      daysLeft: left,
+                      months: months,
+                      memories: memories,
+                      progress: 0.53,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ));
-        await tester.pump();
-        expect(tester.takeException(), isNull);
+          );
+          await tester.pump();
+          expect(tester.takeException(), isNull);
 
-        final card = tester.getRect(find.byType(YearRingCard));
-        final paragraphs = tester
-            .renderObjectList<RenderParagraph>(find.descendant(
-              of: find.byType(YearRingCard),
-              matching: find.byType(RichText),
-            ))
-            .toList();
-        expect(paragraphs, isNotEmpty);
+          final card = tester.getRect(find.byType(YearRingCard));
+          final paragraphs = tester
+              .renderObjectList<RenderParagraph>(
+                find.descendant(
+                  of: find.byType(YearRingCard),
+                  matching: find.byType(RichText),
+                ),
+              )
+              .toList();
+          expect(paragraphs, isNotEmpty);
 
-        for (final rp in paragraphs) {
-          final text = rp.text.toPlainText();
-          final left = rp.localToGlobal(Offset.zero).dx;
-          final width = rp.getMaxIntrinsicWidth(double.infinity);
-          expect(left + width, lessThanOrEqualTo(card.right - 8 + 0.5),
-              reason: '«$text» вылезает за правый край карточки');
-          expect(left, greaterThanOrEqualTo(card.left + 8),
-              reason: '«$text» вылезает за левый край');
-        }
+          for (final rp in paragraphs) {
+            final text = rp.text.toPlainText();
+            final left = rp.localToGlobal(Offset.zero).dx;
+            final width = rp.getMaxIntrinsicWidth(double.infinity);
+            expect(
+              left + width,
+              lessThanOrEqualTo(card.right - 8 + 0.5),
+              reason: '«$text» вылезает за правый край карточки',
+            );
+            expect(
+              left,
+              greaterThanOrEqualTo(card.left + 8),
+              reason: '«$text» вылезает за левый край',
+            );
+          }
 
-        // Число дней в кольце: целиком во внутреннем диаметре.
-        final ringSide = small ? YearRingSpec.smallRing : YearRingSpec.ring;
-        final stroke = small ? YearRingSpec.smallStroke : YearRingSpec.stroke;
-        final number = tester.renderObject<RenderParagraph>(find.text('$days'));
-        expect(number.getMaxIntrinsicWidth(double.infinity),
+          // Число дней в кольце: целиком во внутреннем диаметре.
+          final ringSide = small ? YearRingSpec.smallRing : YearRingSpec.ring;
+          final stroke = small ? YearRingSpec.smallStroke : YearRingSpec.stroke;
+          final number = tester.renderObject<RenderParagraph>(
+            find.text('$days'),
+          );
+          expect(
+            number.getMaxIntrinsicWidth(double.infinity),
             lessThanOrEqualTo(ringSide - 2 * stroke - 8),
-            reason: 'число $days шире кольца');
-      });
+            reason: 'число $days шире кольца',
+          );
+        },
+      );
     }
   }
 }

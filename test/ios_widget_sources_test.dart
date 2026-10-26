@@ -26,13 +26,17 @@ void main() {
       }
     }
 
-    expect(missing, isEmpty,
-        reason: 'Не попадут в сборку расширения: ${missing.join(', ')}');
+    expect(
+      missing,
+      isEmpty,
+      reason: 'Не попадут в сборку расширения: ${missing.join(', ')}',
+    );
   });
 
   test('каждый виджет бандла объявлен в исходниках', () {
-    final bundle =
-        File('ios/TogetherlyWidget/TogetherlyWidgetBundle.swift').readAsStringSync();
+    final bundle = File(
+      'ios/TogetherlyWidget/TogetherlyWidgetBundle.swift',
+    ).readAsStringSync();
     final swift = widgetDir
         .listSync()
         .whereType<File>()
@@ -44,20 +48,25 @@ void main() {
     // и глубже: виджеты под `if #available` живут на двенадцати пробелах, и
     // прежняя маска на восемь их не видела вовсе — конфигурируемые фото и
     // виджеты экрана блокировки этот сторож молча пропускал.
-    final declared = RegExp(r'^\s{8,16}([A-Za-z]+Widget[A-Za-z]*)\(\)\s*$',
-            multiLine: true)
-        .allMatches(bundle)
-        .map((m) => m.group(1)!)
-        .toSet();
+    final declared = RegExp(
+      r'^\s{8,16}([A-Za-z]+Widget[A-Za-z]*)\(\)\s*$',
+      multiLine: true,
+    ).allMatches(bundle).map((m) => m.group(1)!).toSet();
 
-    expect(declared.length, greaterThanOrEqualTo(20),
-        reason: 'Бандл разобрался не полностью: ${declared.length} виджетов');
+    expect(
+      declared.length,
+      greaterThanOrEqualTo(20),
+      reason: 'Бандл разобрался не полностью: ${declared.length} виджетов',
+    );
 
     final undefined = declared
         .where((name) => !swift.contains('struct $name: Widget'))
         .toList();
-    expect(undefined, isEmpty,
-        reason: 'В бандле есть, в коде нет: ${undefined.join(', ')}');
+    expect(
+      undefined,
+      isEmpty,
+      reason: 'В бандле есть, в коде нет: ${undefined.join(', ')}',
+    );
   });
 }
 

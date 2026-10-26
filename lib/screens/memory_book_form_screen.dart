@@ -11,17 +11,18 @@ import '../widgets/memory_date_field.dart';
 import '../widgets/rating_widgets.dart';
 
 /// Сохранение книжного воспоминания.
-typedef MemoryBookSaveCallback = Future<void> Function({
-  required String bookTitle,
-  required String bookAuthor,
-  String? bookCoverUrl,
-  String? bookYear,
-  String? bookPublisher,
-  String? bookInfoUrl,
-  int? rating,
-  required String caption,
-  DateTime? customDate,
-});
+typedef MemoryBookSaveCallback =
+    Future<void> Function({
+      required String bookTitle,
+      required String bookAuthor,
+      String? bookCoverUrl,
+      String? bookYear,
+      String? bookPublisher,
+      String? bookInfoUrl,
+      int? rating,
+      required String caption,
+      DateTime? customDate,
+    });
 
 /// Одна книга из результатов поиска.
 class _BookResult {
@@ -31,6 +32,7 @@ class _BookResult {
   final String? year;
   final String? publisher;
   final String? infoUrl;
+
   /// `true`, если в заголовке есть кириллица — то есть название
   /// уже на русском. Open Library хранит `title` в исходном языке
   /// произведения, поэтому для переводных книг (Harry Potter и т.п.)
@@ -51,12 +53,16 @@ class _BookResult {
   factory _BookResult.fromOpenLibraryDoc(Map<String, dynamic> doc) {
     final title = doc['title']?.toString().trim() ?? '';
     final authors =
-        (doc['author_name'] as List?)?.cast<String>().where((a) => a.isNotEmpty) ??
-            const [];
+        (doc['author_name'] as List?)?.cast<String>().where(
+          (a) => a.isNotEmpty,
+        ) ??
+        const [];
     // publisher — список издательств; берём самое релевантное.
     final publishers =
-        (doc['publisher'] as List?)?.cast<String>().where((p) => p.isNotEmpty) ??
-            const [];
+        (doc['publisher'] as List?)?.cast<String>().where(
+          (p) => p.isNotEmpty,
+        ) ??
+        const [];
     // first_publish_year — int; в title может быть year у конкретного издания.
     final firstYear = doc['first_publish_year'];
     final year = (firstYear is num) ? firstYear.toInt().toString() : null;
@@ -124,7 +130,8 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
 
   List<_BookResult> _results = const [];
   bool _isSearching = false;
-  bool _searchFailed = false; // последний запрос упал — покажем «ввести вручную»
+  bool _searchFailed =
+      false; // последний запрос упал — покажем «ввести вручную»
   bool _picked = false; // выбрана конкретная книга → показываем превью/детали
   bool _manualMode = false; // пользователь выбрал «ввести вручную» (минуя API)
   Timer? _debounce;
@@ -185,8 +192,7 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
             headers: {
               'Accept': 'application/json',
               // UA обязателен — без него Open Library отбивает некоторые запросы.
-              'User-Agent':
-                  'Mozilla/5.0 (compatible; TetheredApp/1.0)', // fork
+              'User-Agent': 'Mozilla/5.0 (compatible; TetheredApp/1.0)',
             },
           )
           // Жёсткий таймаут: на мобильной сети ответ может висеть вечно,
@@ -201,8 +207,9 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
         final data = json.decode(resp.body) as Map<String, dynamic>;
         final docs = (data['docs'] as List?) ?? const [];
         final parsed = docs
-            .map((e) =>
-                _BookResult.fromOpenLibraryDoc(e as Map<String, dynamic>))
+            .map(
+              (e) => _BookResult.fromOpenLibraryDoc(e as Map<String, dynamic>),
+            )
             .where((b) => b.title.isNotEmpty)
             .toList();
         // Поднимаем книги с русским названием — Open Library отдаёт
@@ -212,8 +219,10 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
           if (a.isRussianTitle == b.isRussianTitle) return 0;
           return a.isRussianTitle ? -1 : 1;
         });
-        debugPrint('[BookForm] parsed ${parsed.length} books '
-            '(${parsed.where((b) => b.isRussianTitle).length} RU-titled)');
+        debugPrint(
+          '[BookForm] parsed ${parsed.length} books '
+          '(${parsed.where((b) => b.isRussianTitle).length} RU-titled)',
+        );
         setState(() {
           _results = parsed;
           _searchFailed = parsed.isEmpty;
@@ -373,7 +382,9 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
         tooltip: ruEn('Закрыть', 'Close'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded, size: 22),
-        style: IconButton.styleFrom(foregroundColor: widget.theme.textSecondary),
+        style: IconButton.styleFrom(
+          foregroundColor: widget.theme.textSecondary,
+        ),
       ),
       title: Text(
         s.books,
@@ -396,10 +407,14 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                 backgroundColor: _primary,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                textStyle:
-                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
               child: Text(s.addMemoryBtn),
             ),
@@ -455,7 +470,9 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 height: 1.15,
-                color: hasBook ? widget.theme.textPrimary : widget.theme.textMuted,
+                color: hasBook
+                    ? widget.theme.textPrimary
+                    : widget.theme.textMuted,
               ),
             ),
           ),
@@ -604,20 +621,25 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.grey),
+                          strokeWidth: 2,
+                          color: Colors.grey,
+                        ),
                       ),
                     )
                   : (_searchCtrl.text.isNotEmpty
-                      ? IconButton(
-                          tooltip: ruEn('Очистить поиск', 'Clear search'),
-                          icon: Icon(Icons.clear_rounded,
-                              color: widget.theme.textMuted, size: 18),
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            _onQueryChanged('');
-                          },
-                        )
-                      : null),
+                        ? IconButton(
+                            tooltip: ruEn('Очистить поиск', 'Clear search'),
+                            icon: Icon(
+                              Icons.clear_rounded,
+                              color: widget.theme.textMuted,
+                              size: 18,
+                            ),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              _onQueryChanged('');
+                            },
+                          )
+                        : null),
               filled: true,
               fillColor: widget.theme.cardSurface,
               border: OutlineInputBorder(
@@ -628,8 +650,10 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: _primary, width: 1.5),
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
           ),
         ],
@@ -657,25 +681,17 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
       return Container(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
         decoration: BoxDecoration(
-          color: failed
-              ? Colors.orange.shade50
-              : widget.theme.surfaceMuted,
+          color: failed ? Colors.orange.shade50 : widget.theme.surfaceMuted,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: failed
-                ? Colors.orange.shade200
-                : widget.theme.divider,
+            color: failed ? Colors.orange.shade200 : widget.theme.divider,
           ),
         ),
         child: Column(
           children: [
             Icon(
-              failed
-                  ? Icons.cloud_off_rounded
-                  : Icons.search_off_rounded,
-              color: failed
-                  ? Colors.orange.shade400
-                  : widget.theme.textMuted,
+              failed ? Icons.cloud_off_rounded : Icons.search_off_rounded,
+              color: failed ? Colors.orange.shade400 : widget.theme.textMuted,
               size: 32,
             ),
             const SizedBox(height: 8),
@@ -683,9 +699,7 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
               failed ? s.bookSearchFailed : s.noBooksFound,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: failed
-                    ? Colors.orange.shade700
-                    : widget.theme.textMuted,
+                color: failed ? Colors.orange.shade700 : widget.theme.textMuted,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -695,10 +709,7 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
               Text(
                 s.bookSearchFailedHint,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: widget.theme.textMuted,
-                  fontSize: 11.5,
-                ),
+                style: TextStyle(color: widget.theme.textMuted, fontSize: 11.5),
               ),
             ],
             const SizedBox(height: 12),
@@ -870,7 +881,9 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            fontSize: 12, color: widget.theme.textMuted),
+                          fontSize: 12,
+                          color: widget.theme.textMuted,
+                        ),
                       ),
                     ),
                   if (book.year != null)
@@ -879,14 +892,15 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                       child: Text(
                         book.year!,
                         style: TextStyle(
-                            fontSize: 11, color: widget.theme.textMuted),
+                          fontSize: 11,
+                          color: widget.theme.textMuted,
+                        ),
                       ),
                     ),
                 ],
               ),
             ),
-            Icon(Icons.add_circle_outline_rounded,
-                color: _primary, size: 22),
+            Icon(Icons.add_circle_outline_rounded, color: _primary, size: 22),
           ],
         ),
       ),
@@ -936,9 +950,12 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
   }
 
   Widget _coverIcon() => Center(
-        child: Icon(Icons.menu_book_rounded,
-            color: _primary.withValues(alpha: 0.5), size: 20),
-      );
+    child: Icon(
+      Icons.menu_book_rounded,
+      color: _primary.withValues(alpha: 0.5),
+      size: 20,
+    ),
+  );
 
   // ── Details (editable) ──────────────────────────────────────────────────────
 
@@ -968,8 +985,11 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
                   color: _primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.auto_stories_rounded,
-                    size: 16, color: _primary),
+                child: Icon(
+                  Icons.auto_stories_rounded,
+                  size: 16,
+                  color: _primary,
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -1016,7 +1036,11 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.translate_rounded, size: 14, color: Colors.amber.shade800),
+            Icon(
+              Icons.translate_rounded,
+              size: 14,
+              color: Colors.amber.shade800,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1057,8 +1081,10 @@ class _MemoryBookFormScreenState extends State<MemoryBookFormScreen> {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: _primary, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }

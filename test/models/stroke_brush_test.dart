@@ -7,16 +7,16 @@ import 'package:love_app/models/stroke_brush.dart';
 import 'package:love_app/models/stroke_transform.dart';
 
 DrawStroke _stroke({StrokeBrush brush = StrokeBrush.pen}) => DrawStroke(
-      id: 's1',
-      clientId: 'c1',
-      userId: 'u',
-      colorValue: 0xFFFF0000,
-      strokeWidth: 8,
-      points: const [DrawPoint(0.1, 0.1), DrawPoint(0.5, 0.5), DrawPoint(0.9, 0.2)],
-      orderIndex: 3,
-      layer: 1,
-      brush: brush,
-    );
+  id: 's1',
+  clientId: 'c1',
+  userId: 'u',
+  colorValue: 0xFFFF0000,
+  strokeWidth: 8,
+  points: const [DrawPoint(0.1, 0.1), DrawPoint(0.5, 0.5), DrawPoint(0.9, 0.2)],
+  orderIndex: 3,
+  layer: 1,
+  brush: brush,
+);
 
 void main() {
   test('кисть читается по имени, незнакомая и пустая — перо', () {
@@ -34,7 +34,10 @@ void main() {
   test('кисть переживает круг через базу и через живую карту', () {
     final saved = _stroke(brush: StrokeBrush.airbrush).toFirestore();
     expect(DrawStroke.fromFirestore(saved, 'x').brush, StrokeBrush.airbrush);
-    expect(DrawStroke.fromFirestore({'points': []}, 'x').brush, StrokeBrush.pen);
+    expect(
+      DrawStroke.fromFirestore({'points': []}, 'x').brush,
+      StrokeBrush.pen,
+    );
 
     final live = _stroke(brush: StrokeBrush.marker).toLiveMap();
     expect(DrawStroke.fromLiveMap(live, 'u').brush, StrokeBrush.marker);
@@ -69,10 +72,9 @@ void main() {
     // Копия, собранная руками, теряет поле молча: маркер после отмены,
     // зеркала или повтора стал бы пером. Сторожим все места разом.
     final files = [
-      ...Directory('lib/models')
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.endsWith('.dart')),
+      ...Directory(
+        'lib/models',
+      ).listSync().whereType<File>().where((f) => f.path.endsWith('.dart')),
       File('lib/screens/draw_screen.dart'),
     ];
     final missing = <String>[];

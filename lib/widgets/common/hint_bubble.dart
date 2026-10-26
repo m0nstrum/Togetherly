@@ -80,9 +80,7 @@ Future<void> showHintBubble(
       child: Transform.translate(
         offset: Offset(0, side == HintSide.above ? -6 : 6),
         child: Icon(
-          side == HintSide.above
-              ? Icons.arrow_drop_down
-              : Icons.arrow_drop_up,
+          side == HintSide.above ? Icons.arrow_drop_down : Icons.arrow_drop_up,
           color: theme.fillColor,
           size: 38,
         ),

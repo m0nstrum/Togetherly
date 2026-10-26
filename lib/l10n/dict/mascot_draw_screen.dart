@@ -327,13 +327,20 @@ const Map<String, Map<String, String>> mascotDrawScreenStrings = {
     'de': 'Dieses Ausmalbild ist schon angefangen',
   },
   'coloringJoinBody': {
-    'ru': 'Лист «{name}» ещё не докрашен. Открой его, и вы будете красить один рисунок на двоих, а не каждый свой.',
-    'en': '“{name}” isn’t finished yet. Open it and you’ll colour one picture together instead of one each.',
-    'pt': '“{name}” ainda não está pronto. Abra e vocês vão colorir o mesmo desenho, em vez de um cada.',
-    'it': '«{name}» non è ancora finito. Aprilo e colorerete lo stesso disegno, invece di uno a testa.',
-    'es': '«{name}» aún no está terminado. Ábrelo y colorearéis el mismo dibujo, no uno cada uno.',
-    'fr': '« {name} » n’est pas encore terminé. Ouvre-le : vous colorierez le même dessin au lieu d’en avoir un chacun.',
-    'de': '„{name}“ ist noch nicht fertig. Öffne es, dann malt ihr zusammen ein Bild statt jeder sein eigenes.',
+    'ru':
+        'Лист «{name}» ещё не докрашен. Открой его, и вы будете красить один рисунок на двоих, а не каждый свой.',
+    'en':
+        '“{name}” isn’t finished yet. Open it and you’ll colour one picture together instead of one each.',
+    'pt':
+        '“{name}” ainda não está pronto. Abra e vocês vão colorir o mesmo desenho, em vez de um cada.',
+    'it':
+        '«{name}» non è ancora finito. Aprilo e colorerete lo stesso disegno, invece di uno a testa.',
+    'es':
+        '«{name}» aún no está terminado. Ábrelo y colorearéis el mismo dibujo, no uno cada uno.',
+    'fr':
+        '« {name} » n’est pas encore terminé. Ouvre-le : vous colorierez le même dessin au lieu d’en avoir un chacun.',
+    'de':
+        '„{name}“ ist noch nicht fertig. Öffne es, dann malt ihr zusammen ein Bild statt jeder sein eigenes.',
   },
   'coloringJoinOpen': {
     'ru': 'Открыть начатый',

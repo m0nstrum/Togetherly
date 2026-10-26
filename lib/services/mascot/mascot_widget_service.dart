@@ -157,7 +157,9 @@ class MascotWidgetService {
         stripDay: stripPaths[MascotWidgetFrame.day] ?? '',
         stripNight: stripPaths[MascotWidgetFrame.night] ?? '',
         stripSad: stripPaths[MascotWidgetFrame.sad] ?? '',
-        animManifest: strips.isEmpty ? '' : jsonEncode(strips.values.first.manifest),
+        animManifest: strips.isEmpty
+            ? ''
+            : jsonEncode(strips.values.first.manifest),
       );
 
       for (final e in keys.entries) {
@@ -226,8 +228,10 @@ class MascotWidgetService {
           await HomeWidget.saveWidgetData<String>(e.value, '');
           continue;
         }
-        final shared = await HomeWidgetService.instance
-            .appGroupReadablePath(local, 'mascotw_${e.key.name}_$rev.png');
+        final shared = await HomeWidgetService.instance.appGroupReadablePath(
+          local,
+          'mascotw_${e.key.name}_$rev.png',
+        );
         await HomeWidget.saveWidgetData<String>(e.value, shared);
       }
 
@@ -241,7 +245,13 @@ class MascotWidgetService {
   Future<void> clear(String groupId) async {
     final g = groupId.isEmpty ? 'solo' : groupId;
     try {
-      for (final key in const ['frame_day', 'frame_night', 'frame_sad', 'id', 'name']) {
+      for (final key in const [
+        'frame_day',
+        'frame_night',
+        'frame_sad',
+        'id',
+        'name',
+      ]) {
         await HomeWidget.saveWidgetData<String>('mascot_${g}_$key', '');
       }
       await _deleteGroupFiles(g);
@@ -260,7 +270,9 @@ class MascotWidgetService {
   ) async {
     if (strips.isEmpty) return {};
     final g = groupId.isEmpty ? 'solo' : groupId;
-    final dir = Directory('${(await getApplicationSupportDirectory()).path}/$_dirName');
+    final dir = Directory(
+      '${(await getApplicationSupportDirectory()).path}/$_dirName',
+    );
     dir.createSync(recursive: true);
     final rev = DateTime.now().millisecondsSinceEpoch;
 
@@ -275,7 +287,9 @@ class MascotWidgetService {
 
   /// Одна картинка на все часы: встроенный, каталожный или нарисованный
   /// маскот. Ночной и грустной сцены у них нет — рисунок один.
-  Future<Map<MascotWidgetFrame, Uint8List>> _singleFrame(MascotArtSource art) async {
+  Future<Map<MascotWidgetFrame, Uint8List>> _singleFrame(
+    MascotArtSource art,
+  ) async {
     final bytes = switch (art.kind) {
       MascotArtKind.asset => await _assetBytes(art.ref),
       MascotArtKind.network => await _cachedBytes(art.ref, art.ref),
@@ -300,7 +314,10 @@ class MascotWidgetService {
   Future<Uint8List?> _cachedBytes(String key, String url) async {
     try {
       var hit = await OfflineImageCacheManager.instance.getFileFromCache(key);
-      hit ??= await OfflineImageCacheManager.instance.downloadFile(url, key: key);
+      hit ??= await OfflineImageCacheManager.instance.downloadFile(
+        url,
+        key: key,
+      );
       return await hit.file.readAsBytes();
     } catch (e) {
       debugPrint('MascotWidgetService: картинка $key не скачалась — $e');
@@ -374,7 +391,9 @@ class MascotWidgetService {
     Map<MascotWidgetFrame, Uint8List> frames,
   ) async {
     final g = groupId.isEmpty ? 'solo' : groupId;
-    final dir = Directory('${(await getApplicationSupportDirectory()).path}/$_dirName');
+    final dir = Directory(
+      '${(await getApplicationSupportDirectory()).path}/$_dirName',
+    );
     dir.createSync(recursive: true);
     await _deleteGroupFiles(g);
 
@@ -392,7 +411,9 @@ class MascotWidgetService {
 
   Future<void> _deleteGroupFiles(String g) async {
     try {
-      final dir = Directory('${(await getApplicationSupportDirectory()).path}/$_dirName');
+      final dir = Directory(
+        '${(await getApplicationSupportDirectory()).path}/$_dirName',
+      );
       if (!dir.existsSync()) return;
       for (final f in dir.listSync()) {
         if (f is File && f.path.contains('mascot_${g}_')) {

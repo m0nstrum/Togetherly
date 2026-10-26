@@ -121,9 +121,9 @@ class WidgetService extends ChangeNotifier {
   /// при этом пустела, виджет «Фото партнёра» читал одиночное поле — и фото у
   /// партнёра не пропадало (жалоба 2026-08-07).
   static Map<String, dynamic> photoForPartnerFields(List<String> urls) => {
-        'photoForPartnerUrls': urls,
-        'photoForPartnerUrl': urls.isNotEmpty ? urls.first : '',
-      };
+    'photoForPartnerUrls': urls,
+    'photoForPartnerUrl': urls.isNotEmpty ? urls.first : '',
+  };
 
   /// Поля записи, когда убирают фото ПАРНОГО виджета.
   ///
@@ -142,8 +142,8 @@ class WidgetService extends ChangeNotifier {
     if (mine.isEmpty || forPartner != mine) return cleared;
 
     final carousel = d?.photoForPartnerUrls ?? const <String>[];
-    final sameShot = carousel.isEmpty ||
-        (carousel.length == 1 && carousel.first == mine);
+    final sameShot =
+        carousel.isEmpty || (carousel.length == 1 && carousel.first == mine);
     if (!sameShot) return cleared;
 
     return {...cleared, ...photoForPartnerFields(const [])};
@@ -203,29 +203,28 @@ class WidgetService extends ChangeNotifier {
     _partnerSubs.remove(partnerUid)?.cancel();
     _partnerData.remove(partnerUid);
 
-    _partnerSubs[partnerUid] = _rt.watchWidgetOne(_groupId, partnerUid).listen(
-      (rec) {
-        if (_isDisposed) return;
-        if (rec != null) {
-          _partnerData[partnerUid] = WidgetData.fromPb(rec);
-        } else {
-          _partnerData[partnerUid] = WidgetData(uid: partnerUid);
-          // Fallback: имя/аватар из group-дока (member_names/member_avatars).
-          _loadPartnerFallback(partnerUid);
-        }
-        _scheduleSyncToNative();
-        // refreshPhotoOfDay перечитывает виджет-данные — дёргаем только когда
-        // реально изменились фото-поля партнёра, а не mood/status.
-        final newSig = _photoSigOf(_partnerData[partnerUid]);
-        if (_groupId.isNotEmpty && _partnerPhotoSigs[partnerUid] != newSig) {
-          _partnerPhotoSigs[partnerUid] = newSig;
-          HomeWidgetService.instance.invalidateWidgetDataCache();
-          HomeWidgetService.instance.refreshPhotoOfDay(_groupId);
-        }
-        notifyListeners();
-      },
-      onError: (e) => debugPrint('WidgetService partner listener error: $e'),
-    );
+    _partnerSubs[partnerUid] = _rt.watchWidgetOne(_groupId, partnerUid).listen((
+      rec,
+    ) {
+      if (_isDisposed) return;
+      if (rec != null) {
+        _partnerData[partnerUid] = WidgetData.fromPb(rec);
+      } else {
+        _partnerData[partnerUid] = WidgetData(uid: partnerUid);
+        // Fallback: имя/аватар из group-дока (member_names/member_avatars).
+        _loadPartnerFallback(partnerUid);
+      }
+      _scheduleSyncToNative();
+      // refreshPhotoOfDay перечитывает виджет-данные — дёргаем только когда
+      // реально изменились фото-поля партнёра, а не mood/status.
+      final newSig = _photoSigOf(_partnerData[partnerUid]);
+      if (_groupId.isNotEmpty && _partnerPhotoSigs[partnerUid] != newSig) {
+        _partnerPhotoSigs[partnerUid] = newSig;
+        HomeWidgetService.instance.invalidateWidgetDataCache();
+        HomeWidgetService.instance.refreshPhotoOfDay(_groupId);
+      }
+      notifyListeners();
+    }, onError: (e) => debugPrint('WidgetService partner listener error: $e'));
   }
 
   Future<void> unbindFromGroup({bool clearNativeWidget = true}) async {
@@ -273,7 +272,9 @@ class WidgetService extends ChangeNotifier {
         // этой строки на столе остались бы имя, настроение и лицо бывшего.
         if (gone.isNotEmpty) {
           await HomeWidget.saveWidgetData<String>(
-              pairWidgetKey(gone, e.key), e.value);
+            pairWidgetKey(gone, e.key),
+            e.value,
+          );
         }
       }
       if (gone.isNotEmpty) {
@@ -294,7 +295,11 @@ class WidgetService extends ChangeNotifier {
         'SelfPhotoWidgetProvider',
         'PartnerPhotoWidgetProvider',
       ]) {
-        await HomeWidget.updateWidget(name: name, androidName: name, qualifiedAndroidName: ForkIdentity.widgetClass(name)) /* fork */;
+        await HomeWidget.updateWidget(
+          name: name,
+          androidName: name,
+          qualifiedAndroidName: ForkIdentity.widgetClass(name),
+        ) /* fork */;
       }
     } catch (e) {
       debugPrint('WidgetService.clearPairWidgetData failed: $e');
@@ -306,27 +311,24 @@ class WidgetService extends ChangeNotifier {
     if (uid == null || _groupId.isEmpty) return;
 
     _mySub?.cancel();
-    _mySub = _rt.watchWidgetOne(_groupId, uid).listen(
-      (rec) {
-        if (_isDisposed) return;
-        if (rec != null) {
-          _myData = WidgetData.fromPb(rec);
-        } else {
-          _myData = WidgetData(uid: uid);
-          // Bootstrap record with profile data so widget shows name/avatar
-          _initializeMyWidgetData(uid);
-        }
-        _scheduleSyncToNative();
-        final newSig = _photoSigOf(_myData);
-        if (_groupId.isNotEmpty && _myPhotoSig != newSig) {
-          _myPhotoSig = newSig;
-          HomeWidgetService.instance.invalidateWidgetDataCache();
-          HomeWidgetService.instance.refreshPhotoOfDay(_groupId);
-        }
-        notifyListeners();
-      },
-      onError: (e) => debugPrint('WidgetService my data listener error: $e'),
-    );
+    _mySub = _rt.watchWidgetOne(_groupId, uid).listen((rec) {
+      if (_isDisposed) return;
+      if (rec != null) {
+        _myData = WidgetData.fromPb(rec);
+      } else {
+        _myData = WidgetData(uid: uid);
+        // Bootstrap record with profile data so widget shows name/avatar
+        _initializeMyWidgetData(uid);
+      }
+      _scheduleSyncToNative();
+      final newSig = _photoSigOf(_myData);
+      if (_groupId.isNotEmpty && _myPhotoSig != newSig) {
+        _myPhotoSig = newSig;
+        HomeWidgetService.instance.invalidateWidgetDataCache();
+        HomeWidgetService.instance.refreshPhotoOfDay(_groupId);
+      }
+      notifyListeners();
+    }, onError: (e) => debugPrint('WidgetService my data listener error: $e'));
   }
 
   /// Creates the widget_data record with profile data when it doesn't exist yet.
@@ -582,7 +584,8 @@ class WidgetService extends ChangeNotifier {
   Future<void> _updateField(
     Map<String, dynamic> fields, {
     String? groupId,
-    bool emitEvent = true, // legacy-параметр (FCM-триггер убран); сохранён для API
+    bool emitEvent =
+        true, // legacy-параметр (FCM-триггер убран); сохранён для API
   }) async {
     final uid = PocketBaseService().userId;
     final targetGroupId = groupId ?? _groupId;
@@ -739,7 +742,8 @@ class WidgetService extends ChangeNotifier {
 
       // Чья пара лежит в контейнере СЕЙЧАС — см. [_containerPairId].
       final previousPairId = await _rememberContainerPair();
-      final pairChanged = _groupId.isNotEmpty &&
+      final pairChanged =
+          _groupId.isNotEmpty &&
           previousPairId.isNotEmpty &&
           previousPairId != _groupId;
 
@@ -776,8 +780,11 @@ class WidgetService extends ChangeNotifier {
       // Правило и причина в pair_widget_payload.dart, сторож
       // test/services/pair_widget_media_test.dart. Исключение — смена пары:
       // тогда картинке прежней связи на виджете места нет.
-      final media =
-          pairWidgetMedia(my: my, partner: partner, pairChanged: pairChanged);
+      final media = pairWidgetMedia(
+        my: my,
+        partner: partner,
+        pairChanged: pairChanged,
+      );
 
       // ── Фото: сохраняем URL, кэшируем локально фоново ──
       // Правило выбора — в pairPhotoOfMine/pairPhotoOfPartner (под тестами
@@ -786,7 +793,9 @@ class WidgetService extends ChangeNotifier {
         await HomeWidget.saveWidgetData<String>(key, value);
         if (_groupId.isNotEmpty) {
           await HomeWidget.saveWidgetData<String>(
-              pairWidgetKey(_groupId, key), value);
+            pairWidgetKey(_groupId, key),
+            value,
+          );
         }
       }
 
@@ -810,9 +819,13 @@ class WidgetService extends ChangeNotifier {
       // нативный виджет решает, читать ли ключи пары или старые общие.
       if (_groupId.isNotEmpty) {
         await HomeWidget.saveWidgetData<String>(
-            kPairWidgetLatestGroupKey, _groupId);
+          kPairWidgetLatestGroupKey,
+          _groupId,
+        );
         await HomeWidget.saveWidgetData<String>(
-            pairWidgetReadyKey(_groupId), '1');
+          pairWidgetReadyKey(_groupId),
+          '1',
+        );
       }
 
       // Контейнер теперь про эту пару: следующий проход не станет стирать
@@ -827,7 +840,8 @@ class WidgetService extends ChangeNotifier {
       // ── Обновить виджет на рабочем столе (текстовые данные сразу) ──
       await HomeWidget.updateWidget(
         name: 'LoveWidgetProvider',
-        androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
+        androidName: 'LoveWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
       );
       if (_isDisposed || bindGeneration != _bindGeneration) return;
       debugPrint(
@@ -869,7 +883,10 @@ class WidgetService extends ChangeNotifier {
         try {
           await HomeWidget.updateWidget(
             name: 'LoveWidgetProvider',
-            androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
+            androidName: 'LoveWidgetProvider',
+            qualifiedAndroidName: ForkIdentity.widgetClass(
+              'LoveWidgetProvider',
+            ),
           );
         } catch (e) {
           debugPrint('WidgetService emoji update failed: $e');
@@ -882,12 +899,14 @@ class WidgetService extends ChangeNotifier {
       // iPhone: у фото-виджетов свои ключи и свой каталог выбора. Пока их никто
       // не писал, «Моё фото», «Фото партнёра», «Фото дня» и «Сетка» стояли на
       // рабочем столе пустыми белыми прямоугольниками.
-      unawaited(HomeWidgetService.instance.syncIosPhotoWidgets(
-        myPhotos: media.myIosPhotos,
-        partnerPhotos: media.partnerIosPhotos,
-        partnerName: partner?.displayName ?? '',
-        gridPhotos: partner?.photoGridUrls,
-      ));
+      unawaited(
+        HomeWidgetService.instance.syncIosPhotoWidgets(
+          myPhotos: media.myIosPhotos,
+          partnerPhotos: media.partnerIosPhotos,
+          partnerName: partner?.displayName ?? '',
+          gridPhotos: partner?.photoGridUrls,
+        ),
+      );
       _cacheAvatarsForLoveWidget(media.myAvatar, media.partnerAvatar);
       _cacheGroupAvatarsForWidget(limitedMembers);
 
@@ -929,25 +948,33 @@ class WidgetService extends ChangeNotifier {
   /// новая, и следующего повода пересобрать картинку не будет, пока человек не
   /// сменит фото ещё раз. Отсюда «меняется только текст, фотография прежняя».
   /// Теперь неудачная попытка назначает следующую.
-  void _cachePhotosForWidget(String? myUrl, String? partnerUrl,
-      {int attempt = 1}) {
+  void _cachePhotosForWidget(
+    String? myUrl,
+    String? partnerUrl, {
+    int attempt = 1,
+  }) {
     final bindGeneration = _bindGeneration;
     Future.wait([
       _downloadPhoto(myUrl, 'my_photo_path', generation: bindGeneration),
-      _downloadPhoto(partnerUrl, 'partner_photo_path',
-          generation: bindGeneration),
+      _downloadPhoto(
+        partnerUrl,
+        'partner_photo_path',
+        generation: bindGeneration,
+      ),
     ]).then((_) async {
       if (_isDisposed || bindGeneration != _bindGeneration) return;
       try {
         await HomeWidget.updateWidget(
           name: 'LoveWidgetProvider',
-          androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
+          androidName: 'LoveWidgetProvider',
+          qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
         );
       } catch (e) {
         debugPrint('WidgetService._cachePhotosForWidget update failed: $e');
       }
       if (attempt >= _photoAttempts) return;
-      final missing = await _photoPathMissing(myUrl, 'my_photo_path') ||
+      final missing =
+          await _photoPathMissing(myUrl, 'my_photo_path') ||
           await _photoPathMissing(partnerUrl, 'partner_photo_path');
       if (!missing) return;
       debugPrint(
@@ -980,14 +1007,18 @@ class WidgetService extends ChangeNotifier {
     final bindGeneration = _bindGeneration;
     Future.wait([
       _downloadPhoto(myUrl, 'my_avatar_path', generation: bindGeneration),
-      _downloadPhoto(partnerUrl, 'partner_avatar_path',
-          generation: bindGeneration),
+      _downloadPhoto(
+        partnerUrl,
+        'partner_avatar_path',
+        generation: bindGeneration,
+      ),
     ]).then((_) async {
       if (_isDisposed || bindGeneration != _bindGeneration) return;
       try {
         await HomeWidget.updateWidget(
           name: 'LoveWidgetProvider',
-          androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
+          androidName: 'LoveWidgetProvider',
+          qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
         );
       } catch (e) {
         debugPrint(
@@ -1003,8 +1034,11 @@ class WidgetService extends ChangeNotifier {
     final futures = <Future<void>>[];
     for (int i = 0; i < members.length; i++) {
       futures.add(
-        _downloadPhoto(members[i].avatarUrl, 'user_${i}_avatar_path',
-            generation: bindGeneration),
+        _downloadPhoto(
+          members[i].avatarUrl,
+          'user_${i}_avatar_path',
+          generation: bindGeneration,
+        ),
       );
     }
     Future.wait(futures).then((_) async {
@@ -1012,7 +1046,8 @@ class WidgetService extends ChangeNotifier {
       try {
         await HomeWidget.updateWidget(
           name: 'MoodWidgetProvider',
-          androidName: 'MoodWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'), // fork
+          androidName: 'MoodWidgetProvider',
+          qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
         );
       } catch (e) {
         debugPrint(
@@ -1027,13 +1062,17 @@ class WidgetService extends ChangeNotifier {
   /// Сама подготовка файла живёт в [HomeWidgetService.pairEmojiPath] — она
   /// нужна и фоновому обновлению, где никакой службы нет.
   Future<void> _cacheEmojiForWidget(String? assetPath, String key) async {
-    final path = await HomeWidgetService.instance
-        .pairEmojiPath(pairWidgetKey(_groupId, key), assetPath);
+    final path = await HomeWidgetService.instance.pairEmojiPath(
+      pairWidgetKey(_groupId, key),
+      assetPath,
+    );
     if (path == null) return;
     await HomeWidget.saveWidgetData<String>(key, path);
     if (_groupId.isNotEmpty) {
       await HomeWidget.saveWidgetData<String>(
-          pairWidgetKey(_groupId, key), path);
+        pairWidgetKey(_groupId, key),
+        path,
+      );
     }
   }
 
@@ -1052,7 +1091,9 @@ class WidgetService extends ChangeNotifier {
     // Тот же путь к файлу — и в ключ этой пары: у каждой связи свой набор.
     if (_groupId.isNotEmpty) {
       await HomeWidget.saveWidgetData<String>(
-          pairWidgetKey(_groupId, key), value);
+        pairWidgetKey(_groupId, key),
+        value,
+      );
     }
   }
 
@@ -1069,8 +1110,10 @@ class WidgetService extends ChangeNotifier {
     // Готовим по ключу ПАРЫ: и запись кэша, и имя файла берут ключ. С общим
     // ключом переключение между связями сносило снимок предыдущей — уборка
     // старых файлов удаляет всё по тому же имени.
-    final path = await HomeWidgetService.instance
-        .pairImagePath(pairWidgetKey(_groupId, key), url);
+    final path = await HomeWidgetService.instance.pairImagePath(
+      pairWidgetKey(_groupId, key),
+      url,
+    );
     if (path == null) return;
     await _saveIfCurrent(generation, key, path);
   }

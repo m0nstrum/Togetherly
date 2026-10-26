@@ -10,8 +10,9 @@ import 'package:love_app/widgets/common/animations.dart';
 /// Так выглядел раздел «Уведомления»: заголовок, пустота и кнопка внизу
 /// (жалоба со скриншотом 13 августа 2026).
 void main() {
-  testWidgets('содержимое нижнего листа видно после его появления',
-      (tester) async {
+  testWidgets('содержимое нижнего листа видно после его появления', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -41,9 +42,15 @@ void main() {
 
     for (final label in ['Скучаю', 'Чат']) {
       final opacity = tester.widget<Opacity>(
-        find.ancestor(of: find.text(label), matching: find.byType(Opacity)).first,
+        find
+            .ancestor(of: find.text(label), matching: find.byType(Opacity))
+            .first,
       );
-      expect(opacity.opacity, 1.0, reason: 'строка «$label» осталась невидимой');
+      expect(
+        opacity.opacity,
+        1.0,
+        reason: 'строка «$label» осталась невидимой',
+      );
     }
   });
 }

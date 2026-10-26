@@ -5,7 +5,8 @@ import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/launch_splash.dart';
 
-const _heart = 'M0.0,19.0 C-3.0,19.0 -6.0,13.1 -9.0,10.0 C-12.0,6.9 -16.2,3.5 -18.0,0.4 '
+const _heart =
+    'M0.0,19.0 C-3.0,19.0 -6.0,13.1 -9.0,10.0 C-12.0,6.9 -16.2,3.5 -18.0,0.4 '
     'C-19.8,-2.7 -20.2,-5.7 -19.6,-8.4 C-19.0,-11.1 -16.7,-14.6 -14.4,-16.0 '
     'C-12.1,-17.4 -8.4,-17.7 -6.0,-16.8 C-3.6,-15.9 -2.0,-10.4 0.0,-10.4 '
     'C2.0,-10.4 3.6,-15.9 6.0,-16.8 C8.4,-17.7 12.1,-17.4 14.4,-16.0 '
@@ -13,61 +14,64 @@ const _heart = 'M0.0,19.0 C-3.0,19.0 -6.0,13.1 -9.0,10.0 C-12.0,6.9 -16.2,3.5 -1
     'C16.2,3.5 12.0,6.9 9.0,10.0 C6.0,13.1 3.0,19.0 0.0,19.0 Z';
 
 Map<String, dynamic> _data({String until = '2026-11-01', String from = ''}) => {
-      'key': 'hw_key',
-      'v': 1,
-      'w': 360,
-      'h': 780,
-      'ms': 60,
-      'step': 20,
-      'from': from,
-      'until': until,
-      'sort': 100,
-      'night': '#1E1729',
-      'name': {'ru': 'Хэллоуин', 'en': 'Halloween', 'zh': '万圣节'},
-      'window': {
-        'path': _heart,
-        'frame': [12, 4],
-        'ink': '#2a2d30',
-        'track': [
-          [180, 372, 0],
-          [180, 372, 0],
-          [181, 372, 2],
-          [182, 372, 40],
-        ],
-      },
-      'sprites': {
-        'door': {
-          'frames': ['door'],
-          'box': [0, 0, 360, 780],
-        },
-        'key': {
-          'frames': ['key0', 'key1', 'key2'],
-          'box': [-17.9, -48.7, 35.8, 53.6],
-        },
-      },
-      'layers': [
-        {'sprite': 'door', 'fill': true, 'under': true},
-        {
-          'sprite': 'key',
-          'track': [
-            [430, 93.6, 6.9, -70, 0, 1],
-            [430, 93.6, 6.9, -70, 1, 2],
-            [300, 200, 5, -30, 1, 0],
-            [180, 366, 3.2, 0, 1, 1],
-          ],
-        },
+  'key': 'hw_key',
+  'v': 1,
+  'w': 360,
+  'h': 780,
+  'ms': 60,
+  'step': 20,
+  'from': from,
+  'until': until,
+  'sort': 100,
+  'night': '#1E1729',
+  'name': {'ru': 'Хэллоуин', 'en': 'Halloween', 'zh': '万圣节'},
+  'window': {
+    'path': _heart,
+    'frame': [12, 4],
+    'ink': '#2a2d30',
+    'track': [
+      [180, 372, 0],
+      [180, 372, 0],
+      [181, 372, 2],
+      [182, 372, 40],
+    ],
+  },
+  'sprites': {
+    'door': {
+      'frames': ['door'],
+      'box': [0, 0, 360, 780],
+    },
+    'key': {
+      'frames': ['key0', 'key1', 'key2'],
+      'box': [-17.9, -48.7, 35.8, 53.6],
+    },
+  },
+  'layers': [
+    {'sprite': 'door', 'fill': true, 'under': true},
+    {
+      'sprite': 'key',
+      'track': [
+        [430, 93.6, 6.9, -70, 0, 1],
+        [430, 93.6, 6.9, -70, 1, 2],
+        [300, 200, 5, -30, 1, 0],
+        [180, 366, 3.2, 0, 1, 1],
       ],
-      'files': {
-        'door': 'https://togetherly.day/api/files/catalog_items/splash_hw_key/door_a.webp',
-        'key0': 'https://x/key0.webp',
-        'key1': 'https://x/key1.webp',
-        'key2': 'https://x/key2.webp',
-        'still': 'https://x/still.webp',
-      },
-    };
+    },
+  ],
+  'files': {
+    'door':
+        'https://togetherly.day/api/files/catalog_items/splash_hw_key/door_a.webp',
+    'key0': 'https://x/key0.webp',
+    'key1': 'https://x/key1.webp',
+    'key2': 'https://x/key2.webp',
+    'still': 'https://x/still.webp',
+  },
+};
 
-Map<String, dynamic> _row(Map<String, dynamic> data, {String kind = 'splash'}) =>
-    {'id': 'splash_hw_key', 'kind': kind, 'data': data};
+Map<String, dynamic> _row(
+  Map<String, dynamic> data, {
+  String kind = 'splash',
+}) => {'id': 'splash_hw_key', 'kind': kind, 'data': data};
 
 void main() {
   group('запись каталога', () {
@@ -83,7 +87,10 @@ void main() {
       expect(s.layers.first.under, isTrue);
       expect(s.layers.last.under, isFalse);
       expect(s.sprites['key']!.frames, ['key0', 'key1', 'key2']);
-      expect(s.sprites['key']!.box, const Rect.fromLTWH(-17.9, -48.7, 35.8, 53.6));
+      expect(
+        s.sprites['key']!.box,
+        const Rect.fromLTWH(-17.9, -48.7, 35.8, 53.6),
+      );
       expect(s.window.frameWidth, 12);
       expect(s.window.inkWidth, 4);
       expect(s.window.track.length, 4);
@@ -93,9 +100,15 @@ void main() {
 
     test('чужой вид и битые записи не разбираются', () {
       expect(LaunchSplash.fromCatalog(_row(_data(), kind: 'backdrop')), isNull);
-      expect(LaunchSplash.fromCatalog({'kind': 'splash', 'data': 'нет'}), isNull);
+      expect(
+        LaunchSplash.fromCatalog({'kind': 'splash', 'data': 'нет'}),
+        isNull,
+      );
       expect(LaunchSplash.fromCatalog(_row({..._data(), 'key': ''})), isNull);
-      expect(LaunchSplash.fromCatalog(_row({..._data(), 'layers': []})), isNull);
+      expect(
+        LaunchSplash.fromCatalog(_row({..._data(), 'layers': []})),
+        isNull,
+      );
       expect(LaunchSplash.fromCatalog(_row({..._data(), 'ms': 0})), isNull);
     });
 
@@ -141,7 +154,9 @@ void main() {
     });
 
     test('начало включая, пустой конец — без конца', () {
-      final s = LaunchSplash.fromCatalog(_row(_data(from: '2026-10-20', until: '')))!;
+      final s = LaunchSplash.fromCatalog(
+        _row(_data(from: '2026-10-20', until: '')),
+      )!;
       expect(s.isOn(DateTime(2026, 10, 19, 23)), isFalse);
       expect(s.isOn(DateTime(2026, 10, 20, 0, 1)), isTrue);
       expect(s.isOn(DateTime(2030, 1, 1)), isTrue);
@@ -179,19 +194,32 @@ void main() {
   });
 
   test('запечённый «Ключ» из мастерской разбирается целиком', () {
-    final dir = Directory('${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_splash/hw_key');
+    final dir = Directory(
+      '${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_splash/hw_key',
+    );
     if (!dir.existsSync()) return;
-    final spec = jsonDecode(File('${dir.path}/splash.json').readAsStringSync()) as Map<String, dynamic>;
+    final spec =
+        jsonDecode(File('${dir.path}/splash.json').readAsStringSync())
+            as Map<String, dynamic>;
     final files = {
       for (final f in dir.listSync().whereType<File>())
-        if (!f.path.endsWith('.json')) f.uri.pathSegments.last.split('.').first: f.path,
+        if (!f.path.endsWith('.json'))
+          f.uri.pathSegments.last.split('.').first: f.path,
     };
     final s = LaunchSplash.fromJson({...spec, 'files': files});
     expect(s, isNotNull);
     expect(s!.ms, 1800);
     expect(s.layers.length, 6);
-    expect(s.layers.where((l) => l.under).length, 5, reason: 'дверь, накладка, скважины и щелчок лежат в ночи');
-    expect(s.layers.last.sprite, 'key', reason: 'ключ падает поверх открытого окна');
+    expect(
+      s.layers.where((l) => l.under).length,
+      5,
+      reason: 'дверь, накладка, скважины и щелчок лежат в ночи',
+    );
+    expect(
+      s.layers.last.sprite,
+      'key',
+      reason: 'ключ падает поверх открытого окна',
+    );
     expect(s.window.track.length, 91);
     expect(s.fileNames.length, 17);
   });

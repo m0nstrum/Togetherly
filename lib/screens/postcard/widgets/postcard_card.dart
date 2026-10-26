@@ -75,30 +75,38 @@ class PostcardCard extends StatelessWidget {
         // открытка должна выглядеть одинаково и в списке шаблонов, и в
         // полноразмерном снимке, а вёрстка «от ширины» на мелком превью
         // упиралась в переполнение по высоте.
-        PostcardTemplateId.ticket => _fixed(TicketPostcard(
-          days: days,
-          blocks: blocks,
-          isEditing: isEditing,
-          onBlockTap: onBlockTap,
-        )),
-        PostcardTemplateId.receipt => _fixed(ReceiptPostcard(
-          days: days,
-          blocks: blocks,
-          isEditing: isEditing,
-          onBlockTap: onBlockTap,
-        )),
-        PostcardTemplateId.telegram => _fixed(TelegramPostcard(
-          days: days,
-          blocks: blocks,
-          isEditing: isEditing,
-          onBlockTap: onBlockTap,
-        )),
-        PostcardTemplateId.parcel => _fixed(ParcelPostcard(
-          days: days,
-          blocks: blocks,
-          isEditing: isEditing,
-          onBlockTap: onBlockTap,
-        )),
+        PostcardTemplateId.ticket => _fixed(
+          TicketPostcard(
+            days: days,
+            blocks: blocks,
+            isEditing: isEditing,
+            onBlockTap: onBlockTap,
+          ),
+        ),
+        PostcardTemplateId.receipt => _fixed(
+          ReceiptPostcard(
+            days: days,
+            blocks: blocks,
+            isEditing: isEditing,
+            onBlockTap: onBlockTap,
+          ),
+        ),
+        PostcardTemplateId.telegram => _fixed(
+          TelegramPostcard(
+            days: days,
+            blocks: blocks,
+            isEditing: isEditing,
+            onBlockTap: onBlockTap,
+          ),
+        ),
+        PostcardTemplateId.parcel => _fixed(
+          ParcelPostcard(
+            days: days,
+            blocks: blocks,
+            isEditing: isEditing,
+            onBlockTap: onBlockTap,
+          ),
+        ),
       },
     );
   }
@@ -108,9 +116,9 @@ class PostcardCard extends StatelessWidget {
 /// а наружу отдаётся масштабированная копия. Так превью в списке шаблонов и
 /// снимок в полном размере отличаются только количеством пикселей.
 Widget _fixed(Widget card) => FittedBox(
-      fit: BoxFit.contain,
-      child: SizedBox(width: 1000, height: 1000, child: card),
-    );
+  fit: BoxFit.contain,
+  child: SizedBox(width: 1000, height: 1000, child: card),
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helper: wraps a text widget with an edit tap region when editing
@@ -176,22 +184,34 @@ class _TogetherCard extends StatelessWidget {
           const Positioned(
             top: 18,
             left: 22,
-            child: Text('♡', style: TextStyle(fontSize: 28, color: Color(0x33FF6B81))),
+            child: Text(
+              '♡',
+              style: TextStyle(fontSize: 28, color: Color(0x33FF6B81)),
+            ),
           ),
           const Positioned(
             top: 40,
             right: 18,
-            child: Text('♡', style: TextStyle(fontSize: 18, color: Color(0x22FF6B81))),
+            child: Text(
+              '♡',
+              style: TextStyle(fontSize: 18, color: Color(0x22FF6B81)),
+            ),
           ),
           const Positioned(
             bottom: 28,
             left: 16,
-            child: Text('♡', style: TextStyle(fontSize: 16, color: Color(0x22FF6B81))),
+            child: Text(
+              '♡',
+              style: TextStyle(fontSize: 16, color: Color(0x22FF6B81)),
+            ),
           ),
           const Positioned(
             bottom: 18,
             right: 24,
-            child: Text('♡', style: TextStyle(fontSize: 24, color: Color(0x33FF6B81))),
+            child: Text(
+              '♡',
+              style: TextStyle(fontSize: 24, color: Color(0x33FF6B81)),
+            ),
           ),
           // Content
           Positioned.fill(
@@ -201,47 +221,66 @@ class _TogetherCard extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                _editable(
-                  block: _b('names'),
-                  isEditing: isEditing,
-                  onTap: onBlockTap,
-                  highlightColor: const Color(0xFFFF6B81),
-                  child: Text(
-                    _b('names').text,
-                    style: AppFonts.onest(size: 15, weight: 600, letterSpacing: 2, color: const Color(0xFFAD4560)),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  days.toString(),
-                  style: AppFonts.onest(size: 96, weight: 900, height: 1, color: const Color(0xFFFF6B81)),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                _editable(
-                  block: _b('days_label'),
-                  isEditing: isEditing,
-                  onTap: onBlockTap,
-                  highlightColor: const Color(0xFFFF6B81),
-                  child: Text(
-                    _b('days_label').text,
-                    style: AppFonts.onest(size: 16, weight: 500, letterSpacing: 1.5, color: const Color(0xFFCC4A66)),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 28),
-                _editable(
-                  block: _b('message'),
-                  isEditing: isEditing,
-                  onTap: onBlockTap,
-                  highlightColor: const Color(0xFFFF6B81),
-                  child: Text(
-                    _b('message').text,
-                    style: AppFonts.onest(size: 13, weight: 400, color: const Color(0xFFAD4560)).copyWith(fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+                    _editable(
+                      block: _b('names'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      highlightColor: const Color(0xFFFF6B81),
+                      child: Text(
+                        _b('names').text,
+                        style: AppFonts.onest(
+                          size: 15,
+                          weight: 600,
+                          letterSpacing: 2,
+                          color: const Color(0xFFAD4560),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      days.toString(),
+                      style: AppFonts.onest(
+                        size: 96,
+                        weight: 900,
+                        height: 1,
+                        color: const Color(0xFFFF6B81),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    _editable(
+                      block: _b('days_label'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      highlightColor: const Color(0xFFFF6B81),
+                      child: Text(
+                        _b('days_label').text,
+                        style: AppFonts.onest(
+                          size: 16,
+                          weight: 500,
+                          letterSpacing: 1.5,
+                          color: const Color(0xFFCC4A66),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    _editable(
+                      block: _b('message'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      highlightColor: const Color(0xFFFF6B81),
+                      child: Text(
+                        _b('message').text,
+                        style: AppFonts.onest(
+                          size: 13,
+                          weight: 400,
+                          color: const Color(0xFFAD4560),
+                        ).copyWith(fontStyle: FontStyle.italic),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -297,8 +336,14 @@ class _PolaroidCard extends StatelessWidget {
         child: GestureDetector(
           onPanUpdate: isEditing && onAlignmentChanged != null
               ? (d) {
-                  final nx = (imageAlignment.x - d.delta.dx / 120).clamp(-1.0, 1.0);
-                  final ny = (imageAlignment.y - d.delta.dy / 120).clamp(-1.0, 1.0);
+                  final nx = (imageAlignment.x - d.delta.dx / 120).clamp(
+                    -1.0,
+                    1.0,
+                  );
+                  final ny = (imageAlignment.y - d.delta.dy / 120).clamp(
+                    -1.0,
+                    1.0,
+                  );
                   onAlignmentChanged!(Alignment(nx, ny));
                 }
               : null,
@@ -309,18 +354,25 @@ class _PolaroidCard extends StatelessWidget {
               // фото из галереи декодилось в натуральном разрешении (12 Мп ≈
               // 48 МБ битмап) → при рендере открытки в PNG ловили OutOfMemory
               // на слабых устройствах («не удалось сохранить»).
-              Image.file(File(imagePath!),
-                  fit: BoxFit.cover,
-                  alignment: imageAlignment,
-                  cacheWidth: 1080),
+              Image.file(
+                File(imagePath!),
+                fit: BoxFit.cover,
+                alignment: imageAlignment,
+                cacheWidth: 1080,
+              ),
               Positioned(
-                bottom: 0, left: 0, right: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.55)],
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.55),
+                      ],
                     ),
                   ),
                   padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
@@ -329,13 +381,30 @@ class _PolaroidCard extends StatelessWidget {
                     children: [
                       Text(
                         days.toString(),
-                        style: AppFonts.onest(size: 72, weight: 900, height: 1, color: Colors.white).copyWith(shadows: const [Shadow(color: Colors.black26, blurRadius: 12)]),
+                        style:
+                            AppFonts.onest(
+                              size: 72,
+                              weight: 900,
+                              height: 1,
+                              color: Colors.white,
+                            ).copyWith(
+                              shadows: const [
+                                Shadow(color: Colors.black26, blurRadius: 12),
+                              ],
+                            ),
                       ),
                       _editable(
-                        block: _b('days_label'), isEditing: isEditing, onTap: onBlockTap,
+                        block: _b('days_label'),
+                        isEditing: isEditing,
+                        onTap: onBlockTap,
                         child: Text(
                           _b('days_label').text,
-                          style: AppFonts.onest(size: 12, weight: 500, letterSpacing: 1.5, color: Colors.white.withOpacity(0.85)),
+                          style: AppFonts.onest(
+                            size: 12,
+                            weight: 500,
+                            letterSpacing: 1.5,
+                            color: Colors.white.withOpacity(0.85),
+                          ),
                         ),
                       ),
                     ],
@@ -345,9 +414,13 @@ class _PolaroidCard extends StatelessWidget {
               // Drag hint — скрывается при экспорте (isEditing = false)
               if (isEditing)
                 Positioned(
-                  top: 8, left: 8,
+                  top: 8,
+                  left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.45),
                       borderRadius: BorderRadius.circular(6),
@@ -355,12 +428,19 @@ class _PolaroidCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.open_with_rounded,
-                            color: Colors.white, size: 11),
+                        const Icon(
+                          Icons.open_with_rounded,
+                          color: Colors.white,
+                          size: 11,
+                        ),
                         const SizedBox(width: 4),
-                        Text(LocaleService.current.dragHint,
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 10)),
+                        Text(
+                          LocaleService.current.dragHint,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -388,27 +468,68 @@ class _PolaroidCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               Positioned(
-                top: 12, right: 14,
-                child: Text('📷',
-                  style: TextStyle(fontSize: 20, color: Colors.white.withOpacity(0.6))),
+                top: 12,
+                right: 14,
+                child: Text(
+                  '📷',
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white.withOpacity(0.6),
+                  ),
+                ),
               ),
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isEditing) ...[
-                      const Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 34),
+                      const Icon(
+                        Icons.add_photo_alternate_rounded,
+                        color: Colors.white,
+                        size: 34,
+                      ),
                       const SizedBox(height: 6),
-                      Text(LocaleService.current.addPhoto,
-                        style: AppFonts.onest(size: 12, weight: 500, color: Colors.white.withOpacity(0.9))),
+                      Text(
+                        LocaleService.current.addPhoto,
+                        style: AppFonts.onest(
+                          size: 12,
+                          weight: 500,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
                       const SizedBox(height: 16),
                     ],
-                    Text(days.toString(),
-                      style: AppFonts.onest(size: 80, weight: 900, height: 1, color: Colors.white).copyWith(shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 8)])),
+                    Text(
+                      days.toString(),
+                      style:
+                          AppFonts.onest(
+                            size: 80,
+                            weight: 900,
+                            height: 1,
+                            color: Colors.white,
+                          ).copyWith(
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                    ),
                     _editable(
-                      block: _b('days_label'), isEditing: isEditing, onTap: onBlockTap,
-                      child: Text(_b('days_label').text,
-                        style: AppFonts.onest(size: 13, weight: 500, letterSpacing: 1.5, color: Colors.white.withOpacity(0.85)))),
+                      block: _b('days_label'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      child: Text(
+                        _b('days_label').text,
+                        style: AppFonts.onest(
+                          size: 13,
+                          weight: 500,
+                          letterSpacing: 1.5,
+                          color: Colors.white.withOpacity(0.85),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -425,19 +546,35 @@ class _PolaroidCard extends StatelessWidget {
       child: Column(
         children: [
           _editable(
-            block: _b('names'), isEditing: isEditing, onTap: onBlockTap,
+            block: _b('names'),
+            isEditing: isEditing,
+            onTap: onBlockTap,
             highlightColor: const Color(0xFFFF6B9D),
-            child: Text(_b('names').text,
-              style: AppFonts.onest(size: 14, weight: 700, color: const Color(0xFF333333)),
-              textAlign: TextAlign.center),
+            child: Text(
+              _b('names').text,
+              style: AppFonts.onest(
+                size: 14,
+                weight: 700,
+                color: const Color(0xFF333333),
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 6),
           _editable(
-            block: _b('message'), isEditing: isEditing, onTap: onBlockTap,
+            block: _b('message'),
+            isEditing: isEditing,
+            onTap: onBlockTap,
             highlightColor: const Color(0xFFFF6B9D),
-            child: Text(_b('message').text,
-              style: AppFonts.onest(size: 12, weight: 400, color: Colors.grey.shade500).copyWith(fontStyle: FontStyle.italic),
-              textAlign: TextAlign.center),
+            child: Text(
+              _b('message').text,
+              style: AppFonts.onest(
+                size: 12,
+                weight: 400,
+                color: Colors.grey.shade500,
+              ).copyWith(fontStyle: FontStyle.italic),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),
@@ -454,10 +591,7 @@ class _PolaroidCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            height: 185,
-            child: _buildPhotoContent(topRadius: true),
-          ),
+          SizedBox(height: 185, child: _buildPhotoContent(topRadius: true)),
           _buildBottomStrip(),
         ],
       ),
@@ -517,10 +651,26 @@ class _BloomCard extends StatelessWidget {
           // Blob decorations
           Positioned.fill(child: CustomPaint(painter: _BlobPainter())),
           // Flower corner decorations
-          const Positioned(top: 12, left: 14, child: Text('🌸', style: TextStyle(fontSize: 26))),
-          const Positioned(bottom: 12, right: 14, child: Text('🌸', style: TextStyle(fontSize: 22))),
-          const Positioned(top: 14, right: 12, child: Text('🌷', style: TextStyle(fontSize: 18))),
-          const Positioned(bottom: 14, left: 12, child: Text('🌷', style: TextStyle(fontSize: 16))),
+          const Positioned(
+            top: 12,
+            left: 14,
+            child: Text('🌸', style: TextStyle(fontSize: 26)),
+          ),
+          const Positioned(
+            bottom: 12,
+            right: 14,
+            child: Text('🌸', style: TextStyle(fontSize: 22)),
+          ),
+          const Positioned(
+            top: 14,
+            right: 12,
+            child: Text('🌷', style: TextStyle(fontSize: 18)),
+          ),
+          const Positioned(
+            bottom: 14,
+            left: 12,
+            child: Text('🌷', style: TextStyle(fontSize: 16)),
+          ),
           // Central frosted card
           Center(
             child: Container(
@@ -530,7 +680,10 @@ class _BloomCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.78),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.9), width: 1.5),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.9),
+                  width: 1.5,
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -542,14 +695,24 @@ class _BloomCard extends StatelessWidget {
                     highlightColor: const Color(0xFFD48BC0),
                     child: Text(
                       _b('names').text,
-                      style: AppFonts.onest(size: 13, weight: 600, letterSpacing: 1.5, color: const Color(0xFFB06090)),
+                      style: AppFonts.onest(
+                        size: 13,
+                        weight: 600,
+                        letterSpacing: 1.5,
+                        color: const Color(0xFFB06090),
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     days.toString(),
-                    style: AppFonts.onest(size: 82, weight: 900, height: 1, color: const Color(0xFFD48BC0)),
+                    style: AppFonts.onest(
+                      size: 82,
+                      weight: 900,
+                      height: 1,
+                      color: const Color(0xFFD48BC0),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
@@ -560,7 +723,12 @@ class _BloomCard extends StatelessWidget {
                     highlightColor: const Color(0xFFD48BC0),
                     child: Text(
                       _b('days_label').text,
-                      style: AppFonts.onest(size: 13, weight: 400, letterSpacing: 1.2, color: const Color(0xFFB06090)),
+                      style: AppFonts.onest(
+                        size: 13,
+                        weight: 400,
+                        letterSpacing: 1.2,
+                        color: const Color(0xFFB06090),
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -572,7 +740,11 @@ class _BloomCard extends StatelessWidget {
                     highlightColor: const Color(0xFFD48BC0),
                     child: Text(
                       _b('message').text,
-                      style: AppFonts.onest(size: 12, weight: 400, color: const Color(0xFF9A5070)).copyWith(fontStyle: FontStyle.italic),
+                      style: AppFonts.onest(
+                        size: 12,
+                        weight: 400,
+                        color: const Color(0xFF9A5070),
+                      ).copyWith(fontStyle: FontStyle.italic),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -592,8 +764,16 @@ class _BlobPainter extends CustomPainter {
     final blobs = [
       (Offset(0, 0), 90.0, const Color(0x30F4A4C8)),
       (Offset(size.width, size.height), 100.0, const Color(0x30C9A4F4)),
-      (Offset(size.width * 0.15, size.height * 0.75), 70.0, const Color(0x28F4CCA4)),
-      (Offset(size.width * 0.85, size.height * 0.2), 65.0, const Color(0x25A4C4F4)),
+      (
+        Offset(size.width * 0.15, size.height * 0.75),
+        70.0,
+        const Color(0x28F4CCA4),
+      ),
+      (
+        Offset(size.width * 0.85, size.height * 0.2),
+        65.0,
+        const Color(0x25A4C4F4),
+      ),
     ];
     for (final (center, radius, color) in blobs) {
       canvas.drawCircle(center, radius, Paint()..color = color);
@@ -639,9 +819,24 @@ class _NightSkyCard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(child: CustomPaint(painter: _StarsPainter())),
-          const Positioned(top: 22, right: 26, child: Text('🌙', style: TextStyle(fontSize: 28))),
-          const Positioned(bottom: 22, left: 20, child: Text('⭐', style: TextStyle(fontSize: 14))),
-          const Positioned(top: 60, left: 16, child: Text('✦', style: TextStyle(fontSize: 12, color: Color(0x80FFD700)))),
+          const Positioned(
+            top: 22,
+            right: 26,
+            child: Text('🌙', style: TextStyle(fontSize: 28)),
+          ),
+          const Positioned(
+            bottom: 22,
+            left: 20,
+            child: Text('⭐', style: TextStyle(fontSize: 14)),
+          ),
+          const Positioned(
+            top: 60,
+            left: 16,
+            child: Text(
+              '✦',
+              style: TextStyle(fontSize: 12, color: Color(0x80FFD700)),
+            ),
+          ),
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -654,17 +849,30 @@ class _NightSkyCard extends StatelessWidget {
                     onTap: onBlockTap,
                     child: Text(
                       _b('names').text,
-                      style: AppFonts.onest(size: 14, weight: 500, letterSpacing: 2.5, color: Colors.white.withOpacity(0.7)),
+                      style: AppFonts.onest(
+                        size: 14,
+                        weight: 500,
+                        letterSpacing: 2.5,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     days.toString(),
-                    style: AppFonts.onest(size: 96, weight: 900, height: 1, color: const Color(0xFFFFD700)).copyWith(shadows: const [
-                        Shadow(color: Color(0x80FFD700), blurRadius: 24),
-                        Shadow(color: Color(0x40FFD700), blurRadius: 48),
-                      ]),
+                    style:
+                        AppFonts.onest(
+                          size: 96,
+                          weight: 900,
+                          height: 1,
+                          color: const Color(0xFFFFD700),
+                        ).copyWith(
+                          shadows: const [
+                            Shadow(color: Color(0x80FFD700), blurRadius: 24),
+                            Shadow(color: Color(0x40FFD700), blurRadius: 48),
+                          ],
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
@@ -674,7 +882,12 @@ class _NightSkyCard extends StatelessWidget {
                     onTap: onBlockTap,
                     child: Text(
                       _b('days_label').text,
-                      style: AppFonts.onest(size: 12, weight: 400, letterSpacing: 1.5, color: Colors.white.withOpacity(0.5)),
+                      style: AppFonts.onest(
+                        size: 12,
+                        weight: 400,
+                        letterSpacing: 1.5,
+                        color: Colors.white.withOpacity(0.5),
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -685,7 +898,11 @@ class _NightSkyCard extends StatelessWidget {
                     onTap: onBlockTap,
                     child: Text(
                       _b('message').text,
-                      style: AppFonts.onest(size: 14, weight: 400, color: Colors.white.withOpacity(0.85)).copyWith(fontStyle: FontStyle.italic),
+                      style: AppFonts.onest(
+                        size: 14,
+                        weight: 400,
+                        color: Colors.white.withOpacity(0.85),
+                      ).copyWith(fontStyle: FontStyle.italic),
                       textAlign: TextAlign.center,
                     ),
                   ),

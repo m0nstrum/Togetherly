@@ -37,19 +37,26 @@ void main() {
 
   group('незащищённых обращений по индексу не осталось', () {
     test('никто не индексирует список сырым активным индексом', () {
-      final src = File('lib/models/connections_manager.dart').readAsStringSync();
+      final src = File(
+        'lib/models/connections_manager.dart',
+      ).readAsStringSync();
       // Разрешено ровно одно место — сам clampedActiveIndex внутри выражения.
-      final raw = RegExp(r'_connections\[_activeConnectionIndex\]').allMatches(src).length;
+      final raw = RegExp(
+        r'_connections\[_activeConnectionIndex\]',
+      ).allMatches(src).length;
       expect(
         raw,
         0,
-        reason: 'обращение по сырому индексу падает, когда он −1: '
+        reason:
+            'обращение по сырому индексу падает, когда он −1: '
             'так ронялось приложение и в августе, и в ночь на 14-е',
       );
     });
 
     test('активный индекс не получает −1 от indexOf', () {
-      final src = File('lib/models/connections_manager.dart').readAsStringSync();
+      final src = File(
+        'lib/models/connections_manager.dart',
+      ).readAsStringSync();
       expect(
         src.contains('_activeConnectionIndex = _connections.indexOf('),
         isFalse,

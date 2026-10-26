@@ -117,6 +117,14 @@ body.reels {
 .rl-top { position: absolute; top: var(--rl-top); left: 12px; right: 68px; display: flex; align-items: center; gap: 8px; }
 .rl-pill { height: 40px; min-width: 0; border-radius: 999px; background: var(--rl-scrim); display: inline-flex; align-items: center; gap: 8px; padding: 0 12px 0 8px; font-weight: 600; font-size: 13px; }
 .rl-pill b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* fork (D2): «Позвать» — рядом с пилюлей, пока партнёра нет */
+.rl-invite { height: 40px; flex: none; border-radius: 999px; padding: 0 14px; background: var(--rl-accent); color: var(--rl-on-accent); font: inherit; font-weight: 600; font-size: 13px; border: 0; }
+.rl-invite[hidden] { display: none; }
+.rl-invite:disabled { opacity: .6; }
+/* fork (D1): ×2 у TikTok */
+.rl-speed b { font-weight: 700; font-size: 15px; }
+.rl-speed[hidden] { display: none; }
+.rl-speed.is-on { background: var(--rl-accent); color: var(--rl-on-accent); }
 .rl-src { flex: none; background: rgba(255, 255, 255, .2); border-radius: 999px; padding: 4px 8px; font: 700 10px/1 'Onest', sans-serif; letter-spacing: .04em; }
 .rl-av { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 800 10px/1 'Unbounded', sans-serif; background: var(--rl-pc); color: var(--rl-on-pc); }
 .rl-av.is-partner { background: var(--rl-partner); color: var(--rl-on-partner); }

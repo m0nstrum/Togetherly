@@ -54,8 +54,7 @@ class RatingPicker extends StatelessWidget {
             ),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (c, a) =>
-                  ScaleTransition(scale: a, child: c),
+              transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
               child: v == null
                   ? Text(
                       s.ratingNotRated,
@@ -192,10 +191,7 @@ class _Segment extends StatelessWidget {
         decoration: BoxDecoration(
           color: filled ? fillColor : t.surfaceMuted,
           borderRadius: BorderRadius.circular(9),
-          border: Border.all(
-            color: filled ? fillColor : t.divider,
-            width: 1,
-          ),
+          border: Border.all(color: filled ? fillColor : t.divider, width: 1),
         ),
         child: Text(
           '$index',

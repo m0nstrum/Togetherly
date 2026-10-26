@@ -79,8 +79,9 @@ class HttpMediaFetcher implements MediaFetcher {
   /// `v2|<ссылка как в записи>`, а на диске лежит исходный файл целиком.
   Future<File?> _fromImageCache(String ref) async {
     try {
-      final info = await OfflineImageCacheManager.instance
-          .getFileFromCache('v2|$ref');
+      final info = await OfflineImageCacheManager.instance.getFileFromCache(
+        'v2|$ref',
+      );
       final file = info?.file;
       if (file == null || !await file.exists()) return null;
       if (await file.length() < _minCachedBytes) return null;

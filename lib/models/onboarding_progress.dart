@@ -53,12 +53,11 @@ abstract final class OnboardingProgress {
     required bool hasPhoto,
     required bool moodToday,
     required bool widgetPinned,
-  }) =>
-      {
-        if (hasPhoto) OnboardingStep.photo,
-        if (moodToday) OnboardingStep.mood,
-        if (widgetPinned) OnboardingStep.widget,
-      };
+  }) => {
+    if (hasPhoto) OnboardingStep.photo,
+    if (moodToday) OnboardingStep.mood,
+    if (widgetPinned) OnboardingStep.widget,
+  };
 
   /// Показывать ли карточку.
   static bool visible({

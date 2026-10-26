@@ -53,10 +53,9 @@ List<CountdownEvent> countdownEventsFor(
   required String Function(DateTime) dateLabel,
   int limit = kCountdownWidgetEvents,
 }) {
-  final upcoming = timers
-      .where((t) => t.isCountdown && t.startDate.isAfter(now))
-      .toList()
-    ..sort((a, b) => a.startDate.compareTo(b.startDate));
+  final upcoming =
+      timers.where((t) => t.isCountdown && t.startDate.isAfter(now)).toList()
+        ..sort((a, b) => a.startDate.compareTo(b.startDate));
   return [
     for (final t in upcoming.take(limit))
       CountdownEvent(
@@ -125,8 +124,9 @@ CountdownTick? countdownAt(
   final start = from > nowMs ? nowMs : from;
   final total = next.atMs - start;
   final passed = nowMs - start;
-  final percent =
-      total <= 0 ? 100 : ((passed * 100) / total).round().clamp(0, 100);
+  final percent = total <= 0
+      ? 100
+      : ((passed * 100) / total).round().clamp(0, 100);
   return CountdownTick(
     event: next,
     days: leftMin ~/ dayMin,

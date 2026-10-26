@@ -32,8 +32,9 @@ class _MissYouWeekChartState extends State<MissYouWeekChart>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 950))
-      ..forward();
+      vsync: this,
+      duration: const Duration(milliseconds: 950),
+    )..forward();
   }
 
   @override
@@ -65,9 +66,11 @@ class _MissYouWeekChartState extends State<MissYouWeekChart>
               // Стаггер: каждый следующий столбик стартует позже.
               final anim = CurvedAnimation(
                 parent: _ctrl,
-                curve: Interval((i * 0.08).clamp(0.0, 1.0),
-                    (i * 0.08 + 0.5).clamp(0.0, 1.0),
-                    curve: Curves.easeOutCubic),
+                curve: Interval(
+                  (i * 0.08).clamp(0.0, 1.0),
+                  (i * 0.08 + 0.5).clamp(0.0, 1.0),
+                  curve: Curves.easeOutCubic,
+                ),
               );
               return Expanded(
                 child: Padding(
@@ -99,9 +102,13 @@ class _MissYouWeekChartState extends State<MissYouWeekChart>
                                   left: 0,
                                   right: 0,
                                   child: Opacity(
-                                    opacity: ((t - 0.75) / 0.25).clamp(0.0, 1.0),
+                                    opacity: ((t - 0.75) / 0.25).clamp(
+                                      0.0,
+                                      1.0,
+                                    ),
                                     child: Center(
-                                        child: _Badge(check: cs.primary)),
+                                      child: _Badge(check: cs.primary),
+                                    ),
                                   ),
                                 ),
                             ],

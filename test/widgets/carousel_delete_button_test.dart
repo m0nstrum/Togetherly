@@ -50,7 +50,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.delete_outline_rounded).first);
     await tester.pumpAndSettle();
 
-    expect(pressed, 0,
-        reason: 'карусель пропустила нажатие внутрь — кнопку можно вернуть');
+    expect(
+      pressed,
+      0,
+      reason: 'карусель пропустила нажатие внутрь — кнопку можно вернуть',
+    );
   });
 }

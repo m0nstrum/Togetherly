@@ -8,10 +8,22 @@ void main() {
 
   test('партнёр включил ролик и поставил паузу — строки и полоса', () {
     final live = make();
-    live.handle({'t': 'source', 'by': 'partner', 'kind': 'youtube', 'label': 'YouTube', 'url': 'https://youtu.be/x'});
+    live.handle({
+      't': 'source',
+      'by': 'partner',
+      'kind': 'youtube',
+      'label': 'YouTube',
+      'url': 'https://youtu.be/x',
+    });
     live.handle({'t': 'title', 'title': 'Кино'});
     t = t.add(const Duration(seconds: 30));
-    live.handle({'t': 'act', 'act': 'pause', 'playing': false, 'at': 754.0, 'by': 'partner'});
+    live.handle({
+      't': 'act',
+      'act': 'pause',
+      'playing': false,
+      'at': 754.0,
+      'by': 'partner',
+    });
     expect(live.hasVideo, isTrue);
     expect(live.title, 'Кино');
     expect(live.playing, isFalse);
@@ -23,15 +35,33 @@ void main() {
 
   test('перемотка и «играть» сразу за ней — одна строка о перемотке', () {
     final live = make();
-    live.handle({'t': 'act', 'act': 'seek', 'playing': false, 'at': 60.0, 'by': 'me'});
+    live.handle({
+      't': 'act',
+      'act': 'seek',
+      'playing': false,
+      'at': 60.0,
+      'by': 'me',
+    });
     t = t.add(const Duration(milliseconds: 800));
-    live.handle({'t': 'act', 'act': 'play', 'playing': true, 'at': 60.5, 'by': 'me'});
+    live.handle({
+      't': 'act',
+      'act': 'play',
+      'playing': true,
+      'at': 60.5,
+      'by': 'me',
+    });
     expect(live.lines, hasLength(1));
     expect(live.lines.single.kind, 'seek');
     expect(live.lines.single.mine, isTrue);
     expect(live.playing, isTrue);
     t = t.add(const Duration(seconds: 10));
-    live.handle({'t': 'act', 'act': 'pause', 'playing': false, 'at': 70.0, 'by': 'partner'});
+    live.handle({
+      't': 'act',
+      'act': 'pause',
+      'playing': false,
+      'at': 70.0,
+      'by': 'partner',
+    });
     expect(live.lines, hasLength(2), reason: 'чужое действие — своя строка');
   });
 
@@ -44,14 +74,21 @@ void main() {
     live.handle({'t': 'status', 'text': 'Играет: YouTube', 'loud': false});
     expect(live.status, 'Играет: YouTube');
     expect(live.noticeSeq, 0);
-    live.handle({'t': 'status', 'text': 'Такую ссылку не открыть', 'loud': true});
+    live.handle({
+      't': 'status',
+      'text': 'Такую ссылку не открыть',
+      'loud': true,
+    });
     expect(live.notice, 'Такую ссылку не открыть');
     expect(live.noticeSeq, 1);
     live.handle({'t': 'pick'});
     live.handle({'t': 'fullscreen'});
     live.handle({'t': 'net', 'kind': 'offline'});
     live.handle({'t': 'manual', 'on': true});
-    expect((live.pickSeq, live.fullscreenSeq, live.offline, live.manual), (1, 1, true, true));
+    expect(
+      (live.pickSeq, live.fullscreenSeq, live.offline, live.manual),
+      (1, 1, true, true),
+    );
     live.handle({'t': 'net', 'kind': 'ready'});
     expect(live.offline, isFalse);
   });

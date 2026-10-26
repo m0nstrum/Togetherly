@@ -51,7 +51,10 @@ void main() {
           final pairs = {
             'primary': (s.onPrimary, s.primary),
             'primaryContainer': (s.onPrimaryContainer, s.primaryContainer),
-            'secondaryContainer': (s.onSecondaryContainer, s.secondaryContainer),
+            'secondaryContainer': (
+              s.onSecondaryContainer,
+              s.secondaryContainer,
+            ),
             'surface': (s.onSurface, s.surface),
             'surfaceVariant': (s.onSurfaceVariant, s.surfaceContainerHighest),
           };

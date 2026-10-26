@@ -48,11 +48,18 @@ void main() {
     test('экран без своей шапки говорит об этом странице', () {
       final js = WatchRoomService.authScript();
       expect(js, contains('window.__togetherlyChrome=1;'));
-      final room = File('pocketbase/pb_public/watch/room/room.js').readAsStringSync();
+      final room = File(
+        'pocketbase/pb_public/watch/room/room.js',
+      ).readAsStringSync();
       expect(room, contains('window.__togetherlyChrome'));
       for (final h in ['watchBack', 'watchCopy', 'watchShare']) {
         expect(room, contains("'$h'"));
-        expect(File('lib/screens/together/watch_room_screen.dart').readAsStringSync(), contains("'$h'"));
+        expect(
+          File(
+            'lib/screens/together/watch_room_screen.dart',
+          ).readAsStringSync(),
+          contains("'$h'"),
+        );
       }
     });
 
@@ -64,14 +71,19 @@ void main() {
       expect(pair, contains("callHandler('forkWatchTicket'"));
       expect(pair, isNot(contains('window.__togetherlyAuth')));
       for (final page in ['room/index.html', 'reels/index.html']) {
-        expect(File('pocketbase/pb_public/watch/$page').readAsStringSync(), contains('pair.js'),
-            reason: '$page обязана подключать pair.js');
+        expect(
+          File('pocketbase/pb_public/watch/$page').readAsStringSync(),
+          contains('pair.js'),
+          reason: '$page обязана подключать pair.js',
+        );
       }
     });
   });
 
   test('экран комнаты передаёт сессию странице', () {
-    final src = File('lib/screens/together/watch_room_screen.dart').readAsStringSync();
+    final src = File(
+      'lib/screens/together/watch_room_screen.dart',
+    ).readAsStringSync();
     expect(src, contains('initialUserScripts'));
     expect(src, contains('WatchRoomService.authScript('));
     expect(src, contains('UserScriptInjectionTime.AT_DOCUMENT_START'));

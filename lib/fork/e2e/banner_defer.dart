@@ -46,7 +46,9 @@ class _ForkE2EBannerDeferState extends State<ForkE2EBannerDefer> {
         setState(() {
           _prefs = prefs;
           final saved = prefs.getInt(key) ?? 0;
-          if (saved > _until) { _until = saved; }
+          if (saved > _until) {
+            _until = saved;
+          }
         });
       }
     } catch (_) {

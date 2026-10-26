@@ -53,15 +53,20 @@ void main() {
     test('Каждое имя из русского словаря есть в шрифте', () {
       for (final entry in kSymbolSynonymsRu.entries) {
         for (final name in entry.value) {
-          expect(SymbolCatalog.has(name), isTrue,
-              reason: '${entry.key} → $name');
+          expect(
+            SymbolCatalog.has(name),
+            isTrue,
+            reason: '${entry.key} → $name',
+          );
         }
       }
     });
 
     test('Значок берётся из нашего шрифта, а не из встроенного', () {
-      expect(SymbolCatalog.iconFor('cake').fontFamily,
-          SymbolCatalog.fontFamily);
+      expect(
+        SymbolCatalog.iconFor('cake').fontFamily,
+        SymbolCatalog.fontFamily,
+      );
     });
   });
 

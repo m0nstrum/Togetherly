@@ -14,17 +14,17 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Widget host(AppTheme theme) => MediaQuery(
-        data: const MediaQueryData(size: Size(360, 780)),
-        child: MaterialApp(
-          home: MissYouScreen(
-            theme: theme,
-            groupId: '',
-            myUid: 'me',
-            partnerUid: '',
-            partnerName: '',
-          ),
-        ),
-      );
+    data: const MediaQueryData(size: Size(360, 780)),
+    child: MaterialApp(
+      home: MissYouScreen(
+        theme: theme,
+        groupId: '',
+        myUid: 'me',
+        partnerUid: '',
+        partnerName: '',
+      ),
+    ),
+  );
 
   testWidgets('рисует оба счёта и пустую неделю', (tester) async {
     await tester.pumpWidget(host(AppThemes.byIndex(7)));
@@ -47,21 +47,24 @@ void main() {
   // Жалоба со скриншотом (16.08.2026): у партнёра в кружке фото, у себя буква
   // «Т» — заглушку строило слово «Ты» из подписи, а не имя человека. Свой
   // аватар экрану вообще не передавали.
-  testWidgets('свой кружок берёт букву имени, а не подписи «Ты»',
-      (tester) async {
-    await tester.pumpWidget(MediaQuery(
-      data: const MediaQueryData(size: Size(360, 780)),
-      child: MaterialApp(
-        home: MissYouScreen(
-          theme: AppThemes.byIndex(7),
-          groupId: '',
-          myUid: 'me',
-          myName: 'Гуляйн',
-          partnerUid: '',
-          partnerName: '',
+  testWidgets('свой кружок берёт букву имени, а не подписи «Ты»', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(size: Size(360, 780)),
+        child: MaterialApp(
+          home: MissYouScreen(
+            theme: AppThemes.byIndex(7),
+            groupId: '',
+            myUid: 'me',
+            myName: 'Гуляйн',
+            partnerUid: '',
+            partnerName: '',
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
     expect(find.text('Г'), findsOneWidget);
@@ -78,21 +81,25 @@ void main() {
     var sent = 0;
     // Экран с парой подписывается на счётчики — без клиента PocketBase он падает.
     await tester.runAsync(() => PocketBaseService().init());
-    await tester.pumpWidget(MediaQuery(
-      data: const MediaQueryData(size: Size(360, 780)),
-      child: MaterialApp(
-        home: MissYouScreen(
-          theme: AppThemes.byIndex(7),
-          groupId: 'g',
-          myUid: 'me',
-          partnerUid: '',
-          partnerName: '',
-          onSent: () => sent++,
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(size: Size(360, 780)),
+        child: MaterialApp(
+          home: MissYouScreen(
+            theme: AppThemes.byIndex(7),
+            groupId: 'g',
+            myUid: 'me',
+            partnerUid: '',
+            partnerName: '',
+            onSent: () => sent++,
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
-    await tester.tap(find.byWidgetPredicate((w) => w.runtimeType.toString() == '_HeartButton'));
+    await tester.tap(
+      find.byWidgetPredicate((w) => w.runtimeType.toString() == '_HeartButton'),
+    );
     await tester.pump();
     expect(sent, 1);
     await tester.pumpWidget(const SizedBox());

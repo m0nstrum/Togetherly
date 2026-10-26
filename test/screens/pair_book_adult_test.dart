@@ -13,15 +13,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// «пусть переключатель будет, человек сам решит». Книга уходит из
 /// приложения файлом, поэтому по умолчанию таких записей в ней нет.
 Memory _m(String id, int day, {bool adult = false}) => Memory(
-      id: id,
-      groupId: 'g',
-      authorUid: 'u',
-      authorName: 'Аня',
-      type: MemoryType.photo,
-      createdAt: DateTime(2026, 5, day),
-      caption: 'запись $id',
-      isAdult: adult,
-    );
+  id: id,
+  groupId: 'g',
+  authorUid: 'u',
+  authorName: 'Аня',
+  type: MemoryType.photo,
+  createdAt: DateTime(2026, 5, day),
+  caption: 'запись $id',
+  isAdult: adult,
+);
 
 void main() {
   setUp(() async {
@@ -38,20 +38,22 @@ void main() {
     tester.view.physicalSize = Size(width * 3, 900 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(
-          size: Size(width, 900),
-          textScaler: TextScaler.linear(scale),
-        ),
-        child: PairBookScreen(
-          memories: memories,
-          theme: AppThemes.pink,
-          coupleTitle: 'Аня и Петя',
-          secretUnlocked: false,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: Size(width, 900),
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: PairBookScreen(
+            memories: memories,
+            theme: AppThemes.pink,
+            coupleTitle: 'Аня и Петя',
+            secretUnlocked: false,
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -61,8 +63,9 @@ void main() {
     expect(find.textContaining('2 '), findsOneWidget);
   });
 
-  testWidgets('переключатель выключен, и запись 18+ в счёт не идёт',
-      (tester) async {
+  testWidgets('переключатель выключен, и запись 18+ в счёт не идёт', (
+    tester,
+  ) async {
     await open(tester, [_m('a', 1), _m('b', 2), _m('hot', 3, adult: true)]);
     final sw = tester.widget<Switch>(find.byType(Switch));
     expect(sw.value, isFalse);
@@ -79,11 +82,13 @@ void main() {
     expect(find.textContaining('3 воспоминани'), findsOneWidget);
   });
 
-  testWidgets('в книге одни записи 18+: кнопка сборки ждёт переключателя',
-      (tester) async {
+  testWidgets('в книге одни записи 18+: кнопка сборки ждёт переключателя', (
+    tester,
+  ) async {
     await open(tester, [_m('hot', 3, adult: true)]);
     FilledButton build() => tester.widget<FilledButton>(
-        find.widgetWithIcon(FilledButton, Icons.menu_book_rounded));
+      find.widgetWithIcon(FilledButton, Icons.menu_book_rounded),
+    );
     expect(build().onPressed, isNull);
     await tester.tap(find.byType(Switch));
     await tester.pump();
@@ -92,8 +97,9 @@ void main() {
 
   // Владелец 11.10.2026: «конечно пусть сохраняется». Выбор живёт на
   // телефоне и переживает закрытие экрана и перезапуск приложения.
-  testWidgets('выбор запоминается: включил один раз, дальше включён',
-      (tester) async {
+  testWidgets('выбор запоминается: включил один раз, дальше включён', (
+    tester,
+  ) async {
     final memories = [_m('a', 1), _m('hot', 3, adult: true)];
     await open(tester, memories);
     await tester.tap(find.byType(Switch));
@@ -118,10 +124,15 @@ void main() {
     expect(src, contains('prefs.remove(kPairBookAdultKey)'));
   });
 
-  testWidgets('строка переключателя влезает на 320 dp с крупным шрифтом',
-      (tester) async {
-    await open(tester, [_m('a', 1), _m('hot', 3, adult: true)],
-        width: 320, scale: 1.3);
+  testWidgets('строка переключателя влезает на 320 dp с крупным шрифтом', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      [_m('a', 1), _m('hot', 3, adult: true)],
+      width: 320,
+      scale: 1.3,
+    );
     expect(tester.takeException(), isNull);
     expect(find.byType(Switch), findsOneWidget);
   });

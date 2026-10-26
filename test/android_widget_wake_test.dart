@@ -10,15 +10,17 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-String _kt(String name) =>
-    File('android/app/src/main/kotlin/com/togetherly/love/$name').readAsStringSync();
+String _kt(String name) => File(
+  'android/app/src/main/kotlin/com/togetherly/love/$name',
+).readAsStringSync();
 
 void main() {
   final wake = _kt('WidgetRefreshWake.kt');
   // fork: FcmService.kt удалён — FCM в форке нет (TOUCHPOINTS.md).
   final map = _kt('PairMapWidgetProvider.kt');
-  final dispatcher =
-      File('lib/services/widget_background_refresh_service.dart').readAsStringSync();
+  final dispatcher = File(
+    'lib/services/widget_background_refresh_service.dart',
+  ).readAsStringSync();
 
   test('тихий пуш и виджет карты не зовут HomeWidgetBackgroundIntent', () {
     expect(map, isNot(contains('HomeWidgetBackgroundIntent')));
@@ -33,14 +35,20 @@ void main() {
   });
 
   test('имена задач совпадают в Kotlin и в диспетчере Dart', () {
-    final names = RegExp(r'const val TASK_\w+ = "(\w+)"')
-        .allMatches(wake)
-        .map((m) => m.group(1)!)
-        .toList();
+    final names = RegExp(
+      r'const val TASK_\w+ = "(\w+)"',
+    ).allMatches(wake).map((m) => m.group(1)!).toList();
     expect(names, containsAll(['widgetRefresh', 'mapWidget']));
     for (final n in names) {
-      expect(dispatcher, contains("'$n'"), reason: 'диспетчер не знает задачу $n');
+      expect(
+        dispatcher,
+        contains("'$n'"),
+        reason: 'диспетчер не знает задачу $n',
+      );
     }
-    expect(dispatcher, contains('PairMapWidgetService.instance.refreshInBackground'));
+    expect(
+      dispatcher,
+      contains('PairMapWidgetService.instance.refreshInBackground'),
+    );
   });
 }

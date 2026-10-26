@@ -1,4 +1,4 @@
-# Инстанс Tethered одной командой (docs/fork/PLAN.md, S4):
+# Инстанс Tethered одной командой (docs/history/PLAN.md, S4):
 #   cp .env.example .env && $EDITOR .env && docker compose up -d
 # Bugsink (крашрепорты) — по желанию: docker compose --profile crash up -d
 name: tethered
@@ -27,6 +27,11 @@ services:
       TETHERED_BACKUP__MAX_KEEP: ${BACKUP_MAX_KEEP:-7}
       TETHERED_BACKUP__AGE_RECIPIENTS: ${BACKUP_AGE_RECIPIENTS:-}
       TETHERED_POISKKINO_KEY: ${POISKKINO_KEY:-}
+      TETHERED_INVITE__PLAY_URL: ${INVITE_PLAY_URL:-}
+      TETHERED_INVITE__RUSTORE_URL: ${INVITE_RUSTORE_URL:-}
+      TETHERED_INVITE__APK_URL: ${INVITE_APK_URL:-}
+      TETHERED_INVITE__ANDROID_FINGERPRINTS: ${INVITE_ANDROID_FINGERPRINTS:-}
+      TETHERED_INVITE__IOS_APP_ID: ${INVITE_IOS_APP_ID:-}
       # Адрес клиента для лимитов — от Caddy (снаружи сервер не виден).
       TETHERED_TRUSTED_PROXY_HEADER: X-Forwarded-For
       # /metrics для Prometheus — только во внутренней сети compose.

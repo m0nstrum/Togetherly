@@ -21,6 +21,6 @@ DrawLayout drawLayoutFor(Size size) {
 /// Ширина боковой колонки. Меньше трёхсот панель ломается: восемь кружков
 /// цвета и шесть кнопок перестают помещаться в строку.
 double sidePanelWidth(Size size) => math.min(
-      math.max(300.0, size.width * 0.32),
-      math.max(300.0, size.width / 3),
-    );
+  math.max(300.0, size.width * 0.32),
+  math.max(300.0, size.width / 3),
+);

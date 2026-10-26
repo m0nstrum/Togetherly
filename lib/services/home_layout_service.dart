@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/home_layout.dart';
 import 'plus_service.dart';
-import '../fork/home_defaults.dart'; // fork
+import '../fork/home_defaults.dart';
 
 /// Хранит раскладку главной ([HomeLayout]) на телефоне и раздаёт её экранам.
 ///
@@ -28,8 +28,7 @@ class HomeLayoutService extends ChangeNotifier {
   HomeLayout get saved => _saved;
 
   /// То, что действует на главной сейчас.
-  HomeLayout get current =>
-      _saved.effective(plus: PlusService.instance.active);
+  HomeLayout get current => _saved.effective(plus: PlusService.instance.active);
 
   Future<void> ensureLoaded() async {
     if (_loaded) return;
@@ -58,7 +57,7 @@ class HomeLayoutService extends ChangeNotifier {
 
   /// Выход из аккаунта: следующий человек на телефоне видит главную целиком.
   Future<void> clear() async {
-    _saved = ForkHome.layout; // fork
+    _saved = ForkHome.layout;
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();

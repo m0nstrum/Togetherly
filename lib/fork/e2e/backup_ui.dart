@@ -1,4 +1,4 @@
-/// Бэкап ключей и восстановление (docs/fork/E2E.md §7, решение §12.1).
+/// Бэкап ключей и восстановление (docs/E2E.md §7, решение §12.1).
 library;
 
 import '../secure_screen.dart';
@@ -10,6 +10,7 @@ import '../../widgets/settings_scaffold.dart';
 import 'backup.dart';
 import 'e2e_service.dart';
 import 'fork_e2e.dart';
+import 'link_ui.dart';
 import 'password_policy.dart';
 import 'crypto.dart' show E2EVerifyError;
 import '../ui/feedback.dart';
@@ -83,10 +84,16 @@ class ForkE2EBackupRow extends StatelessWidget {
             ? SettingsRow(
                 icon: Icons.restore_rounded,
                 title: _t('Восстановить ключи', 'Restore keys'),
-                subtitle: _t(
-                  'На сервере есть бэкап — введите фразу или пароль, чтобы читать историю',
-                  'There is a backup on the server — enter your phrase or password to read your history',
-                ),
+                // T3: без бэкапа ключи только на другом телефоне.
+                subtitle: svc.restoreMethod == null
+                    ? _t(
+                        'Ключи на другом вашем телефоне — привяжите этот по QR, чтобы читать историю',
+                        'Your keys are on your other phone — link this one by QR to read your history',
+                      )
+                    : _t(
+                        'На сервере есть бэкап — введите фразу или пароль, чтобы читать историю',
+                        'There is a backup on the server — enter your phrase or password to read your history',
+                      ),
                 onTap: () => Navigator.of(context).push(
                   forkE2ERoute<void>(context, const ForkE2ERestoreScreen()),
                 ),
@@ -101,7 +108,10 @@ class ForkE2EBackupRow extends StatelessWidget {
                       'Включён: фраза из 24 слов',
                       'On: 24-word phrase',
                     ),
-                    BackupMethod.password => _t('Включён: пароль', 'On: password'),
+                    BackupMethod.password => _t(
+                      'Включён: пароль',
+                      'On: password',
+                    ),
                     null => _t(
                       'Выключен — потеряете телефон, потеряете переписку',
                       'Off — lose your phone, lose your history',
@@ -159,7 +169,9 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(_t('Сменить фразу или пароль?', 'Change phrase or password?')),
+        title: Text(
+          _t('Сменить фразу или пароль?', 'Change phrase or password?'),
+        ),
         content: Text(
           _t(
             'Бэкап на сервере перезапишется. Старая фраза или пароль перестанут подходить — '
@@ -258,7 +270,8 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => ForkSecureScreen(builder: _protectedBody);
+  Widget build(BuildContext context) =>
+      ForkSecureScreen(builder: _protectedBody);
 
   Widget _protectedBody(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -269,19 +282,16 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
           padding: const EdgeInsets.all(20),
           children: switch (_method) {
             _ when _showStatus => [
-              Text(
-                switch (_svc.backupMethod.value) {
-                  BackupMethod.password => _t(
-                    'Бэкап ключей включён и защищён паролем.',
-                    'Key backup is on, protected by a password.',
-                  ),
-                  _ => _t(
-                    'Бэкап ключей включён и защищён фразой из 24 слов.',
-                    'Key backup is on, protected by a 24-word phrase.',
-                  ),
-                },
-                style: text.bodyLarge,
-              ),
+              Text(switch (_svc.backupMethod.value) {
+                BackupMethod.password => _t(
+                  'Бэкап ключей включён и защищён паролем.',
+                  'Key backup is on, protected by a password.',
+                ),
+                _ => _t(
+                  'Бэкап ключей включён и защищён фразой из 24 слов.',
+                  'Key backup is on, protected by a 24-word phrase.',
+                ),
+              }, style: text.bodyLarge),
               const SizedBox(height: 8),
               Text(
                 _t(
@@ -295,7 +305,9 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
               const SizedBox(height: 24),
               OutlinedButton(
                 onPressed: _change,
-                child: Text(_t('Сменить фразу или пароль', 'Change phrase or password')),
+                child: Text(
+                  _t('Сменить фразу или пароль', 'Change phrase or password'),
+                ),
               ),
             ],
             _ when _quiz != null => [
@@ -315,21 +327,28 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
                     autocorrect: false,
                     enableSuggestions: false,
                     decoration: InputDecoration(
-                      labelText: _t('Слово №${_quiz![i] + 1}', 'Word #${_quiz![i] + 1}'),
+                      labelText: _t(
+                        'Слово №${_quiz![i] + 1}',
+                        'Word #${_quiz![i] + 1}',
+                      ),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
               const SizedBox(height: 8),
               FilledButton(
-                onPressed: _quizOk && !_busy ? () => _save(_phrase.toString()) : null,
+                onPressed: _quizOk && !_busy
+                    ? () => _save(_phrase.toString())
+                    : null,
                 child: _busy
                     ? const _Spinner()
                     : Text(_t('Включить бэкап', 'Turn on backup')),
               ),
               TextButton(
                 onPressed: _busy ? null : () => setState(() => _quiz = null),
-                child: Text(_t('Показать фразу ещё раз', 'Show the phrase again')),
+                child: Text(
+                  _t('Показать фразу ещё раз', 'Show the phrase again'),
+                ),
               ),
             ],
             null => [
@@ -404,35 +423,53 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
               ),
               FilledButton(
                 onPressed: _written && !_busy ? _startQuiz : null,
-                child: Text(_t('Дальше: проверить запись', 'Next: check what you wrote')),
+                child: Text(
+                  _t('Дальше: проверить запись', 'Next: check what you wrote'),
+                ),
               ),
             ],
             BackupMethod.password => [
               TextField(
                 controller: _pw,
                 obscureText: !_showPassword,
-                autocorrect: false, enableSuggestions: false,
+                autocorrect: false,
+                enableSuggestions: false,
                 autofillHints: const [AutofillHints.newPassword],
                 decoration: InputDecoration(
                   labelText: _t('Пароль', 'Password'),
                   suffixIcon: IconButton(
-                    tooltip: _showPassword ? _t('Скрыть пароль', 'Hide password') : _t('Показать пароль', 'Show password'),
-                    onPressed: () => setState(() => _showPassword = !_showPassword),
-                    icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility)),
+                    tooltip: _showPassword
+                        ? _t('Скрыть пароль', 'Hide password')
+                        : _t('Показать пароль', 'Show password'),
+                    onPressed: () =>
+                        setState(() => _showPassword = !_showPassword),
+                    icon: Icon(
+                      _showPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                  ),
                 ),
                 onChanged: (_) => _check(),
               ),
               TextField(
                 controller: _pw2,
                 obscureText: !_showRepeat,
-                autocorrect: false, enableSuggestions: false,
-                decoration: InputDecoration(labelText: _t('Ещё раз', 'Repeat'),
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: InputDecoration(
+                  labelText: _t('Ещё раз', 'Repeat'),
                   errorText: _pw2.text.isNotEmpty && _pw.text != _pw2.text
-                      ? _t('Пароли не совпадают', 'Passwords don’t match') : null,
+                      ? _t('Пароли не совпадают', 'Passwords don’t match')
+                      : null,
                   suffixIcon: IconButton(
-                    tooltip: _showRepeat ? _t('Скрыть пароль', 'Hide password') : _t('Показать пароль', 'Show password'),
+                    tooltip: _showRepeat
+                        ? _t('Скрыть пароль', 'Hide password')
+                        : _t('Показать пароль', 'Show password'),
                     onPressed: () => setState(() => _showRepeat = !_showRepeat),
-                    icon: Icon(_showRepeat ? Icons.visibility_off : Icons.visibility))),
+                    icon: Icon(
+                      _showRepeat ? Icons.visibility_off : Icons.visibility,
+                    ),
+                  ),
+                ),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
@@ -500,7 +537,10 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       // Обещанный ввод по первым четырём буквам (UX_AUDIT A6): фразу
       // раскрываем до полных слов и проверяем контрольную сумму до Argon2.
       if (_svc.restoreMethod == BackupMethod.phrase) {
-        secret = RecoveryPhrase.parse(secret, await ForkE2E.wordlist()).toString();
+        secret = RecoveryPhrase.parse(
+          secret,
+          await ForkE2E.wordlist(),
+        ).toString();
       }
       await _svc.restore(secret);
       if (mounted) Navigator.of(context).maybePop();
@@ -530,7 +570,10 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       );
     }
     if (m.contains('24')) {
-      return _t('Во фразе должно быть 24 слова', 'The phrase must have 24 words');
+      return _t(
+        'Во фразе должно быть 24 слова',
+        'The phrase must have 24 words',
+      );
     }
     return _t(
       'Во фразе ошибка: одно из слов не на своём месте или с опечаткой',
@@ -587,9 +630,12 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => ForkSecureScreen(builder: _protectedBody);
+  Widget build(BuildContext context) =>
+      ForkSecureScreen(builder: _protectedBody);
 
   Widget _protectedBody(BuildContext context) {
+    // T3: бэкапа нет, ключи на другом телефоне — только привязка или заново.
+    if (_svc.restoreMethod == null) return _noBackupBody(context);
     final phrase = _svc.restoreMethod == BackupMethod.phrase;
     return Scaffold(
       appBar: AppBar(title: Text(_t('Восстановить ключи', 'Restore keys'))),
@@ -622,10 +668,18 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
                     ? _t('Фраза', 'Phrase')
                     : _t('Пароль', 'Password'),
                 errorText: _error,
-                suffixIcon: phrase ? null : IconButton(
-                  tooltip: _showSecret ? _t('Скрыть пароль', 'Hide password') : _t('Показать пароль', 'Show password'),
-                  onPressed: () => setState(() => _showSecret = !_showSecret),
-                  icon: Icon(_showSecret ? Icons.visibility_off : Icons.visibility)),
+                suffixIcon: phrase
+                    ? null
+                    : IconButton(
+                        tooltip: _showSecret
+                            ? _t('Скрыть пароль', 'Hide password')
+                            : _t('Показать пароль', 'Show password'),
+                        onPressed: () =>
+                            setState(() => _showSecret = !_showSecret),
+                        icon: Icon(
+                          _showSecret ? Icons.visibility_off : Icons.visibility,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 16),
@@ -634,6 +688,14 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
               child: _busy
                   ? const _Spinner()
                   : Text(_t('Восстановить', 'Restore')),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _openLink,
+              icon: const Icon(Icons.qr_code_rounded),
+              label: Text(
+                _t('Привязать с другого телефона', 'Link from another phone'),
+              ),
             ),
             const SizedBox(height: 24),
             TextButton(
@@ -650,6 +712,44 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       ),
     );
   }
+
+  void _openLink() => Navigator.of(context).push(forkE2ELinkShowRoute(context));
+
+  Widget _noBackupBody(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(_t('Восстановить ключи', 'Restore keys'))),
+    body: SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(
+            _t(
+              'Ключи шифрования этого аккаунта уже есть на другом вашем телефоне, а бэкапа на сервере нет. Привяжите этот телефон по QR — переписка откроется здесь.',
+              'This account’s encryption keys are on your other phone, and there’s no backup on the server. Link this phone by QR to open your history here.',
+            ),
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: _busy ? null : _openLink,
+            icon: const Icon(Icons.qr_code_rounded),
+            label: Text(
+              _t('Привязать с другого телефона', 'Link from another phone'),
+            ),
+          ),
+          const SizedBox(height: 24),
+          TextButton(
+            onPressed: _busy ? null : _fresh,
+            child: Text(
+              _t(
+                'Другого телефона нет — начать заново',
+                'No other phone — start over',
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _Spinner extends StatelessWidget {

@@ -29,9 +29,17 @@ Future<void> showJarToast(PairJar jar) async {
   final bottom = MediaQuery.of(context).padding.bottom + 96;
   final text = jar.filled
       ? trKey('jarToastFull')
-      : trKey('jarToast').replaceAll('{k}', '${jar.count}').replaceAll('{n}', '${jar.size}');
+      : trKey(
+          'jarToast',
+        ).replaceAll('{k}', '${jar.count}').replaceAll('{n}', '${jar.size}');
   // Наполнилась — показываем полную копилку, а не пустую новую.
-  final shown = jar.filled ? PairJar(size: jar.size, drops: List.filled(jar.size, true), bonus: jar.bonus) : jar;
+  final shown = jar.filled
+      ? PairJar(
+          size: jar.size,
+          drops: List.filled(jar.size, true),
+          bonus: jar.bonus,
+        )
+      : jar;
   late final OverlayEntry entry;
   var removed = false;
   void close() {
@@ -57,7 +65,10 @@ Future<void> showJarToast(PairJar jar) async {
             duration: const Duration(milliseconds: 240),
             builder: (_, v, child) => Opacity(
               opacity: v,
-              child: Transform.translate(offset: Offset(0, (1 - v) * 14), child: child),
+              child: Transform.translate(
+                offset: Offset(0, (1 - v) * 14),
+                child: child,
+              ),
             ),
             child: Material(
               color: cs.inverseSurface,

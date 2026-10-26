@@ -2,6 +2,7 @@
 import 'dart:typed_data';
 
 import 'package:love_app/fork/e2e/crypto.dart';
+import 'package:love_app/fork/e2e/device_link.dart';
 import 'package:love_app/fork/e2e/devices.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
 
@@ -13,6 +14,7 @@ class ServerDb {
   final grants = <String, (PairKeyGrant, String)>{};
   final handshakes = <HandshakeMsg>[];
   final backups = <String, Map<String, dynamic>>{};
+  final links = <String, Map<String, dynamic>>{};
   final members = <String, List<String>>{
     gid: [alice, bob],
   };
@@ -97,4 +99,36 @@ class FakeBackend implements E2EBackend {
   @override
   Future<void> putBackup(String uid, Map<String, dynamic> data) async =>
       db.backups[uid] = data;
+
+  @override
+  Future<void> putLink(Map<String, dynamic> body) async {
+    if (body['user_uid'] != viewer) throw StateError('сервер: чужая привязка');
+    db.links[body['id'] as String] = {...body, 'payload': ''};
+  }
+
+  @override
+  Future<LinkRecord?> link(String id) async {
+    final j = db.links[id];
+    if (j == null || j['user_uid'] != viewer) return null;
+    return LinkRecord(
+      id: id,
+      uid: j['user_uid'] as String,
+      device: DeviceEntry.fromJson(
+        (j['device'] as Map).cast<String, dynamic>(),
+      ),
+      mac: unb64(j['mac'] as String),
+      payload: j['payload'] as String? ?? '',
+    );
+  }
+
+  @override
+  Future<void> putLinkPayload(String id, String payload) async {
+    final j = db.links[id];
+    if (j == null || j['user_uid'] != viewer)
+      throw StateError('сервер: нет привязки');
+    j['payload'] = payload;
+  }
+
+  @override
+  Future<void> deleteLink(String id) async => db.links.remove(id);
 }

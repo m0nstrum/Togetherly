@@ -6,11 +6,10 @@ import 'package:flutter/foundation.dart';
 
 import '../services/pocketbase_service.dart';
 import 'config/endpoints.dart';
-import 'flags.dart';
 import 'meta_direct.dart';
 
 /// Все запросы приложения к сторонним сайтам — через свой сервер
-/// (meta gateway, docs/fork/PLAN.md S5).
+/// (meta gateway, docs/history/PLAN.md S5).
 ///
 /// Перехватывает `dart:io` целиком (`HttpOverrides`), то есть и
 /// `package:http`, и `Image.network`, и всё, что апстрим добавит позже, — без
@@ -30,7 +29,7 @@ abstract final class ForkHttpGateway {
   /// Звать до первых запросов: из `PocketBaseService.init`, которую зовут все
   /// изоляты (главный, push-сервис, WorkManager).
   static void install() {
-    if (!ForkFlags.metaGateway || _installed) return;
+    if (_installed) return;
     final cfg = Endpoints.current;
     if (cfg.pbUrl.isEmpty) return;
     final pb = cfg.pbUrl.endsWith('/')

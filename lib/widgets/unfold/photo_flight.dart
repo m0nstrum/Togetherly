@@ -37,7 +37,8 @@ class PhotoFlightRoute<T> extends PageRoute<T> {
   @override
   void install() {
     final context = navigator?.context;
-    _calm = context != null &&
+    _calm =
+        context != null &&
         (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     // Картинку берём в миг нажатия: через кадр миниатюра может перестроиться.
     final shot = UnfoldTouch.takeImage();
@@ -51,13 +52,14 @@ class PhotoFlightRoute<T> extends PageRoute<T> {
 
   @override
   Duration get transitionDuration => Duration(
-      milliseconds:
-          (_calm ? UnfoldTiming.fadeInMs : PhotoTiming.openMs).round());
+    milliseconds: (_calm ? UnfoldTiming.fadeInMs : PhotoTiming.openMs).round(),
+  );
 
   @override
   Duration get reverseTransitionDuration => Duration(
-      milliseconds:
-          (_calm ? UnfoldTiming.fadeOutMs : PhotoTiming.closeMs).round());
+    milliseconds: (_calm ? UnfoldTiming.fadeOutMs : PhotoTiming.closeMs)
+        .round(),
+  );
 
   // Под просмотром виден прежний экран: фон темнеет не сразу, а под пальцем
   // светлеет снова.
@@ -80,13 +82,19 @@ class PhotoFlightRoute<T> extends PageRoute<T> {
   }
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation,
-          Animation<double> secondaryAnimation) =>
-      builder(context);
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) => builder(context);
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation, Widget child) {
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
     return _PhotoFlight(route: this, animation: animation, child: child);
   }
 
@@ -249,8 +257,7 @@ class _PhotoFlightState extends State<_PhotoFlight>
 
   double get _fadeIn => _route.offstage ? 0 : widget.animation.value;
 
-  double get _fadeOut =>
-      (widget.animation.value / _popValue).clamp(0.0, 1.0);
+  double get _fadeOut => (widget.animation.value / _popValue).clamp(0.0, 1.0);
 
   // ── что видят обёртки ─────────────────────────────────────────────────────
 
@@ -408,7 +415,9 @@ class _PhotoFlightState extends State<_PhotoFlight>
         now = Rect.lerp(_from, _to, flightNow);
         image = _image;
       }
-    } else if (shot != null && area != null && (stage?.widget.returns ?? false)) {
+    } else if (shot != null &&
+        area != null &&
+        (stage?.widget.returns ?? false)) {
       final rest = photoFit(
         Size(shot.image.width.toDouble(), shot.image.height.toDouble()),
         area,
@@ -480,10 +489,7 @@ class _PhotoFlightState extends State<_PhotoFlight>
       animation: ticks,
       builder: (context, page) {
         final flier = _flier();
-        return Stack(
-          fit: StackFit.expand,
-          children: [page!, ?flier],
-        );
+        return Stack(fit: StackFit.expand, children: [page!, ?flier]);
       },
       child: _PhotoFlightScope(host: this, child: widget.child),
     );
@@ -595,7 +601,9 @@ class _PhotoFlightStageState extends State<PhotoFlightStage> {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.attached || !box.hasSize) return null;
     return MatrixUtils.transformRect(
-        box.getTransformTo(ancestor), Offset.zero & box.size);
+      box.getTransformTo(ancestor),
+      Offset.zero & box.size,
+    );
   }
 
   /// Снимок куска сцены [crop] (в её координатах).
@@ -612,10 +620,12 @@ class _PhotoFlightStageState extends State<PhotoFlightStage> {
     final drags = widget.canDismiss;
     return GestureDetector(
       onVerticalDragStart: drags ? (_) => host.beginDrag() : null,
-      onVerticalDragUpdate: drags ? (details) => host.dragBy(details.delta) : null,
+      onVerticalDragUpdate: drags
+          ? (details) => host.dragBy(details.delta)
+          : null,
       onVerticalDragEnd: drags
           ? (details) =>
-              host.endDrag(velocity: details.velocity.pixelsPerSecond.dy)
+                host.endDrag(velocity: details.velocity.pixelsPerSecond.dy)
           : null,
       onVerticalDragCancel: drags ? () => host.endDrag(cancel: true) : null,
       child: AnimatedBuilder(

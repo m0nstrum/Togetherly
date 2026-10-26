@@ -18,26 +18,44 @@ void main() {
     // Ключи фото-виджетов пишутся ТОЛЬКО когда есть что писать: запись могла не
     // приехать (нет сети, отказ сервера, полумёртвая сессия), и пустая строка
     // стёрла бы снимок с рабочего стола.
-    final src = File('lib/services/home_widget_service.dart').readAsStringSync();
+    final src = File(
+      'lib/services/home_widget_service.dart',
+    ).readAsStringSync();
     final block = RegExp(
       r"if \(dayPhotoUrl\.isNotEmpty \|\| day\.isNotEmpty\) \{",
     );
-    expect(block.hasMatch(src), isTrue,
-        reason: 'фото дня пишется без проверки — пустота затрёт прежний снимок');
+    expect(
+      block.hasMatch(src),
+      isTrue,
+      reason: 'фото дня пишется без проверки — пустота затрёт прежний снимок',
+    );
   });
 
   group('supportsWidgetInteractivity', () {
     test('iOS 17 и новее — интерактивность есть', () {
-      expect(supportsWidgetInteractivity('Version 17.0 (Build 21A329)'), isTrue);
-      expect(supportsWidgetInteractivity('Version 18.7.9 (Build 22H123)'),
-          isTrue);
-      expect(supportsWidgetInteractivity('Version 26.5.2 (Build 23A1)'), isTrue);
+      expect(
+        supportsWidgetInteractivity('Version 17.0 (Build 21A329)'),
+        isTrue,
+      );
+      expect(
+        supportsWidgetInteractivity('Version 18.7.9 (Build 22H123)'),
+        isTrue,
+      );
+      expect(
+        supportsWidgetInteractivity('Version 26.5.2 (Build 23A1)'),
+        isTrue,
+      );
     });
 
     test('iOS 16 и старше — не зовём', () {
       expect(
-          supportsWidgetInteractivity('Version 16.7.10 (Build 20H350)'), isFalse);
-      expect(supportsWidgetInteractivity('Version 15.8 (Build 19H370)'), isFalse);
+        supportsWidgetInteractivity('Version 16.7.10 (Build 20H350)'),
+        isFalse,
+      );
+      expect(
+        supportsWidgetInteractivity('Version 15.8 (Build 19H370)'),
+        isFalse,
+      );
     });
 
     test('строку не разобрали — считаем, что нет', () {

@@ -16,6 +16,10 @@ void main() {
     expect(adEnd, greaterThan(0));
     expect(slowCheck, greaterThan(adEnd));
     final between = source.substring(adEnd, slowCheck);
-    expect(between, contains('total.reset()'), reason: 'время ролика не должно попадать в «долго»');
+    expect(
+      between,
+      contains('total.reset()'),
+      reason: 'время ролика не должно попадать в «долго»',
+    );
   });
 }

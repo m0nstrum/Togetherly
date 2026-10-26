@@ -55,13 +55,13 @@ class CustomMood {
 
   /// Своё настроение в том же виде, в каком живут встроенные.
   MoodOption toMoodOption() => MoodOption(
-        id: moodId,
-        imagePath: imageUrl,
-        label: label,
-        color: colorOfScore(score),
-        labelEn: label,
-        scoreOverride: score,
-      );
+    id: moodId,
+    imagePath: imageUrl,
+    label: label,
+    color: colorOfScore(score),
+    labelEn: label,
+    scoreOverride: score,
+  );
 
   /// Эмодзи хранится картинкой на прозрачном фоне, поэтому в сетке стоит на
   /// плитке цвета своей шкалы, как стикеры «Розовых». Фото и рисунок заполняют

@@ -6,32 +6,49 @@ void main() {
     test('всё заполнено верно', () {
       expect(
         passwordChangeProblem(
-            current: 'StaryiParol1', fresh: 'NovyiParol123', repeat: 'NovyiParol123'),
+          current: 'StaryiParol1',
+          fresh: 'NovyiParol123',
+          repeat: 'NovyiParol123',
+        ),
         isNull,
       );
     });
 
     test('без текущего пароля не отправляем', () {
       expect(
-        passwordChangeProblem(current: '', fresh: 'NovyiParol123', repeat: 'NovyiParol123'),
+        passwordChangeProblem(
+          current: '',
+          fresh: 'NovyiParol123',
+          repeat: 'NovyiParol123',
+        ),
         PasswordChangeProblem.noCurrent,
       );
     });
 
     test('короче минимума форка (12) — отказ, ровно 12 — можно', () {
       expect(
-        passwordChangeProblem(current: 'StaryiParol1', fresh: 'korot', repeat: 'korot'),
+        passwordChangeProblem(
+          current: 'StaryiParol1',
+          fresh: 'korot',
+          repeat: 'korot',
+        ),
         PasswordChangeProblem.tooShort,
       );
       // fork (A15): 8–11 символов раньше проходили, теперь нет.
       expect(
         passwordChangeProblem(
-            current: 'StaryiParol1', fresh: 'Dlina11char', repeat: 'Dlina11char'),
+          current: 'StaryiParol1',
+          fresh: 'Dlina11char',
+          repeat: 'Dlina11char',
+        ),
         PasswordChangeProblem.tooShort,
       );
       expect(
         passwordChangeProblem(
-            current: 'StaryiParol1', fresh: 'Dlina12chars', repeat: 'Dlina12chars'),
+          current: 'StaryiParol1',
+          fresh: 'Dlina12chars',
+          repeat: 'Dlina12chars',
+        ),
         isNull,
       );
     });
@@ -39,7 +56,10 @@ void main() {
     test('повтор не совпал', () {
       expect(
         passwordChangeProblem(
-            current: 'StaryiParol1', fresh: 'NovyiParol123', repeat: 'NovyiParol124'),
+          current: 'StaryiParol1',
+          fresh: 'NovyiParol123',
+          repeat: 'NovyiParol124',
+        ),
         PasswordChangeProblem.mismatch,
       );
     });
@@ -47,7 +67,10 @@ void main() {
     test('новый пароль равен старому — сервер примет молча, мы нет', () {
       expect(
         passwordChangeProblem(
-            current: 'StaryiParol1', fresh: 'StaryiParol1', repeat: 'StaryiParol1'),
+          current: 'StaryiParol1',
+          fresh: 'StaryiParol1',
+          repeat: 'StaryiParol1',
+        ),
         PasswordChangeProblem.same,
       );
     });

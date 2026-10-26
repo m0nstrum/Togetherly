@@ -65,8 +65,8 @@ class VoiceRecordingBar extends StatelessWidget {
                 cancelling
                     ? s.voiceReleaseToCancel
                     : gesture == VoiceGesture.locking
-                        ? s.voiceReleaseToLock
-                        : s.voiceSlideHints,
+                    ? s.voiceReleaseToLock
+                    : s.voiceSlideHints,
               ),
             ),
           ),
@@ -217,8 +217,7 @@ class _RecDot extends StatefulWidget {
   State<_RecDot> createState() => _RecDotState();
 }
 
-class _RecDotState extends State<_RecDot>
-    with SingleTickerProviderStateMixin {
+class _RecDotState extends State<_RecDot> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 900),
@@ -232,13 +231,13 @@ class _RecDotState extends State<_RecDot>
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: Tween<double>(begin: 1, end: .25).animate(_c),
-        child: Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
-        ),
-      );
+    opacity: Tween<double>(begin: 1, end: .25).animate(_c),
+    child: Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+    ),
+  );
 }
 
 /// Бегущая волна текущей громкости: новое приходит справа, старое уезжает влево.

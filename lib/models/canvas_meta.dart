@@ -39,56 +39,56 @@ class CanvasMeta {
 
   /// Пропорция листа для отрисовки: у пиксельного её задаёт сетка, у нового
   /// обычного — сохранённая, у старого — null (рисуем во всю область).
-  double? get effectiveRatio =>
-      isPixel ? pixelW! / pixelH! : sheetRatio;
+  double? get effectiveRatio => isPixel ? pixelW! / pixelH! : sheetRatio;
 
   CanvasMeta copyWith({
     String? name,
     DateTime? updatedAt,
     String? previewBase64,
     bool clearPreview = false,
-  }) =>
-      CanvasMeta(
-        id: id,
-        name: name ?? this.name,
-        createdAt: createdAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-        previewBase64:
-            clearPreview ? null : (previewBase64 ?? this.previewBase64),
-        pixelW: pixelW,
-        pixelH: pixelH,
-        sheetRatio: sheetRatio,
-      );
+  }) => CanvasMeta(
+    id: id,
+    name: name ?? this.name,
+    createdAt: createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    previewBase64: clearPreview ? null : (previewBase64 ?? this.previewBase64),
+    pixelW: pixelW,
+    pixelH: pixelH,
+    sheetRatio: sheetRatio,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'createdAt': createdAt.millisecondsSinceEpoch,
-        'updatedAt': updatedAt.millisecondsSinceEpoch,
-        if (previewBase64 != null) 'previewBase64': previewBase64,
-        if (pixelW != null) 'pixelW': pixelW,
-        if (pixelH != null) 'pixelH': pixelH,
-        if (sheetRatio != null) 'sheetRatio': sheetRatio,
-      };
+    'id': id,
+    'name': name,
+    'createdAt': createdAt.millisecondsSinceEpoch,
+    'updatedAt': updatedAt.millisecondsSinceEpoch,
+    if (previewBase64 != null) 'previewBase64': previewBase64,
+    if (pixelW != null) 'pixelW': pixelW,
+    if (pixelH != null) 'pixelH': pixelH,
+    if (sheetRatio != null) 'sheetRatio': sheetRatio,
+  };
 
   /// Отпечаток для сравнения списков: всё, что видно в карточке галереи.
   ///
   /// Экран перезагружает каталог на каждое realtime-событие пары, а событий
   /// приходит много (правка соседнего холста, чужой бутстрап). Без сравнения
   /// `setState` пересобирал сетку впустую, и миниатюры моргали.
-  String get fingerprint => '$id|$name|${updatedAt.millisecondsSinceEpoch}|'
+  String get fingerprint =>
+      '$id|$name|${updatedAt.millisecondsSinceEpoch}|'
       '${previewBase64?.length ?? 0}|$pixelW|$pixelH|$sheetRatio';
 
   factory CanvasMeta.fromJson(Map<String, dynamic> json) => CanvasMeta(
-        id: json['id'] as String,
-        name: (json['name'] as String?) ?? 'Canvas',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(
-            (json['createdAt'] as num).toInt()),
-        updatedAt: DateTime.fromMillisecondsSinceEpoch(
-            (json['updatedAt'] as num).toInt()),
-        previewBase64: json['previewBase64'] as String?,
-        pixelW: (json['pixelW'] as num?)?.toInt(),
-        pixelH: (json['pixelH'] as num?)?.toInt(),
-        sheetRatio: (json['sheetRatio'] as num?)?.toDouble(),
-      );
+    id: json['id'] as String,
+    name: (json['name'] as String?) ?? 'Canvas',
+    createdAt: DateTime.fromMillisecondsSinceEpoch(
+      (json['createdAt'] as num).toInt(),
+    ),
+    updatedAt: DateTime.fromMillisecondsSinceEpoch(
+      (json['updatedAt'] as num).toInt(),
+    ),
+    previewBase64: json['previewBase64'] as String?,
+    pixelW: (json['pixelW'] as num?)?.toInt(),
+    pixelH: (json['pixelH'] as num?)?.toInt(),
+    sheetRatio: (json['sheetRatio'] as num?)?.toDouble(),
+  );
 }

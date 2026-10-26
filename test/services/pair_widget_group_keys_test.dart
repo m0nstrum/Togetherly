@@ -17,8 +17,10 @@ import 'package:love_app/services/pair_widget_payload.dart';
 void main() {
   test('ключ пары несёт её номер', () {
     expect(pairWidgetKey('abc123', 'my_status'), 'love_abc123_my_status');
-    expect(pairWidgetKey('abc123', 'partner_photo_path'),
-        'love_abc123_partner_photo_path');
+    expect(
+      pairWidgetKey('abc123', 'partner_photo_path'),
+      'love_abc123_partner_photo_path',
+    );
   });
 
   test('без пары ключ остаётся общим', () {
@@ -32,8 +34,11 @@ void main() {
     });
     expect(byPair['love_g7_my_status'], 'дома');
     expect(byPair['love_g7_partner_mood'], 'Смех');
-    expect(byPair.containsKey('my_status'), isFalse,
-        reason: 'общие ключи пишутся отдельно, тут только пара');
+    expect(
+      byPair.containsKey('my_status'),
+      isFalse,
+      reason: 'общие ключи пишутся отдельно, тут только пара',
+    );
   });
 
   test('без пары набор не переименовывается', () {

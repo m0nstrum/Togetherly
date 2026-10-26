@@ -48,18 +48,18 @@ class CycleEntry {
       kind == CycleKind.intimacy ? 'intimacy' : 'period';
 
   static CycleFlow? flowFromStorage(String? raw) => switch (raw) {
-        'light' => CycleFlow.light,
-        'medium' => CycleFlow.medium,
-        'heavy' => CycleFlow.heavy,
-        _ => null,
-      };
+    'light' => CycleFlow.light,
+    'medium' => CycleFlow.medium,
+    'heavy' => CycleFlow.heavy,
+    _ => null,
+  };
 
   static String? flowToStorage(CycleFlow? flow) => switch (flow) {
-        CycleFlow.light => 'light',
-        CycleFlow.medium => 'medium',
-        CycleFlow.heavy => 'heavy',
-        null => null,
-      };
+    CycleFlow.light => 'light',
+    CycleFlow.medium => 'medium',
+    CycleFlow.heavy => 'heavy',
+    null => null,
+  };
 
   factory CycleEntry.fromPb(RecordModel rec) {
     final rawDay = rec.getStringValue('day');
@@ -77,7 +77,7 @@ class CycleEntry {
   factory CycleEntry.fromMap(Map<String, dynamic> map) {
     final parsed =
         DateTime.tryParse((map['day'] ?? '') as String)?.toLocal() ??
-            DateTime.now();
+        DateTime.now();
     return CycleEntry(
       id: (map['id'] ?? '') as String,
       day: DateTime(parsed.year, parsed.month, parsed.day),
@@ -89,21 +89,21 @@ class CycleEntry {
   }
 
   Map<String, dynamic> toMap({required String groupId}) => {
-        'id': id,
-        'group_id': groupId,
-        'user_uid': userUid,
-        'day': day.toIso8601String(),
-        'kind': kindToStorage(kind),
-        if (flowToStorage(flow) != null) 'flow': flowToStorage(flow),
-        'shared': shared,
-      };
+    'id': id,
+    'group_id': groupId,
+    'user_uid': userUid,
+    'day': day.toIso8601String(),
+    'kind': kindToStorage(kind),
+    if (flowToStorage(flow) != null) 'flow': flowToStorage(flow),
+    'shared': shared,
+  };
 
   CycleEntry copyWith({CycleFlow? flow, bool? shared}) => CycleEntry(
-        id: id,
-        day: day,
-        kind: kind,
-        flow: flow ?? this.flow,
-        shared: shared ?? this.shared,
-        userUid: userUid,
-      );
+    id: id,
+    day: day,
+    kind: kind,
+    flow: flow ?? this.flow,
+    shared: shared ?? this.shared,
+    userUid: userUid,
+  );
 }

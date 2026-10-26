@@ -37,20 +37,22 @@ import '../note_send_status.dart';
 /// работа продолжалась, и очередь запускала вторую отправку поверх первой.
 /// После пяти таких провалов кружок отравлялся — иногда уже доехав.
 Duration outboxOpTimeout(String type) => switch (type) {
-      'chatNote' => const Duration(minutes: 8),
-      'chatVoice' => const Duration(minutes: 3),
-      _ => const Duration(seconds: 20),
-    };
+  'chatNote' => const Duration(minutes: 8),
+  'chatVoice' => const Duration(minutes: 3),
+  _ => const Duration(seconds: 20),
+};
 
 class OutboxService {
   OutboxService._();
   static final OutboxService instance = OutboxService._();
   factory OutboxService() => instance;
 
-  final StoreRef<int, Map<String, Object?>> _store =
-      intMapStoreFactory.store('outbox');
-  final StoreRef<int, Map<String, Object?>> _poison =
-      intMapStoreFactory.store('outbox_poison');
+  final StoreRef<int, Map<String, Object?>> _store = intMapStoreFactory.store(
+    'outbox',
+  );
+  final StoreRef<int, Map<String, Object?>> _poison = intMapStoreFactory.store(
+    'outbox_poison',
+  );
   // fork: лимит только для постоянных HTTP 4xx; сеть и 5xx ждут без лимита.
   static const int _maxAttempts = 5;
 
@@ -65,7 +67,7 @@ class OutboxService {
   /// ТОЛЬКО для тестов: подменить применение операции, чтобы не ходить в сеть.
   @visibleForTesting
   Future<bool> Function(String type, Map<String, dynamic> payload)?
-      applyOverride;
+  applyOverride;
 
   /// Когда очередь впервые перестала пустеть — чтобы отличить долгую отправку
   /// от залипания и один раз рассказать о нём в Bugsink.
@@ -150,13 +152,18 @@ class OutboxService {
   /// маленькое, чтобы не штормить сервер (писатель SQLite всё равно один).
   static const int _maxParallelLanes = 4;
 
-  Future<void> init({Stream<bool>? onlineChanges, Stream<void>? reconnected}) async {
-    _connSub ??= (onlineChanges ?? ConnectivityService.instance.onOnlineChanged).listen((online) {
-      if (online) unawaited(retryPoison());
-    });
-    _reconnectSub ??= (reconnected ?? CentrifugoService.instance.reconnected).listen((_) {
-      unawaited(retryPoison());
-    });
+  Future<void> init({
+    Stream<bool>? onlineChanges,
+    Stream<void>? reconnected,
+  }) async {
+    _connSub ??= (onlineChanges ?? ConnectivityService.instance.onOnlineChanged)
+        .listen((online) {
+          if (online) unawaited(retryPoison());
+        });
+    _reconnectSub ??= (reconnected ?? CentrifugoService.instance.reconnected)
+        .listen((_) {
+          unawaited(retryPoison());
+        });
     await _updatePending();
     unawaited(flush()); // дослать то, что осталось с прошлой офлайн-сессии
   }
@@ -220,7 +227,9 @@ class OutboxService {
       for (final snap in all) {
         final parsed = _parseOp(snap.value);
         if (parsed == null) {
-          debugPrint('Outbox: повреждённая запись ${snap.key} удалена из очереди');
+          debugPrint(
+            'Outbox: повреждённая запись ${snap.key} удалена из очереди',
+          );
           await _store.record(snap.key).delete(db);
           continue;
         }
@@ -248,8 +257,10 @@ class OutboxService {
           if (await _flushLane(db, lane)) anyFailed = true;
         }
       }
-      final n =
-          lanes.length < _maxParallelLanes ? lanes.length : _maxParallelLanes;
+
+      final n = lanes.length < _maxParallelLanes
+          ? lanes.length
+          : _maxParallelLanes;
       await Future.wait([for (var i = 0; i < n; i++) worker()]);
       if (anyFailed) {
         _scheduleRetry();
@@ -268,8 +279,7 @@ class OutboxService {
       // действия человека.
       if (_rerunRequested) {
         _rerunRequested = false;
-        if (ConnectivityService.instance.isOnline &&
-            pendingCount.value > 0) {
+        if (ConnectivityService.instance.isOnline && pendingCount.value > 0) {
           unawaited(flush());
         }
       }
@@ -305,11 +315,15 @@ class OutboxService {
         // вечно ждал повисший без таймаута запрос). По таймауту/исключению →
         // как провал → ретрай; операции идемпотентны по id.
         final apply = applyOverride ?? _apply;
-        ok = await attempt.run(() => apply(parsed.type, parsed.payload))
-            .timeout(outboxOpTimeout(parsed.type), onTimeout: () {
-              attempt.transient();
-              return false;
-            });
+        ok = await attempt
+            .run(() => apply(parsed.type, parsed.payload))
+            .timeout(
+              outboxOpTimeout(parsed.type),
+              onTimeout: () {
+                attempt.transient();
+                return false;
+              },
+            );
       } catch (error) {
         attempt.error(error);
         ok = false;
@@ -332,7 +346,9 @@ class OutboxService {
         // Следующие правки этой записи идут тем же проходом и спрашивают
         // [isPoisoned]: без отметки сейчас они сочли бы запись пропавшей.
         if (parsed.rkey case final rkey?) _poisonKeys.add(rkey);
-        debugPrint('Outbox: операция «${parsed.type}» отравлена после $next попыток');
+        debugPrint(
+          'Outbox: операция «${parsed.type}» отравлена после $next попыток',
+        );
         continue; // запись разблокирована — даём ход следующим её правкам
       }
       await _store.record(key).update(db, {'attempts': next});
@@ -370,15 +386,17 @@ class OutboxService {
       }
     } catch (_) {}
 
-    unawaited(Sentry.captureMessage(
-      'outbox stuck: $active операций не уходят',
-      withScope: (scope) {
-        scope.level = SentryLevel.warning;
-        scope.setExtra('active', active.toString());
-        scope.setExtra('poison', poisonCount.value.toString());
-        scope.setExtra('types', types.toString());
-      },
-    ));
+    unawaited(
+      Sentry.captureMessage(
+        'outbox stuck: $active операций не уходят',
+        withScope: (scope) {
+          scope.level = SentryLevel.warning;
+          scope.setExtra('active', active.toString());
+          scope.setExtra('poison', poisonCount.value.toString());
+          scope.setExtra('types', types.toString());
+        },
+      ),
+    );
   }
 
   /// Запись (collection:id), которую затрагивает операция — для сохранения
@@ -389,6 +407,7 @@ class OutboxService {
       final s = id?.toString() ?? '';
       return s.isEmpty ? null : '$col:$s';
     }
+
     switch (type) {
       case 'memoryUpsert':
       case 'memoryDelete':
@@ -430,6 +449,10 @@ class OutboxService {
         return k('wish_categories', (p['kind'] as Map?)?['id']);
       case 'wishCategoryDelete':
         return k('wish_categories', p['id']);
+      case 'wishCommentUpsert':
+        return k('wish_comments', (p['comment'] as Map?)?['id']);
+      case 'wishCommentDelete':
+        return k('wish_comments', p['id']);
       case 'chatUpsert':
       case 'chatVoice':
       case 'chatNote':
@@ -459,8 +482,9 @@ class OutboxService {
   _ParsedOp? _parseOp(Map<String, Object?> value) {
     try {
       final type = value['type'] as String? ?? '';
-      final payload =
-          Map<String, dynamic>.from((value['payload'] as Map?) ?? const {});
+      final payload = Map<String, dynamic>.from(
+        (value['payload'] as Map?) ?? const {},
+      );
       final attempts = (value['attempts'] as num?)?.toInt() ?? 0;
       return _ParsedOp(type, payload, attempts, _recordKeyOf(type, payload));
     } catch (_) {
@@ -545,12 +569,14 @@ class OutboxService {
     if (db == null) return;
     await db.transaction((txn) async {
       final items = await _poison.find(txn);
-    for (final s in items) {
+      for (final s in items) {
         await _store.add(txn, {
-          'type': s.value['type'], 'payload': s.value['payload'], 'attempts': 0,
-      });
+          'type': s.value['type'],
+          'payload': s.value['payload'],
+          'attempts': 0,
+        });
         await _poison.record(s.key).delete(txn);
-    }
+      }
     });
     await _updatePending();
     unawaited(flush());
@@ -561,15 +587,17 @@ class OutboxService {
   /// существующую (новую добавлять не нужно). Операции, обрабатываемые flush
   /// (`_inflightKeys`), не трогаем.
   Future<bool> _coalesce(
-      Database db, String type, Map<String, dynamic> p) async {
+    Database db,
+    String type,
+    Map<String, dynamic> p,
+  ) async {
     switch (type) {
       // Человек отменил штрих, который ещё не улетел на сервер. Задача на его
       // добавление снимается прямо здесь: иначе очередь пришлёт штрих позже, и
       // он вернётся на холст сам собой — та самая жалоба «отменённые штрихи
       // восстанавливаются», только с другого конца.
       case 'strokeCancel':
-        return _dropQueued(
-            db, 'strokeAdd', p, (a, b) => a['id'] == b['id']);
+        return _dropQueued(db, 'strokeAdd', p, (a, b) => a['id'] == b['id']);
       case 'counterInc':
         return _replaceOrMerge(
           db,
@@ -578,7 +606,8 @@ class OutboxService {
           (a, b) => a['groupId'] == b['groupId'] && a['field'] == b['field'],
           merge: (o, n) => {
             ...o,
-            'by': ((o['by'] as num?)?.toInt() ?? 0) +
+            'by':
+                ((o['by'] as num?)?.toInt() ?? 0) +
                 ((n['by'] as num?)?.toInt() ?? 0),
           },
         );
@@ -612,40 +641,86 @@ class OutboxService {
         );
       case 'groupSetMemberMood':
       case 'groupSetMemberAilment':
-        return _replaceOrMerge(db, type, p,
-            (a, b) => a['groupId'] == b['groupId'] && a['uid'] == b['uid']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => a['groupId'] == b['groupId'] && a['uid'] == b['uid'],
+        );
       case 'groupSetStatus':
         return _replaceOrMerge(
-            db, type, p, (a, b) => a['groupId'] == b['groupId']);
+          db,
+          type,
+          p,
+          (a, b) => a['groupId'] == b['groupId'],
+        );
       case 'chatSetReaction':
-        return _replaceOrMerge(db, type, p,
-            (a, b) => a['id'] == b['id'] && a['uid'] == b['uid']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => a['id'] == b['id'] && a['uid'] == b['uid'],
+        );
       case 'memorySetSaved':
       case 'memorySetReaction':
-        return _replaceOrMerge(db, type, p,
-            (a, b) => a['memoryId'] == b['memoryId'] && a['uid'] == b['uid']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => a['memoryId'] == b['memoryId'] && a['uid'] == b['uid'],
+        );
       case 'memoryUpsert':
         return _replaceOrMerge(db, type, p, (a, b) => a['id'] == b['id']);
       // Наклейку двигают и убирают подряд: серверу нужно последнее
       // состояние. Убрать ещё не улетевшую — удаление незнакомой наклейки
       // сервер принимает молча.
       case 'memorySticker':
-        return _replaceOrMerge(db, type, p,
-            (a, b) => a['memoryId'] == b['memoryId'] && a['sid'] == b['sid']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => a['memoryId'] == b['memoryId'] && a['sid'] == b['sid'],
+        );
       // Желание правят и отмечают подряд — в очередь нужна только последняя
       // версия записи, промежуточные состояния серверу не интересны.
       case 'wishUpsert':
-        return _replaceOrMerge(db, type, p,
-            (a, b) => (a['wish'] as Map?)?['id'] == (b['wish'] as Map?)?['id']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => (a['wish'] as Map?)?['id'] == (b['wish'] as Map?)?['id'],
+        );
+      // Партнёр шлёт только свои поля (отметка, «я тоже», порядок): поля
+      // двух заданий складываются, иначе перестановка стёрла бы отметку.
       case 'wishMark':
-        return _replaceOrMerge(db, type, p, (a, b) => a['id'] == b['id']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => a['id'] == b['id'],
+          merge: (o, n) => {
+            ...o,
+            'fields': {
+              ...?(o['fields'] as Map?)?.cast<String, dynamic>(),
+              ...?(n['fields'] as Map?)?.cast<String, dynamic>(),
+            },
+          },
+        );
       case 'wishCategoryUpsert':
-        return _replaceOrMerge(db, type, p,
-            (a, b) => (a['kind'] as Map?)?['id'] == (b['kind'] as Map?)?['id']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => (a['kind'] as Map?)?['id'] == (b['kind'] as Map?)?['id'],
+        );
       // «Дарю» нажимают туда-обратно: серверу нужно последнее состояние.
       case 'wishReserve':
-        return _replaceOrMerge(db, type, p,
-            (a, b) => (a['res'] as Map?)?['id'] == (b['res'] as Map?)?['id']);
+        return _replaceOrMerge(
+          db,
+          type,
+          p,
+          (a, b) => (a['res'] as Map?)?['id'] == (b['res'] as Map?)?['id'],
+        );
       case 'memoryDelete':
         // create+delete аннигиляция: убрать ещё не отправленный memoryUpsert того
         // же id (создавать-затем-удалять на сервере не нужно). Сам delete ставим
@@ -674,10 +749,12 @@ class OutboxService {
     String type,
     Map<String, dynamic> payload,
     bool Function(Map<String, dynamic> existing, Map<String, dynamic> incoming)
-        sameKey,
+    sameKey,
   ) async {
-    final pend = await _store.find(db,
-        finder: Finder(sortOrders: [SortOrder(Field.key)]));
+    final pend = await _store.find(
+      db,
+      finder: Finder(sortOrders: [SortOrder(Field.key)]),
+    );
     for (final s in pend) {
       if (_inflightKeys.contains(s.key) || s.value['type'] != type) continue;
       final parsed = _parseOp(s.value);
@@ -695,13 +772,17 @@ class OutboxService {
     String type,
     Map<String, dynamic> payload,
     bool Function(Map<String, dynamic> existing, Map<String, dynamic> incoming)
-        sameKey, {
+    sameKey, {
     Map<String, dynamic> Function(
-            Map<String, dynamic> old, Map<String, dynamic> incoming)?
-        merge,
+      Map<String, dynamic> old,
+      Map<String, dynamic> incoming,
+    )?
+    merge,
   }) async {
-    final pend = await _store.find(db,
-        finder: Finder(sortOrders: [SortOrder(Field.key)]));
+    final pend = await _store.find(
+      db,
+      finder: Finder(sortOrders: [SortOrder(Field.key)]),
+    );
     for (final s in pend) {
       if (_inflightKeys.contains(s.key) || s.value['type'] != type) continue;
       final parsed = _parseOp(s.value);
@@ -830,6 +911,13 @@ class OutboxService {
         );
       case 'wishCategoryDelete':
         return data.deleteWishCategory(p['id'] as String? ?? '');
+      case 'wishCommentUpsert':
+        return data.upsertWishComment(
+          p['groupId'] as String? ?? '',
+          Map<String, dynamic>.from(p['comment'] as Map? ?? const {}),
+        );
+      case 'wishCommentDelete':
+        return data.deleteWishComment(p['id'] as String? ?? '');
       // ── комментарии ──
       case 'commentUpsert':
         return data.upsertComment(
@@ -871,21 +959,27 @@ class OutboxService {
         return data.setChatReaction(
           id,
           p['uid'] as String? ?? '',
-          p['emoji'] as String?, // null/'' → снять (setChatReaction идемпотентен)
+          p['emoji']
+              as String?, // null/'' → снять (setChatReaction идемпотентен)
           missingIsDone: !isPoisoned('chat_messages', id),
         );
       // ── маскоты ──
       case 'mascotUpsert':
-        return data.upsertMascot(p['groupId'] as String? ?? '',
-            Map<String, dynamic>.from(p['mascot'] as Map? ?? const {}));
+        return data.upsertMascot(
+          p['groupId'] as String? ?? '',
+          Map<String, dynamic>.from(p['mascot'] as Map? ?? const {}),
+        );
       case 'mascotDelete':
         return data.deleteMascot(
-            p['groupId'] as String? ?? '', p['mascotId'] as String? ?? '');
+          p['groupId'] as String? ?? '',
+          p['mascotId'] as String? ?? '',
+        );
       case 'mascotUpdateFields':
         return data.updateMascotFields(
-            p['groupId'] as String? ?? '',
-            p['mascotId'] as String? ?? '',
-            Map<String, dynamic>.from(p['cols'] as Map? ?? const {}));
+          p['groupId'] as String? ?? '',
+          p['mascotId'] as String? ?? '',
+          Map<String, dynamic>.from(p['cols'] as Map? ?? const {}),
+        );
       // ── поля группы (настроение/самочувствие/статус/маскот) ──
       case 'groupSetMemberMood':
         final gid = p['groupId'] as String? ?? '';
@@ -901,7 +995,10 @@ class OutboxService {
         return ail == null
             ? data.clearMemberAilment(gid, uid)
             : data.setMemberAilment(
-                gid, uid, Map<String, dynamic>.from(ail as Map));
+                gid,
+                uid,
+                Map<String, dynamic>.from(ail as Map),
+              );
       case 'groupSetStatus':
         final gid = p['groupId'] as String? ?? '';
         final st = p['status'];
@@ -909,8 +1006,10 @@ class OutboxService {
             ? data.clearGroupStatus(gid)
             : data.setGroupStatus(gid, Map<String, dynamic>.from(st as Map));
       case 'groupUpdateFields':
-        return data.updateGroupFields(p['groupId'] as String? ?? '',
-            Map<String, dynamic>.from(p['cols'] as Map? ?? const {}));
+        return data.updateGroupFields(
+          p['groupId'] as String? ?? '',
+          Map<String, dynamic>.from(p['cols'] as Map? ?? const {}),
+        );
       default:
         debugPrint('Outbox: неизвестный тип «$type» — пропускаю');
         return true; // не зацикливаем неизвестное
@@ -961,7 +1060,9 @@ class OutboxService {
       try {
         final f = File(path);
         if (await f.exists()) await f.delete();
-      } catch (_) {/* не удалился — уберёт система */}
+      } catch (_) {
+        /* не удалился — уберёт система */
+      }
     }
     return ok;
   }
@@ -1022,8 +1123,10 @@ class OutboxService {
       // Доля готовности кодека — чтобы под кружком шли проценты, а не
       // безликое «отправляется» на минуту.
       final progressSub = VideoCompress.compressProgress$.subscribe((v) {
-        status.set(id,
-            NoteSendState(NoteSendPhase.compressing, (v / 100).clamp(0.0, 1.0)));
+        status.set(
+          id,
+          NoteSendState(NoteSendPhase.compressing, (v / 100).clamp(0.0, 1.0)),
+        );
       });
       try {
         final info = await VideoCompress.compressVideo(
@@ -1035,7 +1138,7 @@ class OutboxService {
           quality: VideoQuality.Res960x540Quality,
           deleteOrigin: false,
           includeAudio: true,
-        // Минута видео на слабом телефоне жмётся дольше двух минут.
+          // Минута видео на слабом телефоне жмётся дольше двух минут.
         ).timeout(const Duration(minutes: 3));
         final out = info?.file;
         if (out != null && await out.exists()) {
@@ -1056,7 +1159,9 @@ class OutboxService {
       );
       try {
         if (shrunk != null && await shrunk.exists()) await shrunk.delete();
-      } catch (_) {/* уберёт система */}
+      } catch (_) {
+        /* уберёт система */
+      }
       if (uploaded == null) {
         status.clear(id); // подождёт в очереди, подпись станет «ждёт»
         return false; // сеть/сервер — повторим позже
@@ -1078,23 +1183,33 @@ class OutboxService {
         try {
           final f = File(path);
           if (await f.exists()) await f.delete();
-        } catch (_) {/* не удалился — уберёт система */}
+        } catch (_) {
+          /* не удалился — уберёт система */
+        }
       }
     }
     return ok;
   }
 
   Future<bool> _applyBumpComments(
-      String groupId, String memoryId, int by) async {
+    String groupId,
+    String memoryId,
+    int by,
+  ) async {
     if (memoryId.isEmpty || by == 0) return true;
     final data = PbDataService();
     final rec = await data.loadMemoryById(memoryId);
     if (rec == null) return true;
     final raw = rec.data['data'];
-    final map = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    final map = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
     map['commentsCount'] = ((map['commentsCount'] as num?)?.toInt() ?? 0) + by;
     return data.upsertMemory(
-        rec.data['group_id'] as String? ?? groupId, memoryId, map);
+      rec.data['group_id'] as String? ?? groupId,
+      memoryId,
+      map,
+    );
   }
 
   /// Идемпотентный RMW «избранное»: читаем АКТУАЛЬНОЕ серверное состояние и
@@ -1106,7 +1221,9 @@ class OutboxService {
     final rec = await data.loadMemoryById(memoryId);
     if (rec == null) return true; // удалено на сервере — считаем выполненным
     final raw = rec.data['data'];
-    final map = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    final map = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
     final list = (map['savedBy'] is List)
         ? List<String>.from((map['savedBy'] as List).map((e) => e.toString()))
         : <String>[];
@@ -1120,19 +1237,27 @@ class OutboxService {
     }
     map['savedBy'] = list;
     return data.upsertMemory(
-        rec.data['group_id'] as String? ?? '', memoryId, map);
+      rec.data['group_id'] as String? ?? '',
+      memoryId,
+      map,
+    );
   }
 
   /// Реакция на сервере пересчитывается по свежей записи, а не затирает её
   /// целиком: пока операция лежала в очереди, партнёр мог отметить своё.
   Future<bool> _applySetReaction(
-      String memoryId, String uid, String reaction) async {
+    String memoryId,
+    String uid,
+    String reaction,
+  ) async {
     if (memoryId.isEmpty || uid.isEmpty) return true;
     final data = PbDataService();
     final rec = await data.loadMemoryById(memoryId);
     if (rec == null) return true; // удалено на сервере — считаем выполненным
     final raw = rec.data['data'];
-    final map = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    final map = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
     final current = parseReactions(map['reactions']);
     if ((current[uid] ?? '') == reaction) return true; // уже так — идемпотентно
     final next = Map<String, String>.from(current);
@@ -1143,7 +1268,10 @@ class OutboxService {
     }
     map['reactions'] = next;
     return data.upsertMemory(
-        rec.data['group_id'] as String? ?? '', memoryId, map);
+      rec.data['group_id'] as String? ?? '',
+      memoryId,
+      map,
+    );
   }
 
   /// Наклейка уходит своей операцией сервера (см. `memoryStickerOp`).
@@ -1159,7 +1287,9 @@ class OutboxService {
     final body = p['del'] == true
         ? <String, dynamic>{'sticker_del': p['sid']}
         : <String, dynamic>{
-            'sticker_put': Map<String, dynamic>.from(p['put'] as Map? ?? const {}),
+            'sticker_put': Map<String, dynamic>.from(
+              p['put'] as Map? ?? const {},
+            ),
           };
     final data = PbDataService();
     final res = await data.memoryStickerOp(memoryId, body);

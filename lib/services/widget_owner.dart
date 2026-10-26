@@ -36,7 +36,6 @@ WidgetOwnerAction widgetOwnerAction({
   return WidgetOwnerAction.wipeAndRemember;
 }
 
-
 /// Кто в сессии по событию `authStore.onChange`.
 ///
 /// Пустая строка — выход. `null` — «не знаю»: трогать данные виджетов нельзя.
@@ -55,9 +54,9 @@ String? _uidFromToken(String token) {
   try {
     final parts = token.split('.');
     if (parts.length != 3) return null;
-    final payload = jsonDecode(
-      utf8.decode(base64Decode(base64.normalize(parts[1]))),
-    ) as Map<String, dynamic>;
+    final payload =
+        jsonDecode(utf8.decode(base64Decode(base64.normalize(parts[1]))))
+            as Map<String, dynamic>;
     final id = payload['id'];
     return (id is String && id.isNotEmpty) ? id : null;
   } catch (_) {

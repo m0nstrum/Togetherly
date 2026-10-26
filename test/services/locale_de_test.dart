@@ -8,6 +8,8 @@ import 'package:love_app/services/locale_service.dart';
 /// и если реализацию забыть, немец увидит английское «2 days» посреди
 /// немецкого экрана — на глаз это заметно не сразу, тест ловит сразу.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings de;
   late AppStrings en;
 
@@ -53,7 +55,10 @@ void main() {
 
   test('подстановки не теряют значения', () {
     expect(de.partnerIsMood('Anna', 'froh'), 'Anna ist froh');
-    expect(de.capsuleNotReady('14. Feb 2027'), 'Noch nicht. Öffnet am 14. Feb 2027');
+    expect(
+      de.capsuleNotReady('14. Feb 2027'),
+      'Noch nicht. Öffnet am 14. Feb 2027',
+    );
     expect(de.watchWithPartner('Max'), 'Mit Max schauen');
     expect(de.shareInviteText('4F2K9C', 'https://t.dy/x'), contains('4F2K9C'));
     expect(

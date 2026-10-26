@@ -14,15 +14,16 @@ import '../widgets/memory_date_field.dart';
 typedef MusicMetaFetcher = Future<Map<String, String?>> Function(String url);
 
 /// Сохранение музыкального воспоминания.
-typedef MemoryMusicSaveCallback = Future<void> Function({
-  required String musicTitle,
-  required String musicArtist,
-  required String musicUrl,
-  String? musicCoverUrl,
-  String? musicPath,
-  String caption,
-  DateTime? customDate,
-});
+typedef MemoryMusicSaveCallback =
+    Future<void> Function({
+      required String musicTitle,
+      required String musicArtist,
+      required String musicUrl,
+      String? musicCoverUrl,
+      String? musicPath,
+      String caption,
+      DateTime? customDate,
+    });
 
 /// Описание стримингового сервиса для бейджа платформы.
 class _MusicService {
@@ -36,28 +37,60 @@ class _MusicService {
     final lower = url.toLowerCase();
     if (lower.isEmpty || !lower.startsWith('http')) return null;
     if (lower.contains('spotify')) {
-      return const _MusicService('Spotify', Color(0xFF1DB954), Icons.music_note_rounded);
+      return const _MusicService(
+        'Spotify',
+        Color(0xFF1DB954),
+        Icons.music_note_rounded,
+      );
     }
     if (lower.contains('music.youtube.com')) {
-      return const _MusicService('YouTube Music', Color(0xFFFF0000), Icons.play_circle_rounded);
+      return const _MusicService(
+        'YouTube Music',
+        Color(0xFFFF0000),
+        Icons.play_circle_rounded,
+      );
     }
     if (lower.contains('youtube') || lower.contains('youtu.be')) {
-      return const _MusicService('YouTube', Color(0xFFFF0000), Icons.smart_display_rounded);
+      return const _MusicService(
+        'YouTube',
+        Color(0xFFFF0000),
+        Icons.smart_display_rounded,
+      );
     }
     if (lower.contains('music.apple.com')) {
-      return const _MusicService('Apple Music', Color(0xFFFC3C44), Icons.apple_rounded);
+      return const _MusicService(
+        'Apple Music',
+        Color(0xFFFC3C44),
+        Icons.apple_rounded,
+      );
     }
     if (lower.contains('deezer')) {
-      return const _MusicService('Deezer', Color(0xFFA238FF), Icons.album_rounded);
+      return const _MusicService(
+        'Deezer',
+        Color(0xFFA238FF),
+        Icons.album_rounded,
+      );
     }
     if (lower.contains('soundcloud')) {
-      return const _MusicService('SoundCloud', Color(0xFFFF5500), Icons.cloud_rounded);
+      return const _MusicService(
+        'SoundCloud',
+        Color(0xFFFF5500),
+        Icons.cloud_rounded,
+      );
     }
     if (lower.contains('yandex') && lower.contains('music')) {
-      return const _MusicService('Яндекс Музыка', Color(0xFFFFCC00), Icons.library_music_rounded);
+      return const _MusicService(
+        'Яндекс Музыка',
+        Color(0xFFFFCC00),
+        Icons.library_music_rounded,
+      );
     }
     if (lower.contains('tidal.com')) {
-      return const _MusicService('Tidal', Color(0xFF101010), Icons.waves_rounded);
+      return const _MusicService(
+        'Tidal',
+        Color(0xFF101010),
+        Icons.waves_rounded,
+      );
     }
     return null;
   }
@@ -264,7 +297,9 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
         tooltip: ruEn('Закрыть', 'Close'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded, size: 22),
-        style: IconButton.styleFrom(foregroundColor: widget.theme.textSecondary),
+        style: IconButton.styleFrom(
+          foregroundColor: widget.theme.textSecondary,
+        ),
       ),
       title: Text(
         s.music,
@@ -287,10 +322,14 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
                 backgroundColor: _primary,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                textStyle:
-                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
               child: Text(s.addMemoryBtn),
             ),
@@ -401,9 +440,7 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
     return Container(
       width: 150,
       height: 150,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Stack(
@@ -520,8 +557,11 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
                   color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.link_rounded,
-                    size: 16, color: Color(0xFF22C55E)),
+                child: const Icon(
+                  Icons.link_rounded,
+                  size: 16,
+                  color: Color(0xFF22C55E),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -536,8 +576,10 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
               ),
               if (hasCover)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -545,8 +587,11 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.check_circle_rounded,
-                          size: 12, color: Color(0xFF22C55E)),
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        size: 12,
+                        color: Color(0xFF22C55E),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         s.fetched,
@@ -571,8 +616,7 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
             onSubmitted: _fetchMeta,
             decoration: InputDecoration(
               hintText: s.pasteLinkFromService,
-              hintStyle:
-                  TextStyle(color: widget.theme.textMuted, fontSize: 13),
+              hintStyle: TextStyle(color: widget.theme.textMuted, fontSize: 13),
               prefixIcon: Icon(Icons.link_rounded, color: _primary, size: 20),
               suffixIcon: _isFetching
                   ? const Padding(
@@ -581,7 +625,9 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.grey),
+                          strokeWidth: 2,
+                          color: Colors.grey,
+                        ),
                       ),
                     )
                   : IconButton(
@@ -599,8 +645,10 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: _primary, width: 1.5),
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -655,8 +703,9 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
           foregroundColor: color,
           side: BorderSide(color: color),
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
@@ -690,8 +739,11 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
                   color: _primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child:
-                    Icon(Icons.music_note_rounded, size: 16, color: _primary),
+                child: Icon(
+                  Icons.music_note_rounded,
+                  size: 16,
+                  color: _primary,
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -748,8 +800,10 @@ class _MemoryMusicFormScreenState extends State<MemoryMusicFormScreen>
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: _primary, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }

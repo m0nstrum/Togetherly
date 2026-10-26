@@ -15,8 +15,10 @@ void main() {
   });
 
   test('информация о маршруте приходит картой', () {
-    expect(uriFromRoute({'location': 'loveapp://mood?id=happy'}),
-        Uri.parse('loveapp://mood?id=happy'));
+    expect(
+      uriFromRoute({'location': 'loveapp://mood?id=happy'}),
+      Uri.parse('loveapp://mood?id=happy'),
+    );
   });
 
   test('обычные маршруты приложения не трогаем', () {

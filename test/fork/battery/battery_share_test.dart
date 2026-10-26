@@ -32,10 +32,19 @@ void main() {
 
   test('пишем редко: 5%, зарядка или полчаса', () {
     expect(ForkBattery.shouldSend(null, s(80)), isTrue);
-    expect(ForkBattery.shouldSend(s(80), s(78, after: const Duration(minutes: 5))), isFalse);
-    expect(ForkBattery.shouldSend(s(80), s(75, after: const Duration(minutes: 5))), isTrue);
+    expect(
+      ForkBattery.shouldSend(s(80), s(78, after: const Duration(minutes: 5))),
+      isFalse,
+    );
+    expect(
+      ForkBattery.shouldSend(s(80), s(75, after: const Duration(minutes: 5))),
+      isTrue,
+    );
     expect(ForkBattery.shouldSend(s(80), s(80, c: true)), isTrue);
-    expect(ForkBattery.shouldSend(s(80), s(79, after: const Duration(minutes: 30))), isTrue);
+    expect(
+      ForkBattery.shouldSend(s(80), s(79, after: const Duration(minutes: 30))),
+      isTrue,
+    );
   });
 
   test('состояние: разбор, «скоро сядет», свежесть', () {
@@ -52,14 +61,25 @@ void main() {
     final c = await E2ECrypto.init();
     final keys = _Keys()..add(PairKey(_gid, 1, c.symmetricKey()));
     final codec = RecordCodec(c, keys);
-    final body = {'group_id': _gid, 'user_uid': 'alice', 'state': s(42, c: true).toJson()};
+    final body = {
+      'group_id': _gid,
+      'user_uid': 'alice',
+      'state': s(42, c: true).toJson(),
+    };
     final sealed = codec.encode(ForkBattery.collection, 'b1', _gid, body);
     expect(sealed['state'], startsWith(e2eFieldPrefix));
-    expect('${sealed['state']}', isNot(contains('42')));
+    // «42» в base64 шифра может встретиться случайно — ищем имя поля.
+    expect('${sealed['state']}', isNot(contains('level')));
     final open = codec.decode(ForkBattery.collection, {'id': 'b1', ...sealed});
     expect(ForkBatteryState.fromJson(open['state'])!.level, 42);
     // Без ключа пары — не уходит открытым текстом.
-    expect(() => RecordCodec(c, _Keys()).encode(ForkBattery.collection, 'b1', _gid, body), throwsA(isA<E2ENoKeyError>()));
+    expect(
+      () => RecordCodec(
+        c,
+        _Keys(),
+      ).encode(ForkBattery.collection, 'b1', _gid, body),
+      throwsA(isA<E2ENoKeyError>()),
+    );
   });
 
   test('подписи и значки', () {
@@ -67,6 +87,9 @@ void main() {
     expect(forkBatteryIcon(s(5)), Icons.battery_alert_rounded);
     expect(forkBatteryIcon(s(5, c: true)), Icons.battery_charging_full_rounded);
     expect(forkBatteryNote(s(50), t0), isNotEmpty);
-    expect(forkBatteryNote(s(10), t0.add(const Duration(minutes: 40))), contains('40'));
+    expect(
+      forkBatteryNote(s(10), t0.add(const Duration(minutes: 40))),
+      contains('40'),
+    );
   });
 }

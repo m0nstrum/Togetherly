@@ -10,7 +10,8 @@ class FakeCustomMoodStore implements CustomMoodStore {
   final List<CustomMood> moods;
 
   /// Что пришло в последнем create.
-  ({String groupId, String label, int score, Uint8List png, String emoji})? created;
+  ({String groupId, String label, int score, Uint8List png, String emoji})?
+  created;
 
   /// Что пришло в последнем rename.
   ({String recordId, String label, int score})? renamed;
@@ -40,7 +41,13 @@ class FakeCustomMoodStore implements CustomMoodStore {
       failNext = false;
       return null;
     }
-    created = (groupId: groupId, label: label, score: score, png: png, emoji: emoji);
+    created = (
+      groupId: groupId,
+      label: label,
+      score: score,
+      png: png,
+      emoji: emoji,
+    );
     final mood = CustomMood(
       id: 'new${moods.length}',
       groupId: groupId,
@@ -56,7 +63,11 @@ class FakeCustomMoodStore implements CustomMoodStore {
   }
 
   @override
-  Future<bool> rename({required String recordId, required String label, required int score}) async {
+  Future<bool> rename({
+    required String recordId,
+    required String label,
+    required int score,
+  }) async {
     if (failNext) {
       failNext = false;
       return false;
@@ -85,14 +96,13 @@ CustomMood ownMood(
   String author = 'me',
   String label = '',
   String image = 'assets/images/new emodji/Счастье.webp',
-}) =>
-    CustomMood(
-      id: id,
-      groupId: 'g1',
-      authorUid: author,
-      moodId: 'custom_$id',
-      label: label.isEmpty ? id : label,
-      emoji: emoji,
-      imageUrl: image,
-      score: score,
-    );
+}) => CustomMood(
+  id: id,
+  groupId: 'g1',
+  authorUid: author,
+  moodId: 'custom_$id',
+  label: label.isEmpty ? id : label,
+  emoji: emoji,
+  imageUrl: image,
+  score: score,
+);

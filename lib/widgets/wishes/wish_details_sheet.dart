@@ -8,6 +8,7 @@ import '../../theme/fonts.dart';
 import '../../theme/profile_theme.dart';
 import '../../utils/safe_launch.dart';
 import '../app_sheet.dart';
+import 'wish_due_picker.dart';
 
 /// Открыть чужое желание целиком.
 ///
@@ -19,6 +20,8 @@ Future<void> showWishDetailsSheet(
   required AppTheme theme,
   required Wish wish,
   required String authorName,
+  bool alsoMine = false,
+  Future<void> Function()? onAlso,
 }) {
   // Схему снимаем до открытия: лист живёт в навигаторе и переживает экран.
   final scheme = ProfileTheme.themeFor(theme).colorScheme;
@@ -27,23 +30,47 @@ Future<void> showWishDetailsSheet(
     background: scheme.surfaceContainer,
     builder: (_) => Theme(
       data: ProfileTheme.data(scheme),
-      child: WishDetailsSheet(wish: wish, authorName: authorName),
+      child: WishDetailsSheet(
+        wish: wish,
+        authorName: authorName,
+        alsoMine: alsoMine,
+        onAlso: onAlso,
+      ),
     ),
   );
 }
 
-class WishDetailsSheet extends StatelessWidget {
+class WishDetailsSheet extends StatefulWidget {
   const WishDetailsSheet({
     super.key,
     required this.wish,
     required this.authorName,
+    this.alsoMine = false,
+    this.onAlso,
   });
 
   final Wish wish;
   final String authorName;
 
+  /// «Я тоже хочу» уже стоит.
+  final bool alsoMine;
+
+  /// Переключить «я тоже хочу». Null — кнопки нет (своё или сбывшееся).
+  final Future<void> Function()? onAlso;
+
+  @override
+  State<WishDetailsSheet> createState() => _WishDetailsSheetState();
+}
+
+class _WishDetailsSheetState extends State<WishDetailsSheet> {
+  late bool _also = widget.alsoMine;
+
+  Wish get wish => widget.wish;
+  String get authorName => widget.authorName;
+
   @override
   Widget build(BuildContext context) {
+    final due = wishDueLabel(wish.due);
     final cs = Theme.of(context).colorScheme;
     final hasShopLine = wish.hasPrice || wish.shop.isNotEmpty;
 
@@ -73,7 +100,10 @@ class WishDetailsSheet extends StatelessWidget {
               Text(
                 authorName,
                 style: AppFonts.onest(
-                    size: 13.5, weight: 600, color: cs.onSurfaceVariant),
+                  size: 13.5,
+                  weight: 600,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             if (hasShopLine) ...[
               const SizedBox(height: 10),
@@ -85,7 +115,9 @@ class WishDetailsSheet extends StatelessWidget {
                   if (wish.hasPrice)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 5),
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: cs.secondaryContainer,
                         borderRadius: BorderRadius.circular(999),
@@ -93,18 +125,57 @@ class WishDetailsSheet extends StatelessWidget {
                       child: Text(
                         wish.priceLabel,
                         style: AppFonts.onest(
-                            size: 13.5,
-                            weight: 700,
-                            color: cs.onSecondaryContainer),
+                          size: 13.5,
+                          weight: 700,
+                          color: cs.onSecondaryContainer,
+                        ),
                       ),
                     ),
                   if (wish.shop.isNotEmpty)
                     Text(
                       wish.shop,
                       style: AppFonts.onest(
-                          size: 13.5, color: cs.onSurfaceVariant),
+                        size: 13.5,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                 ],
+              ),
+            ],
+            if (due.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(Icons.event_rounded, size: 18, color: cs.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    due,
+                    style: AppFonts.onest(
+                      size: 14,
+                      weight: 600,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (widget.onAlso != null && !wish.done) ...[
+              const SizedBox(height: 12),
+              FilterChip(
+                key: const Key('wish-details-also'),
+                selected: _also,
+                showCheckmark: false,
+                avatar: Icon(
+                  _also
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  size: 18,
+                ),
+                label: Text(ruEn('Я тоже хочу', 'I want it too')),
+                onSelected: (_) async {
+                  setState(() => _also = !_also);
+                  await widget.onAlso!();
+                },
               ),
             ],
             if (wish.note.isNotEmpty) ...[
@@ -112,7 +183,10 @@ class WishDetailsSheet extends StatelessWidget {
               Text(
                 wish.note,
                 style: AppFonts.onest(
-                    size: 16, height: 1.45, color: cs.onSurface),
+                  size: 16,
+                  height: 1.45,
+                  color: cs.onSurface,
+                ),
               ),
             ],
           ],

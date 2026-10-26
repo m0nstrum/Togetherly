@@ -23,10 +23,18 @@ void main() {
   test('после 1 ноября остаётся у пришедших до него', () {
     final now = at(2026, 11, 5);
     expect(paletteOpen(hw, registeredAt: at(2025, 3, 1), now: now), isTrue);
-    expect(paletteOpen(hw, registeredAt: DateTime.utc(2026, 10, 31, 23, 59),
-        now: now), isTrue);
-    expect(paletteOpen(hw, registeredAt: DateTime.utc(2026, 11, 1, 0, 1),
-        now: now), isFalse);
+    expect(
+      paletteOpen(
+        hw,
+        registeredAt: DateTime.utc(2026, 10, 31, 23, 59),
+        now: now,
+      ),
+      isTrue,
+    );
+    expect(
+      paletteOpen(hw, registeredAt: DateTime.utc(2026, 11, 1, 0, 1), now: now),
+      isFalse,
+    );
   });
 
   test('пришедший после сезона ждёт следующего Хэллоуина', () {
@@ -35,13 +43,17 @@ void main() {
     expect(paletteOpen(hw, registeredAt: late, now: at(2027, 10, 1)), isTrue);
     // Застал Хэллоуин 2027 — тема остаётся и после него.
     expect(paletteOpen(hw, registeredAt: late, now: at(2027, 11, 20)), isTrue);
-    expect(paletteOpen(hw, registeredAt: at(2027, 11, 2), now: at(2027, 11, 20)),
-        isFalse);
+    expect(
+      paletteOpen(hw, registeredAt: at(2027, 11, 2), now: at(2027, 11, 20)),
+      isFalse,
+    );
   });
 
   test('до первого сезона темы не было ни у кого', () {
-    expect(paletteOpen(hw, registeredAt: at(2024, 1, 1), now: at(2026, 9, 20)),
-        isFalse);
+    expect(
+      paletteOpen(hw, registeredAt: at(2024, 1, 1), now: at(2026, 9, 20)),
+      isFalse,
+    );
   });
 
   test('неизвестная дата регистрации тему не отнимает', () {

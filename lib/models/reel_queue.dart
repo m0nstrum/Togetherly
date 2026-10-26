@@ -24,7 +24,9 @@ class ReelQueue {
   static List<String> idsIn(String text) {
     final out = <String>[];
     final seen = <String>{};
-    for (final m in RegExp(r'"videoId":"([A-Za-z0-9_-]{11})"').allMatches(text)) {
+    for (final m in RegExp(
+      r'"videoId":"([A-Za-z0-9_-]{11})"',
+    ).allMatches(text)) {
       final id = m.group(1)!;
       if (seen.add(id)) out.add(id);
     }

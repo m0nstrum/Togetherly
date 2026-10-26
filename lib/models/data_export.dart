@@ -33,9 +33,9 @@ const List<String> kAuthorFields = [
 ];
 
 Map<String, dynamic> _clean(Map<String, dynamic> row) => {
-      for (final e in row.entries)
-        if (!kExportSecrets.contains(e.key)) e.key: e.value,
-    };
+  for (final e in row.entries)
+    if (!kExportSecrets.contains(e.key)) e.key: e.value,
+};
 
 /// Моя ли это запись.
 ///

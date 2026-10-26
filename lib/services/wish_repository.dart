@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import '../models/wish.dart';
 import '../models/wish_reservation.dart';
 import '../models/wish_category.dart';
+import '../models/wish_comment.dart';
+import '../models/wish_due.dart';
+import '../models/wish_place.dart';
 import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/pb_id.dart';
@@ -23,6 +26,7 @@ class WishRepository {
   static const String _collection = 'wishes';
   static const String _categories = 'wish_categories';
   static const String _reservations = 'wish_reservations';
+  static const String _comments = 'wish_comments';
 
   final PbDataService _data = PbDataService();
   final PbRealtimeService _rt = PbRealtimeService();
@@ -45,8 +49,11 @@ class WishRepository {
 
       final fresh = recs.map(Wish.fromPb).toList();
       for (final w in fresh) {
-        await LocalStore.instance
-            .upsertRaw(_collection, w.id, w.toMap(groupId: groupId));
+        await LocalStore.instance.upsertRaw(
+          _collection,
+          w.id,
+          w.toMap(groupId: groupId),
+        );
       }
       return fresh;
     } catch (e) {
@@ -72,6 +79,8 @@ class WishRepository {
     String url = '',
     String image = '',
     String shop = '',
+    WishDue due = WishDue.none,
+    WishPlace? place,
   }) async {
     final uid = _uid;
     final text = title.trim();
@@ -92,6 +101,8 @@ class WishRepository {
       url: url,
       image: image,
       shop: shop,
+      due: due,
+      place: place,
       createdAt: DateTime.now(),
     );
     await _save(groupId, wish);
@@ -111,6 +122,9 @@ class WishRepository {
     String? url,
     String? image,
     String? shop,
+    WishDue? due,
+    WishPlace? place,
+    bool noPlace = false,
   }) async {
     final text = title.trim();
     if (groupId.isEmpty || text.isEmpty) return;
@@ -127,8 +141,63 @@ class WishRepository {
         url: url,
         image: image,
         shop: shop,
+        due: due,
+        place: place,
+        noPlace: noPlace,
       ),
     );
+  }
+
+  /// «Я тоже хочу» и обратно. Ставит сам партнёр — поле общее, страж
+  /// пускает в него не-автора.
+  Future<Wish?> toggleAlso({
+    required String groupId,
+    required Wish wish,
+  }) async {
+    final uid = _uid;
+    if (uid == null || uid.isEmpty || groupId.isEmpty) return null;
+    final also = wish.also.contains(uid)
+        ? (List.of(wish.also)..remove(uid))
+        : [...wish.also, uid];
+    final next = wish.copyWith(also: also);
+    await _save(groupId, next, shared: const ['also']);
+    return next;
+  }
+
+  /// Новое место карточки в общем порядке. Двигает любой из пары.
+  Future<Wish> setPos({
+    required String groupId,
+    required Wish wish,
+    required double pos,
+  }) async {
+    final next = wish.copyWith(pos: pos);
+    if (groupId.isNotEmpty) await _save(groupId, next, shared: const ['pos']);
+    return next;
+  }
+
+  /// «Другое желание недели»: это желание не выпадает до конца недели
+  /// [weekKey]. Общее поле — выбор недели у пары один.
+  Future<Wish> skipWeek({
+    required String groupId,
+    required Wish wish,
+    required String weekKey,
+  }) async {
+    final next = wish.copyWith(skip: weekKey);
+    if (groupId.isNotEmpty) await _save(groupId, next, shared: const ['skip']);
+    return next;
+  }
+
+  /// Привязать сбывшееся к воспоминанию; пустой [memoryId] — отвязать.
+  Future<Wish> linkMemory({
+    required String groupId,
+    required Wish wish,
+    required String memoryId,
+  }) async {
+    final next = wish.copyWith(memoryId: memoryId);
+    if (groupId.isNotEmpty) {
+      await _save(groupId, next, shared: const ['memory']);
+    }
+    return next;
   }
 
   /// Заводит свою категорию пары. Доступ решает вызывающий: создание закрыто
@@ -192,10 +261,7 @@ class WishRepository {
 
   /// Отмечает желание сбывшимся. Отметить может любой из пары — [Wish.doneBy]
   /// запоминает, кто именно.
-  Future<Wish?> markDone({
-    required String groupId,
-    required Wish wish,
-  }) async {
+  Future<Wish?> markDone({required String groupId, required Wish wish}) async {
     final uid = _uid;
     if (uid == null || uid.isEmpty || groupId.isEmpty) return null;
     final marked = wish.markDone(by: uid);
@@ -204,10 +270,7 @@ class WishRepository {
   }
 
   /// Снимает отметку — кнопка «Отменить» в снекбаре и повторный тап по галочке.
-  Future<Wish> undone({
-    required String groupId,
-    required Wish wish,
-  }) async {
+  Future<Wish> undone({required String groupId, required Wish wish}) async {
     final back = wish.undone();
     if (groupId.isNotEmpty) await _save(groupId, back);
     return back;
@@ -244,6 +307,50 @@ class WishRepository {
     await OutboxService.instance.enqueue('wishDelete', {'id': wishId});
   }
 
+  // ── комментарии ──
+
+  /// Все комментарии пары к желаниям, старые сверху.
+  Stream<List<WishComment>> watchComments(String groupId) => _rt
+      .watchWishComments(groupId)
+      .map((recs) => recs.map(WishComment.fromPb).toList());
+
+  /// Пишет комментарий: сразу в кэш, следом в очередь — работает без сети.
+  Future<WishComment?> addComment({
+    required String groupId,
+    required String wishId,
+    required String text,
+  }) async {
+    final uid = _uid;
+    final body = text.trim();
+    if (uid == null ||
+        uid.isEmpty ||
+        groupId.isEmpty ||
+        wishId.isEmpty ||
+        body.isEmpty) {
+      return null;
+    }
+    final c = WishComment(
+      id: newPbId(),
+      wishId: wishId,
+      authorUid: uid,
+      text: body,
+      createdAt: DateTime.now(),
+    );
+    final map = c.toMap(groupId: groupId);
+    await LocalStore.instance.upsertRaw(_comments, c.id, map);
+    await OutboxService.instance.enqueue('wishCommentUpsert', {
+      'groupId': groupId,
+      'comment': map,
+    });
+    return c;
+  }
+
+  Future<void> removeComment(String id) async {
+    if (id.isEmpty) return;
+    await LocalStore.instance.deleteRecord(_comments, id);
+    await OutboxService.instance.enqueue('wishCommentDelete', {'id': id});
+  }
+
   // ── «дарю»: отметки, которых автор не видит ──
 
   /// Свои отметки. Чужих не бывает: правило коллекции отдаёт только записи
@@ -256,8 +363,11 @@ class WishRepository {
       final recs = await _data.loadWishReservations(groupId);
       final fresh = recs.map(WishReservation.fromPb).toList();
       for (final r in fresh) {
-        await LocalStore.instance
-            .upsertRaw(_reservations, r.id, r.toMap(groupId: groupId));
+        await LocalStore.instance.upsertRaw(
+          _reservations,
+          r.id,
+          r.toMap(groupId: groupId),
+        );
       }
       return fresh;
     } catch (e) {
@@ -296,20 +406,44 @@ class WishRepository {
     return res;
   }
 
+  /// Срок «Дарю»: напомнит дарящему (WishReminders). Null — без срока.
+  Future<WishReservation> setReserveUntil({
+    required String groupId,
+    required WishReservation res,
+    DateTime? until,
+  }) async {
+    final next = res.withUntil(until);
+    final map = next.toMap(groupId: groupId);
+    await LocalStore.instance.upsertRaw(_reservations, next.id, map);
+    await OutboxService.instance.enqueue('wishReserve', {
+      'groupId': groupId,
+      'res': map,
+    });
+    return next;
+  }
+
   /// Передумал дарить.
   Future<void> release(String reservationId) async {
     if (reservationId.isEmpty) return;
     await LocalStore.instance.deleteRecord(_reservations, reservationId);
-    await OutboxService.instance
-        .enqueue('wishReserveDelete', {'id': reservationId});
+    await OutboxService.instance.enqueue('wishReserveDelete', {
+      'id': reservationId,
+    });
   }
 
   /// Кладёт запись местно и ставит задание в очередь.
   ///
   /// Чужое желание уходит на сервер урезанным заданием: страж
-  /// `wishes_guard.pb.js` пускает не-автора только в поля отметки, а полное
+  /// `authorship.go` сервера пускает не-автора только в поля отметки, а полное
   /// тело он отвергнет — вместе с обычной галочкой «сбылось».
-  Future<void> _save(String groupId, Wish wish) async {
+  ///
+  /// [shared] — какие общие поля поменялись: партнёр шлёт только их, чтобы
+  /// перестановка карточки не перетёрла свежую отметку автора.
+  Future<void> _save(
+    String groupId,
+    Wish wish, {
+    List<String> shared = const ['done'],
+  }) async {
     final map = wish.toMap(groupId: groupId);
     await LocalStore.instance.upsertRaw(_collection, wish.id, map);
 
@@ -317,10 +451,17 @@ class WishRepository {
       await OutboxService.instance.enqueue('wishMark', {
         'id': wish.id,
         'fields': {
-          'done': wish.done,
-          'done_at': wish.doneAt?.toIso8601String(),
-          'done_by': wish.doneBy,
-          'done_note': wish.doneNote,
+          if (shared.contains('done')) ...{
+            'done': wish.done,
+            'done_at': wish.doneAt?.toIso8601String(),
+            'done_by': wish.doneBy,
+            'done_note': wish.doneNote,
+          },
+          if (shared.contains('also')) 'also': wish.also.join(','),
+          if (shared.contains('pos'))
+            'pos': wish.pos == null ? '' : Wish.posText(wish.pos!),
+          if (shared.contains('skip')) 'skip': wish.skip,
+          if (shared.contains('memory')) 'memory': wish.memoryId,
         },
       });
       return;

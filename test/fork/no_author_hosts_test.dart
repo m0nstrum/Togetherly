@@ -84,7 +84,7 @@ void main() {
       hits,
       isEmpty,
       reason:
-          'Адреса — в lib/fork/config/endpoints.dart, см. docs/fork/TOUCHPOINTS.md',
+          'Адреса — в lib/fork/config/endpoints.dart, см. docs/history/TOUCHPOINTS.md',
     );
   });
 }

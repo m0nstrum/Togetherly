@@ -44,10 +44,15 @@ class JarDrops extends StatelessWidget {
         width: w,
         height: dropHeight,
         child: CustomPaint(
-          painter: JarDropPainter(index: i, fill: filled ? (jar.drops[i] ? mine : partner) : null),
+          painter: JarDropPainter(
+            index: i,
+            fill: filled ? (jar.drops[i] ? mine : partner) : null,
+          ),
         ),
       );
-      cells.add(popLast && filled && i == jar.count - 1 ? _Pop(child: drop) : drop);
+      cells.add(
+        popLast && filled && i == jar.count - 1 ? _Pop(child: drop) : drop,
+      );
       if (i < jar.size - 1) cells.add(SizedBox(width: gap));
     }
     return Semantics(
@@ -71,8 +76,10 @@ class _Pop extends StatefulWidget {
 }
 
 class _PopState extends State<_Pop> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))
-    ..forward();
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  )..forward();
 
   @override
   void dispose() {
@@ -130,7 +137,10 @@ class JarDropPainter extends CustomPainter {
       return seed / 2147483647;
     }
 
-    return [for (final p in _base) p + Offset((rnd() - 0.5) * 0.7, (rnd() - 0.5) * 0.7)];
+    return [
+      for (final p in _base)
+        p + Offset((rnd() - 0.5) * 0.7, (rnd() - 0.5) * 0.7),
+    ];
   }
 
   /// Сглаживание Catmull-Rom — `cr()` из badges.js.
@@ -165,7 +175,10 @@ class JarDropPainter extends CustomPainter {
 
     final color = fill;
     if (color == null) {
-      canvas.drawPath(body, Paint()..color = Colors.white.withValues(alpha: 0.28));
+      canvas.drawPath(
+        body,
+        Paint()..color = Colors.white.withValues(alpha: 0.28),
+      );
       _dashed(
         canvas,
         body,
@@ -191,7 +204,11 @@ class JarDropPainter extends CustomPainter {
 
     // Штриховка тени: полоса вдоль правого нижнего края — форма минус её
     // копия, сдвинутая к свету, как маска `hatch()` в badges.js.
-    final shadow = Path.combine(ui.PathOperation.difference, body, body.shift(const Offset(-3.2, -3.2)));
+    final shadow = Path.combine(
+      ui.PathOperation.difference,
+      body,
+      body.shift(const Offset(-3.2, -3.2)),
+    );
     canvas.save();
     canvas.clipPath(shadow);
     final hatch = Paint()
@@ -199,7 +216,11 @@ class JarDropPainter extends CustomPainter {
       ..strokeWidth = 0.9
       ..strokeCap = StrokeCap.round;
     for (var t = -24.0; t < 24; t += 2.2) {
-      canvas.drawLine(Offset(8 + t, 10 - 14), Offset(8 + t - 14, 10 + 14), hatch);
+      canvas.drawLine(
+        Offset(8 + t, 10 - 14),
+        Offset(8 + t - 14, 10 + 14),
+        hatch,
+      );
     }
     canvas.restore();
 
@@ -217,7 +238,10 @@ class JarDropPainter extends CustomPainter {
 
     // Контур маркером: круг и заход на старт с нахлёстом (`contour()`).
     final a = pts[0], b = pts[1];
-    final overlap = Offset(a.dx + (b.dx - a.dx) * 0.45, a.dy + (b.dy - a.dy) * 0.45);
+    final overlap = Offset(
+      a.dx + (b.dx - a.dx) * 0.45,
+      a.dy + (b.dy - a.dy) * 0.45,
+    );
     canvas.drawPath(
       smooth([...pts, a, overlap], closed: false),
       stroke
@@ -236,5 +260,6 @@ class JarDropPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(JarDropPainter old) => old.index != index || old.fill != fill;
+  bool shouldRepaint(JarDropPainter old) =>
+      old.index != index || old.fill != fill;
 }

@@ -4,7 +4,9 @@ import '../fork/ui/feedback.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
+import '../models/mood_entry.dart';
+import 'mood_repository.dart';
 import 'pocketbase_service.dart';
 
 /// Развёрнутая статистика пары одним запросом.
@@ -34,19 +36,24 @@ class CoupleStatsService {
     if (token.isEmpty) throw const ForkFailureError(ForkFailure.session);
 
     try {
-      final res = await http.get(
-        Uri.parse(
-          '${PocketBaseService.baseUrl}/api/couple/stats?groupId=$groupId',
-        ),
-        headers: {'Authorization': token},
-      ).timeout(const Duration(seconds: 20));
+      final res = await http
+          .get(
+            Uri.parse(
+              '${PocketBaseService.baseUrl}/api/couple/stats?groupId=$groupId',
+            ),
+            headers: {'Authorization': token},
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (res.statusCode != 200) {
         debugPrint('CoupleStatsService: HTTP ${res.statusCode}');
-        throw ForkFailureError(res.statusCode == 401 ? ForkFailure.session : ForkFailure.network);
+        throw ForkFailureError(
+          res.statusCode == 401 ? ForkFailure.session : ForkFailure.network,
+        );
       }
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       await ForkE2E.patchCoupleStats(groupId, json); // fork: даты пары шифром
+      await _patchMoods(groupId, json); // T2: настроения — шифр, считаем здесь
       final stats = CoupleStats.fromJson(json);
       _cache[groupId] = _Cached(stats, DateTime.now());
       return stats;
@@ -56,6 +63,69 @@ class CoupleStatsService {
       rethrow;
     }
   }
+}
+
+/// T2: сервер не видит, какое настроение отмечено (`mood_id` — шифр), и
+/// отдаёт разбивку пустой. Считаем её из своих расшифрованных отметок обоих.
+Future<void> _patchMoods(String groupId, Map<String, dynamic> json) async {
+  final mood = json['mood'];
+  if (mood is Map && ((mood['daily'] as List?)?.isNotEmpty ?? false)) return;
+  final uids = [
+    for (final m in (json['members'] as List? ?? const []))
+      if (m is Map && '${m['uid'] ?? ''}'.isNotEmpty) '${m['uid']}',
+  ];
+  if (uids.isEmpty) return;
+  try {
+    final byUid = <String, List<MoodEntry>>{
+      for (final uid in uids) uid: await MoodRepository().load(groupId, uid),
+    };
+    json['mood'] = moodStatsJson(byUid, DateTime.now());
+  } catch (e) {
+    debugPrint('CoupleStatsService: настроения не посчитались: $e');
+  }
+}
+
+/// Разбивка настроений в форме ответа сервера: `daily` — отметки за 90 дней
+/// по дням автора (новые сверху), `top` — самые частые у каждого.
+@visibleForTesting
+Map<String, dynamic> moodStatsJson(
+  Map<String, List<MoodEntry>> byUid,
+  DateTime now,
+) {
+  final from = DateTime(
+    now.year,
+    now.month,
+    now.day,
+  ).subtract(const Duration(days: 89));
+  final daily = <(String, String, String), int>{};
+  final top = <(String, String), int>{};
+  String ymd(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  byUid.forEach((uid, entries) {
+    for (final e in entries) {
+      final id = e.moodId.trim();
+      // Не расшифровалось — не настроение, а шум.
+      if (id.isEmpty || id.startsWith('e2e1.')) continue;
+      top[(uid, id)] = (top[(uid, id)] ?? 0) + 1;
+      final d = e.authorDate;
+      if (d.isBefore(from)) continue;
+      final k = (ymd(d), uid, id);
+      daily[k] = (daily[k] ?? 0) + 1;
+    }
+  });
+  final dailyList = daily.entries.toList()
+    ..sort((a, b) => b.key.$1.compareTo(a.key.$1));
+  final topList = top.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  return {
+    'daily': [
+      for (final e in dailyList)
+        {'d': e.key.$1, 'uid': e.key.$2, 'id': e.key.$3, 'c': e.value},
+    ],
+    'top': [
+      for (final e in topList) {'uid': e.key.$1, 'id': e.key.$2, 'c': e.value},
+    ],
+  };
 }
 
 class _Cached {
@@ -211,7 +281,9 @@ class CoupleStats {
       // поворачиваем на пояс читателя, иначе у московской пары пик в 21:00
       // рисуется на 18:00.
       hourMessages: shiftHoursToLocal(
-          _slots(rhythm['hourMessages'], 'h', 24), DateTime.now().timeZoneOffset),
+        _slots(rhythm['hourMessages'], 'h', 24),
+        DateTime.now().timeZoneOffset,
+      ),
       moodDaily: [
         for (final p in (mood['daily'] as List? ?? const []))
           if (p is Map) MoodPoint.fromJson(p),
@@ -247,11 +319,11 @@ class MoodPoint {
   final int count;
 
   factory MoodPoint.fromJson(Map raw) => MoodPoint(
-        day: DateTime.tryParse('${raw['d'] ?? ''}'),
-        uid: '${raw['uid'] ?? ''}',
-        moodId: '${raw['id'] ?? ''}',
-        count: (raw['c'] as num?)?.toInt() ?? 0,
-      );
+    day: DateTime.tryParse('${raw['d'] ?? ''}'),
+    uid: '${raw['uid'] ?? ''}',
+    moodId: '${raw['id'] ?? ''}',
+    count: (raw['c'] as num?)?.toInt() ?? 0,
+  );
 }
 
 /// Гистограмму часов, посчитанную сервером в UTC, повернуть в часы читателя.

@@ -93,8 +93,8 @@ class _DrawReplayScreenState extends State<DrawReplayScreen>
       _playing = false;
       if (mounted) setState(() {});
     }
-    _shown.value =
-        (_total * (_elapsed.inMicroseconds / _base.inMicroseconds)).round();
+    _shown.value = (_total * (_elapsed.inMicroseconds / _base.inMicroseconds))
+        .round();
   }
 
   void _seek(double fraction) {
@@ -209,14 +209,18 @@ class _DrawReplayScreenState extends State<DrawReplayScreen>
             Row(
               children: [
                 IconButton.filled(
-                  tooltip: _playing ? ruEn('Пауза', 'Pause') : _elapsed >= _base ? ruEn('Повторить', 'Replay') : ruEn('Воспроизвести', 'Play'),
+                  tooltip: _playing
+                      ? ruEn('Пауза', 'Pause')
+                      : _elapsed >= _base
+                      ? ruEn('Повторить', 'Replay')
+                      : ruEn('Воспроизвести', 'Play'),
                   onPressed: _toggle,
                   icon: Icon(
                     _playing
                         ? Icons.pause_rounded
                         : _elapsed >= _base
-                            ? Icons.replay_rounded
-                            : Icons.play_arrow_rounded,
+                        ? Icons.replay_rounded
+                        : Icons.play_arrow_rounded,
                   ),
                 ),
                 const SizedBox(width: 12),

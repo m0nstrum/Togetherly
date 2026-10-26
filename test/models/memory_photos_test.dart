@@ -27,7 +27,9 @@ void main() {
   });
 
   test('один кадр не задваивается', () {
-    final out = photosFromMemories([_photo('1', url: 'a.jpg', urls: ['a.jpg'])]);
+    final out = photosFromMemories([
+      _photo('1', url: 'a.jpg', urls: ['a.jpg']),
+    ]);
     expect(out.length, 1);
   });
 

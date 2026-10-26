@@ -16,7 +16,10 @@ const _size = Size(60, 60);
 Future<ui.Image> _render(CustomPainter painter) async {
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
-  canvas.drawRect(Offset.zero & _size, Paint()..color = const Color(0xFFFFFFFF));
+  canvas.drawRect(
+    Offset.zero & _size,
+    Paint()..color = const Color(0xFFFFFFFF),
+  );
   painter.paint(canvas, _size);
   final picture = recorder.endRecording();
   final image = await picture.toImage(60, 60);
@@ -30,13 +33,16 @@ Future<int> _paintedPixels(CustomPainter painter) async {
   image.dispose();
   var painted = 0;
   for (var i = 0; i < data!.lengthInBytes; i += 4) {
-    final r = data.getUint8(i), g = data.getUint8(i + 1), b = data.getUint8(i + 2);
+    final r = data.getUint8(i),
+        g = data.getUint8(i + 1),
+        b = data.getUint8(i + 2);
     if (r != 255 || g != 255 || b != 255) painted++;
   }
   return painted;
 }
 
-DrawStroke _stroke(List<DrawPoint> points, {int color = 0xFFFF0000}) => DrawStroke(
+DrawStroke _stroke(List<DrawPoint> points, {int color = 0xFFFF0000}) =>
+    DrawStroke(
       id: 'stroke-${points.length}-$color',
       userId: 'u1',
       points: points,
@@ -54,12 +60,14 @@ void main() {
   );
 
   test('штрихи рисуются: плитка перестаёт быть пустой', () async {
-    final painted = await _paintedPixels(CanvasPreviewPainter(
-      strokes: [
-        _stroke(const [DrawPoint(0.1, 0.5), DrawPoint(0.9, 0.5)]),
-      ],
-      meta: meta,
-    ));
+    final painted = await _paintedPixels(
+      CanvasPreviewPainter(
+        strokes: [
+          _stroke(const [DrawPoint(0.1, 0.5), DrawPoint(0.9, 0.5)]),
+        ],
+        meta: meta,
+      ),
+    );
     expect(painted, greaterThan(50), reason: 'линия не нарисовалась');
   });
 
@@ -79,18 +87,24 @@ void main() {
       pixelW: 6,
       pixelH: 6,
     );
-    final image = await _render(CanvasPreviewPainter(
-      strokes: [
-        _stroke(const [DrawPoint(0.25, 0.25)]),
-      ],
-      meta: pixelMeta,
-    ));
+    final image = await _render(
+      CanvasPreviewPainter(
+        strokes: [
+          _stroke(const [DrawPoint(0.25, 0.25)]),
+        ],
+        meta: pixelMeta,
+      ),
+    );
     final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     image.dispose();
     Color at(int x, int y) {
       final i = (y * 60 + x) * 4;
-      return Color.fromARGB(255, data!.getUint8(i), data.getUint8(i + 1),
-          data.getUint8(i + 2));
+      return Color.fromARGB(
+        255,
+        data!.getUint8(i),
+        data.getUint8(i + 1),
+        data.getUint8(i + 2),
+      );
     }
 
     // Клетка 10×10 точек: середина и угол одной клетки красятся одинаково.
@@ -100,7 +114,9 @@ void main() {
   });
 
   test('плитка без снимка грузит заливки, сжатые под свой размер', () {
-    final source = File('lib/widgets/draw/canvas_preview.dart').readAsStringSync();
+    final source = File(
+      'lib/widgets/draw/canvas_preview.dart',
+    ).readAsStringSync();
     expect(source, contains('imageOf: _images.imageFor'));
     // В 1600 точек двадцать плиток с заливками заняли бы сотни мегабайт.
     expect(source, contains('CanvasImageCache(decodeSide: '));
@@ -132,56 +148,69 @@ void main() {
       imageWidth: 1,
       imageHeight: 1,
     );
-    final image = await _render(CanvasPreviewPainter(
-      strokes: const [stroke],
-      meta: meta,
-      imageOf: (s) => s.id == 'fill' ? fill : null,
-    ));
+    final image = await _render(
+      CanvasPreviewPainter(
+        strokes: const [stroke],
+        meta: meta,
+        imageOf: (s) => s.id == 'fill' ? fill : null,
+      ),
+    );
     final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     image.dispose();
     fill.dispose();
     final i = (30 * 60 + 30) * 4;
     expect(
-      Color.fromARGB(255, data!.getUint8(i), data.getUint8(i + 1), data.getUint8(i + 2)),
+      Color.fromARGB(
+        255,
+        data!.getUint8(i),
+        data.getUint8(i + 1),
+        data.getUint8(i + 2),
+      ),
       const Color(0xFFFFC107),
     );
   });
 
-  test('толщина линии на плитке — в той же доле листа, что на холсте', () async {
-    // Эмулятор 20.10.2026: плитка считала холст шириной в 1000 точек, а на
-    // телефоне он около 400. Линия выходила в 2,5 раза тоньше дырки, которую
-    // оставляет в заливке, и вокруг неё белел ободок.
-    const tile = Size(200, 250);
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawRect(Offset.zero & tile, Paint()..color = const Color(0xFFFFFFFF));
-    CanvasPreviewPainter(
-      strokes: [
-        DrawStroke(
-          id: 'line',
-          userId: 'u1',
-          points: const [DrawPoint(0.1, 0.5), DrawPoint(0.9, 0.5)],
-          colorValue: 0xFF0000FF,
-          strokeWidth: 10,
-          orderIndex: 0,
-        ),
-      ],
-      meta: meta,
-    ).paint(canvas, tile);
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(200, 250);
-    picture.dispose();
-    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    image.dispose();
-    var thick = 0;
-    for (var y = 0; y < 250; y++) {
-      final i = (y * 200 + 100) * 4;
-      if (data!.getUint8(i + 2) > 200 && data.getUint8(i) < 120) thick++;
-    }
-    // Холст на телефоне около 400 точек в ширину: 10 из 400 на плитке в 200 —
-    // это пять пикселей.
-    expect(thick, inInclusiveRange(4, 6));
-  });
+  test(
+    'толщина линии на плитке — в той же доле листа, что на холсте',
+    () async {
+      // Эмулятор 20.10.2026: плитка считала холст шириной в 1000 точек, а на
+      // телефоне он около 400. Линия выходила в 2,5 раза тоньше дырки, которую
+      // оставляет в заливке, и вокруг неё белел ободок.
+      const tile = Size(200, 250);
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      canvas.drawRect(
+        Offset.zero & tile,
+        Paint()..color = const Color(0xFFFFFFFF),
+      );
+      CanvasPreviewPainter(
+        strokes: [
+          DrawStroke(
+            id: 'line',
+            userId: 'u1',
+            points: const [DrawPoint(0.1, 0.5), DrawPoint(0.9, 0.5)],
+            colorValue: 0xFF0000FF,
+            strokeWidth: 10,
+            orderIndex: 0,
+          ),
+        ],
+        meta: meta,
+      ).paint(canvas, tile);
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(200, 250);
+      picture.dispose();
+      final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      image.dispose();
+      var thick = 0;
+      for (var y = 0; y < 250; y++) {
+        final i = (y * 200 + 100) * 4;
+        if (data!.getUint8(i + 2) > 200 && data.getUint8(i) < 120) thick++;
+      }
+      // Холст на телефоне около 400 точек в ширину: 10 из 400 на плитке в 200 —
+      // это пять пикселей.
+      expect(thick, inInclusiveRange(4, 6));
+    },
+  );
 
   test('плитка другой формы не сдвигает заливку относительно линий', () async {
     // Эмулятор 20.10.2026: лист 4:5, плитка почти квадратная. Линии плитка
@@ -197,8 +226,14 @@ void main() {
     // Заливка 40×50 (тоже 4:5) с синей полосой ровно на четверти высоты.
     final recorder = ui.PictureRecorder();
     final c = Canvas(recorder);
-    c.drawRect(const Rect.fromLTWH(0, 0, 40, 50), Paint()..color = const Color(0xFFFFC107));
-    c.drawRect(const Rect.fromLTWH(0, 12, 40, 1), Paint()..color = const Color(0xFF0000FF));
+    c.drawRect(
+      const Rect.fromLTWH(0, 0, 40, 50),
+      Paint()..color = const Color(0xFFFFC107),
+    );
+    c.drawRect(
+      const Rect.fromLTWH(0, 12, 40, 1),
+      Paint()..color = const Color(0xFF0000FF),
+    );
     final pic = recorder.endRecording();
     final fill = await pic.toImage(40, 50);
     pic.dispose();
@@ -206,7 +241,10 @@ void main() {
     const tile = Size(60, 50);
     final out = ui.PictureRecorder();
     final canvas = Canvas(out);
-    canvas.drawRect(Offset.zero & tile, Paint()..color = const Color(0xFFFFFFFF));
+    canvas.drawRect(
+      Offset.zero & tile,
+      Paint()..color = const Color(0xFFFFFFFF),
+    );
     CanvasPreviewPainter(
       strokes: const [
         DrawStroke(
@@ -245,7 +283,12 @@ void main() {
       final rows = <int>[];
       for (var y = 0; y < 50; y++) {
         final i = (y * 60 + x) * 4;
-        if (match(data!.getUint8(i), data.getUint8(i + 1), data.getUint8(i + 2))) rows.add(y);
+        if (match(
+          data!.getUint8(i),
+          data.getUint8(i + 1),
+          data.getUint8(i + 2),
+        ))
+          rows.add(y);
       }
       expect(rows, isNotEmpty);
       return rows.reduce((a, b) => a + b) / rows.length;
@@ -253,20 +296,24 @@ void main() {
 
     final blue = rowsOf(15, (r, g, b) => b > 200 && r < 80 && g < 80);
     final red = rowsOf(45, (r, g, b) => r > 200 && g < 80 && b < 80);
-    expect((blue - red).abs(), lessThanOrEqualTo(1.5),
-        reason: 'полоса заливки на ${blue.toStringAsFixed(1)}, линия на ${red.toStringAsFixed(1)}');
+    expect(
+      (blue - red).abs(),
+      lessThanOrEqualTo(1.5),
+      reason:
+          'полоса заливки на ${blue.toStringAsFixed(1)}, линия на ${red.toStringAsFixed(1)}',
+    );
   });
 
   test('тяжёлый холст не рисуется целиком: плитка размером в ноготь', () async {
     final many = List.generate(
       5000,
-      (i) => _stroke([
-        DrawPoint(i / 5000, 0.2),
-        DrawPoint(i / 5000, 0.8),
-      ]),
+      (i) => _stroke([DrawPoint(i / 5000, 0.2), DrawPoint(i / 5000, 0.8)]),
     );
     final painter = CanvasPreviewPainter(strokes: many, meta: meta);
-    expect(painter.visibleStrokes.length, lessThanOrEqualTo(kPreviewStrokeLimit));
+    expect(
+      painter.visibleStrokes.length,
+      lessThanOrEqualTo(kPreviewStrokeLimit),
+    );
   });
 }
 

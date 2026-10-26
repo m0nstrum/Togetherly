@@ -26,12 +26,12 @@ class BottomStick {
 
   /// Обернуть ленту: оба слушателя стоят снаружи прокрутки.
   Widget wrap(Widget list) => NotificationListener<ScrollMetricsNotification>(
-        onNotification: _onMetrics,
-        child: NotificationListener<ScrollNotification>(
-          onNotification: _onScroll,
-          child: list,
-        ),
-      );
+    onNotification: _onMetrics,
+    child: NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: list,
+    ),
+  );
 
   /// Сюда приходят и программные прыжки: `jumpTo` шлёт начало и конец разом,
   /// поэтому после прыжка вниз флаг встаёт сам, а после прыжка к цитате или

@@ -6,7 +6,11 @@ import 'dart:convert';
 /// своё у каждого персонажа: у кого-то часы бьют до полуночи, а Мигун в эти
 /// часы наоборот разгорается, он ночной.
 class SleepWindow {
-  const SleepWindow({required this.from, required this.to, this.enabled = true});
+  const SleepWindow({
+    required this.from,
+    required this.to,
+    this.enabled = true,
+  });
 
   /// Прежнее поведение: с одиннадцати вечера до семи утра. Достаётся всем, кто
   /// ничего не настраивал.
@@ -36,10 +40,10 @@ class SleepWindow {
   }
 
   SleepWindow copyWith({int? from, int? to, bool? enabled}) => SleepWindow(
-        from: from ?? this.from,
-        to: to ?? this.to,
-        enabled: enabled ?? this.enabled,
-      );
+    from: from ?? this.from,
+    to: to ?? this.to,
+    enabled: enabled ?? this.enabled,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -52,8 +56,7 @@ class SleepWindow {
   int get hashCode => Object.hash(from, to, enabled);
 
   @override
-  String toString() =>
-      'SleepWindow($from→$to${enabled ? '' : ', выключено'})';
+  String toString() => 'SleepWindow($from→$to${enabled ? '' : ', выключено'})';
 }
 
 /// Расписание сна всех персонажей: `id маскота → окно`.
@@ -98,11 +101,7 @@ class MascotSleep {
     final out = <String, dynamic>{};
     all.forEach((id, w) {
       if (w == SleepWindow.standard) return;
-      out[id] = {
-        'from': w.from,
-        'to': w.to,
-        if (!w.enabled) 'enabled': false,
-      };
+      out[id] = {'from': w.from, 'to': w.to, if (!w.enabled) 'enabled': false};
     });
     return out;
   }

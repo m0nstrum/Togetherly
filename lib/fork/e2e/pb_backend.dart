@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'crypto.dart';
+import 'device_link.dart';
 import 'devices.dart';
 import 'e2e_service.dart';
 
@@ -185,6 +186,45 @@ class PbE2EBackend implements E2EBackend {
       await _pb.collection('e2e_backups').create(body: body);
     } else {
       await _pb.collection('e2e_backups').update(r.items.first.id, body: body);
+    }
+  }
+
+  @override
+  Future<void> putLink(Map<String, dynamic> body) async {
+    await _pb.collection('e2e_links').create(body: body);
+  }
+
+  @override
+  Future<LinkRecord?> link(String id) async {
+    final RecordModel r;
+    try {
+      r = await _pb.collection('e2e_links').getOne(id);
+    } on ClientException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+    final device = r.data['device'];
+    if (device is! Map) throw const FormatException('e2e_links.device');
+    return LinkRecord(
+      id: r.id,
+      uid: r.getStringValue('user_uid'),
+      device: DeviceEntry.fromJson(device.cast<String, dynamic>()),
+      mac: unb64(r.getStringValue('mac')),
+      payload: r.getStringValue('payload'),
+    );
+  }
+
+  @override
+  Future<void> putLinkPayload(String id, String payload) async {
+    await _pb.collection('e2e_links').update(id, body: {'payload': payload});
+  }
+
+  @override
+  Future<void> deleteLink(String id) async {
+    try {
+      await _pb.collection('e2e_links').delete(id);
+    } on ClientException catch (e) {
+      if (e.statusCode != 404) rethrow;
     }
   }
 }

@@ -1,4 +1,4 @@
-/// Плашка состояния ключей пары и экран сверки (docs/fork/E2E.md §6.3,
+/// Плашка состояния ключей пары и экран сверки (docs/E2E.md §6.3,
 /// решение §12.4: непроверенная пара работает, но плашка кричит).
 library;
 
@@ -47,154 +47,183 @@ class ForkE2EBanner extends StatelessWidget {
         return ValueListenableBuilder<BackupMethod?>(
           valueListenable: svc.backupMethod,
           builder: (context, backup, _) => ValueListenableBuilder<SasState?>(
-          valueListenable: svc.sas,
-          builder: (context, sas, _) => ValueListenableBuilder<Map<String, PairE2EStatus>>(
-            valueListenable: svc.status,
-            builder: (context, all, _) {
-              final incoming = sas is SasIncoming && sas.groupId == groupId;
-              // Ключи без бэкапа: потеря телефона = потеря переписки, а
-              // сказано об этом было только в настройках (UX_AUDIT A2).
-              final backupOff = backup == null &&
-                  !svc.needsRestore.value &&
-                  all[groupId] != PairE2EStatus.needsRestore;
-              final (text, danger) = switch (all[groupId]) {
-                _ when incoming && all[groupId] != PairE2EStatus.keyChanged &&
-                    all[groupId] != PairE2EStatus.tampered => (
-                  _t(
-                    '$partnerName зовёт сверить ключи',
-                    '$partnerName wants to verify keys',
-                  ),
-                  false,
-                ),
-                PairE2EStatus.needsRestore => (
-                  _t(
-                    'Восстановите ключи из бэкапа, чтобы читать историю',
-                    'Restore your keys from backup to read your history',
-                  ),
-                  false,
-                ),
-                PairE2EStatus.unverified => (
-                  _t(
-                    'Переписка зашифрована. Сверьте 7 эмодзи с $partnerName — так вы убедитесь, что ключи ваши',
-                    'Your chat is encrypted. Compare 7 emoji with $partnerName to make sure the keys are yours',
-                  ),
-                  false,
-                ),
-                PairE2EStatus.keyChanged => (
-                  _t(
-                    'Ключ $partnerName сменился — обычно это новый телефон или переустановка. Если не ожидали, сверьте эмодзи',
-                    '$partnerName\'s key changed — usually a new phone or a reinstall. If you didn\'t expect it, compare emoji',
-                  ),
-                  true,
-                ),
-                PairE2EStatus.tampered => (
-                  _t(
-                    'Ключи не сходятся — возможна подмена сервером. Сверьте эмодзи по звонку',
-                    'Keys don\'t match — the server may have swapped them. Compare emoji on a call',
-                  ),
-                  true,
-                ),
-                PairE2EStatus.waitingPartner => (
-                  _t(
-                    'Ждём, пока $partnerName войдёт в новую версию: пока нет ключей партнёра, писать нельзя',
-                    'Waiting for $partnerName to open the new version: you can’t write until their keys arrive',
-                  ),
-                  false,
-                ),
-                PairE2EStatus.waitingKey => (
-                  _t(
-                    'Договариваемся о ключе пары — сообщения можно будет писать через пару секунд',
-                    'Agreeing on the pair key — you’ll be able to write in a moment',
-                  ),
-                  false,
-                ),
-                _ when backupOff => (
-                  _t(
-                    'Ключи без бэкапа: потеряете телефон — потеряете переписку.',
-                    'Keys have no backup: lose your phone, lose your history.',
-                  ),
-                  false,
-                ),
-                _ => ('', false),
-              };
-              if (text.isEmpty) return const SizedBox.shrink();
-              final toBackup = backupOff &&
-                  !incoming &&
-                  (all[groupId] == null || all[groupId] == PairE2EStatus.verified);
-              final scheme = Theme.of(context).colorScheme;
-              final bg = danger
-                  ? scheme.errorContainer
-                  : scheme.tertiaryContainer;
-              final fg = danger
-                  ? scheme.onErrorContainer
-                  : scheme.onTertiaryContainer;
-              final waiting = all[groupId] == PairE2EStatus.waitingPartner ||
-                  all[groupId] == PairE2EStatus.waitingKey;
-              final canAct = incoming || toBackup || (!waiting &&
-                  (all[groupId] == PairE2EStatus.needsRestore || svc.keys.peers.containsKey(partnerUid)));
-              Widget banner(VoidCallback? later) => Material(
-                color: bg,
-                child: InkWell(
-                  onTap: canAct ? () => Navigator.of(context).push(
-                    forkE2ERoute<void>(context, toBackup
-                        ? const ForkE2EBackupScreen()
-                        : all[groupId] == PairE2EStatus.needsRestore
-                            ? const ForkE2ERestoreScreen()
-                            : ForkE2EVerifyScreen(groupId: groupId,
-                                partnerUid: partnerUid, partnerName: partnerName)),
-                  ) : null,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+            valueListenable: svc.sas,
+            builder: (context, sas, _) => ValueListenableBuilder<Map<String, PairE2EStatus>>(
+              valueListenable: svc.status,
+              builder: (context, all, _) {
+                final incoming = sas is SasIncoming && sas.groupId == groupId;
+                // Ключи без бэкапа: потеря телефона = потеря переписки, а
+                // сказано об этом было только в настройках (UX_AUDIT A2).
+                final backupOff =
+                    backup == null &&
+                    !svc.needsRestore.value &&
+                    all[groupId] != PairE2EStatus.needsRestore;
+                final (text, danger) = switch (all[groupId]) {
+                  _
+                      when incoming &&
+                          all[groupId] != PairE2EStatus.keyChanged &&
+                          all[groupId] != PairE2EStatus.tampered =>
+                    (
+                      _t(
+                        '$partnerName зовёт сверить ключи',
+                        '$partnerName wants to verify keys',
+                      ),
+                      false,
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          danger
-                              ? Icons.gpp_bad_rounded
-                              : Icons.gpp_maybe_rounded,
-                          color: fg,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            text,
-                            style: TextStyle(
-                              color: fg,
-                              fontWeight: FontWeight.w600,
+                  PairE2EStatus.needsRestore => (
+                    _t(
+                      'Восстановите ключи из бэкапа, чтобы читать историю',
+                      'Restore your keys from backup to read your history',
+                    ),
+                    false,
+                  ),
+                  PairE2EStatus.unverified => (
+                    _t(
+                      'Переписка зашифрована. Сверьте 7 эмодзи с $partnerName — так вы убедитесь, что ключи ваши',
+                      'Your chat is encrypted. Compare 7 emoji with $partnerName to make sure the keys are yours',
+                    ),
+                    false,
+                  ),
+                  PairE2EStatus.keyChanged => (
+                    _t(
+                      'Ключ $partnerName сменился — обычно это новый телефон или переустановка. Если не ожидали, сверьте эмодзи',
+                      '$partnerName\'s key changed — usually a new phone or a reinstall. If you didn\'t expect it, compare emoji',
+                    ),
+                    true,
+                  ),
+                  PairE2EStatus.tampered => (
+                    _t(
+                      'Ключи не сходятся — возможна подмена сервером. Сверьте эмодзи по звонку',
+                      'Keys don\'t match — the server may have swapped them. Compare emoji on a call',
+                    ),
+                    true,
+                  ),
+                  PairE2EStatus.waitingPartner => (
+                    _t(
+                      'Ждём, пока $partnerName войдёт в новую версию: пока нет ключей партнёра, писать нельзя',
+                      'Waiting for $partnerName to open the new version: you can’t write until their keys arrive',
+                    ),
+                    false,
+                  ),
+                  PairE2EStatus.waitingKey => (
+                    _t(
+                      'Договариваемся о ключе пары — сообщения можно будет писать через пару секунд',
+                      'Agreeing on the pair key — you’ll be able to write in a moment',
+                    ),
+                    false,
+                  ),
+                  _ when backupOff => (
+                    _t(
+                      'Ключи без бэкапа: потеряете телефон — потеряете переписку.',
+                      'Keys have no backup: lose your phone, lose your history.',
+                    ),
+                    false,
+                  ),
+                  _ => ('', false),
+                };
+                if (text.isEmpty) return const SizedBox.shrink();
+                final toBackup =
+                    backupOff &&
+                    !incoming &&
+                    (all[groupId] == null ||
+                        all[groupId] == PairE2EStatus.verified);
+                final scheme = Theme.of(context).colorScheme;
+                final bg = danger
+                    ? scheme.errorContainer
+                    : scheme.tertiaryContainer;
+                final fg = danger
+                    ? scheme.onErrorContainer
+                    : scheme.onTertiaryContainer;
+                final waiting =
+                    all[groupId] == PairE2EStatus.waitingPartner ||
+                    all[groupId] == PairE2EStatus.waitingKey;
+                final canAct =
+                    incoming ||
+                    toBackup ||
+                    (!waiting &&
+                        (all[groupId] == PairE2EStatus.needsRestore ||
+                            svc.keys.peers.containsKey(partnerUid)));
+                Widget banner(VoidCallback? later) => Material(
+                  color: bg,
+                  child: InkWell(
+                    onTap: canAct
+                        ? () => Navigator.of(context).push(
+                            forkE2ERoute<void>(
+                              context,
+                              toBackup
+                                  ? const ForkE2EBackupScreen()
+                                  : all[groupId] == PairE2EStatus.needsRestore
+                                  ? const ForkE2ERestoreScreen()
+                                  : ForkE2EVerifyScreen(
+                                      groupId: groupId,
+                                      partnerUid: partnerUid,
+                                      partnerName: partnerName,
+                                    ),
+                            ),
+                          )
+                        : null,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            danger
+                                ? Icons.gpp_bad_rounded
+                                : Icons.gpp_maybe_rounded,
+                            color: fg,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              text,
+                              style: TextStyle(
+                                color: fg,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                        if (canAct) Text(
-                          toBackup
-                              ? _t('Включить', 'Turn on')
-                              : all[groupId] == PairE2EStatus.needsRestore
-                              ? _t('Восстановить', 'Restore')
-                              : _t('Сверить', 'Verify'),
-                          style: TextStyle(
-                            color: fg,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                        if (later != null)
-                          IconButton(tooltip: _t('Позже — напомнить через неделю', 'Later — remind me in a week'),
-                            onPressed: later, icon: Icon(Icons.close, color: fg)),
-                      ],
+                          if (canAct)
+                            Text(
+                              toBackup
+                                  ? _t('Включить', 'Turn on')
+                                  : all[groupId] == PairE2EStatus.needsRestore
+                                  ? _t('Восстановить', 'Restore')
+                                  : _t('Сверить', 'Verify'),
+                              style: TextStyle(
+                                color: fg,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          if (later != null)
+                            IconButton(
+                              tooltip: _t(
+                                'Позже — напомнить через неделю',
+                                'Later — remind me in a week',
+                              ),
+                              onPressed: later,
+                              icon: Icon(Icons.close, color: fg),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-              final ordinary = !incoming && !danger &&
-                  (all[groupId] == PairE2EStatus.unverified || toBackup);
-              if (!ordinary) return banner(null);
-              final peer = svc.keys.peers[partnerUid];
-              final scope = '${svc.uid}|$groupId|$partnerUid|${toBackup ? 'backup' : 'verify'}|'
-                  '${base64Encode(svc.keys.account.publicKey)}|'
-                  '${peer == null ? '' : base64Encode(peer.accountKey)}';
-              return ForkE2EBannerDefer(scope: scope, builder: banner);
-            },
-          ),
+                );
+                final ordinary =
+                    !incoming &&
+                    !danger &&
+                    (all[groupId] == PairE2EStatus.unverified || toBackup);
+                if (!ordinary) return banner(null);
+                final peer = svc.keys.peers[partnerUid];
+                final scope =
+                    '${svc.uid}|$groupId|$partnerUid|${toBackup ? 'backup' : 'verify'}|'
+                    '${base64Encode(svc.keys.account.publicKey)}|'
+                    '${peer == null ? '' : base64Encode(peer.accountKey)}';
+                return ForkE2EBannerDefer(scope: scope, builder: banner);
+              },
+            ),
           ),
         );
       },
@@ -247,7 +276,10 @@ class _ForkE2EVerifyScreenState extends State<ForkE2EVerifyScreen> {
   void dispose() {
     final s = _svc?.sas.value;
     // Ушли с экрана посреди сверки — партнёр не должен ждать вечно.
-    if (s != null && s is! SasFinished && s is! SasStopped && s is! SasIncoming) {
+    if (s != null &&
+        s is! SasFinished &&
+        s is! SasStopped &&
+        s is! SasIncoming) {
       _svc?.sasCancel();
     }
     if (s is SasFinished || s is SasStopped) _svc?.sas.value = null;

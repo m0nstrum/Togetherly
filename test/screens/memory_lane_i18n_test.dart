@@ -11,10 +11,9 @@ void main() {
   test('в ленте нет выбора «русский или английский»', () {
     final files = [
       File('lib/screens/memory_lane_screen.dart'),
-      ...Directory('lib/screens/memory_lane')
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.endsWith('.dart')),
+      ...Directory(
+        'lib/screens/memory_lane',
+      ).listSync().whereType<File>().where((f) => f.path.endsWith('.dart')),
     ];
     final offenders = <String>[];
     for (final f in files) {

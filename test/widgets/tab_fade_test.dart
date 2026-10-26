@@ -21,34 +21,38 @@ class _CounterState extends State<_Counter> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () => setState(() => taps++),
-        child: ColoredBox(
-          color: Colors.white,
-          child: Center(child: Text('${widget.label} $taps')),
-        ),
-      );
+    onTap: () => setState(() => taps++),
+    child: ColoredBox(
+      color: Colors.white,
+      child: Center(child: Text('${widget.label} $taps')),
+    ),
+  );
 }
 
 Widget _tab(int index) => switch (index) {
-      0 => _Counter(key: _homeKey, label: 'главная'),
-      1 => const Center(child: Text('виджеты')),
-      _ => const Center(child: Text('профиль')),
-    };
+  0 => _Counter(key: _homeKey, label: 'главная'),
+  1 => const Center(child: Text('виджеты')),
+  _ => const Center(child: Text('профиль')),
+};
 
 Future<void> _pump(WidgetTester tester, int index) => tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: TabFade(index: index, child: _tab(index))),
-      ),
-    );
+  MaterialApp(
+    home: Scaffold(
+      body: TabFade(index: index, child: _tab(index)),
+    ),
+  ),
+);
 
 double _opacityOf(WidgetTester tester, Finder of) => tester
     .widget<Opacity>(
-        find.ancestor(of: of, matching: find.byType(Opacity)).first)
+      find.ancestor(of: of, matching: find.byType(Opacity)).first,
+    )
     .opacity;
 
 double _scaleOf(WidgetTester tester, Finder of) => tester
     .widget<Transform>(
-        find.ancestor(of: of, matching: find.byType(Transform)).first)
+      find.ancestor(of: of, matching: find.byType(Transform)).first,
+    )
     .transform
     .storage[0];
 
@@ -74,20 +78,26 @@ void main() {
     expect(find.byKey(_old), findsNothing);
   });
 
-  testWidgets('старая вкладка уходит снимком, новая проявляется следом',
-      (tester) async {
+  testWidgets('старая вкладка уходит снимком, новая проявляется следом', (
+    tester,
+  ) async {
     await _pump(tester, 0);
     await _pump(tester, 1);
 
-    expect(find.text('главная 0'), findsNothing,
-        reason: 'живой экземпляр вкладки всегда один: прежнюю держит снимок');
+    expect(
+      find.text('главная 0'),
+      findsNothing,
+      reason: 'живой экземпляр вкладки всегда один: прежнюю держит снимок',
+    );
     expect(find.byKey(_old), findsOneWidget);
     expect(tester.widget<Opacity>(find.byKey(_old)).opacity, 1);
     expect(_opacityOf(tester, find.text('виджеты')), 0);
 
     await tester.pump(const Duration(milliseconds: 45));
-    expect(tester.widget<Opacity>(find.byKey(_old)).opacity,
-        closeTo(0.5, 0.01));
+    expect(
+      tester.widget<Opacity>(find.byKey(_old)).opacity,
+      closeTo(0.5, 0.01),
+    );
     expect(_opacityOf(tester, find.text('виджеты')), 0);
 
     await tester.pump(const Duration(milliseconds: 150));
@@ -107,13 +117,17 @@ void main() {
     expect(find.text('главная 1'), findsOneWidget);
 
     await _pump(tester, 0);
-    expect(find.text('главная 1'), findsOneWidget,
-        reason: 'состояние вкладки пережило пересборку родителя');
+    expect(
+      find.text('главная 1'),
+      findsOneWidget,
+      reason: 'состояние вкладки пережило пересборку родителя',
+    );
     expect(find.byKey(_old), findsNothing);
   });
 
-  testWidgets('туда и обратно быстрее проявления — без двух экземпляров',
-      (tester) async {
+  testWidgets('туда и обратно быстрее проявления — без двух экземпляров', (
+    tester,
+  ) async {
     await _pump(tester, 0);
     await _pump(tester, 1);
     await tester.pump(const Duration(milliseconds: 30));
@@ -128,8 +142,9 @@ void main() {
     expect(_opacityOf(tester, find.text('профиль')), 1);
   });
 
-  testWidgets('при «уменьшить движение» вкладка меняется сразу',
-      (tester) async {
+  testWidgets('при «уменьшить движение» вкладка меняется сразу', (
+    tester,
+  ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);

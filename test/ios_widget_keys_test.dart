@@ -49,10 +49,17 @@ void main() {
     // восьми до пяти 18.08.2026: расширение больше не читает каталоги
     // `ios_photo_catalog_*` — фото-виджеты вернулись к статике, потому что
     // конфигурируемые версии на iOS 26 рисовались чёрным.
-    expect(seen.length, greaterThanOrEqualTo(5),
-        reason: 'Ключи ios_* в расширении не нашлись — проверьте разбор');
-    expect(missing, isEmpty,
-        reason: 'Расширение ждёт этих ключей, а Dart их не пишет:\n'
-            '${missing.join('\n')}');
+    expect(
+      seen.length,
+      greaterThanOrEqualTo(5),
+      reason: 'Ключи ios_* в расширении не нашлись — проверьте разбор',
+    );
+    expect(
+      missing,
+      isEmpty,
+      reason:
+          'Расширение ждёт этих ключей, а Dart их не пишет:\n'
+          '${missing.join('\n')}',
+    );
   });
 }

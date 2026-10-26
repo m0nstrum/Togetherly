@@ -75,8 +75,9 @@ class _SyncChipsState extends State<_SyncChips> {
     MediaService.instance.compressProgress.addListener(_onChange);
     ForkE2E.startFailed.addListener(_onChange); // fork (UX A9)
     ForkE2E.service.addListener(_onChange); // fork (UX A9)
-    _connSub =
-        ConnectivityService.instance.onOnlineChanged.listen((_) => _onChange());
+    _connSub = ConnectivityService.instance.onOnlineChanged.listen(
+      (_) => _onChange(),
+    );
   }
 
   void _onChange() {
@@ -105,67 +106,77 @@ class _SyncChipsState extends State<_SyncChips> {
 
     if (!online) {
       // Офлайн — показываем сразу (важное состояние).
-      chips.add(IgnorePointer(
-        child: _chip(
-          context,
-          icon: Icons.cloud_off_rounded,
-          text: ruEn('Нет сети', 'Offline'),
-          bg: scheme.surfaceContainerHighest,
-          fg: scheme.onSurfaceVariant,
+      chips.add(
+        IgnorePointer(
+          child: _chip(
+            context,
+            icon: Icons.cloud_off_rounded,
+            text: ruEn('Нет сети', 'Offline'),
+            bg: scheme.surfaceContainerHighest,
+            fg: scheme.onSurfaceVariant,
+          ),
         ),
-      ));
+      );
     } else if (compressing != null) {
       // Сжатие видео идёт десятки секунд. Без своей строки это выглядело как
       // застрявшая синхронизация, поэтому показываем сразу, без дебаунса, и с
       // настоящей долей от кодека.
-      chips.add(IgnorePointer(
-        child: _chip(
-          context,
-          spinner: true,
-          text: ruEn('Сжатие видео…', 'Compressing video…'),
-          bg: scheme.surfaceContainerHighest,
-          fg: scheme.onSurfaceVariant,
-          progress: compressing,
+      chips.add(
+        IgnorePointer(
+          child: _chip(
+            context,
+            spinner: true,
+            text: ruEn('Сжатие видео…', 'Compressing video…'),
+            bg: scheme.surfaceContainerHighest,
+            fg: scheme.onSurfaceVariant,
+            progress: compressing,
+          ),
         ),
-      ));
+      );
     }
 
     // fork (UX A9): шифрование не поднялось или нет ключа пары — повтор
     // очереди ничего не даст. Говорим причину и ведём к тому, что поможет.
     final group = ForkE2E.activeGroup;
-    final blocked = (poison > 0 || ForkE2E.startFailed.value) &&
-        forkSealBlocked(group);
+    final blocked =
+        (poison > 0 || ForkE2E.startFailed.value) && forkSealBlocked(group);
     if (blocked) {
       final why = forkLockedWhyNow(group);
-      chips.add(GestureDetector(
-        onTap: () {
-          final nav = LoveApp.rootNavigatorKey.currentState;
-          if (nav != null) showForkLockedSheet(context, group, navigator: nav);
-        },
-        child: _chip(
-          context,
-          icon: Icons.lock_outline_rounded,
-          text: poison > 0
-              ? ruEn('Не ушло: ', 'Not sent: ') + forkLockedShort(why).toLowerCase()
-              : forkLockedShort(why),
-          bg: scheme.errorContainer,
-          fg: scheme.onErrorContainer,
+      chips.add(
+        GestureDetector(
+          onTap: () {
+            final nav = LoveApp.rootNavigatorKey.currentState;
+            if (nav != null)
+              showForkLockedSheet(context, group, navigator: nav);
+          },
+          child: _chip(
+            context,
+            icon: Icons.lock_outline_rounded,
+            text: poison > 0
+                ? ruEn('Не ушло: ', 'Not sent: ') +
+                      forkLockedShort(why).toLowerCase()
+                : forkLockedShort(why),
+            bg: scheme.errorContainer,
+            fg: scheme.onErrorContainer,
+          ),
         ),
-      ));
+      );
     }
 
     // «Ядовитые» операции — кликабельно: повторить отправку. Показываем сразу.
     if (poison > 0 && !blocked) {
-      chips.add(GestureDetector(
-        onTap: () => OutboxService.instance.retryPoison(),
-        child: _chip(
-          context,
-          icon: Icons.refresh_rounded,
-          text: ruEn('Не сохранилось — повторить', "Didn't sync — retry"),
-          bg: scheme.errorContainer,
-          fg: scheme.onErrorContainer,
+      chips.add(
+        GestureDetector(
+          onTap: () => OutboxService.instance.retryPoison(),
+          child: _chip(
+            context,
+            icon: Icons.refresh_rounded,
+            text: ruEn('Не сохранилось — повторить', "Didn't sync — retry"),
+            bg: scheme.errorContainer,
+            fg: scheme.onErrorContainer,
+          ),
         ),
-      ));
+      );
     }
 
     return AnimatedSwitcher(
@@ -175,7 +186,10 @@ class _SyncChipsState extends State<_SyncChips> {
       transitionBuilder: (child, anim) => FadeTransition(
         opacity: anim,
         child: SizeTransition(
-            sizeFactor: anim, axisAlignment: -1, child: child),
+          sizeFactor: anim,
+          axisAlignment: -1,
+          child: child,
+        ),
       ),
       child: chips.isEmpty
           ? const SizedBox.shrink()
@@ -187,7 +201,9 @@ class _SyncChipsState extends State<_SyncChips> {
                 children: [
                   for (final c in chips)
                     Padding(
-                        padding: const EdgeInsets.only(bottom: 4), child: c),
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: c,
+                    ),
                 ],
               ),
             ),
@@ -202,39 +218,38 @@ class _SyncChipsState extends State<_SyncChips> {
     required Color bg,
     required Color fg,
     double? progress,
-  }) =>
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        // Ширина — по содержимому. Раньше стояло растягивание по поперечной оси,
-        // и чип с полосой распирало во всю ширину экрана: вместо короткого
-        // сообщения получалась серая доска поверх шапки.
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _chipRow(context, icon: icon, spinner: spinner, text: text, fg: fg),
-            // Волновая полоса под строкой — только там, где доля настоящая
-            // (сжатие видео). Ширину задаём сами, иначе она снова растянет чип.
-            if (progress != null) ...[
-              const SizedBox(height: 7),
-              SizedBox(
-                width: 150,
-                child: M3WaveProgress(
-                  value: progress,
-                  minHeight: 3,
-                  wavelength: 16,
-                  color: fg,
-                  trackColor: fg.withValues(alpha: 0.22),
-                ),
-              ),
-            ],
-          ],
-        ),
-      );
+  }) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    // Ширина — по содержимому. Раньше стояло растягивание по поперечной оси,
+    // и чип с полосой распирало во всю ширину экрана: вместо короткого
+    // сообщения получалась серая доска поверх шапки.
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _chipRow(context, icon: icon, spinner: spinner, text: text, fg: fg),
+        // Волновая полоса под строкой — только там, где доля настоящая
+        // (сжатие видео). Ширину задаём сами, иначе она снова растянет чип.
+        if (progress != null) ...[
+          const SizedBox(height: 7),
+          SizedBox(
+            width: 150,
+            child: M3WaveProgress(
+              value: progress,
+              minHeight: 3,
+              wavelength: 16,
+              color: fg,
+              trackColor: fg.withValues(alpha: 0.22),
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 
   Widget _chipRow(
     BuildContext context, {
@@ -242,28 +257,27 @@ class _SyncChipsState extends State<_SyncChips> {
     bool spinner = false,
     required String text,
     required Color fg,
-  }) =>
-      Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (spinner)
-              SizedBox(
-                width: 13,
-                height: 13,
-                child: CircularProgressIndicator(strokeWidth: 2, color: fg),
-              )
-            else if (icon != null)
-              Icon(icon, size: 15, color: fg),
-            const SizedBox(width: 7),
-            Text(
-              text,
-              style: TextStyle(
-                color: fg,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.none,
-              ),
-            ),
-          ],
-        );
+  }) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (spinner)
+        SizedBox(
+          width: 13,
+          height: 13,
+          child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+        )
+      else if (icon != null)
+        Icon(icon, size: 15, color: fg),
+      const SizedBox(width: 7),
+      Text(
+        text,
+        style: TextStyle(
+          color: fg,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          decoration: TextDecoration.none,
+        ),
+      ),
+    ],
+  );
 }

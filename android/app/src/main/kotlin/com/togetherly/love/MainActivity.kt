@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.util.Log
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -58,10 +56,9 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         takeSharedText(intent)
-        // Пересоздание активности (поворот, тема) приносит тот же интент, и пуш
-        // открыл бы Wallet второй раз.
+        // Пересоздание активности (поворот, тема) приносит тот же интент, и
+        // приглашение открылось бы второй раз.
         if (savedInstanceState == null) {
-            openWalletFromPush(intent)
             ReelsInviteBridge.fromIntent(intent, warm = false)
         }
     }
@@ -71,42 +68,10 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         takeSharedText(intent)
-        openWalletFromPush(intent)
         ReelsInviteBridge.fromIntent(intent, warm = true)
         pendingSharedText?.let { text ->
             sharedTextChannel?.invokeMethod("shared", text)
             pendingSharedText = null
-        }
-    }
-
-    // Касание по пушу «Togetherly Wallet вышел» (рассылает
-    // `pocketbase/wallet_release.py`). Данные FCM приходят в интент лаунчера
-    // дополнениями: `kind`, `package`, `url`. Wallet стоит — открываем его,
-    // нет — страницу в магазине.
-    private fun openWalletFromPush(intent: Intent?) {
-        if (intent == null || intent.getStringExtra("kind") != "wallet") return
-        val pkg = intent.getStringExtra("package") ?: "com.togetherly.money"
-        val url = intent.getStringExtra("url")
-        intent.removeExtra("kind")
-        if (launchPackage(pkg)) return
-        if (url.isNullOrBlank()) return
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (e: Exception) {
-            Log.w("MainActivity", "магазин для Wallet не открылся: ${e.message}")
-        }
-    }
-
-    // Запуск чужого приложения по имени пакета. false — его нет на телефоне
-    // или у него нет экрана запуска.
-    private fun launchPackage(pkg: String): Boolean {
-        val launch = packageManager.getLaunchIntentForPackage(pkg) ?: return false
-        return try {
-            startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            true
-        } catch (e: Exception) {
-            false
         }
     }
 
@@ -399,7 +364,7 @@ class MainActivity : FlutterActivity() {
                     try {
                         val pm = packageManager
                         for ((aliasId, suffix) in ICON_ALIASES) {
-                            val component = ComponentName(packageName, "$aliasPackage$suffix") // fork
+                            val component = ComponentName(packageName, "$aliasPackage$suffix")
                             val state = if (aliasId == id)
                                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                             else
@@ -427,7 +392,7 @@ class MainActivity : FlutterActivity() {
                         val pm = packageManager
                         val on = mutableListOf<String>()
                         for ((aliasId, suffix) in ICON_ALIASES) {
-                            val component = ComponentName(packageName, "$aliasPackage$suffix") // fork
+                            val component = ComponentName(packageName, "$aliasPackage$suffix")
                             val state = pm.getComponentEnabledSetting(component)
                             val enabled = when (state) {
                                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
@@ -442,31 +407,6 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
-                else -> result.notImplemented()
-            }
-        }
-
-        // ── Целость установки ──
-        // Приложение из Play приезжает базовым APK плюс докачиваемыми частями
-        // под экран и архитектуру. Утилиты переноса на новый телефон, клоны в
-        // «двойном пространстве» и APK, вытащенный из чужого телефона, копируют
-        // только базовую часть. В таком состоянии библиотека Play Core рисует
-        // собственное английское окно «Something went wrong» и закрывает
-        // приложение — человек остаётся ни с чем и пишет в поддержку.
-        //
-        // Спросить об этом Play Core нельзя: он отвечает тем самым окном.
-        // Поэтому проверяем сами, ровно по тем же двум признакам, что и он —
-        // просит ли манифест докачиваемые части и лежат ли они на устройстве.
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "love_app/install"
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "hasMissingSplits" -> result.success(hasMissingSplits())
-                // Кнопка Togetherly Wallet на главной (`WalletTeaser.open`).
-                "launchPackage" -> result.success(
-                    launchPackage(call.argument<String>("package") ?: "com.togetherly.money")
-                )
                 else -> result.notImplemented()
             }
         }
@@ -515,7 +455,7 @@ class MainActivity : FlutterActivity() {
                     runOnUiThread { result.success(t) }
                 }
 
-                "getToken" -> ForkFcmService.token(this) { t -> // fork
+                "getToken" -> ForkFcmService.token(this) { t ->
                     runOnUiThread { result.success(t) }
                 }
 
@@ -546,29 +486,5 @@ class MainActivity : FlutterActivity() {
             "forest" to ".IconForest",
             "ocean" to ".IconOcean",
         )
-    }
-
-    /// Ставилось ли приложение как набор частей, которых теперь нет.
-    ///
-    /// `com.android.vending.splits.required` в манифест кладёт Play при сборке
-    /// бандла, поэтому у одиночного APK флага нет и проверка молчит — там
-    /// докачивать нечего по определению.
-    private fun hasMissingSplits(): Boolean {
-        return try {
-            val appInfo = packageManager.getApplicationInfo(
-                packageName,
-                PackageManager.GET_META_DATA
-            )
-            val requiresSplits =
-                appInfo.metaData?.getBoolean("com.android.vending.splits.required", false)
-                    ?: false
-            if (!requiresSplits) return false
-            val info = packageManager.getPackageInfo(packageName, 0)
-            info.splitNames.isNullOrEmpty()
-        } catch (e: Exception) {
-            // Не смогли выяснить — молчим. Ложная тревога здесь хуже пропуска:
-            // она уводит человека переустанавливать исправное приложение.
-            false
-        }
     }
 }

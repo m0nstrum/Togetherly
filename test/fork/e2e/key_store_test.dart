@@ -1,4 +1,4 @@
-// fork: хранилище ключей E2E (docs/fork/E2E.md §5).
+// fork: хранилище ключей E2E (docs/E2E.md §5).
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
 import 'package:love_app/fork/e2e/devices.dart';

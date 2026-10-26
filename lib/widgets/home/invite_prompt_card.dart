@@ -69,7 +69,9 @@ class InvitePromptCard extends StatelessWidget {
                         fontFamily: ProfileTheme.bodyFont,
                         fontSize: 13,
                         height: 1.35,
-                        color: scheme.onPrimaryContainer.withValues(alpha: 0.85),
+                        color: scheme.onPrimaryContainer.withValues(
+                          alpha: 0.85,
+                        ),
                       ),
                     ),
                   ],

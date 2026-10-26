@@ -32,7 +32,8 @@ void main() {
   test('каждому подарку каталога досталась своя механика или вложение', () {
     for (final g in GiftCatalog.all) {
       // эффекты на приложение живут отдельно, в gift_effect.dart
-      final hasOwn = effectOf(g.key) != null ||
+      final hasOwn =
+          effectOf(g.key) != null ||
           g.action != GiftAction.tap ||
           g.carriesNote ||
           g.carriesDate ||
@@ -42,7 +43,11 @@ void main() {
           g.deliversAtMorning ||
           g.deliverAfter != null ||
           g.piercesQuietHours;
-      expect(hasOwn, isTrue, reason: 'подарок ${g.key} остался просто картинкой');
+      expect(
+        hasOwn,
+        isTrue,
+        reason: 'подарок ${g.key} остался просто картинкой',
+      );
     }
   });
 

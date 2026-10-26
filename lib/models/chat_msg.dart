@@ -71,7 +71,7 @@ class ChatMsg {
 
   /// Когда получатель дослушал (epoch-ms). Ставит СЛУШАТЕЛЬ, а не автор —
   /// отправителю важно знать, дошло ли голосовое до ушей, а не только до
-  /// экрана. Страж `chat_guard.pb.js` пускает не-автора ровно в это поле.
+  /// экрана. Страж сервера (`authorship.go`) пускает не-автора ровно в это поле.
   final int? voiceHeardAt;
 
   /// «К утру»: до этого момента (epoch-ms) сообщение видит только автор,
@@ -127,12 +127,12 @@ class ChatMsg {
 
   /// Фигурка или null, если это не видеосообщение.
   ShapeNote? get note => ShapeNote.fromFields(
-        url: noteUrl,
-        ms: noteMs,
-        shape: noteShape,
-        thumb: noteThumb,
-        hearts: noteHearts,
-      );
+    url: noteUrl,
+    ms: noteMs,
+    shape: noteShape,
+    thumb: noteThumb,
+    hearts: noteHearts,
+  );
 
   bool get isNote => (noteUrl ?? '').isNotEmpty;
 
@@ -182,8 +182,10 @@ class ChatMsg {
     final rawTs = (m['ts'] as num?)?.toInt() ?? 0;
     final ts = rawTs > 0
         ? rawTs
-        : (DateTime.tryParse(rec.get<String>('created'))?.millisecondsSinceEpoch ??
-            0);
+        : (DateTime.tryParse(
+                rec.get<String>('created'),
+              )?.millisecondsSinceEpoch ??
+              0);
     return ChatMsg(
       id: rec.id,
       uid: (m['user_uid'] ?? '').toString(),

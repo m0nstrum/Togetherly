@@ -22,24 +22,27 @@ void main() {
     for (var i = 1; i < row.length; i++) {
       expect(row[i].radius, greaterThanOrEqualTo(row[i - 1].radius));
     }
-    expect(dots.map((d) => d.radius).reduce((a, b) => a > b ? a : b),
-        closeTo(3.3, 0.001));
+    expect(
+      dots.map((d) => d.radius).reduce((a, b) => a > b ? a : b),
+      closeTo(3.3, 0.001),
+    );
   });
 
   test('ряды сдвинуты через один, шаг 11', () {
-    final ys = halftoneDots(size, dark: false).map((d) => d.center.dy).toSet()
-      .toList()
-      ..sort();
+    final ys = halftoneDots(
+      size,
+      dark: false,
+    ).map((d) => d.center.dy).toSet().toList()..sort();
     expect(ys.first, 5);
     expect(ys[1] - ys[0], 11);
-    final first = halftoneDots(size, dark: false)
-        .where((d) => d.center.dy == ys[0])
-        .map((d) => d.center.dx % 11)
-        .toSet();
-    final second = halftoneDots(size, dark: false)
-        .where((d) => d.center.dy == ys[1])
-        .map((d) => d.center.dx % 11)
-        .toSet();
+    final first = halftoneDots(
+      size,
+      dark: false,
+    ).where((d) => d.center.dy == ys[0]).map((d) => d.center.dx % 11).toSet();
+    final second = halftoneDots(
+      size,
+      dark: false,
+    ).where((d) => d.center.dy == ys[1]).map((d) => d.center.dx % 11).toSet();
     expect(first.single, isNot(second.single));
   });
 
@@ -55,14 +58,21 @@ void main() {
     expect(halftoneDots(const Size(200, 104), dark: false), isNotEmpty);
   });
 
-  testWidgets('painter перерисовывается только при смене цвета или темы',
-      (tester) async {
+  testWidgets('painter перерисовывается только при смене цвета или темы', (
+    tester,
+  ) async {
     const a = HalftonePainter(color: Colors.white, dark: false);
-    expect(a.shouldRepaint(const HalftonePainter(color: Colors.white, dark: false)),
-        isFalse);
-    expect(a.shouldRepaint(const HalftonePainter(color: Colors.black, dark: false)),
-        isTrue);
-    expect(a.shouldRepaint(const HalftonePainter(color: Colors.white, dark: true)),
-        isTrue);
+    expect(
+      a.shouldRepaint(const HalftonePainter(color: Colors.white, dark: false)),
+      isFalse,
+    );
+    expect(
+      a.shouldRepaint(const HalftonePainter(color: Colors.black, dark: false)),
+      isTrue,
+    );
+    expect(
+      a.shouldRepaint(const HalftonePainter(color: Colors.white, dark: true)),
+      isTrue,
+    );
   });
 }

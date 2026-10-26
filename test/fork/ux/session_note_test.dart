@@ -6,14 +6,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   Future<void> open(WidgetTester t) async {
     ForkSessionNote.debugReset();
-    await t.pumpWidget(const MaterialApp(
-      home: ForkSessionNote(child: Scaffold(body: Text('login'))),
-    ));
+    await t.pumpWidget(
+      const MaterialApp(
+        home: ForkSessionNote(child: Scaffold(body: Text('login'))),
+      ),
+    );
     await t.pumpAndSettle();
   }
 
-  testWidgets('сервер отозвал вход — экран входа говорит почему (UX A13)',
-      (t) async {
+  testWidgets('сервер отозвал вход — экран входа говорит почему (UX A13)', (
+    t,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     await ForkSessionEnd.revoked();
     await open(t);
@@ -30,9 +33,11 @@ void main() {
     expect(find.text(ForkSessionEnd.text(revoked: false)), findsOneWidget);
     await t.tap(find.byType(FilledButton));
     await t.pumpAndSettle();
-    await t.pumpWidget(const MaterialApp(
-      home: ForkSessionNote(child: Scaffold(body: Text('again'))),
-    ));
+    await t.pumpWidget(
+      const MaterialApp(
+        home: ForkSessionNote(child: Scaffold(body: Text('again'))),
+      ),
+    );
     await t.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
   });

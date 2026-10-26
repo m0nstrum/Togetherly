@@ -93,13 +93,16 @@ class _FeedState extends State<_Feed> {
             Positioned.fromRect(
               rect: _thumbRect,
               child: GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  PhotoFlightRoute<void>(builder: (_) => widget.viewer),
-                ),
+                onTap: () => Navigator.of(
+                  context,
+                ).push(PhotoFlightRoute<void>(builder: (_) => widget.viewer)),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: RawImage(
-                      key: _thumb, image: widget.photo, fit: BoxFit.cover),
+                    key: _thumb,
+                    image: widget.photo,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -109,17 +112,22 @@ class _FeedState extends State<_Feed> {
   }
 }
 
-Future<void> _pumpFeed(WidgetTester tester,
-    {Widget viewer = const _Viewer()}) async {
+Future<void> _pumpFeed(
+  WidgetTester tester, {
+  Widget viewer = const _Viewer(),
+}) async {
   await tester.binding.setSurfaceSize(_screen);
   addTearDown(() => tester.binding.setSurfaceSize(null));
-  final photo =
-      (await tester.runAsync(() => createTestImage(width: 40, height: 30)))!;
+  final photo = (await tester.runAsync(
+    () => createTestImage(width: 40, height: 30),
+  ))!;
   addTearDown(photo.dispose);
-  await tester.pumpWidget(MaterialApp(
-    navigatorKey: _navigator,
-    home: _Feed(photo: photo, viewer: viewer),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      navigatorKey: _navigator,
+      home: _Feed(photo: photo, viewer: viewer),
+    ),
+  );
 }
 
 /// Нажатие и первый видимый кадр (самый первый кадр маршрута за сценой).
@@ -131,7 +139,8 @@ Future<void> _tapThumb(WidgetTester tester) async {
 
 double _opacityAbove(WidgetTester tester, Finder of) => tester
     .widget<Opacity>(
-        find.ancestor(of: of, matching: find.byType(Opacity)).first)
+      find.ancestor(of: of, matching: find.byType(Opacity)).first,
+    )
     .opacity;
 
 void main() {
@@ -140,17 +149,26 @@ void main() {
     UnfoldTouch.forget();
   });
 
-  testWidgets('кадр вылетает из миниатюры и встаёт на своё место',
-      (tester) async {
+  testWidgets('кадр вылетает из миниатюры и встаёт на своё место', (
+    tester,
+  ) async {
     await _pumpFeed(tester);
     await _tapThumb(tester);
 
-    expect(tester.getRect(find.byKey(_flier)), _thumbRect,
-        reason: 'первый кадр обязан совпасть с миниатюрой');
-    expect(tester.widget<ClipRRect>(find.byKey(_flier)).borderRadius,
-        BorderRadius.circular(12));
-    expect(_opacityAbove(tester, find.byKey(_photo)), 0,
-        reason: 'пока летит снимок, сам кадр в просмотре не виден');
+    expect(
+      tester.getRect(find.byKey(_flier)),
+      _thumbRect,
+      reason: 'первый кадр обязан совпасть с миниатюрой',
+    );
+    expect(
+      tester.widget<ClipRRect>(find.byKey(_flier)).borderRadius,
+      BorderRadius.circular(12),
+    );
+    expect(
+      _opacityAbove(tester, find.byKey(_photo)),
+      0,
+      reason: 'пока летит снимок, сам кадр в просмотре не виден',
+    );
 
     await tester.pump(const Duration(milliseconds: 90));
     final flying = tester.getRect(find.byKey(_flier));
@@ -170,13 +188,17 @@ void main() {
     expect(_opacityAbove(tester, find.byKey(_photo)), 1);
   });
 
-  testWidgets('фон темнеет постепенно, кнопки проявляются следом',
-      (tester) async {
+  testWidgets('фон темнеет постепенно, кнопки проявляются следом', (
+    tester,
+  ) async {
     await _pumpFeed(tester);
     await _tapThumb(tester);
     expect(_opacityAbove(tester, find.byKey(_backdrop)), 0);
-    expect(find.byKey(_thumb), findsOneWidget,
-        reason: 'прежний экран виден под темнеющим фоном');
+    expect(
+      find.byKey(_thumb),
+      findsOneWidget,
+      reason: 'прежний экран виден под темнеющим фоном',
+    );
 
     await tester.pump(const Duration(milliseconds: 110));
     expect(_opacityAbove(tester, find.byKey(_backdrop)), closeTo(0.5, 0.05));
@@ -236,10 +258,15 @@ void main() {
 
     await finger.up();
     await tester.pump();
-    expect(find.byKey(_flier), findsOneWidget,
-        reason: 'отпущенный кадр летит в миниатюру оттуда, где его держали');
-    expect(tester.getRect(find.byKey(_flier)).center.dy,
-        greaterThan(_target.center.dy + 100));
+    expect(
+      find.byKey(_flier),
+      findsOneWidget,
+      reason: 'отпущенный кадр летит в миниатюру оттуда, где его держали',
+    );
+    expect(
+      tester.getRect(find.byKey(_flier)).center.dy,
+      greaterThan(_target.center.dy + 100),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(_Viewer), findsNothing);
   });
@@ -276,8 +303,9 @@ void main() {
     expect(tester.getRect(find.byKey(_photo)), rest);
   });
 
-  testWidgets('пролистали к другому кадру — просмотр гаснет без полёта',
-      (tester) async {
+  testWidgets('пролистали к другому кадру — просмотр гаснет без полёта', (
+    tester,
+  ) async {
     await _pumpFeed(tester, viewer: const _Viewer(returns: false));
     await _tapThumb(tester);
     await tester.pumpAndSettle();
@@ -291,8 +319,9 @@ void main() {
     expect(find.byType(_Viewer), findsNothing);
   });
 
-  testWidgets('миниатюры больше нет — просмотр гаснет без полёта',
-      (tester) async {
+  testWidgets('миниатюры больше нет — просмотр гаснет без полёта', (
+    tester,
+  ) async {
     await _pumpFeed(tester);
     await _tapThumb(tester);
     await tester.pumpAndSettle();
@@ -307,11 +336,13 @@ void main() {
     expect(find.byType(_Viewer), findsNothing);
   });
 
-  testWidgets('открыли не касанием — просмотр проявляется на месте',
-      (tester) async {
+  testWidgets('открыли не касанием — просмотр проявляется на месте', (
+    tester,
+  ) async {
     await _pumpFeed(tester);
-    _navigator.currentState!
-        .push(PhotoFlightRoute<void>(builder: (_) => const _Viewer()));
+    _navigator.currentState!.push(
+      PhotoFlightRoute<void>(builder: (_) => const _Viewer()),
+    );
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 110));
@@ -323,8 +354,9 @@ void main() {
     expect(_opacityAbove(tester, find.byKey(_photo)), 1);
   });
 
-  testWidgets('закрыли посреди полёта — кадр возвращается с полпути',
-      (tester) async {
+  testWidgets('закрыли посреди полёта — кадр возвращается с полпути', (
+    tester,
+  ) async {
     await _pumpFeed(tester);
     await _tapThumb(tester);
     await tester.pump(const Duration(milliseconds: 90));
@@ -332,8 +364,7 @@ void main() {
 
     _navigator.currentState!.pop();
     await tester.pump();
-    expect(tester.getRect(find.byKey(_flier)).width,
-        closeTo(midway.width, 1));
+    expect(tester.getRect(find.byKey(_flier)).width, closeTo(midway.width, 1));
     await tester.pumpAndSettle();
     expect(find.byType(_Viewer), findsNothing);
   });
@@ -352,8 +383,11 @@ void main() {
 
     await tester.drag(find.byKey(_photo), const Offset(0, 200));
     await tester.pumpAndSettle();
-    expect(find.byType(_Viewer), findsOneWidget,
-        reason: 'жест — тоже движение: с ним просмотр закрывают кнопкой');
+    expect(
+      find.byType(_Viewer),
+      findsOneWidget,
+      reason: 'жест — тоже движение: с ним просмотр закрывают кнопкой',
+    );
   });
 
   testWidgets('вне маршрута обёртки ничего не делают', (tester) async {
@@ -361,8 +395,10 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const MaterialApp(home: _Viewer()));
 
-    expect(find.ancestor(of: find.byKey(_backdrop), matching: find.byType(Opacity)),
-        findsNothing);
+    expect(
+      find.ancestor(of: find.byKey(_backdrop), matching: find.byType(Opacity)),
+      findsNothing,
+    );
     expect(find.text('закрыть'), findsOneWidget);
     await tester.drag(find.byKey(_photo), const Offset(0, 200));
     await tester.pumpAndSettle();

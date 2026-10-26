@@ -128,7 +128,7 @@
             <!-- fork: Web link приглашений на домене своего инстанса. Хост
                  подставляет Gradle из SITE_URL/PB_URL (inviteHost). Брошенные
                  домены апстрима (duckdns, web.app) убраны: их можно занять и
-                 уводить через них приглашения (docs/fork/AUDIT.md §2). -->
+                 уводить через них приглашения (docs/history/AUDIT.md §2). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -977,11 +977,5 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="yandexmaps" />
         </intent>
-        <!-- Required by in_app_update to detect the Play Store package on Android 11+ -->
-        <package android:name="com.android.vending" />
-        <!-- Togetherly Wallet: кнопка на главной запускает его, если он стоит.
-             Без этой строки Android 11+ прячет пакет, и запуск по имени всегда
-             промахивается в магазин даже у тех, у кого Wallet уже есть. -->
-        <package android:name="com.togetherly.money" />
     </queries>
 </manifest>

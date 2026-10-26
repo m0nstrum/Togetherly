@@ -31,7 +31,8 @@ void main() {
     expect(
       bridges - 1,
       registrants,
-      reason: 'движок без моста love_app/ios_widget_media затирает пути к фото '
+      reason:
+          'движок без моста love_app/ios_widget_media затирает пути к фото '
           'пустой строкой: копирование в App Group падает с MissingPluginException',
     );
   });
@@ -40,8 +41,15 @@ void main() {
     // Ищем участок, где поднимается headless-движок обновления виджетов, и
     // проверяем, что мост привязан там же.
     final start = source.indexOf('togetherly-widget-refresh');
-    expect(start, greaterThan(0), reason: 'не нашёл фоновый движок — разбор сломан');
-    final tail = source.substring(start, (start + 1600).clamp(0, source.length));
+    expect(
+      start,
+      greaterThan(0),
+      reason: 'не нашёл фоновый движок — разбор сломан',
+    );
+    final tail = source.substring(
+      start,
+      (start + 1600).clamp(0, source.length),
+    );
     expect(
       tail,
       contains('setupWidgetMediaChannel'),

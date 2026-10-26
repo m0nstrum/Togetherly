@@ -5,7 +5,7 @@ import (
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
-// Коллекции E2E (docs/fork/E2E.md §5–7, PLAN S8). Сервер хранит и раздаёт
+// Коллекции E2E (docs/E2E.md §5–7, PLAN S8). Сервер хранит и раздаёт
 // публичные ключи и шифртекст ключей; подделать их не может — подписи и
 // MAC проверяет клиент. Стражи на Go — infrastructure/pocketbase/e2e.go.
 func init() {
@@ -155,7 +155,7 @@ func init() {
 	m.Register(func(app core.App) error {
 		return addEncField(app, "groups")
 	}, nil, "1760000007_e2e_moved_groups.go")
-	// «Шифровать всё» (docs/fork/E2E.md, дополнение 2026-10-23): ссылки и
+	// «Шифровать всё» (docs/E2E.md, дополнение 2026-10-23): ссылки и
 	// облик сообщений, авторы воспоминаний, вещи желаний, раскраски, маскоты.
 	m.Register(func(app core.App) error {
 		if err := widenSealed(app, e2eSealedMax); err != nil {

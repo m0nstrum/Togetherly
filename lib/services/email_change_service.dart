@@ -4,7 +4,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'locale_service.dart';
 import 'pocketbase_service.dart';
 
-/// Смена почты аккаунта кодом из письма (хук pb_hooks/email_change.pb.js).
+/// Смена почты аккаунта кодом из письма (server/internal/handler/email.go).
 ///
 /// «У меня не та почта» правили руками через суперюзера. Штатная смена
 /// PocketBase просит пароль, а у вошедших через Google и Apple его нет,
@@ -27,11 +27,13 @@ enum EmailChangeError {
 
 class EmailChangeResult {
   const EmailChangeResult.ok({this.email = '', this.token = ''})
-      : error = null,
-        retryIn = 0;
-  const EmailChangeResult.failed(EmailChangeError this.error, {this.retryIn = 0})
-      : email = '',
-        token = '';
+    : error = null,
+      retryIn = 0;
+  const EmailChangeResult.failed(
+    EmailChangeError this.error, {
+    this.retryIn = 0,
+  }) : email = '',
+       token = '';
 
   final EmailChangeError? error;
 
@@ -60,8 +62,10 @@ EmailChangeResult parseEmailChange(int status, Map<String, dynamic>? body) {
     orElse: () => EmailChangeError.network,
   );
   final retry = body?['retryIn'];
-  return EmailChangeResult.failed(error,
-      retryIn: retry is num ? retry.toInt() : 0);
+  return EmailChangeResult.failed(
+    error,
+    retryIn: retry is num ? retry.toInt() : 0,
+  );
 }
 
 class EmailChangeService {
@@ -71,27 +75,33 @@ class EmailChangeService {
 
   PocketBase get _pb => PocketBaseService().pb;
 
-  Future<EmailChangeResult> _post(String path, Map<String, dynamic> body) async {
+  Future<EmailChangeResult> _post(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final res = await _pb
           .send(path, method: 'POST', body: body)
           .timeout(const Duration(seconds: 25));
       return parseEmailChange(
-          200, res is Map ? Map<String, dynamic>.from(res) : null);
+        200,
+        res is Map ? Map<String, dynamic>.from(res) : null,
+      );
     } on ClientException catch (e) {
       return parseEmailChange(
-          e.statusCode, e.response.isEmpty ? null : Map<String, dynamic>.from(e.response));
+        e.statusCode,
+        e.response.isEmpty ? null : Map<String, dynamic>.from(e.response),
+      );
     } catch (_) {
       return const EmailChangeResult.failed(EmailChangeError.network);
     }
   }
 
   /// Прислать код на новый адрес. Письмо идёт на языке приложения.
-  Future<EmailChangeResult> requestCode(String email) =>
-      _post('/api/account/email-change/request', {
-        'email': email.trim(),
-        'lang': LocaleService.instance.language.code,
-      });
+  Future<EmailChangeResult> requestCode(String email) => _post(
+    '/api/account/email-change/request',
+    {'email': email.trim(), 'lang': LocaleService.instance.language.code},
+  );
 
   /// Подтвердить код. Сервер меняет почту и выдаёт новый токен: смена почты
   /// обнуляет прежние, и без него человека выкинуло бы из приложения.

@@ -36,8 +36,11 @@ void main() {
       final end = feed.indexOf('\n  Widget _', start + 10);
       final body = feed.substring(start, end < 0 ? feed.length : end);
       final viaMedia = tile == '_photoTile' && body.contains('_momentMedia(');
-      expect(body.contains('_stickerAnchor(') || viaMedia, isTrue,
-          reason: '$tile без слоя наклеек');
+      expect(
+        body.contains('_stickerAnchor(') || viaMedia,
+        isTrue,
+        reason: '$tile без слоя наклеек',
+      );
     }
   });
 
@@ -69,10 +72,11 @@ void main() {
     expect(outbox, contains('_applySticker'));
   });
 
-  test('сервер принимает операцию и бережёт наклейки при правке', () {
-    final hotpath = _read('pocketbase/hotpath/hotpath.py');
-    expect(hotpath, contains('"sticker_put" in body'));
-    expect(hotpath, contains('_наклейка_воспоминания'));
-    expect(hotpath, contains("data ? 'stickers'"));
+  test('наклейку кладёт в шифр сам телефон', () {
+    // Сервер форка `data` не читает: операцию наклейки клиент сам
+    // превращает в правку `data` шифром.
+    final http = _read('lib/fork/e2e/http_client.dart');
+    expect(http, contains('static bool stickerOp('));
+    expect(http, contains('applySticker('));
   });
 }

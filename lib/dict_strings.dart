@@ -45,8 +45,6 @@ import 'l10n/dict/pair_book.dart';
 import 'l10n/dict/account_email.dart';
 import 'l10n/dict/mascot_source.dart';
 import 'l10n/dict/memory_sort.dart';
-import 'l10n/dict/plus_promo.dart';
-import 'l10n/dict/wallet_teaser.dart';
 import 'l10n/dict/moods.dart';
 import 'l10n/dict/postcard_templates.dart';
 import 'l10n/dict/profile.dart';
@@ -70,10 +68,7 @@ import 'l10n/zh/zh.dart';
 /// каждую запись (почему она лежит отдельно — см. `l10n/zh/zh.dart`).
 final Map<String, Map<String, String>> kStrings = {
   for (final e in _kSectionStrings.entries)
-    e.key: {
-      ...e.value,
-      if (kZhStrings[e.key] case final zh?) 'zh': zh,
-    },
+    e.key: {...e.value, if (kZhStrings[e.key] case final zh?) 'zh': zh},
 };
 
 /// Разделы `l10n/dict/`, разбивка по экранам нужна, чтобы правка одного
@@ -93,8 +88,6 @@ const Map<String, Map<String, String>> _kSectionStrings = {
   ...accountEmailStrings,
   ...mascotSourceStrings,
   ...memorySortStrings,
-  ...plusPromoStrings,
-  ...walletTeaserStrings,
   ...ailmentsStrings,
   ...appIconsStrings,
   ...chatStrings,
@@ -158,10 +151,10 @@ String trDict(String key, String code) {
 /// `{0}`, `{1}`… и подставляются обратно, поэтому «нужно 30, у вас 12»
 /// находит перевод так же, как строка без чисел.
 String ruEn(String ru, String en) => switch (LocaleService.instance.language) {
-      AppLanguage.ru => ru,
-      AppLanguage.zh => zhForEnglish(en),
-      _ => en,
-    };
+  AppLanguage.ru => ru,
+  AppLanguage.zh => zhForEnglish(en),
+  _ => en,
+};
 
 /// Английская строка из экрана на текущем языке: китайским переводится,
 /// остальным языкам отдаётся как есть.
@@ -634,23 +627,14 @@ abstract class DictStrings extends AppStrings {
   @override
   String get customMoodLimitReached => _t('customMoodLimitReached');
   @override
-  String get plusPromoTitle => _t('plusPromoTitle');
   @override
-  String get plusPromoBody => _t('plusPromoBody');
   @override
-  String get plusPromoPerkMoods => _t('plusPromoPerkMoods');
   @override
-  String get plusPromoPerkCycle => _t('plusPromoPerkCycle');
   @override
-  String get plusPromoPerkStats => _t('plusPromoPerkStats');
   @override
-  String get plusPromoPerkWidgets => _t('plusPromoPerkWidgets');
   @override
-  String get plusPromoPerkNoAds => _t('plusPromoPerkNoAds');
   @override
-  String get plusPromoOpen => _t('plusPromoOpen');
   @override
-  String get plusPromoLater => _t('plusPromoLater');
   @override
   String get memoryDailyTaskBadge => _t('memoryDailyTaskBadge');
   @override
@@ -1361,10 +1345,9 @@ abstract class DictStrings extends AppStrings {
   String get moodVesselMode => _t('moodVesselMode');
   String moodVesselCount(int filled, int total) => '$filled / $total';
   String get vesselHint => _t('vesselHint');
-  String moodVesselSummary(int both, int gaps) =>
-      _t('moodVesselSummary')
-          .replaceFirst('{both}', '$both')
-          .replaceFirst('{gaps}', '$gaps');
+  String moodVesselSummary(int both, int gaps) => _t(
+    'moodVesselSummary',
+  ).replaceFirst('{both}', '$both').replaceFirst('{gaps}', '$gaps');
   String get drawToolsTitle => _t('drawToolsTitle');
   String get drawToolsHint => _t('drawToolsHint');
   String get drawToolsReorder => _t('drawToolsReorder');
@@ -2662,11 +2645,13 @@ abstract class DictStrings extends AppStrings {
   @override
   String get mascotStageAdult => _t('mascotStageAdult');
   @override
-  String mascotWidgetToTeen(int days) =>
-      _t('mascotWidgetToTeen').replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
+  String mascotWidgetToTeen(int days) => _t(
+    'mascotWidgetToTeen',
+  ).replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
   @override
-  String mascotWidgetToAdult(int days) =>
-      _t('mascotWidgetToAdult').replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
+  String mascotWidgetToAdult(int days) => _t(
+    'mascotWidgetToAdult',
+  ).replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
   @override
   String get mascotWidgetGrown => _t('mascotWidgetGrown');
   @override
@@ -2679,8 +2664,9 @@ abstract class DictStrings extends AppStrings {
   String mascotWidgetSleepsUntil(String time) =>
       _t('mascotWidgetSleepsUntil').replaceAll('{time}', time);
   @override
-  String mascotWidgetRecord(int days) =>
-      _t('mascotWidgetRecord').replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
+  String mascotWidgetRecord(int days) => _t(
+    'mascotWidgetRecord',
+  ).replaceAll('{days}', '$days ${tgYearDaysUnit(days)}');
   @override
   String get mascotWidgetNoMascot => _t('mascotWidgetNoMascot');
 
@@ -2949,10 +2935,9 @@ abstract class DictStrings extends AppStrings {
   String plusGiftTitleFor(String name) =>
       _t('plusGiftTitleFor').replaceAll('{name}', name);
   @override
-  String timerTitleWithPartner(String label, String name) =>
-      _t('timerTitleWithPartner')
-          .replaceAll('{label}', label)
-          .replaceAll('{name}', name);
+  String timerTitleWithPartner(String label, String name) => _t(
+    'timerTitleWithPartner',
+  ).replaceAll('{label}', label).replaceAll('{name}', name);
   @override
   String get plusGiftBody => _t('plusGiftBody');
   @override
@@ -3484,8 +3469,9 @@ abstract class DictStrings extends AppStrings {
   String get reelsTogetherHint => _t('reelsTogetherHint');
   String get reelsSavedCaption => _t('reelsSavedCaption');
   @override
-  String reelsInvitedBy(String name, String feed) =>
-      _t('reelsInvitedBy').replaceAll('{name}', name).replaceAll('{feed}', feed);
+  String reelsInvitedBy(String name, String feed) => _t(
+    'reelsInvitedBy',
+  ).replaceAll('{name}', name).replaceAll('{feed}', feed);
   String get reelsJoin => _t('reelsJoin');
   String get reelsLater => _t('reelsLater');
   String get reelsAskPartnerTitle => _t('reelsAskPartnerTitle');

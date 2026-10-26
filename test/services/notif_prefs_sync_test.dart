@@ -55,13 +55,17 @@ void main() {
 
     test('поле проходит белый список профиля', () {
       final pb = File('lib/services/pb_data_service.dart').readAsStringSync();
-      expect(pb.contains("put('notifChestOff', 'notif_chest_off')"), isTrue,
-          reason: 'updateUserProfile молча выбрасывает незнакомый ключ');
+      expect(
+        pb.contains("put('notifChestOff', 'notif_chest_off')"),
+        isTrue,
+        reason: 'updateUserProfile молча выбрасывает незнакомый ключ',
+      );
     });
 
     test('сервер читает ту же колонку', () {
-      final script =
-          File('pocketbase/chest_morning_push.py').readAsStringSync();
+      final script = File(
+        'pocketbase/chest_morning_push.py',
+      ).readAsStringSync();
       expect(script.contains('notif_chest_off'), isTrue);
     });
   });
@@ -71,16 +75,24 @@ void main() {
 
     test('настройки уезжают сразу после входа, а не только из профиля', () {
       final home = read('lib/screens/home_screen.dart');
-      expect(home.contains('NotifPrefsSync.pushToServer()'), isTrue,
-          reason: 'Без этого вызова сервер узнаёт о тумблерах только тогда, '
-              'когда человек откроет вкладку «Профиль»');
+      expect(
+        home.contains('NotifPrefsSync.pushToServer()'),
+        isTrue,
+        reason:
+            'Без этого вызова сервер узнаёт о тумблерах только тогда, '
+            'когда человек откроет вкладку «Профиль»',
+      );
     });
 
     test('профиль отправляет настройки тем же кодом', () {
       final profile = read('lib/screens/profile_screen.dart');
-      expect(profile.contains('NotifPrefsSync'), isTrue,
-          reason: 'Две копии списка колонок разъезжаются: notif_draw и '
-              'notif_comments уже были только в одной из них');
+      expect(
+        profile.contains('NotifPrefsSync'),
+        isTrue,
+        reason:
+            'Две копии списка колонок разъезжаются: notif_draw и '
+            'notif_comments уже были только в одной из них',
+      );
     });
   });
 }

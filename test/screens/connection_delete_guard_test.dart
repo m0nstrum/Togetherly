@@ -12,28 +12,40 @@ import 'package:love_app/l10n/dict/connect_partner.dart';
 /// ни того, что пропадёт. Теперь удержание открывает список действий, удаление
 /// стоит вторым шагом, и в заголовке — имя того, кого теряешь.
 void main() {
-  final source =
-      File('lib/screens/connect_partner_screen.dart').readAsStringSync();
+  final source = File(
+    'lib/screens/connect_partner_screen.dart',
+  ).readAsStringSync();
 
   test('удержание пилюли не удаляет связь сразу', () {
-    final longPress = RegExp(r'onLongPress:\s*\(\)\s*\{(.*?)\n\s{24}\},',
-        dotAll: true);
+    final longPress = RegExp(
+      r'onLongPress:\s*\(\)\s*\{(.*?)\n\s{24}\},',
+      dotAll: true,
+    );
     final matches = longPress.allMatches(source);
     expect(matches, isNotEmpty, reason: 'обработчик удержания на месте');
     for (final m in matches) {
-      expect(m.group(1), isNot(contains('_confirmDeleteConnection')),
-          reason: 'удержание открывает список действий, а не удаление');
+      expect(
+        m.group(1),
+        isNot(contains('_confirmDeleteConnection')),
+        reason: 'удержание открывает список действий, а не удаление',
+      );
     }
   });
 
   test('подтверждение называет партнёра по имени', () {
-    expect(source, contains('deleteConnectionWith'),
-        reason: 'в заголовке подтверждения стоит имя связи');
+    expect(
+      source,
+      contains('deleteConnectionWith'),
+      reason: 'в заголовке подтверждения стоит имя связи',
+    );
 
     final withName = connectPartnerStrings['deleteConnectionWith']!;
     for (final entry in withName.entries) {
-      expect(entry.value, contains('{name}'),
-          reason: 'подстановка имени есть в языке ${entry.key}');
+      expect(
+        entry.value,
+        contains('{name}'),
+        reason: 'подстановка имени есть в языке ${entry.key}',
+      );
     }
   });
 

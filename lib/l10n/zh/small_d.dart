@@ -1,5 +1,5 @@
 // Китайский (упрощённое письмо) к разделам словаря: account_email,
-// mascot_gallery, wallet_teaser, login, moods, custom_moods, profile_icons.
+// mascot_gallery, login, moods, custom_moods, profile_icons.
 // Почему колонка лежит отдельно — см. `zh.dart`.
 
 const Map<String, String> smallDZh = {
@@ -32,7 +32,8 @@ const Map<String, String> smallDZh = {
   'mascotSaveFailed': '萌宠保存失败，请检查网络。',
   'mascotLoadFailed': '加载失败，请检查网络。',
   'transparentBgTitle': '需要透明背景',
-  'transparentBgBody': '萌宠显示时没有背景，所以请上传带透明通道的 PNG 文件。\n\n请先把背景抠掉，比如用 remove.bg、Photoshop 或 Canva。',
+  'transparentBgBody':
+      '萌宠显示时没有背景，所以请上传带透明通道的 PNG 文件。\n\n请先把背景抠掉，比如用 remove.bg、Photoshop 或 Canva。',
   'mascotNameTitle': '萌宠的名字',
   'enterNameHint': '输入名字',
   'mascotLimitReached': '已达上限，请先从图库里删掉一个萌宠。',
@@ -54,32 +55,6 @@ const Map<String, String> smallDZh = {
   'streakNew': '新的连续记录',
   'streakNewHint': '每个吉祥物都有自己的连续记录。你们俩在同一天打开应用，这个记录就开始了',
   'fromUs': '官方出品',
-
-  // wallet_teaser
-  'walletSoon': '即将上线',
-  'walletTagline': '两个人的生活，一个钱包',
-  'walletRowBudget': '共同预算',
-  'walletRowBudgetValue': '两人共用',
-  'walletRowPersonal': '个人账户',
-  'walletRowPersonalValue': '只属于你',
-  'walletRowSplit': '分摊花销',
-  'walletRowSplitValue': '精确到分',
-  'walletRowGoals': '储蓄目标',
-  'walletRowGoalsValue': '各出多少一目了然',
-  'walletRowBank': '银行消费',
-  'walletRowBankValue': '自动记账',
-  'walletRowChat': '理财聊天',
-  'walletRowChatValue': '能答也能记',
-  'walletWaitingTotal': '正在等待',
-  'walletStampTop': '你的位置',
-  'walletStampBottom': '排队中',
-  'walletFoot': '和 Togetherly 共用一个账号，无需重新注册。',
-  'walletJoin': '加入等候名单',
-  'walletJoined': '你已在等候名单中',
-  'walletHintBefore': '点一下，上线当天我们会通知你。',
-  'walletHintAfter': '好了。上线当天会收到通知，首页的按钮会直接打开 Wallet。',
-  'walletJoinFailed': '没能加入，请检查网络后再点一次。',
-  'walletOpenFailed': '无法打开应用商店。',
 
   // login
   'welcomeBack': '欢迎回来！',

@@ -24,9 +24,15 @@ void main() {
 
   test('в превью каталога нет зашитого текста заметки', () {
     final src = File('lib/screens/widget_screen.dart').readAsStringSync();
-    expect(src.contains('Купи молоко'), isFalse,
-        reason: 'демо-текст перекрывал настоящую заметку');
-    expect(src.contains('_noteText'), isTrue,
-        reason: 'превью обязано читать настоящую заметку');
+    expect(
+      src.contains('Купи молоко'),
+      isFalse,
+      reason: 'демо-текст перекрывал настоящую заметку',
+    );
+    expect(
+      src.contains('_noteText'),
+      isTrue,
+      reason: 'превью обязано читать настоящую заметку',
+    );
   });
 }

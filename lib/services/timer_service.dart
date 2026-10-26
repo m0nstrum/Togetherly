@@ -42,13 +42,15 @@ class TimerService extends ChangeNotifier {
     // System timer always at position 0, others follow in creation order.
     // Do NOT sort by isDefault — it changes on every swipe and would
     // cause the carousel to re-order while the user is navigating.
-    final sorted = [..._timers]..sort((a, b) {
+    final sorted = [..._timers]
+      ..sort((a, b) {
         if (a.isSystem && !b.isSystem) return -1;
         if (!a.isSystem && b.isSystem) return 1;
         return 0;
       });
     return List.unmodifiable(sorted);
   }
+
   int get count => _timers.length;
 
   String get _storageKey {
@@ -58,7 +60,8 @@ class TimerService extends ChangeNotifier {
         : '${_localStorageKey}_$uid';
   }
 
-  String get _pendingKey => 'timer_pending_${PocketBaseService().userId ?? 'guest'}_$_groupId';
+  String get _pendingKey =>
+      'timer_pending_${PocketBaseService().userId ?? 'guest'}_$_groupId';
 
   /// Таймер, отображаемый по умолчанию в свёрнутом виде.
   TimerItem? get defaultTimer {
@@ -114,7 +117,9 @@ class TimerService extends ChangeNotifier {
       if (remote != null && remote.isNotEmpty) {
         _timers = remote.map(TimerItem.fromJson).toList();
         await _saveLocal();
-        debugPrint('TimerService: восстановлено ${_timers.length} соло-таймеров из облака');
+        debugPrint(
+          'TimerService: восстановлено ${_timers.length} соло-таймеров из облака',
+        );
       }
     } catch (e) {
       debugPrint('TimerService: _loadFromCloud error: $e');
@@ -145,10 +150,13 @@ class TimerService extends ChangeNotifier {
     if (groupId.isEmpty) return;
 
     // Слушаем изменения групповых таймеров (PB group.timers, live).
-    _firestoreSub = _repo.watchGroupTimers(groupId).listen(
-      _mergeRemoteTimers,
-      onError: (e) => debugPrint('TimerService: watchGroupTimers error: $e'),
-    );
+    _firestoreSub = _repo
+        .watchGroupTimers(groupId)
+        .listen(
+          _mergeRemoteTimers,
+          onError: (e) =>
+              debugPrint('TimerService: watchGroupTimers error: $e'),
+        );
   }
 
   /// Отвязать от группы (при unpair или переключении на соло)
@@ -244,11 +252,16 @@ class TimerService extends ChangeNotifier {
     final defaultTimers = _timers.where((t) => t.isDefault).toList();
     if (defaultTimers.length > 1) {
       hadDuplicateDefault = true;
-      final keep = defaultTimers.firstWhere((t) => t.isSystem, orElse: () => defaultTimers.first);
+      final keep = defaultTimers.firstWhere(
+        (t) => t.isSystem,
+        orElse: () => defaultTimers.first,
+      );
       for (final t in _timers) {
         t.isDefault = t.id == keep.id;
       }
-      debugPrint('TimerService: исправляю дублирующийся default флаг, оставляю ${keep.id}');
+      debugPrint(
+        'TimerService: исправляю дублирующийся default флаг, оставляю ${keep.id}',
+      );
     } else if (defaultTimers.isEmpty && _timers.isNotEmpty) {
       final sys = systemTimer;
       if (sys != null) {
@@ -262,7 +275,10 @@ class TimerService extends ChangeNotifier {
 
     // Если были устаревшие пути, дублирующиеся таймеры или восстановленный
     // isCountdown — сохраняем актуальное состояние обратно в Firestore
-    if (hadStalePaths || hadDuplicateSystem || hadDuplicateDefault || hadUnsyncedIsCountdown) {
+    if (hadStalePaths ||
+        hadDuplicateSystem ||
+        hadDuplicateDefault ||
+        hadUnsyncedIsCountdown) {
       _saveToFirestore();
     }
 
@@ -291,7 +307,10 @@ class TimerService extends ChangeNotifier {
     final defaults = _timers.where((t) => t.isDefault).toList();
     if (defaults.length > 1) {
       // Оставляем только один default: предпочитаем системный, иначе первый.
-      final keep = defaults.firstWhere((t) => t.isSystem, orElse: () => defaults.first);
+      final keep = defaults.firstWhere(
+        (t) => t.isSystem,
+        orElse: () => defaults.first,
+      );
       for (final t in _timers) {
         t.isDefault = t.id == keep.id;
       }
@@ -329,7 +348,10 @@ class TimerService extends ChangeNotifier {
     if (_pending.isEmpty) {
       await prefs.remove(_pendingKey);
     } else {
-      await prefs.setString(_pendingKey, TimerItem.encodeList(_pending.values.toList()));
+      await prefs.setString(
+        _pendingKey,
+        TimerItem.encodeList(_pending.values.toList()),
+      );
     }
   }
 
@@ -433,7 +455,9 @@ class TimerService extends ChangeNotifier {
       return;
     }
     final timer = defaultTimer ?? _timers.first;
-    debugPrint('TimerService._syncWidgetTimer: syncing timer ${timer.id} title=${timer.title} days=${timer.daysElapsed} groupId=$_groupId');
+    debugPrint(
+      'TimerService._syncWidgetTimer: syncing timer ${timer.id} title=${timer.title} days=${timer.daysElapsed} groupId=$_groupId',
+    );
     await HomeWidgetService.instance.syncTimerAndDays(timer, groupId: _groupId);
   }
 
@@ -472,26 +496,32 @@ class TimerService extends ChangeNotifier {
     );
     if (timer.isSystem) return; // нельзя удалить системный таймер
 
-    debugPrint('TimerService.deleteTimer: удаляю таймер $id (${timer.title}), groupId=$_groupId');
-    
+    debugPrint(
+      'TimerService.deleteTimer: удаляю таймер $id (${timer.title}), groupId=$_groupId',
+    );
+
     _timers.removeWhere((t) => t.id == id);
     // Если удалили дефолтный — ставим первый
     if (_timers.isNotEmpty && !_timers.any((t) => t.isDefault)) {
       _timers.first.isDefault = true;
     }
     await _saveLocal();
-    debugPrint('TimerService.deleteTimer: сохранено в local, таймеров: ${_timers.length}');
-    
+    debugPrint(
+      'TimerService.deleteTimer: сохранено в local, таймеров: ${_timers.length}',
+    );
+
     if (_groupId.isNotEmpty) {
       // Удалённый таймер больше не досылаем, иначе он вернулся бы с сервера
       if (_pending.remove(id) != null) await _savePending();
       await _repo.deleteGroupTimer(_groupId, id);
       debugPrint('TimerService.deleteTimer: удалено из облака');
     }
-    
+
     await _syncWidgetTimer();
     notifyListeners();
-    debugPrint('TimerService.deleteTimer: завершено, синхронизировано с виджетом');
+    debugPrint(
+      'TimerService.deleteTimer: завершено, синхронизировано с виджетом',
+    );
   }
 
   /// Назначить таймер «показываемым по умолчанию».

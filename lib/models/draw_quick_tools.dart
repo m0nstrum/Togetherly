@@ -48,10 +48,9 @@ const int kMaxQuickTools = 12;
 List<DrawQuickTool> quickToolsFor(
   List<DrawQuickTool> tools, {
   required bool pixel,
-}) =>
-    pixel
-        ? tools.where((t) => t != DrawQuickTool.select).toList(growable: false)
-        : tools;
+}) => pixel
+    ? tools.where((t) => t != DrawQuickTool.select).toList(growable: false)
+    : tools;
 
 /// Разбор настройки. Она переживает обновления приложения, поэтому незнакомые
 /// имена пропускаются молча, а не роняют весь набор.

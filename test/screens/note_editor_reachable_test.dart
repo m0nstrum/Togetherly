@@ -13,10 +13,11 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('лист заметки открывается не только из виджета', () {
     final calls = <String>[];
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       final text = file.readAsStringSync();
       if (!text.contains('showNoteEditorSheet(')) continue;
       if (file.path.endsWith('note_editor_sheet.dart')) continue; // объявление
@@ -25,7 +26,8 @@ void main() {
     expect(
       calls.length,
       greaterThanOrEqualTo(2),
-      reason: 'кроме перехода с виджета нужен вход из самого приложения, '
+      reason:
+          'кроме перехода с виджета нужен вход из самого приложения, '
           'иначе заметку не найти: $calls',
     );
   });

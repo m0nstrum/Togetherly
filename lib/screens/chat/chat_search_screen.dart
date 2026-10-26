@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../dict_strings.dart' show trKey;
-import '../../fork/e2e/chat_search.dart'; // fork
+import '../../fork/e2e/chat_search.dart';
 import '../../models/chat_msg.dart';
 import '../../models/chat_search.dart';
 import '../../models/shape_note.dart';
@@ -23,7 +23,12 @@ import 'note_viewer_screen.dart';
 /// тот подгружает ленту до него и подсвечивает. Кружки открываются сразу в
 /// полноэкранном просмотре, ссылки — ещё и в браузере.
 class ChatSearchScreen extends StatefulWidget {
-  const ChatSearchScreen({super.key, required this.groupId, required this.myUid, this.searcher});
+  const ChatSearchScreen({
+    super.key,
+    required this.groupId,
+    required this.myUid,
+    this.searcher,
+  });
 
   final String groupId;
   final String myUid;
@@ -68,7 +73,10 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
 
   void _onQuery() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 350), () => _search(reset: true));
+    _debounce = Timer(
+      const Duration(milliseconds: 350),
+      () => _search(reset: true),
+    );
   }
 
   void _setKind(ChatSearchKind k) {
@@ -105,7 +113,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
     if (widget.searcher != null) {
       got = await widget.searcher!(filter);
     } else {
-      final recs = ForkChatSearch.applies(widget.groupId, _kind) // fork
+      final recs = ForkChatSearch.applies(widget.groupId, _kind)
           ? await ForkChatSearch.search(
               groupId: widget.groupId,
               kind: _kind,
@@ -132,12 +140,12 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
   }
 
   String _label(ChatSearchKind k) => switch (k) {
-        ChatSearchKind.all => trKey('chatSearchAll'),
-        ChatSearchKind.memories => trKey('chatSearchMemories'),
-        ChatSearchKind.voice => trKey('chatSearchVoice'),
-        ChatSearchKind.notes => trKey('chatSearchNotes'),
-        ChatSearchKind.links => trKey('chatSearchLinks'),
-      };
+    ChatSearchKind.all => trKey('chatSearchAll'),
+    ChatSearchKind.memories => trKey('chatSearchMemories'),
+    ChatSearchKind.voice => trKey('chatSearchVoice'),
+    ChatSearchKind.notes => trKey('chatSearchNotes'),
+    ChatSearchKind.links => trKey('chatSearchLinks'),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +186,9 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
                           borderRadius: BorderRadius.circular(28),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -189,7 +199,10 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
               height: 48,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 5,
+                ),
                 itemCount: ChatSearchKind.values.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 6),
                 itemBuilder: (context, i) {
@@ -210,7 +223,9 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
                               fontFamily: 'Onest',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: on ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+                              color: on
+                                  ? cs.onSecondaryContainer
+                                  : cs.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -235,10 +250,12 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
     if (_failed) {
       note = trKey('chatSearchOffline');
     } else if (_items.isEmpty) {
-      final short = _kind == ChatSearchKind.all &&
+      final short =
+          _kind == ChatSearchKind.all &&
           _query.text.trim().length < kChatSearchMinChars;
       note = short ? trKey('chatSearchTypeMore') : trKey('chatSearchEmpty');
-      if (!short && _incomplete) note = '$note\n$forkSearchGapText'; // fork (UX C5)
+      if (!short && _incomplete)
+        note = '$note\n$forkSearchGapText'; // fork (UX C5)
     }
     if (note != null) {
       return Center(
@@ -247,7 +264,11 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
           child: Text(
             note,
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'Onest', fontSize: 15, color: cs.onSurfaceVariant),
+            style: TextStyle(
+              fontFamily: 'Onest',
+              fontSize: 15,
+              color: cs.onSurfaceVariant,
+            ),
           ),
         ),
       );
@@ -278,22 +299,27 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: 4),
       itemBuilder: (context, i) {
         if (i == _items.length) return _more(cs);
-        return _row(cs, _items[i], first: i == 0, last: i == _items.length - 1 && !_hasMore);
+        return _row(
+          cs,
+          _items[i],
+          first: i == 0,
+          last: i == _items.length - 1 && !_hasMore,
+        );
       },
     );
   }
 
   Widget _more(ColorScheme cs) => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Center(
-          child: _loading
-              ? M3Loading(size: 32, color: cs.primary)
-              : TextButton(
-                  onPressed: () => _search(reset: false),
-                  child: Text(LocaleService.current.loadMore),
-                ),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8),
+    child: Center(
+      child: _loading
+          ? M3Loading(size: 32, color: cs.primary)
+          : TextButton(
+              onPressed: () => _search(reset: false),
+              child: Text(LocaleService.current.loadMore),
+            ),
+    ),
+  );
 
   String _when(ChatMsg m) {
     final d = DateTime.fromMillisecondsSinceEpoch(m.ts);
@@ -301,7 +327,12 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
     return '${two(d.day)}.${two(d.month)}.${d.year} ${two(d.hour)}:${two(d.minute)}';
   }
 
-  Widget _row(ColorScheme cs, ChatMsg m, {required bool first, required bool last}) {
+  Widget _row(
+    ColorScheme cs,
+    ChatMsg m, {
+    required bool first,
+    required bool last,
+  }) {
     final mine = m.uid == widget.myUid;
     final who = mine ? trKey('chatSearchYou') : m.name;
     // Блоки как в настройках: крайние скруглены сильнее, между ними зазор.
@@ -322,20 +353,42 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
             child: thumb.isEmpty
                 ? ColoredBox(
                     color: cs.secondaryContainer,
-                    child: Icon(Icons.push_pin_rounded, color: cs.onSecondaryContainer),
+                    child: Icon(
+                      Icons.push_pin_rounded,
+                      color: cs.onSecondaryContainer,
+                    ),
                   )
-                : StorageImage(imageUrl: thumb, fit: BoxFit.cover, memCacheWidth: 144),
+                : StorageImage(
+                    imageUrl: thumb,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 144,
+                  ),
           ),
         );
-        body = Text(m.pinTitle ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontFamily: 'Onest', fontSize: 15, color: cs.onSurface));
+        body = Text(
+          m.pinTitle ?? '',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: 'Onest',
+            fontSize: 15,
+            color: cs.onSurface,
+          ),
+        );
       case ChatSearchKind.voice:
         lead = CircleAvatar(
           backgroundColor: cs.primaryContainer,
           child: Icon(Icons.mic_rounded, color: cs.onPrimaryContainer),
         );
-        body = Text(VoiceNote.formatDuration(m.voice?.duration ?? Duration.zero),
-            style: TextStyle(fontFamily: 'Onest', fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface));
+        body = Text(
+          VoiceNote.formatDuration(m.voice?.duration ?? Duration.zero),
+          style: TextStyle(
+            fontFamily: 'Onest',
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface,
+          ),
+        );
       case ChatSearchKind.links:
         final link = firstLink(m.text);
         body = _highlighted(cs, m.text);
@@ -401,23 +454,34 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
       t = '…${t.substring(cut)}';
       ranges = matchRanges(t, _query.text);
     }
-    final base = TextStyle(fontFamily: 'Onest', fontSize: 15, height: 1.3, color: cs.onSurface);
+    final base = TextStyle(
+      fontFamily: 'Onest',
+      fontSize: 15,
+      height: 1.3,
+      color: cs.onSurface,
+    );
     final spans = <TextSpan>[];
     var at = 0;
     for (final (a, b) in ranges) {
       if (a > at) spans.add(TextSpan(text: t.substring(at, a)));
-      spans.add(TextSpan(
-        text: t.substring(a, b),
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-          color: cs.onTertiaryContainer,
-          backgroundColor: cs.tertiaryContainer,
+      spans.add(
+        TextSpan(
+          text: t.substring(a, b),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: cs.onTertiaryContainer,
+            backgroundColor: cs.tertiaryContainer,
+          ),
         ),
-      ));
+      );
       at = b;
     }
     if (at < t.length) spans.add(TextSpan(text: t.substring(at)));
-    return Text.rich(TextSpan(style: base, children: spans), maxLines: 3, overflow: TextOverflow.ellipsis);
+    return Text.rich(
+      TextSpan(style: base, children: spans),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 
   Widget _notesGrid(ColorScheme cs) {
@@ -437,28 +501,45 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
         final thumb = m.note?.thumbUrl ?? '';
         return InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => NoteViewerScreen(notes: notes, index: i, myUid: widget.myUid),
-          )),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  NoteViewerScreen(notes: notes, index: i, myUid: widget.myUid),
+            ),
+          ),
           child: Column(
             children: [
               Expanded(
                 child: AspectRatio(
                   aspectRatio: 1,
                   child: ClipOval(
-                    child: thumb.isEmpty || !thumb.startsWith('pb://') && !thumb.startsWith('http')
+                    child:
+                        thumb.isEmpty ||
+                            !thumb.startsWith('pb://') &&
+                                !thumb.startsWith('http')
                         ? ColoredBox(
                             color: cs.surfaceContainerHigh,
-                            child: Icon(Icons.videocam_rounded, color: cs.onSurfaceVariant),
+                            child: Icon(
+                              Icons.videocam_rounded,
+                              color: cs.onSurfaceVariant,
+                            ),
                           )
-                        : StorageImage(imageUrl: thumb, fit: BoxFit.cover, memCacheWidth: 260),
+                        : StorageImage(
+                            imageUrl: thumb,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 260,
+                          ),
                   ),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 ShapeNote.formatDuration(m.note?.duration ?? Duration.zero),
-                style: TextStyle(fontFamily: 'Onest', fontSize: 12, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontSize: 12,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ],
           ),

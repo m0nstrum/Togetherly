@@ -25,18 +25,25 @@ WidgetData _data({String? photo, String? forPartner, List<String>? carousel}) =>
 
 void main() {
   group('Фото для партнёра', () {
-    test('пустой список стирает и одиночное поле — пустой строкой, не null', () {
-      final f = WidgetService.photoForPartnerFields(const []);
-      expect(f['photoForPartnerUrl'], '');
-      expect(f['photoForPartnerUrls'], isEmpty);
-    });
+    test(
+      'пустой список стирает и одиночное поле — пустой строкой, не null',
+      () {
+        final f = WidgetService.photoForPartnerFields(const []);
+        expect(f['photoForPartnerUrl'], '');
+        expect(f['photoForPartnerUrls'], isEmpty);
+      },
+    );
 
     test('первое фото списка становится одиночным полем', () {
-      final f = WidgetService.photoForPartnerFields(
-        const ['pb://media/a.webp', 'pb://media/b.webp'],
-      );
+      final f = WidgetService.photoForPartnerFields(const [
+        'pb://media/a.webp',
+        'pb://media/b.webp',
+      ]);
       expect(f['photoForPartnerUrl'], 'pb://media/a.webp');
-      expect(f['photoForPartnerUrls'], ['pb://media/a.webp', 'pb://media/b.webp']);
+      expect(f['photoForPartnerUrls'], [
+        'pb://media/a.webp',
+        'pb://media/b.webp',
+      ]);
     });
   });
 

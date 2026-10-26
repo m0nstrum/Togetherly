@@ -1,4 +1,4 @@
-# Боевая сборка APK форка под свой сервер (docs/fork/README.md, «Сборка в GitHub»).
+# Боевая сборка APK форка под свой сервер (docs/DEVELOPMENT.md, «Сборка в GitHub»).
 #
 # Адреса — из переменных репозитория (Settings → Secrets and variables →
 # Actions → Variables), ключ подписи — из секретов там же. В репозитории их
@@ -72,7 +72,7 @@ jobs:
           set -euo pipefail
           for v in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS; do
             if [ -z "${!v}" ]; then
-              echo "::error::Нет секрета подписи ($v), см. docs/fork/README.md"
+              echo "::error::Нет секрета подписи ($v), см. docs/DEVELOPMENT.md"
               exit 1
             fi
           done

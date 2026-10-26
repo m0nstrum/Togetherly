@@ -263,8 +263,8 @@ class OnboardingCard extends StatelessWidget {
   }
 
   String _label(OnboardingStep step) => switch (step) {
-        OnboardingStep.photo => _s.onboardingStepPhoto,
-        OnboardingStep.mood => _s.onboardingStepMood,
-        OnboardingStep.widget => _s.onboardingStepWidget,
-      };
+    OnboardingStep.photo => _s.onboardingStepPhoto,
+    OnboardingStep.mood => _s.onboardingStepMood,
+    OnboardingStep.widget => _s.onboardingStepWidget,
+  };
 }

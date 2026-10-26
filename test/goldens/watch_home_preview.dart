@@ -20,15 +20,23 @@ import 'package:love_app/widgets/together/watch_home_blocks.dart';
 Future<void> _font(String family, String path) async {
   final f = File(path);
   if (!f.existsSync()) return;
-  await (FontLoader(family)..addFont(f.readAsBytes().then(ByteData.sublistView))).load();
+  await (FontLoader(
+    family,
+  )..addFont(f.readAsBytes().then(ByteData.sublistView))).load();
 }
 
 void main() {
   setUpAll(() async {
     await _font('Onest', 'assets/fonts/Onest.ttf');
     await _font('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _font('MaterialSymbolsRounded', 'assets/fonts/MaterialSymbolsRounded.ttf');
-    await _font('MaterialIcons', '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _font(
+      'MaterialSymbolsRounded',
+      'assets/fonts/MaterialSymbolsRounded.ttf',
+    );
+    await _font(
+      'MaterialIcons',
+      '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
   });
 
   testWidgets('блоки экрана «Смотрим»', (tester) async {
@@ -41,7 +49,13 @@ void main() {
 
     Widget phone(AppTheme t, double w, {double scale = 1, bool locked = true}) {
       final cs = t.scheme!;
-      Widget pc(double tw) => WatchComputerTile(code: '2x4vhuku', loading: false, onCopy: () {}, onOpenSite: () {}, titleWidth: tw);
+      Widget pc(double tw) => WatchComputerTile(
+        code: '2x4vhuku',
+        loading: false,
+        onCopy: () {},
+        onOpenSite: () {},
+        titleWidth: tw,
+      );
       return Theme(
         data: ProfileTheme.data(cs),
         child: MediaQuery(
@@ -50,7 +64,10 @@ void main() {
             width: w,
             margin: const EdgeInsets.all(10),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            decoration: BoxDecoration(color: t.bgGradient.first, borderRadius: BorderRadius.circular(28)),
+            decoration: BoxDecoration(
+              color: t.bgGradient.first,
+              borderRadius: BorderRadius.circular(28),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -73,12 +90,19 @@ void main() {
                 WatchBento(
                   reels: (tw) => WatchReelsTile(
                     title: s.reelsTogether,
-                    text: locked ? s.watchReelsTileHint : s.reelsInvitedBy('JB SHARAN', 'TikTok'),
+                    text: locked
+                        ? s.watchReelsTileHint
+                        : s.reelsInvitedBy('JB SHARAN', 'TikTok'),
                     plusLocked: locked,
                     onTap: () {},
                     titleWidth: tw,
                   ),
-                  games: (tw) => WatchGamesTile(title: s.gamesForTwo, text: s.watchGamesTileHint, onTap: () {}, titleWidth: tw),
+                  games: (tw) => WatchGamesTile(
+                    title: s.gamesForTwo,
+                    text: s.watchGamesTileHint,
+                    onTap: () {},
+                    titleWidth: tw,
+                  ),
                   computer: pc,
                 ),
                 const SizedBox(height: 10),
@@ -91,25 +115,36 @@ void main() {
     }
 
     final key = GlobalKey();
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: const Color(0xFFEFE7E4),
-        body: RepaintBoundary(
-          key: key,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              phone(buildAppTheme(pink, Brightness.light), 393),
-              phone(buildAppTheme(pink, Brightness.light), 320, scale: 1.3, locked: false),
-              phone(buildAppTheme(pink, Brightness.dark), 393),
-            ],
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: const Color(0xFFEFE7E4),
+          body: RepaintBoundary(
+            key: key,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                phone(buildAppTheme(pink, Brightness.light), 393),
+                phone(
+                  buildAppTheme(pink, Brightness.light),
+                  320,
+                  scale: 1.3,
+                  locked: false,
+                ),
+                phone(buildAppTheme(pink, Brightness.dark), 393),
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump(const Duration(milliseconds: 300));
-    expect(tester.takeException(), isNull, reason: 'без переполнений и падений');
+    expect(
+      tester.takeException(),
+      isNull,
+      reason: 'без переполнений и падений',
+    );
     await tester.runAsync(() async {
       for (final e in tester.allElements.whereType<StatefulElement>()) {
         final w = e.widget;
@@ -118,21 +153,27 @@ void main() {
     });
     await tester.pump();
     await tester.runAsync(() async {
-      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final boundary =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final img = await boundary.toImage(pixelRatio: 1.5);
       final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
       Directory('build/watch-home').createSync(recursive: true);
-      File('build/watch-home/blocks.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+      File(
+        'build/watch-home/blocks.png',
+      ).writeAsBytesSync(bytes!.buffer.asUint8List());
     });
 
     // Кадры отклика: держим палец 300 мс, отпускаем, смотрим через 150 и
     // 500 мс — `build/watch-home/press-<что>-<кадр>.png`.
     Future<void> shot(String name) => tester.runAsync(() async {
-          final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-          final img = await boundary.toImage(pixelRatio: 1);
-          final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
-          File('build/watch-home/$name.png').writeAsBytesSync(bytes!.buffer.asUint8List());
-        });
+      final boundary =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final img = await boundary.toImage(pixelRatio: 1);
+      final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
+      File(
+        'build/watch-home/$name.png',
+      ).writeAsBytesSync(bytes!.buffer.asUint8List());
+    });
     Future<void> press(String name, Finder target) async {
       final g = await tester.startGesture(tester.getCenter(target.first));
       await tester.pump(const Duration(milliseconds: 300));
@@ -145,10 +186,16 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
     }
 
-    await press('kino', find.byIcon(const IconData(0xe037, fontFamily: 'MaterialSymbolsRounded')));
+    await press(
+      'kino',
+      find.byIcon(const IconData(0xe037, fontFamily: 'MaterialSymbolsRounded')),
+    );
     await press('reels', find.byType(WatchReelsTile));
     await press('games', find.byType(WatchGamesTile));
-    await press('copy', find.byIcon(const IconData(0xe14d, fontFamily: 'MaterialSymbolsRounded')));
+    await press(
+      'copy',
+      find.byIcon(const IconData(0xe14d, fontFamily: 'MaterialSymbolsRounded')),
+    );
     expect(tester.takeException(), isNull, reason: 'отклик без падений');
   });
 }

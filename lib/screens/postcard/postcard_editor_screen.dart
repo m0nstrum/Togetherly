@@ -41,9 +41,11 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
   PostcardTemplateId _templateId = PostcardTemplateId.together;
   late List<PostcardTextBlock> _blocks;
   bool _exporting = false;
+
   /// Правил ли человек текст руками: после этого числа не перетираем.
   bool _blocksEdited = false;
-  bool _capturing = false; // true во время снимка — скрывает UI-оверлеи из экспорта
+  bool _capturing =
+      false; // true во время снимка — скрывает UI-оверлеи из экспорта
 
   // Polaroid photo state
   String? _polaroidImagePath;
@@ -61,6 +63,7 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
     if (date == null) return 0;
     return DateTime.now().difference(date).inDays;
   }
+
   String get _myName => widget.userData.displayName;
   String get _partnerName => widget.pairData.partnerDisplayName;
 
@@ -147,9 +150,7 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
           decoration: BoxDecoration(
             color: _t.cardSurface,
@@ -173,7 +174,12 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
               const SizedBox(height: 20),
               Text(
                 block.label,
-                style: AppFonts.onest(size: 13, weight: 600, letterSpacing: 1, color: _t.textMuted),
+                style: AppFonts.onest(
+                  size: 13,
+                  weight: 600,
+                  letterSpacing: 1,
+                  color: _t.textMuted,
+                ),
               ),
               const SizedBox(height: 10),
               TextField(
@@ -188,7 +194,10 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -207,7 +216,11 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
                     if (newText.isNotEmpty) {
                       setState(() {
                         _blocks = _blocks
-                            .map((b) => b.id == blockId ? b.copyWith(text: newText) : b)
+                            .map(
+                              (b) => b.id == blockId
+                                  ? b.copyWith(text: newText)
+                                  : b,
+                            )
                             .toList();
                       });
                     }
@@ -215,7 +228,11 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
                   },
                   child: Text(
                     LocaleService.current.done,
-                    style: AppFonts.onest(size: 15, weight: 700, color: Colors.white),
+                    style: AppFonts.onest(
+                      size: 15,
+                      weight: 700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -234,7 +251,10 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
       return box != null ? box.localToGlobal(Offset.zero) & box.size : null;
     }();
     // Скрываем UI-оверлеи (баджик «потяни» и рамки редактирования)
-    setState(() { _exporting = true; _capturing = true; });
+    setState(() {
+      _exporting = true;
+      _capturing = true;
+    });
     // Ждём РЕАЛЬНО отрисованный кадр без оверлеев. Future.delayed(60ms) не
     // гарантировал готовность кадра → boundary.toImage падал ассертом
     // '!debugNeedsPaint' (debug) или захватывал старый кадр с видимыми рамками
@@ -248,7 +268,8 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
           ? _polaroidKey
           : _cardKey;
       final boundary =
-          captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+          captureKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       // Раньше здесь был молчаливый `return`: спиннер гас, шэра нет, ошибки нет
       // — тестер видел «ничего не происходит». Теперь бросаем → SnackBar.
       if (boundary == null) {
@@ -268,7 +289,8 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
       // Имя завязано на контент (дни + шаблон) → системный share-кэш не подхватит
       // устаревший файл от прошлого шэра. flush:true — файл дописан до share.
       final file = File(
-          '${dir.path}/togetherly_postcard_${_days}_${_templateId.name}.png');
+        '${dir.path}/togetherly_postcard_${_days}_${_templateId.name}.png',
+      );
       await file.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
 
       // sharePositionOrigin обязателен для share-поповера на iPad (иначе краш).
@@ -285,7 +307,11 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
       }
     } finally {
       image?.dispose();
-      if (mounted) setState(() { _exporting = false; _capturing = false; });
+      if (mounted)
+        setState(() {
+          _exporting = false;
+          _capturing = false;
+        });
     }
   }
 
@@ -338,12 +364,20 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
           IconButton(
             tooltip: ruEn('Назад', 'Back'),
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(Icons.arrow_back_ios_new_rounded, color: _t.primary, size: 20),
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: _t.primary,
+              size: 20,
+            ),
           ),
           Expanded(
             child: Text(
               LocaleService.current.postcardTitle,
-              style: AppFonts.onest(size: 20, weight: 700, color: _t.textPrimary),
+              style: AppFonts.onest(
+                size: 20,
+                weight: 700,
+                color: _t.textPrimary,
+              ),
             ),
           ),
           Text(
@@ -372,7 +406,9 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected ? _t.primary : _t.cardSurface.withOpacity(0.85),
+                color: isSelected
+                    ? _t.primary
+                    : _t.cardSurface.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected ? _t.primary : _t.divider,
@@ -386,7 +422,11 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
                   const SizedBox(width: 8),
                   Text(
                     tpl.title,
-                    style: AppFonts.onest(size: 13, weight: 600, color: isSelected ? Colors.white : _t.textSecondary),
+                    style: AppFonts.onest(
+                      size: 13,
+                      weight: 600,
+                      color: isSelected ? Colors.white : _t.textSecondary,
+                    ),
                   ),
                 ],
               ),

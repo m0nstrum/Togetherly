@@ -14,19 +14,19 @@ enum AdGrantKind { theme, canvasBg, widgetPhoto }
 /// ничем себя не выдаёт — кнопка нажимается, сервер отвечает отказом, человек
 /// видит «не сработало». Стережёт `test/services/ad_grants_wiring_test.dart`.
 String adGrantKey(AdGrantKind k) => switch (k) {
-      AdGrantKind.theme => 'theme',
-      AdGrantKind.canvasBg => 'canvas_bg',
-      AdGrantKind.widgetPhoto => 'widget_photo',
-    };
+  AdGrantKind.theme => 'theme',
+  AdGrantKind.canvasBg => 'canvas_bg',
+  AdGrantKind.widgetPhoto => 'widget_photo',
+};
 
 /// Обратный разбор ключа. Незнакомый ключ — null, а не исключение: поле правит
 /// сервер, и новая награда не имеет права ронять старую сборку.
 AdGrantKind? adGrantKindOf(String key) => switch (key) {
-      'theme' => AdGrantKind.theme,
-      'canvas_bg' => AdGrantKind.canvasBg,
-      'widget_photo' => AdGrantKind.widgetPhoto,
-      _ => null,
-    };
+  'theme' => AdGrantKind.theme,
+  'canvas_bg' => AdGrantKind.canvasBg,
+  'widget_photo' => AdGrantKind.widgetPhoto,
+  _ => null,
+};
 
 /// Сколько просмотров стоит награда.
 const Map<AdGrantKind, int> kAdGrantViews = {
@@ -152,8 +152,9 @@ class AdGrantResult {
   final int days;
 
   static const AdGrantResult ok = AdGrantResult._(AdGrantOutcome.ok);
-  static const AdGrantResult rateLimited =
-      AdGrantResult._(AdGrantOutcome.rateLimited);
+  static const AdGrantResult rateLimited = AdGrantResult._(
+    AdGrantOutcome.rateLimited,
+  );
   static const AdGrantResult failed = AdGrantResult._(AdGrantOutcome.failed);
 
   factory AdGrantResult.cooldown(int days) =>

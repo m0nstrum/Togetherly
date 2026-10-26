@@ -14,9 +14,11 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Future<List<Image>> images(WidgetTester t) async {
-    await t.pumpWidget(const MaterialApp(
-      home: Center(child: AvatarFrameImage('hearts', avatarSize: 248)),
-    ));
+    await t.pumpWidget(
+      const MaterialApp(
+        home: Center(child: AvatarFrameImage('hearts', avatarSize: 248)),
+      ),
+    );
     await t.pump(const Duration(milliseconds: 200));
     return find.byType(Image).evaluate().map((e) => e.widget as Image).toList();
   }
@@ -32,7 +34,12 @@ void main() {
 
   testWidgets('анимация из каталога и её заглушка тоже', (t) async {
     CatalogService.instance.debugSetFrames(const [
-      AvatarFrame(key: 'hearts', smUrl: 'https://x.test/sm.webp', lgUrl: 'https://x.test/lg.webp', stillUrl: 'https://x.test/still.webp'),
+      AvatarFrame(
+        key: 'hearts',
+        smUrl: 'https://x.test/sm.webp',
+        lgUrl: 'https://x.test/lg.webp',
+        stillUrl: 'https://x.test/still.webp',
+      ),
     ]);
     final list = await images(t);
     expect(list.length, greaterThanOrEqualTo(2));
@@ -67,9 +74,18 @@ void main() {
       AvatarFrame(key: 'ribbon', smUrl: 'https://x.test/sm.webp', hole: 27.5),
     ]);
     const photo = SizedBox.square(key: ValueKey('photo'), dimension: 100);
-    await t.pumpWidget(const MaterialApp(
-      home: Center(child: FramedAvatar(uid: 'u', size: 100, frame: 'ribbon', child: photo)),
-    ));
+    await t.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: FramedAvatar(
+            uid: 'u',
+            size: 100,
+            frame: 'ribbon',
+            child: photo,
+          ),
+        ),
+      ),
+    );
     await t.pump(const Duration(milliseconds: 200));
     expect(t.getSize(find.byType(FramedAvatar)), const Size(100, 100));
     final r = t.getRect(find.byKey(const ValueKey('photo')));

@@ -35,7 +35,18 @@ const _ruServices = {'mail', 'yandex', 'list', 'bk', 'inbox', 'rambler', 'ya'};
 const _ruTypos = {'tu', 'ry', 'r', 'rj', 'eu'};
 
 /// Верхний уровень, которого не бывает: промах мимо `.com`.
-const _comTypos = {'con', 'cpm', 'vom', 'xom', 'cim', 'comm', 'coom', 'om', 'cm', 'c'};
+const _comTypos = {
+  'con',
+  'cpm',
+  'vom',
+  'xom',
+  'cim',
+  'comm',
+  'coom',
+  'om',
+  'cm',
+  'c',
+};
 
 /// Исправленный адрес, если в домене узнаётся опечатка, иначе `null`.
 String? emailTypoFix(String email) {
@@ -47,31 +58,6 @@ String? emailTypoFix(String email) {
   final fixed = _fixDomain(domain);
   if (fixed == null || fixed == domain) return null;
   return '$local@$fixed';
-}
-
-/// Самые частые опечатки с прода для каждого настоящего домена (04.10.2026):
-/// gmail.con 795, gmail.ru 102, gmai.com 93, icloud.con 85, gnail.com 53,
-/// gamil.com 47, gmail.co 26, mail.ry и yandex.ry по 11.
-const Map<String, List<String>> _typosOf = {
-  'gmail.com': ['gmail.con', 'gmail.ru', 'gmai.com', 'gnail.com', 'gamil.com', 'gmail.co'],
-  'icloud.com': ['icloud.con'],
-  'mail.ru': ['mail.ry'],
-  'yandex.ru': ['yandex.ry'],
-};
-
-/// Адреса с опечаткой, под которыми мог зарегистрироваться владелец [email].
-///
-/// Человек входит с правильной почтой, а аккаунт заведён на `gmail.con` — вход
-/// не проходит, и он заводит новый пустой аккаунт, теряя пару (обращения 208,
-/// 223, 232). Экран входа пробует тот же пароль с этими адресами. Без пароля
-/// так никуда не войти, поэтому это не открывает чужие аккаунты.
-List<String> emailTypoVariants(String email) {
-  final e = email.trim();
-  final at = e.lastIndexOf('@');
-  if (at <= 0 || at == e.length - 1) return const [];
-  final local = e.substring(0, at);
-  final typos = _typosOf[e.substring(at + 1).toLowerCase()] ?? const [];
-  return [for (final t in typos) '$local@$t'];
 }
 
 String? _fixDomain(String domain) {

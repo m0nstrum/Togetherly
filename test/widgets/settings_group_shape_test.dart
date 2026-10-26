@@ -9,27 +9,32 @@ import 'package:love_app/widgets/settings_scaffold.dart';
 /// последнему большой низ, средним малый радиус со всех сторон.
 void main() {
   Future<void> pump(WidgetTester tester, Widget group) => tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: ListView(children: [group]))),
-      );
+    MaterialApp(
+      home: Scaffold(body: ListView(children: [group])),
+    ),
+  );
 
   List<BorderRadius> radiiOf(WidgetTester tester) => tester
-      .widgetList<Material>(find.descendant(
-        of: find.byType(SettingsGroup),
-        matching: find.byType(Material),
-      ))
+      .widgetList<Material>(
+        find.descendant(
+          of: find.byType(SettingsGroup),
+          matching: find.byType(Material),
+        ),
+      )
       .where((m) => m.borderRadius != null)
       .map((m) => m.borderRadius! as BorderRadius)
       .toList();
 
-  SettingsRow row(String title) => SettingsRow(
-        icon: Icons.palette_rounded,
-        title: title,
-        onTap: () {},
-      );
+  SettingsRow row(String title) =>
+      SettingsRow(icon: Icons.palette_rounded, title: title, onTap: () {});
 
-  testWidgets('у трёх пунктов внешние углы только сверху и снизу группы',
-      (tester) async {
-    await pump(tester, SettingsGroup([row('Первый'), row('Второй'), row('Третий')]));
+  testWidgets('у трёх пунктов внешние углы только сверху и снизу группы', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      SettingsGroup([row('Первый'), row('Второй'), row('Третий')]),
+    );
 
     final radii = radiiOf(tester);
     expect(radii, hasLength(3));
@@ -53,10 +58,7 @@ void main() {
     await pump(tester, SettingsGroup([row('Один')]));
 
     const outer = Radius.circular(SettingsGroup.outerRadius);
-    expect(
-      radiiOf(tester).single,
-      const BorderRadius.all(outer),
-    );
+    expect(radiiOf(tester).single, const BorderRadius.all(outer));
   });
 
   testWidgets('между блоками есть зазор', (tester) async {
@@ -67,8 +69,9 @@ void main() {
     expect(second.top - first.bottom, greaterThan(SettingsGroup.gap));
   });
 
-  testWidgets('забытый разделитель не рисуется и не считается блоком',
-      (tester) async {
+  testWidgets('забытый разделитель не рисуется и не считается блоком', (
+    tester,
+  ) async {
     await pump(
       tester,
       SettingsGroup([row('Первый'), const SettingsDivider(), row('Второй')]),

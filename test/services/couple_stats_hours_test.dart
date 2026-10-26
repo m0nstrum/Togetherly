@@ -36,8 +36,10 @@ void main() {
       final utc = List<int>.filled(24, 0);
       utc[10] = 3;
 
-      final local =
-          shiftHoursToLocal(utc, const Duration(hours: 5, minutes: 30));
+      final local = shiftHoursToLocal(
+        utc,
+        const Duration(hours: 5, minutes: 30),
+      );
 
       expect(local[16], 3);
     });

@@ -43,7 +43,6 @@ import '../models/pixel_grid_style.dart';
 import '../models/pair_data.dart';
 import '../models/ad_grants.dart';
 import '../models/user_data.dart';
-import '../services/analytics_service.dart';
 import '../services/canvas/canvas_widget_service.dart';
 import '../widgets/draw/canvas_preview.dart' show kPreviewStrokeLimit;
 import '../services/canvas_storage_service.dart';
@@ -79,7 +78,6 @@ import '../services/plus_access.dart';
 import '../services/plus_service.dart';
 import 'plus_screen.dart';
 import '../utils/canvas_gestures.dart';
-
 
 //  Palette
 
@@ -182,18 +180,21 @@ class _DrawScreenState extends State<DrawScreen>
   final RewardedAdService _rewardedAd = RewardedAdService();
 
   static const double _kCanvasPad = 16.0;
+
   /// Ширина к высоте листа. 4:5 — вертикаль, привычная по фото в галерее.
   static const double _kSheetRatio = 4 / 5;
+
   /// Место под подписью формата под листом.
   static const double _kSheetCaption = 22.0;
+
   /// Скругление листа — как у карточек приложения.
   static const double _kSheetRadius = 14.0;
+
   /// Цвет клетки на листе — бесплатный фон «Клетка» из макета.
   static const Color _sheetGridColor = Color(0x1A6E4FC0);
 
   /// Холст в режиме пиксель-арта.
-  bool get _isPixel =>
-      (widget.pixelW ?? 0) > 1 && (widget.pixelH ?? 0) > 1;
+  bool get _isPixel => (widget.pixelW ?? 0) > 1 && (widget.pixelH ?? 0) > 1;
   int get _pxCols => widget.pixelW ?? 1;
   int get _pxRows => widget.pixelH ?? 1;
 
@@ -220,6 +221,7 @@ class _DrawScreenState extends State<DrawScreen>
     final cy = (canvasPx.dy / ch).floor().clamp(0, _pxRows - 1);
     return Offset((cx + 0.5) * cw, (cy + 0.5) * ch);
   }
+
   // Live cursor throttle. 60ms felt great but produced ~16 writes/sec per
   // drawing user — combined with the partner's snapshot listener that's
   // ~16 reads/sec on the other side. 150ms (~6.6 fps) still feels fluid for
@@ -236,6 +238,7 @@ class _DrawScreenState extends State<DrawScreen>
   /// пакет, не дожидаясь конца мазка.
   static const int _liveKeyframeMs = 150;
   static const double _kMinScale = 0.2;
+
   /// Показывать направляющие пиксельной сетки. Выбор запоминается: кому-то
   /// удобнее целиться по клеткам, кому-то они мешают смотреть на рисунок.
   bool _showPixelGrid = true;
@@ -302,6 +305,7 @@ class _DrawScreenState extends State<DrawScreen>
     if (!appendOnly(_strokesNotifier.value.list, next)) _strokesBaseRevision++;
     _strokesNotifier.value = StrokesSnapshot(next, _strokesBaseRevision);
   }
+
   final List<DrawPoint> _currentPoints = [];
 
   DrawTool _activeTool = DrawTool.brush;
@@ -319,8 +323,9 @@ class _DrawScreenState extends State<DrawScreen>
 
   /// Пиксельный холст — клетки: там нет мягкого края, а толщина ластика
   /// общая с кистью, как и было.
-  EraserMode get _eraserModeNow =>
-      _isPixel && _eraserMode == EraserMode.soft ? EraserMode.hard : _eraserMode;
+  EraserMode get _eraserModeNow => _isPixel && _eraserMode == EraserMode.soft
+      ? EraserMode.hard
+      : _eraserMode;
   double get _eraserWidthNow => _isPixel ? _strokeWidth : _eraserWidth;
 
   /// Ластик «Линия целиком»: что задето за одно касание, то и уходит одной
@@ -349,6 +354,7 @@ class _DrawScreenState extends State<DrawScreen>
   String? _coloringId;
 
   ColoringMode _coloringMode = ColoringMode.surprise;
+
   /// Половины поменяны местами. Общее решение пары: на картинке бывает мальчик
   /// слева и девочка справа, а порядок uid об этом не знает — «у меня выходит
   /// сторона мальчика, а у него наоборот».
@@ -364,10 +370,10 @@ class _DrawScreenState extends State<DrawScreen>
 
   /// Моя половина листа.
   ColoringSide get _mySide => coloringSideFor(
-        _myUid,
-        widget.pairData.partnerUid,
-        swapped: _coloringSwap,
-      );
+    _myUid,
+    widget.pairData.partnerUid,
+    swapped: _coloringSwap,
+  );
 
   bool get _iAmDone => _coloringDone[_myUid] == true;
 
@@ -485,6 +491,7 @@ class _DrawScreenState extends State<DrawScreen>
 
   // Pan / zoom / rotation
   Size _canvasSize = Size.zero;
+
   /// Сигнал «вид холста поменялся»: масштаб, смещение или поворот.
   ///
   /// Пока панорама шла через `setState`, на каждом сэмпле жеста заново
@@ -580,9 +587,13 @@ class _DrawScreenState extends State<DrawScreen>
   }
 
   bool get _canUndo =>
-      _myStrokeIds.isNotEmpty || _shapeEdits.isNotEmpty || _wholeErases.isNotEmpty;
+      _myStrokeIds.isNotEmpty ||
+      _shapeEdits.isNotEmpty ||
+      _wholeErases.isNotEmpty;
   bool get _canRedo =>
-      _redoStack.isNotEmpty || _shapeRedos.isNotEmpty || _wholeEraseRedos.isNotEmpty;
+      _redoStack.isNotEmpty ||
+      _shapeRedos.isNotEmpty ||
+      _wholeEraseRedos.isNotEmpty;
 
   /// Штрих нарисовал я — значит его можно отменить. Номер по общей шкале.
   void _noteMyStroke(String id) {
@@ -707,9 +718,6 @@ class _DrawScreenState extends State<DrawScreen>
     if (!_hasSharedCanvas) _loadSoloStrokes();
     _markPresence(true);
     _scheduleHints();
-    unawaited(
-      AnalyticsService.instance.logCanvasOpened(shared: _hasSharedCanvas),
-    );
     // Зов партнёру: «сел рисовать, давай вместе». Один запрос на вход, дальше
     // всё решает сервер — и частоту, и выключатель, и то, что человеку в
     // приложении звать незачем. В одиночном холсте звать некого.
@@ -741,8 +749,7 @@ class _DrawScreenState extends State<DrawScreen>
     );
     if (!mounted || strokes.isEmpty) return;
     setState(() {
-      _visibleStrokes = List<DrawStroke>.from(strokes)
-        ..sort(_compareStrokes);
+      _visibleStrokes = List<DrawStroke>.from(strokes)..sort(_compareStrokes);
       // Restore undo history so the user can undo loaded strokes.
       _myStrokeIds
         ..clear()
@@ -750,7 +757,7 @@ class _DrawScreenState extends State<DrawScreen>
       if (strokes.isNotEmpty) {
         _orderCounter =
             strokes.map((s) => s.orderIndex).reduce((a, b) => a > b ? a : b) +
-                1;
+            1;
       }
     });
   }
@@ -805,8 +812,10 @@ class _DrawScreenState extends State<DrawScreen>
   /// Перерисовывает картинки холстов для виджета «Рисунок на столе».
   Future<void> _syncCanvasWidget() async {
     try {
-      final canvases = await CanvasStorageService.instance
-          .getCanvases(_myUid, groupId: _groupId);
+      final canvases = await CanvasStorageService.instance.getCanvases(
+        _myUid,
+        groupId: _groupId,
+      );
       if (canvases.isEmpty) return;
       await CanvasWidgetService.instance.publish(
         groupId: _groupId,
@@ -816,8 +825,11 @@ class _DrawScreenState extends State<DrawScreen>
         force: true,
         strokesOf: (meta) => _groupId.isEmpty
             ? CanvasStorageService.instance.loadLocalStrokes(_myUid, meta.id)
-            : CanvasRepository.instance
-                .previewStrokes(_groupId, meta.id, limit: kPreviewStrokeLimit),
+            : CanvasRepository.instance.previewStrokes(
+                _groupId,
+                meta.id,
+                limit: kPreviewStrokeLimit,
+              ),
       );
     } catch (e) {
       debugPrint('[Draw] widget sync error: $e');
@@ -918,8 +930,11 @@ class _DrawScreenState extends State<DrawScreen>
 
   void _showMessage(String message, {bool error = false}) {
     if (!mounted) return;
-    if (error) { AppSnack.error(context, message); }
-    else { AppSnack.info(context, message); }
+    if (error) {
+      AppSnack.error(context, message);
+    } else {
+      AppSnack.info(context, message);
+    }
   }
 
   //  Firebase listeners
@@ -973,7 +988,8 @@ class _DrawScreenState extends State<DrawScreen>
 
       // Свой оптимистичный штрих сверяем сперва по идентификатору и только
       // потом на глаз — эвристика осталась для записей прежних сборок.
-      final matchKey = remainingPending.entries
+      final matchKey =
+          remainingPending.entries
               .where((e) => clientId != null && e.value.clientId == clientId)
               .map((e) => e.key)
               .firstOrNull ??
@@ -988,7 +1004,12 @@ class _DrawScreenState extends State<DrawScreen>
         }
         // Номер действия ведётся по id: без переезда отмена не найдёт штрих
         // и выйдет молча при живой кнопке (обращение 403).
-        adoptStrokeId(_strokeSeq, _mirrorGroupOf, from: matchKey, to: remote.id);
+        adoptStrokeId(
+          _strokeSeq,
+          _mirrorGroupOf,
+          from: matchKey,
+          to: remote.id,
+        );
         // Картинку-штрих (заливка, вставленное фото) продолжаем рисовать с
         // диска — см. [adoptLocalImagePath].
         adoptLocalImagePath(_localImagePaths, matchKey, remote.id);
@@ -1002,9 +1023,10 @@ class _DrawScreenState extends State<DrawScreen>
     // истории отмены, как у одиночного холста (владелец, 21.10.2026).
     if (!_undoHistorySeeded && parsed.isNotEmpty) {
       _undoHistorySeeded = true;
-      final earlier = ownStrokeHistory(parsed, _myUid)
-          .where((id) => !updatedMyIds.contains(id))
-          .toList();
+      final earlier = ownStrokeHistory(
+        parsed,
+        _myUid,
+      ).where((id) => !updatedMyIds.contains(id)).toList();
       updatedMyIds.insertAll(0, earlier);
     }
     _myStrokeIds
@@ -1083,8 +1105,12 @@ class _DrawScreenState extends State<DrawScreen>
       if (ColoringPicture.isOwnId(remoteColoring) &&
           outline != null &&
           outline.isNotEmpty) {
-        unawaited(_adoptRemoteOutline(remoteColoring, outline)
-            .then((_) => _loadColoringOutline()));
+        unawaited(
+          _adoptRemoteOutline(
+            remoteColoring,
+            outline,
+          ).then((_) => _loadColoringOutline()),
+        );
       } else {
         unawaited(_loadColoringOutline());
       }
@@ -1093,7 +1119,11 @@ class _DrawScreenState extends State<DrawScreen>
     // Дописываем, иначе у партнёра лист откроется обычным холстом.
     if (_hasSharedCanvas &&
         !_coloringPictureSent &&
-        coloringMetaNeedsPicture(remoteExists: meta.exists, remote: remoteColoring, local: _coloringId)) {
+        coloringMetaNeedsPicture(
+          remoteExists: meta.exists,
+          remote: remoteColoring,
+          local: _coloringId,
+        )) {
       _coloringPictureSent = true;
       unawaited(_resendColoringPicture());
     }
@@ -1411,14 +1441,17 @@ class _DrawScreenState extends State<DrawScreen>
     setState(() {
       _currentPoints
         ..clear()
-        ..add(DrawPoint.clampedFromOffset(
-          _snapToCell(_screenToCanvas(localPoint)),
-          _canvasSize,
-        ));
+        ..add(
+          DrawPoint.clampedFromOffset(
+            _snapToCell(_screenToCanvas(localPoint)),
+            _canvasSize,
+          ),
+        );
       _currentShapeType = null;
       final erasing = _activeTool == DrawTool.eraser;
-      _currentColorValue =
-          erasing ? _bgColor.toARGB32() : _activeColor.toARGB32();
+      _currentColorValue = erasing
+          ? _bgColor.toARGB32()
+          : _activeColor.toARGB32();
       _currentStrokeWidth = erasing ? _eraserWidthNow : _strokeWidth;
       _currentIsEraser = erasing;
       _currentBrush = erasing
@@ -1527,10 +1560,8 @@ class _DrawScreenState extends State<DrawScreen>
     }
     _disarmQuickShape();
 
-    DrawPoint toPoint(Offset o) => DrawPoint.clampedFromOffset(
-          Offset(o.dx, o.dy),
-          _canvasSize,
-        );
+    DrawPoint toPoint(Offset o) =>
+        DrawPoint.clampedFromOffset(Offset(o.dx, o.dy), _canvasSize);
 
     setState(() {
       _currentPoints
@@ -1614,7 +1645,8 @@ class _DrawScreenState extends State<DrawScreen>
     final now = DateTime.now();
     // Фигура (линия, круг, прямоугольник) живёт двумя точками, и вторая
     // ездит: приростом её не передать, шлём целиком.
-    final needKeyframe = _currentShapeType != null ||
+    final needKeyframe =
+        _currentShapeType != null ||
         _liveSentPoints == 0 ||
         _liveSentPoints > _currentPoints.length ||
         now.difference(_lastLiveKeyframe).inMilliseconds >= _liveKeyframeMs;
@@ -1647,15 +1679,15 @@ class _DrawScreenState extends State<DrawScreen>
   }
 
   LiveStrokeMeta _liveMeta() => LiveStrokeMeta(
-        colorValue: _currentColorValue,
-        strokeWidth: _currentStrokeWidth,
-        isEraser: _currentIsEraser,
-        isFilledShape: _currentIsFilledShape,
-        shapeType: _currentShapeType,
-        layer: _activeLayer,
-        // Ровная фигура из линии рисуется пером — так же, как ляжет в базу.
-        brush: _currentShapeType != null ? StrokeBrush.pen : _currentBrush,
-      );
+    colorValue: _currentColorValue,
+    strokeWidth: _currentStrokeWidth,
+    isEraser: _currentIsEraser,
+    isFilledShape: _currentIsFilledShape,
+    shapeType: _currentShapeType,
+    layer: _activeLayer,
+    // Ровная фигура из линии рисуется пером — так же, как ляжет в базу.
+    brush: _currentShapeType != null ? StrokeBrush.pen : _currentBrush,
+  );
 
   /// Верхний слой: туда ложится живая линия партнёра на старой сборке,
   /// которая слой не присылает, — поверх всего, как было до слоёв в пакете.
@@ -1665,7 +1697,9 @@ class _DrawScreenState extends State<DrawScreen>
   /// Хвост нужен, чтобы у двоих, рисующих в одну миллисекунду, не совпали
   /// идентификаторы: по ним партнёр узнаёт мазок в пришедшей записи.
   String _newStrokeId() {
-    final tail = _myUid.length > 4 ? _myUid.substring(_myUid.length - 4) : _myUid;
+    final tail = _myUid.length > 4
+        ? _myUid.substring(_myUid.length - 4)
+        : _myUid;
     return 'local_${DateTime.now().millisecondsSinceEpoch}_${_orderCounter}_$tail';
   }
 
@@ -2122,8 +2156,7 @@ class _DrawScreenState extends State<DrawScreen>
     double? h,
     double? rot,
     String? url,
-  }) =>
-      copyImageStroke(s, x: x, y: y, w: w, h: h, rot: rot, url: url);
+  }) => copyImageStroke(s, x: x, y: y, w: w, h: h, rot: rot, url: url);
 
   /// Показать правленый штрих на холсте: и свой неотправленный, и приехавший с
   /// сервера, и одиночный. Имя было `_applyImageUpdate`, хотя картинок метод
@@ -2148,7 +2181,6 @@ class _DrawScreenState extends State<DrawScreen>
     _applyStrokeUpdate(updated);
   }
 
-
   DrawStroke? get _selectedStroke {
     final id = _selectedStrokeId;
     if (id == null) return null;
@@ -2169,10 +2201,10 @@ class _DrawScreenState extends State<DrawScreen>
 
     final current = _selectedStroke;
     if (current != null) {
-      final spin = strokeBounds(current, _canvasSize)
-          .inflate(kSelectionPad)
-          .topCenter
-          .translate(0, -kSelectionSpinGap);
+      final spin = strokeBounds(
+        current,
+        _canvasSize,
+      ).inflate(kSelectionPad).topCenter.translate(0, -kSelectionSpinGap);
       if ((spin - canvasPoint).distance <= 22 / _scale) {
         _rememberShapeBefore(current);
         setState(() {
@@ -2199,9 +2231,7 @@ class _DrawScreenState extends State<DrawScreen>
     // Картинки правит инструмент «Фото» — со своей рамкой и своими полями
     // положения; ластик формы не имеет вовсе.
     final hit = strokeAtPoint(
-      _visibleStrokes
-          .where((s) => !s.isEraser && !s.isImageStroke)
-          .toList(),
+      _visibleStrokes.where((s) => !s.isEraser && !s.isImageStroke).toList(),
       canvasPoint,
       _canvasSize,
       tolerance: 18 / _scale,
@@ -2258,19 +2288,25 @@ class _DrawScreenState extends State<DrawScreen>
     final point = _screenToCanvas(screenPoint);
     if (_selectRotating) {
       _selectDirty = true;
-      _applyStrokeUpdate(rotateStroke(
-        base,
-        _angleAround(base, point) - _selectStartAngle,
-        _canvasSize,
-      ));
+      _applyStrokeUpdate(
+        rotateStroke(
+          base,
+          _angleAround(base, point) - _selectStartAngle,
+          _canvasSize,
+        ),
+      );
       return;
     }
     final delta = point - _selectStartPx;
     final handle = _selectHandle;
     final updated = handle == null
         ? moveStroke(base, delta, _canvasSize)
-        : stretchStroke(base,
-            handle: handle, delta: delta, canvas: _canvasSize);
+        : stretchStroke(
+            base,
+            handle: handle,
+            delta: delta,
+            canvas: _canvasSize,
+          );
     _selectDirty = true;
     _applyStrokeUpdate(updated);
   }
@@ -2288,12 +2324,14 @@ class _DrawScreenState extends State<DrawScreen>
     // одним движением, и снимать это надо тоже одним нажатием.
     if (stroke != null && before != null) {
       _shapeRedos.clear();
-      _shapeEdits.add(_ShapeEdit(
-        id: stroke.id,
-        before: before,
-        after: List<DrawPoint>.unmodifiable(stroke.points),
-        seq: ++_actionSeq,
-      ));
+      _shapeEdits.add(
+        _ShapeEdit(
+          id: stroke.id,
+          before: before,
+          after: List<DrawPoint>.unmodifiable(stroke.points),
+          seq: ++_actionSeq,
+        ),
+      );
       _syncCanvasChrome();
     }
     _selectBase = stroke;
@@ -2305,7 +2343,8 @@ class _DrawScreenState extends State<DrawScreen>
       _saveSoloStrokes();
       return;
     }
-    if (_pendingLocalStrokes.containsKey(stroke.id)) return; // ещё не на сервере
+    if (_pendingLocalStrokes.containsKey(stroke.id))
+      return; // ещё не на сервере
     try {
       await _canvas.patchStroke(stroke.id, {
         'points': [for (final p in stroke.points) p.toMap()],
@@ -2382,10 +2421,7 @@ class _DrawScreenState extends State<DrawScreen>
   Future<void> _pickAndAddImage() async {
     final picker = ImagePicker();
     final xFile = await safePick(
-      () => picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      ),
+      () => picker.pickImage(source: ImageSource.gallery, imageQuality: 85),
     );
     if (xFile == null || !mounted) return;
 
@@ -2449,10 +2485,14 @@ class _DrawScreenState extends State<DrawScreen>
         context,
         uploadOutcome.failure,
         what: localStrokeId.startsWith('fill_')
-            ? ruEn('Заливка не добавилась на холст',
-                'The fill wasn’t added to the canvas')
-            : ruEn('Картинка не добавилась на холст',
-                'The image wasn’t added to the canvas'),
+            ? ruEn(
+                'Заливка не добавилась на холст',
+                'The fill wasn’t added to the canvas',
+              )
+            : ruEn(
+                'Картинка не добавилась на холст',
+                'The image wasn’t added to the canvas',
+              ),
       );
       _cancelledPendingStrokeIds.remove(localStrokeId);
       _myStrokeIds.remove(localStrokeId);
@@ -2484,8 +2524,9 @@ class _DrawScreenState extends State<DrawScreen>
           if (remoteId.isEmpty) throw Exception('Empty stroke id');
           if (_cancelledPendingStrokeIds.remove(localId)) {
             if (!await _canvas.deleteStroke(remoteId)) {
-              await OutboxService.instance
-                  .enqueue('strokeDelete', {'id': remoteId});
+              await OutboxService.instance.enqueue('strokeDelete', {
+                'id': remoteId,
+              });
             }
           }
         })
@@ -2617,8 +2658,9 @@ class _DrawScreenState extends State<DrawScreen>
           if (remoteId.isEmpty) throw Exception('Empty stroke id');
           if (_cancelledPendingStrokeIds.remove(stroke.id)) {
             if (!await _canvas.deleteStroke(remoteId)) {
-              await OutboxService.instance
-                  .enqueue('strokeDelete', {'id': remoteId});
+              await OutboxService.instance.enqueue('strokeDelete', {
+                'id': remoteId,
+              });
             }
           }
         })
@@ -2628,12 +2670,14 @@ class _DrawScreenState extends State<DrawScreen>
           // стирал нарисованное: в пиксельной раскраске клетки уходят
           // десятками в секунду, часть запросов не проходит, и рисунок
           // осыпался прямо под рукой («всё стирает»).
-          unawaited(OutboxService.instance.enqueue('strokeAdd', {
-            'id': stroke.id,
-            'groupId': _groupId,
-            'canvasId': _canvasId,
-            'stroke': stroke.toFirestore(),
-          }));
+          unawaited(
+            OutboxService.instance.enqueue('strokeAdd', {
+              'id': stroke.id,
+              'groupId': _groupId,
+              'canvasId': _canvasId,
+              'stroke': stroke.toFirestore(),
+            }),
+          );
         });
   }
 
@@ -2675,7 +2719,6 @@ class _DrawScreenState extends State<DrawScreen>
   }
 
   Future<void> _undoOne(String undoKey) async {
-
     DrawStroke? removed;
     String? remoteIdForDelete;
 
@@ -2685,7 +2728,8 @@ class _DrawScreenState extends State<DrawScreen>
       // Штрих мог не долететь с первого раза и ждать в очереди. Снимаем задачу,
       // иначе очередь пришлёт его позже и отменённое вернётся на холст.
       unawaited(
-          OutboxService.instance.enqueue('strokeCancel', {'id': undoKey}));
+        OutboxService.instance.enqueue('strokeCancel', {'id': undoKey}),
+      );
     } else {
       removed = _visibleStrokes.where((s) => s.id == undoKey).firstOrNull;
       if (removed != null && _hasSharedCanvas) {
@@ -2733,8 +2777,9 @@ class _DrawScreenState extends State<DrawScreen>
       debugPrint('[Draw] undo: удаление не прошло ($e)');
     }
     if (!done) {
-      await OutboxService.instance
-          .enqueue('strokeDelete', {'id': remoteIdForDelete});
+      await OutboxService.instance.enqueue('strokeDelete', {
+        'id': remoteIdForDelete,
+      });
     }
   }
 
@@ -2799,7 +2844,6 @@ class _DrawScreenState extends State<DrawScreen>
     _submitStroke(stroke);
   }
 
-
   //  Ластик «Линия целиком»
 
   /// Палец прошёл здесь: задетые линии своего слоя уходят сразу, как под
@@ -2821,12 +2865,14 @@ class _DrawScreenState extends State<DrawScreen>
       // поочерёдно: отмена вернёт их в обратном порядке ровно туда же.
       final own = _myStrokeIds.indexOf(s.id);
       if (own >= 0) _myStrokeIds.removeAt(own);
-      entry.strokes.add(ErasedStroke(
-        stroke: s,
-        ownIndex: own >= 0 ? own : null,
-        ownSeq: own >= 0 ? _strokeSeq[s.id] : null,
-        mirrorGroup: _mirrorGroupOf[s.id],
-      ));
+      entry.strokes.add(
+        ErasedStroke(
+          stroke: s,
+          ownIndex: own >= 0 ? own : null,
+          ownSeq: own >= 0 ? _strokeSeq[s.id] : null,
+          mirrorGroup: _mirrorGroupOf[s.id],
+        ),
+      );
     }
     HapticFeedback.selectionClick();
     _dropStrokes({for (final s in hits) s.id});
@@ -2881,7 +2927,12 @@ class _DrawScreenState extends State<DrawScreen>
       }
       restored.insert(
         0,
-        ErasedStroke(stroke: copy, ownIndex: e.ownIndex, ownSeq: e.ownSeq, mirrorGroup: e.mirrorGroup),
+        ErasedStroke(
+          stroke: copy,
+          ownIndex: e.ownIndex,
+          ownSeq: e.ownSeq,
+          mirrorGroup: e.mirrorGroup,
+        ),
       );
     }
     // Повторное стирание уберёт уже вернувшиеся копии.
@@ -3076,8 +3127,8 @@ class _DrawScreenState extends State<DrawScreen>
     _cancelCurrentGesture();
     if (_canvasSize.isEmpty) return;
 
-    final boundary = _canvasKey.currentContext?.findRenderObject()
-        as RenderRepaintBoundary?;
+    final boundary =
+        _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     if (boundary == null) return;
 
     try {
@@ -3096,7 +3147,8 @@ class _DrawScreenState extends State<DrawScreen>
       // а снимок сделан в его же пикселях.
       final canvasPoint = _screenToCanvas(localPoint);
       final sx = (canvasPoint.dx / _canvasSize.width * snapshot.width).round();
-      final sy = (canvasPoint.dy / _canvasSize.height * snapshot.height).round();
+      final sy = (canvasPoint.dy / _canvasSize.height * snapshot.height)
+          .round();
 
       final filled = await FloodFill.fill(
         source: snapshot,
@@ -3112,7 +3164,9 @@ class _DrawScreenState extends State<DrawScreen>
       // Обрезаем прозрачные поля: слой во весь холст весил как целый рисунок и
       // ложился в хранилище отдельным файлом на каждую заливку.
       final bounds = await FloodFill.opaqueBounds(filled);
-      final cropped = bounds == null ? filled : await _cropImage(filled, bounds);
+      final cropped = bounds == null
+          ? filled
+          : await _cropImage(filled, bounds);
       if (!identical(cropped, filled)) filled.dispose();
 
       final png = await cropped.toByteData(format: ui.ImageByteFormat.png);
@@ -3176,8 +3230,6 @@ class _DrawScreenState extends State<DrawScreen>
       }
     }
   }
-
-
 
   Future<void> _confirmClear() async {
     final s = LocaleService.current;
@@ -3319,12 +3371,12 @@ class _DrawScreenState extends State<DrawScreen>
         // 2x хватает для карточки и полного экрана, а файл вдвое легче, чем
         // у «Поделиться» (там 2.5x на печать).
         final image = await boundary.toImage(pixelRatio: 2);
-        final byteData =
-            await image.toByteData(format: ui.ImageByteFormat.png);
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         if (byteData != null) {
           final dir = await getTemporaryDirectory();
           final file = File(
-              '${dir.path}/chat_drawing_${DateTime.now().millisecondsSinceEpoch}.png');
+            '${dir.path}/chat_drawing_${DateTime.now().millisecondsSinceEpoch}.png',
+          );
           await file.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
           ok = await ChatService.instance.sendDrawing(
             groupId: _groupId,
@@ -3343,8 +3395,7 @@ class _DrawScreenState extends State<DrawScreen>
     if (ok) {
       _showMessage(trKey('drawSentToChat'));
     } else {
-      _showMessage(trKey('drawSendToChatFailed'),
-          error: true);
+      _showMessage(trKey('drawSendToChatFailed'), error: true);
     }
   }
 
@@ -3375,8 +3426,7 @@ class _DrawScreenState extends State<DrawScreen>
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 10,
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
@@ -3472,8 +3522,8 @@ class _DrawScreenState extends State<DrawScreen>
             color: sel
                 ? widget.theme.primary
                 : (c == Colors.white
-                    ? Colors.grey.shade300
-                    : Colors.transparent),
+                      ? Colors.grey.shade300
+                      : Colors.transparent),
             width: sel ? 3 : 1.5,
           ),
         ),
@@ -3520,8 +3570,9 @@ class _DrawScreenState extends State<DrawScreen>
     await queue.resume();
     final own = queue.items
         .where((i) => i.isReady)
-        .map((i) =>
-            ColoringPicture.own(id: i.id, title: i.title, ratio: i.ratio))
+        .map(
+          (i) => ColoringPicture.own(id: i.id, title: i.title, ratio: i.ratio),
+        )
         .toList();
     if (!mounted || own.isEmpty) return;
     setState(() => _ownColorings = own);
@@ -3638,9 +3689,9 @@ class _DrawScreenState extends State<DrawScreen>
       if (file.existsSync() && file.lengthSync() > 1024) return;
       final url = await PbMediaService.instance.resolveUrlAuthed(ref);
       if (url == null || url.isEmpty) return;
-      final res = await http.get(Uri.parse(url)).timeout(
-            const Duration(seconds: 30),
-          );
+      final res = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 30));
       if (res.statusCode != 200 || res.bodyBytes.length < 1024) return;
       await file.parent.create(recursive: true);
       await file.writeAsBytes(res.bodyBytes);
@@ -3671,7 +3722,12 @@ class _DrawScreenState extends State<DrawScreen>
     setState(() => _coloringDone = next);
     HapticFeedback.mediumImpact();
     if (_hasSharedCanvas) {
-      await CanvasRepository().setColoringDone(_groupId, _canvasId, next, pictureId: _coloringId);
+      await CanvasRepository().setColoringDone(
+        _groupId,
+        _canvasId,
+        next,
+        pictureId: _coloringId,
+      );
     }
   }
 
@@ -3692,8 +3748,8 @@ class _DrawScreenState extends State<DrawScreen>
   Future<void> _openColoringResult() async {
     final picture = _coloring;
     if (picture == null) return;
-    final boundary = _canvasKey.currentContext?.findRenderObject()
-        as RenderRepaintBoundary?;
+    final boundary =
+        _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     if (boundary == null) return;
     try {
       final image = await boundary.toImage(pixelRatio: 2.5);
@@ -3721,10 +3777,13 @@ class _DrawScreenState extends State<DrawScreen>
     final destination =
         'memories/$_groupId/coloring_${DateTime.now().millisecondsSinceEpoch}.png';
     // fork: D4 — причина отказа, а не `Exception: upload failed`
-    final outcome =
-        await MediaService().uploadFileWithReason(file.path, destination);
+    final outcome = await MediaService().uploadFileWithReason(
+      file.path,
+      destination,
+    );
     final url = outcome.ref;
-    if (url == null) throw ForkFailureError(forkFailureOfUpload(outcome.failure));
+    if (url == null)
+      throw ForkFailureError(forkFailureOfUpload(outcome.failure));
     await MemoryRepository().add(
       groupId: _groupId,
       authorName: widget.userData.displayName,
@@ -3781,13 +3840,14 @@ class _DrawScreenState extends State<DrawScreen>
   /// Включает режим взятия цвета: снимает холст один раз, дальше цвет читается
   /// из снимка. Лист при этом уже закрыт — цвет берут с самого рисунка.
   Future<void> _armEyedropper() async {
-    final boundary = _canvasKey.currentContext?.findRenderObject()
-        as RenderRepaintBoundary?;
+    final boundary =
+        _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     if (boundary == null) return;
     try {
       final snapshot = await boundary.toImage(pixelRatio: 1.0);
-      final bytes =
-          await snapshot.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final bytes = await snapshot.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
       _eyedropperWidth = snapshot.width;
       _eyedropperHeight = snapshot.height;
       snapshot.dispose();
@@ -3820,10 +3880,8 @@ class _DrawScreenState extends State<DrawScreen>
     if (pixels == null || _canvasSize.isEmpty) return null;
 
     final canvasPoint = _screenToCanvas(localPoint);
-    final x =
-        (canvasPoint.dx / _canvasSize.width * _eyedropperWidth).round();
-    final y =
-        (canvasPoint.dy / _canvasSize.height * _eyedropperHeight).round();
+    final x = (canvasPoint.dx / _canvasSize.width * _eyedropperWidth).round();
+    final y = (canvasPoint.dy / _canvasSize.height * _eyedropperHeight).round();
     if (x < 0 || y < 0 || x >= _eyedropperWidth || y >= _eyedropperHeight) {
       return null;
     }
@@ -3951,8 +4009,10 @@ class _DrawScreenState extends State<DrawScreen>
                               color: _activeColor,
                               icon: _bubbleIcon,
                               fill: t.fillColor,
-                              onFill: AppThemes.onColor(t.fillColor,
-                                  mode: t.brightness),
+                              onFill: AppThemes.onColor(
+                                t.fillColor,
+                                mode: t.brightness,
+                              ),
                               onTap: () => setState(() => _toolsOpen = true),
                             ),
                           ),
@@ -4034,7 +4094,12 @@ class _DrawScreenState extends State<DrawScreen>
     setState(() => _coloringSwap = next);
     if (_groupId.isEmpty) return;
     try {
-      await _canvas.setColoringSwap(_groupId, _canvasId, swapped: next, pictureId: _coloringId);
+      await _canvas.setColoringSwap(
+        _groupId,
+        _canvasId,
+        swapped: next,
+        pictureId: _coloringId,
+      );
     } catch (e) {
       debugPrint('Раскраска: обмен половин не сохранился — $e');
     }
@@ -4083,9 +4148,10 @@ class _DrawScreenState extends State<DrawScreen>
                 Text(
                   _iAmDone
                       ? (bothDone
-                          ? s.coloringRevealTitle
-                          : s.coloringWaitingHint(
-                              widget.pairData.partnerDisplayName))
+                            ? s.coloringRevealTitle
+                            : s.coloringWaitingHint(
+                                widget.pairData.partnerDisplayName,
+                              ))
                       : s.coloringMyHalf,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -4112,7 +4178,10 @@ class _DrawScreenState extends State<DrawScreen>
                 backgroundColor: t.primary,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
               ),
               child: Text(s.coloringRevealTitle),
             )
@@ -4128,7 +4197,10 @@ class _DrawScreenState extends State<DrawScreen>
                 backgroundColor: _iAmDone ? t.surfaceMuted : t.primary,
                 foregroundColor: _iAmDone ? t.textSecondary : Colors.white,
                 shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
             ),
         ],
@@ -4176,10 +4248,7 @@ class _DrawScreenState extends State<DrawScreen>
               alignment: Alignment.centerLeft,
               child: Row(
                 children: [
-                  if (live) ...[
-                    const _PulsingDot(),
-                    const SizedBox(width: 9),
-                  ],
+                  if (live) ...[const _PulsingDot(), const SizedBox(width: 9)],
                   Expanded(
                     child: Text(
                       live
@@ -4210,11 +4279,17 @@ class _DrawScreenState extends State<DrawScreen>
             ),
             const SizedBox(width: 8),
           ],
-          _pillIcon(Icons.undo_rounded, _canUndo ? _undo : null,
-              tooltip: s.undoAction),
+          _pillIcon(
+            Icons.undo_rounded,
+            _canUndo ? _undo : null,
+            tooltip: s.undoAction,
+          ),
           const SizedBox(width: 8),
-          _pillIcon(Icons.redo_rounded, _canRedo ? _redo : null,
-              tooltip: s.redoAction),
+          _pillIcon(
+            Icons.redo_rounded,
+            _canRedo ? _redo : null,
+            tooltip: s.redoAction,
+          ),
           const SizedBox(width: 8),
           // Фон, рука и очистка переехали сюда из нижнего ряда: панель
           // рисования держит шесть кнопок, а редкие действия прячутся в меню.
@@ -4232,8 +4307,11 @@ class _DrawScreenState extends State<DrawScreen>
                     ),
                   ),
                 )
-              : _pillIcon(Icons.ios_share_rounded, () => _saveOrShare(share: true),
-                  tooltip: s.shareDrawing),
+              : _pillIcon(
+                  Icons.ios_share_rounded,
+                  () => _saveOrShare(share: true),
+                  tooltip: s.shareDrawing,
+                ),
         ],
       ),
     );
@@ -4342,8 +4420,11 @@ class _DrawScreenState extends State<DrawScreen>
           value: 'clear',
           child: Row(
             children: [
-              Icon(Icons.delete_outline_rounded,
-                  size: 20, color: Colors.red.shade400),
+              Icon(
+                Icons.delete_outline_rounded,
+                size: 20,
+                color: Colors.red.shade400,
+              ),
               const SizedBox(width: 12),
               Text(s.clearCanvas),
             ],
@@ -4401,10 +4482,14 @@ class _DrawScreenState extends State<DrawScreen>
         if (ratio == null) {
           // Холст, созданный до появления листа: прежняя геометрия во всю
           // область — иначе сохранённые штрихи сплющит.
-          final fullW =
-              (available.width - _kCanvasPad * 2).clamp(1.0, double.infinity);
-          final fullH =
-              (available.height - _kCanvasPad * 2).clamp(1.0, double.infinity);
+          final fullW = (available.width - _kCanvasPad * 2).clamp(
+            1.0,
+            double.infinity,
+          );
+          final fullH = (available.height - _kCanvasPad * 2).clamp(
+            1.0,
+            double.infinity,
+          );
           // Форму снимаем ОДИН раз за заход и держим её дальше: рисунок
           // хранится в долях, поэтому любая другая форма его растягивает.
           // Раньше форма менялась вместе с областью — панель открылась или
@@ -4421,8 +4506,10 @@ class _DrawScreenState extends State<DrawScreen>
           sheetLeft = (available.width - w) / 2;
           sheetTop = (available.height - h) / 2;
         } else {
-          final maxW =
-              (available.width - _kCanvasPad * 2).clamp(1.0, double.infinity);
+          final maxW = (available.width - _kCanvasPad * 2).clamp(
+            1.0,
+            double.infinity,
+          );
           final maxH = (available.height - _kCanvasPad * 2 - _kSheetCaption)
               .clamp(1.0, double.infinity);
           double w = maxW;
@@ -4464,69 +4551,69 @@ class _DrawScreenState extends State<DrawScreen>
                   child: ValueListenableBuilder<int>(
                     valueListenable: _viewTick,
                     builder: (context, _, canvasChild) => Transform(
-                    transform: Matrix4.identity()
-                      ..setTranslationRaw(
-                        _canvasOffset.dx,
-                        _canvasOffset.dy,
-                        0.0,
-                      )
-                      ..scale(_scale, _scale, 1.0)
-                      ..rotateZ(_canvasRotation),
-                    // Вуаль едет вместе с холстом: при зуме и повороте она
-                    // должна закрывать ту же половину, иначе чужой рисунок
-                    // подсматривается простым щипком.
-                    child: Stack(
-                      children: [
-                    RepaintBoundary(
-                      key: _canvasKey,
-                      child: _CanvasScene(
-                        selection: _selectionNotifier,
-                        bgColor: _bgColor,
-                        background: _background,
-                        gridColor: _isPixel ? null : _sheetGridColor,
-                        pixelCols: _isPixel ? _pxCols : null,
-                        pixelRows: _isPixel ? _pxRows : null,
-                        showPixelGrid: _showPixelGrid,
-                        strokes: _strokesNotifier,
-                        currentPoints: _currentPoints,
-                        symmetry: _symmetry,
-                        symmetrySectors: _symmetrySectors,
-                        currentColorValue: _currentColorValue,
-                        currentStrokeWidth: _currentStrokeWidth,
-                        currentIsEraser: _currentIsEraser,
-                        currentBrush: _currentBrush,
-                        // Зерно — от id, под которым мазок ляжет в базу:
-                        // при подтверждении записи карандаш не мигнёт.
-                        currentSeed: brushSeedFor(_liveSid ?? ''),
-                        currentIsFilledShape: _currentIsFilledShape,
-                        currentShapeType: _currentShapeType,
-                        currentLayer: _activeLayer,
-                        partnerNotifier: _partnerNotifier,
-                        canvasSize: _canvasSize,
-                        repaintNotifier: _repaintNotifier,
-                        coloringOutline: _coloringOutline,
-                        localImagePaths: _localImagePaths,
-                        selectedImageId: _selectedImageId,
-                      ),
-                    ),
-                    if (_isColoring && !_coloringRevealed)
-                      // Доли, а не пиксели: _canvasSize обновляется в разметке
-                      // и на первом кадре отстаёт — штриховка вылезала за лист
-                      // и заходила на свою половину.
-                      Positioned.fill(
-                        child: Align(
-                          alignment: _mySide == ColoringSide.left
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: FractionallySizedBox(
-                            widthFactor: 0.5,
-                            heightFactor: 1,
-                            child: _coloringVeil(),
+                      transform: Matrix4.identity()
+                        ..setTranslationRaw(
+                          _canvasOffset.dx,
+                          _canvasOffset.dy,
+                          0.0,
+                        )
+                        ..scale(_scale, _scale, 1.0)
+                        ..rotateZ(_canvasRotation),
+                      // Вуаль едет вместе с холстом: при зуме и повороте она
+                      // должна закрывать ту же половину, иначе чужой рисунок
+                      // подсматривается простым щипком.
+                      child: Stack(
+                        children: [
+                          RepaintBoundary(
+                            key: _canvasKey,
+                            child: _CanvasScene(
+                              selection: _selectionNotifier,
+                              bgColor: _bgColor,
+                              background: _background,
+                              gridColor: _isPixel ? null : _sheetGridColor,
+                              pixelCols: _isPixel ? _pxCols : null,
+                              pixelRows: _isPixel ? _pxRows : null,
+                              showPixelGrid: _showPixelGrid,
+                              strokes: _strokesNotifier,
+                              currentPoints: _currentPoints,
+                              symmetry: _symmetry,
+                              symmetrySectors: _symmetrySectors,
+                              currentColorValue: _currentColorValue,
+                              currentStrokeWidth: _currentStrokeWidth,
+                              currentIsEraser: _currentIsEraser,
+                              currentBrush: _currentBrush,
+                              // Зерно — от id, под которым мазок ляжет в базу:
+                              // при подтверждении записи карандаш не мигнёт.
+                              currentSeed: brushSeedFor(_liveSid ?? ''),
+                              currentIsFilledShape: _currentIsFilledShape,
+                              currentShapeType: _currentShapeType,
+                              currentLayer: _activeLayer,
+                              partnerNotifier: _partnerNotifier,
+                              canvasSize: _canvasSize,
+                              repaintNotifier: _repaintNotifier,
+                              coloringOutline: _coloringOutline,
+                              localImagePaths: _localImagePaths,
+                              selectedImageId: _selectedImageId,
+                            ),
                           ),
-                        ),
+                          if (_isColoring && !_coloringRevealed)
+                            // Доли, а не пиксели: _canvasSize обновляется в разметке
+                            // и на первом кадре отстаёт — штриховка вылезала за лист
+                            // и заходила на свою половину.
+                            Positioned.fill(
+                              child: Align(
+                                alignment: _mySide == ColoringSide.left
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: FractionallySizedBox(
+                                  widthFactor: 0.5,
+                                  heightFactor: 1,
+                                  child: _coloringVeil(),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      ],
-                    ),
                     ),
                   ),
                 ),
@@ -4555,21 +4642,22 @@ class _DrawScreenState extends State<DrawScreen>
               ),
             ),
             // Формат листа — только там, где лист есть
-            if (_hasSheet) Positioned(
-              left: 0,
-              right: 0,
-              top: sheetTop + sheetH + 6,
-              child: Center(
-                child: Text(
-                  _sheetCaption(sheetW, sheetH),
-                  style: TextStyle(
-                    fontSize: 11,
-                    letterSpacing: 0.4,
-                    color: widget.theme.textMuted,
+            if (_hasSheet)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: sheetTop + sheetH + 6,
+                child: Center(
+                  child: Text(
+                    _sheetCaption(sheetW, sheetH),
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 0.4,
+                      color: widget.theme.textMuted,
+                    ),
                   ),
                 ),
               ),
-            ),
             // Partner cursor overlays
             ValueListenableBuilder<List<DrawStroke>>(
               valueListenable: _partnerNotifier,
@@ -4636,7 +4724,8 @@ class _DrawScreenState extends State<DrawScreen>
                   child: Text(
                     waiting
                         ? LocaleService.current.coloringPartnerColoring(
-                            widget.pairData.partnerDisplayName)
+                            widget.pairData.partnerDisplayName,
+                          )
                         : LocaleService.current.coloringPartnerHalfHidden,
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -4705,8 +4794,11 @@ class _DrawScreenState extends State<DrawScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.colorize_rounded,
-                      size: 16, color: Colors.white),
+                  const Icon(
+                    Icons.colorize_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     _eyedropperColor == null
@@ -4742,8 +4834,8 @@ class _DrawScreenState extends State<DrawScreen>
     final label = (ratio - _kSheetRatio).abs() < 0.01
         ? '4 : 5'
         : (ratio - 1).abs() < 0.01
-            ? '1 : 1'
-            : ratio.toStringAsFixed(2);
+        ? '1 : 1'
+        : ratio.toStringAsFixed(2);
     return '$label · $exportW×$exportH';
   }
 
@@ -4963,7 +5055,9 @@ class _DrawScreenState extends State<DrawScreen>
       fill: t.fillColor,
       onFill: AppThemes.onColor(t.fillColor, mode: t.brightness),
       labelThickness: s.strokeThickness,
-      labelEraserThickness: ownEraserWidth ? s.eraserThickness : s.strokeThickness,
+      labelEraserThickness: ownEraserWidth
+          ? s.eraserThickness
+          : s.strokeThickness,
       labelColor: s.colorLabel,
       brush: _brush,
       // Пиксельный холст — клетки: кисти там не действуют.
@@ -5054,18 +5148,17 @@ class _DrawScreenState extends State<DrawScreen>
   /// листа. Фигуры (линия, прямоугольник, круг, треугольник) прячутся за одной
   /// кнопкой — на холсте важен не вид фигуры, а то, что рисуют не кистью.
   DrawQuickTool get _panelTool => switch (_activeTool) {
-        DrawTool.palm => DrawQuickTool.palm,
-        DrawTool.select => DrawQuickTool.select,
-        DrawTool.eraser => DrawQuickTool.eraser,
-        DrawTool.fill => DrawQuickTool.fill,
-        DrawTool.line ||
-        DrawTool.rect ||
-        DrawTool.circle ||
-        DrawTool.triangle =>
-          DrawQuickTool.shapes,
-        DrawTool.image => DrawQuickTool.image,
-        _ => DrawQuickTool.brush,
-      };
+    DrawTool.palm => DrawQuickTool.palm,
+    DrawTool.select => DrawQuickTool.select,
+    DrawTool.eraser => DrawQuickTool.eraser,
+    DrawTool.fill => DrawQuickTool.fill,
+    DrawTool.line ||
+    DrawTool.rect ||
+    DrawTool.circle ||
+    DrawTool.triangle => DrawQuickTool.shapes,
+    DrawTool.image => DrawQuickTool.image,
+    _ => DrawQuickTool.brush,
+  };
 
   void _onPanelTool(DrawQuickTool tool) {
     switch (tool) {
@@ -5124,9 +5217,9 @@ class _DrawScreenState extends State<DrawScreen>
                 children: [
                   Text(
                     s.brushSmoothing,
-                    style: ProfileTheme.sectionLabel(cs).copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: ProfileTheme.sectionLabel(
+                      cs,
+                    ).copyWith(color: cs.onSurfaceVariant),
                   ),
                   Slider(
                     value: _smoothing,
@@ -5176,25 +5269,43 @@ class _DrawScreenState extends State<DrawScreen>
                   const SizedBox(height: 8),
                   Text(
                     s.symmetryTitle,
-                    style: ProfileTheme.sectionLabel(cs).copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: ProfileTheme.sectionLabel(
+                      cs,
+                    ).copyWith(color: cs.onSurfaceVariant),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (final (mode, label, icon) in <(SymmetryMode, String, IconData)>[
-                        (SymmetryMode.none, s.symmetryNone, Icons.block_rounded),
-                        (SymmetryMode.vertical, s.symmetryVertical,
-                            Icons.flip_rounded),
-                        (SymmetryMode.horizontal, s.symmetryHorizontal,
-                            Icons.flip_rounded),
-                        (SymmetryMode.quad, s.symmetryQuad, Icons.grid_view_rounded),
-                        (SymmetryMode.radial, s.symmetryRadial,
-                            Icons.blur_on_rounded),
-                      ])
+                      for (final (mode, label, icon)
+                          in <(SymmetryMode, String, IconData)>[
+                            (
+                              SymmetryMode.none,
+                              s.symmetryNone,
+                              Icons.block_rounded,
+                            ),
+                            (
+                              SymmetryMode.vertical,
+                              s.symmetryVertical,
+                              Icons.flip_rounded,
+                            ),
+                            (
+                              SymmetryMode.horizontal,
+                              s.symmetryHorizontal,
+                              Icons.flip_rounded,
+                            ),
+                            (
+                              SymmetryMode.quad,
+                              s.symmetryQuad,
+                              Icons.grid_view_rounded,
+                            ),
+                            (
+                              SymmetryMode.radial,
+                              s.symmetryRadial,
+                              Icons.blur_on_rounded,
+                            ),
+                          ])
                         ChoiceChip(
                           selected: _symmetry == mode,
                           onSelected: (_) => pick(mode),
@@ -5292,16 +5403,25 @@ class _DrawScreenState extends State<DrawScreen>
               children: [
                 Row(
                   children: [
-                    for (final (icon, tool, label) in <(IconData, DrawTool, String)>[
-                      (Icons.remove_rounded, DrawTool.line, s.drawLine),
-                      (Icons.crop_square_rounded, DrawTool.rect, s.drawRect),
-                      (Icons.circle_outlined, DrawTool.circle, s.drawCircle),
-                      (
-                        Icons.change_history_rounded,
-                        DrawTool.triangle,
-                        s.drawTriangle
-                      ),
-                    ]) ...[
+                    for (final (icon, tool, label)
+                        in <(IconData, DrawTool, String)>[
+                          (Icons.remove_rounded, DrawTool.line, s.drawLine),
+                          (
+                            Icons.crop_square_rounded,
+                            DrawTool.rect,
+                            s.drawRect,
+                          ),
+                          (
+                            Icons.circle_outlined,
+                            DrawTool.circle,
+                            s.drawCircle,
+                          ),
+                          (
+                            Icons.change_history_rounded,
+                            DrawTool.triangle,
+                            s.drawTriangle,
+                          ),
+                        ]) ...[
                       Expanded(
                         child: Tooltip(
                           message: label,
@@ -5384,8 +5504,9 @@ class _DrawScreenState extends State<DrawScreen>
               final index = _layerCount - 1 - i;
               final hidden = _hiddenLayers.contains(index);
               final active = index == _activeLayer;
-              final count =
-                  _visibleStrokes.where((st) => st.layer == index).length;
+              final count = _visibleStrokes
+                  .where((st) => st.layer == index)
+                  .length;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -5413,8 +5534,7 @@ class _DrawScreenState extends State<DrawScreen>
                       fontFamily: 'Onest',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color:
-                          active ? cs.onPrimaryContainer : cs.onSurface,
+                      color: active ? cs.onPrimaryContainer : cs.onSurface,
                     ),
                   ),
                   subtitle: Text(
@@ -5458,8 +5578,10 @@ class _DrawScreenState extends State<DrawScreen>
                         IconButton(
                           tooltip: s.drawLayerDelete,
                           onPressed: () => _deleteLayer(index, setSheet),
-                          icon: Icon(Icons.delete_outline_rounded,
-                              color: cs.error),
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: cs.error,
+                          ),
                         ),
                     ],
                   ),
@@ -5485,8 +5607,9 @@ class _DrawScreenState extends State<DrawScreen>
     );
     if (!ok || !mounted) return;
 
-    final doomed =
-        _visibleStrokes.where((st) => st.layer == index).map((st) => st.id);
+    final doomed = _visibleStrokes
+        .where((st) => st.layer == index)
+        .map((st) => st.id);
     for (final id in doomed) {
       _removeStrokeById(id);
     }
@@ -5617,15 +5740,19 @@ class _DrawScreenState extends State<DrawScreen>
       return;
     }
 
-    final res =
-        await widget.userData.takeAdGrant(AdGrantKind.canvasBg, bg.name);
+    final res = await widget.userData.takeAdGrant(
+      AdGrantKind.canvasBg,
+      bg.name,
+    );
     // Итог после ролика — когда экран рекламы уже закрылся, иначе он под ним.
     await untilAppVisible();
     if (!mounted) return;
     if (res.kind == AdGrantOutcome.ok) refreshSheet(() {});
     showAdNote(
       context,
-      res.kind == AdGrantOutcome.ok ? s.adTrialTakenToday : s.adRewardLimitReached,
+      res.kind == AdGrantOutcome.ok
+          ? s.adTrialTakenToday
+          : s.adRewardLimitReached,
       overSheet: true,
     );
   }
@@ -5640,9 +5767,12 @@ class _DrawScreenState extends State<DrawScreen>
     // Платные фоны набора открывает Togetherly+ (или поштучная покупка), а
     // ещё — проба за рекламу: она живёт до конца суток и владением не
     // становится.
-    final trial = widget.userData.adGrants
-        .activeFor(AdGrantKind.canvasBg, DateTime.now());
-    final unlocked = PlusAccess.ownsBackground(
+    final trial = widget.userData.adGrants.activeFor(
+      AdGrantKind.canvasBg,
+      DateTime.now(),
+    );
+    final unlocked =
+        PlusAccess.ownsBackground(
           id: bg,
           plus: PlusService.instance.active,
           owned: widget.userData.ownedFeatures,
@@ -5657,17 +5787,17 @@ class _DrawScreenState extends State<DrawScreen>
           if (!PlusService.instance.visible) return;
           // Закрытый фон не выбирается молча: сперва предлагаем открыть его
           // рекламой на сегодня, и только потом — витрину Togetherly+.
-          if (widget.userData.adGrants
-              .canTake(AdGrantKind.canvasBg, DateTime.now())) {
+          if (widget.userData.adGrants.canTake(
+            AdGrantKind.canvasBg,
+            DateTime.now(),
+          )) {
             _offerCanvasBgTrial(bg, refreshSheet);
             return;
           }
           Navigator.of(context).pop();
           Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => PlusScreen(
-                scheme: Theme.of(context).colorScheme,
-              ),
+              builder: (_) => PlusScreen(scheme: Theme.of(context).colorScheme),
               settings: const RouteSettings(name: '/plus'),
             ),
           );
@@ -5697,8 +5827,7 @@ class _DrawScreenState extends State<DrawScreen>
               right: 0,
               bottom: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 color: cs.surface.withValues(alpha: 0.88),
                 child: Text(
                   s.drawBackgroundName(bg.name),
@@ -5720,8 +5849,11 @@ class _DrawScreenState extends State<DrawScreen>
                 child: Container(
                   color: cs.surface.withValues(alpha: 0.55),
                   alignment: Alignment.center,
-                  child: Icon(Icons.lock_rounded,
-                      size: 20, color: cs.onSurfaceVariant),
+                  child: Icon(
+                    Icons.lock_rounded,
+                    size: 20,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
             if (selected && unlocked)
@@ -5734,8 +5866,11 @@ class _DrawScreenState extends State<DrawScreen>
                     color: cs.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.check_rounded,
-                      size: 13, color: cs.onPrimary),
+                  child: Icon(
+                    Icons.check_rounded,
+                    size: 13,
+                    color: cs.onPrimary,
+                  ),
                 ),
               ),
           ],
@@ -5745,8 +5880,9 @@ class _DrawScreenState extends State<DrawScreen>
   }
 
   /// Контрастный цвет поверх акцента: у светлых акцентов белый текст тонет.
-  Color _onPrimaryColor(AppTheme t) =>
-      t.primary.computeLuminance() > 0.55 ? const Color(0xFF16161A) : Colors.white;
+  Color _onPrimaryColor(AppTheme t) => t.primary.computeLuminance() > 0.55
+      ? const Color(0xFF16161A)
+      : Colors.white;
 }
 
 //  Grid background
@@ -5900,7 +6036,11 @@ class _ColoringOutlinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final src = Rect.fromLTWH(
-        0, 0, image.width.toDouble(), image.height.toDouble());
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
     canvas.drawImageRect(
       image,
       src,
@@ -5931,13 +6071,17 @@ class _CanvasScene extends StatefulWidget {
   /// Текстура листа: клетка, тетрадь, крафт и прочее. Рисуется под штрихами и
   /// попадает в выгрузку вместе с рисунком.
   final CanvasBackground background;
+
   /// Цвет клетки фона; null — фон без сетки.
   final Color? gridColor;
+
   /// Сетка пиксельного холста (колонки × строки); null — обычный холст.
   final int? pixelCols;
   final int? pixelRows;
+
   /// Показывать направляющие сетки поверх листа.
   final bool showPixelGrid;
+
   /// Состав рисунка: приезжает каналом, чтобы новый штрих не перестраивал экран.
   final ValueListenable<StrokesSnapshot> strokes;
   final List<DrawPoint> currentPoints;
@@ -5972,7 +6116,6 @@ class _CanvasScene extends StatefulWidget {
 
   /// Локальные файлы своих картинок-штрихов: id → путь.
   final Map<String, String> localImagePaths;
-
 
   const _CanvasScene({
     required this.bgColor,
@@ -6140,7 +6283,9 @@ class _CanvasSceneState extends State<_CanvasScene> {
           // сделанных до появления текстур.
           if (widget.gridColor != null &&
               widget.background == CanvasBackground.plain)
-            Positioned.fill(child: _GridBackground(lineColor: widget.gridColor!)),
+            Positioned.fill(
+              child: _GridBackground(lineColor: widget.gridColor!),
+            ),
           // Пиксельная сетка: тонкие направляющие ровно по клеткам, чтобы было
           // видно, куда встанет следующий пиксель.
           if (widget.showPixelGrid &&
@@ -6224,6 +6369,7 @@ class _DrawingPainter extends CustomPainter {
   final DrawShapeType? currentShapeType;
   final ValueNotifier<List<DrawStroke>> partnerNotifier;
   final Size canvasSize;
+
   /// Сетка пиксельного холста; null — обычное рисование кривыми.
   final int? pixelCols;
   final int? pixelRows;
@@ -6250,7 +6396,6 @@ class _DrawingPainter extends CustomPainter {
   /// ручками. Рисуем её здесь, в координатах холста, — иначе рамка разъезжается
   /// с рисунком при повороте и масштабе листа.
   final ValueListenable<DrawStroke?>? selection;
-
 
   _DrawingPainter({
     required this.strokes,
@@ -6299,9 +6444,14 @@ class _DrawingPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..color = const Color(0xFF2F6BFF);
     for (final p in [
-      b.topLeft, b.topCenter, b.topRight,
-      b.centerLeft, b.centerRight,
-      b.bottomLeft, b.bottomCenter, b.bottomRight,
+      b.topLeft,
+      b.topCenter,
+      b.topRight,
+      b.centerLeft,
+      b.centerRight,
+      b.bottomLeft,
+      b.bottomCenter,
+      b.bottomRight,
     ]) {
       canvas.drawCircle(p, 6, knob);
       canvas.drawCircle(p, 6, knobEdge);
@@ -6349,21 +6499,22 @@ class _DrawingPainter extends CustomPainter {
         pixelCols: pixelCols,
         pixelRows: pixelRows,
         imageOf: _imageOf,
-        pictureOf: (index, own) => layerPictures.pictureFor(index, own, size, () {
-          // Пока растр картинки едет, слой не записываем: дыра осталась бы
-          // в картинке до пересборки.
-          if (_readyPrefix(own) < own.length) return null;
-          final recorder = ui.PictureRecorder();
-          paintStrokeRange(
-            Canvas(recorder),
-            own,
-            size,
-            pixelCols: pixelCols,
-            pixelRows: pixelRows,
-            imageOf: _imageOf,
-          );
-          return recorder.endRecording();
-        }),
+        pictureOf: (index, own) =>
+            layerPictures.pictureFor(index, own, size, () {
+              // Пока растр картинки едет, слой не записываем: дыра осталась бы
+              // в картинке до пересборки.
+              if (_readyPrefix(own) < own.length) return null;
+              final recorder = ui.PictureRecorder();
+              paintStrokeRange(
+                Canvas(recorder),
+                own,
+                size,
+                pixelCols: pixelCols,
+                pixelRows: pixelRows,
+                imageOf: _imageOf,
+              );
+              return recorder.endRecording();
+            }),
         liveLayers: liveLayers,
         eraserLayers: [
           if (currentPoints.isNotEmpty && currentIsEraser) currentLayer,
@@ -6381,7 +6532,8 @@ class _DrawingPainter extends CustomPainter {
     // надо в своём слое: иначе стирание выест и фон холста — сетку, узор,
     // сам лист. Слой заводим только когда ластик в рисунке есть: saveLayer
     // на весь холст стоит кадра, и платить за него всем незачем.
-    final needsLayer = currentIsEraser ||
+    final needsLayer =
+        currentIsEraser ||
         strokeList.any((s) => s.isEraser) ||
         partnerNotifier.value.any((s) => s.isEraser);
     if (needsLayer) canvas.saveLayer(Offset.zero & size, Paint());
@@ -6580,14 +6732,20 @@ class _DrawingPainter extends CustomPainter {
     Size size, {
     double alpha = 1.0,
     required bool isFilledShape,
-  }) =>
-      paintShape(canvas, points, colorValue, strokeWidth, shapeType, size,
-          alpha: alpha,
-          isFilledShape: isFilledShape,
-          // Сетку передаём так же, как штрихам: без неё фигура рисовалась
-          // гладкой кривой поверх клеток пиксельного холста.
-          pixelCols: pixelCols,
-          pixelRows: pixelRows);
+  }) => paintShape(
+    canvas,
+    points,
+    colorValue,
+    strokeWidth,
+    shapeType,
+    size,
+    alpha: alpha,
+    isFilledShape: isFilledShape,
+    // Сетку передаём так же, как штрихам: без неё фигура рисовалась
+    // гладкой кривой поверх клеток пиксельного холста.
+    pixelCols: pixelCols,
+    pixelRows: pixelRows,
+  );
 
   void _drawStroke(
     Canvas canvas,
@@ -6599,13 +6757,19 @@ class _DrawingPainter extends CustomPainter {
     double alpha = 1.0,
     StrokeBrush brush = StrokeBrush.pen,
     int seed = 0,
-  }) =>
-      paintStroke(canvas, points, colorValue, strokeWidth, isEraser, size,
-          alpha: alpha,
-          pixelCols: pixelCols,
-          pixelRows: pixelRows,
-          brush: brush,
-          seed: seed);
+  }) => paintStroke(
+    canvas,
+    points,
+    colorValue,
+    strokeWidth,
+    isEraser,
+    size,
+    alpha: alpha,
+    pixelCols: pixelCols,
+    pixelRows: pixelRows,
+    brush: brush,
+    seed: seed,
+  );
 
   @override
   bool shouldRepaint(covariant _DrawingPainter old) =>

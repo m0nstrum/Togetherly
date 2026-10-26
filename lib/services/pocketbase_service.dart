@@ -3,7 +3,7 @@ import '../fork/battery/battery_share.dart'; // fork: M7
 import 'live_location_service.dart';
 import 'presence_service.dart';
 import '../fork/push/fcm_wake.dart'; // fork: M9
-import '../fork/own_name.dart'; // fork
+import '../fork/own_name.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -12,10 +12,10 @@ import 'package:pocketbase/pocketbase.dart';
 import 'centrifugo_service.dart';
 import 'widget_owner.dart';
 import 'pb_data_service.dart';
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
-import '../fork/http_gateway.dart'; // fork
-import '../fork/secure_auth_store.dart'; // fork
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
+import '../fork/http_gateway.dart';
+import '../fork/secure_auth_store.dart';
 
 /// Ядро клиента PocketBase — единая точка доступа к нашему self-hosted бэкенду
 /// на VPS (миграция Firebase→PocketBase, Этап 6).
@@ -61,7 +61,7 @@ class PocketBaseService {
       httpClientFactory: ForkE2E.httpClient, // fork: шифрование полей (S9)
     );
     _initialized = true;
-    ForkE2E.preload(); // fork
+    ForkE2E.preload();
     ForkHttpGateway.install(); // fork: сторонние сайты — через свой сервер
     debugPrint('PocketBaseService: init, авторизован=$isLoggedIn');
   }

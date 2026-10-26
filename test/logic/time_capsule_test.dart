@@ -8,16 +8,16 @@ import 'package:love_app/services/capsule_notification_service.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 Memory _capsule({DateTime? openAt, bool sealed = true}) => Memory(
-      id: 'm1',
-      groupId: 'g1',
-      authorUid: 'u1',
-      authorName: 'Аня',
-      type: MemoryType.text,
-      createdAt: DateTime(2024, 1, 1),
-      caption: 'секрет',
-      sealed: sealed,
-      openAt: openAt,
-    );
+  id: 'm1',
+  groupId: 'g1',
+  authorUid: 'u1',
+  authorName: 'Аня',
+  type: MemoryType.text,
+  createdAt: DateTime(2024, 1, 1),
+  caption: 'секрет',
+  sealed: sealed,
+  openAt: openAt,
+);
 
 void main() {
   group('Memory: флаги капсулы и секрета в сериализации', () {

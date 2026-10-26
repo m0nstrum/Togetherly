@@ -51,8 +51,8 @@ class MoodPack {
     this.unlock = const Unlock.free(),
     this.author = '',
     this.sort = 500,
-  })  : _nameRu = nameRu,
-        _nameEn = nameEn;
+  }) : _nameRu = nameRu,
+       _nameEn = nameEn;
 
   String get name => ruEn(_nameRu, _nameEn);
 
@@ -135,5 +135,4 @@ bool moodPackVisible({
   required bool isMoney,
   required bool isOpen,
   bool buysInStore = false,
-}) =>
-    !(isIOS && isMoney && !isOpen && !buysInStore);
+}) => !(isIOS && isMoney && !isOpen && !buysInStore);

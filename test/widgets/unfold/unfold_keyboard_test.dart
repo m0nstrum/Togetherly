@@ -49,7 +49,10 @@ class _Home extends StatelessWidget {
                 radius: 20,
                 builder: (context, source) => GestureDetector(
                   onTap: () => Navigator.of(context).push(
-                    UnfoldRoute<void>(source: source, builder: (_) => const _Chat()),
+                    UnfoldRoute<void>(
+                      source: source,
+                      builder: (_) => const _Chat(),
+                    ),
                   ),
                   child: const SizedBox(
                     key: ValueKey('chat-button'),
@@ -68,37 +71,53 @@ class _Home extends StatelessWidget {
 }
 
 void main() {
-  testWidgets('с открытой клавиатурой чат складывается в кнопку, а не над ней',
-      (tester) async {
-    tester.view.physicalSize = _screen;
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(const MaterialApp(home: _Home()));
-    final button = tester.getRect(find.byKey(const ValueKey('chat-button')));
+  testWidgets(
+    'с открытой клавиатурой чат складывается в кнопку, а не над ней',
+    (tester) async {
+      tester.view.physicalSize = _screen;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const MaterialApp(home: _Home()));
+      final button = tester.getRect(find.byKey(const ValueKey('chat-button')));
 
-    await tester.tap(find.byKey(const ValueKey('chat-button')));
-    await tester.pumpAndSettle();
-    expect(tester.testTextInput.hasAnyClients, isTrue, reason: 'поле в чате не в фокусе');
+      await tester.tap(find.byKey(const ValueKey('chat-button')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.testTextInput.hasAnyClients,
+        isTrue,
+        reason: 'поле в чате не в фокусе',
+      );
 
-    // Клавиатура выехала: экран под чатом ужался, кнопка поднялась.
-    tester.view.viewInsets = const FakeViewPadding(bottom: _keyboard);
-    await tester.pumpAndSettle();
+      // Клавиатура выехала: экран под чатом ужался, кнопка поднялась.
+      tester.view.viewInsets = const FakeViewPadding(bottom: _keyboard);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('назад'));
-    await tester.pump();
-    await tester.pump();
-    expect(tester.testTextInput.hasAnyClients, isFalse,
-        reason: 'клавиатуру прячем сразу, как экран начал складываться');
-    // Система убирает клавиатуру сама, пока окно складывается.
-    tester.view.viewInsets = FakeViewPadding.zero;
+      await tester.tap(find.text('назад'));
+      await tester.pump();
+      await tester.pump();
+      expect(
+        tester.testTextInput.hasAnyClients,
+        isFalse,
+        reason: 'клавиатуру прячем сразу, как экран начал складываться',
+      );
+      // Система убирает клавиатуру сама, пока окно складывается.
+      tester.view.viewInsets = FakeViewPadding.zero;
 
-    Rect? last;
-    for (var frames = 0; frames < 80 && find.byKey(_window).evaluate().isNotEmpty; frames++) {
-      last = tester.getRect(find.byKey(_window));
-      await tester.pump(const Duration(milliseconds: 8));
-    }
-    expect(last, isNotNull);
-    expect((last!.center - button.center).distance, lessThan(6),
-        reason: 'окно сложилось в $last, а кнопка в $button');
-  });
+      Rect? last;
+      for (
+        var frames = 0;
+        frames < 80 && find.byKey(_window).evaluate().isNotEmpty;
+        frames++
+      ) {
+        last = tester.getRect(find.byKey(_window));
+        await tester.pump(const Duration(milliseconds: 8));
+      }
+      expect(last, isNotNull);
+      expect(
+        (last!.center - button.center).distance,
+        lessThan(6),
+        reason: 'окно сложилось в $last, а кнопка в $button',
+      );
+    },
+  );
 }

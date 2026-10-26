@@ -14,10 +14,9 @@ void main() {
 
   test('каждая роль темы, которую зовёт Swift, объявлена в WidgetTheme', () {
     final theme = File('${dir.path}/WidgetTheme.swift').readAsStringSync();
-    final declared = RegExp(r'var (\w+): Color')
-        .allMatches(theme)
-        .map((m) => m.group(1)!)
-        .toSet();
+    final declared = RegExp(
+      r'var (\w+): Color',
+    ).allMatches(theme).map((m) => m.group(1)!).toSet();
     expect(declared, isNotEmpty);
 
     // Ищем только те переменные, которым ПРИСВОЕНА тема: короткое имя `t`
@@ -27,14 +26,17 @@ void main() {
       if (!file.path.endsWith('.swift')) continue;
       if (file.path.endsWith('WidgetTheme.swift')) continue;
       final code = file.readAsStringSync();
-      final names = RegExp(r'(?:let|var) (\w+)(?::\s*WidgetTheme)?\s*=\s*WidgetTheme\(\)')
-          .allMatches(code)
-          .map((m) => m.group(1)!)
-          .toSet();
+      final names = RegExp(
+        r'(?:let|var) (\w+)(?::\s*WidgetTheme)?\s*=\s*WidgetTheme\(\)',
+      ).allMatches(code).map((m) => m.group(1)!).toSet();
       if (names.isEmpty) continue;
       for (final name in names) {
-        for (final m in RegExp('\\b$name\\.([a-z][A-Za-z]*)\\b').allMatches(code)) {
-          used.putIfAbsent(m.group(1)!, () => {}).add(file.uri.pathSegments.last);
+        for (final m in RegExp(
+          '\\b$name\\.([a-z][A-Za-z]*)\\b',
+        ).allMatches(code)) {
+          used
+              .putIfAbsent(m.group(1)!, () => {})
+              .add(file.uri.pathSegments.last);
         }
       }
     }
@@ -52,7 +54,8 @@ void main() {
     expect(
       missing,
       isEmpty,
-      reason: 'Swift зовёт роли, которых нет в WidgetTheme: ${missing.join("; ")}',
+      reason:
+          'Swift зовёт роли, которых нет в WidgetTheme: ${missing.join("; ")}',
     );
   });
 }

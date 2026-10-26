@@ -57,8 +57,10 @@ class LevelAvatar extends StatelessWidget {
                 Positioned(
                   bottom: 0,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(10),

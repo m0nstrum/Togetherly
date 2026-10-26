@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/screens/settings_screen.dart';
@@ -11,31 +10,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// пароль сбросить, в приложении ничего не найти». Строка в настройках держит
 /// второй вход в ту же дверь.
 Widget _app({VoidCallback? onChangePassword}) => MaterialApp(
-      home: SettingsScreen(
-        scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE91E63)),
-        accountEmail: 'sasha@example.com',
-        onAppearance: () {},
-        onNotifications: () {},
-        onLanguage: () {},
-        onCoinShop: () {},
-        onPrivacyPolicy: () {},
-        onExport: () {},
-        onTerms: () {},
-        onSupport: () {},
-        onOfficial: () {},
-        onDrawTools: () {},
-        onTelegramChannel: () {},
-        onBugBot: () {},
-        onAbout: () {},
-        onChangePassword: onChangePassword ?? () {},
-        onLogout: () {},
-        onDeleteAccount: () {},
-        lockScreenMood: false,
-        onLockScreenMoodChanged: (_) {},
-        sideActionIsArrow: true,
-        onToggleSideAction: () {},
-      ),
-    );
+  home: SettingsScreen(
+    scheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE91E63)),
+    accountEmail: 'sasha@example.com',
+    onAppearance: () {},
+    onNotifications: () {},
+    onLanguage: () {},
+    onCoinShop: () {},
+    onPrivacyPolicy: () {},
+    onExport: () {},
+    onTerms: () {},
+    onSupport: () {},
+    onOfficial: () {},
+    onDrawTools: () {},
+    onAbout: () {},
+    onChangePassword: onChangePassword ?? () {},
+    onLogout: () {},
+    onDeleteAccount: () {},
+    lockScreenMood: false,
+    onLockScreenMoodChanged: (_) {},
+    sideActionIsArrow: true,
+    onToggleSideAction: () {},
+  ),
+);
 
 /// Высокий вьюпорт: строки ниже экрана в ListView просто не строятся.
 void _tallViewport(WidgetTester tester) {
@@ -55,8 +52,10 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    expect(find.textContaining(RegExp('Сменить пароль|Change password')),
-        findsOneWidget);
+    expect(
+      find.textContaining(RegExp('Сменить пароль|Change password')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('нажатие зовёт обработчик', (tester) async {

@@ -71,7 +71,9 @@ Future<T?> safePick<T>(
 final List<void Function(String code, Object error)> _failureWatchers = [];
 
 /// Подписаться на отказы пикера. Возвращает функцию отписки.
-void Function() onPickFailure(void Function(String code, Object error) watcher) {
+void Function() onPickFailure(
+  void Function(String code, Object error) watcher,
+) {
   _failureWatchers.add(watcher);
   return () => _failureWatchers.remove(watcher);
 }

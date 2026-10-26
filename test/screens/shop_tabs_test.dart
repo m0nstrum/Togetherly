@@ -20,45 +20,68 @@ void main() {
 
   const frames = [
     AvatarFrame(key: 'wreath', sort: 10, stillUrl: 'https://x/w.png'),
-    AvatarFrame(key: 'cat', rarity: 'legendary', sort: 90, stillUrl: 'https://x/c.png'),
+    AvatarFrame(
+      key: 'cat',
+      rarity: 'legendary',
+      sort: 90,
+      stillUrl: 'https://x/c.png',
+    ),
   ];
 
-  Future<void> pumpShop(WidgetTester tester, ShopTab tab, {double scale = 1.3, bool gifts = false}) async {
+  Future<void> pumpShop(
+    WidgetTester tester,
+    ShopTab tab, {
+    double scale = 1.3,
+    bool gifts = false,
+  }) async {
     installTestBadges();
     CatalogService.instance.debugSetFrames(frames);
     final ud = UserData()..applyOwnedFeatures(const ['frame:frame_cat']);
     tester.view.physicalSize = const Size(320, 720) * 3;
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(size: const Size(320, 720), textScaler: TextScaler.linear(scale)),
-        child: GiftShopScreen(
-          theme: buildAppTheme(kPalettes[0], Brightness.light),
-          groupId: gifts ? 'g' : '',
-          coins: 25,
-          onCoins: (_) {},
-          userData: ud,
-          initialTab: tab,
-          showGifts: gifts,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: const Size(320, 720),
+            textScaler: TextScaler.linear(scale),
+          ),
+          child: GiftShopScreen(
+            theme: buildAppTheme(kPalettes[0], Brightness.light),
+            groupId: gifts ? 'g' : '',
+            coins: 25,
+            onCoins: (_) {},
+            userData: ud,
+            initialTab: tab,
+            showGifts: gifts,
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets('рамки: «Из сундука» вместо цены, полученная помечена своей', (tester) async {
+  testWidgets('рамки: «Из сундука» вместо цены, полученная помечена своей', (
+    tester,
+  ) async {
     await pumpShop(tester, ShopTab.frames);
     expect(tester.takeException(), isNull);
     expect(find.text(trKey('shopFromChest')), findsOneWidget);
     expect(find.text(trKey('shopMineFrame')), findsOneWidget);
-    expect(find.textContaining(trKey('shopBuyFor').replaceAll('{n}', '')), findsNothing);
+    expect(
+      find.textContaining(trKey('shopBuyFor').replaceAll('{n}', '')),
+      findsNothing,
+    );
   });
 
-  testWidgets('значки: цена из каталога, наградные без цены', (tester) async {
+  testWidgets('значки: платные уже свои (всё открыто), наградные без цены', (
+    tester,
+  ) async {
     await pumpShop(tester, ShopTab.badges);
     expect(tester.takeException(), isNull);
-    expect(find.text('20'), findsOneWidget, reason: 'цена лапки из каталога');
+    expect(find.text('20'), findsNothing, reason: 'цен у значков нет');
+    expect(find.text(trKey('shopMineBadge')), findsWidgets);
     expect(find.text(trKey('shopAward')), findsWidgets);
   });
 
@@ -70,12 +93,18 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('подарки сундука стоят своей полкой «Из сундука», без цены', (tester) async {
+  testWidgets('подарки сундука стоят своей полкой «Из сундука», без цены', (
+    tester,
+  ) async {
     await pumpShop(tester, ShopTab.gifts, gifts: true);
     // Чип фильтра открывает только полку сундука.
     final chip = find.text(trKey('shopFromChest'));
     // Лента фильтров — первая прокрутка экрана, чип сундука в ней последний.
-    await tester.scrollUntilVisible(chip, 80, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(
+      chip,
+      80,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.ensureVisible(chip.first);
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
     await tester.tap(chip.first);

@@ -1,4 +1,4 @@
-// Сервер Tethered: PocketBase с хуками и роутами форка (docs/fork/PLAN.md, S4).
+// Сервер Tethered: PocketBase с хуками и роутами форка (docs/history/PLAN.md, S4).
 //
 // Без аргументов — `serve` на TETHERED_HTTP_ADDR. `tethered restore` —
 // восстановление из зашифрованного бэкапа. Остальное — команды PocketBase как

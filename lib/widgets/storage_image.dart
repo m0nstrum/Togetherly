@@ -35,7 +35,8 @@ class StorageImage extends StatefulWidget {
   final double? height;
   final BoxFit? fit;
   final Widget Function(BuildContext, String)? placeholder;
-  final Widget Function(BuildContext, String, DownloadProgress)? progressIndicatorBuilder;
+  final Widget Function(BuildContext, String, DownloadProgress)?
+  progressIndicatorBuilder;
   final Widget Function(BuildContext, String, dynamic)? errorWidget;
   final int? memCacheWidth;
   final int? memCacheHeight;
@@ -208,12 +209,16 @@ class _StorageImageState extends State<StorageImage> {
           : (ctx, provider) {
               provider
                   .resolve(const ImageConfiguration())
-                  .addListener(ImageStreamListener((info, _) {
-                widget.onSize!(Size(
-                  info.image.width.toDouble(),
-                  info.image.height.toDouble(),
-                ));
-              }, onError: (_, _) {}));
+                  .addListener(
+                    ImageStreamListener((info, _) {
+                      widget.onSize!(
+                        Size(
+                          info.image.width.toDouble(),
+                          info.image.height.toDouble(),
+                        ),
+                      );
+                    }, onError: (_, _) {}),
+                  );
               return Image(
                 image: provider,
                 width: widget.width,
@@ -242,20 +247,27 @@ class _StorageImageState extends State<StorageImage> {
   Widget _buildFile(String path) {
     final (decodeWidth, decodeHeight) = _decode;
     final provider = ResizeImage.resizeIfNeeded(
-        decodeWidth, decodeHeight, FileImage(File(path)));
+      decodeWidth,
+      decodeHeight,
+      FileImage(File(path)),
+    );
     final onSize = widget.onSize;
     if (onSize != null && _sizedPath != path) {
       _sizedPath = path;
       provider
           .resolve(const ImageConfiguration())
-          .addListener(ImageStreamListener((info, _) {
-        if (mounted) {
-          onSize(Size(
-            info.image.width.toDouble(),
-            info.image.height.toDouble(),
-          ));
-        }
-      }, onError: (_, _) {}));
+          .addListener(
+            ImageStreamListener((info, _) {
+              if (mounted) {
+                onSize(
+                  Size(
+                    info.image.width.toDouble(),
+                    info.image.height.toDouble(),
+                  ),
+                );
+              }
+            }, onError: (_, _) {}),
+          );
     }
     return Image(
       image: provider,

@@ -39,8 +39,10 @@ void showShareDenied(BuildContext context, ShareIssue issue) {
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: Text(issue.text ??
-            ruEn('Не удалось включить показ', 'Couldn’t turn sharing on')),
+        content: Text(
+          issue.text ??
+              ruEn('Не удалось включить показ', 'Couldn’t turn sharing on'),
+        ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: cs.errorContainer,
         duration: const Duration(seconds: 8),
@@ -63,18 +65,21 @@ void showBackgroundLimited(BuildContext context) {
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: Text(ruEn(
-          'Показ включён, но в фоне телефон может его остановить. Чтобы партнёр '
-              'видел вас и при закрытом приложении, выберите «Разрешать всегда».',
-          'Sharing is on, but the phone may stop it in the background. To stay '
-              'visible while the app is closed, choose “Allow all the time”.',
-        )),
+        content: Text(
+          ruEn(
+            'Показ включён, но в фоне телефон может его остановить. Чтобы партнёр '
+                'видел вас и при закрытом приложении, выберите «Разрешать всегда».',
+            'Sharing is on, but the phone may stop it in the background. To stay '
+                'visible while the app is closed, choose “Allow all the time”.',
+          ),
+        ),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 10),
         action: SnackBarAction(
           label: ruEn('Разрешить', 'Allow'),
           // fork: прямо на страницу разрешения, где есть «Разрешать всегда».
-          onPressed: () => unawaited(LiveLocationService.instance.requestAlways()),
+          onPressed: () =>
+              unawaited(LiveLocationService.instance.requestAlways()),
         ),
       ),
     );
@@ -103,7 +108,11 @@ class ShareIssueBar extends StatelessWidget {
 /// «Партнёр вас не видит»: свою точку на большой карте человек видит и без
 /// показа, и это легко принять за обоюдность (G5).
 class PartnerBlindBar extends StatelessWidget {
-  const PartnerBlindBar({super.key, required this.partnerName, required this.onEnable});
+  const PartnerBlindBar({
+    super.key,
+    required this.partnerName,
+    required this.onEnable,
+  });
 
   final String partnerName;
   final VoidCallback onEnable;

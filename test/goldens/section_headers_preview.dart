@@ -46,8 +46,11 @@ void main() {
                   const Text('СТАЛО — один'),
                   const SizedBox(height: 10),
                   _New('Друзья', cs, icon: Icons.group_rounded),
-                  _New('Статистика отношений', cs,
-                      icon: Icons.insights_rounded),
+                  _New(
+                    'Статистика отношений',
+                    cs,
+                    icon: Icons.insights_rounded,
+                  ),
                   const SettingsSection('Уведомления'),
                   _New('Достижения', cs),
                   const SizedBox(height: 30),
@@ -55,7 +58,10 @@ void main() {
                   const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.add_to_home_screen_rounded, size: 18),
+                    icon: const Icon(
+                      Icons.add_to_home_screen_rounded,
+                      size: 18,
+                    ),
                     label: const Text('Добавить на рабочий стол'),
                     style: FilledButton.styleFrom(padding: EdgeInsets.zero),
                   ),
@@ -84,8 +90,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/section-headers.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/section-headers.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }
@@ -101,18 +108,18 @@ class _Old extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontFamily: font,
-            fontSize: size,
-            fontWeight: FontWeight.w700,
-            letterSpacing: spacing,
-            color: color,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontFamily: font,
+        fontSize: size,
+        fontWeight: FontWeight.w700,
+        letterSpacing: spacing,
+        color: color,
+      ),
+    ),
+  );
 }
 
 class _New extends StatelessWidget {
@@ -124,20 +131,19 @@ class _New extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(6, 14, 6, 8),
-        child: Row(
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 18, color: cs.primary),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: Text(text.toUpperCase(),
-                  style: ProfileTheme.sectionLabel(cs)),
-            ),
-            if (icon != null)
-              Icon(Icons.expand_more_rounded, color: cs.onSurfaceVariant),
-          ],
+    padding: const EdgeInsets.fromLTRB(6, 14, 6, 8),
+    child: Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 18, color: cs.primary),
+          const SizedBox(width: 10),
+        ],
+        Expanded(
+          child: Text(text.toUpperCase(), style: ProfileTheme.sectionLabel(cs)),
         ),
-      );
+        if (icon != null)
+          Icon(Icons.expand_more_rounded, color: cs.onSurfaceVariant),
+      ],
+    ),
+  );
 }

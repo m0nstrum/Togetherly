@@ -56,8 +56,15 @@ class PairTime {
     if (raw is num) return parsed;
     if (zoneToDuration(zone) != null) return parsed.toLocal();
     final u = parsed.toUtc();
-    return DateTime(u.year, u.month, u.day, u.hour, u.minute, u.second,
-        u.millisecond);
+    return DateTime(
+      u.year,
+      u.month,
+      u.day,
+      u.hour,
+      u.minute,
+      u.second,
+      u.millisecond,
+    );
   }
 
   /// Сутки, в которые событие произошло У АВТОРА.

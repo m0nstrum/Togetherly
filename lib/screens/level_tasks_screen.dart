@@ -64,7 +64,10 @@ class _LevelTasksScreenState extends State<LevelTasksScreen> {
       case XpAction.dailyStreak:
         return (
           icon: Icons.local_fire_department_rounded,
-          title: _t('Заходите в приложение каждый день', 'Open the app every day'),
+          title: _t(
+            'Заходите в приложение каждый день',
+            'Open the app every day',
+          ),
         );
       case XpAction.addMemory:
         return (
@@ -121,7 +124,9 @@ class _LevelTasksScreenState extends State<LevelTasksScreen> {
             children: [
               _buildHeader(p),
               const SizedBox(height: 24),
-              _sectionTitle(_t('Задания — как растить уровень', 'Tasks — how to level up')),
+              _sectionTitle(
+                _t('Задания — как растить уровень', 'Tasks — how to level up'),
+              ),
               const SizedBox(height: 10),
               ...LevelService.instance.actions.map(_buildTaskTile),
               const SizedBox(height: 24),
@@ -280,7 +285,11 @@ class _LevelTasksScreenState extends State<LevelTasksScreen> {
             ),
           ),
           if (complete)
-            Icon(Icons.check_circle_rounded, color: Colors.green.shade400, size: 22)
+            Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green.shade400,
+              size: 22,
+            )
           else if (cap > 1)
             Text(
               '$done/$cap',
@@ -298,11 +307,13 @@ class _LevelTasksScreenState extends State<LevelTasksScreen> {
   // ── Награды (маскоты из каталога) ────────────────────────────────────────────
 
   Widget _buildRewards(int level) {
-    final mascots = CatalogService.instance.mascots
-        .where((m) => m.unlock.type == UnlockType.level)
-        .toList()
-      ..sort((a, b) =>
-          a.unlock.requiredLevel.compareTo(b.unlock.requiredLevel));
+    final mascots =
+        CatalogService.instance.mascots
+            .where((m) => m.unlock.type == UnlockType.level)
+            .toList()
+          ..sort(
+            (a, b) => a.unlock.requiredLevel.compareTo(b.unlock.requiredLevel),
+          );
 
     if (mascots.isEmpty) {
       final t = context.appTheme;
@@ -346,7 +357,7 @@ class _LevelTasksScreenState extends State<LevelTasksScreen> {
               opacity: unlocked ? 1.0 : 0.4,
               child: m.catalogUrl != null
                   ? CachedNetworkImage(
-      cacheManager: OfflineImageCacheManager.instance,
+                      cacheManager: OfflineImageCacheManager.instance,
                       imageUrl: m.catalogUrl!,
                       fit: BoxFit.contain,
                       errorWidget: (_, __, ___) =>
@@ -359,14 +370,15 @@ class _LevelTasksScreenState extends State<LevelTasksScreen> {
           Expanded(
             child: Text(
               m.localizedName,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
           if (unlocked)
-            Icon(Icons.check_circle_rounded, color: Colors.green.shade400, size: 22)
+            Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green.shade400,
+              size: 22,
+            )
           else
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

@@ -29,12 +29,12 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 MoodEntry _e(String id, String mood, int h, int m) => MoodEntry(
-      id: id,
-      moodId: mood,
-      imagePath: MoodOption.byId(mood)!.imagePath,
-      label: mood,
-      timestamp: DateTime(2026, 9, 29, h, m),
-    );
+  id: id,
+  moodId: mood,
+  imagePath: MoodOption.byId(mood)!.imagePath,
+  label: mood,
+  timestamp: DateTime(2026, 9, 29, h, m),
+);
 
 void main() {
   setUpAll(() async {
@@ -50,42 +50,53 @@ void main() {
 
     final cs = ProfileTheme.schemeFor(AppThemes.pink);
     final key = GlobalKey();
-    final mine = [_e('a', 'sad', 8, 40), _e('c', 'laugh', 13, 2), _e('f', 'kiss', 22, 48)];
-    final theirs = [_e('b', 'happy', 9, 15), _e('d', 'anxiety', 17, 30), _e('e', 'love', 19, 5)];
+    final mine = [
+      _e('a', 'sad', 8, 40),
+      _e('c', 'laugh', 13, 2),
+      _e('f', 'kiss', 22, 48),
+    ];
+    final theirs = [
+      _e('b', 'happy', 9, 15),
+      _e('d', 'anxiety', 17, 30),
+      _e('e', 'love', 19, 5),
+    ];
 
     Widget phone(double w) => Container(
-          width: w,
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(28)),
-          // В приложении лист даёт Material, здесь — сам превью.
-          child: Material(
-            type: MaterialType.transparency,
-            child: DayMoodLanes(
-              mine: mine,
-              theirs: theirs,
-              myName: 'Саша',
-              partnerName: 'Аня',
-            ),
-          ),
-        );
+      width: w,
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      // В приложении лист даёт Material, здесь — сам превью.
+      child: Material(
+        type: MaterialType.transparency,
+        child: DayMoodLanes(
+          mine: mine,
+          theirs: theirs,
+          myName: 'Саша',
+          partnerName: 'Аня',
+        ),
+      ),
+    );
 
-    await tester.pumpWidget(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ProfileTheme.data(cs),
-      home: RepaintBoundary(
-        key: key,
-        child: ColoredBox(
-          color: const Color(0xFF171210),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [phone(393), phone(320)],
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ProfileTheme.data(cs),
+        home: RepaintBoundary(
+          key: key,
+          child: ColoredBox(
+            color: const Color(0xFF171210),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [phone(393), phone(320)],
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.runAsync(() async {
       final ctx = key.currentContext!;
       for (final e in [...mine, ...theirs]) {
@@ -101,8 +112,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 1.5);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/day_mood_lanes.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/day_mood_lanes.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }

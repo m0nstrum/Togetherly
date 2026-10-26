@@ -96,12 +96,20 @@ class SeasonGlitch extends ChangeNotifier {
     }
     // 1. мигание, как от просевшего напряжения
     for (final d in const [60, 40, 70]) {
-      _set(phase == GlitchPhase.dim ? GlitchPhase.calm : GlitchPhase.dim, text: null, power: 0);
+      _set(
+        phase == GlitchPhase.dim ? GlitchPhase.calm : GlitchPhase.dim,
+        text: null,
+        power: 0,
+      );
       if (!await wait(d)) return;
     }
     // 2. «13/13», порванное полосами; каждый третий кадр с битыми знаками
     for (var k = 0; k < 4; k++) {
-      _set(GlitchPhase.split, text: k % 3 == 2 ? garble(spec.mid, k) : spec.mid, power: 1);
+      _set(
+        GlitchPhase.split,
+        text: k % 3 == 2 ? garble(spec.mid, k) : spec.mid,
+        power: 1,
+      );
       if (!await wait(40)) return;
     }
     // 3. вспышка-негатив, один кадр
@@ -144,7 +152,9 @@ String garble(String s, int k) {
   var i = 0;
   for (final ch in s.split('')) {
     final alts = swaps[ch];
-    out.write(alts != null && (i + k) % 2 == 0 ? alts[(i + k) ~/ 2 % alts.length] : ch);
+    out.write(
+      alts != null && (i + k) % 2 == 0 ? alts[(i + k) ~/ 2 % alts.length] : ch,
+    );
     i++;
   }
   return out.toString();
@@ -153,7 +163,13 @@ String garble(String s, int k) {
 /// Надпись кнопки в три слоя — основной и два цветовых канала, — которые
 /// сбой рвёт полосами, плюс послеобраз пика.
 class GlitchLabel extends StatelessWidget {
-  const GlitchLabel({super.key, required this.glitch, required this.prefix, required this.real, required this.style});
+  const GlitchLabel({
+    super.key,
+    required this.glitch,
+    required this.prefix,
+    required this.real,
+    required this.style,
+  });
 
   final SeasonGlitch glitch;
 
@@ -166,19 +182,28 @@ class GlitchLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final g = glitch;
     final shown = '$prefix ${g.text ?? real}';
-    final torn = g.power > 0 && (g.phase == GlitchPhase.split || g.phase == GlitchPhase.peak);
+    final torn =
+        g.power > 0 &&
+        (g.phase == GlitchPhase.split || g.phase == GlitchPhase.peak);
     final r = math.Random(g.frame * 7919);
     double rnd() => r.nextDouble() * 2 - 1;
-    Widget layer(Color? color) =>
-        Text(shown, maxLines: 1, softWrap: false, style: color == null ? style : style.copyWith(color: color));
-    final y1 = r.nextDouble() * 0.6, y2 = math.min(1.0, y1 + 0.15 + r.nextDouble() * 0.3);
+    Widget layer(Color? color) => Text(
+      shown,
+      maxLines: 1,
+      softWrap: false,
+      style: color == null ? style : style.copyWith(color: color),
+    );
+    final y1 = r.nextDouble() * 0.6,
+        y2 = math.min(1.0, y1 + 0.15 + r.nextDouble() * 0.3);
     return Stack(
       alignment: Alignment.center,
       children: [
         // послеобраз: «666» тает сквозь настоящее число
         AnimatedOpacity(
           opacity: g.phase == GlitchPhase.ghost ? 0.55 : 0,
-          duration: g.phase == GlitchPhase.ghost ? Duration.zero : const Duration(milliseconds: 600),
+          duration: g.phase == GlitchPhase.ghost
+              ? Duration.zero
+              : const Duration(milliseconds: 600),
           curve: Curves.easeOut,
           child: Text(
             '$prefix ${g.spec.peak}',
@@ -190,7 +215,10 @@ class GlitchLabel extends StatelessWidget {
         if (torn) ...[
           Transform.translate(
             offset: Offset(rnd() * 9 * g.power, 0),
-            child: ClipRect(clipper: _Band(y1, y2), child: layer(const Color(0xFFFF2A4A))),
+            child: ClipRect(
+              clipper: _Band(y1, y2),
+              child: layer(const Color(0xFFFF2A4A)),
+            ),
           ),
           Transform.translate(
             offset: Offset(rnd() * 7 * g.power, 0),
@@ -203,7 +231,8 @@ class GlitchLabel extends StatelessWidget {
         Transform(
           alignment: Alignment.center,
           transform: torn
-              ? (Matrix4.translationValues(rnd() * 3 * g.power, 0, 0)..multiply(Matrix4.skewX(rnd() * 0.17 * g.power)))
+              ? (Matrix4.translationValues(rnd() * 3 * g.power, 0, 0)
+                  ..multiply(Matrix4.skewX(rnd() * 0.17 * g.power)))
               : Matrix4.identity(),
           child: layer(null),
         ),
@@ -219,7 +248,8 @@ class _Band extends CustomClipper<Rect> {
   final double top, bottom;
 
   @override
-  Rect getClip(Size size) => Rect.fromLTRB(0, size.height * top, size.width, size.height * bottom);
+  Rect getClip(Size size) =>
+      Rect.fromLTRB(0, size.height * top, size.width, size.height * bottom);
 
   @override
   bool shouldReclip(_Band old) => old.top != top || old.bottom != bottom;

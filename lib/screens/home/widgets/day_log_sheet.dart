@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../models/pair_calendar.dart';
+import '../../../widgets/pair_calendar_events.dart';
 import 'package:flutter/services.dart';
 
 import '../../../models/mood_entry.dart' show MoodEntry, MoodGenders;
@@ -33,6 +35,7 @@ Future<void> showDayLogSheet({
   required WidgetService widgetService,
   required AppTheme theme,
   UserData? userData,
+  List<PairEvent> events = const [],
 }) {
   final scheme = ProfileTheme.schemeFor(theme);
   return showAppSheet<void>(
@@ -48,6 +51,7 @@ Future<void> showDayLogSheet({
         theme: theme,
         scheme: scheme,
         userData: userData,
+        events: events,
       ),
     ),
   );
@@ -84,8 +88,11 @@ class _DayLogSheet extends StatefulWidget {
     required this.theme,
     required this.scheme,
     required this.userData,
+    this.events = const [],
   });
 
+  /// D8: что ещё было или будет в этот день — записи и праздники пары.
+  final List<PairEvent> events;
   final DateTime day;
   final PairData pairData;
   final MoodService moodService;
@@ -124,6 +131,12 @@ class _DayLogSheetState extends State<_DayLogSheet> {
   AppStrings get _s => LocaleService.current;
   ColorScheme get _cs => widget.scheme;
 
+  /// Будущий день: отмечать в нём нечего, лист показывает только события.
+  bool get _isFuture {
+    final now = DateTime.now();
+    return widget.day.isAfter(DateTime(now.year, now.month, now.day));
+  }
+
   bool get _isToday {
     final now = DateTime.now();
     return now.year == widget.day.year &&
@@ -137,7 +150,8 @@ class _DayLogSheetState extends State<_DayLogSheet> {
     final entries = widget.moodService.myEntriesForDay(widget.day);
     if (entries.isEmpty) return _s.dayLogNotMarked;
     final latest = entries.reduce(
-        (a, b) => a.timestamp.isAfter(b.timestamp) ? a : b);
+      (a, b) => a.timestamp.isAfter(b.timestamp) ? a : b,
+    );
     final hh = latest.timestamp.hour.toString().padLeft(2, '0');
     final mm = latest.timestamp.minute.toString().padLeft(2, '0');
     return '${latest.labelFor(MoodGenders.mine)} · $hh:$mm';
@@ -272,36 +286,47 @@ class _DayLogSheetState extends State<_DayLogSheet> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                 child: lanes,
               ),
-            _LogCard(
-              icon: Icons.sentiment_satisfied_rounded,
-              title: _s.moodTabLabel,
-              value: _moodValue,
-              background: _cs.primaryContainer,
-              foreground: _cs.onPrimaryContainer,
-              onTap: _openMood,
-            ),
-            _LogCard(
-              icon: Icons.monitor_heart_rounded,
-              title: _s.ailmentTabLabel,
-              value: _ailmentValue,
-              background: _cs.secondaryContainer,
-              foreground: _cs.onSecondaryContainer,
-              enabled: _isToday,
-              onTap: _openAilment,
-            ),
-            if (showCycle)
+            PairDayEvents(events: widget.events, scheme: _cs, nameOf: _nameOf),
+            if (!_isFuture) ...[
               _LogCard(
-                icon: Icons.autorenew_rounded,
-                title: _s.cycleTitle,
-                value: _cycleValue,
-                background: _cs.errorContainer,
-                foreground: _cs.onErrorContainer,
-                onTap: _openCycle,
+                icon: Icons.sentiment_satisfied_rounded,
+                title: _s.moodTabLabel,
+                value: _moodValue,
+                background: _cs.primaryContainer,
+                foreground: _cs.onPrimaryContainer,
+                onTap: _openMood,
               ),
+              _LogCard(
+                icon: Icons.monitor_heart_rounded,
+                title: _s.ailmentTabLabel,
+                value: _ailmentValue,
+                background: _cs.secondaryContainer,
+                foreground: _cs.onSecondaryContainer,
+                enabled: _isToday,
+                onTap: _openAilment,
+              ),
+              if (showCycle)
+                _LogCard(
+                  icon: Icons.autorenew_rounded,
+                  title: _s.cycleTitle,
+                  value: _cycleValue,
+                  background: _cs.errorContainer,
+                  foreground: _cs.onErrorContainer,
+                  onTap: _openCycle,
+                ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  String _nameOf(String uid) {
+    if (uid == widget.userData?.uid) return widget.userData?.displayName ?? '';
+    for (final p in widget.pairData.partners) {
+      if (p.uid == uid) return p.name;
+    }
+    return '';
   }
 
   /// История дня двумя дорожками: вы и партнёр. Нет отметок ни у кого —
@@ -401,8 +426,11 @@ class _CycleDaySheetState extends State<_CycleDaySheet> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.chevron_left_rounded,
-                        size: 20, color: _cs.onSurfaceVariant),
+                    Icon(
+                      Icons.chevron_left_rounded,
+                      size: 20,
+                      color: _cs.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 2),
                     Text(
                       _s.dayLogDate(widget.day),
@@ -553,8 +581,11 @@ class _LogCard extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           if (checked == null)
-            Icon(Icons.chevron_right_rounded,
-                size: 22, color: foreground.withValues(alpha: 0.7))
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 22,
+              color: foreground.withValues(alpha: 0.7),
+            )
           else
             Container(
               width: 30,
@@ -589,10 +620,7 @@ class _LogCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          child: InkWell(
-            onTap: enabled ? onTap : null,
-            child: content,
-          ),
+          child: InkWell(onTap: enabled ? onTap : null, child: content),
         ),
       ),
     );

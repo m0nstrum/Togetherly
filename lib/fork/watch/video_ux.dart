@@ -1,4 +1,4 @@
-/// Тексты и расчёты «Смотрим» (docs/fork/UX_AUDIT.md, V3, V12).
+/// Тексты и расчёты «Смотрим» (docs/history/UX_AUDIT.md, V3, V12).
 library;
 
 import '../../dict_strings.dart' show ruEn;

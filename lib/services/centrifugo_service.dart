@@ -9,8 +9,8 @@ import 'package:pocketbase/pocketbase.dart';
 import 'pocketbase_service.dart';
 import 'publish_gate.dart';
 import 'reconnect_detector.dart';
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 
 /// Транспорт realtime через Centrifugo (замена встроенного SSE PocketBase).
 ///
@@ -45,7 +45,7 @@ class CentrifugoService {
 
   /// Внешний TLS-порт Centrifugo (тот же домен/сертификат, что у PocketBase).
   /// Переопределяется: `--dart-define=CENTRIFUGO_WS=wss://.../connection/websocket`
-  static final String _wsUrl = Endpoints.current.centrifugoUrl; // fork
+  static final String _wsUrl = Endpoints.current.centrifugoUrl;
 
   centrifuge.Client? _client;
   final Map<String, _ChannelHub> _channels = {};
@@ -115,7 +115,9 @@ class CentrifugoService {
     // холст), по этому сигналу дотягивают пропущенное. Первое соединение сюда
     // не попадает — там список только что загрузили (см. ReconnectDetector).
     c.connected.listen((e) {
-      ForkVerifiedDelta.forBackend(_pb).refreshKey(); // fork: H3 fresh HTTPS clock/key after sleep
+      ForkVerifiedDelta.forBackend(
+        _pb,
+      ).refreshKey(); // fork: H3 fresh HTTPS clock/key after sleep
       if (kDebugMode) debugPrint('Centrifugo connected: ${e.client}');
       if (_reconnects.onConnected() && !_reconnected.isClosed) {
         _reconnected.add(null);
@@ -144,7 +146,9 @@ class CentrifugoService {
   _ChannelHub _hub(String channel) {
     _ensureClient();
     return _channels.putIfAbsent(
-        channel, () => _ChannelHub(_ensureClient(), channel, _pb));
+      channel,
+      () => _ChannelHub(_ensureClient(), channel, _pb),
+    );
   }
 
   /// Подписаться на дельты [channel], отфильтрованные по [collection] и
@@ -170,7 +174,9 @@ class CentrifugoService {
   /// штрихи рисования — нет записи в БД, нет нагрузки на SQLite-writer).
   /// [onData] получает декодированный JSON публикации.
   Future<RtUnsub> subscribeRaw(
-      String channel, void Function(Map<String, dynamic>) onData) async {
+    String channel,
+    void Function(Map<String, dynamic>) onData,
+  ) async {
     final hub = _hub(ForkVerifiedDelta.signalChannel(channel));
     hub.addRaw(onData);
     return () async {
@@ -183,9 +189,13 @@ class CentrifugoService {
   /// allow_publish_for_subscriber). Клиент должен быть подписан на канал —
   /// поднимаем подписку при необходимости. Ошибки глотаем: эфемерная публикация
   /// (потерянный кадр live-штриха некритичен).
-  Future<void> publish(String channel, Map<String, dynamic> data,
-      {bool requireDelivery = false}) =>
-      _hub(ForkVerifiedDelta.signalChannel(channel)).publish(data, requireDelivery: requireDelivery);
+  Future<void> publish(
+    String channel,
+    Map<String, dynamic> data, {
+    bool requireDelivery = false,
+  }) => _hub(
+    ForkVerifiedDelta.signalChannel(channel),
+  ).publish(data, requireDelivery: requireDelivery);
 
   /// fork: публикация, пришедшая не по сокету (будильник FCM,
   /// lib/fork/push/fcm_wake.dart), — слушателям канала, как с сокета.
@@ -233,10 +243,10 @@ class _ChannelHub {
       centrifuge.SubscriptionConfig(
         getToken: (centrifuge.SubscriptionTokenEvent e) async =>
             CentrifugoService.askToken(
-          _pb,
-          '/api/centrifugo/subscription-token',
-          body: {'channel': e.channel},
-        ),
+              _pb,
+              '/api/centrifugo/subscription-token',
+              body: {'channel': e.channel},
+            ),
       ),
     );
     _pubSub = _sub.publication.listen(_onPublication);
@@ -248,7 +258,9 @@ class _ChannelHub {
     try {
       final envelope = jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>;
       if (_listeners.isNotEmpty) {
-        final delta = await ForkVerifiedDelta.forBackend(_pb).open(channel, envelope);
+        final delta = await ForkVerifiedDelta.forBackend(
+          _pb,
+        ).open(channel, envelope);
         if (delta != null) _dispatch(delta);
       } else {
         // Raw hubs are separate client-publishable namespaces.
@@ -259,11 +271,14 @@ class _ChannelHub {
     }
   }
 
-  void _dispatch(Map<String, dynamic> map) { // fork: и для CentrifugoService.deliver
+  void _dispatch(Map<String, dynamic> map) {
+    // fork: и для CentrifugoService.deliver
     try {
       // Сырые слушатели (эфемерные публикации без PB-формата {collection,record}).
       if (_rawListeners.isNotEmpty) {
-        for (final r in List<void Function(Map<String, dynamic>)>.of(_rawListeners)) {
+        for (final r in List<void Function(Map<String, dynamic>)>.of(
+          _rawListeners,
+        )) {
           try {
             r(map);
           } catch (e) {
@@ -277,7 +292,7 @@ class _ChannelHub {
       final recMap = map['record'];
       if (recMap is Map) {
         rec = RecordModel.fromJson(
-          ForkE2E.decodeSync(collection, Map<String, dynamic>.from(recMap)), // fork
+          ForkE2E.decodeSync(collection, Map<String, dynamic>.from(recMap)),
         );
       }
       // Копия списка: слушатель может отписаться из колбэка.
@@ -323,15 +338,18 @@ class _ChannelHub {
   /// пропадающие штрихи после каждого обрыва связи (19 августа 2026).
   ///
   /// Ошибки глотаем — данные эфемерные, потеря кадра некритична.
-  Future<void> publish(Map<String, dynamic> data, {bool requireDelivery = false}) async {
+  Future<void> publish(
+    Map<String, dynamic> data, {
+    bool requireDelivery = false,
+  }) async {
     _ensureSubscribed();
     final ready = await awaitSubscribed(
-      isSubscribed: () =>
-          _sub.state == centrifuge.SubscriptionState.subscribed,
+      isSubscribed: () => _sub.state == centrifuge.SubscriptionState.subscribed,
       onSubscribed: () => _sub.subscribed.first,
     );
     if (!ready) {
-      if (requireDelivery) throw TimeoutException('Channel subscription unavailable');
+      if (requireDelivery)
+        throw TimeoutException('Channel subscription unavailable');
       debugPrint('Centrifugo publish($channel): подписки нет, пропускаем');
       return;
     }

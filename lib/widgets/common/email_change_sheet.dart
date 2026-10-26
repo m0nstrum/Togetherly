@@ -31,7 +31,11 @@ Future<String?> showEmailChangeSheet(
 }
 
 class EmailChangeSheet extends StatefulWidget {
-  const EmailChangeSheet({super.key, required this.service, this.initialEmail = ''});
+  const EmailChangeSheet({
+    super.key,
+    required this.service,
+    this.initialEmail = '',
+  });
 
   final EmailChangeService service;
 
@@ -123,16 +127,15 @@ class _EmailChangeSheetState extends State<EmailChangeSheet> {
     final second = _sentTo.isNotEmpty;
 
     InputDecoration field(String label) => InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: cs.surfaceContainerHigh,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        );
+      labelText: label,
+      filled: true,
+      fillColor: cs.surfaceContainerHigh,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+    );
 
     final progress = SizedBox(
       width: 22,
@@ -149,10 +152,13 @@ class _EmailChangeSheetState extends State<EmailChangeSheet> {
             key: const Key('email-change-main'),
             onPressed: _busy ? null : (second ? _confirm : _send),
             style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(56)),
+              minimumSize: const Size.fromHeight(56),
+            ),
             child: _busy
                 ? progress
-                : Text(trKey(second ? 'emailChangeConfirm' : 'emailChangeSend')),
+                : Text(
+                    trKey(second ? 'emailChangeConfirm' : 'emailChangeSend'),
+                  ),
           ),
           if (second) ...[
             const SizedBox(height: 4),
@@ -162,10 +168,10 @@ class _EmailChangeSheetState extends State<EmailChangeSheet> {
                   onPressed: _busy
                       ? null
                       : () => setState(() {
-                            _sentTo = '';
-                            _code.clear();
-                            _error = '';
-                          }),
+                          _sentTo = '';
+                          _code.clear();
+                          _error = '';
+                        }),
                   child: Text(trKey('emailChangeOther')),
                 ),
                 const Spacer(),
@@ -177,10 +183,13 @@ class _EmailChangeSheetState extends State<EmailChangeSheet> {
                           _email.text = _sentTo;
                           _send();
                         },
-                  child: Text(_resendIn > 0
-                      ? trKey('emailChangeResendIn')
-                          .replaceAll('{s}', '$_resendIn')
-                      : trKey('emailChangeResend')),
+                  child: Text(
+                    _resendIn > 0
+                        ? trKey(
+                            'emailChangeResendIn',
+                          ).replaceAll('{s}', '$_resendIn')
+                        : trKey('emailChangeResend'),
+                  ),
                 ),
               ],
             ),
@@ -195,8 +204,7 @@ class _EmailChangeSheetState extends State<EmailChangeSheet> {
             if (!second) ...[
               Text(
                 trKey('emailChangeHint'),
-                style: AppFonts.onest(
-                    size: 14.5, color: cs.onSurfaceVariant),
+                style: AppFonts.onest(size: 14.5, color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 14),
               TextField(
@@ -212,8 +220,7 @@ class _EmailChangeSheetState extends State<EmailChangeSheet> {
             ] else ...[
               Text(
                 trKey('emailChangeSentTo').replaceAll('{email}', _sentTo),
-                style: AppFonts.onest(
-                    size: 14.5, color: cs.onSurfaceVariant),
+                style: AppFonts.onest(size: 14.5, color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 14),
               TextField(
@@ -230,7 +237,10 @@ class _EmailChangeSheetState extends State<EmailChangeSheet> {
                   if (v.length == 6) _confirm();
                 },
                 style: AppFonts.unbounded(
-                    size: 24, weight: 700, color: cs.onSurface),
+                  size: 24,
+                  weight: 700,
+                  color: cs.onSurface,
+                ),
                 decoration: field(trKey('emailChangeCodeLabel')),
               ),
             ],

@@ -50,21 +50,45 @@ Future<bool?> showCustomMoodSheet(
 /// прошлые отметки ссылаются на прежний файл.
 ///
 /// Возвращает true, если правка сохранилась.
-Future<bool?> showEditCustomMoodSheet(BuildContext context, CustomMood mood, {CustomMoodStore? store}) {
+Future<bool?> showEditCustomMoodSheet(
+  BuildContext context,
+  CustomMood mood, {
+  CustomMoodStore? store,
+}) {
   return showAppSheet<bool>(
     context,
-    builder: (_) => _EditCustomMoodSheet(mood: mood, store: store ?? CustomMoodService.instance),
+    builder: (_) => _EditCustomMoodSheet(
+      mood: mood,
+      store: store ?? CustomMoodService.instance,
+    ),
   );
 }
 
 /// Частые смайлики на холсте. Без новинок последних лет: на старых телефонах
 /// системный шрифт их не знает и рисует пустой квадрат.
-const List<String> kQuickMoodEmoji = ['😊', '🥰', '🤯', '😴', '🤒', '😤', '🥺', '😭', '🍕', '☕', '🎉', '💤'];
+const List<String> kQuickMoodEmoji = [
+  '😊',
+  '🥰',
+  '🤯',
+  '😴',
+  '🤒',
+  '😤',
+  '🥺',
+  '😭',
+  '🍕',
+  '☕',
+  '🎉',
+  '💤',
+];
 
 Future<Uint8List?> _galleryPhoto() async {
   final picker = ImagePicker();
   final shot = await safePick(
-    () => picker.pickImage(source: ImageSource.gallery, maxWidth: 1024, imageQuality: 90),
+    () => picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 90,
+    ),
   );
   if (shot == null) return null;
   // Обрезка обязательна: в сетке и в календаре настроение живёт в квадратной
@@ -82,7 +106,11 @@ class _CustomMoodSheet extends StatefulWidget {
   final CustomMoodStore store;
   final Future<Uint8List?> Function() pickPhoto;
 
-  const _CustomMoodSheet({required this.groupId, required this.store, required this.pickPhoto});
+  const _CustomMoodSheet({
+    required this.groupId,
+    required this.store,
+    required this.pickPhoto,
+  });
 
   @override
   State<_CustomMoodSheet> createState() => _CustomMoodSheetState();
@@ -111,11 +139,11 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
   }
 
   bool get _hasPicture => switch (_stage) {
-        _Stage.emoji => _emoji.text.trim().isNotEmpty,
-        _Stage.photo => _photo != null,
-        _Stage.draw => _strokes.isNotEmpty,
-        _ => false,
-      };
+    _Stage.emoji => _emoji.text.trim().isNotEmpty,
+    _Stage.photo => _photo != null,
+    _Stage.draw => _strokes.isNotEmpty,
+    _ => false,
+  };
 
   bool get _ready => _hasPicture && _label.text.trim().isNotEmpty;
 
@@ -221,7 +249,11 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
           children: [
             Text(
               s.customMoodSubtitle,
-              style: TextStyle(fontFamily: 'Onest', fontSize: 14, color: cs.onSurfaceVariant),
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 14,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             Center(child: _stageBox(t, cs)),
@@ -230,9 +262,15 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
               _tools(t, cs),
             ],
             const SizedBox(height: 16),
-            MoodNameField(controller: _label, onChanged: (_) => setState(() => _error = '')),
+            MoodNameField(
+              controller: _label,
+              onChanged: (_) => setState(() => _error = ''),
+            ),
             const SizedBox(height: 14),
-            MoodScoreScale(score: _score, onChanged: (v) => setState(() => _score = v)),
+            MoodScoreScale(
+              score: _score,
+              onChanged: (v) => setState(() => _score = v),
+            ),
             if (_error.isNotEmpty) ...[
               const SizedBox(height: 12),
               _ErrorNote(text: _error),
@@ -246,40 +284,52 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
   // ── Холст ────────────────────────────────────────────────────────────────
 
   Widget _stageBox(AppTheme t, ColorScheme cs) {
-    return LayoutBuilder(builder: (context, box) {
-      final side = math.min(264.0, box.maxWidth);
-      final tinted = _stage == _Stage.emoji && _emoji.text.trim().isNotEmpty;
-      final background = switch (_stage) {
-        _Stage.draw => Colors.white,
-        _ when tinted => moodScoreTint(_score, cs, alpha: 0.30),
-        _ => cs.surfaceContainerHighest,
-      };
-      return SizedBox(
-        key: const Key('custom-mood-stage'),
-        width: side,
-        height: side,
-        child: ClipPath(
-          clipper: ShapeBorderClipper(
-            shape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(side * 0.2)),
-          ),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-            color: background,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                _stageContent(t, cs, side),
-                if (_stage == _Stage.emoji || _stage == _Stage.photo)
-                  Positioned(top: 12, right: 12, child: _SwapPill(onTap: _swap)),
-                if (_stage == _Stage.draw)
-                  Positioned(top: 10, right: 10, child: _SwapRound(onTap: _swap)),
-              ],
+    return LayoutBuilder(
+      builder: (context, box) {
+        final side = math.min(264.0, box.maxWidth);
+        final tinted = _stage == _Stage.emoji && _emoji.text.trim().isNotEmpty;
+        final background = switch (_stage) {
+          _Stage.draw => Colors.white,
+          _ when tinted => moodScoreTint(_score, cs, alpha: 0.30),
+          _ => cs.surfaceContainerHighest,
+        };
+        return SizedBox(
+          key: const Key('custom-mood-stage'),
+          width: side,
+          height: side,
+          child: ClipPath(
+            clipper: ShapeBorderClipper(
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(side * 0.2),
+              ),
+            ),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              color: background,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _stageContent(t, cs, side),
+                  if (_stage == _Stage.emoji || _stage == _Stage.photo)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: _SwapPill(onTap: _swap),
+                    ),
+                  if (_stage == _Stage.draw)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: _SwapRound(onTap: _swap),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 
   Widget _stageContent(AppTheme t, ColorScheme cs, double side) {
@@ -323,34 +373,39 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
           child: Column(
             children: [
               Expanded(
-                child: LayoutBuilder(builder: (context, box) {
-                  const gap = 4.0;
-                  final cellW = (box.maxWidth - gap * 3) / 4;
-                  final cellH = (box.maxHeight - gap * 2) / 3;
-                  return GridView.count(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: gap,
-                    crossAxisSpacing: gap,
-                    childAspectRatio: cellH > 0 ? cellW / cellH : 1,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    children: [
-                      for (final e in kQuickMoodEmoji)
-                        _EmojiCell(
-                          key: Key('custom-mood-emoji-$e'),
-                          emoji: e,
-                          size: math.min(cellW, cellH) * 0.62,
-                          onTap: () => _chooseEmoji(e),
-                        ),
-                    ],
-                  );
-                }),
+                child: LayoutBuilder(
+                  builder: (context, box) {
+                    const gap = 4.0;
+                    final cellW = (box.maxWidth - gap * 3) / 4;
+                    final cellH = (box.maxHeight - gap * 2) / 3;
+                    return GridView.count(
+                      crossAxisCount: 4,
+                      mainAxisSpacing: gap,
+                      crossAxisSpacing: gap,
+                      childAspectRatio: cellH > 0 ? cellW / cellH : 1,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      children: [
+                        for (final e in kQuickMoodEmoji)
+                          _EmojiCell(
+                            key: Key('custom-mood-emoji-$e'),
+                            emoji: e,
+                            size: math.min(cellW, cellH) * 0.62,
+                            onTap: () => _chooseEmoji(e),
+                          ),
+                      ],
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(
-                    child: _KeyboardPill(label: trKey('customMoodOwnKeyboard'), onTap: _typeEmoji),
+                    child: _KeyboardPill(
+                      label: trKey('customMoodOwnKeyboard'),
+                      onTap: _typeEmoji,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   _SwapRound(onTap: _swap, size: 44, tonal: true),
@@ -374,9 +429,19 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
                     focusNode: _emojiFocus,
                     maxLength: 4,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: side * 0.42, height: 1.15, color: cs.onSurface),
+                    style: TextStyle(
+                      fontSize: side * 0.42,
+                      height: 1.15,
+                      color: cs.onSurface,
+                    ),
                     cursorColor: cs.primary,
-                    buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                    buildCounter:
+                        (
+                          context, {
+                          required currentLength,
+                          required isFocused,
+                          maxLength,
+                        }) => null,
                     decoration: const InputDecoration.collapsed(hintText: ''),
                     onChanged: (_) => setState(() => _error = ''),
                     onSubmitted: (_) => _emojiFocus.unfocus(),
@@ -392,7 +457,11 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
                 child: Text(
                   trKey('customMoodTypeHint'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontFamily: 'Onest', fontSize: 13, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontFamily: 'Onest',
+                    fontSize: 13,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
           ],
@@ -415,60 +484,67 @@ class _CustomMoodSheetState extends State<_CustomMoodSheet> {
   Widget _tools(AppTheme t, ColorScheme cs) {
     final s = LocaleService.current;
     final onFill = AppThemes.onColor(t.fillColor, mode: t.brightness);
-    return LayoutBuilder(builder: (context, box) {
-      // Шесть красок делят остаток строки после двух кнопок; на 320 точках
-      // кружок становится меньше, но не уезжает за край. Кнопка рисуется в 44,
-      // а места занимает 48: столько Material отдаёт под касание.
-      const button = 44.0, target = 48.0, gap = 6.0;
-      final cell = ((box.maxWidth - target * 2 - gap * 3) / kMoodInks.length).clamp(26.0, 40.0);
-      final dot = math.min(30.0, cell - 6);
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          for (var i = 0; i < kMoodInks.length; i++)
-            _InkDot(
-              key: Key('custom-mood-ink-$i'),
-              color: kMoodInks[i],
-              cell: cell,
-              dot: dot,
-              selected: !_eraser && _ink == kMoodInks[i],
-              onTap: () => setState(() {
-                _ink = kMoodInks[i];
-                _eraser = false;
-              }),
+    return LayoutBuilder(
+      builder: (context, box) {
+        // Шесть красок делят остаток строки после двух кнопок; на 320 точках
+        // кружок становится меньше, но не уезжает за край. Кнопка рисуется в 44,
+        // а места занимает 48: столько Material отдаёт под касание.
+        const button = 44.0, target = 48.0, gap = 6.0;
+        final cell = ((box.maxWidth - target * 2 - gap * 3) / kMoodInks.length)
+            .clamp(26.0, 40.0);
+        final dot = math.min(30.0, cell - 6);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < kMoodInks.length; i++)
+              _InkDot(
+                key: Key('custom-mood-ink-$i'),
+                color: kMoodInks[i],
+                cell: cell,
+                dot: dot,
+                selected: !_eraser && _ink == kMoodInks[i],
+                onTap: () => setState(() {
+                  _ink = kMoodInks[i];
+                  _eraser = false;
+                }),
+              ),
+            const SizedBox(width: gap),
+            IconButton(
+              key: const Key('custom-mood-eraser'),
+              tooltip: s.customMoodEraser,
+              onPressed: () => setState(() => _eraser = !_eraser),
+              style: IconButton.styleFrom(
+                fixedSize: const Size(button, button),
+                backgroundColor: _eraser
+                    ? t.fillColor
+                    : cs.surfaceContainerHighest,
+                foregroundColor: _eraser ? onFill : cs.onSurface,
+              ),
+              icon: const Icon(Icons.cleaning_services_rounded, size: 22),
             ),
-          const SizedBox(width: gap),
-          IconButton(
-            key: const Key('custom-mood-eraser'),
-            tooltip: s.customMoodEraser,
-            onPressed: () => setState(() => _eraser = !_eraser),
-            style: IconButton.styleFrom(
-              fixedSize: const Size(button, button),
-              backgroundColor: _eraser ? t.fillColor : cs.surfaceContainerHighest,
-              foregroundColor: _eraser ? onFill : cs.onSurface,
-            ),
-            icon: const Icon(Icons.cleaning_services_rounded, size: 22),
-          ),
-          const SizedBox(width: gap),
-          IconButton(
-            key: const Key('custom-mood-undo'),
-            tooltip: s.customMoodUndo,
-            onPressed: _strokes.isEmpty
-                ? null
-                : () => setState(() {
+            const SizedBox(width: gap),
+            IconButton(
+              key: const Key('custom-mood-undo'),
+              tooltip: s.customMoodUndo,
+              onPressed: _strokes.isEmpty
+                  ? null
+                  : () => setState(() {
                       _strokes.removeLast();
                     }),
-            style: IconButton.styleFrom(
-              fixedSize: const Size(button, button),
-              backgroundColor: cs.surfaceContainerHighest,
-              foregroundColor: cs.onSurface,
-              disabledBackgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+              style: IconButton.styleFrom(
+                fixedSize: const Size(button, button),
+                backgroundColor: cs.surfaceContainerHighest,
+                foregroundColor: cs.onSurface,
+                disabledBackgroundColor: cs.surfaceContainerHighest.withValues(
+                  alpha: 0.6,
+                ),
+              ),
+              icon: const Icon(Icons.undo_rounded, size: 22),
             ),
-            icon: const Icon(Icons.undo_rounded, size: 22),
-          ),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -477,7 +553,12 @@ class _StageOption extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _StageOption({super.key, required this.icon, required this.label, required this.onTap});
+  const _StageOption({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -499,7 +580,10 @@ class _StageOption extends StatelessWidget {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(color: t.fillColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: t.fillColor,
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(icon, size: 22, color: onFill),
                 ),
                 const SizedBox(width: 12),
@@ -508,7 +592,13 @@ class _StageOption extends StatelessWidget {
                     label,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'Onest', fontSize: 15, fontWeight: FontWeight.w600, height: 1.2, color: cs.onSurface),
+                    style: TextStyle(
+                      fontFamily: 'Onest',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ),
               ],
@@ -525,7 +615,12 @@ class _EmojiCell extends StatelessWidget {
   final double size;
   final VoidCallback onTap;
 
-  const _EmojiCell({super.key, required this.emoji, required this.size, required this.onTap});
+  const _EmojiCell({
+    super.key,
+    required this.emoji,
+    required this.size,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -568,14 +663,23 @@ class _KeyboardPill extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.keyboard_rounded, size: 20, color: cs.onSurfaceVariant),
+                Icon(
+                  Icons.keyboard_rounded,
+                  size: 20,
+                  color: cs.onSurfaceVariant,
+                ),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'Onest', fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface),
+                    style: TextStyle(
+                      fontFamily: 'Onest',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ),
               ],
@@ -608,11 +712,20 @@ class _SwapPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.swap_horiz_rounded, size: 18, color: cs.onInverseSurface),
+              Icon(
+                Icons.swap_horiz_rounded,
+                size: 18,
+                color: cs.onInverseSurface,
+              ),
               const SizedBox(width: 6),
               Text(
                 trKey('customMoodSwap'),
-                style: TextStyle(fontFamily: 'Onest', fontSize: 13, fontWeight: FontWeight.w600, color: cs.onInverseSurface),
+                style: TextStyle(
+                  fontFamily: 'Onest',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onInverseSurface,
+                ),
               ),
             ],
           ),
@@ -646,7 +759,11 @@ class _SwapRound extends StatelessWidget {
           child: SizedBox(
             width: size,
             height: size,
-            child: Icon(Icons.swap_horiz_rounded, size: 20, color: tonal ? cs.onSurfaceVariant : cs.onInverseSurface),
+            child: Icon(
+              Icons.swap_horiz_rounded,
+              size: 20,
+              color: tonal ? cs.onSurfaceVariant : cs.onInverseSurface,
+            ),
           ),
         ),
       ),
@@ -716,8 +833,18 @@ class _ErrorNote extends StatelessWidget {
     final cs = ProfileTheme.schemeFor(context.appTheme);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(14)),
-      child: Text(text, style: TextStyle(fontFamily: 'Onest', fontSize: 13, color: cs.onErrorContainer)),
+      decoration: BoxDecoration(
+        color: cs.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Onest',
+          fontSize: 13,
+          color: cs.onErrorContainer,
+        ),
+      ),
     );
   }
 }
@@ -735,7 +862,9 @@ class _EditCustomMoodSheet extends StatefulWidget {
 }
 
 class _EditCustomMoodSheetState extends State<_EditCustomMoodSheet> {
-  late final TextEditingController _label = TextEditingController(text: widget.mood.label);
+  late final TextEditingController _label = TextEditingController(
+    text: widget.mood.label,
+  );
   late int _score = widget.mood.score;
   bool _saving = false;
   String _error = '';
@@ -758,7 +887,11 @@ class _EditCustomMoodSheetState extends State<_EditCustomMoodSheet> {
       _saving = true;
       _error = '';
     });
-    final ok = await widget.store.rename(recordId: widget.mood.id, label: _label.text.trim(), score: _score);
+    final ok = await widget.store.rename(
+      recordId: widget.mood.id,
+      label: _label.text.trim(),
+      score: _score,
+    );
     if (!mounted) return;
     if (!ok) {
       setState(() {
@@ -789,25 +922,47 @@ class _EditCustomMoodSheetState extends State<_EditCustomMoodSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(child: OwnMoodPicture(mood: widget.mood, size: 124, score: _score)),
+            Center(
+              child: OwnMoodPicture(
+                mood: widget.mood,
+                size: 124,
+                score: _score,
+              ),
+            ),
             const SizedBox(height: 10),
             Text(
               label.isEmpty ? widget.mood.label : label,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontFamily: 'Onest', fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface),
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               trKey('customMoodEditHint'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Onest', fontSize: 13, height: 1.4, color: cs.onSurfaceVariant),
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 13,
+                height: 1.4,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
-            MoodNameField(controller: _label, onChanged: (_) => setState(() => _error = '')),
+            MoodNameField(
+              controller: _label,
+              onChanged: (_) => setState(() => _error = ''),
+            ),
             const SizedBox(height: 14),
-            MoodScoreScale(score: _score, onChanged: (v) => setState(() => _score = v)),
+            MoodScoreScale(
+              score: _score,
+              onChanged: (v) => setState(() => _score = v),
+            ),
             if (_error.isNotEmpty) ...[
               const SizedBox(height: 12),
               _ErrorNote(text: _error),

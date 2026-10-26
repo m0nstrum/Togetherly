@@ -1,4 +1,4 @@
-// fork: бэкап ключей и требования к паролю (docs/fork/E2E.md §7).
+// fork: бэкап ключей и требования к паролю (docs/E2E.md §7).
 import 'dart:io';
 import 'dart:typed_data';
 

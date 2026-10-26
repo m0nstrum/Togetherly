@@ -18,19 +18,29 @@ void main() {
   });
 
   test('незнакомые ключи выбрасываются', () {
-    final restored =
-        WidgetPanels.restore(const [WidgetPanels.sectionTime, 'ерунда']);
+    final restored = WidgetPanels.restore(const [
+      WidgetPanels.sectionTime,
+      'ерунда',
+    ]);
     expect(restored, {WidgetPanels.sectionTime});
   });
 
   test('ключи прежних разделов отсеиваются: таких разделов больше нет', () {
-    expect(WidgetPanels.restore(const ['legacy_section', 'new_section']),
-        isEmpty);
+    expect(
+      WidgetPanels.restore(const ['legacy_section', 'new_section']),
+      isEmpty,
+    );
   });
 
   test('порядок записи постоянный, независимо от порядка нажатий', () {
-    final a = WidgetPanels.store({WidgetPanels.photoGrid, WidgetPanels.pairWidget});
-    final b = WidgetPanels.store({WidgetPanels.pairWidget, WidgetPanels.photoGrid});
+    final a = WidgetPanels.store({
+      WidgetPanels.photoGrid,
+      WidgetPanels.pairWidget,
+    });
+    final b = WidgetPanels.store({
+      WidgetPanels.pairWidget,
+      WidgetPanels.photoGrid,
+    });
     expect(a, b);
   });
 
@@ -45,8 +55,9 @@ void main() {
 
   test('каждый известный ключ переживает круг', () {
     for (final key in WidgetPanels.known) {
-      expect(WidgetPanels.restore(WidgetPanels.store({key})), {key},
-          reason: '$key обязан сохраняться');
+      expect(WidgetPanels.restore(WidgetPanels.store({key})), {
+        key,
+      }, reason: '$key обязан сохраняться');
     }
   });
 
@@ -62,16 +73,22 @@ void main() {
         'bool _photoDayExpanded =',
         'bool _photoGridExpanded =',
       ]) {
-        expect(src.contains(dead), isFalse,
-            reason: '«$dead» вернёт сброс к умолчаниям при каждом заходе');
+        expect(
+          src.contains(dead),
+          isFalse,
+          reason: '«$dead» вернёт сброс к умолчаниям при каждом заходе',
+        );
       }
     });
 
     test('набор читается из prefs при открытии и пишется при нажатии', () {
       expect(src.contains('_loadPanels();'), isTrue);
       expect(src.contains('WidgetPanels.prefsKey'), isTrue);
-      expect(src.contains('_togglePanel(key)'), isTrue,
-          reason: 'разделы переключаются одним путём — по ключу');
+      expect(
+        src.contains('_togglePanel(key)'),
+        isTrue,
+        reason: 'разделы переключаются одним путём — по ключу',
+      );
       for (final section in [
         'WidgetPanels.sectionPair',
         'WidgetPanels.sectionTime',
@@ -90,8 +107,11 @@ void main() {
         '_legacyWidgetItems',
         '_newWidgetItems',
       ]) {
-        expect(src.contains(gone), isFalse,
-            reason: '«$gone» делил виджеты по времени их написания');
+        expect(
+          src.contains(gone),
+          isFalse,
+          reason: '«$gone» делил виджеты по времени их написания',
+        );
       }
     });
   });

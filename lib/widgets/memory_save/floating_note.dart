@@ -31,7 +31,9 @@ void showFloatingNote(
             builder: (_, v, child) => Opacity(
               opacity: v,
               child: Transform.translate(
-                  offset: Offset(0, (1 - v) * 12), child: child),
+                offset: Offset(0, (1 - v) * 12),
+                child: child,
+              ),
             ),
             child: Material(
               color: cs.inverseSurface,

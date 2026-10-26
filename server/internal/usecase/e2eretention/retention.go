@@ -13,8 +13,13 @@ func Sweep(app core.App, now time.Time) error {
 	params := dbx.Params{
 		"sas": now.Add(-24 * time.Hour).UTC().Format("2006-01-02 15:04:05.000Z"),
 		"old": now.Add(-30 * 24 * time.Hour).UTC().Format("2006-01-02 15:04:05.000Z"),
+		// Привязка по QR длится минуты: дольше запись с ключами не держим.
+		"link": now.Add(-15 * time.Minute).UTC().Format("2006-01-02 15:04:05.000Z"),
 	}
 	return app.RunInTransaction(func(tx core.App) error {
+		if _, err := tx.DB().NewQuery(`DELETE FROM e2e_links WHERE created < {:link}`).Bind(params).Execute(); err != nil {
+			return err
+		}
 		_, err := tx.DB().NewQuery(`DELETE FROM e2e_handshake WHERE id IN (
 			SELECT id FROM e2e_handshake WHERE (kind != 'invite_proof' AND created < {:sas})
 			OR created < {:old} ORDER BY created LIMIT 5000

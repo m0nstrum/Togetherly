@@ -20,15 +20,17 @@ void main() {
     final moodField = RegExp(r'\b\w*(moodEmoji|moodImagePath|previewImage)\b');
     final assetCall = RegExp(r'Image\.asset\s*\(');
 
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       final source = file.readAsStringSync();
       for (final match in assetCall.allMatches(source)) {
         final args = _argumentsOf(source, match.end - 1);
         if (args == null || !moodField.hasMatch(args)) continue;
-        final line = '\n'.allMatches(source.substring(0, match.start)).length + 1;
+        final line =
+            '\n'.allMatches(source.substring(0, match.start)).length + 1;
         offenders.add('${file.path}:$line');
       }
     }
@@ -36,7 +38,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Каталожный пак приезжает адресом, Image.asset его не покажет — '
+      reason:
+          'Каталожный пак приезжает адресом, Image.asset его не покажет — '
           'рисовать через MoodImage: ${offenders.join(', ')}',
     );
   });

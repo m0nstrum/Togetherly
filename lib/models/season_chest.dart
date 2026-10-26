@@ -106,7 +106,8 @@ class SeasonChest {
   String hintIn(String lang) => _in(hints, lang);
 
   /// Подпись на карточке: `{date}` — дата конца сезона, её отдаёт [date].
-  String tagIn(String lang, String date) => _in(tags, lang).replaceAll('{date}', date);
+  String tagIn(String lang, String date) =>
+      _in(tags, lang).replaceAll('{date}', date);
 
   /// Последний день сезона (до [until] не включая) — для подписи «до 31 октября».
   DateTime? get lastDay {
@@ -114,8 +115,9 @@ class SeasonChest {
     return d?.subtract(const Duration(days: 1));
   }
 
-  static Map<String, String> _strMap(Object? v) =>
-      v is Map ? {for (final e in v.entries) '${e.key}': '${e.value}'} : const {};
+  static Map<String, String> _strMap(Object? v) => v is Map
+      ? {for (final e in v.entries) '${e.key}': '${e.value}'}
+      : const {};
 
   static Color? _color(Object? v) {
     final s = '${v ?? ''}'.trim();
@@ -131,15 +133,24 @@ class SeasonChest {
     final key = '${j['key'] ?? ''}'.trim();
     final set = '${j['set'] ?? ''}'.trim();
     final files = _strMap(j['files']);
-    if (key.isEmpty || set.isEmpty || files['idle'] == null || files['open'] == null) return null;
+    if (key.isEmpty ||
+        set.isEmpty ||
+        files['idle'] == null ||
+        files['open'] == null)
+      return null;
     final track = <List<double>?>[];
     final t = j['track'];
     if (t is Map && t['frames'] is List) {
       for (final f in t['frames'] as List) {
-        track.add(f is List && f.length == 3 ? [for (final v in f) (v as num).toDouble()] : null);
+        track.add(
+          f is List && f.length == 3
+              ? [for (final v in f) (v as num).toDouble()]
+              : null,
+        );
       }
     }
-    int ms(Object? m, String k, int def) => m is Map && m[k] is num ? (m[k] as num).toInt() : def;
+    int ms(Object? m, String k, int def) =>
+        m is Map && m[k] is num ? (m[k] as num).toInt() : def;
     final c = j['curtain'] is Map ? j['curtain'] as Map : const {};
     final flash = j['flash'] is Map ? j['flash'] as Map : const {};
     final aspect = j['cardAspect'];
@@ -154,7 +165,9 @@ class SeasonChest {
       palette: SeasonPalette.fromJson(j['palette']),
       flashColor: _color(flash['color']),
       flashAtMs: ms(flash, 'atMs', 900),
-      cardAspect: aspect is num && aspect > 0.5 && aspect < 3 ? aspect.toDouble() : 600 / 516,
+      cardAspect: aspect is num && aspect > 0.5 && aspect < 3
+          ? aspect.toDouble()
+          : 600 / 516,
       track: track,
       trackFrameMs: ms(t, 'frameMs', 60),
       wonAtMs: ms(t, 'wonAtMs', 2000),
@@ -222,7 +235,8 @@ class SeasonCurtain {
     if (raw is! Map) return null;
     final url = files['${raw['sheet'] ?? ''}'];
     double? d(String k) => raw[k] is num ? (raw[k] as num).toDouble() : null;
-    int i(String k, int def) => raw[k] is num ? (raw[k] as num).toInt().clamp(0, 5000) : def;
+    int i(String k, int def) =>
+        raw[k] is num ? (raw[k] as num).toInt().clamp(0, 5000) : def;
     final from = d('from'), mid = d('mid'), to = d('to');
     if (url == null || from == null || mid == null || to == null) return null;
     return SeasonCurtain(
@@ -240,7 +254,12 @@ class SeasonCurtain {
 /// Чем срывается кнопка открытия: сперва [mid] рваными полосами, потом [peak]
 /// на заливке [peakColor]. Счётчик подменяется только в надписи.
 class SeasonGlitchSpec {
-  const SeasonGlitchSpec({required this.mid, required this.peak, this.peakColor, this.onPeak});
+  const SeasonGlitchSpec({
+    required this.mid,
+    required this.peak,
+    this.peakColor,
+    this.onPeak,
+  });
 
   final String mid;
   final String peak;
@@ -249,7 +268,8 @@ class SeasonGlitchSpec {
 
   static SeasonGlitchSpec? fromJson(Object? raw) {
     if (raw is! Map) return null;
-    final mid = '${raw['mid'] ?? ''}'.trim(), peak = '${raw['peak'] ?? ''}'.trim();
+    final mid = '${raw['mid'] ?? ''}'.trim(),
+        peak = '${raw['peak'] ?? ''}'.trim();
     if (mid.isEmpty || peak.isEmpty) return null;
     return SeasonGlitchSpec(
       mid: mid,
@@ -277,8 +297,17 @@ class SeasonPalette {
   static SeasonPalette? fromJson(Object? raw) {
     if (raw is! Map) return null;
     Color? c(String k) => SeasonChest._color(raw[k]);
-    final page = c('page'), surface = c('surface'), ink = c('ink'), fill = c('fill'), onFill = c('onFill');
-    if (page == null || surface == null || ink == null || fill == null || onFill == null) return null;
+    final page = c('page'),
+        surface = c('surface'),
+        ink = c('ink'),
+        fill = c('fill'),
+        onFill = c('onFill');
+    if (page == null ||
+        surface == null ||
+        ink == null ||
+        fill == null ||
+        onFill == null)
+      return null;
     return SeasonPalette(
       page: page,
       surface: surface,

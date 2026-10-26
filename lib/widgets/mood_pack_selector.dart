@@ -1,9 +1,7 @@
 import 'dart:io' show Platform;
-import '../utils/safe_launch.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/level.dart';
 import '../models/mood_pack.dart';
 import '../models/own_mood_pack.dart';
@@ -18,7 +16,6 @@ import '../theme/app_theme.dart';
 import '../theme/theme_scope.dart';
 import 'mood_image.dart';
 import '../models/catalog_price.dart';
-import '../fork/flags.dart'; // fork: M2
 
 /// Выбор пака настроений в пикере: таблетки без обводки.
 ///
@@ -92,9 +89,10 @@ class MoodPackSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge(
-        [MoodPackService.instance, CatalogService.instance],
-      ),
+      animation: Listenable.merge([
+        MoodPackService.instance,
+        CatalogService.instance,
+      ]),
       builder: (context, _) {
         final selectedId = MoodPackService.instance.selectedPackId;
         // Подсвечиваем тот набор, который человек сейчас видит: у закрытого это
@@ -107,13 +105,15 @@ class MoodPackSelector extends StatelessWidget {
         // нельзя.
         final packs = CatalogService.instance.allPacks
             // fork: M2 — платных за деньги закрытых наборов в форке нет
-            .where((p) => !(ForkFlags.allFree && p.unlock.isMoney && !isOpen(p)))
-            .where((p) => moodPackVisible(
-                  isIOS: Platform.isIOS,
-                  isMoney: p.unlock.isMoney,
-                  isOpen: isOpen(p),
-                  buysInStore: kCatalogBuysInStore,
-                ))
+            .where((p) => !(p.unlock.isMoney && !isOpen(p)))
+            .where(
+              (p) => moodPackVisible(
+                isIOS: Platform.isIOS,
+                isMoney: p.unlock.isMoney,
+                isOpen: isOpen(p),
+                buysInStore: kCatalogBuysInStore,
+              ),
+            )
             .toList();
         if (packs.isEmpty) return const SizedBox.shrink();
 
@@ -135,20 +135,20 @@ class MoodPackSelector extends StatelessWidget {
         final own = this.own;
         final ownSelected = shownId == kOwnMoodPackId;
         Widget ownChip({required bool stretched}) => OwnMoodPackChip(
-              key: const Key('mood-pack-own'),
-              chip: own!,
-              selected: ownSelected,
-              stretched: stretched,
-            );
+          key: const Key('mood-pack-own'),
+          chip: own!,
+          selected: ownSelected,
+          stretched: stretched,
+        );
         Widget packChip(MoodPack p, {required bool stretched}) => MoodPackChip(
-              key: Key('mood-pack-${p.id}'),
-              pack: p,
-              selected: p.id == shownId,
-              locked: !isOpen(p),
-              primary: primary,
-              stretched: stretched,
-              onTap: () => select(p),
-            );
+          key: Key('mood-pack-${p.id}'),
+          pack: p,
+          selected: p.id == shownId,
+          locked: !isOpen(p),
+          primary: primary,
+          stretched: stretched,
+          onTap: () => select(p),
+        );
         final count = packs.length + (own == null ? 0 : 1);
 
         if (count <= _stretchUpTo) {
@@ -175,10 +175,14 @@ class MoodPackSelector extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: count,
             // «Свои» отделены от наборов чуть шире: это набор пары, а не пак.
-            separatorBuilder: (_, i) => SizedBox(width: own != null && i == 0 ? 12 : 8),
+            separatorBuilder: (_, i) =>
+                SizedBox(width: own != null && i == 0 ? 12 : 8),
             itemBuilder: (context, i) {
               if (own != null && i == 0) return ownChip(stretched: false);
-              return packChip(packs[i - (own == null ? 0 : 1)], stretched: false);
+              return packChip(
+                packs[i - (own == null ? 0 : 1)],
+                stretched: false,
+              );
             },
           ),
         );
@@ -195,7 +199,8 @@ bool moodPackOpenFor(
   Set<String> pairOwned = const {},
 }) {
   final key = Unlock.featureKey(kMoodPackFeatureKind, pack.id);
-  final byPair = pairOwned.contains(key) ||
+  final byPair =
+      pairOwned.contains(key) ||
       CatalogService.instance.pairOwned.contains(key);
   if (user == null) return byPair || !pack.unlock.isForSale;
   return user.unlocksCatalogItem(
@@ -235,91 +240,29 @@ Future<void> buyMoodPack(
   // Сообщения ниже написаны парой «русский / английский»; китайский берёт
   // перевод английской половины.
   void say(String text) => messenger.showSnackBar(
-        SnackBar(
-          content: Text(ru ? text : zhForEnglishIfZh(text)),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    SnackBar(
+      content: Text(ru ? text : zhForEnglishIfZh(text)),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
 
   if (!pack.unlock.isForSale) {
     say(ru ? 'Этот набор пока не продаётся' : 'This pack is not for sale yet');
     return;
   }
 
-  // Пак за деньги: монеты тут ни при чём, оплату ведёт lava.top. Счёт заводит
-  // сервер на почту аккаунта — по витринной ссылке уведомление об оплате не
-  // приходит вовсе, и набор пришлось бы выдавать руками.
+  // Наборов за деньги в Tethered нет: всё бесплатно, внешней оплаты нет.
   if (pack.unlock.isMoney) {
-    // fork: M2 — в форке всё бесплатно, внешней оплаты (lava.top) нет
-    if (ForkFlags.allFree) {
-      say(ru ? 'Этот набор недоступен' : 'This pack is not available');
-      return;
-    }
-    final featureKey = Unlock.featureKey(kMoodPackFeatureKind, pack.id);
-    // На iPhone покупка идёт только через StoreKit: внешняя оплата — 3.1.1.
-    // Товара там нет (сборка старее самого товара) — молчим, а не ведём на
-    // сайт.
-    if (Platform.isIOS && !kCatalogBuysInStore) return;
-
-    if (kCatalogBuysInStore) {
-      final store = sharedCoinStore;
-      final productId = catalogProductId(featureKey);
-      final known = await store.ensureProduct(productId);
-      if (!context.mounted) return;
-      if (!known) {
-        say(ru ? 'Набор пока недоступен к покупке' : 'This pack is not available yet');
-        return;
-      }
-      final res = await store.buy(productId);
-      if (!context.mounted) return;
-      switch (res.status) {
-        case IapStatus.success:
-          // Ключ владения положил сервер при сверке чека — перечитываем свой
-          // профиль (`refreshCoinsFromServer` тянет и `owned_features`), на нём
-          // завязаны все проверки доступа.
-          await user.refreshCoinsFromServer();
-          if (!context.mounted) return;
-          HapticFeedback.selectionClick();
-          await MoodPackService.instance.setSelectedPack(pack.id);
-          onBought?.call();
-        case IapStatus.pending:
-          say(ru
-              ? 'Оплата обрабатывается — набор откроется сам'
-              : 'Payment is processing — the pack will open by itself');
-        case IapStatus.cancelled:
-          break;
-        case IapStatus.error:
-          say(ru ? 'Покупка не прошла' : 'Purchase failed');
-      }
-      return;
-    }
-
-    final res = await CatalogService.instance.purchaseUrl(
-      featureKey,
-      currency: pack.unlock.currency,
-    );
-    if (!context.mounted) return;
-    if (res.already) {
-      say(ru ? 'Набор уже открыт' : 'You already own this pack');
-      return;
-    }
-    final url = res.url;
-    if (url == null) {
-      say(ru ? 'Не удалось открыть оплату' : 'Could not open checkout');
-      return;
-    }
-    final ok = await safeLaunchUrl(Uri.parse(url),
-        mode: LaunchMode.externalApplication);
-    if (!ok && context.mounted) {
-      say(ru ? 'Не удалось открыть оплату' : 'Could not open checkout');
-    }
+    say(ru ? 'Этот набор недоступен' : 'This pack is not available');
     return;
   }
 
   if (user.coins < price) {
-    say(ru
-        ? 'Не хватает монет: нужно $price, у вас ${user.coins}'
-        : 'Not enough coins: $price needed, you have ${user.coins}');
+    say(
+      ru
+          ? 'Не хватает монет: нужно $price, у вас ${user.coins}'
+          : 'Not enough coins: $price needed, you have ${user.coins}',
+    );
     return;
   }
 
@@ -369,7 +312,12 @@ class OwnMoodPackChip extends StatelessWidget {
   final bool selected;
   final bool stretched;
 
-  const OwnMoodPackChip({super.key, required this.chip, required this.selected, required this.stretched});
+  const OwnMoodPackChip({
+    super.key,
+    required this.chip,
+    required this.selected,
+    required this.stretched,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -411,8 +359,17 @@ class OwnMoodPackChip extends StatelessWidget {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: chip.preview.isEmpty
-                    ? Icon(Icons.add_rounded, size: 18, color: selected ? bg : onFill)
-                    : MoodImage(chip.preview, fit: BoxFit.cover, width: 24, height: 24),
+                    ? Icon(
+                        Icons.add_rounded,
+                        size: 18,
+                        color: selected ? bg : onFill,
+                      )
+                    : MoodImage(
+                        chip.preview,
+                        fit: BoxFit.cover,
+                        width: 24,
+                        height: 24,
+                      ),
               ),
               const SizedBox(width: 8),
               Flexible(
@@ -534,8 +491,11 @@ class MoodPackChip extends StatelessWidget {
                   // товар не подгрузился (см. catalogPriceLabel).
                   catalogPriceLabel(
                     storePrice: kCatalogBuysInStore
-                        ? sharedCoinStore.priceLabel(catalogProductId(
-                            Unlock.featureKey(kMoodPackFeatureKind, pack.id)))
+                        ? sharedCoinStore.priceLabel(
+                            catalogProductId(
+                              Unlock.featureKey(kMoodPackFeatureKind, pack.id),
+                            ),
+                          )
                         : null,
                     catalogPrice: pack.unlock.priceLabel,
                   ),

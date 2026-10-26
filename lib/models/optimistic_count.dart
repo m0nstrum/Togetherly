@@ -26,7 +26,7 @@ class OptimisticCount {
   static const Duration ttl = Duration(seconds: 10);
 
   const OptimisticCount({this.confirmed = 0, List<DateTime> pending = const []})
-      : _pending = pending;
+    : _pending = pending;
 
   /// Сколько тапов ждут подтверждения.
   int get pending => _pending.length;

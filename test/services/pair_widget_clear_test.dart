@@ -29,8 +29,11 @@ void main() {
   test('стираются все текстовые ключи, которые пишет живая пара', () {
     final written = pairWidgetPayload(my: full, partner: full).keys.toSet();
     final cleared = pairWidgetClearPayload().keys.toSet();
-    expect(written.difference(cleared), isEmpty,
-        reason: 'иначе на столе остаётся имя или настроение бывшего партнёра');
+    expect(
+      written.difference(cleared),
+      isEmpty,
+      reason: 'иначе на столе остаётся имя или настроение бывшего партнёра',
+    );
   });
 
   test('стираются ссылки и пути к картинкам обеих половин', () {
@@ -62,8 +65,10 @@ void main() {
   test('файловые ключи названы отдельно — по ним чистится контейнер', () {
     expect(kPairWidgetFileKeys, contains('my_photo_path'));
     expect(kPairWidgetFileKeys, contains('partner_mood_emoji_path'));
-    expect(kPairWidgetFileKeys.every(pairWidgetClearPayload().containsKey),
-        isTrue);
+    expect(
+      kPairWidgetFileKeys.every(pairWidgetClearPayload().containsKey),
+      isTrue,
+    );
   });
 
   group('связка на месте', () {
@@ -79,8 +84,11 @@ void main() {
           .take(45)
           .join('\n');
       // Упоминание в комментарии допустимо, вызов — нет.
-      expect(body.contains('clearPairWidgetData()'), isFalse,
-          reason: 'экран зовёт отвязку и при переключении между связями');
+      expect(
+        body.contains('clearPairWidgetData()'),
+        isFalse,
+        reason: 'экран зовёт отвязку и при переключении между связями',
+      );
     });
 
     test('распад пары чистит по правилу', () {
@@ -99,7 +107,10 @@ void main() {
     expect(start, isNot(-1));
     final end = src.indexOf('\n  void _listenToMyData', start);
     final body = src.substring(start, end > 0 ? end : src.length);
-    expect(body.contains('pairWidgetKey'), isTrue,
-        reason: 'иначе набор распавшейся пары останется в контейнере');
+    expect(
+      body.contains('pairWidgetKey'),
+      isTrue,
+      reason: 'иначе набор распавшейся пары останется в контейнере',
+    );
   });
 }

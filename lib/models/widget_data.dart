@@ -208,8 +208,7 @@ class WidgetData {
       message: message ?? this.message,
       photoUrl: photoUrl ?? this.photoUrl,
       photoForPartnerUrl: photoForPartnerUrl ?? this.photoForPartnerUrl,
-      photoForPartnerUrls:
-          photoForPartnerUrls ?? this.photoForPartnerUrls,
+      photoForPartnerUrls: photoForPartnerUrls ?? this.photoForPartnerUrls,
       photoGridCount: photoGridCount ?? this.photoGridCount,
       photoGridUrls: photoGridUrls ?? this.photoGridUrls,
       musicTitle: musicTitle ?? this.musicTitle,

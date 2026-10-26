@@ -15,7 +15,8 @@ class UpsertIdCache {
 
   /// Ключ строится из коллекции и фильтра: один и тот же фильтр всегда ведёт к
   /// одной записи.
-  static String keyOf(String collection, String filter) => '$collection|$filter';
+  static String keyOf(String collection, String filter) =>
+      '$collection|$filter';
 
   String? operator [](String key) => _ids[key];
 

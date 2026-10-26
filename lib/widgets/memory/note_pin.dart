@@ -93,7 +93,9 @@ class NotePin extends StatelessWidget {
                 else
                   Text(
                     LocaleService.current.memBadgeNote,
-                    style: bodyStyle.copyWith(color: ink.withValues(alpha: 0.7)),
+                    style: bodyStyle.copyWith(
+                      color: ink.withValues(alpha: 0.7),
+                    ),
                   ),
               ],
             ),

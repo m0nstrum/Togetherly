@@ -12,18 +12,31 @@ void main() {
     final ids = kAilments.map((a) => a.id).toSet();
     expect(AilmentIcon.bundled, ids);
     for (final id in ids) {
-      expect(File('assets/images/ailments/$id.webp').existsSync(), isTrue, reason: id);
+      expect(
+        File('assets/images/ailments/$id.webp').existsSync(),
+        isTrue,
+        reason: id,
+      );
     }
-    expect(File('pubspec.yaml').readAsStringSync().contains('- assets/images/ailments/'), isTrue);
+    expect(
+      File(
+        'pubspec.yaml',
+      ).readAsStringSync().contains('- assets/images/ailments/'),
+      isTrue,
+    );
   });
 
   testWidgets('без каталога — кадр из сборки, незнакомое — эмодзи', (t) async {
-    await t.pumpWidget(const MaterialApp(
-      home: Row(children: [
-        AilmentIcon(id: 'fever', emoji: '🌡️'),
-        AilmentIcon(id: 'new_one', emoji: '🥲'),
-      ]),
-    ));
+    await t.pumpWidget(
+      const MaterialApp(
+        home: Row(
+          children: [
+            AilmentIcon(id: 'fever', emoji: '🌡️'),
+            AilmentIcon(id: 'new_one', emoji: '🥲'),
+          ],
+        ),
+      ),
+    );
     expect(find.byType(Image), findsOneWidget);
     expect(find.text('🥲'), findsOneWidget);
   });

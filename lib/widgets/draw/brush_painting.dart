@@ -19,7 +19,12 @@ Path strokeCurve(List<DrawPoint> points, Size size) {
   for (var i = 1; i < points.length - 1; i++) {
     final p0 = points[i].toOffset(size);
     final p1 = points[i + 1].toOffset(size);
-    path.quadraticBezierTo(p0.dx, p0.dy, (p0.dx + p1.dx) / 2, (p0.dy + p1.dy) / 2);
+    path.quadraticBezierTo(
+      p0.dx,
+      p0.dy,
+      (p0.dx + p1.dx) / 2,
+      (p0.dy + p1.dy) / 2,
+    );
   }
   final last = points.last.toOffset(size);
   path.lineTo(last.dx, last.dy);
@@ -42,7 +47,9 @@ void paintBrushStroke(
   int seed = 0,
 }) {
   if (points.isEmpty) return;
-  final dot = points.every((p) => p.x == points.first.x && p.y == points.first.y);
+  final dot = points.every(
+    (p) => p.x == points.first.x && p.y == points.first.y,
+  );
   final curve = strokeCurve(points, size);
 
   if (isEraser) {
@@ -69,9 +76,19 @@ void paintBrushStroke(
       // только наложение разных мазков.
       final paint = Paint()..color = tint(0.5);
       if (dot) {
-        canvas.drawRect(Rect.fromCenter(center: center, width: width * 1.6, height: width * 1.6), paint);
+        canvas.drawRect(
+          Rect.fromCenter(
+            center: center,
+            width: width * 1.6,
+            height: width * 1.6,
+          ),
+          paint,
+        );
       } else {
-        canvas.drawPath(curve, _line(width * 1.6, cap: StrokeCap.butt)..color = tint(0.5));
+        canvas.drawPath(
+          curve,
+          _line(width * 1.6, cap: StrokeCap.butt)..color = tint(0.5),
+        );
       }
     case StrokeBrush.pencil:
       final core = math.max(1.0, width * 0.45);
@@ -80,16 +97,41 @@ void paintBrushStroke(
       } else {
         canvas.drawPath(curve, _line(core)..color = tint(0.55));
       }
-      _paintGrain(canvas, dot ? [center] : _samples(curve, 0.9), core, base, alpha, seed);
+      _paintGrain(
+        canvas,
+        dot ? [center] : _samples(curve, 0.9),
+        core,
+        base,
+        alpha,
+        seed,
+      );
     case StrokeBrush.airbrush:
       final blur = MaskFilter.blur(BlurStyle.normal, _softSigma(width));
       if (dot) {
-        canvas.drawCircle(center, width * 0.65, Paint()..color = tint(0.55)..maskFilter = blur);
+        canvas.drawCircle(
+          center,
+          width * 0.65,
+          Paint()
+            ..color = tint(0.55)
+            ..maskFilter = blur,
+        );
       } else {
-        canvas.drawPath(curve, _line(width * 1.3)..color = tint(0.55)..maskFilter = blur);
+        canvas.drawPath(
+          curve,
+          _line(width * 1.3)
+            ..color = tint(0.55)
+            ..maskFilter = blur,
+        );
       }
     case StrokeBrush.calligraphy:
-      _paintCalligraphy(canvas, dot ? [center] : _samples(curve, 1.5), curve, width, tint(1), dot);
+      _paintCalligraphy(
+        canvas,
+        dot ? [center] : _samples(curve, 1.5),
+        curve,
+        width,
+        tint(1),
+        dot,
+      );
     case StrokeBrush.pen:
       // Перо рисует `paintStroke`; сюда оно не доходит.
       canvas.drawPath(curve, _line(width)..color = tint(1));
@@ -120,7 +162,14 @@ List<Offset> _samples(Path curve, double step) {
 
 /// Крошки графита вокруг линии. Три силы нажима — три вызова, а не тысяча
 /// отдельных квадратиков.
-void _paintGrain(Canvas canvas, List<Offset> along, double core, Color base, double alpha, int seed) {
+void _paintGrain(
+  Canvas canvas,
+  List<Offset> along,
+  double core,
+  Color base,
+  double alpha,
+  int seed,
+) {
   final random = BrushRandom(seed);
   final buckets = [<double>[], <double>[], <double>[]];
   final spread = core * 0.9 + 0.6;
@@ -151,7 +200,14 @@ void _paintGrain(Canvas canvas, List<Offset> along, double core, Color base, dou
 /// Лента плоского пера: на каждом шаге — четырёхугольник между положениями
 /// насадки. Все они обходятся в одну сторону, иначе при заливке «ненулевым»
 /// правилом встречные сократились бы и в линии остались дыры.
-void _paintCalligraphy(Canvas canvas, List<Offset> along, Path curve, double width, Color color, bool dot) {
+void _paintCalligraphy(
+  Canvas canvas,
+  List<Offset> along,
+  Path curve,
+  double width,
+  Color color,
+  bool dot,
+) {
   final half = width * 0.75;
   final nib = Offset(math.cos(_nibAngle) * half, math.sin(_nibAngle) * half);
   final hairline = _line(math.max(1.0, width * 0.12))..color = color;

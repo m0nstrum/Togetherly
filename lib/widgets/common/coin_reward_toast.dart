@@ -28,11 +28,7 @@ import 'coin_image.dart';
 class CoinRewardToast {
   static OverlayEntry? _current;
 
-  static void show(
-    BuildContext context, {
-    required int amount,
-    String? label,
-  }) {
+  static void show(BuildContext context, {required int amount, String? label}) {
     if (amount <= 0) return;
     _safeRemove(_current);
     _current = null;
@@ -155,8 +151,12 @@ class _CoinToastWidgetState extends State<_CoinToastWidget>
               final v = _ctrl.value;
 
               final enter = _phase(v, 0, _enterEnd, curve: _overshoot);
-              final collapse =
-                  _phase(v, _collapseStart, _collapseEnd, curve: _accelerate);
+              final collapse = _phase(
+                v,
+                _collapseStart,
+                _collapseEnd,
+                curve: _accelerate,
+              );
               final fly = _phase(v, _collapseEnd, _flyEnd, curve: _accelerate);
 
               // Появление: подъём снизу с перелётом. Уход: короткий рывок вверх
@@ -212,10 +212,15 @@ class _CoinToastWidgetState extends State<_CoinToastWidget>
                       final angle = (1 - spin) * math.pi / 2;
                       // На схлопывании чуть подрастает: кружок будто вбирает
                       // в себя всю плашку.
-                      final grow = 1 +
+                      final grow =
+                          1 +
                           0.08 *
-                              _phase(v, _collapseStart, _collapseEnd,
-                                  curve: _decelerate);
+                              _phase(
+                                v,
+                                _collapseStart,
+                                _collapseEnd,
+                                curve: _decelerate,
+                              );
                       return Transform.scale(
                         scale: (0.5 + 0.5 * pop) * grow,
                         child: Transform(
@@ -240,8 +245,11 @@ class _CoinToastWidgetState extends State<_CoinToastWidget>
                     animation: _ctrl,
                     builder: (_, textChild) {
                       final v = _ctrl.value;
-                      final out =
-                          _phase(v, _collapseStart, _collapseStart + 140);
+                      final out = _phase(
+                        v,
+                        _collapseStart,
+                        _collapseStart + 140,
+                      );
                       final appear = _phase(v, 90, 300, curve: _decelerate);
                       return Opacity(
                         opacity: (appear * (1 - out)).clamp(0.0, 1.0),
@@ -260,10 +268,16 @@ class _CoinToastWidgetState extends State<_CoinToastWidget>
                         AnimatedBuilder(
                           animation: _ctrl,
                           builder: (context, _) {
-                            final grow = _phase(_ctrl.value, 120, _countEnd,
-                                curve: Curves.easeOutCubic);
-                            final shown =
-                                (widget.amount * grow).ceil().clamp(1, widget.amount);
+                            final grow = _phase(
+                              _ctrl.value,
+                              120,
+                              _countEnd,
+                              curve: Curves.easeOutCubic,
+                            );
+                            final shown = (widget.amount * grow).ceil().clamp(
+                              1,
+                              widget.amount,
+                            );
                             return Text(
                               s.coinsPlus(shown),
                               style: TextStyle(
@@ -272,7 +286,7 @@ class _CoinToastWidgetState extends State<_CoinToastWidget>
                                 height: 1.15,
                                 fontWeight: FontWeight.w700,
                                 fontVariations: const [
-                                  FontVariation('wght', 700)
+                                  FontVariation('wght', 700),
                                 ],
                                 color: cs.onInverseSurface,
                               ),
@@ -288,8 +302,9 @@ class _CoinToastWidgetState extends State<_CoinToastWidget>
                                 fontFamily: ProfileTheme.bodyFont,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: cs.onInverseSurface
-                                    .withValues(alpha: 0.72),
+                                color: cs.onInverseSurface.withValues(
+                                  alpha: 0.72,
+                                ),
                               ),
                             ),
                           ),

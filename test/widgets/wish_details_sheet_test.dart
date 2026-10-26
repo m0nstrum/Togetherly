@@ -13,24 +13,28 @@ import 'package:love_app/widgets/wishes/wish_details_sheet.dart';
 final _longNote = List.filled(12, 'только в Питере белыми ночами').join(', ');
 
 Wish _wish({String url = '', int price = 0}) => Wish(
-      id: 'w1',
-      title: 'Прокатиться на катере по каналам и встретить рассвет у моста',
-      note: _longNote,
-      authorUid: 'partner',
-      price: price,
-      currency: '₽',
-      shop: 'Нева-тур',
-      url: url,
-      createdAt: DateTime(2026, 9, 1),
-    );
+  id: 'w1',
+  title: 'Прокатиться на катере по каналам и встретить рассвет у моста',
+  note: _longNote,
+  authorUid: 'partner',
+  price: price,
+  currency: '₽',
+  shop: 'Нева-тур',
+  url: url,
+  createdAt: DateTime(2026, 9, 1),
+);
 
 Future<void> _pump(WidgetTester tester, Wish wish) async {
   tester.view.devicePixelRatio = 3;
   tester.view.physicalSize = const Size(360, 780) * 3;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(body: WishDetailsSheet(wish: wish, authorName: 'Аня')),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: WishDetailsSheet(wish: wish, authorName: 'Аня'),
+      ),
+    ),
+  );
 }
 
 void main() {
@@ -60,6 +64,13 @@ void main() {
     final src = File('lib/screens/wishes_screen.dart').readAsStringSync();
     expect(src, contains('showWishDetailsSheet('));
     // Прежде ветка «не моё и не сбылось» давала onTap: null.
-    expect(src, isNot(contains(': mine\n                                          ? () => _edit(wish)\n                                          : null')));
+    expect(
+      src,
+      isNot(
+        contains(
+          ': mine\n                                          ? () => _edit(wish)\n                                          : null',
+        ),
+      ),
+    );
   });
 }

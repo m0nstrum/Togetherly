@@ -32,8 +32,12 @@ void main() {
       }
     }
 
-    expect(offenders, isEmpty,
-        reason: 'без своего предела картинка разжимается в 1200 точек и '
-            'убивает расширение: ${offenders.join(', ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'без своего предела картинка разжимается в 1200 точек и '
+          'убивает расширение: ${offenders.join(', ')}',
+    );
   });
 }

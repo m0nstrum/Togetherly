@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'pocketbase_service.dart';
-import '../fork/push/fcm_wake.dart'; // fork
+import '../fork/push/fcm_wake.dart';
 
 /// Нужен ли фоновый сокет-сервис вместо пушей.
 ///
@@ -19,8 +19,7 @@ import '../fork/push/fcm_wake.dart'; // fork
 bool socketServiceNeeded({
   required bool hasGoogleServices,
   required bool hasToken,
-}) =>
-    !(hasGoogleServices && hasToken);
+}) => !(hasGoogleServices && hasToken);
 
 /// Должен ли сервис, поднятый системой после перезагрузки, погасить себя.
 ///

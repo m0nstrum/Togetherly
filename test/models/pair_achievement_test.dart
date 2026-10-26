@@ -22,18 +22,25 @@ void main() {
             .toList();
         final sorted = [...steps]..sort();
         expect(steps, sorted, reason: 'метрика $metric');
-        expect(steps.toSet().length, steps.length,
-            reason: 'повтор порога в $metric');
+        expect(
+          steps.toSet().length,
+          steps.length,
+          reason: 'повтор порога в $metric',
+        );
       }
     });
 
     test('уровень не понижается с ростом порога', () {
       for (final metric in AchievementMetric.values) {
-        final items =
-            PairAchievement.all.where((a) => a.metric == metric).toList();
+        final items = PairAchievement.all
+            .where((a) => a.metric == metric)
+            .toList();
         for (var i = 1; i < items.length; i++) {
-          expect(items[i].tier.index, greaterThanOrEqualTo(items[i - 1].tier.index),
-              reason: '${items[i].id} слабее предыдущего');
+          expect(
+            items[i].tier.index,
+            greaterThanOrEqualTo(items[i - 1].tier.index),
+            reason: '${items[i].id} слабее предыдущего',
+          );
         }
       }
     });
@@ -47,8 +54,11 @@ void main() {
             .map((a) => a.threshold)
             .toList();
         for (var i = 1; i < steps.length; i++) {
-          expect(steps[i] / steps[i - 1], lessThanOrEqualTo(10),
-              reason: 'разрыв в $metric: ${steps[i - 1]} → ${steps[i]}');
+          expect(
+            steps[i] / steps[i - 1],
+            lessThanOrEqualTo(10),
+            reason: 'разрыв в $metric: ${steps[i - 1]} → ${steps[i]}',
+          );
         }
       }
     });
@@ -76,8 +86,10 @@ void main() {
         final steps = family.map((a) => a.threshold).toList();
         expect(steps, [...steps]..sort(), reason: '$metric');
       }
-      final total = AchievementMetric.values
-          .fold<int>(0, (n, m) => n + PairAchievement.family(m).length);
+      final total = AchievementMetric.values.fold<int>(
+        0,
+        (n, m) => n + PairAchievement.family(m).length,
+      );
       expect(total, PairAchievement.all.length);
     });
 

@@ -7,15 +7,13 @@ import 'package:love_app/models/mascot_sleep.dart';
 /// только формат атласа. Поэтому разбор манифеста и вырезка кадра покрыты
 /// тестами — ошибка здесь показала бы людям простыню кадров вместо персонажа.
 void main() {
-  Map<String, dynamic> row({
-    String id = 'pudya',
-    Map<String, dynamic>? data,
-  }) =>
+  Map<String, dynamic> row({String id = 'pudya', Map<String, dynamic>? data}) =>
       {
         'id': id,
         'name_ru': 'Пудя',
         'name_en': 'Pud',
-        'data': data ??
+        'data':
+            data ??
             {
               'sheet': 'https://togetherly.duckdns.org/atlas.png',
               'frame': 48,
@@ -42,7 +40,13 @@ void main() {
 
     test('Без картинки маскота нет', () {
       final anim = MascotAnim.fromCatalog(
-        row(data: {'frame': 48, 'cols': 12, 'rows': ['live']}),
+        row(
+          data: {
+            'frame': 48,
+            'cols': 12,
+            'rows': ['live'],
+          },
+        ),
         unlock: const Unlock.free(),
       );
       expect(anim, isNull);
@@ -58,12 +62,14 @@ void main() {
 
     test('Нулевой кадр не пройдёт — на него потом делят', () {
       final anim = MascotAnim.fromCatalog(
-        row(data: {
-          'sheet': 'https://x/a.png',
-          'frame': 0,
-          'cols': 12,
-          'rows': ['live'],
-        }),
+        row(
+          data: {
+            'sheet': 'https://x/a.png',
+            'frame': 0,
+            'cols': 12,
+            'rows': ['live'],
+          },
+        ),
         unlock: const Unlock.free(),
       );
       expect(anim, isNull);
@@ -99,20 +105,25 @@ void main() {
 
   group('Ступени роста', () {
     final anim = MascotAnim.fromCatalog(
-      row(data: {
-        'sheet': 'https://x/a.png',
-        'frame': 48,
-        'cols': 12,
-        'rows': ['live', 'grow', 'freeze', 'sad', 'happy'],
-        'levels': 3,
-        'level_offsets': {'1': 5, '2': 10, '3': 0},
-      }),
+      row(
+        data: {
+          'sheet': 'https://x/a.png',
+          'frame': 48,
+          'cols': 12,
+          'rows': ['live', 'grow', 'freeze', 'sad', 'happy'],
+          'levels': 3,
+          'level_offsets': {'1': 5, '2': 10, '3': 0},
+        },
+      ),
       unlock: const Unlock.free(),
     )!;
 
-    test('Третья ступень лежит в нулевом блоке — так видят её старые сборки', () {
-      expect(anim.rect(MascotAnimState.live, 0, level: 3).top, 0);
-    });
+    test(
+      'Третья ступень лежит в нулевом блоке — так видят её старые сборки',
+      () {
+        expect(anim.rect(MascotAnimState.live, 0, level: 3).top, 0);
+      },
+    );
 
     test('Первая и вторая ступени берутся со своим смещением', () {
       expect(anim.rect(MascotAnimState.live, 0, level: 1).top, 48 * 5);
@@ -120,8 +131,10 @@ void main() {
     });
 
     test('Ступень за пределами набора прижимается к допустимой', () {
-      expect(anim.rect(MascotAnimState.live, 0, level: 7).top,
-          anim.rect(MascotAnimState.live, 0, level: 3).top);
+      expect(
+        anim.rect(MascotAnimState.live, 0, level: 7).top,
+        anim.rect(MascotAnimState.live, 0, level: 3).top,
+      );
     });
 
     test('Атлас без ступеней рисует нулевой блок', () {
@@ -142,15 +155,17 @@ void main() {
 
   group('Свои сцены персонажа', () {
     final anim = MascotAnim.fromCatalog(
-      row(data: {
-        'sheet': 'https://x/a.png',
-        'frame': 96,
-        'cols': 12,
-        'rows': ['live', 'grow', 'freeze', 'sad', 'happy', 'preen', 'sleep'],
-        'extra_idles': ['preen', 'нет-такой'],
-        'night_idle': 'sleep',
-        'level_offsets': {'1': 7, '2': 14, '3': 0},
-      }),
+      row(
+        data: {
+          'sheet': 'https://x/a.png',
+          'frame': 96,
+          'cols': 12,
+          'rows': ['live', 'grow', 'freeze', 'sad', 'happy', 'preen', 'sleep'],
+          'extra_idles': ['preen', 'нет-такой'],
+          'night_idle': 'sleep',
+          'level_offsets': {'1': 7, '2': 14, '3': 0},
+        },
+      ),
       unlock: const Unlock.free(),
     )!;
 
@@ -174,8 +189,10 @@ void main() {
     test('Ночь включается по окну, заданному человеком', () {
       const early = SleepWindow(from: 21 * 60, to: 5 * 60);
       expect(anim.idleRow(DateTime(2026, 8, 1, 21, 30), early), 'sleep');
-      expect(anim.idleRow(DateTime(2026, 8, 1, 22, 30), SleepWindow.standard),
-          'live');
+      expect(
+        anim.idleRow(DateTime(2026, 8, 1, 22, 30), SleepWindow.standard),
+        'live',
+      );
     });
 
     test('Выключенная ночь не наступает никогда', () {
@@ -185,16 +202,22 @@ void main() {
 
     test('Ночь важнее своей сцены', () {
       expect(
-        anim.idleRow(DateTime(2026, 8, 1, 3, 0), SleepWindow.standard,
-            scene: 'preen'),
+        anim.idleRow(
+          DateTime(2026, 8, 1, 3, 0),
+          SleepWindow.standard,
+          scene: 'preen',
+        ),
         'sleep',
       );
     });
 
     test('Днём играет своя сцена', () {
       expect(
-        anim.idleRow(DateTime(2026, 8, 1, 15, 0), SleepWindow.standard,
-            scene: 'preen'),
+        anim.idleRow(
+          DateTime(2026, 8, 1, 15, 0),
+          SleepWindow.standard,
+          scene: 'preen',
+        ),
         'preen',
       );
     });
@@ -208,14 +231,28 @@ void main() {
 
   group('Сезонный наряд', () {
     final anim = MascotAnim.fromCatalog(
-      row(data: {
-        'sheet': 'https://x/a.png',
-        'frame': 96,
-        'cols': 12,
-        'rows': ['live', 'grow', 'freeze', 'sad', 'happy', 'winter', 'summer'],
-        'season_idles': {'12': 'winter', '1': 'winter', '7': 'summer',
-                         '5': 'нет-такой'},
-      }),
+      row(
+        data: {
+          'sheet': 'https://x/a.png',
+          'frame': 96,
+          'cols': 12,
+          'rows': [
+            'live',
+            'grow',
+            'freeze',
+            'sad',
+            'happy',
+            'winter',
+            'summer',
+          ],
+          'season_idles': {
+            '12': 'winter',
+            '1': 'winter',
+            '7': 'summer',
+            '5': 'нет-такой',
+          },
+        },
+      ),
       unlock: const Unlock.free(),
     )!;
 

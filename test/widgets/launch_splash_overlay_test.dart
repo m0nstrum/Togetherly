@@ -13,14 +13,19 @@ import 'package:love_app/widgets/launch_splash/launch_splash_view.dart';
 /// runApp), закрывает приложение, не пропускает к нему касаний и уходит
 /// целиком. Без заставки приложение доступно сразу.
 void main() {
-  final dir = Directory('${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_splash/hw_key');
+  final dir = Directory(
+    '${Platform.environment['HOME']}/Projects/togetherly-badges-hand/out_splash/hw_key',
+  );
   final ok = dir.existsSync();
 
   LaunchSplash splash() {
-    final spec = jsonDecode(File('${dir.path}/splash.json').readAsStringSync()) as Map<String, dynamic>;
+    final spec =
+        jsonDecode(File('${dir.path}/splash.json').readAsStringSync())
+            as Map<String, dynamic>;
     final files = {
       for (final f in dir.listSync().whereType<File>())
-        if (!f.path.endsWith('.json')) f.uri.pathSegments.last.split('.').first: f.path,
+        if (!f.path.endsWith('.json'))
+          f.uri.pathSegments.last.split('.').first: f.path,
     };
     return LaunchSplash.fromJson({...spec, 'files': files})!;
   }
@@ -28,23 +33,38 @@ void main() {
   Future<LaunchSplashReady> ready(WidgetTester tester) async {
     final s = splash();
     late Map<String, ui.Image> images;
-    await tester.runAsync(() async => images = await LaunchSplashService.decode(s));
+    await tester.runAsync(
+      () async => images = await LaunchSplashService.decode(s),
+    );
     return LaunchSplashReady(s, images);
   }
 
   Widget app(void Function() onTap) => MaterialApp(
-        builder: (context, child) => LaunchSplashOverlay(child: child!),
-        home: Scaffold(body: Center(child: ElevatedButton(onPressed: onTap, child: const Text('приложение')))),
-      );
+    builder: (context, child) => LaunchSplashOverlay(child: child!),
+    home: Scaffold(
+      body: Center(
+        child: ElevatedButton(
+          onPressed: onTap,
+          child: const Text('приложение'),
+        ),
+      ),
+    ),
+  );
 
   tearDown(() => LaunchSplashOverlay.pending = null);
 
-  testWidgets('играет с первого кадра, держит касания и уходит целиком', (tester) async {
+  testWidgets('играет с первого кадра, держит касания и уходит целиком', (
+    tester,
+  ) async {
     if (!ok) return;
     var taps = 0;
     LaunchSplashOverlay.pending = await ready(tester);
     await tester.pumpWidget(app(() => taps++));
-    expect(find.byType(LaunchSplashView), findsOneWidget, reason: 'сцена с первого кадра, без пустой ночи');
+    expect(
+      find.byType(LaunchSplashView),
+      findsOneWidget,
+      reason: 'сцена с первого кадра, без пустой ночи',
+    );
 
     await tester.tap(find.text('приложение'), warnIfMissed: false);
     await tester.pump(const Duration(milliseconds: 200));
@@ -52,12 +72,18 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 1700));
     await tester.pump();
-    expect(find.byType(LaunchSplashView), findsNothing, reason: 'заставка обязана уйти целиком');
+    expect(
+      find.byType(LaunchSplashView),
+      findsNothing,
+      reason: 'заставка обязана уйти целиком',
+    );
     await tester.tap(find.text('приложение'));
     expect(taps, 1);
   });
 
-  testWidgets('заставка играет один раз: второй оверлей её не берёт', (tester) async {
+  testWidgets('заставка играет один раз: второй оверлей её не берёт', (
+    tester,
+  ) async {
     if (!ok) return;
     LaunchSplashOverlay.pending = await ready(tester);
     await tester.pumpWidget(app(() {}));

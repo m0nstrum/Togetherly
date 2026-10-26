@@ -1,6 +1,6 @@
 // Китайский (упрощённое письмо) к небольшим разделам словаря: ads,
 // gift_photo, miss_you_history, photo_carousel_editor, watch_voice,
-// plus_promo, push_notifications, welcome.
+// push_notifications, welcome.
 // Почему колонка лежит отдельно — см. `zh.dart`.
 
 const Map<String, String> smallBZh = {
@@ -53,17 +53,6 @@ const Map<String, String> smallBZh = {
   'watchVoiceHint': '打开语音，边看边聊',
   'watchVoiceMic': '麦克风',
   'watchVoiceSpeaker': '扬声器',
-
-  // plus_promo
-  'plusPromoTitle': 'Togetherly+',
-  'plusPromoBody': '自定义心情、生理期日历、情侣数据统计、全部小组件和背景，而且没有广告。',
-  'plusPromoPerkMoods': '自定义心情',
-  'plusPromoPerkCycle': '生理期日历',
-  'plusPromoPerkStats': '情侣数据统计',
-  'plusPromoPerkWidgets': '全部小组件和背景',
-  'plusPromoPerkNoAds': '完全没有广告',
-  'plusPromoOpen': '去看看',
-  'plusPromoLater': '以后再说',
 
   // push_notifications
   'pushChannelName': '另一半的通知',

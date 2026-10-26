@@ -1,6 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/flat_source.dart';
 import 'package:love_app/models/coloring_meta.dart';
 
 /// Картинка раскраски уходит на сервер одной записью при заведении листа, а
@@ -12,25 +12,41 @@ void main() {
   group('когда дописать картинку раскраски', () {
     test('мета есть, картинки в ней нет, а телефон её знает', () {
       expect(
-        coloringMetaNeedsPicture(remoteExists: true, remote: '', local: 'metro'),
+        coloringMetaNeedsPicture(
+          remoteExists: true,
+          remote: '',
+          local: 'metro',
+        ),
         isTrue,
       );
       expect(
-        coloringMetaNeedsPicture(remoteExists: true, remote: null, local: 'metro'),
+        coloringMetaNeedsPicture(
+          remoteExists: true,
+          remote: null,
+          local: 'metro',
+        ),
         isTrue,
       );
     });
 
     test('картинка на сервере уже есть', () {
       expect(
-        coloringMetaNeedsPicture(remoteExists: true, remote: 'metro', local: 'metro'),
+        coloringMetaNeedsPicture(
+          remoteExists: true,
+          remote: 'metro',
+          local: 'metro',
+        ),
         isFalse,
       );
     });
 
     test('меты ещё нет: картинку как раз пишет заведение листа', () {
       expect(
-        coloringMetaNeedsPicture(remoteExists: false, remote: null, local: 'metro'),
+        coloringMetaNeedsPicture(
+          remoteExists: false,
+          remote: null,
+          local: 'metro',
+        ),
         isFalse,
       );
     });
@@ -44,21 +60,31 @@ void main() {
   });
 
   group('записи меты несут картинку', () {
-    final screen = File('lib/screens/draw_screen.dart').readAsStringSync();
+    final screen = flatSource('lib/screens/draw_screen.dart');
 
     test('«Готово» и смена половин заводят мету вместе с картинкой', () {
-      expect(screen, contains('setColoringDone(_groupId, _canvasId, next, pictureId: _coloringId)'));
-      expect(RegExp(r'setColoringSwap\([^;]*pictureId: _coloringId').hasMatch(screen), isTrue);
+      expect(
+        screen,
+        contains(
+          flat(
+            'setColoringDone(_groupId, _canvasId, next, pictureId: _coloringId)',
+          ),
+        ),
+      );
+      expect(
+        RegExp(r'setColoringSwap\([^;]*pictureId:_coloringId').hasMatch(screen),
+        isTrue,
+      );
     });
 
     test('экран дописывает картинку, если мета пришла без неё', () {
-      expect(screen, contains('coloringMetaNeedsPicture('));
-      expect(screen, contains('remoteExists: meta.exists'));
+      expect(screen, contains(flat('coloringMetaNeedsPicture(')));
+      expect(screen, contains(flat('remoteExists: meta.exists')));
     });
 
     test('сервер отдаёт признак, что мета есть', () {
-      final repo = File('lib/services/canvas_repository.dart').readAsStringSync();
-      expect(repo, contains('exists: true'));
+      final repo = flatSource('lib/services/canvas_repository.dart');
+      expect(repo, contains(flat('exists: true')));
     });
   });
 }

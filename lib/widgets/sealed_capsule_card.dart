@@ -94,7 +94,8 @@ class _SealedCapsuleCardState extends State<SealedCapsuleCard>
           animation: _wiggle,
           builder: (context, child) {
             // Затухающее покачивание ±0.05 рад.
-            final angle = math.sin(_wiggle.value * math.pi * 4) *
+            final angle =
+                math.sin(_wiggle.value * math.pi * 4) *
                 0.05 *
                 (1 - _wiggle.value);
             return Transform.rotate(angle: angle, child: child);
@@ -172,7 +173,11 @@ class _SealedCapsuleCardState extends State<SealedCapsuleCard>
                       padding: const EdgeInsets.only(bottom: 3),
                       child: Text(
                         '${s.tgYearDaysUnit(days)} ${s.capsuleUntilOpen}',
-                        style: AppFonts.onest(size: 15, weight: 700, color: ink),
+                        style: AppFonts.onest(
+                          size: 15,
+                          weight: 700,
+                          color: ink,
+                        ),
                       ),
                     ),
                   ],
@@ -185,8 +190,10 @@ class _SealedCapsuleCardState extends State<SealedCapsuleCard>
                   value: share,
                   minHeight: 4,
                   color: ink,
-                  backgroundColor:
-                      Color.alphaBlend(ink.withValues(alpha: 0.22), cs.secondaryContainer),
+                  backgroundColor: Color.alphaBlend(
+                    ink.withValues(alpha: 0.22),
+                    cs.secondaryContainer,
+                  ),
                   stopIndicatorColor: ink,
                   trackGap: 4,
                   borderRadius: BorderRadius.circular(2),
@@ -203,13 +210,20 @@ class _SealedCapsuleCardState extends State<SealedCapsuleCard>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.schedule_rounded, size: 16, color: cs.onInverseSurface),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 16,
+                        color: cs.onInverseSurface,
+                      ),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           s.capsuleOpensOn(memoryDateLabel(widget.openAt)),
                           style: AppFonts.onest(
-                              size: 13, weight: 600, color: cs.onInverseSurface),
+                            size: 13,
+                            weight: 600,
+                            color: cs.onInverseSurface,
+                          ),
                         ),
                       ),
                     ],
@@ -221,11 +235,7 @@ class _SealedCapsuleCardState extends State<SealedCapsuleCard>
         ),
         // Печать лежит поверх края листа и касаний не забирает: касание
         // по карточке целиком говорит «ещё рано».
-        Positioned(
-          left: 14,
-          top: 0,
-          child: IgnorePointer(child: _seal()),
-        ),
+        Positioned(left: 14, top: 0, child: IgnorePointer(child: _seal())),
       ],
     );
   }

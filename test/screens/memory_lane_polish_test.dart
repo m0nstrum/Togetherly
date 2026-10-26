@@ -9,10 +9,9 @@ void main() {
   final src = File('lib/screens/memory_lane_screen.dart').readAsStringSync();
 
   test('в ленте нет вшитых цветов мимо темы', () {
-    final hits = RegExp(r'Colors\.(red|grey|green|blue|amber|orange|pink|purple)')
-        .allMatches(src)
-        .map((m) => m.group(0))
-        .toList();
+    final hits = RegExp(
+      r'Colors\.(red|grey|green|blue|amber|orange|pink|purple)',
+    ).allMatches(src).map((m) => m.group(0)).toList();
     expect(hits, isEmpty);
   });
 

@@ -190,7 +190,8 @@ class MediaCache {
     if (db != null) await _pending.delete(db);
     try {
       final dir = Directory(
-          '${(await getApplicationSupportDirectory()).path}/offline/pending_media');
+        '${(await getApplicationSupportDirectory()).path}/offline/pending_media',
+      );
       if (await dir.exists()) await dir.delete(recursive: true);
     } catch (e) {
       debugPrint('MediaCache.clearPending failed: $e');

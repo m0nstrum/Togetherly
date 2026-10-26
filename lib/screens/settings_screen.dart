@@ -10,12 +10,11 @@ import '../widgets/home_layout_editor.dart';
 import '../widgets/settings_scaffold.dart';
 import '../fork/quick_tiles.dart'; // fork: PLAN 3.3
 import '../fork/app_lock/app_lock_ui.dart'; // fork: PLAN 3.1
-import '../fork/crash_reports.dart'; // fork
-import '../fork/flags.dart'; // fork
-import '../fork/battery/battery_share.dart'; // fork
-import '../fork/battery/battery_ui.dart'; // fork
-import '../fork/meta_direct.dart'; // fork
-import '../fork/ui/settings_parts.dart'; // fork
+import '../fork/crash_reports.dart';
+import '../fork/battery/battery_share.dart';
+import '../fork/battery/battery_ui.dart';
+import '../fork/meta_direct.dart';
+import '../fork/ui/settings_parts.dart';
 
 /// Экран настроек.
 ///
@@ -41,8 +40,6 @@ class SettingsScreen extends StatelessWidget {
     required this.onSupport,
     required this.onOfficial,
     required this.onDrawTools,
-    required this.onTelegramChannel,
-    required this.onBugBot,
     this.onHelp,
     this.onChangeEmail,
     required this.onAbout,
@@ -94,19 +91,13 @@ class SettingsScreen extends StatelessWidget {
 
   /// Оба адреса стоят подписями к строкам: «Написать нам» не говорит, куда
   /// именно письмо уйдёт, а человеку это надо знать заранее.
-  static const String supportEmail = String.fromEnvironment('SUPPORT_EMAIL'); // fork
+  static const String supportEmail = String.fromEnvironment('SUPPORT_EMAIL');
 
   /// Ящик для писем от организаций, а не от людей.
-  static const String officialEmail = String.fromEnvironment( // fork
+  static const String officialEmail = String.fromEnvironment(
     'OFFICIAL_EMAIL',
     defaultValue: supportEmail,
   );
-
-  /// Канал в Telegram и бот, принимающий жалобы. Обе ссылки жили где угодно,
-  /// кроме приложения: «не могу найти ссылку на тгк» — обычный вопрос в
-  /// поддержке, а про бота знали только те, кому его присылали в ответ.
-  final VoidCallback onTelegramChannel;
-  final VoidCallback onBugBot;
 
   /// Справка «Как сделать».
   final VoidCallback? onHelp;
@@ -114,6 +105,7 @@ class SettingsScreen extends StatelessWidget {
   /// Смена почты кодом из письма.
   final VoidCallback? onChangeEmail;
   final VoidCallback onAbout;
+
   /// Письмо со ссылкой на смену пароля — на почту аккаунта.
   ///
   /// Дублирует «Забыли пароль?» с экрана входа: до сюда доходят те, кто
@@ -254,8 +246,10 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   SettingsRow(
                     icon: Icons.monetization_on_rounded,
-                    title: forkCoinsRowTitle(), subtitle: s.settingsCoinsHint,
-                    trailing: const SettingsChevron(), onTap: onCoinShop,
+                    title: forkCoinsRowTitle(),
+                    subtitle: s.settingsCoinsHint,
+                    trailing: const SettingsChevron(),
+                    onTap: onCoinShop,
                   ),
                   SettingsRow(
                     icon: Icons.logout_rounded,
@@ -267,27 +261,9 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
 
-              // fork: при ForkFlags.allFree Плюс открыт всем, продавать нечего — строки нет.
-              if (plusVisible && !ForkFlags.allFree)
-                SettingsGroup([
-                  SettingsRow(
-                    icon: Icons.workspace_premium_rounded,
-                    title: s.plusTitle,
-                    subtitle: plusActive ? s.plusActiveBody : s.plusHeroBody,
-                    iconBg: plusActive
-                        ? scheme.primary
-                        : scheme.primaryContainer,
-                    iconFg: plusActive
-                        ? scheme.onPrimary
-                        : scheme.onPrimaryContainer,
-                    trailing: const SettingsChevron(),
-                    onTap: onPlus,
-                  ),
-                ]),
-
               SettingsCollapsible(
                 prefsKey: 'appearance',
-                title: ruEn('Внешний вид и язык', 'Look & language'), // fork
+                title: ruEn('Внешний вид и язык', 'Look & language'),
                 icon: Icons.brush_rounded,
                 children: [
                   SettingsRow(
@@ -338,11 +314,14 @@ class SettingsScreen extends StatelessWidget {
 
               SettingsCollapsible(
                 prefsKey: 'notifications',
-                title: ruEn('Телефон и экран блокировки', 'Phone & lock screen'), // fork
+                title: ruEn(
+                  'Телефон и экран блокировки',
+                  'Phone & lock screen',
+                ),
                 icon: Icons.campaign_rounded,
                 children: [
-                  const ForkAppLockSettings(), // fork
-                  const ForkQuickTilesSettings(), // fork
+                  const ForkAppLockSettings(),
+                  const ForkQuickTilesSettings(),
                   SettingsRow(
                     icon: Icons.notifications_rounded,
                     title: s.notifications,
@@ -363,10 +342,18 @@ class SettingsScreen extends StatelessWidget {
                   // fork: заряд телефона — партнёру.
                   SettingsRow(
                     icon: Icons.battery_5_bar_rounded,
-                    title: ruEn('Показывать партнёру заряд', 'Show my battery to my partner'),
-                    subtitle: ruEn('Видно в чате и в профиле; шифром пары', 'Shown in chat and profile; end-to-end encrypted'),
+                    title: ruEn(
+                      'Показывать партнёру заряд',
+                      'Show my battery to my partner',
+                    ),
+                    subtitle: ruEn(
+                      'Видно в чате и в профиле; шифром пары',
+                      'Shown in chat and profile; end-to-end encrypted',
+                    ),
                     trailing: const ForkBatteryShareSwitch(),
-                    onTap: () => ForkBattery.instance.setSharing(!ForkBattery.instance.sharing.value),
+                    onTap: () => ForkBattery.instance.setSharing(
+                      !ForkBattery.instance.sharing.value,
+                    ),
                   ),
                 ],
               ),
@@ -443,14 +430,20 @@ class SettingsScreen extends StatelessWidget {
                   SettingsRow(
                     icon: Icons.folder_zip_outlined,
                     title: s.exportMyData,
-                    subtitle: ruEn('Полный архив всех ваших данных', 'Full archive of all your data'), // fork
+                    subtitle: ruEn(
+                      'Полный архив всех ваших данных',
+                      'Full archive of all your data',
+                    ),
                     trailing: const SettingsChevron(),
                     onTap: onExportMyData,
                   ),
                   SettingsRow(
                     icon: Icons.download_rounded,
                     title: s.exportMemories,
-                    subtitle: ruEn('Только воспоминания — файлом на память', 'Just your memories, as a file'), // fork
+                    subtitle: ruEn(
+                      'Только воспоминания — файлом на память',
+                      'Just your memories, as a file',
+                    ),
                     trailing: const SettingsChevron(),
                     onTap: onExport,
                   ),
@@ -470,11 +463,15 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.info_rounded,
                 children: [
                   if (onHelp != null)
-                    SettingsRow(icon: Icons.help_rounded,
-                      title: trKey('help.title'), subtitle: trKey('help.subtitle'),
-                      trailing: const SettingsChevron(), onTap: onHelp),
-                  const ForkCrashReportsRow(), // fork
-                  const ForkMetaDirectRow(), // fork
+                    SettingsRow(
+                      icon: Icons.help_rounded,
+                      title: trKey('help.title'),
+                      subtitle: trKey('help.subtitle'),
+                      trailing: const SettingsChevron(),
+                      onTap: onHelp,
+                    ),
+                  const ForkCrashReportsRow(),
+                  const ForkMetaDirectRow(),
                   SettingsRow(
                     icon: Icons.info_rounded,
                     title: ruEn('Версия и лицензии', 'Version & licenses'),
@@ -488,56 +485,40 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const SettingsChevron(),
                     onTap: onTerms,
                   ),
-                  if (SettingsScreen.supportEmail.isNotEmpty) // fork
-                  SettingsRow(
-                    icon: Icons.mail_rounded,
-                    title: s.supportTitle,
-                    subtitle: SettingsScreen.supportEmail,
-                    trailing: const SettingsChevron(),
-                    onTap: onSupport,
-                  ),
+                  if (SettingsScreen.supportEmail.isNotEmpty)
+                    SettingsRow(
+                      icon: Icons.mail_rounded,
+                      title: s.supportTitle,
+                      subtitle: SettingsScreen.supportEmail,
+                      trailing: const SettingsChevron(),
+                      onTap: onSupport,
+                    ),
                   // Официальные обращения идут в отдельный ящик: письма от
                   // магазинов, юристов и правообладателей нельзя терять в
                   // потоке жалоб на ошибки.
-                  if (SettingsScreen.officialEmail.isNotEmpty) // fork
-                  SettingsRow(
-                    icon: Icons.gavel_rounded,
-                    title: s.officialTitle,
-                    subtitle: SettingsScreen.officialEmail,
-                    trailing: const SettingsChevron(),
-                    onTap: onOfficial,
-                  ),
-                  if (!ForkFlags.hideUpstreamChannels) ...[ // fork
-                  SettingsRow(
-                    icon: Icons.campaign_rounded,
-                    title: s.telegramChannelTitle,
-                    subtitle: s.telegramChannelHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onTelegramChannel,
-                  ),
-                  SettingsRow(
-                    icon: Icons.bug_report_rounded,
-                    title: s.bugBotTitle,
-                    subtitle: s.bugBotHint,
-                    trailing: const SettingsChevron(),
-                    onTap: onBugBot,
-                  ),
-                  ], // fork
+                  if (SettingsScreen.officialEmail.isNotEmpty)
+                    SettingsRow(
+                      icon: Icons.gavel_rounded,
+                      title: s.officialTitle,
+                      subtitle: SettingsScreen.officialEmail,
+                      trailing: const SettingsChevron(),
+                      onTap: onOfficial,
+                    ),
                 ],
               ),
 
               // fork: удаление аккаунта — отдельно и внизу, не в общем списке.
               const SizedBox(height: 28),
               SettingsGroup([
-                  SettingsRow(
-                    icon: Icons.delete_forever_rounded,
-                    title: s.deleteAccount,
-                    subtitle: s.settingsDeleteHint,
-                    iconBg: scheme.errorContainer,
-                    iconFg: scheme.onErrorContainer,
-                    titleColor: scheme.error,
-                    onTap: onDeleteAccount,
-                  ),
+                SettingsRow(
+                  icon: Icons.delete_forever_rounded,
+                  title: s.deleteAccount,
+                  subtitle: s.settingsDeleteHint,
+                  iconBg: scheme.errorContainer,
+                  iconFg: scheme.onErrorContainer,
+                  titleColor: scheme.error,
+                  onTap: onDeleteAccount,
+                ),
               ]),
             ],
           ),

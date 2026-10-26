@@ -33,8 +33,11 @@ void main() {
       final row = PbDataService.userProfileRow({'birthDate': moment});
       final back = DateOnly.parse(row['birth_date'])!;
 
-      expect([back.year, back.month, back.day], [2005, 10, 2],
-          reason: 'момент $moment не должен менять число');
+      expect(
+        [back.year, back.month, back.day],
+        [2005, 10, 2],
+        reason: 'момент $moment не должен менять число',
+      );
     }
   });
 
@@ -65,7 +68,10 @@ void main() {
     expect(start, greaterThan(0), reason: 'пикер дня рождения на месте');
     final body = screen.substring(start, screen.indexOf(');', start));
 
-    expect(body.contains('withTime: false'), isTrue,
-        reason: 'вкладка времени у дня рождения выключена');
+    expect(
+      body.contains('withTime: false'),
+      isTrue,
+      reason: 'вкладка времени у дня рождения выключена',
+    );
   });
 }

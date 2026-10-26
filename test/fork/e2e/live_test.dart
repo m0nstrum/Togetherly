@@ -15,6 +15,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/fork/e2e/backup.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
+import 'package:love_app/fork/e2e/device_link.dart';
 import 'package:love_app/fork/e2e/e2e_service.dart';
 import 'package:love_app/fork/e2e/key_store.dart';
 import 'package:love_app/fork/e2e/media_cipher.dart';
@@ -208,6 +209,8 @@ void main() {
               'author_uid': a.uid,
               'title': 'Плед',
               'price': 990,
+              'place': '{"lat":55.7298,"lng":37.6011}',
+              'due': '2026-11-14',
             },
           );
       final rawWish =
@@ -215,11 +218,109 @@ void main() {
               .collection('wishes')
               .getOne(wish.id);
       expect(rawWish.getStringValue('title'), startsWith(e2eFieldPrefix));
+      expect(rawWish.getStringValue('place'), startsWith(e2eFieldPrefix));
+      expect(rawWish.getStringValue('due'), startsWith(e2eFieldPrefix));
       expect(
         (await bobChat.collection('wishes').getOne(wish.id)).getStringValue(
           'title',
         ),
         'Плед',
+      );
+      // Партнёр отмечает чужое желание: дата отметки уходит шифром в `enc`,
+      // «я тоже хочу» — в `also`; сервер пускает не-автора в эти поля, а
+      // цена автора в `enc` не теряется (docs/WISHLIST.md).
+      // Контекст правки — расшифрованная запись, как у приложения (кэш или
+      // сервер): из неё кодек добирает в `enc` чужие поля (цену).
+      final bobFull = PocketBase(
+        url,
+        httpClientFactory: () => E2EHttpClient(
+          http.Client(),
+          codec: () async => RecordCodec(c, b),
+          context: (col, id, _) async =>
+              (await bobChat.collection(col).getOne(id)).toJson(),
+          newId: newPbId,
+        ),
+      )..authStore.save(env['SMOKE_BTOK']!, null);
+      await bobFull
+          .collection('wishes')
+          .update(
+            wish.id,
+            body: {
+              'done': true,
+              'done_at': DateTime.utc(2026, 10, 25).toIso8601String(),
+              'done_by': b.uid,
+              'also': b.uid,
+            },
+          );
+      final marked = await chat(
+        env['SMOKE_ATOK']!,
+        a,
+      ).collection('wishes').getOne(wish.id);
+      expect(marked.getBoolValue('done'), isTrue);
+      expect(marked.getStringValue('also'), b.uid);
+      expect(marked.getIntValue('price'), 990);
+      expect(marked.getStringValue('done_at'), startsWith('2026-10-25'));
+      // «Другое желание недели» ставит и партнёр; срок «Дарю» — шифром.
+      await bobFull
+          .collection('wishes')
+          .update(wish.id, body: {'skip': '2026-W43', 'memory': 'mem123'});
+      final shared = await chat(
+        env['SMOKE_ATOK']!,
+        a,
+      ).collection('wishes').getOne(wish.id);
+      expect(shared.getStringValue('skip'), '2026-W43');
+      expect(shared.getStringValue('memory'), 'mem123');
+      final res = await bobChat
+          .collection('wish_reservations')
+          .create(
+            body: {
+              'group_id': pair,
+              'wish_id': wish.id,
+              'uid': b.uid,
+              'until': '2026-11-03',
+            },
+          );
+      expect(
+        (await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
+                .collection('wish_reservations')
+                .getOne(res.id))
+            .getStringValue('until'),
+        startsWith(e2eFieldPrefix),
+      );
+      expect(
+        (await bobChat.collection('wish_reservations').getOne(res.id))
+            .getStringValue('until'),
+        '2026-11-03',
+      );
+      // Комментарий партнёра — шифром; удалённое желание уносит его.
+      final comment = await bobChat
+          .collection('wish_comments')
+          .create(
+            body: {
+              'group_id': pair,
+              'wish_id': wish.id,
+              'author_uid': b.uid,
+              'text': 'в пятницу?',
+            },
+          );
+      final rawComment =
+          await (PocketBase(url)..authStore.save(env['SMOKE_ATOK']!, null))
+              .collection('wish_comments')
+              .getOne(comment.id);
+      expect(rawComment.getStringValue('text'), startsWith(e2eFieldPrefix));
+      expect(
+        (await chat(
+          env['SMOKE_ATOK']!,
+          a,
+        ).collection('wish_comments').getOne(comment.id)).getStringValue(
+          'text',
+        ),
+        'в пятницу?',
+      );
+      await chat(env['SMOKE_ATOK']!, a).collection('wishes').delete(wish.id);
+      await expectLater(
+        bobChat.collection('wish_comments').getOne(comment.id),
+        throwsA(isA<ClientException>()),
       );
       await chat(env['SMOKE_ATOK']!, a).send(
         '/api/group/miss-you',
@@ -332,6 +433,30 @@ void main() {
       expect(
         a2.currentKey(pair)!.key.extractBytes(),
         b.currentKey(pair)!.key.extractBytes(),
+      );
+
+      // T3: третий телефон привязывается по QR с первого через e2e_links.
+      final a3 = install(env['SMOKE_ATOK']!, env['SMOKE_AID']!);
+      await a3.start();
+      expect(a3.needsRestore.value, isTrue);
+      final qr = await a3.linkStart();
+      expect(await a3.linkPoll(), isFalse);
+      // Чужой аккаунт запись привязки не видит.
+      await expectLater(
+        b.linkApprove(LinkQr(uid: b.uid, linkId: qr.linkId, secret: qr.secret)),
+        throwsA(isA<E2ELinkExpired>()),
+      );
+      await a.linkApprove(qr);
+      expect(await a3.linkPoll(), isTrue);
+      expect(
+        a3.currentKey(pair)!.key.extractBytes(),
+        b.currentKey(pair)!.key.extractBytes(),
+      );
+      await b.syncGroup(pair);
+      expect(
+        b.status.value[pair],
+        PairE2EStatus.verified,
+        reason: 'новое устройство того же аккаунта — без смены ключа',
       );
     },
     skip: base == null

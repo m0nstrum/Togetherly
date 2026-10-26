@@ -1,11 +1,11 @@
-import '../fork/geo/map_attribution.dart'; // fork
+import '../fork/geo/map_attribution.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import '../dict_strings.dart' show ruEn; // fork
-import '../fork/geo/geo_status.dart'; // fork
-import '../fork/geo/share_ui.dart'; // fork
+import '../dict_strings.dart' show ruEn;
+import '../fork/geo/geo_status.dart';
+import '../fork/geo/share_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -76,7 +76,8 @@ class LiveMapScreen extends StatefulWidget {
   State<LiveMapScreen> createState() => _LiveMapScreenState();
 }
 
-class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateMixin {
+class _LiveMapScreenState extends State<LiveMapScreen>
+    with TickerProviderStateMixin {
   final MapController _map = MapController();
 
   StreamSubscription<LivePoint?>? _partnerSub;
@@ -88,17 +89,38 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
   Timer? _decideTimer;
 
   /// 0 — глобус, 1 — карта; между ними идёт переход.
-  late final AnimationController _mode =
-      AnimationController(vsync: this, value: 1, duration: _transitionTime);
-  late final Animation<double> _tiles = _mode.drive(CurveTween(curve: const Interval(_t2, 1)));
-  late final AnimationController _fly =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1300));
+  late final AnimationController _mode = AnimationController(
+    vsync: this,
+    value: 1,
+    duration: _transitionTime,
+  );
+  late final Animation<double> _tiles = _mode.drive(
+    CurveTween(curve: const Interval(_t2, 1)),
+  );
+  late final AnimationController _fly = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1300),
+  );
   final ValueNotifier<double?> _flyValue = ValueNotifier(null);
-  late final AnimationController _bump =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 520));
+  late final AnimationController _bump = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+  );
   late final Animation<double> _bumpScale = TweenSequence<double>([
-    TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.14).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
-    TweenSequenceItem(tween: Tween(begin: 1.14, end: 1.0).chain(CurveTween(curve: Curves.easeOutCubic)), weight: 60),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 1.0,
+        end: 1.14,
+      ).chain(CurveTween(curve: Curves.easeOut)),
+      weight: 40,
+    ),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 1.14,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeOutCubic)),
+      weight: 60,
+    ),
   ]).animate(_bump);
 
   GlobeTransition? _transition;
@@ -125,14 +147,24 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _partnerSub = LiveLocationService.instance.watchPartner(widget.pairId, widget.partnerUid).listen(_onPartner);
+    _partnerSub = LiveLocationService.instance
+        .watchPartner(widget.pairId, widget.partnerUid)
+        .listen(_onPartner);
     _startMyStream();
-    LiveLocationService.instance.sharingEnabled.addListener(_onShareChanged); // fork (UX G5)
-    LiveLocationService.instance.issue.addListener(_onShareChanged); // fork
+    LiveLocationService.instance.sharingEnabled.addListener(
+      _onShareChanged,
+    ); // fork (UX G5)
+    LiveLocationService.instance.issue.addListener(_onShareChanged);
     _loadShapes();
-    LandShapes.coarse().then((v) => mounted ? setState(() => _land110 = v) : null);
-    LandShapes.detailed().then((v) => mounted ? setState(() => _land50 = v) : null);
-    _fly.addListener(() => _flyValue.value = _fly.isAnimating ? _fly.value : null);
+    LandShapes.coarse().then(
+      (v) => mounted ? setState(() => _land110 = v) : null,
+    );
+    LandShapes.detailed().then(
+      (v) => mounted ? setState(() => _land50 = v) : null,
+    );
+    _fly.addListener(
+      () => _flyValue.value = _fly.isAnimating ? _fly.value : null,
+    );
     _fly.addStatusListener((s) {
       if (s == AnimationStatus.completed) {
         _flyValue.value = null;
@@ -145,14 +177,17 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
       }
     });
     // Без второй точки дольше четырёх секунд — открываемся тем, что есть.
-    _decideTimer = Timer(const Duration(seconds: 4), () => _decide(force: true));
+    _decideTimer = Timer(
+      const Duration(seconds: 4),
+      () => _decide(force: true),
+    );
   }
 
   @override
   void dispose() {
     _partnerSub?.cancel();
-    LiveLocationService.instance.sharingEnabled.removeListener(_onShareChanged); // fork
-    LiveLocationService.instance.issue.removeListener(_onShareChanged); // fork
+    LiveLocationService.instance.sharingEnabled.removeListener(_onShareChanged);
+    LiveLocationService.instance.issue.removeListener(_onShareChanged);
     _meFeed?.dispose();
     _decideTimer?.cancel();
     _toastTimer?.cancel();
@@ -170,7 +205,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
   // fork (UX G5): включить показ прямо с большой карты.
   Future<void> _enableSharing() async {
     final svc = LiveLocationService.instance;
-    final ok = await svc.setSharingEnabled(true, pairId: widget.pairId, partnerUid: widget.partnerUid);
+    final ok = await svc.setSharingEnabled(
+      true,
+      pairId: widget.pairId,
+      partnerUid: widget.partnerUid,
+    );
     if (!mounted) return;
     if (!ok) {
       showShareDenied(context, svc.issue.value);
@@ -182,7 +221,8 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
   Future<void> _loadShapes() async {
     final prefs = await SharedPreferences.getInstance();
     RoundedPolygon shapeFor(String uid) {
-      final i = prefs.getInt('avatar_shape_$uid') ?? defaultShapeIndexForUid(uid);
+      final i =
+          prefs.getInt('avatar_shape_$uid') ?? defaultShapeIndexForUid(uid);
       return kAvatarShapes[i.clamp(0, kAvatarShapes.length - 1)];
     }
 
@@ -225,24 +265,33 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     if (me == null && partner == null) return;
     _decided = true;
     _decideTimer?.cancel();
-    if (me != null && partner != null && LiveLocationService.distanceMeters(me, partner) > kGlobeStartMeters) {
+    if (me != null &&
+        partner != null &&
+        LiveLocationService.distanceMeters(me, partner) > kGlobeStartMeters) {
       _mode.value = 0;
       setState(() {});
     } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _fitBoth(animate: false));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _fitBoth(animate: false),
+      );
     }
   }
 
   // ── Камера карты ────────────────────────────────────────────────────────
 
-  EdgeInsets get _fitPadding => EdgeInsets.fromLTRB(72, _topBar + 100, 72, _size.height - _panelTop + 36);
+  EdgeInsets get _fitPadding =>
+      EdgeInsets.fromLTRB(72, _topBar + 100, 72, _size.height - _panelTop + 36);
 
   MapCamera? _fitCamera() {
     if (!_mapReady) return null;
     final coords = [?_me, ?_partner?.latLng];
     if (coords.isEmpty) return null;
     try {
-      return CameraFit.coordinates(coordinates: coords, padding: _fitPadding, maxZoom: 16).fit(_map.camera);
+      return CameraFit.coordinates(
+        coordinates: coords,
+        padding: _fitPadding,
+        maxZoom: 16,
+      ).fit(_map.camera);
     } catch (_) {
       return null;
     }
@@ -281,7 +330,9 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     final mid = greatCircle(a, b, segments: 2)[1];
     final ang = LiveLocationService.distanceMeters(a, b) / 6371008.8;
     final w = _size.width;
-    final r = (.42 * w / math.max(ang, 1e-4)).clamp(.42 * w, 1.45 * w).toDouble();
+    final r = (.42 * w / math.max(ang, 1e-4))
+        .clamp(.42 * w, 1.45 * w)
+        .toDouble();
     return GlobeView(
       lat: (mid.latitude + _drag.dy).clamp(-80.0, 80.0).toDouble(),
       lon: mid.longitude + _drag.dx,
@@ -309,7 +360,8 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     );
   }
 
-  Duration _timeFor(double distance) => _transitionTime * distance.abs().clamp(.2, 1.0);
+  Duration _timeFor(double distance) =>
+      _transitionTime * distance.abs().clamp(.2, 1.0);
 
   Future<void> _goMap() async {
     if (_mode.isAnimating || _mode.value >= 1 || !_paired) return;
@@ -321,7 +373,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     } catch (_) {}
     _transition = _transitionFor(fit, _restView());
     HapticFeedback.selectionClick();
-    await _mode.animateTo(1, duration: _timeFor(1 - _mode.value), curve: Curves.linear);
+    await _mode.animateTo(
+      1,
+      duration: _timeFor(1 - _mode.value),
+      curve: Curves.linear,
+    );
   }
 
   void _goGlobe() {
@@ -339,19 +395,36 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     final p = _mode.value;
     if (p <= 0 && !_mode.isAnimating) {
       final rest = _restView();
-      return GlobeScene.globe(GlobeTransition(
-        rest: rest,
-        target: GlobeTarget(lat: rest.lat, lon: rest.lon, radius: rest.radius),
-        focus: _focus,
-        horizonGap: _gap,
-        camera: MercatorCamera(centerLat: rest.lat, centerLon: rest.lon, zoom: 0, size: _size),
-      ).viewAt(0));
+      return GlobeScene.globe(
+        GlobeTransition(
+          rest: rest,
+          target: GlobeTarget(
+            lat: rest.lat,
+            lon: rest.lon,
+            radius: rest.radius,
+          ),
+          focus: _focus,
+          horizonGap: _gap,
+          camera: MercatorCamera(
+            centerLat: rest.lat,
+            centerLon: rest.lon,
+            zoom: 0,
+            size: _size,
+          ),
+        ).viewAt(0),
+      );
     }
     final t = _transition;
     if (t == null) return null;
     if (p <= _t1) return GlobeScene.globe(t.viewAt(p / _t1));
-    final a = Curves.easeInOutCubic.transform(((p - _t1) / (_t2 - _t1)).clamp(0.0, 1.0));
-    return GlobeScene.unroll(t, a, landMix: ((p - _t2) / (1 - _t2)).clamp(0.0, 1.0));
+    final a = Curves.easeInOutCubic.transform(
+      ((p - _t1) / (_t2 - _t1)).clamp(0.0, 1.0),
+    );
+    return GlobeScene.unroll(
+      t,
+      a,
+      landMix: ((p - _t2) / (1 - _t2)).clamp(0.0, 1.0),
+    );
   }
 
   // ── «Скучаю» и «Как доехать» ────────────────────────────────────────────
@@ -397,33 +470,36 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
       data: ProfileTheme.data(cs),
       child: Scaffold(
         backgroundColor: cs.surface,
-        body: LayoutBuilder(builder: (context, box) {
-          _size = box.biggest;
-          _topBar = media.padding.top + 12 + 48;
-          _panelTop = box.maxHeight - _panelHeight;
-          _focus = Offset(box.maxWidth / 2, (_topBar + _panelTop) / 2);
-          return Stack(
-            children: [
-              Positioned.fill(child: _globeLayer(palette)),
-              Positioned.fill(child: _mapLayer(palette, cs)),
-              Positioned.fill(child: _overlayBalloons(cs, palette)),
-              _topControls(cs),
-              _sideButtons(cs),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _MeasureSize(
-                  onChange: (s) {
-                    if ((s.height - _panelHeight).abs() > .5) setState(() => _panelHeight = s.height);
-                  },
-                  child: _panel(cs, media.padding.bottom),
+        body: LayoutBuilder(
+          builder: (context, box) {
+            _size = box.biggest;
+            _topBar = media.padding.top + 12 + 48;
+            _panelTop = box.maxHeight - _panelHeight;
+            _focus = Offset(box.maxWidth / 2, (_topBar + _panelTop) / 2);
+            return Stack(
+              children: [
+                Positioned.fill(child: _globeLayer(palette)),
+                Positioned.fill(child: _mapLayer(palette, cs)),
+                Positioned.fill(child: _overlayBalloons(cs, palette)),
+                _topControls(cs),
+                _sideButtons(cs),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _MeasureSize(
+                    onChange: (s) {
+                      if ((s.height - _panelHeight).abs() > .5)
+                        setState(() => _panelHeight = s.height);
+                    },
+                    child: _panel(cs, media.padding.bottom),
+                  ),
                 ),
-              ),
-              _toastView(cs),
-            ],
-          );
-        }),
+                _toastView(cs),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -435,8 +511,12 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
         if (_inMap) return const SizedBox.shrink();
         final scene = _scene();
         if (scene == null) return const SizedBox.shrink();
-        final land = scene.radius > 700 ? (_land50 ?? _land110) : (_land110 ?? _land50);
-        final arc = scene.arc(greatCircle(_me!, _partner!.latLng, segments: 64));
+        final land = scene.radius > 700
+            ? (_land50 ?? _land110)
+            : (_land110 ?? _land50);
+        final arc = scene.arc(
+          greatCircle(_me!, _partner!.latLng, segments: 64),
+        );
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onDoubleTap: _goMap,
@@ -486,7 +566,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
           mapController: _map,
           options: MapOptions(
             initialCenter: center,
-            initialZoom: known == null ? 2 : widget.initialZoom, // fork
+            initialZoom: known == null ? 2 : widget.initialZoom,
             minZoom: 1.5,
             maxZoom: 18,
             backgroundColor: palette.land,
@@ -504,7 +584,12 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
           children: [
             ThemedMapLayer(theme: widget.theme),
             if (_inMap && me != null && partner != null)
-              MapArcLayer(from: me, to: partner.latLng, palette: palette, fly: _flyValue),
+              MapArcLayer(
+                from: me,
+                to: partner.latLng,
+                palette: palette,
+                fly: _flyValue,
+              ),
             if (_inMap)
               MarkerLayer(
                 markers: [
@@ -564,22 +649,26 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     );
   }
 
-  BalloonColors _colors(ColorScheme cs, MapPalette palette, {required bool partner}) => BalloonColors(
-        ring: cs.surface,
-        string: cs.onSecondaryContainer,
-        dot: palette.thread,
-        face: partner ? cs.secondaryContainer : cs.tertiaryContainer,
-        onFace: partner ? cs.onSecondaryContainer : cs.onTertiaryContainer,
-      );
+  BalloonColors _colors(
+    ColorScheme cs,
+    MapPalette palette, {
+    required bool partner,
+  }) => BalloonColors(
+    ring: cs.surface,
+    string: cs.onSecondaryContainer,
+    dot: palette.thread,
+    face: partner ? cs.secondaryContainer : cs.tertiaryContainer,
+    onFace: partner ? cs.onSecondaryContainer : cs.onTertiaryContainer,
+  );
 
   Widget _myBalloon(ColorScheme cs, MapPalette palette) => MapBalloon(
-        key: const ValueKey('me'),
-        shape: _myShape,
-        avatarUrl: widget.myAvatarUrl,
-        name: LocaleService.current.liveMapYou,
-        colors: _colors(cs, palette, partner: false),
-        live: true,
-      );
+    key: const ValueKey('me'),
+    shape: _myShape,
+    avatarUrl: widget.myAvatarUrl,
+    name: LocaleService.current.liveMapYou,
+    colors: _colors(cs, palette, partner: false),
+    live: true,
+  );
 
   Widget _partnerBalloon(ColorScheme cs, MapPalette palette) {
     final p = _partner;
@@ -701,13 +790,20 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
                     SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: cs.primary,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         s.liveMapWaitingPartner,
-                        style: AppFonts.onest(size: 15, weight: 500, color: cs.onSurfaceVariant),
+                        style: AppFonts.onest(
+                          size: 15,
+                          weight: 500,
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ],
@@ -715,8 +811,14 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
                 // fork (UX G14): что делать, если ждать нечего.
                 const SizedBox(height: 8),
                 Text(
-                  waitingPartnerHint(iShare: LiveLocationService.instance.sharingEnabled.value),
-                  style: AppFonts.onest(size: 13, weight: 400, color: cs.onSurfaceVariant),
+                  waitingPartnerHint(
+                    iShare: LiveLocationService.instance.sharingEnabled.value,
+                  ),
+                  style: AppFonts.onest(
+                    size: 13,
+                    weight: 400,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 ..._shareNotice(),
               ],
@@ -737,15 +839,26 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
                               ? '—'
                               // fork (UX G8): «рядом» — только по свежей точке партнёра.
                               : distanceLabel(
-                                  LiveLocationService.distanceMeters(me, partner.latLng),
-                                  fresh: pointIsFresh(partner.updatedAt,
-                                      nowMs: DateTime.now().millisecondsSinceEpoch),
+                                  LiveLocationService.distanceMeters(
+                                    me,
+                                    partner.latLng,
+                                  ),
+                                  fresh: pointIsFresh(
+                                    partner.updatedAt,
+                                    nowMs:
+                                        DateTime.now().millisecondsSinceEpoch,
+                                  ),
                                   lang: LocaleService.instance.language.code,
                                   nearby: s.liveMapNearby,
                                   unitM: s.unitM,
                                   unitKm: s.unitKm,
                                 ),
-                          style: AppFonts.unbounded(size: 40, weight: 800, color: cs.onSurface, height: 1),
+                          style: AppFonts.unbounded(
+                            size: 40,
+                            weight: 800,
+                            color: cs.onSurface,
+                            height: 1,
+                          ),
                         ),
                       ),
                     ),
@@ -761,7 +874,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
                           child: SizedBox(
                             width: 56,
                             height: 56,
-                            child: Icon(Icons.favorite_rounded, color: onFill, size: 26),
+                            child: Icon(
+                              Icons.favorite_rounded,
+                              color: onFill,
+                              size: 26,
+                            ),
                           ),
                         ),
                       ),
@@ -782,17 +899,27 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text.rich(
-                        TextSpan(children: [
-                          TextSpan(
-                            text: widget.partnerName,
-                            style: AppFonts.onest(size: 15, weight: 700, color: cs.onSurface),
-                          ),
-                          if (_ageCaption(partner) != null)
+                        TextSpan(
+                          children: [
                             TextSpan(
-                              text: ' · ${_ageCaption(partner)}',
-                              style: AppFonts.onest(size: 14.5, weight: 500, color: cs.onSurfaceVariant),
+                              text: widget.partnerName,
+                              style: AppFonts.onest(
+                                size: 15,
+                                weight: 700,
+                                color: cs.onSurface,
+                              ),
                             ),
-                        ]),
+                            if (_ageCaption(partner) != null)
+                              TextSpan(
+                                text: ' · ${_ageCaption(partner)}',
+                                style: AppFonts.onest(
+                                  size: 14.5,
+                                  weight: 500,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -822,7 +949,10 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
     final svc = LiveLocationService.instance;
     Widget? bar;
     if (!svc.sharingEnabled.value) {
-      bar = PartnerBlindBar(partnerName: widget.partnerName, onEnable: _enableSharing);
+      bar = PartnerBlindBar(
+        partnerName: widget.partnerName,
+        onEnable: _enableSharing,
+      );
     } else if (svc.issue.value != ShareIssue.none) {
       bar = ShareIssueBar(issue: svc.issue.value);
     }
@@ -842,10 +972,17 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
           child: Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              decoration: BoxDecoration(color: cs.inverseSurface, borderRadius: BorderRadius.circular(22)),
+              decoration: BoxDecoration(
+                color: cs.inverseSurface,
+                borderRadius: BorderRadius.circular(22),
+              ),
               child: Text(
                 text ?? '',
-                style: AppFonts.onest(size: 14, weight: 600, color: cs.onInverseSurface),
+                style: AppFonts.onest(
+                  size: 14,
+                  weight: 600,
+                  color: cs.onInverseSurface,
+                ),
               ),
             ),
           ),
@@ -863,7 +1000,10 @@ class _LiveMapScreenState extends State<LiveMapScreen> with TickerProviderStateM
 
   bool _isStale(int updatedAt) {
     if (updatedAt <= 0) return false;
-    return LivePointAge.of(updatedAt, nowMs: DateTime.now().millisecondsSinceEpoch).needsCaption;
+    return LivePointAge.of(
+      updatedAt,
+      nowMs: DateTime.now().millisecondsSinceEpoch,
+    ).needsCaption;
   }
 }
 
@@ -926,31 +1066,40 @@ class _ModeSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final on = cs.inversePrimary;
-    final onText = ThemeData.estimateBrightnessForColor(on) == Brightness.dark ? Colors.white : const Color(0xFF1B1516);
+    final onText = ThemeData.estimateBrightnessForColor(on) == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF1B1516);
     Widget part(String label, bool selected, VoidCallback tap) => Semantics(
-          button: true,
-          selected: selected,
-          child: GestureDetector(
-            onTap: selected ? null : tap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? on : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                label,
-                style: AppFonts.onest(size: 14, weight: 600, color: selected ? onText : cs.onInverseSurface),
-              ),
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        onTap: selected ? null : tap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? on : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            style: AppFonts.onest(
+              size: 14,
+              weight: 600,
+              color: selected ? onText : cs.onInverseSurface,
             ),
           ),
-        );
+        ),
+      ),
+    );
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: cs.inverseSurface, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(
+        color: cs.inverseSurface,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -971,10 +1120,14 @@ class _MeasureSize extends SingleChildRenderObjectWidget {
   const _MeasureSize({required this.onChange, required super.child});
 
   @override
-  RenderObject createRenderObject(BuildContext context) => _MeasureSizeBox(onChange);
+  RenderObject createRenderObject(BuildContext context) =>
+      _MeasureSizeBox(onChange);
 
   @override
-  void updateRenderObject(BuildContext context, covariant _MeasureSizeBox renderObject) {
+  void updateRenderObject(
+    BuildContext context,
+    covariant _MeasureSizeBox renderObject,
+  ) {
     renderObject.onChange = onChange;
   }
 }

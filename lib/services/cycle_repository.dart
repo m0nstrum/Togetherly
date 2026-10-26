@@ -35,10 +35,9 @@ class CycleRepository {
   /// Живой список отметок [uid]: кэш + дельты Centrifugo. Отметка, поставленная
   /// на втором устройстве или партнёршей, доезжает сама — без перезахода на
   /// экран.
-  Stream<List<CycleEntry>> watch(String groupId, String uid) =>
-      _rt.watchCycle(groupId, uid).map(
-            (recs) => recs.map(CycleEntry.fromPb).toList(),
-          );
+  Stream<List<CycleEntry>> watch(String groupId, String uid) => _rt
+      .watchCycle(groupId, uid)
+      .map((recs) => recs.map(CycleEntry.fromPb).toList());
 
   /// Отметки [uid] в группе. Свои — все; партнёрские сервер отдаст только те,
   /// что разрешено показывать.
@@ -56,8 +55,11 @@ class CycleRepository {
 
       final fresh = recs.map(CycleEntry.fromPb).toList();
       for (final e in fresh) {
-        await LocalStore.instance
-            .upsertRaw(_collection, e.id, e.toMap(groupId: groupId));
+        await LocalStore.instance.upsertRaw(
+          _collection,
+          e.id,
+          e.toMap(groupId: groupId),
+        );
       }
       return fresh;
     } catch (e) {

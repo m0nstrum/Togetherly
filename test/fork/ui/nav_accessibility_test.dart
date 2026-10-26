@@ -7,7 +7,9 @@ import 'package:love_app/theme/app_theme.dart';
 
 void main() {
   for (final width in [320.0, 360.0]) {
-    testWidgets('navigation at $width with large text has named actions', (tester) async {
+    testWidgets('navigation at $width with large text has named actions', (
+      tester,
+    ) async {
       tester.view.physicalSize = Size(width, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -15,21 +17,36 @@ void main() {
       final semantics = tester.ensureSemantics();
       final taps = <int>[];
       final s = LocaleService.current;
-      await tester.pumpWidget(MaterialApp(
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(2)),
-          child: child!,
-        ),
-        home: Scaffold(body: Align(
-          alignment: Alignment.bottomCenter,
-          child: HomeBottomNav(
-            selectedIndex: 0, theme: AppThemes.pink, isPaired: true,
-            onTap: taps.add, onCreatePin: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(2)),
+            child: child!,
           ),
-        )),
-      ));
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: HomeBottomNav(
+                selectedIndex: 0,
+                theme: AppThemes.pink,
+                isPaired: true,
+                onTap: taps.add,
+                onCreatePin: () {},
+              ),
+            ),
+          ),
+        ),
+      );
       expect(find.text(s.home), findsOneWidget);
-      for (final label in [s.home, s.widgets, s.watchTogether, s.connect, s.profile]) {
+      for (final label in [
+        s.home,
+        s.widgets,
+        s.watchTogether,
+        s.connect,
+        s.profile,
+      ]) {
         final node = tester.getSemantics(find.bySemanticsLabel(label));
         expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
         expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);

@@ -42,8 +42,12 @@ void main() {
       }
     }
 
-    expect(offenders, isEmpty,
-        reason: 'зависший кодек не бросает исключение — ждать его нечем: '
-            '${offenders.join(", ")}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'зависший кодек не бросает исключение — ждать его нечем: '
+          '${offenders.join(", ")}',
+    );
   });
 }

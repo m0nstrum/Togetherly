@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Код форка не глотает ошибки молча (docs/fork/UX_AUDIT.md): пустой
+/// Код форка не глотает ошибки молча (docs/history/UX_AUDIT.md): пустой
 /// `catch` допустим, только если рядом сказано, почему молчать правильно
 /// (`// тихо: …`). Остальное — через `ForkNotice`/`Outcome`
 /// (lib/fork/ui/feedback.dart).
@@ -19,6 +19,10 @@ void main() {
         }
       }
     }
-    expect(bad, isEmpty, reason: 'Объясните молчание (`// тихо: …`) или скажите человеку');
+    expect(
+      bad,
+      isEmpty,
+      reason: 'Объясните молчание (`// тихо: …`) или скажите человеку',
+    );
   });
 }

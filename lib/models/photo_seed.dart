@@ -31,7 +31,8 @@ List<Color> pickSeedCandidates(List<SeedCandidate> found, {int limit = 6}) {
     final hct = Hct.fromInt(c.color.toARGB32());
     (hct.chroma >= _kLivelyChroma ? lively : dull).add(c);
   }
-  int byWeight(SeedCandidate a, SeedCandidate b) => b.weight.compareTo(a.weight);
+  int byWeight(SeedCandidate a, SeedCandidate b) =>
+      b.weight.compareTo(a.weight);
   lively.sort(byWeight);
   dull.sort(byWeight);
 
@@ -40,9 +41,11 @@ List<Color> pickSeedCandidates(List<SeedCandidate> found, {int limit = 6}) {
   for (final c in [...lively, ...dull]) {
     if (out.length == limit) break;
     final hct = Hct.fromInt(c.color.toARGB32());
-    final duplicate = taken.any((t) =>
-        _hueGap(t.hue, hct.hue) < _kSameHue &&
-        (t.tone - hct.tone).abs() < _kSameTone);
+    final duplicate = taken.any(
+      (t) =>
+          _hueGap(t.hue, hct.hue) < _kSameHue &&
+          (t.tone - hct.tone).abs() < _kSameTone,
+    );
     if (duplicate) continue;
     taken.add(hct);
     out.add(c.color);

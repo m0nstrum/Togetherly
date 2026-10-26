@@ -47,15 +47,17 @@ enum UnfoldFit {
   scale,
 }
 
-typedef UnfoldSourceBuilder = Widget Function(
-    BuildContext context, UnfoldSourceState source);
+typedef UnfoldSourceBuilder =
+    Widget Function(BuildContext context, UnfoldSourceState source);
 
 Rect? _rectOf(BuildContext? context, RenderObject? ancestor) {
   final box = context?.findRenderObject();
   if (box is! RenderBox || !box.attached || !box.hasSize) return null;
   if (ancestor != null && !ancestor.attached) return null;
   return MatrixUtils.transformRect(
-      box.getTransformTo(ancestor), Offset.zero & box.size);
+    box.getTransformTo(ancestor),
+    Offset.zero & box.size,
+  );
 }
 
 ui.Image? _snapshotOf(BuildContext? context, double pixelRatio) {
@@ -534,13 +536,15 @@ class _UnfoldSession {
     for (final shared in origin.shared()) {
       final place = _rectOf(shared._boundary.currentContext, _overlayBox);
       if (place == null || place.isEmpty) continue;
-      fliers.add(_Flier(
-        tag: shared.widget.tag,
-        fit: shared.widget.fit,
-        from: place,
-        fromRadius: shared.widget.radius,
-        image: _snapshotOf(shared._boundary.currentContext, _pixelRatio),
-      ));
+      fliers.add(
+        _Flier(
+          tag: shared.widget.tag,
+          fit: shared.widget.fit,
+          from: place,
+          fromRadius: shared.widget.radius,
+          image: _snapshotOf(shared._boundary.currentContext, _pixelRatio),
+        ),
+      );
     }
   }
 
@@ -674,16 +678,18 @@ class _UnfoldSession {
       }
       final image = _snapshotOf(shared._boundary.currentContext, _pixelRatio);
       if (image == null) continue;
-      fliers.add(_Flier(
-        tag: shared.widget.tag,
-        fit: shared.widget.fit,
-        from: there,
-        fromRadius: home.widget.radius,
-        image: image,
-      )
-        ..to = here
-        ..toRadius = shared.widget.radius
-        ..farFrom = shared.widget.fit == UnfoldFit.scale ? home : null);
+      fliers.add(
+        _Flier(
+            tag: shared.widget.tag,
+            fit: shared.widget.fit,
+            from: there,
+            fromRadius: home.widget.radius,
+            image: image,
+          )
+          ..to = here
+          ..toRadius = shared.widget.radius
+          ..farFrom = shared.widget.fit == UnfoldFit.scale ? home : null,
+      );
       shared._setHidden(true);
     }
     flightCap = 1;
@@ -749,17 +755,16 @@ class UnfoldRoute<T> extends PageRoute<T> {
 
   @override
   Duration get transitionDuration => Duration(
-      milliseconds: (_session.grows
-              ? UnfoldTiming.openMs
-              : UnfoldTiming.fadeInMs)
-          .round());
+    milliseconds: (_session.grows ? UnfoldTiming.openMs : UnfoldTiming.fadeInMs)
+        .round(),
+  );
 
   @override
   Duration get reverseTransitionDuration => Duration(
-      milliseconds: (_session.grows
-              ? UnfoldTiming.closeMs
-              : UnfoldTiming.fadeOutMs)
-          .round());
+    milliseconds:
+        (_session.grows ? UnfoldTiming.closeMs : UnfoldTiming.fadeOutMs)
+            .round(),
+  );
 
   @override
   bool get opaque => true;
@@ -788,15 +793,24 @@ class UnfoldRoute<T> extends PageRoute<T> {
   }
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation,
-          Animation<double> secondaryAnimation) =>
-      builder(context);
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) => builder(context);
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation, Widget child) {
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
     return _UnfoldTransition(
-        session: _session, animation: animation, child: child);
+      session: _session,
+      animation: animation,
+      child: child,
+    );
   }
 
   @override
@@ -863,8 +877,7 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
   Listenable get ticks => _ticks;
 
   @override
-  bool get hidesNewShared =>
-      _route.grows && _route.phase == _Phase.opening;
+  bool get hidesNewShared => _route.grows && _route.phase == _Phase.opening;
 
   @override
   void claimFill(Color color) {
@@ -878,8 +891,7 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
     super.initState();
     _settle = AnimationController(
       vsync: this,
-      duration:
-          Duration(milliseconds: UnfoldTiming.settleMs.round()),
+      duration: Duration(milliseconds: UnfoldTiming.settleMs.round()),
     );
     _ticks = Listenable.merge(<Listenable>[widget.animation, _settle]);
     _route.view = this;
@@ -921,8 +933,7 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
   }
 
   void _onStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed &&
-        _route.phase == _Phase.opening) {
+    if (status == AnimationStatus.completed && _route.phase == _Phase.opening) {
       _route.finishOpening(this);
     }
     // Обычный маршрут Material о закрытии не скажет: узнаём по развороту
@@ -956,8 +967,8 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
     final route = _route;
     final full = _fullRect;
     // Окно стоит или едет под пальцем: ни заливки, ни призрака, ни полёта.
-    UnfoldFrame at(Rect rect, double radius) => UnfoldFrame(
-        rect: rect, radius: radius, tint: 0, ghost: 0, flight: 1);
+    UnfoldFrame at(Rect rect, double radius) =>
+        UnfoldFrame(rect: rect, radius: radius, tint: 0, ghost: 0, flight: 1);
 
     final source = route.sourceRect;
     switch (route.phase) {
@@ -973,14 +984,24 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
         return at(full, 0);
       case _Phase.dragging:
         final drag = unfoldDragFrame(
-            delta: _dragDelta, screen: _screen, fromRight: _dragFromRight);
+          delta: _dragDelta,
+          screen: _screen,
+          fromRight: _dragFromRight,
+        );
         return at(drag.rect, drag.radius);
       case _Phase.settling:
         final drag = unfoldDragFrame(
-            delta: _dragDelta, screen: _screen, fromRight: _dragFromRight);
-        final left = 1 -
-            unfoldSpring(_settle.value * UnfoldTiming.settleMs,
-                omega: 26, zeta: 1);
+          delta: _dragDelta,
+          screen: _screen,
+          fromRight: _dragFromRight,
+        );
+        final left =
+            1 -
+            unfoldSpring(
+              _settle.value * UnfoldTiming.settleMs,
+              omega: 26,
+              zeta: 1,
+            );
         return at(Rect.lerp(full, drag.rect, left)!, drag.radius * left);
       case _Phase.closing:
         // Складываться некуда: окно гаснет там, где его отпустили.
@@ -1000,13 +1021,16 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
   /// Прозрачность окна целиком: нужна только там, где оно не растёт.
   double get _windowOpacity {
     final route = _route;
-    final fades = !route.grows ||
+    final fades =
+        !route.grows ||
         (route.phase == _Phase.closing && route.sourceRect == null);
     if (!fades) return 1;
     return switch (route.phase) {
       _Phase.opening => widget.animation.value,
-      _Phase.closing =>
-        (widget.animation.value / route.popValue).clamp(0.0, 1.0),
+      _Phase.closing => (widget.animation.value / route.popValue).clamp(
+        0.0,
+        1.0,
+      ),
       _ => 1,
     };
   }
@@ -1074,7 +1098,10 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
     final route = _route;
     if (route.phase != _Phase.dragging) return;
     final drag = unfoldDragFrame(
-        delta: _dragDelta, screen: _screen, fromRight: _dragFromRight);
+      delta: _dragDelta,
+      screen: _screen,
+      fromRight: _dragFromRight,
+    );
     final closes = commit ?? unfoldDragCommits(drag.progress);
     final navigator = route.route.navigator;
     if (closes && navigator != null) {
@@ -1112,8 +1139,9 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
     final start = _backStart;
     final now = backEvent.touchOffset;
     final ratio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
-    final drop =
-        start != null && now != null ? (now.dy - start.dy) / ratio : 0.0;
+    final drop = start != null && now != null
+        ? (now.dy - start.dy) / ratio
+        : 0.0;
     _dragTo(Offset(_dragFromRight ? -pull : pull, drop));
   }
 
@@ -1130,17 +1158,19 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, box) {
-      _screen = box.biggest;
-      return AnimatedBuilder(
-        animation: _ticks,
-        builder: (context, page) => _buildFrame(context, page!),
-        child: _UnfoldScope(
-          host: this,
-          child: RepaintBoundary(key: _pageKey, child: widget.child),
-        ),
-      );
-    });
+    return LayoutBuilder(
+      builder: (context, box) {
+        _screen = box.biggest;
+        return AnimatedBuilder(
+          animation: _ticks,
+          builder: (context, page) => _buildFrame(context, page!),
+          child: _UnfoldScope(
+            host: this,
+            child: RepaintBoundary(key: _pageKey, child: widget.child),
+          ),
+        );
+      },
+    );
   }
 
   bool _chasing = false;
@@ -1151,8 +1181,9 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
   /// (на экране 120 Гц это 130 мс) — и хватит, летим со старым снимком.
   void _chaseFar() {
     if (_chasing || _chaseTries >= 16) return;
-    final pending = _route.fliers
-        .any((flier) => flier.farFrom != null && flier.far == null);
+    final pending = _route.fliers.any(
+      (flier) => flier.farFrom != null && flier.far == null,
+    );
     if (!pending) return;
     _chasing = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1199,19 +1230,18 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
     final at = flier.textAt(flight);
     final toward = opening ? flight : 1 - flight;
     final far = flier.far;
-    final blend =
-        far == null ? 0.0 : ((toward - 0.12) / 0.22).clamp(0.0, 1.0);
+    final blend = far == null ? 0.0 : ((toward - 0.12) / 0.22).clamp(0.0, 1.0);
     Widget glyphs(ui.Image image, double opacity, String side) => Opacity(
-          opacity: opacity,
-          child: RawImage(
-            key: ValueKey<String>('unfold-flier-${flier.tag}-$side'),
-            image: image,
-            height: at.height,
-            fit: BoxFit.fitHeight,
-            alignment: Alignment.topLeft,
-            filterQuality: FilterQuality.medium,
-          ),
-        );
+      opacity: opacity,
+      child: RawImage(
+        key: ValueKey<String>('unfold-flier-${flier.tag}-$side'),
+        image: image,
+        height: at.height,
+        fit: BoxFit.fitHeight,
+        alignment: Alignment.topLeft,
+        filterQuality: FilterQuality.medium,
+      ),
+    );
     return Positioned(
       left: at.corner.dx,
       top: at.corner.dy,
@@ -1241,11 +1271,13 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
     final flight = route.phase == _Phase.closing
         ? frame.flight * route.flightCap
         : frame.flight;
-    final flying = route.grows &&
+    final flying =
+        route.grows &&
         (route.phase == _Phase.opening || route.phase == _Phase.closing);
 
     if (flying && !route.route.offstage) _chaseFar();
-    final moving = route.phase == _Phase.dragging ||
+    final moving =
+        route.phase == _Phase.dragging ||
         route.phase == _Phase.settling ||
         route.phase == _Phase.closing;
     // До первой раскладки пары ещё не известны: все летящие стоят на своих
@@ -1284,7 +1316,8 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
                         IgnorePointer(
                           child: ColoredBox(
                             color: route.fill.withValues(
-                                alpha: route.fill.a * frame.tint),
+                              alpha: route.fill.a * frame.tint,
+                            ),
                           ),
                         ),
                       if (frame.ghost > 0 && ghost != null && source != null)
@@ -1320,20 +1353,22 @@ class _UnfoldTransitionState extends State<_UnfoldTransition>
         if (flying)
           for (final flier in fliers)
             if (flier.fit == UnfoldFit.scale)
-              _textFlier(flier, flight,
-                  opening: route.phase == _Phase.opening)
+              _textFlier(flier, flight, opening: route.phase == _Phase.opening)
             else
-            Positioned.fromRect(
-              rect: flier.rectAt(flight),
-              child: IgnorePointer(
-                child: ClipRRect(
-                  key: ValueKey<String>('unfold-flier-${flier.tag}'),
-                  borderRadius: BorderRadius.circular(flier.radiusAt(flight)),
-                  child: _pictureFlier(flier, flight,
-                      opening: route.phase == _Phase.opening),
+              Positioned.fromRect(
+                rect: flier.rectAt(flight),
+                child: IgnorePointer(
+                  child: ClipRRect(
+                    key: ValueKey<String>('unfold-flier-${flier.tag}'),
+                    borderRadius: BorderRadius.circular(flier.radiusAt(flight)),
+                    child: _pictureFlier(
+                      flier,
+                      flight,
+                      opening: route.phase == _Phase.opening,
+                    ),
+                  ),
                 ),
               ),
-            ),
         if (_ownsEdgeSwipe && !route.calm)
           Positioned(
             left: 0,
@@ -1373,7 +1408,9 @@ class _GhostPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final area = Offset.zero & size;
     canvas.saveLayer(
-        area, Paint()..color = Color.fromRGBO(0, 0, 0, opacity.clamp(0, 1)));
+      area,
+      Paint()..color = Color.fromRGBO(0, 0, 0, opacity.clamp(0, 1)),
+    );
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),

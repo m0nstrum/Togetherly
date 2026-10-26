@@ -32,6 +32,8 @@ var published = map[string]bool{
 	"widget_data": true, "chat_typing": true, "chat_reads": true, "groups": true,
 	"watch_history": true, "cycle_entries": true, "wishes": true,
 	"wish_categories": true, "custom_moods": true, "watch_videos": true,
+	// Форк: комментарии к желаниям (docs/WISHLIST.md).
+	"wish_comments": true,
 	// Форк, E2E: шаги обмена ключами и выданные ключи пары (шифртекст) —
 	// в канал пары, чтобы сверка эмодзи шла без опроса.
 	"e2e_handshake": true, "e2e_grants": true,

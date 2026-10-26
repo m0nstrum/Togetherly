@@ -54,9 +54,9 @@ bool _atBottom(ScrollController c) =>
 /// 180 коротких строк, а последние 20 — фото и голосовые, вчетверо выше
 /// средней строки. Оценка низа по первым рядам выходит сильно меньше настоящей.
 List<double> _tallTail() => [
-      for (var i = 0; i < 180; i++) 40.0,
-      for (var i = 0; i < 20; i++) 300.0,
-    ];
+  for (var i = 0; i < 180; i++) 40.0,
+  for (var i = 0; i < 20; i++) 300.0,
+];
 
 void main() {
   late ScrollController controller;
@@ -75,8 +75,9 @@ void main() {
     viewport.dispose();
   });
 
-  testWidgets('без держателя прыжок в оценку не доезжает до низа',
-      (tester) async {
+  testWidgets('без держателя прыжок в оценку не доезжает до низа', (
+    tester,
+  ) async {
     // Так чат открывался до правки: последние сообщения оставались ниже экрана.
     await tester.pumpWidget(
       _feed(controller: controller, heights: heights, viewport: viewport),
@@ -86,15 +87,18 @@ void main() {
     expect(find.text('ряд 199'), findsNothing);
   });
 
-  testWidgets('открытие встаёт к последнему сообщению, хоть ряды у низа выше',
-      (tester) async {
+  testWidgets('открытие встаёт к последнему сообщению, хоть ряды у низа выше', (
+    tester,
+  ) async {
     final stick = BottomStick(controller);
-    await tester.pumpWidget(_feed(
-      controller: controller,
-      heights: heights,
-      viewport: viewport,
-      stick: stick,
-    ));
+    await tester.pumpWidget(
+      _feed(
+        controller: controller,
+        heights: heights,
+        viewport: viewport,
+        stick: stick,
+      ),
+    );
     await _openAtBottom(tester, controller, stick);
     expect(_atBottom(controller), isTrue);
     expect(find.text('ряд 199'), findsOneWidget);
@@ -103,12 +107,14 @@ void main() {
   testWidgets('догрузилась картинка — лента остаётся у низа', (tester) async {
     heights.value = [for (var i = 0; i < 30; i++) 60.0];
     final stick = BottomStick(controller);
-    await tester.pumpWidget(_feed(
-      controller: controller,
-      heights: heights,
-      viewport: viewport,
-      stick: stick,
-    ));
+    await tester.pumpWidget(
+      _feed(
+        controller: controller,
+        heights: heights,
+        viewport: viewport,
+        stick: stick,
+      ),
+    );
     await _openAtBottom(tester, controller, stick);
     final before = controller.position.pixels;
 
@@ -120,16 +126,19 @@ void main() {
     expect(find.text('ряд 29'), findsOneWidget);
   });
 
-  testWidgets('лента короче экрана выросла — низ всё равно держится',
-      (tester) async {
+  testWidgets('лента короче экрана выросла — низ всё равно держится', (
+    tester,
+  ) async {
     heights.value = [for (var i = 0; i < 4; i++) 60.0];
     final stick = BottomStick(controller);
-    await tester.pumpWidget(_feed(
-      controller: controller,
-      heights: heights,
-      viewport: viewport,
-      stick: stick,
-    ));
+    await tester.pumpWidget(
+      _feed(
+        controller: controller,
+        heights: heights,
+        viewport: viewport,
+        stick: stick,
+      ),
+    );
     // Прыгать некуда, флаг ставит сам экран.
     await _openAtBottom(tester, controller, stick);
 
@@ -140,15 +149,18 @@ void main() {
     expect(find.text('ряд 4'), findsOneWidget);
   });
 
-  testWidgets('клавиатура сжала ленту — последнее сообщение на виду',
-      (tester) async {
+  testWidgets('клавиатура сжала ленту — последнее сообщение на виду', (
+    tester,
+  ) async {
     final stick = BottomStick(controller);
-    await tester.pumpWidget(_feed(
-      controller: controller,
-      heights: heights,
-      viewport: viewport,
-      stick: stick,
-    ));
+    await tester.pumpWidget(
+      _feed(
+        controller: controller,
+        heights: heights,
+        viewport: viewport,
+        stick: stick,
+      ),
+    );
     await _openAtBottom(tester, controller, stick);
 
     viewport.value = 260;
@@ -158,16 +170,19 @@ void main() {
     expect(find.text('ряд 199'), findsOneWidget);
   });
 
-  testWidgets('человек отлистал вверх — догрузка его не дёргает',
-      (tester) async {
+  testWidgets('человек отлистал вверх — догрузка его не дёргает', (
+    tester,
+  ) async {
     heights.value = [for (var i = 0; i < 40; i++) 60.0];
     final stick = BottomStick(controller);
-    await tester.pumpWidget(_feed(
-      controller: controller,
-      heights: heights,
-      viewport: viewport,
-      stick: stick,
-    ));
+    await tester.pumpWidget(
+      _feed(
+        controller: controller,
+        heights: heights,
+        viewport: viewport,
+        stick: stick,
+      ),
+    );
     await _openAtBottom(tester, controller, stick);
 
     await tester.drag(find.byType(ListView), const Offset(0, 300));
@@ -185,12 +200,14 @@ void main() {
   testWidgets('вернулся рукой к низу — низ снова держится', (tester) async {
     heights.value = [for (var i = 0; i < 40; i++) 60.0];
     final stick = BottomStick(controller);
-    await tester.pumpWidget(_feed(
-      controller: controller,
-      heights: heights,
-      viewport: viewport,
-      stick: stick,
-    ));
+    await tester.pumpWidget(
+      _feed(
+        controller: controller,
+        heights: heights,
+        viewport: viewport,
+        stick: stick,
+      ),
+    );
     await _openAtBottom(tester, controller, stick);
     await tester.drag(find.byType(ListView), const Offset(0, 300));
     await tester.pumpAndSettle();
@@ -207,12 +224,14 @@ void main() {
   testWidgets('прыжок к цитате отпускает низ', (tester) async {
     heights.value = [for (var i = 0; i < 40; i++) 60.0];
     final stick = BottomStick(controller);
-    await tester.pumpWidget(_feed(
-      controller: controller,
-      heights: heights,
-      viewport: viewport,
-      stick: stick,
-    ));
+    await tester.pumpWidget(
+      _feed(
+        controller: controller,
+        heights: heights,
+        viewport: viewport,
+        stick: stick,
+      ),
+    );
     await _openAtBottom(tester, controller, stick);
 
     controller.jumpTo(300);

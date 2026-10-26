@@ -10,17 +10,29 @@ import 'package:love_app/utils/coloring_outline.dart';
 img.Image _closedShape({int w = 200, int h = 200}) {
   final im = img.Image(width: w, height: h);
   img.fill(im, color: img.ColorRgb8(255, 255, 255));
-  img.drawRect(im,
-      x1: 20, y1: 20, x2: w - 20, y2: h - 20,
-      color: img.ColorRgb8(0, 0, 0), thickness: 4);
+  img.drawRect(
+    im,
+    x1: 20,
+    y1: 20,
+    x2: w - 20,
+    y2: h - 20,
+    color: img.ColorRgb8(0, 0, 0),
+    thickness: 4,
+  );
   return im;
 }
 
 /// Та же рамка, но с дырой в верхней стороне.
 img.Image _brokenShape({int w = 200, int h = 200}) {
   final im = _closedShape(w: w, h: h);
-  img.fillRect(im,
-      x1: 80, y1: 16, x2: 120, y2: 26, color: img.ColorRgb8(255, 255, 255));
+  img.fillRect(
+    im,
+    x1: 80,
+    y1: 16,
+    x2: 120,
+    y2: 26,
+    color: img.ColorRgb8(255, 255, 255),
+  );
   return im;
 }
 
@@ -43,28 +55,35 @@ void main() {
 
     test('пропорции считаются по файлу, а не по квадрату', () {
       final tall = prepareColoringOutline(
-          img.encodePng(_closedShape(w: 600, h: 900)));
+        img.encodePng(_closedShape(w: 600, h: 900)),
+      );
       expect(tall.ratio, closeTo(600 / 900, 0.001));
 
       final wide = prepareColoringOutline(
-          img.encodePng(_closedShape(w: 1200, h: 600)));
+        img.encodePng(_closedShape(w: 1200, h: 600)),
+      );
       expect(wide.ratio, closeTo(2.0, 0.001));
     });
 
     test('замкнутый контур не течёт', () {
-      expect(prepareColoringOutline(img.encodePng(_closedShape())).leaks,
-          isFalse);
+      expect(
+        prepareColoringOutline(img.encodePng(_closedShape())).leaks,
+        isFalse,
+      );
     });
 
     test('разрыв в линии виден до начала рисования', () {
-      expect(prepareColoringOutline(img.encodePng(_brokenShape())).leaks,
-          isTrue);
+      expect(
+        prepareColoringOutline(img.encodePng(_brokenShape())).leaks,
+        isTrue,
+      );
     });
 
     test('слишком вытянутый лист приводится к разумной пропорции', () {
       // Панорама 4:1 половинками по 2:1 — рисовать нечем, поле уже пальца.
       final out = prepareColoringOutline(
-          img.encodePng(_closedShape(w: 2000, h: 500)));
+        img.encodePng(_closedShape(w: 2000, h: 500)),
+      );
       expect(out.ratio, lessThanOrEqualTo(kColoringMaxRatio));
       expect(out.ratio, greaterThanOrEqualTo(1 / kColoringMaxRatio));
     });

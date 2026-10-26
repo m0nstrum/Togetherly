@@ -13,14 +13,14 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   DrawStroke fill(String url) => DrawStroke(
-        id: 'fill',
-        userId: 'u',
-        points: const [],
-        colorValue: 0xFF000000,
-        strokeWidth: 0,
-        orderIndex: 0,
-        imageUrl: url,
-      );
+    id: 'fill',
+    userId: 'u',
+    points: const [],
+    colorValue: 0xFF000000,
+    strokeWidth: 0,
+    orderIndex: 0,
+    imageUrl: url,
+  );
 
   testWidgets('дожидается растра заливки', (tester) async {
     final dir = Directory.systemTemp.createTempSync('fill');
@@ -29,7 +29,10 @@ void main() {
 
     await tester.runAsync(() async {
       final recorder = ui.PictureRecorder();
-      Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 8, 8), Paint()..color = const Color(0xFFFFC107));
+      Canvas(recorder).drawRect(
+        const Rect.fromLTWH(0, 0, 8, 8),
+        Paint()..color = const Color(0xFFFFC107),
+      );
       final image = await recorder.endRecording().toImage(8, 8);
       final png = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
@@ -48,8 +51,13 @@ void main() {
     await tester.runAsync(() async {
       final cache = CanvasImageCache(decodeSide: 64);
       final started = DateTime.now();
-      await cache.preload([fill('file:///нет/такого/файла.png')], timeout: const Duration(seconds: 2));
-      expect(DateTime.now().difference(started), lessThan(const Duration(seconds: 3)));
+      await cache.preload([
+        fill('file:///нет/такого/файла.png'),
+      ], timeout: const Duration(seconds: 2));
+      expect(
+        DateTime.now().difference(started),
+        lessThan(const Duration(seconds: 3)),
+      );
       cache.dispose();
     });
   });

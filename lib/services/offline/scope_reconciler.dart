@@ -29,8 +29,12 @@ Future<bool> reconcileWithServer({
         if (watch.saw(collection, r.id) || outbox.isPending(collection, r.id))
           r.id,
     };
-    await store.reconcileScope(collection, scope, serverRecords,
-        protectIds: own);
+    await store.reconcileScope(
+      collection,
+      scope,
+      serverRecords,
+      protectIds: own,
+    );
     return true;
   } finally {
     watch.close();

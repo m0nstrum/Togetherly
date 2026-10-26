@@ -43,10 +43,7 @@ void main() {
 
     test('человек не вошёл — сессия истекла, какой бы ни был ответ', () {
       expect(
-        classifyUploadError(
-          ClientException(statusCode: 400),
-          loggedIn: false,
-        ),
+        classifyUploadError(ClientException(statusCode: 400), loggedIn: false),
         UploadFailure.sessionExpired,
       );
     });
@@ -77,7 +74,8 @@ void main() {
           'data': {
             'file': {
               'code': 'validation_file_size_limit',
-              'message': 'Failed to upload "file" - the maximum allowed file '
+              'message':
+                  'Failed to upload "file" - the maximum allowed file '
                   'size is 5242880 bytes.',
             },
           },
@@ -120,10 +118,7 @@ void main() {
     });
 
     test('сжатия не было — исходник', () {
-      expect(
-        pickUploadSource(originalBytes: 5000),
-        UploadSource.original,
-      );
+      expect(pickUploadSource(originalBytes: 5000), UploadSource.original);
     });
 
     test('сжатый тяжелее при onlyIfSmaller — исходник', () {
@@ -240,17 +235,22 @@ void main() {
 
     test('сессия истекла — просим войти заново', () {
       expect(
-        uploadFailureText(UploadFailure.sessionExpired, ru, video: false)
-            .toLowerCase(),
+        uploadFailureText(
+          UploadFailure.sessionExpired,
+          ru,
+          video: false,
+        ).toLowerCase(),
         contains('войдите'),
       );
     });
 
     test('пустой файл — просим выбрать заново, а не повторить', () {
-      final text =
-          uploadFailureText(UploadFailure.emptyFile, ru, video: true);
+      final text = uploadFailureText(UploadFailure.emptyFile, ru, video: true);
       expect(text.toLowerCase(), contains('пуст'));
-      expect(text, isNot(uploadFailureText(UploadFailure.other, ru, video: true)));
+      expect(
+        text,
+        isNot(uploadFailureText(UploadFailure.other, ru, video: true)),
+      );
     });
 
     test('прочее для фото и видео — разные строки', () {

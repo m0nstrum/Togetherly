@@ -25,7 +25,10 @@ void main() {
     await LocaleService.instance.init();
     await _font('Onest', 'assets/fonts/Onest.ttf');
     await _font('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _font('MaterialIcons', '${Platform.environment['FLUTTER_ROOT'] ?? '/home/alelx/flutter'}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _font(
+      'MaterialIcons',
+      '${Platform.environment['FLUTTER_ROOT'] ?? '/home/alelx/flutter'}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
   });
 
   for (final (name, palette, b, width, scale, coins) in [
@@ -42,31 +45,47 @@ void main() {
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
       final key = GlobalKey();
-      await tester.pumpWidget(RepaintBoundary(
-        key: key,
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ProfileTheme.data(cs),
-          builder: (c, child) => MediaQuery(
-            data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
-            child: child!,
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ProfileTheme.data(cs),
+            builder: (c, child) => MediaQuery(
+              data: MediaQuery.of(
+                c,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
+            home: GiftShopScreen(
+              theme: theme,
+              groupId: 'g',
+              coins: coins,
+              onCoins: (_) {},
+            ),
           ),
-          home: GiftShopScreen(theme: theme, groupId: 'g', coins: coins, onCoins: (_) {}),
         ),
-      ));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+      );
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 400)),
+      );
       await tester.pump();
       await tester.tap(find.text('Сердце').first);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 400)),
+      );
       await tester.pump(const Duration(milliseconds: 600));
       await tester.runAsync(() async {
-        final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final boundary =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final img = await boundary.toImage(pixelRatio: 2);
         final png = await img.toByteData(format: ui.ImageByteFormat.png);
         Directory('build/gift-pay').createSync(recursive: true);
-        File('build/gift-pay/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
+        File(
+          'build/gift-pay/$name.png',
+        ).writeAsBytesSync(png!.buffer.asUint8List());
       });
       expect(tester.takeException(), isNull);
     });

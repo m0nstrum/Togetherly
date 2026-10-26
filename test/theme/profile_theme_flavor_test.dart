@@ -31,13 +31,22 @@ void main() {
       // — переключатель стоял и не делал ничего, о чём и была жалоба. Теперь
       // он крутит саму насыщенность акцента, и изменённый цвет обязан доехать
       // до экранов на M3 ровно так же, как доезжает исходный.
-      final juicy = buildAppTheme(cherry, Brightness.light,
-          flavor: SchemeFlavor.juicy);
-      final soft =
-          buildAppTheme(cherry, Brightness.light, flavor: SchemeFlavor.soft);
+      final juicy = buildAppTheme(
+        cherry,
+        Brightness.light,
+        flavor: SchemeFlavor.juicy,
+      );
+      final soft = buildAppTheme(
+        cherry,
+        Brightness.light,
+        flavor: SchemeFlavor.soft,
+      );
 
-      expect(juicy.primary, isNot(soft.primary),
-          reason: 'сочность снова ничего не меняет');
+      expect(
+        juicy.primary,
+        isNot(soft.primary),
+        reason: 'сочность снова ничего не меняет',
+      );
       expect(ProfileTheme.themeFor(juicy).colorScheme.primary, juicy.primary);
       expect(ProfileTheme.themeFor(soft).colorScheme.primary, soft.primary);
 
@@ -49,8 +58,11 @@ void main() {
 
     test('все палитры доносят свой акцент до листов', () {
       for (final p in kPalettes) {
-        final app =
-            buildAppTheme(p, Brightness.light, flavor: SchemeFlavor.juicy);
+        final app = buildAppTheme(
+          p,
+          Brightness.light,
+          flavor: SchemeFlavor.juicy,
+        );
         expect(
           ProfileTheme.themeFor(app).colorScheme.primary,
           app.primary,
@@ -87,13 +99,19 @@ void _filledButtonUsesFill() {
       for (final b in Brightness.values) {
         final app = buildAppTheme(p, b);
         final style = ProfileTheme.themeFor(app).filledButtonTheme.style!;
-        expect(style.backgroundColor?.resolve(const {}), app.scheme!.primary,
-            reason: '${p.name} (${b.name}): кнопка взяла не цвет темы');
+        expect(
+          style.backgroundColor?.resolve(const {}),
+          app.scheme!.primary,
+          reason: '${p.name} (${b.name}): кнопка взяла не цвет темы',
+        );
         expect(style.foregroundColor?.resolve(const {}), app.scheme!.onPrimary);
         // Значок на тональной подложке обязан читаться: это и есть выбор типа
         // связи, где иконки пропадали.
-        expect(app.scheme!.primaryContainer, isNot(app.scheme!.primary),
-            reason: '${p.name} (${b.name}): подложка слилась с акцентом');
+        expect(
+          app.scheme!.primaryContainer,
+          isNot(app.scheme!.primary),
+          reason: '${p.name} (${b.name}): подложка слилась с акцентом',
+        );
       }
     }
   });

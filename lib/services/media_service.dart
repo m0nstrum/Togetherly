@@ -68,23 +68,29 @@ class MediaService {
         debugPrint('uploadFile: File does not exist: $path');
         // Выбранный файл пропал до заливки (временную папку почистила
         // система) — это не сеть и не сессия, а сбой на телефоне.
-        unawaited(Sentry.captureMessage(
-          'uploadFile: source file missing',
-          level: SentryLevel.warning,
-          withScope: (s) => s.setExtra('destination', destination),
-        ));
+        unawaited(
+          Sentry.captureMessage(
+            'uploadFile: source file missing',
+            level: SentryLevel.warning,
+            withScope: (s) => s.setExtra('destination', destination),
+          ),
+        );
         return const UploadOutcome.failed(UploadFailure.other);
       }
 
       final fileSize = await file.length();
-      debugPrint('uploadFile: Starting upload of $destination ($fileSize bytes)');
+      debugPrint(
+        'uploadFile: Starting upload of $destination ($fileSize bytes)',
+      );
       if (pickUploadSource(originalBytes: fileSize) == null) {
         // Пустой исходник: облачный ролик выбран, но не скачан на телефон.
-        unawaited(Sentry.captureMessage(
-          'uploadFile: empty source file',
-          level: SentryLevel.warning,
-          withScope: (s) => s.setExtra('destination', destination),
-        ));
+        unawaited(
+          Sentry.captureMessage(
+            'uploadFile: empty source file',
+            level: SentryLevel.warning,
+            withScope: (s) => s.setExtra('destination', destination),
+          ),
+        );
         return const UploadOutcome.failed(UploadFailure.emptyFile);
       }
 
@@ -116,7 +122,9 @@ class MediaService {
           if (xFile != null) {
             final webpFile = File(xFile.path);
             final webpSize = await webpFile.length();
-            debugPrint('uploadFile: WebP conversion $fileSize → $webpSize bytes');
+            debugPrint(
+              'uploadFile: WebP conversion $fileSize → $webpSize bytes',
+            );
             if (pickUploadSource(
                   originalBytes: fileSize,
                   compressedBytes: webpSize,
@@ -130,12 +138,16 @@ class MediaService {
               );
             } else {
               // WebP turned out larger — keep the original
-              debugPrint('uploadFile: WebP larger than original, uploading original $ext');
+              debugPrint(
+                'uploadFile: WebP larger than original, uploading original $ext',
+              );
               webpFile.delete().catchError((_) => webpFile);
             }
           }
         } catch (e) {
-          debugPrint('uploadFile: WebP conversion failed, uploading original: $e');
+          debugPrint(
+            'uploadFile: WebP conversion failed, uploading original: $e',
+          );
         }
       }
 
@@ -156,20 +168,23 @@ class MediaService {
           // экран добавления воспоминания крутил бы спиннер вечно, видео «не
           // отражается». 3 минуты — анти-зависание (легитимное сжатие успевает),
           // по истечении бросаем → catch ниже грузит оригинал.
-          final info = await VideoCompress.compressVideo(
-            path,
-            quality: VideoQuality.DefaultQuality,
-            deleteOrigin: false,
-            includeAudio: true,
-          ).timeout(
-            const Duration(minutes: 3),
-            onTimeout: () =>
-                throw TimeoutException('VideoCompress.compressVideo timed out'),
-          );
+          final info =
+              await VideoCompress.compressVideo(
+                path,
+                quality: VideoQuality.DefaultQuality,
+                deleteOrigin: false,
+                includeAudio: true,
+              ).timeout(
+                const Duration(minutes: 3),
+                onTimeout: () => throw TimeoutException(
+                  'VideoCompress.compressVideo timed out',
+                ),
+              );
           final compressed = info?.file;
           if (compressed != null) {
-            final compressedSize =
-                await compressed.exists() ? await compressed.length() : 0;
+            final compressedSize = await compressed.exists()
+                ? await compressed.length()
+                : 0;
             debugPrint(
               'uploadFile: Video compressed $fileSize → $compressedSize bytes',
             );
@@ -188,22 +203,29 @@ class MediaService {
               // Кодек отдал пустой файл: так в бакет легли видео по 0 байт.
               // Грузим исходник, а случай отмечаем — по нему видно телефоны.
               compressed.delete().ignore();
-              unawaited(Sentry.captureMessage(
-                'uploadFile: video compress returned empty file',
-                level: SentryLevel.warning,
-                withScope: (s) => s.setExtra('original_bytes', fileSize),
-              ));
+              unawaited(
+                Sentry.captureMessage(
+                  'uploadFile: video compress returned empty file',
+                  level: SentryLevel.warning,
+                  withScope: (s) => s.setExtra('original_bytes', fileSize),
+                ),
+              );
             }
           }
         } catch (e) {
-          debugPrint('uploadFile: Video compression failed, uploading original: $e');
+          debugPrint(
+            'uploadFile: Video compression failed, uploading original: $e',
+          );
           // Фиксируем в Crashlytics: сжатие зависло/упало — частая причина жалоб
           // «своё видео не добавляется». Non-fatal, дальше грузим оригинал.
           unawaited(
             Sentry.captureException(
               e,
               withScope: (s) {
-                s.setExtra('reason', 'video compress failed → uploading original');
+                s.setExtra(
+                  'reason',
+                  'video compress failed → uploading original',
+                );
                 s.level = SentryLevel.warning;
               },
             ),
@@ -240,8 +262,12 @@ class MediaService {
       // сети. Прочие kind (avatars/mascots/canvas) офлайн не откладываем.
       final deferrable = kind == 'memories' || kind == 'music';
       if (deferrable && !ConnectivityService.instance.isOnline) {
-        final localRef = await MediaCache.instance
-            .stash(bytes, filename, kind: kind, groupId: groupId);
+        final localRef = await MediaCache.instance.stash(
+          bytes,
+          filename,
+          kind: kind,
+          groupId: groupId,
+        );
         compressedTempFile?.delete().ignore();
         debugPrint('uploadFile → офлайн, отложено: $localRef');
         // Отложить не вышло — сети нет, значит и причина в сети.
@@ -263,19 +289,23 @@ class MediaService {
       // Сюда доходит только своё: чтение файла, склад офлайн-медиа, сжатие
       // вне своих try. Отказ сервера PbMediaService разбирает и шлёт сам.
       debugPrint('uploadFile failed: $e');
-      final failure =
-          classifyUploadError(e, loggedIn: PocketBaseService().isLoggedIn);
+      final failure = classifyUploadError(
+        e,
+        loggedIn: PocketBaseService().isLoggedIn,
+      );
       if (uploadErrorWorthReporting(e)) {
-        unawaited(Sentry.captureException(
-          e,
-          stackTrace: st,
-          withScope: (s) {
-            s.level = SentryLevel.warning;
-            s.setExtra('reason', 'MediaService.uploadFile failed');
-            s.setExtra('destination', destination);
-            s.setExtra('failure', failure.name);
-          },
-        ));
+        unawaited(
+          Sentry.captureException(
+            e,
+            stackTrace: st,
+            withScope: (s) {
+              s.level = SentryLevel.warning;
+              s.setExtra('reason', 'MediaService.uploadFile failed');
+              s.setExtra('destination', destination);
+              s.setExtra('failure', failure.name);
+            },
+          ),
+        );
       }
       return UploadOutcome.failed(failure);
     }

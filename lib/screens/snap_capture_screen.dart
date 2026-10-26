@@ -21,7 +21,7 @@ import '../widgets/unfold/unfold_route.dart';
 /// а нужно именно удержание. Поэтому здесь своё превью на пакете `camera`.
 ///
 /// Предел в три секунды не выдуман: ролик уезжает живым фото в парный виджет,
-/// а сервер режет его на восемнадцать кадров (`tools/widget_anim.py`). Длиннее
+/// а сервер режет его на восемнадцать кадров (usecase/widgetanim на сервере). Длиннее
 /// — и движение распадётся на слайд-шоу.
 class SnapCaptureScreen extends StatefulWidget {
   const SnapCaptureScreen({super.key, required this.theme});
@@ -202,15 +202,20 @@ class _SnapCaptureScreenState extends State<SnapCaptureScreen>
                     IconButton(
                       tooltip: ruEn('Закрыть', 'Close'),
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
                     ),
                     const Spacer(),
                     if (_cameras.length > 1)
                       IconButton(
                         tooltip: ruEn('Переключить камеру', 'Switch camera'),
                         onPressed: _flip,
-                        icon: const Icon(Icons.cameraswitch_rounded,
-                            color: Colors.white),
+                        icon: const Icon(
+                          Icons.cameraswitch_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                   ],
                 ),
@@ -218,7 +223,10 @@ class _SnapCaptureScreenState extends State<SnapCaptureScreen>
                 Text(
                   _recording ? s.snapRecording : s.snapHoldToRecord,
                   style: AppFonts.onest(
-                      size: 14, weight: 600, color: Colors.white),
+                    size: 14,
+                    weight: 600,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 GestureDetector(

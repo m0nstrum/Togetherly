@@ -56,11 +56,13 @@ MoodHalfPayload moodHalfPayload({
     return const MoodHalfPayload();
   }
 
-  final option =
-      widgetMoodEmoji.isEmpty ? null : MoodOption.byImagePath(widgetMoodEmoji);
+  final option = widgetMoodEmoji.isEmpty
+      ? null
+      : MoodOption.byImagePath(widgetMoodEmoji);
   return MoodHalfPayload(
     imagePath: option?.imagePath ?? widgetMoodEmoji,
-    label: option?.localizedLabelFor(gender) ??
+    label:
+        option?.localizedLabelFor(gender) ??
         (widgetMoodLabel.isNotEmpty ? widgetMoodLabel : ''),
     score: option?.score ?? 0,
     colorHex: option == null ? '' : _hex(option.color),

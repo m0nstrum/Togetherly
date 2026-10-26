@@ -64,7 +64,9 @@ String giftTimesLabel(int n, {required bool ru}) {
   if (LocaleService.instance.language == AppLanguage.zh) return '$n 次';
   if (!ru) return n == 1 ? 'once' : '$n times';
   final m10 = n % 10, m100 = n % 100;
-  final word = (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) ? 'раза' : 'раз';
+  final word = (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14))
+      ? 'раза'
+      : 'раз';
   return '$n $word';
 }
 
@@ -143,8 +145,10 @@ class GiftMemoList extends StatelessWidget {
       if (latest != null)
         _zh
             ? '最近一次 ${_dateLabel(latest)}'
-            : _tr('последний ${_dateLabel(latest)}',
-                'last on ${_dateLabel(latest)}'),
+            : _tr(
+                'последний ${_dateLabel(latest)}',
+                'last on ${_dateLabel(latest)}',
+              ),
     ].join(' · ');
 
     return Padding(
@@ -170,13 +174,18 @@ class GiftMemoList extends StatelessWidget {
                     Text(
                       gift.title,
                       style: AppFonts.unbounded(
-                          size: 22, weight: 800, color: scheme.onSurface),
+                        size: 22,
+                        weight: 800,
+                        color: scheme.onSurface,
+                      ),
                     ),
                     if (memos.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 11, vertical: 5),
+                          horizontal: 11,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: scheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(999),
@@ -184,9 +193,10 @@ class GiftMemoList extends StatelessWidget {
                         child: Text(
                           summary,
                           style: AppFonts.onest(
-                              size: 12.5,
-                              weight: 700,
-                              color: scheme.onSecondaryContainer),
+                            size: 12.5,
+                            weight: 700,
+                            color: scheme.onSecondaryContainer,
+                          ),
                         ),
                       ),
                     ],
@@ -200,8 +210,10 @@ class GiftMemoList extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                _tr('Этого подарка на полке ещё нет.',
-                    'This gift is not on the shelf yet.'),
+                _tr(
+                  'Этого подарка на полке ещё нет.',
+                  'This gift is not on the shelf yet.',
+                ),
                 style: AppFonts.onest(size: 15, color: scheme.onSurfaceVariant),
               ),
             )
@@ -280,8 +292,11 @@ class _MemoCard extends StatelessWidget {
               color: scheme.tertiaryContainer,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.redeem_rounded,
-                size: 15, color: scheme.onTertiaryContainer),
+            child: Icon(
+              Icons.redeem_rounded,
+              size: 15,
+              color: scheme.onTertiaryContainer,
+            ),
           )
         : AvatarWidget(
             uid: memo.senderUid,
@@ -311,14 +326,20 @@ class _MemoCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.onest(
-                      size: 13.5, weight: 700, color: scheme.onSurface),
+                    size: 13.5,
+                    weight: 700,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 dateLabel,
                 style: AppFonts.onest(
-                    size: 13, weight: 600, color: scheme.onSurfaceVariant),
+                  size: 13,
+                  weight: 600,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -336,7 +357,10 @@ class _MemoCard extends StatelessWidget {
             Text(
               memo.note,
               style: AppFonts.onest(
-                  size: 16, height: 1.45, color: scheme.onSurface),
+                size: 16,
+                height: 1.45,
+                color: scheme.onSurface,
+              ),
             ),
           ],
           if (memo.reply.isNotEmpty) ...[
@@ -362,13 +386,19 @@ class _MemoCard extends StatelessWidget {
                               ? _tr('Ваш ответ', 'Your reply')
                               : _tr('Ответ', 'Reply'),
                           style: AppFonts.onest(
-                              size: 11.5, weight: 700, color: scheme.primary),
+                            size: 11.5,
+                            weight: 700,
+                            color: scheme.primary,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           memo.reply,
                           style: AppFonts.onest(
-                              size: 14.5, height: 1.4, color: scheme.onSurface),
+                            size: 14.5,
+                            height: 1.4,
+                            color: scheme.onSurface,
+                          ),
                         ),
                       ],
                     ),
@@ -390,16 +420,20 @@ class _MemoCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.place_rounded,
-                      size: 17, color: scheme.onTertiaryContainer),
+                  Icon(
+                    Icons.place_rounded,
+                    size: 17,
+                    color: scheme.onTertiaryContainer,
+                  ),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       meeting,
                       style: AppFonts.onest(
-                          size: 13,
-                          weight: 700,
-                          color: scheme.onTertiaryContainer),
+                        size: 13,
+                        weight: 700,
+                        color: scheme.onTertiaryContainer,
+                      ),
                     ),
                   ),
                 ],

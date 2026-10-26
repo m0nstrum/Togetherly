@@ -13,7 +13,13 @@ class ReelLink {
   final String source;
   final String id;
 
-  static const Set<String> sources = {'shorts', 'tiktok', 'rutube', 'vk', 'dzen'};
+  static const Set<String> sources = {
+    'shorts',
+    'tiktok',
+    'rutube',
+    'vk',
+    'dzen',
+  };
 
   /// null — ключ битый или площадка незнакомая.
   static ReelLink? parse(String key) {
@@ -31,47 +37,64 @@ class ReelLink {
 
   /// Адрес, который откроется у человека в браузере или в приложении площадки.
   String get url => switch (source) {
-        'tiktok' => 'https://www.tiktok.com/@/video/$id',
-        'rutube' => 'https://rutube.ru/shorts/$id/',
-        'vk' => () {
-            final p = id.split('_');
-            return 'https://vk.com/clip${p[0]}_${p[1]}';
-          }(),
-        // У Дзена в ленте только номер видео, страницы публикации по нему
-        // нет; плеер открывается и сам по себе.
-        'dzen' => 'https://dzen.ru/embed/$id',
-        _ => 'https://youtube.com/shorts/$id',
-      };
+    'tiktok' => 'https://www.tiktok.com/@/video/$id',
+    'rutube' => 'https://rutube.ru/shorts/$id/',
+    'vk' => () {
+      final p = id.split('_');
+      return 'https://vk.com/clip${p[0]}_${p[1]}';
+    }(),
+    // У Дзена в ленте только номер видео, страницы публикации по нему
+    // нет; плеер открывается и сам по себе.
+    'dzen' => 'https://dzen.ru/embed/$id',
+    _ => 'https://youtube.com/shorts/$id',
+  };
 
   /// Обложка, которую можно назвать без запроса. У остальных её приносят
   /// данные площадки ([ReelMeta]) или её нет вовсе.
-  String? get knownThumb => source == 'shorts' ? 'https://i.ytimg.com/vi/$id/hqdefault.jpg' : null;
+  String? get knownThumb =>
+      source == 'shorts' ? 'https://i.ytimg.com/vi/$id/hqdefault.jpg' : null;
 
   /// Где спросить название и автора. null — площадка этого не отдаёт.
   Uri? get metaUri => switch (source) {
-        'shorts' => Uri.https('www.youtube.com', '/oembed', {'url': url, 'format': 'json'}),
-        'tiktok' => Uri.https('www.tiktok.com', '/oembed', {'url': url}),
-        'rutube' => Uri.https('rutube.ru', '/api/video/$id/', {'format': 'json'}),
-        _ => null,
-      };
+    'shorts' => Uri.https('www.youtube.com', '/oembed', {
+      'url': url,
+      'format': 'json',
+    }),
+    'tiktok' => Uri.https('www.tiktok.com', '/oembed', {'url': url}),
+    'rutube' => Uri.https('rutube.ru', '/api/video/$id/', {'format': 'json'}),
+    _ => null,
+  };
+
+  /// Адрес для сохранения: у TikTok с ником автора из [meta], если он есть.
+  /// Ссылку `@/video/…` без ника приложение TikTok открывает не всегда (B6).
+  String urlWith(ReelMeta meta) {
+    final handle = meta.handle;
+    if (source == 'tiktok' && handle != null) {
+      return 'https://www.tiktok.com/@$handle/video/$id';
+    }
+    return url;
+  }
 
   /// Подпись площадки в карточке воспоминания.
   String get platform => switch (source) {
-        'tiktok' => 'TikTok',
-        'rutube' => 'Rutube',
-        'vk' => 'VK',
-        'dzen' => 'Дзен',
-        _ => 'YouTube',
-      };
+    'tiktok' => 'TikTok',
+    'rutube' => 'Rutube',
+    'vk' => 'VK',
+    'dzen' => 'Дзен',
+    _ => 'YouTube',
+  };
 }
 
 /// Название, автор и обложка ролика из ответа площадки.
 class ReelMeta {
-  const ReelMeta({this.title, this.author, this.thumb});
+  const ReelMeta({this.title, this.author, this.thumb, this.handle});
 
   final String? title;
   final String? author;
   final String? thumb;
+
+  /// Ник автора TikTok (`author_unique_id`) — только безопасные символы.
+  final String? handle;
 
   static const empty = ReelMeta();
 
@@ -87,8 +110,16 @@ class ReelMeta {
     final author = json['author'];
     return ReelMeta(
       title: str(json['title']),
-      author: str(json['author_name']) ?? (author is Map ? str(author['name']) : null),
+      author:
+          str(json['author_name']) ??
+          (author is Map ? str(author['name']) : null),
       thumb: str(json['thumbnail_url']),
+      handle: () {
+        final h = str(json['author_unique_id']);
+        return h != null && RegExp(r'^[A-Za-z0-9._]{1,40}$').hasMatch(h)
+            ? h
+            : null;
+      }(),
     );
   }
 }

@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../dict_strings.dart';
-import '../fork/flags.dart'; // fork
 import 'locale_service.dart';
 import 'pocketbase_service.dart';
 
@@ -20,21 +19,13 @@ import 'pocketbase_service.dart';
 /// ключ выгорал, и фильмы не мог добавить никто. Платный тариф дорог, TMDB
 /// запрещает коммерцию, Викиданные отдают всё под CC0 без ключа.
 ///
-/// Прямой поход в poiskkino остался запасным путём: сервер старый, упал, нет
-/// сессии или сети до него. Ключ по-прежнему можно подменить при сборке:
-/// `--dart-define=KINOPOISK_TOKEN=...`.
+/// Прямой поход в poiskkino — запасной путь (сервер упал, нет сессии или
+/// сети), только со своим ключом из сборки: `--dart-define=KINOPOISK_TOKEN=...`.
+/// Общий ключ автора апстрима не используется.
 class MovieSearchService {
   MovieSearchService._();
 
-  // Токен из --dart-define имеет приоритет над захардкоженным.
-  static const String _envToken = String.fromEnvironment('KINOPOISK_TOKEN');
-
-  /// Бесплатный токен poiskkino.dev (получен через @poiskkinodev_bot).
-  static const String _fallbackToken = 'TM3RQXB-DCZMAJ5-GF7RGGM-NSKB7JS';
-
-  static String get _token => _envToken.isNotEmpty
-      ? _envToken
-      : (ForkFlags.noUpstreamKeys ? '' : _fallbackToken); // fork
+  static const String _token = String.fromEnvironment('KINOPOISK_TOKEN');
 
   /// `true`, если токен задан — иначе форма уходит в ручной ввод.
   static bool get isConfigured => _token.trim().isNotEmpty;
@@ -88,12 +79,16 @@ class MovieSearchService {
     String token,
     String lang,
   ) async {
-    final uri = Uri.parse('$base/api/movies/search')
-        .replace(queryParameters: {'q': q, 'lang': lang});
+    final uri = Uri.parse(
+      '$base/api/movies/search',
+    ).replace(queryParameters: {'q': q, 'lang': lang});
     final http.Response resp;
     try {
       resp = await c
-          .get(uri, headers: {'Authorization': token, 'accept': 'application/json'})
+          .get(
+            uri,
+            headers: {'Authorization': token, 'accept': 'application/json'},
+          )
           .timeout(_serverTimeout);
     } catch (e) {
       debugPrint('[MovieSearch] сервер не ответил: $e');
@@ -131,7 +126,8 @@ class MovieSearchService {
   }
 
   static List<MovieResult> _parseDocs(http.Response resp) {
-    final data = json.decode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
+    final data =
+        json.decode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
     final docs = (data['docs'] as List?) ?? const [];
     return docs
         .whereType<Map<String, dynamic>>()
@@ -140,7 +136,10 @@ class MovieSearchService {
         .toList();
   }
 
-  static Future<List<MovieResult>> _viaPoiskkino(http.Client c, String q) async {
+  static Future<List<MovieResult>> _viaPoiskkino(
+    http.Client c,
+    String q,
+  ) async {
     if (!isConfigured) {
       throw const MovieSearchException(notConfigured: true);
     }
@@ -154,15 +153,16 @@ class MovieSearchService {
     });
     debugPrint('[MovieSearch] GET $uri');
     try {
-      final resp = await c.get(
-        uri,
-        headers: {
-          'accept': 'application/json',
-          'X-API-KEY': _token,
-        },
-      ).timeout(const Duration(seconds: 10));
+      final resp = await c
+          .get(
+            uri,
+            headers: {'accept': 'application/json', 'X-API-KEY': _token},
+          )
+          .timeout(const Duration(seconds: 10));
 
-      debugPrint('[MovieSearch] ← ${resp.statusCode}, ${resp.body.length} bytes');
+      debugPrint(
+        '[MovieSearch] ← ${resp.statusCode}, ${resp.body.length} bytes',
+      );
       // 401 — ключ не тот. 403 у poiskkino.dev значит другое: «вы израсходовали
       // ваш суточный лимит по запросам». Ключ один на всех, и к вечеру он
       // выгорает, а наутро оживает. Смешивать это с «нет ключа» нельзя:
@@ -270,8 +270,8 @@ class MovieResult {
     final enName = (doc['enName'] as String?)?.trim();
     // Приоритет — русское название. Если его нет, берём оригинальное.
     final original = (altName?.isNotEmpty == true ? altName : enName);
-    final title =
-        (ruName?.isNotEmpty == true ? ruName! : (original ?? '')).trim();
+    final title = (ruName?.isNotEmpty == true ? ruName! : (original ?? ''))
+        .trim();
 
     final yearRaw = doc['year'];
     String? year = (yearRaw is num) ? yearRaw.toInt().toString() : null;
@@ -321,7 +321,8 @@ class MovieResult {
       id: (doc['id'] as num?)?.toInt() ?? 0,
       title: title,
       // originalTitle храним только если реально отличается от заголовка.
-      originalTitle: (original != null && original.isNotEmpty && original != title)
+      originalTitle:
+          (original != null && original.isNotEmpty && original != title)
           ? original
           : null,
       posterUrl: (poster != null && poster.isNotEmpty) ? poster : null,
@@ -330,7 +331,8 @@ class MovieResult {
       genres: (genres != null && genres.isNotEmpty) ? genres : null,
       country: country,
       ratingKp: ratingKp,
-      description: (doc['shortDescription'] as String?)?.trim().isNotEmpty == true
+      description:
+          (doc['shortDescription'] as String?)?.trim().isNotEmpty == true
           ? (doc['shortDescription'] as String).trim()
           : (doc['description'] as String?)?.trim(),
       link: (doc['link'] as String?)?.trim().isNotEmpty == true
@@ -343,9 +345,9 @@ class MovieResult {
 }
 
 /// Человекочитаемая метка типа («Фильм» / «Сериал» / «Мультфильм» / «Аниме»).
-String movieKindLabel(String? kind, {required bool isRu}) =>
-    isRu ? _movieKindLabel(kind, isRu: true) : zhForEnglishIfZh(
-        _movieKindLabel(kind, isRu: false));
+String movieKindLabel(String? kind, {required bool isRu}) => isRu
+    ? _movieKindLabel(kind, isRu: true)
+    : zhForEnglishIfZh(_movieKindLabel(kind, isRu: false));
 
 String _movieKindLabel(String? kind, {required bool isRu}) {
   switch (kind) {

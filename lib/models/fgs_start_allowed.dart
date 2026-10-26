@@ -15,7 +15,10 @@ import 'package:flutter/widgets.dart';
 /// [state] — состояние приложения (`WidgetsBinding.instance.lifecycleState`),
 /// `null` означает «первый кадр ещё не был». [android] — нужна ли проверка
 /// вообще: на iPhone фоновая геопозиция разрешена режимом в `Info.plist`.
-bool fgsLocationStartAllowed(AppLifecycleState? state, {required bool android}) {
+bool fgsLocationStartAllowed(
+  AppLifecycleState? state, {
+  required bool android,
+}) {
   if (!android) return true;
   return state == AppLifecycleState.resumed ||
       // Шторка уведомлений и входящий звонок дают inactive, но приложение

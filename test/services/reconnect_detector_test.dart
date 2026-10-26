@@ -23,8 +23,11 @@ void main() {
   test('повтор события подключения без обрыва ничего не значит', () {
     final d = ReconnectDetector();
     d.onConnected();
-    expect(d.onConnected(), isFalse,
-        reason: 'иначе дубль события заставит всех разом перекачать списки');
+    expect(
+      d.onConnected(),
+      isFalse,
+      reason: 'иначе дубль события заставит всех разом перекачать списки',
+    );
   });
 
   test('обрывов подряд может быть сколько угодно', () {

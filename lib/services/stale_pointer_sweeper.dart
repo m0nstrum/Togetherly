@@ -43,20 +43,23 @@ class StalePointerSweeper {
         swept++;
         // Отмена — отдельным событием после текущего: посреди разбора чужого
         // касания маршрутизатор лучше не трогать.
-        scheduleMicrotask(() => GestureBinding.instance.handlePointerEvent(
-              PointerCancelEvent(
-                pointer: p.key,
-                position: p.value.position,
-                kind: p.value.kind,
-                device: p.value.device,
-                timeStamp: e.timeStamp,
-              ),
-            ));
+        scheduleMicrotask(
+          () => GestureBinding.instance.handlePointerEvent(
+            PointerCancelEvent(
+              pointer: p.key,
+              position: p.value.position,
+              kind: p.value.kind,
+              device: p.value.device,
+              timeStamp: e.timeStamp,
+            ),
+          ),
+        );
       }
       _down[e.pointer] = _Pointer(e.timeStamp, e.position, e.kind, e.device);
     } else if (e is PointerMoveEvent) {
       final p = _down[e.pointer];
-      if (p != null) _down[e.pointer] = _Pointer(e.timeStamp, e.position, p.kind, p.device);
+      if (p != null)
+        _down[e.pointer] = _Pointer(e.timeStamp, e.position, p.kind, p.device);
     } else if (e is PointerUpEvent || e is PointerCancelEvent) {
       _down.remove(e.pointer);
     }

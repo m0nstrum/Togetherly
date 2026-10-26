@@ -69,8 +69,15 @@ class AvatarFrame {
 
   /// Радиусы рамок из сборки — на случай, когда каталога ещё нет.
   static const Map<String, double> bundledHole = {
-    'wreath': 26.5, 'cloud': 27, 'ribbon': 27.5, 'hearts': 31, 'daisies': 30.5,
-    'cat': 30.5, 'lights': 31, 'donut': 28, 'clock': 27.5,
+    'wreath': 26.5,
+    'cloud': 27,
+    'ribbon': 27.5,
+    'hearts': 31,
+    'daisies': 30.5,
+    'cat': 30.5,
+    'lights': 31,
+    'donut': 28,
+    'clock': 27.5,
   };
 
   /// Масштаб фото под рамкой [key]: из каталога, иначе из сборки.
@@ -83,8 +90,15 @@ class AvatarFrame {
 
   /// Ключи рамок, чей неподвижный кадр лежит в сборке.
   static const Set<String> bundled = {
-    'wreath', 'cloud', 'ribbon', 'hearts', 'daisies',
-    'cat', 'lights', 'donut', 'clock',
+    'wreath',
+    'cloud',
+    'ribbon',
+    'hearts',
+    'daisies',
+    'cat',
+    'lights',
+    'donut',
+    'clock',
   };
 
   /// Заглушка из сборки или null, если рамка заведена позже сборки.
@@ -143,7 +157,9 @@ class AvatarFrame {
         : const {};
     final sort = row['sort'];
     final rawHole = data['hole'];
-    final hole = rawHole is num ? rawHole.toDouble().clamp(18.0, avatarR) : (bundledHole[key] ?? avatarR);
+    final hole = rawHole is num
+        ? rawHole.toDouble().clamp(18.0, avatarR)
+        : (bundledHole[key] ?? avatarR);
     return AvatarFrame(
       key: key,
       rarity: '${data['rarity'] ?? 'common'}',

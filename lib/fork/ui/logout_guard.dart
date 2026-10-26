@@ -16,9 +16,6 @@ abstract final class ForkLogoutGuard {
   static String message(String base, {int? pendingOverride}) {
     final n = pendingOverride ?? pending;
     if (n <= 0) return base;
-    return '$base\n\n${ruEn(
-      'Ещё не отправлено: $n. Подключитесь к интернету и дождитесь отправки — после выхода это пропадёт.',
-      'Not sent yet: $n. Get online and wait for it to go through — it will be lost after you sign out.',
-    )}';
+    return '$base\n\n${ruEn('Ещё не отправлено: $n. Подключитесь к интернету и дождитесь отправки — после выхода это пропадёт.', 'Not sent yet: $n. Get online and wait for it to go through — it will be lost after you sign out.')}';
   }
 }

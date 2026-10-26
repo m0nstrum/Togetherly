@@ -8,42 +8,59 @@ import 'package:love_app/fork/ui/chat_hints.dart';
 void main() {
   group('почему запись закрыта (UX A9)', () {
     test('причина по состоянию шифрования', () {
-      expect(forkLockedWhy(started: false, restore: false, hasKey: false),
-          ForkLockedWhy.starting);
       expect(
-          forkLockedWhy(
-              started: false, failed: true, restore: false, hasKey: false),
-          ForkLockedWhy.notStarted);
-      expect(forkLockedWhy(started: true, restore: true, hasKey: false),
-          ForkLockedWhy.needsRestore);
+        forkLockedWhy(started: false, restore: false, hasKey: false),
+        ForkLockedWhy.starting,
+      );
       expect(
-          forkLockedWhy(
-              started: true,
-              restore: false,
-              status: PairE2EStatus.waitingPartner,
-              hasKey: false),
-          ForkLockedWhy.waitingPartner);
+        forkLockedWhy(
+          started: false,
+          failed: true,
+          restore: false,
+          hasKey: false,
+        ),
+        ForkLockedWhy.notStarted,
+      );
       expect(
-          forkLockedWhy(
-              started: true,
-              restore: false,
-              status: PairE2EStatus.waitingKey,
-              hasKey: false),
-          ForkLockedWhy.waitingKey);
+        forkLockedWhy(started: true, restore: true, hasKey: false),
+        ForkLockedWhy.needsRestore,
+      );
       expect(
-          forkLockedWhy(
-              started: true,
-              restore: false,
-              status: PairE2EStatus.tampered,
-              hasKey: true),
-          ForkLockedWhy.tampered);
+        forkLockedWhy(
+          started: true,
+          restore: false,
+          status: PairE2EStatus.waitingPartner,
+          hasKey: false,
+        ),
+        ForkLockedWhy.waitingPartner,
+      );
       expect(
-          forkLockedWhy(
-              started: true,
-              restore: false,
-              status: PairE2EStatus.verified,
-              hasKey: true),
-          ForkLockedWhy.oldKey);
+        forkLockedWhy(
+          started: true,
+          restore: false,
+          status: PairE2EStatus.waitingKey,
+          hasKey: false,
+        ),
+        ForkLockedWhy.waitingKey,
+      );
+      expect(
+        forkLockedWhy(
+          started: true,
+          restore: false,
+          status: PairE2EStatus.tampered,
+          hasKey: true,
+        ),
+        ForkLockedWhy.tampered,
+      );
+      expect(
+        forkLockedWhy(
+          started: true,
+          restore: false,
+          status: PairE2EStatus.verified,
+          hasKey: true,
+        ),
+        ForkLockedWhy.oldKey,
+      );
     });
 
     test('у каждой причины есть подпись и объяснение', () {
@@ -53,23 +70,30 @@ void main() {
       }
     });
 
-    testWidgets('пузырь называет причину, касание — лист с действием',
-        (tester) async {
+    testWidgets('пузырь называет причину, касание — лист с действием', (
+      tester,
+    ) async {
       ForkE2E.startFailed.value = true;
       addTearDown(() => ForkE2E.startFailed.value = false);
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(
-          body: ForkLockedText(color: Colors.black, groupId: 'g1'),
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ForkLockedText(color: Colors.black, groupId: 'g1'),
+          ),
         ),
-      ));
+      );
       expect(
-          find.textContaining(
-              forkLockedShort(ForkLockedWhy.notStarted).toLowerCase()),
-          findsOneWidget);
+        find.textContaining(
+          forkLockedShort(ForkLockedWhy.notStarted).toLowerCase(),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.byType(ForkLockedText));
       await tester.pumpAndSettle();
-      expect(find.text(forkLockedLong(ForkLockedWhy.notStarted)),
-          findsOneWidget);
+      expect(
+        find.text(forkLockedLong(ForkLockedWhy.notStarted)),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.refresh_rounded), findsOneWidget);
     });
 

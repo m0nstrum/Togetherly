@@ -5,7 +5,14 @@ name: iOS → смена фото партнёра в виджете
 # Foundation. Mac для проверки нет, поэтому кусок вырезается между метками и
 # собирается консольной проверкой на macOS.
 on:
+  # Только main и PR: push в рабочую ветку проверяет её PR.
   push:
+    branches: [main]
+    paths:
+      - 'ios/TogetherlyWidget/PhotoWidgets.swift'
+      - 'ios/widget_catalog_test/**'
+      - '.github/workflows/ios-widget-catalog.yml'
+  pull_request:
     paths:
       - 'ios/TogetherlyWidget/PhotoWidgets.swift'
       - 'ios/widget_catalog_test/**'

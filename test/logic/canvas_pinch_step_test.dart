@@ -93,53 +93,103 @@ void main() {
       final t = PinchTracker()..begin();
       // Первый кадр двумя пальцами задаёт опору.
       expect(
-        t.step(pointerCount: 2, scale: 1, rotation: 0,
-            focal: const Offset(100, 100), focalDelta: Offset.zero),
+        t.step(
+          pointerCount: 2,
+          scale: 1,
+          rotation: 0,
+          focal: const Offset(100, 100),
+          focalDelta: Offset.zero,
+        ),
         isNull,
       );
       // Тянем: масштаб пошёл вверх.
-      final grow = t.step(pointerCount: 2, scale: 1.5, rotation: 0,
-          focal: const Offset(100, 100), focalDelta: Offset.zero);
+      final grow = t.step(
+        pointerCount: 2,
+        scale: 1.5,
+        rotation: 0,
+        focal: const Offset(100, 100),
+        focalDelta: Offset.zero,
+      );
       expect(grow!.scaleStep, closeTo(1.5, 0.001));
 
       // Лёг третий палец: Flutter обнулил span и увёл средний фокус.
       // Этот кадр не должен двигать холст ВООБЩЕ — ни масштабом, ни сдвигом.
-      final rebuild = t.step(pointerCount: 3, scale: 1, rotation: 0,
-          focal: const Offset(180, 60), focalDelta: const Offset(80, -40));
+      final rebuild = t.step(
+        pointerCount: 3,
+        scale: 1,
+        rotation: 0,
+        focal: const Offset(180, 60),
+        focalDelta: const Offset(80, -40),
+      );
       expect(rebuild, isNull);
 
       // Следующий кадр считается от новой опоры, а не от старой.
-      final after = t.step(pointerCount: 3, scale: 1.1, rotation: 0,
-          focal: const Offset(182, 60), focalDelta: const Offset(2, 0));
+      final after = t.step(
+        pointerCount: 3,
+        scale: 1.1,
+        rotation: 0,
+        focal: const Offset(182, 60),
+        focalDelta: const Offset(2, 0),
+      );
       expect(after!.scaleStep, closeTo(1.1, 0.001));
       expect(after.focalDelta.dx, closeTo(2, 0.001));
     });
 
     test('палец подняли — холст замирает, пока их меньше двух', () {
       final t = PinchTracker()..begin();
-      t.step(pointerCount: 2, scale: 1, rotation: 0,
-          focal: const Offset(100, 100), focalDelta: Offset.zero);
-      final one = t.step(pointerCount: 1, scale: 1, rotation: 0,
-          focal: const Offset(40, 100), focalDelta: const Offset(-60, 0));
+      t.step(
+        pointerCount: 2,
+        scale: 1,
+        rotation: 0,
+        focal: const Offset(100, 100),
+        focalDelta: Offset.zero,
+      );
+      final one = t.step(
+        pointerCount: 1,
+        scale: 1,
+        rotation: 0,
+        focal: const Offset(40, 100),
+        focalDelta: const Offset(-60, 0),
+      );
       expect(one, isNull);
     });
 
     test('поворот включается только после заметного разворота', () {
       final t = PinchTracker()..begin();
-      t.step(pointerCount: 2, scale: 1, rotation: 0,
-          focal: Offset.zero, focalDelta: Offset.zero);
-      final small = t.step(pointerCount: 2, scale: 1, rotation: 0.05,
-          focal: Offset.zero, focalDelta: Offset.zero);
+      t.step(
+        pointerCount: 2,
+        scale: 1,
+        rotation: 0,
+        focal: Offset.zero,
+        focalDelta: Offset.zero,
+      );
+      final small = t.step(
+        pointerCount: 2,
+        scale: 1,
+        rotation: 0.05,
+        focal: Offset.zero,
+        focalDelta: Offset.zero,
+      );
       expect(small!.rotationStep, 0, reason: 'дрожь руки листа не кренит');
 
-      final big = t.step(pointerCount: 2, scale: 1, rotation: 0.5,
-          focal: Offset.zero, focalDelta: Offset.zero);
+      final big = t.step(
+        pointerCount: 2,
+        scale: 1,
+        rotation: 0.5,
+        focal: Offset.zero,
+        focalDelta: Offset.zero,
+      );
       expect(big!.rotationStep, greaterThan(0));
       // Порог вычитается один раз, а не прибавляется рывком.
       expect(big.rotationStep, closeTo(0.5 - kPinchRotationSlop, 0.001));
 
-      final more = t.step(pointerCount: 2, scale: 1, rotation: 0.6,
-          focal: Offset.zero, focalDelta: Offset.zero);
+      final more = t.step(
+        pointerCount: 2,
+        scale: 1,
+        rotation: 0.6,
+        focal: Offset.zero,
+        focalDelta: Offset.zero,
+      );
       expect(more!.rotationStep, closeTo(0.1, 0.001));
     });
   });

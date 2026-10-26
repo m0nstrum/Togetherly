@@ -13,25 +13,27 @@ void main() {
 
   Future<(List<String>, Finder)> pump(WidgetTester tester) async {
     final taps = <String>[];
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: ListView(
-          children: [
-            ProfileHero(
-              cs: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B)),
-              uid: 'u1',
-              avatarUrl: '',
-              name: 'сифон',
-              bannerUrl: '',
-              subtitle: 'вместе 688 дней',
-              onTapAvatar: () => taps.add('camera'),
-              onTapFrame: () => taps.add('frame'),
-              onEdit: () {},
-            ),
-          ],
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              ProfileHero(
+                cs: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B)),
+                uid: 'u1',
+                avatarUrl: '',
+                name: 'сифон',
+                bannerUrl: '',
+                subtitle: 'вместе 688 дней',
+                onTapAvatar: () => taps.add('camera'),
+                onTapFrame: () => taps.add('frame'),
+                onEdit: () {},
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
     return (taps, find.byIcon(Icons.photo_camera_rounded));
   }

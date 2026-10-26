@@ -11,27 +11,50 @@ import 'package:flutter_test/flutter_test.dart';
 /// координаты у одиночек, и App Review опять не найдёт функции под режим
 /// `location`.
 void main() {
-  final src = File('lib/services/live_location_service.dart').readAsStringSync();
+  final src = File(
+    'lib/services/live_location_service.dart',
+  ).readAsStringSync();
 
   test('startSharing выходит на пустом partnerUid', () {
-    final body = _between(src, 'Future<void> startSharing(', 'Future<void> stopSharing(');
-    expect(body.contains('partnerUid.isEmpty'), isTrue,
-        reason: 'без проверки партнёра шеринг стартует у одиночек');
+    final body = _between(
+      src,
+      'Future<void> startSharing(',
+      'Future<void> stopSharing(',
+    );
+    expect(
+      body.contains('partnerUid.isEmpty'),
+      isTrue,
+      reason: 'без проверки партнёра шеринг стартует у одиночек',
+    );
     final at = body.indexOf('partnerUid.isEmpty');
     final fgs = body.indexOf('_canStartFgs');
-    expect(at < fgs, isTrue,
-        reason: 'проверка партнёра обязана стоять ДО подъёма потока');
+    expect(
+      at < fgs,
+      isTrue,
+      reason: 'проверка партнёра обязана стоять ДО подъёма потока',
+    );
   });
 
   test('resumeIfEnabled гасит остаток, когда партнёра не стало', () {
-    final body = _between(src, 'Future<void> resumeIfEnabled(', 'void _watchLifecycle(');
+    final body = _between(
+      src,
+      'Future<void> resumeIfEnabled(',
+      'void _watchLifecycle(',
+    );
     expect(body.contains('partnerUid.isEmpty'), isTrue);
-    expect(body.contains('stopSharing(removePoint: true)'), isTrue,
-        reason: 'после распада пары точка обязана исчезнуть из RTDB');
+    expect(
+      body.contains('stopSharing(removePoint: true)'),
+      isTrue,
+      reason: 'после распада пары точка обязана исчезнуть из RTDB',
+    );
   });
 
   test('читать точку партнёра без него по-прежнему нельзя', () {
-    final body = _between(src, 'Stream<LivePoint?> watchPartner(', 'Stream<LivePoint?> watchSelf(');
+    final body = _between(
+      src,
+      'Stream<LivePoint?> watchPartner(',
+      'Stream<LivePoint?> watchSelf(',
+    );
     expect(body.contains('partnerUid.isEmpty'), isTrue);
   });
 }

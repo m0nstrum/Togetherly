@@ -1,15 +1,16 @@
 # Образ сервера в GHCR (deploy/README.md): VPS только скачивает готовый образ
 # и не собирает Go сам — серверу хватает памяти на работу, а не на сборку.
 #
-# Теги: `latest` с основной ветки, имя ветки и `sha-<коммит>` с любой.
+# Теги: `latest`, `main` и `sha-<коммит>`. Только из main; образ рабочей ветки —
+# ручным запуском (workflow_dispatch) на этой ветке.
 name: Fork server image
 
 on:
+  # Образ публикуется только из main; PR проверяет сервер в Fork CI.
   push:
-    branches: ['**']
+    branches: [main]
     paths:
       - server/**
-      - pocketbase/pb_hooks/**
       - pocketbase/pb_public/**
       - .dockerignore
       - .github/workflows/fork-server-image.yml

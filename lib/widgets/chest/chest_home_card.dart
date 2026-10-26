@@ -108,7 +108,10 @@ class _ChestHomeCardState extends State<ChestHomeCard> {
       return;
     }
     ChestFrames.prefetch(home.file('idle'));
-    final st = await ChestService.instance.state(groupId: widget.groupId, chest: home.key);
+    final st = await ChestService.instance.state(
+      groupId: widget.groupId,
+      chest: home.key,
+    );
     if (!mounted) return;
     setState(() {
       _season = home;
@@ -147,7 +150,8 @@ class _ChestHomeCardState extends State<ChestHomeCard> {
     final cs = ProfileTheme.schemeFor(widget.theme);
     final season = _season;
     final counted = season != null ? _seasonState : _state;
-    final left = counted?.left ?? season?.perDay ?? 3, perDay = counted?.perDay ?? season?.perDay ?? 3;
+    final left = counted?.left ?? season?.perDay ?? 3,
+        perDay = counted?.perDay ?? season?.perDay ?? 3;
     // В тёмной теме контейнер темы тёмный и сливается с фоном главной, поэтому
     // там фон — сам основной цвет темы, а чип — наоборот.
     // Цвет текста считается по контрасту к фону: в части палитр пара
@@ -160,7 +164,9 @@ class _ChestHomeCardState extends State<ChestHomeCard> {
     final chipBg = night?.fill ?? (dark ? cs.onPrimary : cs.primary);
     final chipFg = night?.onFill ?? readableTextOn(chipBg);
     final lang = LocaleService.instance.language.code;
-    final jar = PairJarService.instance.groupId == widget.groupId ? PairJarService.instance.jar : null;
+    final jar = PairJarService.instance.groupId == widget.groupId
+        ? PairJarService.instance.jar
+        : null;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: UnfoldSource(
@@ -168,126 +174,166 @@ class _ChestHomeCardState extends State<ChestHomeCard> {
         fill: bg,
         radius: 28,
         builder: (_, _) => Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(28),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: _openScreen,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(6, 10, 16, 10),
-            child: Row(
-              children: [
-                // Сундук общий с экраном сундука: при входе он перелетает на
-                // своё место там, при выходе возвращается сюда.
-                UnfoldShared(
-                  tag: chestUnfoldTag(season?.key),
-                  child: season != null
-                      ? ChestFrames(
-                          key: ValueKey(season.file('idle')),
-                          url: season.file('idle'),
-                          still: null,
-                          stillUrl: season.file('still'),
-                          side: 112,
-                        )
-                      : ListenableBuilder(
-                          listenable: CatalogService.instance,
-                          builder: (context, _) => ChestFrames(
-                            key: ValueKey(CatalogService.instance.giftArt('chest_idle')?.smUrl),
-                            url: CatalogService.instance.giftArt('chest_idle')?.smUrl,
-                            still: kChestStill,
+          color: bg,
+          borderRadius: BorderRadius.circular(28),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: _openScreen,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(6, 10, 16, 10),
+              child: Row(
+                children: [
+                  // Сундук общий с экраном сундука: при входе он перелетает на
+                  // своё место там, при выходе возвращается сюда.
+                  UnfoldShared(
+                    tag: chestUnfoldTag(season?.key),
+                    child: season != null
+                        ? ChestFrames(
+                            key: ValueKey(season.file('idle')),
+                            url: season.file('idle'),
+                            still: null,
+                            stillUrl: season.file('still'),
                             side: 112,
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        season?.nameIn(lang) ?? trKey('chestWeekTitle'),
-                        style: TextStyle(
-                          fontFamily: ProfileTheme.displayFont,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: fg,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (jar == null && season != null)
-                        Text(season.hintIn(lang), style: TextStyle(fontSize: 13, height: 1.35, color: fg))
-                      else if (jar == null)
-                        Text(
-                          // Togetherly+ — главный приз, с него описание и начинается.
-                          // На iPhone Плюса нет как понятия, а купившему его не
-                          // выиграть — им прежний текст.
-                          trKey(
-                            PlusService.instance.active
-                                ? 'chestCardTextFree'
-                                : PlusService.instance.visible
-                                ? 'chestCardTextPlus'
-                                : 'chestCardText',
-                          ),
-                          style: TextStyle(fontSize: 13, height: 1.35, color: fg),
-                        )
-                      else ...[
-                        // Копилка пары (макет «Копилка пары», вариант А): строка
-                        // и десять капель. Мои — цветом чипа, партнёра светлые: так
-                        // видно, кто сколько положил.
-                        Text(
-                          jar.capped
-                              ? trKey('jarCapped')
-                              : trKey('jarLine').replaceAll('{k}', '${jar.count}').replaceAll('{n}', '${jar.size}'),
-                          style: TextStyle(fontSize: 13, height: 1.35, color: fg),
-                        ),
-                        const SizedBox(height: 7),
-                        JarDrops(
-                          jar: jar,
-                          mine: chipBg,
-                          partner: Color.lerp(bg, Colors.white, 0.78)!,
-                          dropHeight: 26,
-                          gap: 2,
-                        ),
-                      ],
-                      const SizedBox(height: 7),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(color: chipBg, borderRadius: BorderRadius.circular(999)),
-                            child: Text(
-                              trKey('chestLeftChip').replaceAll('{n}', '$left').replaceAll('{m}', '$perDay'),
-                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: chipFg),
+                          )
+                        : ListenableBuilder(
+                            listenable: CatalogService.instance,
+                            builder: (context, _) => ChestFrames(
+                              key: ValueKey(
+                                CatalogService.instance
+                                    .giftArt('chest_idle')
+                                    ?.smUrl,
+                              ),
+                              url: CatalogService.instance
+                                  .giftArt('chest_idle')
+                                  ?.smUrl,
+                              still: kChestStill,
+                              side: 112,
                             ),
                           ),
-                          if (jar != null && jar.bonus > 0)
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          season?.nameIn(lang) ?? trKey('chestWeekTitle'),
+                          style: TextStyle(
+                            fontFamily: ProfileTheme.displayFont,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: fg,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (jar == null && season != null)
+                          Text(
+                            season.hintIn(lang),
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.35,
+                              color: fg,
+                            ),
+                          )
+                        else if (jar == null)
+                          Text(
+                            // Togetherly+ — главный приз, с него описание и начинается.
+                            // На iPhone Плюса нет как понятия, а купившему его не
+                            // выиграть — им прежний текст.
+                            trKey(
+                              PlusService.instance.active
+                                  ? 'chestCardTextFree'
+                                  : PlusService.instance.visible
+                                  ? 'chestCardTextPlus'
+                                  : 'chestCardText',
+                            ),
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.35,
+                              color: fg,
+                            ),
+                          )
+                        else ...[
+                          // Копилка пары (макет «Копилка пары», вариант А): строка
+                          // и десять капель. Мои — цветом чипа, партнёра светлые: так
+                          // видно, кто сколько положил.
+                          Text(
+                            jar.capped
+                                ? trKey('jarCapped')
+                                : trKey('jarLine')
+                                      .replaceAll('{k}', '${jar.count}')
+                                      .replaceAll('{n}', '${jar.size}'),
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.35,
+                              color: fg,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          JarDrops(
+                            jar: jar,
+                            mine: chipBg,
+                            partner: Color.lerp(bg, Colors.white, 0.78)!,
+                            dropHeight: 26,
+                            gap: 2,
+                          ),
+                        ],
+                        const SizedBox(height: 7),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.6),
+                                color: chipBg,
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
-                                trKey('jarBonusChip').replaceAll('{n}', '${jar.bonus}'),
-                                style: const TextStyle(
+                                trKey('chestLeftChip')
+                                    .replaceAll('{n}', '$left')
+                                    .replaceAll('{m}', '$perDay'),
+                                style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF2A2D30),
+                                  color: chipFg,
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                    ],
+                            if (jar != null && jar.bonus > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  trKey(
+                                    'jarBonusChip',
+                                  ).replaceAll('{n}', '${jar.bonus}'),
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF2A2D30),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

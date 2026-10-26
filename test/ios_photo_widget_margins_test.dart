@@ -12,7 +12,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final src = File('ios/TogetherlyWidget/PhotoWidgets.swift').readAsStringSync();
+  final src = File(
+    'ios/TogetherlyWidget/PhotoWidgets.swift',
+  ).readAsStringSync();
 
   group('Фото-виджеты iOS без системных полей', () {
     for (final widget in const [
@@ -26,8 +28,11 @@ void main() {
         expect(start, greaterThan(0), reason: 'виджет $widget не найден');
         final end = src.indexOf('\n}', start);
         final body = src.substring(start, end);
-        expect(body.contains('.contentMarginsDisabled()'), isTrue,
-            reason: 'без этого система рисует белую рамку вокруг фото');
+        expect(
+          body.contains('.contentMarginsDisabled()'),
+          isTrue,
+          reason: 'без этого система рисует белую рамку вокруг фото',
+        );
       });
     }
 
@@ -41,23 +46,32 @@ void main() {
   // (tool/widget_layout, воркфлоу ios-widget-layout.yml), здесь — быстрый
   // сторож тех же двух ошибок по исходнику.
   group('Парный виджет iOS', () {
-    final love =
-        File('ios/TogetherlyWidget/LoveWidget.swift').readAsStringSync();
+    final love = File(
+      'ios/TogetherlyWidget/LoveWidget.swift',
+    ).readAsStringSync();
 
     test('снимает системные поля', () {
       final start = love.indexOf('struct LoveWidget: Widget {');
       expect(start, greaterThan(0));
       final body = love.substring(start, love.indexOf('\n}', start));
-      expect(body.contains('.contentMarginsDisabled()'), isTrue,
-          reason: 'без этого сверху и снизу белые полосы фона');
+      expect(
+        body.contains('.contentMarginsDisabled()'),
+        isTrue,
+        reason: 'без этого сверху и снизу белые полосы фона',
+      );
     });
 
     test('фото не держится гибкой рамкой', () {
       final flexAfterFill = RegExp(
-          r'\.scaledToFill\(\)\s*\.frame\(maxWidth:\s*\.infinity');
-      expect(flexAfterFill.hasMatch(love), isFalse,
-          reason: 'гибкая рамка принимает ширину широкого фото, '
-              'и половины выходят неравными');
+        r'\.scaledToFill\(\)\s*\.frame\(maxWidth:\s*\.infinity',
+      );
+      expect(
+        flexAfterFill.hasMatch(love),
+        isFalse,
+        reason:
+            'гибкая рамка принимает ширину широкого фото, '
+            'и половины выходят неравными',
+      );
     });
   });
 }

@@ -4,10 +4,7 @@ import '../models/catalog_price.dart';
 
 /// Описание пака коинов, продаваемого через магазин.
 class CoinPack {
-  const CoinPack({
-    required this.productId,
-    required this.coins,
-  });
+  const CoinPack({required this.productId, required this.coins});
 
   /// Идентификатор продукта (одинаков во всех магазинах: Google Play, App
   /// Store, RuStore — продукты заводятся с теми же id).
@@ -65,9 +62,9 @@ const String kGiftProductId = 'togetherly_plus_gift';
 /// Google Play: в sideload и RuStore товаров Play нет, там остаётся lava.top.
 /// Само правило — в `models/catalog_price.dart` под тестами.
 bool get kCatalogBuysInStore => catalogBuysInStore(
-      isIOS: defaultTargetPlatform == TargetPlatform.iOS,
-      store: kStore,
-    );
+  isIOS: defaultTargetPlatform == TargetPlatform.iOS,
+  store: kStore,
+);
 
 /// Товар магазина для ключа владения: `mood_pack:moti` → `mood_pack.moti`.
 ///
@@ -113,10 +110,11 @@ class IapResult {
 ///  - [purchaseToken] — токен/идентификатор покупки (Google Play / App Store
 ///    serverVerificationData либо RuStore purchaseId) — используется сервером
 ///    как ключ идемпотентности.
-typedef GrantCoinsCallback = Future<int?> Function({
-  required String productId,
-  required String purchaseToken,
-});
+typedef GrantCoinsCallback =
+    Future<int?> Function({
+      required String productId,
+      required String purchaseToken,
+    });
 
 /// Абстракция магазина монет. Реализуется per-store ([IapService] для Google
 /// Play / App Store, [RuStoreIapService] для RuStore). UI работает только

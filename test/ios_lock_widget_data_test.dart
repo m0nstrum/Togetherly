@@ -25,8 +25,7 @@ void main() {
   }
 
   /// Ключ вида `miss_\(g)_my_count` в Dart пишется как `miss_${g}_my_count`.
-  String dartKey(String swiftKey) =>
-      swiftKey.replaceAll(r'\(g)', r'${g}');
+  String dartKey(String swiftKey) => swiftKey.replaceAll(r'\(g)', r'${g}');
 
   test('каждый ключ виджетов блокировки кто-то пишет в приложении', () {
     final dart = Directory('lib')
@@ -37,40 +36,59 @@ void main() {
         .join('\n');
 
     final keys = lockKeys();
-    expect(keys.length, greaterThanOrEqualTo(12),
-        reason: 'разобрано подозрительно мало ключей: ${keys.length}');
+    expect(
+      keys.length,
+      greaterThanOrEqualTo(12),
+      reason: 'разобрано подозрительно мало ключей: ${keys.length}',
+    );
 
-    final orphans =
-        keys.map(dartKey).where((k) => !dart.contains("'$k'")).toList();
-    expect(orphans, isEmpty,
-        reason: 'эти ключи виджет читает, но никто не пишет: $orphans');
+    final orphans = keys
+        .map(dartKey)
+        .where((k) => !dart.contains("'$k'"))
+        .toList();
+    expect(
+      orphans,
+      isEmpty,
+      reason: 'эти ключи виджет читает, но никто не пишет: $orphans',
+    );
   });
 
-  test('данные всех трёх виджетов блокировки наполняются с главного экрана',
-      () {
-    // Что зовёт главный экран напрямую и через каталожный синк.
-    final fromHome = read('lib/screens/home_screen.dart') +
-        read('lib/services/catalog_widget_sync.dart');
+  test(
+    'данные всех трёх виджетов блокировки наполняются с главного экрана',
+    () {
+      // Что зовёт главный экран напрямую и через каталожный синк.
+      final fromHome =
+          read('lib/screens/home_screen.dart') +
+          read('lib/services/catalog_widget_sync.dart');
 
-    // syncTogether → together_*, syncMoodTiles → tgmood_*, syncMiss → miss_*.
-    for (final entry in {
-      'syncTogether': 'together_* (дни вместе)',
-      'syncMoodTiles': 'tgmood_* (настроение)',
-      'syncMiss': 'miss_* (скучаю)',
-    }.entries) {
-      expect(fromHome.contains('${entry.key}('), isTrue,
-          reason: 'с главного экрана не наполняется ${entry.value}: '
+      // syncTogether → together_*, syncMoodTiles → tgmood_*, syncMiss → miss_*.
+      for (final entry in {
+        'syncTogether': 'together_* (дни вместе)',
+        'syncMoodTiles': 'tgmood_* (настроение)',
+        'syncMiss': 'miss_* (скучаю)',
+      }.entries) {
+        expect(
+          fromHome.contains('${entry.key}('),
+          isTrue,
+          reason:
+              'с главного экрана не наполняется ${entry.value}: '
               '${entry.key} зовут только другие экраны, и виджет блокировки '
-              'стоит пустой у того, кто туда не заходит');
-    }
-  });
+              'стоит пустой у того, кто туда не заходит',
+        );
+      }
+    },
+  );
 
   test('пустые данные виджет объясняет словами, а не нулями', () {
     final swift = read('ios/TogetherlyWidget/LockScreenWidgets.swift');
     // Отличить «приложение ещё ни разу не записало данные» от «данные есть,
     // но они нулевые» можно только по отсутствию самого ключа.
-    expect(swift.contains('stringOrNil('), isTrue,
-        reason: 'виджет блокировки не отличает «данных нет» от «ноль», '
-            'и человек видит 0 там, где надо просить открыть приложение');
+    expect(
+      swift.contains('stringOrNil('),
+      isTrue,
+      reason:
+          'виджет блокировки не отличает «данных нет» от «ноль», '
+          'и человек видит 0 там, где надо просить открыть приложение',
+    );
   });
 }

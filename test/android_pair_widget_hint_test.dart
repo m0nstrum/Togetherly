@@ -15,9 +15,12 @@ String _read(String p) => File(p).readAsStringSync();
 
 void main() {
   const res = 'android/app/src/main/res';
-  final hint = _read('android/app/src/main/kotlin/com/togetherly/love/PairWidgetHint.kt');
-  final provider =
-      _read('android/app/src/main/kotlin/com/togetherly/love/LoveWidgetProvider.kt');
+  final hint = _read(
+    'android/app/src/main/kotlin/com/togetherly/love/PairWidgetHint.kt',
+  );
+  final provider = _read(
+    'android/app/src/main/kotlin/com/togetherly/love/LoveWidgetProvider.kt',
+  );
   final layout = _read('$res/layout/love_widget.xml');
   final strings = _read('$res/values/strings.xml');
   final service = _read('lib/services/widget_service.dart');
@@ -27,8 +30,11 @@ void main() {
     final failed = decide.indexOf('-> PHOTO_FAILED');
     final none = decide.indexOf('-> NONE');
     expect(failed, greaterThan(0));
-    expect(none, greaterThan(failed),
-        reason: 'сперва «фото не дошло», потом «есть что показать»');
+    expect(
+      none,
+      greaterThan(failed),
+      reason: 'сперва «фото не дошло», потом «есть что показать»',
+    );
     expect(decide, contains('!photoPath.isNullOrEmpty() && !photoShown'));
     expect(decide, contains('photoShown || hasMood || hasText -> NONE'));
     expect(decide, contains('mine -> OWN_EMPTY'));

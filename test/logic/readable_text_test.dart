@@ -53,8 +53,9 @@ void main() {
       ];
       for (final bg in backgrounds) {
         final picked = readableTextOn(bg);
-        final other =
-            picked == const Color(0xFFFFFFFF) ? kDarkBubbleText : const Color(0xFFFFFFFF);
+        final other = picked == const Color(0xFFFFFFFF)
+            ? kDarkBubbleText
+            : const Color(0xFFFFFFFF);
         expect(
           contrastRatio(bg, picked),
           greaterThanOrEqualTo(contrastRatio(bg, other)),

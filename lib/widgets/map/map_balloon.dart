@@ -13,7 +13,10 @@ const double kBalloonDotY = 96;
 
 /// Якорь для `Marker` flutter_map: точка на карте ложится на кружок под
 /// ниточкой, а не на край виджета.
-const Alignment kBalloonAlignment = Alignment(0, 1 - 2 * kBalloonDotY / kBalloonHeight);
+const Alignment kBalloonAlignment = Alignment(
+  0,
+  1 - 2 * kBalloonDotY / kBalloonHeight,
+);
 
 /// Цвета шарика берутся из схемы темы.
 class BalloonColors {
@@ -54,9 +57,12 @@ class MapBalloon extends StatefulWidget {
   State<MapBalloon> createState() => _MapBalloonState();
 }
 
-class _MapBalloonState extends State<MapBalloon> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1800));
+class _MapBalloonState extends State<MapBalloon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  );
 
   @override
   void didChangeDependencies() {
@@ -71,7 +77,10 @@ class _MapBalloonState extends State<MapBalloon> with SingleTickerProviderStateM
   }
 
   void _syncPulse() {
-    final on = widget.live && !widget.stale && !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+    final on =
+        widget.live &&
+        !widget.stale &&
+        !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     if (on && !_pulse.isAnimating) {
       _pulse.repeat();
     } else if (!on && _pulse.isAnimating) {
@@ -195,7 +204,11 @@ class _StringPainter extends CustomPainter {
   final BalloonColors colors;
   final bool stale;
 
-  _StringPainter({required this.pulse, required this.colors, required this.stale}) : super(repaint: pulse);
+  _StringPainter({
+    required this.pulse,
+    required this.colors,
+    required this.stale,
+  }) : super(repaint: pulse);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -213,12 +226,21 @@ class _StringPainter extends CustomPainter {
     const dot = Offset(x, kBalloonDotY);
     if (pulse.isAnimating) {
       final t = Curves.easeOutQuart.transform(pulse.value);
-      canvas.drawCircle(dot, 6 + 13 * t, Paint()..color = colors.dot.withValues(alpha: .55 * (1 - t)));
+      canvas.drawCircle(
+        dot,
+        6 + 13 * t,
+        Paint()..color = colors.dot.withValues(alpha: .55 * (1 - t)),
+      );
     }
     canvas.drawCircle(dot, 7.5, Paint()..color = colors.ring);
-    canvas.drawCircle(dot, 5.5, Paint()..color = stale ? colors.string.withValues(alpha: .5) : colors.dot);
+    canvas.drawCircle(
+      dot,
+      5.5,
+      Paint()..color = stale ? colors.string.withValues(alpha: .5) : colors.dot,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _StringPainter old) => old.colors != colors || old.stale != stale;
+  bool shouldRepaint(covariant _StringPainter old) =>
+      old.colors != colors || old.stale != stale;
 }

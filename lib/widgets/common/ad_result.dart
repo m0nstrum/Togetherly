@@ -42,7 +42,10 @@ Future<void> untilAppVisible() async {
 
 /// Ролик загружен или успел загрузиться за [wait]. false — показывать нечего,
 /// и это «реклама не готова», а не «не засчитан».
-Future<bool> ensureAdReady(RewardedAdService ad, {Duration wait = const Duration(seconds: 6)}) async {
+Future<bool> ensureAdReady(
+  RewardedAdService ad, {
+  Duration wait = const Duration(seconds: 6),
+}) async {
   if (ad.isReady) return true;
   unawaited(ad.load());
   final until = DateTime.now().add(wait);
@@ -56,7 +59,10 @@ Future<bool> ensureAdReady(RewardedAdService ad, {Duration wait = const Duration
 /// Ролик не засчитан: награды не будет, так и говорим. [overSheet] — экран
 /// открыт из нижнего листа: снекбар ушёл бы под него, поэтому плашка в
 /// корневом `Overlay`.
-Future<void> showAdNotEarned(BuildContext context, {bool overSheet = false}) async {
+Future<void> showAdNotEarned(
+  BuildContext context, {
+  bool overSheet = false,
+}) async {
   await untilAppVisible();
   if (!context.mounted) return;
   showAdNote(context, trKey('adNotEarned'), overSheet: overSheet);
@@ -65,7 +71,12 @@ Future<void> showAdNotEarned(BuildContext context, {bool overSheet = false}) asy
 /// Короткое сообщение про ролик: снекбар экрана или, поверх листа, плашка.
 void showAdNote(BuildContext context, String text, {bool overSheet = false}) {
   if (overSheet) {
-    showFloatingNote(context, text, icon: Icons.info_outline_rounded, duration: const Duration(milliseconds: 2600));
+    showFloatingNote(
+      context,
+      text,
+      icon: Icons.info_outline_rounded,
+      duration: const Duration(milliseconds: 2600),
+    );
     return;
   }
   ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +124,12 @@ Future<void> showObtained(
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontFamily: 'Onest', fontSize: 14.5, height: 1.4, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontFamily: 'Onest',
+                    fontSize: 14.5,
+                    height: 1.4,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
               if (footnote != null) ...[
@@ -121,7 +137,11 @@ Future<void> showObtained(
                 Text(
                   footnote,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontFamily: 'Onest', fontSize: 13, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontFamily: 'Onest',
+                    fontSize: 13,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
               const SizedBox(height: 18),

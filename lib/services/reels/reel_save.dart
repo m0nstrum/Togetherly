@@ -9,6 +9,7 @@ import '../../models/reel_link.dart';
 import '../locale_service.dart';
 import '../memory_repository.dart';
 import '../pb_auth_service.dart';
+import '../../utils/video_link_thumb.dart';
 
 /// Закладка совместной ленты: ролик ложится в ленту воспоминаний пары
 /// обычной записью «видео по ссылке». Там он открывается в приложении
@@ -22,7 +23,10 @@ class ReelSave {
   static final Set<String> _saved = {};
 
   /// true — запись легла в ленту (или уже лежала).
-  static Future<bool> save({required String groupId, required String key}) async {
+  static Future<bool> save({
+    required String groupId,
+    required String key,
+  }) async {
     final link = ReelLink.parse(key);
     if (link == null || groupId.isEmpty) return false;
     if (_saved.contains('$groupId|${link.key}')) return true;
@@ -34,8 +38,11 @@ class ReelSave {
       authorName: (p['displayName'] as String?) ?? '',
       authorAvatar: (p['avatarUrl'] as String?) ?? '',
       type: MemoryType.videoLink,
-      videoUrl: link.url,
-      imageUrl: meta.thumb ?? link.knownThumb,
+      videoUrl: link.urlWith(meta),
+      // B6: подписанная обложка CDN (TikTok) истекает — её не храним.
+      imageUrl: (meta.thumb != null && !isExpiringThumb(meta.thumb!))
+          ? meta.thumb
+          : link.knownThumb,
       title: meta.title ?? link.platform,
       // Карточка видео по ссылке держит автора ролика в поле музыки — так
       // её заполняет и форма воспоминания.
@@ -54,7 +61,12 @@ class ReelSave {
     if (uri == null) return ReelMeta.empty;
     try {
       final r = await http
-          .get(uri, headers: {'User-Agent': 'Mozilla/5.0 (Linux; Android 14) Togetherly'})
+          .get(
+            uri,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 14) Togetherly',
+            },
+          )
           .timeout(const Duration(seconds: 4));
       if (r.statusCode != 200) return ReelMeta.empty;
       return ReelMeta.fromJson(jsonDecode(utf8.decode(r.bodyBytes)));

@@ -14,6 +14,7 @@ class MemoryDateField extends StatelessWidget {
   final DateTime? value;
   final ValueChanged<DateTime?> onChanged;
   final Color accent;
+
   /// Прятать ли кнопку сброса (×). По умолчанию `true` — нужна при создании
   /// пина, чтобы вернуться к «сейчас». В режиме редактирования её лучше
   /// прятать (`false`), так как семантика «очистить до дефолта» там неясна:
@@ -60,19 +61,16 @@ class MemoryDateField extends StatelessWidget {
     final t = context.appTheme;
     final hasValue = value != null;
     final formatted = hasValue ? _format(value!) : s.memoryDateNow;
-    final isBackdated = hasValue &&
+    final isBackdated =
+        hasValue &&
         value!.isBefore(DateTime.now().subtract(const Duration(minutes: 1)));
 
     return Container(
       decoration: BoxDecoration(
-        color: hasValue
-            ? accent.withValues(alpha: 0.05)
-            : t.cardSurface,
+        color: hasValue ? accent.withValues(alpha: 0.05) : t.cardSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: hasValue
-              ? accent.withValues(alpha: 0.35)
-              : t.divider,
+          color: hasValue ? accent.withValues(alpha: 0.35) : t.divider,
           width: hasValue ? 1.4 : 1.0,
         ),
       ),
@@ -107,9 +105,7 @@ class MemoryDateField extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: hasValue
-                              ? t.textPrimary
-                              : t.textSecondary,
+                          color: hasValue ? t.textPrimary : t.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 1),
@@ -120,9 +116,7 @@ class MemoryDateField extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: isBackdated
                               ? accent
-                              : (hasValue
-                                  ? t.textSecondary
-                                  : t.textMuted),
+                              : (hasValue ? t.textSecondary : t.textMuted),
                         ),
                       ),
                     ],

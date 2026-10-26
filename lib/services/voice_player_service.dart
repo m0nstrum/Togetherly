@@ -54,11 +54,14 @@ class VoicePlayerService extends ChangeNotifier {
         // пустым состоянием и отсекаются проверкой выше.
         _finished.add(done);
       } else {
-        _set(_state.copy(
-          playing: s.playing,
-          loading: s.processingState == ProcessingState.loading ||
-              s.processingState == ProcessingState.buffering,
-        ));
+        _set(
+          _state.copy(
+            playing: s.playing,
+            loading:
+                s.processingState == ProcessingState.loading ||
+                s.processingState == ProcessingState.buffering,
+          ),
+        );
       }
     });
     _player.durationStream.listen((d) {
@@ -76,7 +79,8 @@ class VoicePlayerService extends ChangeNotifier {
 
   final AudioPlayer _player = AudioPlayer();
 
-  final StreamController<String> _finished = StreamController<String>.broadcast();
+  final StreamController<String> _finished =
+      StreamController<String>.broadcast();
 
   /// id голосового, которое только что дослушали до конца. По нему чат
   /// включает следующее непрослушанное.
@@ -104,12 +108,14 @@ class VoicePlayerService extends ChangeNotifier {
       return;
     }
     await stop();
-    _set(VoicePlayback(
-      messageId: messageId,
-      loading: true,
-      duration: knownDuration ?? Duration.zero,
-      speed: _speed,
-    ));
+    _set(
+      VoicePlayback(
+        messageId: messageId,
+        loading: true,
+        duration: knownDuration ?? Duration.zero,
+        speed: _speed,
+      ),
+    );
     try {
       // Локальная запись играет с диска (сообщение ещё в очереди отправки),
       // серверная — по ссылке с токеном: файлы `media` защищены, и голая
@@ -166,7 +172,9 @@ class VoicePlayerService extends ChangeNotifier {
     if (_state.messageId.isEmpty) return;
     try {
       await _player.stop();
-    } catch (_) {/* уже остановлен */}
+    } catch (_) {
+      /* уже остановлен */
+    }
     _set(const VoicePlayback());
   }
 
@@ -190,13 +198,12 @@ extension on VoicePlayback {
     bool? playing,
     bool? loading,
     double? speed,
-  }) =>
-      VoicePlayback(
-        messageId: messageId ?? this.messageId,
-        position: position ?? this.position,
-        duration: duration ?? this.duration,
-        playing: playing ?? this.playing,
-        loading: loading ?? this.loading,
-        speed: speed ?? this.speed,
-      );
+  }) => VoicePlayback(
+    messageId: messageId ?? this.messageId,
+    position: position ?? this.position,
+    duration: duration ?? this.duration,
+    playing: playing ?? this.playing,
+    loading: loading ?? this.loading,
+    speed: speed ?? this.speed,
+  );
 }

@@ -17,7 +17,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class ForkTikTokComments {
-  ForkTikTokComments({@visibleForTesting Future<String?> Function(String path)? fetch}) : _fetch = fetch;
+  ForkTikTokComments({
+    @visibleForTesting Future<String?> Function(String path)? fetch,
+  }) : _fetch = fetch;
 
   final Future<String?> Function(String path)? _fetch;
 
@@ -33,8 +35,14 @@ class ForkTikTokComments {
   /// Страница комментариев ролика [id] или ответов на комментарий [cid].
   /// Ответ — для страницы ленты: `{ok, total, cursor, more, items}` или
   /// `{ok: false, why: 'blocked' | 'failed'}`.
-  Future<Map<String, dynamic>> page({required String id, String cid = '', int cursor = 0}) async {
-    if (!_num.hasMatch(id) || (cid.isNotEmpty && !_num.hasMatch(cid)) || cursor < 0) {
+  Future<Map<String, dynamic>> page({
+    required String id,
+    String cid = '',
+    int cursor = 0,
+  }) async {
+    if (!_num.hasMatch(id) ||
+        (cid.isNotEmpty && !_num.hasMatch(cid)) ||
+        cursor < 0) {
       return const {'ok': false, 'why': 'failed'};
     }
     final path = cid.isEmpty
@@ -57,7 +65,8 @@ class ForkTikTokComments {
     try {
       final r = await c
           .callAsyncJavaScript(
-            functionBody: "const r = await fetch(p, {credentials: 'include'}); return await r.text();",
+            functionBody:
+                "const r = await fetch(p, {credentials: 'include'}); return await r.text();",
             arguments: {'p': path},
           )
           .timeout(const Duration(seconds: 15));
@@ -93,7 +102,9 @@ class ForkTikTokComments {
       },
       onReceivedError: (c, req, err) {
         if (req.isForMainFrame ?? true) {
-          debugPrint('ForkTikTokComments: tiktok.com не открылся: ${err.description}');
+          debugPrint(
+            'ForkTikTokComments: tiktok.com не открылся: ${err.description}',
+          );
           if (!done.isCompleted) done.complete(null);
           _ready = null; // в следующий раз попробуем заново
         }
@@ -105,11 +116,13 @@ class ForkTikTokComments {
       },
     );
     _view = view;
-    unawaited(view.run().catchError((Object e) {
-      debugPrint('ForkTikTokComments: браузер не поднялся: $e');
-      if (!done.isCompleted) done.complete(null);
-      _ready = null;
-    }));
+    unawaited(
+      view.run().catchError((Object e) {
+        debugPrint('ForkTikTokComments: браузер не поднялся: $e');
+        if (!done.isCompleted) done.complete(null);
+        _ready = null;
+      }),
+    );
     // Не открылся за 20 с — считаем неудачей, а не ждём вечно.
     Future<void>.delayed(const Duration(seconds: 20), () {
       if (!done.isCompleted) {
@@ -136,7 +149,8 @@ class ForkTikTokComments {
 
   /// Ответ API площадки → то, что рисует лист комментариев.
   static Map<String, dynamic> parse(String body) {
-    if (body.contains('cross_border_block')) return const {'ok': false, 'why': 'blocked'};
+    if (body.contains('cross_border_block'))
+      return const {'ok': false, 'why': 'blocked'};
     Object? raw;
     try {
       raw = jsonDecode(body);
@@ -156,8 +170,12 @@ class ForkTikTokComments {
         final cid = '${c['cid'] ?? ''}';
         if (cid.isEmpty) continue;
         final user = c['user'] is Map ? c['user'] as Map : const {};
-        final thumbs = user['avatar_thumb'] is Map ? (user['avatar_thumb'] as Map)['url_list'] : null;
-        final avatar = thumbs is List && thumbs.isNotEmpty ? '${thumbs.first}' : '';
+        final thumbs = user['avatar_thumb'] is Map
+            ? (user['avatar_thumb'] as Map)['url_list']
+            : null;
+        final avatar = thumbs is List && thumbs.isNotEmpty
+            ? '${thumbs.first}'
+            : '';
         final images = c['image_list'];
         items.add({
           'cid': cid,
@@ -182,5 +200,6 @@ class ForkTikTokComments {
     };
   }
 
-  static int _int(Object? v) => v is num ? v.toInt() : int.tryParse('${v ?? ''}') ?? 0;
+  static int _int(Object? v) =>
+      v is num ? v.toInt() : int.tryParse('${v ?? ''}') ?? 0;
 }

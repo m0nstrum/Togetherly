@@ -20,7 +20,10 @@ void main() {
     final meta = block('LiveStrokeMeta _liveMeta()', ');');
     expect(meta, contains('brush:'));
     expect(meta, contains('_currentBrush'));
-    expect(block('Future<void> _pushLiveDone('), contains('brush: stroke.brush'));
+    expect(
+      block('Future<void> _pushLiveDone('),
+      contains('brush: stroke.brush'),
+    );
   });
 
   test('текущая линия и живые мазки партнёра рисуются своей кистью', () {
@@ -30,11 +33,17 @@ void main() {
   });
 
   test('ластик не сглаживается: стирает точно под пальцем', () {
-    expect(block('_stabilizer = StrokeStabilizer(', ')..begin'), contains('DrawTool.eraser'));
+    expect(
+      block('_stabilizer = StrokeStabilizer(', ')..begin'),
+      contains('DrawTool.eraser'),
+    );
   });
 
   test('кисть, режим и толщина ластика живут на устройстве', () {
-    expect(block('Future<void> _loadBrushPrefs()'), contains('smoothingFromPrefs('));
+    expect(
+      block('Future<void> _loadBrushPrefs()'),
+      contains('smoothingFromPrefs('),
+    );
     for (final key in ['kDrawBrush', 'kEraserMode', 'kEraserWidth']) {
       expect(block('Future<void> _loadBrushPrefs()'), contains('UiPrefs.$key'));
       expect(block('Future<void> _saveBrushPrefs()'), contains('UiPrefs.$key'));

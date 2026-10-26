@@ -1,5 +1,5 @@
-import '../../../dict_strings.dart' show ruEn; // fork
-import '../../../fork/geo/map_attribution.dart'; // fork
+import '../../../dict_strings.dart' show ruEn;
+import '../../../fork/geo/map_attribution.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../fork/battery/battery_ui.dart'; // fork: заряд партнёра
@@ -20,8 +20,8 @@ import '../../../services/map/map_tiles.dart';
 import '../../../widgets/map/map_arc_layer.dart';
 import '../../../utils/safe_text.dart';
 import '../../../widgets/unfold/unfold_route.dart';
-import '../../../fork/geo/geo_status.dart'; // fork
-import '../../../fork/geo/share_ui.dart'; // fork
+import '../../../fork/geo/geo_status.dart';
+import '../../../fork/geo/share_ui.dart';
 
 const String _kCollapsedKey = 'live_map_card_collapsed';
 const Color _kPartnerColor = Color(0xFFFF5C8A);
@@ -72,7 +72,9 @@ class _LiveMapCardState extends State<LiveMapCard> {
     _loadPrefs();
     _subscribe();
     LiveLocationService.instance.sharingEnabled.addListener(_onSharingChanged);
-    LiveLocationService.instance.issue.addListener(_onSharingChanged); // fork (UX G3)
+    LiveLocationService.instance.issue.addListener(
+      _onSharingChanged,
+    ); // fork (UX G3)
   }
 
   @override
@@ -87,9 +89,10 @@ class _LiveMapCardState extends State<LiveMapCard> {
   void dispose() {
     _partnerSub?.cancel();
     _meSub?.cancel();
-    LiveLocationService.instance.sharingEnabled
-        .removeListener(_onSharingChanged);
-    LiveLocationService.instance.issue.removeListener(_onSharingChanged); // fork
+    LiveLocationService.instance.sharingEnabled.removeListener(
+      _onSharingChanged,
+    );
+    LiveLocationService.instance.issue.removeListener(_onSharingChanged);
     super.dispose();
   }
 
@@ -115,7 +118,9 @@ class _LiveMapCardState extends State<LiveMapCard> {
     _partnerSub?.cancel();
     _meSub?.cancel();
     final svc = LiveLocationService.instance;
-    _partnerSub = svc.watchPartner(widget.pairId, widget.partnerUid).listen((p) {
+    _partnerSub = svc.watchPartner(widget.pairId, widget.partnerUid).listen((
+      p,
+    ) {
       if (!mounted) return;
       setState(() => _partner = p);
       _fitBoth();
@@ -170,7 +175,9 @@ class _LiveMapCardState extends State<LiveMapCard> {
     // fork (UX G4/G13): причина отказа и кнопка в системные настройки.
     if (!ok && mounted) {
       showShareDenied(context, LiveLocationService.instance.issue.value);
-    } else if (ok && mounted && LiveLocationService.instance.backgroundLimited.value) {
+    } else if (ok &&
+        mounted &&
+        LiveLocationService.instance.backgroundLimited.value) {
       showBackgroundLimited(context);
     }
   }
@@ -263,46 +270,61 @@ class _LiveMapCardState extends State<LiveMapCard> {
   Widget _header(AppTheme t) {
     final cs = ProfileTheme.themeFor(t).colorScheme;
     return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: cs.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.location_on_rounded,
-                  color: cs.onPrimaryContainer, size: 20),
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                LocaleService.current.liveMapTitle,
-                style: TextStyle(
-                  fontFamily: ProfileTheme.displayFont,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
+            child: Icon(
+              Icons.location_on_rounded,
+              color: cs.onPrimaryContainer,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              LocaleService.current.liveMapTitle,
+              style: TextStyle(
+                fontFamily: ProfileTheme.displayFont,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
               ),
             ),
-            if (!_collapsed)
-              IconButton(
-                tooltip: ruEn('Развернуть карту', 'Open full map'),
-                onPressed: _openFull,
-                icon: Icon(Icons.open_in_full_rounded, color: cs.primary, size: 20),
-              ),
+          ),
+          if (!_collapsed)
             IconButton(
-              tooltip: _collapsed ? ruEn('Показать карту', 'Show map') : ruEn('Свернуть карту', 'Collapse map'),
-              onPressed: _toggleCollapsed,
-              icon: AnimatedRotation(turns: _collapsed ? .5 : 0,
-              duration: const Duration(milliseconds: 250),
-                child: Icon(Icons.keyboard_arrow_up_rounded, color: cs.onSurfaceVariant, size: 24)),
+              tooltip: ruEn('Развернуть карту', 'Open full map'),
+              onPressed: _openFull,
+              icon: Icon(
+                Icons.open_in_full_rounded,
+                color: cs.primary,
+                size: 20,
+              ),
             ),
-          ],
-        ),
+          IconButton(
+            tooltip: _collapsed
+                ? ruEn('Показать карту', 'Show map')
+                : ruEn('Свернуть карту', 'Collapse map'),
+            onPressed: _toggleCollapsed,
+            icon: AnimatedRotation(
+              turns: _collapsed ? .5 : 0,
+              duration: const Duration(milliseconds: 250),
+              child: Icon(
+                Icons.keyboard_arrow_up_rounded,
+                color: cs.onSurfaceVariant,
+                size: 24,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -325,61 +347,61 @@ class _LiveMapCardState extends State<LiveMapCard> {
               // грязным весь экран — фон, карточки, ленту заданий.
               RepaintBoundary(
                 child: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter:
-                      partner ?? me ?? const LatLng(47.0105, 28.8638),
-                  initialZoom: 13,
-                  backgroundColor: mapBackground(t),
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.none,
-                  ),
-                  onTap: (_, _) => _openFull(),
-                  onMapReady: () {
-                    _mapReady = true;
-                    _fitBoth();
-                  },
-                ),
-                children: [
-                  // Та же подложка, что на полном экране: векторная, в цветах
-                  // темы. Прежний TileLayer ходил на tile.openstreetmap.org.
-                  ThemedMapLayer(theme: t),
-                  if (me != null && partner != null)
-                    MapArcLayer(
-                      from: me,
-                      to: partner,
-                      palette: MapTiles.paletteOf(t),
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter:
+                        partner ?? me ?? const LatLng(47.0105, 28.8638),
+                    initialZoom: 13,
+                    backgroundColor: mapBackground(t),
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.none,
                     ),
-                  MarkerLayer(
-                    markers: [
-                      if (partner != null)
-                        Marker(
-                          point: partner,
-                          width: 40,
-                          height: 40,
-                          child: _MiniAvatar(
-                            url: widget.partnerAvatarUrl,
-                            name: widget.partnerName,
-                            ring: _kPartnerColor,
-                          ),
-                        ),
-                      if (me != null)
-                        Marker(
-                          point: me,
-                          width: 40,
-                          height: 40,
-                          child: _MiniAvatar(
-                            url: _myAvatarUrl,
-                            name: LocaleService.current.liveMapYou,
-                            ring: t.primary,
-                          ),
-                        ),
-                    ],
+                    onTap: (_, _) => _openFull(),
+                    onMapReady: () {
+                      _mapReady = true;
+                      _fitBoth();
+                    },
                   ),
-                  const ForkMapAttribution(),
-                ],
+                  children: [
+                    // Та же подложка, что на полном экране: векторная, в цветах
+                    // темы. Прежний TileLayer ходил на tile.openstreetmap.org.
+                    ThemedMapLayer(theme: t),
+                    if (me != null && partner != null)
+                      MapArcLayer(
+                        from: me,
+                        to: partner,
+                        palette: MapTiles.paletteOf(t),
+                      ),
+                    MarkerLayer(
+                      markers: [
+                        if (partner != null)
+                          Marker(
+                            point: partner,
+                            width: 40,
+                            height: 40,
+                            child: _MiniAvatar(
+                              url: widget.partnerAvatarUrl,
+                              name: widget.partnerName,
+                              ring: _kPartnerColor,
+                            ),
+                          ),
+                        if (me != null)
+                          Marker(
+                            point: me,
+                            width: 40,
+                            height: 40,
+                            child: _MiniAvatar(
+                              url: _myAvatarUrl,
+                              name: LocaleService.current.liveMapYou,
+                              ring: t.primary,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const ForkMapAttribution(),
+                  ],
+                ),
               ),
-            ),
 
               // Дистанция. fork (UX G8): по устаревшей точке «рядом» не пишем.
               if (me != null && partner != null)
@@ -393,24 +415,22 @@ class _LiveMapCardState extends State<LiveMapCard> {
               if (!sharing) _enableOverlay(t),
 
               // Кнопка выключения шеринга (когда включён).
-              if (sharing)
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: _stopChip(t),
-                ),
+              if (sharing) Positioned(right: 10, top: 10, child: _stopChip(t)),
 
               // Давность точки партнёра. Точка не удаляется, когда человек
               // закрыл приложение, поэтому без подписи метка двухдневной
               // свежести выглядит живой — жалоба «партнёр не заходил два дня,
               // метка не сдвинулась» (18.08.2026).
               // fork (UX G3): включено, но не передаётся — говорим почему.
-              if (sharing && LiveLocationService.instance.issue.value != ShareIssue.none)
+              if (sharing &&
+                  LiveLocationService.instance.issue.value != ShareIssue.none)
                 Positioned(
                   left: 10,
                   right: 10,
                   bottom: 10,
-                  child: ShareIssueBar(issue: LiveLocationService.instance.issue.value),
+                  child: ShareIssueBar(
+                    issue: LiveLocationService.instance.issue.value,
+                  ),
                 )
               else if (sharing && partner != null && _partnerAge() != null)
                 Positioned(
@@ -426,7 +446,9 @@ class _LiveMapCardState extends State<LiveMapCard> {
                   left: 10,
                   right: 10,
                   bottom: 10,
-                  child: Center(child: _hintChip(t, waitingPartnerHint(iShare: true))),
+                  child: Center(
+                    child: _hintChip(t, waitingPartnerHint(iShare: true)),
+                  ),
                 ),
             ],
           ),
@@ -447,7 +469,8 @@ class _LiveMapCardState extends State<LiveMapCard> {
     final meters = LiveLocationService.distanceMeters(me, partner);
     // fork (UX G8): «рядом» и точные метры — только пока обе точки свежие.
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    final fresh = pointIsFresh(_partner?.updatedAt ?? 0, nowMs: nowMs) &&
+    final fresh =
+        pointIsFresh(_partner?.updatedAt ?? 0, nowMs: nowMs) &&
         pointIsFresh(_me?.updatedAt ?? 0, nowMs: nowMs);
     final s = LocaleService.current;
     return Container(
@@ -473,7 +496,11 @@ class _LiveMapCardState extends State<LiveMapCard> {
             style: AppFonts.onest(size: 13, weight: 800, color: t.textPrimary),
           ),
           // fork: заряд телефона партнёра — рядом с расстоянием.
-          ForkBatteryBadge(groupId: widget.pairId, uid: widget.partnerUid, color: t.textSecondary),
+          ForkBatteryBadge(
+            groupId: widget.pairId,
+            uid: widget.partnerUid,
+            color: t.textSecondary,
+          ),
         ],
       ),
     );
@@ -509,48 +536,58 @@ class _LiveMapCardState extends State<LiveMapCard> {
         // карты. Прокрутка внутри оверлея дешевле, чем резать подсказку.
         child: SingleChildScrollView(
           child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.location_on_rounded, color: Colors.white, size: 30),
-            const SizedBox(height: 8),
-            Text(
-              LocaleService.current.liveMapEnableHint,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: ProfileTheme.bodyFont,
-                fontSize: 13,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.location_on_rounded,
                 color: Colors.white,
-                fontWeight: FontWeight.w500,
+                size: 30,
               ),
-            ),
-            // fork (UX G4): после отказа — причина и «Открыть настройки».
-            if (LiveLocationService.instance.issue.value.needsAppSettings ||
-                LiveLocationService.instance.issue.value.needsLocationSettings) ...[
-              const SizedBox(height: 10),
-              ShareIssueBar(issue: LiveLocationService.instance.issue.value),
-            ],
-            const SizedBox(height: 14),
-            FilledButton(
-              onPressed: _enableSharing,
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.primary,
-                foregroundColor: cs.onPrimary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              child: Text(
-                LocaleService.current.liveMapEnableCta,
+              const SizedBox(height: 8),
+              Text(
+                LocaleService.current.liveMapEnableHint,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontFamily: ProfileTheme.bodyFont,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
-          ],
+              // fork (UX G4): после отказа — причина и «Открыть настройки».
+              if (LiveLocationService.instance.issue.value.needsAppSettings ||
+                  LiveLocationService
+                      .instance
+                      .issue
+                      .value
+                      .needsLocationSettings) ...[
+                const SizedBox(height: 10),
+                ShareIssueBar(issue: LiveLocationService.instance.issue.value),
+              ],
+              const SizedBox(height: 14),
+              FilledButton(
+                onPressed: _enableSharing,
+                style: FilledButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  foregroundColor: cs.onPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                child: Text(
+                  LocaleService.current.liveMapEnableCta,
+                  style: const TextStyle(
+                    fontFamily: ProfileTheme.bodyFont,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -574,8 +611,11 @@ class _LiveMapCardState extends State<LiveMapCard> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.location_off_rounded,
-                  size: 14, color: cs.onSurfaceVariant),
+              Icon(
+                Icons.location_off_rounded,
+                size: 14,
+                color: cs.onSurfaceVariant,
+              ),
               const SizedBox(width: 5),
               Text(
                 LocaleService.current.liveMapStopCta,
@@ -600,7 +640,11 @@ class _MiniAvatar extends StatelessWidget {
   final String name;
   final Color ring;
 
-  const _MiniAvatar({required this.url, required this.name, required this.ring});
+  const _MiniAvatar({
+    required this.url,
+    required this.name,
+    required this.ring,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -611,7 +655,10 @@ class _MiniAvatar extends StatelessWidget {
       child: Text(
         initial,
         style: TextStyle(
-            color: ring, fontWeight: FontWeight.w800, fontSize: 14),
+          color: ring,
+          fontWeight: FontWeight.w800,
+          fontSize: 14,
+        ),
       ),
     );
     return Container(

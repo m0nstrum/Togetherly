@@ -10,28 +10,22 @@ import 'package:flutter_test/flutter_test.dart';
 /// коллекции нет (там `created_at`), — 2298 отказов за сутки, и видео-
 /// воспоминания не появлялись в комнате просмотра вообще никогда.
 ///
-/// Тест сверяет каждый `sort:` в `lib/` со схемой `collections_schema.json`.
+/// Тест сверяет каждый `sort:` в `lib/` со схемой сервера форка.
 /// Коллекции, которой в схеме нет, он не касается: судить о ней не по чему.
 void main() {
   test('sort ссылается только на существующие поля коллекции', () {
-    final schemaFile = File('pocketbase/collections_schema.json');
-    expect(schemaFile.existsSync(), isTrue,
-        reason: 'нет pocketbase/collections_schema.json');
-
-    final decoded = jsonDecode(schemaFile.readAsStringSync());
-    final collections = decoded is List
-        ? decoded
-        : (decoded['collections'] as List? ?? const []);
-
-    final fieldsOf = <String, Set<String>>{};
-    for (final raw in collections) {
-      final col = raw as Map<String, dynamic>;
-      final fields = (col['fields'] ?? col['schema'] ?? const []) as List;
-      fieldsOf[col['name'] as String] = {
-        for (final f in fields) (f as Map<String, dynamic>)['name'] as String,
-        'id', // системное, в схеме не перечисляется
-      };
-    }
+    // Схема сервера форка после всех миграций (снимок Go-теста).
+    final raw =
+        jsonDecode(
+              File(
+                'server/internal/migrations/testdata/fields.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    final fieldsOf = <String, Set<String>>{
+      for (final e in raw.entries)
+        e.key: (e.value as List).cast<String>().toSet(),
+    };
 
     final callRe = RegExp(r"""collection\(\s*'([a-z_]+)'\s*\)""");
     final sortRe = RegExp(r"""sort:\s*'([^']+)'""");
@@ -43,9 +37,9 @@ void main() {
       // поля сортировки, и тест ловил бы описание бага вместо самого бага.
       // Пробелы вместо вырезания — чтобы не съехали номера строк.
       final source = entity.readAsStringSync().replaceAllMapped(
-            RegExp(r'//[^\n]*'),
-            (m) => ' ' * m.group(0)!.length,
-          );
+        RegExp(r'//[^\n]*'),
+        (m) => ' ' * m.group(0)!.length,
+      );
 
       for (final call in callRe.allMatches(source)) {
         final name = call.group(1)!;
@@ -64,7 +58,8 @@ void main() {
             if (field.isEmpty || field.startsWith('@')) continue;
             if (known.contains(field)) continue;
 
-            final line = '\n'.allMatches(source.substring(0, call.start)).length + 1;
+            final line =
+                '\n'.allMatches(source.substring(0, call.start)).length + 1;
             problems.add(
               '${entity.path}:$line — коллекция «$name» сортируется по «$field», '
               'такого поля в схеме нет',

@@ -68,5 +68,4 @@ bool daysPhotosApplied({
   required bool requested,
   required String myPath,
   required String partnerPath,
-}) =>
-    requested && myPath.isNotEmpty && partnerPath.isNotEmpty;
+}) => requested && myPath.isNotEmpty && partnerPath.isNotEmpty;

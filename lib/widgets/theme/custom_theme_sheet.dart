@@ -47,8 +47,9 @@ enum _Source { photo, picker }
 
 class _CustomThemeSheetState extends State<_CustomThemeSheet> {
   late Color _seed = widget.initial?.seed ?? kPalettes.first.accent;
-  late final TextEditingController _name =
-      TextEditingController(text: widget.initial?.name ?? '');
+  late final TextEditingController _name = TextEditingController(
+    text: widget.initial?.name ?? '',
+  );
   _Source _source = _Source.photo;
   List<Color> _fromPhoto = const [];
   bool _reading = false;
@@ -69,8 +70,10 @@ class _CustomThemeSheetState extends State<_CustomThemeSheet> {
     });
     try {
       final picked = await safePick(
-        () => ImagePicker()
-            .pickImage(source: ImageSource.gallery, maxWidth: 1200),
+        () => ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1200,
+        ),
       );
       if (picked == null) {
         if (mounted) setState(() => _reading = false);
@@ -155,8 +158,10 @@ class _CustomThemeSheetState extends State<_CustomThemeSheet> {
                 counterText: '',
                 filled: true,
                 fillColor: cs.surfaceContainerHighest,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
+                ),
                 border: _fieldShape,
                 enabledBorder: _fieldShape,
                 focusedBorder: _fieldShape,
@@ -213,13 +218,13 @@ class _CustomThemeSheetState extends State<_CustomThemeSheet> {
   }
 
   Widget _chip(Color color, {bool wide = false}) => Container(
-        width: wide ? 54 : 34,
-        height: 20,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      );
+    width: wide ? 54 : 34,
+    height: 20,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(10),
+    ),
+  );
 
   Widget _photoTab(ColorScheme cs) {
     return Column(
@@ -230,9 +235,11 @@ class _CustomThemeSheetState extends State<_CustomThemeSheet> {
           child: FilledButton.tonalIcon(
             onPressed: _reading ? null : _pickPhoto,
             icon: const Icon(Icons.image_rounded),
-            label: Text(_fromPhoto.isEmpty
-                ? _s.customThemePickPhoto
-                : _s.customThemeAnotherPhoto),
+            label: Text(
+              _fromPhoto.isEmpty
+                  ? _s.customThemePickPhoto
+                  : _s.customThemeAnotherPhoto,
+            ),
           ),
         ),
         if (_reading)
@@ -272,14 +279,14 @@ class _CustomThemeSheetState extends State<_CustomThemeSheet> {
   }
 
   Widget _pickerTab() => ColorPicker(
-        pickerColor: _seed,
-        onColorChanged: (c) => setState(() => _seed = c),
-        enableAlpha: false,
-        displayThumbColor: true,
-        paletteType: PaletteType.hueWheel,
-        labelTypes: const [],
-        hexInputBar: true,
-        portraitOnly: true,
-        pickerAreaBorderRadius: BorderRadius.circular(16),
-      );
+    pickerColor: _seed,
+    onColorChanged: (c) => setState(() => _seed = c),
+    enableAlpha: false,
+    displayThumbColor: true,
+    paletteType: PaletteType.hueWheel,
+    labelTypes: const [],
+    hexInputBar: true,
+    portraitOnly: true,
+    pickerAreaBorderRadius: BorderRadius.circular(16),
+  );
 }

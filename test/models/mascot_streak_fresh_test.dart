@@ -35,7 +35,9 @@ void main() {
   });
 
   test('плашка галереи пишет обрыв только у маскота с прежней серией', () {
-    final source = File('lib/screens/mascot_gallery_screen.dart').readAsStringSync();
+    final source = File(
+      'lib/screens/mascot_gallery_screen.dart',
+    ).readAsStringSync();
     expect(source, contains('streakEverStarted('));
     expect(source, contains('s.streakNew'));
   });

@@ -155,7 +155,8 @@ const Map<String, String> kZhByEnglish = {
   'Weekly rhythm': '每周节奏',
   'Which days you are busiest': '你们哪几天最活跃',
   'Hours of the day': '一天中的时段',
-  'Peak at {0}:{1} · {2}% between {3} and {4}': '高峰在 {0}:{1} · {3} 点到 {4} 点的消息占 {2}%',
+  'Peak at {0}:{1} · {2}% between {3} and {4}':
+      '高峰在 {0}:{1} · {3} 点到 {4} 点的消息占 {2}%',
   'Mood': '心情',
   'Mood over {0} days': '{0} 天里的心情',
   'Daily average, {0} to {1}': '每日平均分，{0} 到 {1}',
@@ -181,7 +182,8 @@ const Map<String, String> kZhByEnglish = {
   'Email copied': '邮箱已复制',
   'Copy the email above': '用上面的按钮复制邮箱',
   'Paste it into the donation message': '把它粘贴到捐助留言里',
-  'From {0} ₽ — coins arrive on their own in a couple of minutes': '{0} 卢布起，金币几分钟内自动到账',
+  'From {0} ₽ — coins arrive on their own in a couple of minutes':
+      '{0} 卢布起，金币几分钟内自动到账',
   'Open DonationAlerts': '打开 DonationAlerts',
 
   // Профиль

@@ -97,34 +97,6 @@ class UiPrefs {
     await p.setBool(kInviteScreenShown, true);
   }
 
-  /// Версия, на которой показывали рассказ про Togetherly+.
-  ///
-  /// Про платную часть надо рассказать один раз после обновления — и замолчать.
-  /// Периодические напоминания «раз в N заходов» превращаются в долбёжку:
-  /// человек открывает приложение по несколько раз в день, и такой экран
-  /// вылезал бы каждые три-четыре дня. Дальше Плюс продаёт себя сам — по
-  /// замкам, там, где человек в него упирается.
-  static const String kPlusPitchVersion = 'plus_pitch_version';
-
-  /// Показывали ли рассказ на этой версии.
-  static Future<bool> plusPitchShownFor(String version) async {
-    final p = await SharedPreferences.getInstance();
-    return p.getString(kPlusPitchVersion) == version;
-  }
-
-  static Future<void> markPlusPitchShown(String version) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setString(kPlusPitchVersion, version);
-  }
-
-  /// Первый запуск приложения после установки: рассказ про Плюс новичку не
-  /// показываем — у него своя дорога, приглашение партнёра.
-  static Future<bool> isFirstLaunchEver() async {
-    final p = await SharedPreferences.getInstance();
-    return p.getString(kPlusPitchVersion) == null &&
-        !(p.getBool(kInviteScreenShown) ?? false);
-  }
-
   /// Карточка первых действий закрыта крестиком.
   static const String kOnboardingDismissed = 'onboarding_card_dismissed';
 
@@ -262,19 +234,6 @@ class UiPrefs {
     await p.setStringList(kCollapsedSections, saved.toList());
   }
 
-  // ── Плашка Togetherly+ ──
-  /// Когда показывали в прошлый раз (epoch-ms).
-  static const String kPlusPromoAt = 'plus_promo_at';
-
-  /// Когда приложение впервые запустилось на этом телефоне (epoch-ms).
-  /// В первые сутки витрину не показываем: человек ещё не понял, за что платить.
-  static const String kFirstRunAt = 'first_run_at';
-
-  static Future<int> plusPromoAt() async {
-    final p = await SharedPreferences.getInstance();
-    return p.getInt(kPlusPromoAt) ?? 0;
-  }
-
   // ── «Умение любить»: карточка на главной ──────────────────────────────────
 
   static const _loveDismissedKey = 'love_test_prompt_dismissed';
@@ -289,34 +248,6 @@ class UiPrefs {
   static Future<void> dismissLoveTestPrompt() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_loveDismissedKey, true);
-  }
-
-  static const _loveAdAtKey = 'love_test_ad_at';
-
-  /// Когда перед результатом теста последний раз крутили ролик (epoch-ms).
-  /// Ноль — ни разу. Пауза между показами живёт в `models/love_test_ad.dart`.
-  static Future<int> loveTestAdAt() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_loveAdAtKey) ?? 0;
-  }
-
-  static Future<void> setLoveTestAdAt(int nowMs) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_loveAdAtKey, nowMs);
-  }
-
-  static Future<void> setPlusPromoShown(int nowMs) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setInt(kPlusPromoAt, nowMs);
-  }
-
-  /// Отметка первого запуска. Ставится один раз и дальше только читается.
-  static Future<int> firstRunAt(int nowMs) async {
-    final p = await SharedPreferences.getInstance();
-    final saved = p.getInt(kFirstRunAt) ?? 0;
-    if (saved > 0) return saved;
-    await p.setInt(kFirstRunAt, nowMs);
-    return nowMs;
   }
 
   // ── Лента воспоминаний ──

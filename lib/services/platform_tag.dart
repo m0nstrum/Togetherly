@@ -21,10 +21,10 @@ class PlatformTag {
 
   /// `ios` или `android`. Прочие платформы (десктоп в отладке) не помечаем.
   static String? get current => switch (defaultTargetPlatform) {
-        TargetPlatform.iOS => 'ios',
-        TargetPlatform.android => 'android',
-        _ => null,
-      };
+    TargetPlatform.iOS => 'ios',
+    TargetPlatform.android => 'android',
+    _ => null,
+  };
 
   static bool _syncedThisRun = false;
 
@@ -49,8 +49,9 @@ class PlatformTag {
     }
 
     try {
-      final updated =
-          await svc.pb.collection('users').update(uid, body: {_field: value});
+      final updated = await svc.pb
+          .collection('users')
+          .update(uid, body: {_field: value});
       // update() не трогает authStore.record, а его читает currentProfile() —
       // без этого следующий запуск снова счёл бы отметку устаревшей.
       svc.pb.authStore.save(svc.pb.authStore.token, updated);

@@ -58,13 +58,20 @@ const Map<String, Map<String, String>> chestStrings = {
     'de': 'Hauptpreis',
   },
   'chestCardTextPlus': {
-    'ru': 'Togetherly+ навсегда, монеты и подарки, которых нет в магазине. Открывается за рекламу.',
-    'en': 'Togetherly+ forever, coins and gifts you can’t buy in the shop. Opens for a video.',
-    'pt': 'Togetherly+ para sempre, moedas e presentes que não estão na loja. Abre com um vídeo.',
-    'it': 'Togetherly+ per sempre, monete e regali che non trovi nel negozio. Si apre con un video.',
-    'es': 'Togetherly+ para siempre, monedas y regalos que no están en la tienda. Se abre con un vídeo.',
-    'fr': 'Togetherly+ pour toujours, des pièces et des cadeaux absents de la boutique. S’ouvre avec une vidéo.',
-    'de': 'Togetherly+ für immer, Münzen und Geschenke, die es im Shop nicht gibt. Öffnet sich für ein Video.',
+    'ru':
+        'Togetherly+ навсегда, монеты и подарки, которых нет в магазине. Открывается за рекламу.',
+    'en':
+        'Togetherly+ forever, coins and gifts you can’t buy in the shop. Opens for a video.',
+    'pt':
+        'Togetherly+ para sempre, moedas e presentes que não estão na loja. Abre com um vídeo.',
+    'it':
+        'Togetherly+ per sempre, monete e regali che non trovi nel negozio. Si apre con un video.',
+    'es':
+        'Togetherly+ para siempre, monedas y regalos que no están en la tienda. Se abre con un vídeo.',
+    'fr':
+        'Togetherly+ pour toujours, des pièces et des cadeaux absents de la boutique. S’ouvre avec une vidéo.',
+    'de':
+        'Togetherly+ für immer, Münzen und Geschenke, die es im Shop nicht gibt. Öffnet sich für ein Video.',
   },
   'chestChance': {
     'ru': 'Шанс {p}',
@@ -164,8 +171,10 @@ const Map<String, Map<String, String>> chestStrings = {
     'pt': 'Moedas e presentes que não estão na loja. Abre com um vídeo.',
     'it': 'Monete e regali che non trovi nel negozio. Si apre con un video.',
     'es': 'Monedas y regalos que no están en la tienda. Se abre con un vídeo.',
-    'fr': 'Des pièces et des cadeaux absents de la boutique. S’ouvre avec une vidéo.',
-    'de': 'Münzen und Geschenke, die es im Shop nicht gibt. Öffnet sich für ein Video.',
+    'fr':
+        'Des pièces et des cadeaux absents de la boutique. S’ouvre avec une vidéo.',
+    'de':
+        'Münzen und Geschenke, die es im Shop nicht gibt. Öffnet sich für ein Video.',
   },
   'chestCardTextFree': {
     'ru': 'Монеты и подарки, которых нет в магазине. Три раза в день.',
@@ -173,7 +182,8 @@ const Map<String, Map<String, String>> chestStrings = {
     'pt': 'Moedas e presentes que não estão na loja. Três vezes por dia.',
     'it': 'Monete e regali che non trovi nel negozio. Tre volte al giorno.',
     'es': 'Monedas y regalos que no están en la tienda. Tres veces al día.',
-    'fr': 'Des pièces et des cadeaux absents de la boutique. Trois fois par jour.',
+    'fr':
+        'Des pièces et des cadeaux absents de la boutique. Trois fois par jour.',
     'de': 'Münzen und Geschenke, die es im Shop nicht gibt. Dreimal am Tag.',
   },
   'chestLeftChip': {
@@ -222,13 +232,20 @@ const Map<String, Map<String, String>> chestStrings = {
     'de': 'Öffnet in {t}',
   },
   'chestNote': {
-    'ru': 'Приз не продаётся и не выводится в деньги. Сундук только за просмотр рекламы.',
-    'en': 'Prizes can’t be sold or cashed out. The chest only opens for a video.',
-    'pt': 'Os prémios não se vendem nem se trocam por dinheiro. O baú só abre com um vídeo.',
-    'it': 'I premi non si vendono e non si convertono in denaro. Il forziere si apre solo con un video.',
-    'es': 'Los premios no se venden ni se cambian por dinero. El cofre solo se abre con un vídeo.',
-    'fr': 'Les prix ne se vendent pas et ne s’échangent pas contre de l’argent. Le coffre ne s’ouvre qu’avec une vidéo.',
-    'de': 'Preise lassen sich nicht verkaufen oder auszahlen. Die Truhe öffnet sich nur für ein Video.',
+    'ru':
+        'Приз не продаётся и не выводится в деньги. Сундук только за просмотр рекламы.',
+    'en':
+        'Prizes can’t be sold or cashed out. The chest only opens for a video.',
+    'pt':
+        'Os prémios não se vendem nem se trocam por dinheiro. O baú só abre com um vídeo.',
+    'it':
+        'I premi non si vendono e non si convertono in denaro. Il forziere si apre solo con un video.',
+    'es':
+        'Los premios no se venden ni se cambian por dinero. El cofre solo se abre con un vídeo.',
+    'fr':
+        'Les prix ne se vendent pas et ne s’échangent pas contre de l’argent. Le coffre ne s’ouvre qu’avec une vidéo.',
+    'de':
+        'Preise lassen sich nicht verkaufen oder auszahlen. Die Truhe öffnet sich nur für ein Video.',
   },
   'chestNoteFree': {
     'ru': 'Приз не продаётся и не выводится в деньги.',
@@ -236,7 +253,8 @@ const Map<String, Map<String, String>> chestStrings = {
     'pt': 'Os prémios não se vendem nem se trocam por dinheiro.',
     'it': 'I premi non si vendono e non si convertono in denaro.',
     'es': 'Los premios no se venden ni se cambian por dinero.',
-    'fr': 'Les prix ne se vendent pas et ne s’échangent pas contre de l’argent.',
+    'fr':
+        'Les prix ne se vendent pas et ne s’échangent pas contre de l’argent.',
     'de': 'Preise lassen sich nicht verkaufen oder auszahlen.',
   },
   'chestTierCommon': {
@@ -350,13 +368,17 @@ const Map<String, Map<String, String>> chestStrings = {
     'de': 'Für heute sind die Truhen aufgebraucht',
   },
   'chestFailed': {
-    'ru': 'Сундук не открылся. Нажмите ещё раз, смотреть рекламу заново не придётся.',
+    'ru':
+        'Сундук не открылся. Нажмите ещё раз, смотреть рекламу заново не придётся.',
     'en': 'The chest didn’t open. Tap again, you won’t need another video.',
     'pt': 'O baú não abriu. Toca de novo, não vais precisar de outro vídeo.',
-    'it': 'Il forziere non si è aperto. Tocca di nuovo, non servirà un altro video.',
+    'it':
+        'Il forziere non si è aperto. Tocca di nuovo, non servirà un altro video.',
     'es': 'El cofre no se abrió. Toca otra vez, no hará falta otro vídeo.',
-    'fr': 'Le coffre ne s’est pas ouvert. Touche encore, pas besoin d’une autre vidéo.',
-    'de': 'Die Truhe ging nicht auf. Tipp noch einmal, ein neues Video brauchst du nicht.',
+    'fr':
+        'Le coffre ne s’est pas ouvert. Touche encore, pas besoin d’une autre vidéo.',
+    'de':
+        'Die Truhe ging nicht auf. Tipp noch einmal, ein neues Video brauchst du nicht.',
   },
   'chestGive': {
     'ru': 'Подарить',
@@ -377,13 +399,20 @@ const Map<String, Map<String, String>> chestStrings = {
     'de': 'Behalten',
   },
   'chestChoiceNote': {
-    'ru': '{name} получит подарок и сможет ответить. Уйдёшь с экрана, он подождёт в магазине, в разделе «Из сундука».',
-    'en': '{name} gets the gift and can reply. If you leave, it waits in the gift shop under “From the chest”.',
-    'pt': '{name} recebe o presente e pode responder. Se saíres, ele espera na loja, em “Do baú”.',
-    'it': '{name} riceve il regalo e può rispondere. Se esci, ti aspetta nel negozio, in “Dal forziere”.',
-    'es': '{name} recibe el regalo y puede responder. Si sales, te espera en la tienda, en «Del cofre».',
-    'fr': '{name} reçoit le cadeau et peut répondre. Si tu pars, il t’attend dans la boutique, dans « Du coffre ».',
-    'de': '{name} bekommt das Geschenk und kann antworten. Gehst du weg, wartet es im Shop unter „Aus der Truhe“.',
+    'ru':
+        '{name} получит подарок и сможет ответить. Уйдёшь с экрана, он подождёт в магазине, в разделе «Из сундука».',
+    'en':
+        '{name} gets the gift and can reply. If you leave, it waits in the gift shop under “From the chest”.',
+    'pt':
+        '{name} recebe o presente e pode responder. Se saíres, ele espera na loja, em “Do baú”.',
+    'it':
+        '{name} riceve il regalo e può rispondere. Se esci, ti aspetta nel negozio, in “Dal forziere”.',
+    'es':
+        '{name} recibe el regalo y puede responder. Si sales, te espera en la tienda, en «Del cofre».',
+    'fr':
+        '{name} reçoit le cadeau et peut répondre. Si tu pars, il t’attend dans la boutique, dans « Du coffre ».',
+    'de':
+        '{name} bekommt das Geschenk und kann antworten. Gehst du weg, wartet es im Shop unter „Aus der Truhe“.',
   },
   'chestPartner': {
     'ru': 'Партнёр',
@@ -426,11 +455,15 @@ const Map<String, Map<String, String>> chestStrings = {
   },
   'chestChoiceFailed': {
     'ru': 'Не получилось. Подарок ждёт в магазине, в разделе «Из сундука».',
-    'en': 'That didn’t work. The gift waits in the shop under “From the chest”.',
+    'en':
+        'That didn’t work. The gift waits in the shop under “From the chest”.',
     'pt': 'Não deu. O presente espera na loja, em “Do baú”.',
-    'it': 'Non è riuscito. Il regalo ti aspetta nel negozio, in “Dal forziere”.',
+    'it':
+        'Non è riuscito. Il regalo ti aspetta nel negozio, in “Dal forziere”.',
     'es': 'No salió. El regalo te espera en la tienda, en «Del cofre».',
-    'fr': 'Ça n’a pas marché. Le cadeau t’attend dans la boutique, dans « Du coffre ».',
-    'de': 'Hat nicht geklappt. Das Geschenk wartet im Shop unter „Aus der Truhe“.',
+    'fr':
+        'Ça n’a pas marché. Le cadeau t’attend dans la boutique, dans « Du coffre ».',
+    'de':
+        'Hat nicht geklappt. Das Geschenk wartet im Shop unter „Aus der Truhe“.',
   },
 };

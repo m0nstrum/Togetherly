@@ -72,8 +72,9 @@ void main() {
   });
 
   group('порядок в самом сервисе', () {
-    final source =
-        File('lib/services/push_background_service.dart').readAsStringSync();
+    final source = File(
+      'lib/services/push_background_service.dart',
+    ).readAsStringSync();
 
     test('решение принимается после вердикта FCM, а не до', () {
       final from = source.indexOf('Future<void> start({');
@@ -84,14 +85,20 @@ void main() {
       final wait = body.indexOf('FcmService.instance.settled');
       final decide = body.indexOf('socketServiceNeeded(');
       expect(wait, greaterThan(-1), reason: 'вердикта ждём');
-      expect(decide, greaterThan(wait),
-          reason: 'спрашиваем готовность только после вердикта');
+      expect(
+        decide,
+        greaterThan(wait),
+        reason: 'спрашиваем готовность только после вердикта',
+      );
     });
 
     test('оживать после перезагрузки решает тот же вердикт', () {
       expect(source, contains('autoRunOnBoot: autoRunOnBoot'));
-      expect(source, contains('bootedServiceShouldStop('),
-          reason: 'изолят гасит себя, когда пуши работают');
+      expect(
+        source,
+        contains('bootedServiceShouldStop('),
+        reason: 'изолят гасит себя, когда пуши работают',
+      );
     });
   });
 }

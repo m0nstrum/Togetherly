@@ -17,17 +17,29 @@ void main() {
   }
 
   test('карточка и автопоказ берут подарки через shownIncomingGifts', () {
-    expect(body('Widget _incomingGiftEntry()', 400), contains('shownIncomingGifts('));
-    expect(body('Future<void> _onGiftEvent()', 500), contains('shownIncomingGifts('));
-    expect(src.contains('_incomingGifts.first'), isFalse,
-        reason: 'первый подарок списка может быть незнакомым и спрячет остальные');
+    expect(
+      body('Widget _incomingGiftEntry()', 400),
+      contains('shownIncomingGifts('),
+    );
+    expect(
+      body('Future<void> _onGiftEvent()', 500),
+      contains('shownIncomingGifts('),
+    );
+    expect(
+      src.contains('_incomingGifts.first'),
+      isFalse,
+      reason: 'первый подарок списка может быть незнакомым и спрячет остальные',
+    );
   });
 
   test('события дня едут с сундуком, а не с лентой', () {
     final blocks = body('List<Widget> _buildHomeBlocks()', 9000);
     expect(blocks, contains('if (b == HomeBlock.chest) ...events()'));
-    expect(blocks.contains('if (b == HomeBlock.lane) ...events()'), isFalse,
-        reason: 'над лентой карточку подарка не видно: это низ главной');
+    expect(
+      blocks.contains('if (b == HomeBlock.lane) ...events()'),
+      isFalse,
+      reason: 'над лентой карточку подарка не видно: это низ главной',
+    );
   });
 
   test('без сундука события встают первыми', () {
@@ -37,7 +49,15 @@ void main() {
     final head = blocks.substring(ret, ret + 400);
     expect(head, contains('!shown.contains(HomeBlock.chest)'));
     final events = head.indexOf('events()');
-    expect(events, greaterThan(0), reason: 'без сундука события дня некуда прицепить');
-    expect(events, lessThan(head.indexOf('promptBlock()')), reason: 'подарок важнее подсказки');
+    expect(
+      events,
+      greaterThan(0),
+      reason: 'без сундука события дня некуда прицепить',
+    );
+    expect(
+      events,
+      lessThan(head.indexOf('promptBlock()')),
+      reason: 'подарок важнее подсказки',
+    );
   });
 }

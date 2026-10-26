@@ -72,7 +72,9 @@ class WidgetDiagnostics {
       if (key.endsWith('_path')) {
         // Путь без файла — самая частая поломка: запись есть, картинки нет.
         final exists = File(value).existsSync();
-        out[key] = exists ? 'файл на месте (${value.length} симв.)' : 'ФАЙЛА НЕТ';
+        out[key] = exists
+            ? 'файл на месте (${value.length} симв.)'
+            : 'ФАЙЛА НЕТ';
         continue;
       }
       out[key] = 'есть (${value.length} симв.)';

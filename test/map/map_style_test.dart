@@ -38,11 +38,14 @@ ColorScheme _pink(Brightness b) => b == Brightness.light
 
 const _fill = Color(0xFFF37094);
 
-Map<String, dynamic> _base() => jsonDecode(
-    File('assets/map/base_style.json').readAsStringSync()) as Map<String, dynamic>;
+Map<String, dynamic> _base() =>
+    jsonDecode(File('assets/map/base_style.json').readAsStringSync())
+        as Map<String, dynamic>;
 
 Map<String, dynamic> _layer(Map<String, dynamic> style, String id) =>
-    (style['layers'] as List).cast<Map<String, dynamic>>().firstWhere((l) => l['id'] == id);
+    (style['layers'] as List).cast<Map<String, dynamic>>().firstWhere(
+      (l) => l['id'] == id,
+    );
 
 void main() {
   group('MapPalette', () {
@@ -73,11 +76,21 @@ void main() {
     // фона, чем вода, — тогда глаз берёт её за фигуру.
     for (final b in Brightness.values) {
       test('на глобусе суша выделяется сильнее воды ($b)', () {
-        final cs = _pink(b).copyWith(surface: b == Brightness.light ? const Color(0xFFFFF8F7) : const Color(0xFF1A1112));
-        final p = MapPalette.of(cs, fill: b == Brightness.light ? _fill : const Color(0xFFF7A5B6));
+        final cs = _pink(b).copyWith(
+          surface: b == Brightness.light
+              ? const Color(0xFFFFF8F7)
+              : const Color(0xFF1A1112),
+        );
+        final p = MapPalette.of(
+          cs,
+          fill: b == Brightness.light ? _fill : const Color(0xFFF7A5B6),
+        );
         double lum(Color c) => c.computeLuminance();
         final sky = lum(p.halo);
-        expect((lum(p.globeLand) - sky).abs(), greaterThan((lum(p.water) - sky).abs() * 1.3));
+        expect(
+          (lum(p.globeLand) - sky).abs(),
+          greaterThan((lum(p.water) - sky).abs() * 1.3),
+        );
       });
     }
 
@@ -122,7 +135,9 @@ void main() {
 
     test('отрисовщик принимает все слои стиля', () {
       final base = _base();
-      final theme = vtr.ThemeReader().read(buildMapStyle(base, palette, lang: 'ru'));
+      final theme = vtr.ThemeReader().read(
+        buildMapStyle(base, palette, lang: 'ru'),
+      );
       expect(theme.layers.length, (base['layers'] as List).length);
     });
   });

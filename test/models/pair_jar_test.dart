@@ -4,7 +4,7 @@ import 'package:love_app/models/pair_jar.dart';
 import 'package:love_app/services/pair_jar_service.dart';
 import 'package:love_app/widgets/chest/jar_drops.dart';
 
-// Копилка пары (pocketbase/pb_hooks/pair_jar.js): сервер шлёт капли числами
+// Копилка пары (server/pb_hooks/pair_jar.js): сервер шлёт капли числами
 // 1 (моя) и 2 (партнёра), бонус открытий и признаки added/filled.
 void main() {
   setUp(() => PairJarService.instance.debugReset());
@@ -41,8 +41,14 @@ void main() {
     final shown = <PairJar>[];
     PairJarService.instance.onDrop = shown.add;
     PairJarService.instance.applyDrop(const PairJar(drops: [true]));
-    expect(shown, isEmpty, reason: 'added = false: капля не упала (предел или частый ролик)');
-    PairJarService.instance.applyDrop(const PairJar(drops: [true, false], added: true));
+    expect(
+      shown,
+      isEmpty,
+      reason: 'added = false: капля не упала (предел или частый ролик)',
+    );
+    PairJarService.instance.applyDrop(
+      const PairJar(drops: [true, false], added: true),
+    );
     expect(shown.length, 1);
     expect(PairJarService.instance.jar?.count, 2);
     PairJarService.instance.onDrop = null;

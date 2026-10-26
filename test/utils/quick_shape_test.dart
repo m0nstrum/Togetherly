@@ -53,7 +53,12 @@ void main() {
 
     test('три стороны становятся треугольником', () {
       final pts = <Offset>[
-        ..._segment(const Offset(140, 30), const Offset(240, 190), 16, jitter: 2),
+        ..._segment(
+          const Offset(140, 30),
+          const Offset(240, 190),
+          16,
+          jitter: 2,
+        ),
         ..._segment(const Offset(240, 190), const Offset(40, 190), 16),
         ..._segment(const Offset(40, 190), const Offset(140, 30), 16),
       ];
@@ -88,10 +93,12 @@ void main() {
       final pts = <Offset>[];
       for (var i = 0; i <= 44; i++) {
         final a = (i / 44) * 2 * math.pi;
-        pts.add(Offset(
-          170 + 130 * math.cos(a) + math.sin(i * 2.3) * 5,
-          150 + 62 * math.sin(a) + math.cos(i * 1.9) * 5,
-        ));
+        pts.add(
+          Offset(
+            170 + 130 * math.cos(a) + math.sin(i * 2.3) * 5,
+            150 + 62 * math.sin(a) + math.cos(i * 1.9) * 5,
+          ),
+        );
       }
       expect(recognizeQuickShape(pts)?.type, DrawShapeType.circle);
     });
@@ -99,8 +106,18 @@ void main() {
     test('квадрат пальцем не превращается в круг', () {
       final pts = <Offset>[
         ..._segment(const Offset(50, 46), const Offset(210, 50), 14, jitter: 3),
-        ..._segment(const Offset(210, 50), const Offset(206, 200), 14, jitter: 3),
-        ..._segment(const Offset(206, 200), const Offset(48, 196), 14, jitter: 3),
+        ..._segment(
+          const Offset(210, 50),
+          const Offset(206, 200),
+          14,
+          jitter: 3,
+        ),
+        ..._segment(
+          const Offset(206, 200),
+          const Offset(48, 196),
+          14,
+          jitter: 3,
+        ),
         ..._segment(const Offset(48, 196), const Offset(50, 52), 14, jitter: 3),
       ];
       expect(recognizeQuickShape(pts)?.type, DrawShapeType.rect);
@@ -110,8 +127,18 @@ void main() {
       // У него углы заполнены, у овала — пусты; на этом их и различаем.
       final pts = <Offset>[
         ..._segment(const Offset(70, 40), const Offset(210, 40), 10, jitter: 2),
-        ..._segment(const Offset(230, 60), const Offset(230, 170), 8, jitter: 2),
-        ..._segment(const Offset(210, 190), const Offset(70, 190), 10, jitter: 2),
+        ..._segment(
+          const Offset(230, 60),
+          const Offset(230, 170),
+          8,
+          jitter: 2,
+        ),
+        ..._segment(
+          const Offset(210, 190),
+          const Offset(70, 190),
+          10,
+          jitter: 2,
+        ),
         ..._segment(const Offset(50, 170), const Offset(50, 60), 8, jitter: 2),
       ];
       expect(recognizeQuickShape(pts)?.type, DrawShapeType.rect);
@@ -123,10 +150,12 @@ void main() {
         final a = (i / 40) * 2 * math.pi;
         // Бока чуть прямее, чем у эллипса: так рисуют овал пальцем.
         final c = math.cos(a), s2 = math.sin(a);
-        pts.add(Offset(
-          180 + 120 * c.sign * math.pow(c.abs(), 0.82).toDouble(),
-          150 + 70 * s2,
-        ));
+        pts.add(
+          Offset(
+            180 + 120 * c.sign * math.pow(c.abs(), 0.82).toDouble(),
+            150 + 70 * s2,
+          ),
+        );
       }
       expect(recognizeQuickShape(pts)?.type, DrawShapeType.circle);
     });
@@ -143,16 +172,15 @@ void main() {
 
     test('короткий мазок не превращается', () {
       expect(
-        recognizeQuickShape(_segment(const Offset(10, 10), const Offset(28, 10), 10)),
+        recognizeQuickShape(
+          _segment(const Offset(10, 10), const Offset(28, 10), 10),
+        ),
         isNull,
       );
     });
 
     test('пары точек мало для разбора', () {
-      expect(
-        recognizeQuickShape(const [Offset(0, 0), Offset(200, 0)]),
-        isNull,
-      );
+      expect(recognizeQuickShape(const [Offset(0, 0), Offset(200, 0)]), isNull);
     });
   });
 }

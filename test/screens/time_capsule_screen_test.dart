@@ -35,22 +35,30 @@ Future<AppTheme> _pump(
   AppLanguage language = AppLanguage.ru,
 }) async {
   LocaleService.instance.setLanguage(language);
-  final theme = buildAppTheme(kPalettes[21], brightness); // «Кофе», как на снимках
+  final theme = buildAppTheme(
+    kPalettes[21],
+    brightness,
+  ); // «Кофе», как на снимках
   tester.view.physicalSize = Size(width * 3, 780 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(MaterialApp(
-    home: MediaQuery(
-      data: MediaQueryData(size: Size(width, 780), textScaler: TextScaler.linear(scale)),
-      child: TimeCapsuleScreen(
-        theme: theme,
-        pairId: 'g',
-        authorName: 'Аня',
-        authorAvatar: '',
-        now: _now,
+  await tester.pumpWidget(
+    MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: Size(width, 780),
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: TimeCapsuleScreen(
+          theme: theme,
+          pairId: 'g',
+          authorName: 'Аня',
+          authorAvatar: '',
+          now: _now,
+        ),
       ),
     ),
-  ));
+  );
   await tester.pump();
   return theme;
 }
@@ -59,6 +67,8 @@ FilledButton _seal(WidgetTester tester) =>
     tester.widget<FilledButton>(find.byKey(const ValueKey('capsule-seal')));
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({'app_language': 'ru'});
@@ -67,10 +77,15 @@ void main() {
     await _loadFont('Unbounded', 'assets/fonts/Unbounded.ttf');
   });
 
-  testWidgets('«Запечатать» молчит, пока нет ни письма, ни фото', (tester) async {
+  testWidgets('«Запечатать» молчит, пока нет ни письма, ни фото', (
+    tester,
+  ) async {
     await _pump(tester);
     expect(_seal(tester).onPressed, isNull);
-    await tester.enterText(find.byKey(const ValueKey('capsule-letter')), 'Привет из октября');
+    await tester.enterText(
+      find.byKey(const ValueKey('capsule-letter')),
+      'Привет из октября',
+    );
     await tester.pump();
     expect(_seal(tester).onPressed, isNotNull);
     await tester.enterText(find.byKey(const ValueKey('capsule-letter')), '   ');
@@ -78,7 +93,9 @@ void main() {
     expect(_seal(tester).onPressed, isNull, reason: 'одни пробелы — не письмо');
   });
 
-  testWidgets('срок: полгода по умолчанию, кнопки меняют число дней', (tester) async {
+  testWidgets('срок: полгода по умолчанию, кнопки меняют число дней', (
+    tester,
+  ) async {
     await _pump(tester);
     expect(find.text('182'), findsOneWidget);
     expect(find.textContaining('14 апреля 2027'), findsOneWidget);
@@ -91,61 +108,91 @@ void main() {
     expect(find.text('365'), findsOneWidget);
   });
 
-  testWidgets('письмо на листе заметки: лист secondaryContainer, кавычка цвета темы, без рамок и теней',
-      (tester) async {
-    final theme = await _pump(tester);
-    final cs = ProfileTheme.themeFor(theme).colorScheme;
-    final screen = find.byType(TimeCapsuleScreen);
-    final fills = <Color>[];
-    for (final w in tester.widgetList<Container>(find.descendant(of: screen, matching: find.byType(Container)))) {
-      final d = w.decoration;
-      if (d is BoxDecoration) {
-        expect(d.border, isNull, reason: 'рамок на экране нет');
-        expect(d.boxShadow, isNull, reason: 'теней на экране нет');
-        expect(d.gradient, isNull, reason: 'градиентов на экране нет');
-        if (d.color != null) fills.add(d.color!);
+  testWidgets(
+    'письмо на листе заметки: лист secondaryContainer, кавычка цвета темы, без рамок и теней',
+    (tester) async {
+      final theme = await _pump(tester);
+      final cs = ProfileTheme.themeFor(theme).colorScheme;
+      final screen = find.byType(TimeCapsuleScreen);
+      final fills = <Color>[];
+      for (final w in tester.widgetList<Container>(
+        find.descendant(of: screen, matching: find.byType(Container)),
+      )) {
+        final d = w.decoration;
+        if (d is BoxDecoration) {
+          expect(d.border, isNull, reason: 'рамок на экране нет');
+          expect(d.boxShadow, isNull, reason: 'теней на экране нет');
+          expect(d.gradient, isNull, reason: 'градиентов на экране нет');
+          if (d.color != null) fills.add(d.color!);
+        }
       }
-    }
-    expect(fills, contains(cs.secondaryContainer), reason: 'письмо пишется на листе пина-заметки');
-    expect(tester.widget<Text>(find.text('“')).style?.color, theme.fillColor);
-    expect(find.textContaining('💌'), findsNothing, reason: 'эмодзи в подсказке больше нет');
-  });
+      expect(
+        fills,
+        contains(cs.secondaryContainer),
+        reason: 'письмо пишется на листе пина-заметки',
+      );
+      expect(tester.widget<Text>(find.text('“')).style?.color, theme.fillColor);
+      expect(
+        find.textContaining('💌'),
+        findsNothing,
+        reason: 'эмодзи в подсказке больше нет',
+      );
+    },
+  );
 
-  testWidgets('немецкий на 320 dp при шрифте 1.3: подпись под числом, подписи сроков одного размера',
-      (tester) async {
-    await _pump(tester, width: 320, scale: 1.3, language: AppLanguage.de);
-    final number = tester.getRect(find.text('182'));
-    final until = tester.getRect(find.text('bis zur Öffnung'));
-    expect(until.top, greaterThanOrEqualTo(number.bottom - 1),
-        reason: 'не влезла рядом — уходит под число, а не рвётся посреди слова');
-    // Высота на экране, с учётом сжатия: размер шрифта в стиле у всех один,
-    // а мелкой подпись делало сжатие под ширину кнопки.
-    final heights = [
-      for (final l in ['Monat', '6 Monate', 'Jahr'])
-        tester.getRect(find.text(l)).height,
-    ];
-    for (final h in heights) {
-      expect(h, closeTo(heights.first, 0.5), reason: 'подписи сроков уменьшаются вместе');
-    }
-  });
+  testWidgets(
+    'немецкий на 320 dp при шрифте 1.3: подпись под числом, подписи сроков одного размера',
+    (tester) async {
+      await _pump(tester, width: 320, scale: 1.3, language: AppLanguage.de);
+      final number = tester.getRect(find.text('182'));
+      final until = tester.getRect(find.text('bis zur Öffnung'));
+      expect(
+        until.top,
+        greaterThanOrEqualTo(number.bottom - 1),
+        reason: 'не влезла рядом — уходит под число, а не рвётся посреди слова',
+      );
+      // Высота на экране, с учётом сжатия: размер шрифта в стиле у всех один,
+      // а мелкой подпись делало сжатие под ширину кнопки.
+      final heights = [
+        for (final l in ['Monat', '6 Monate', 'Jahr'])
+          tester.getRect(find.text(l)).height,
+      ];
+      for (final h in heights) {
+        expect(
+          h,
+          closeTo(heights.first, 0.5),
+          reason: 'подписи сроков уменьшаются вместе',
+        );
+      }
+    },
+  );
 
   for (final language in [AppLanguage.ru, AppLanguage.de]) {
     for (final b in Brightness.values) {
       for (final w in [320.0, 360.0]) {
-        testWidgets('без переполнений: ${language.code}, ${b.name}, $w dp, шрифт 1.3', (tester) async {
-          await _pump(tester, brightness: b, width: w, scale: 1.3, language: language);
-          expect(tester.takeException(), isNull);
-          await tester.enterText(
-            find.byKey(const ValueKey('capsule-title')),
-            'Очень длинный заголовок капсулы, который в строку не помещается',
-          );
-          await tester.enterText(
-            find.byKey(const ValueKey('capsule-letter')),
-            List.filled(30, 'строка письма в будущее').join('\n'),
-          );
-          await tester.pump();
-          expect(tester.takeException(), isNull);
-        });
+        testWidgets(
+          'без переполнений: ${language.code}, ${b.name}, $w dp, шрифт 1.3',
+          (tester) async {
+            await _pump(
+              tester,
+              brightness: b,
+              width: w,
+              scale: 1.3,
+              language: language,
+            );
+            expect(tester.takeException(), isNull);
+            await tester.enterText(
+              find.byKey(const ValueKey('capsule-title')),
+              'Очень длинный заголовок капсулы, который в строку не помещается',
+            );
+            await tester.enterText(
+              find.byKey(const ValueKey('capsule-letter')),
+              List.filled(30, 'строка письма в будущее').join('\n'),
+            );
+            await tester.pump();
+            expect(tester.takeException(), isNull);
+          },
+        );
       }
     }
   }

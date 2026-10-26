@@ -23,18 +23,15 @@ void main() {
     test('магазин молчит — показываем цену каталога', () {
       // Товар ещё грузится или сборка без биллинга: молчать о цене хуже, чем
       // назвать ту, что лежит в манифесте.
-      expect(
-        catalogPriceLabel(storePrice: null, catalogPrice: '5\$'),
-        '5\$',
-      );
-      expect(
-        catalogPriceLabel(storePrice: '', catalogPrice: '5\$'),
-        '5\$',
-      );
+      expect(catalogPriceLabel(storePrice: null, catalogPrice: '5\$'), '5\$');
+      expect(catalogPriceLabel(storePrice: '', catalogPrice: '5\$'), '5\$');
     });
 
     test('двух цен подряд не бывает никогда', () {
-      final label = catalogPriceLabel(storePrice: '5,00 \$', catalogPrice: '5\$');
+      final label = catalogPriceLabel(
+        storePrice: '5,00 \$',
+        catalogPrice: '5\$',
+      );
       // В строке ровно одно число: две цены рядом человек читает как ошибку.
       final numbers = RegExp(r'\d+([.,]\d+)?').allMatches(label);
       expect(numbers.length, 1);
@@ -61,24 +58,24 @@ void main() {
   group('код слушается этих правил', () {
     test('решение о биллинге считается в рантайме', () {
       final src = File('lib/services/coin_store.dart').readAsStringSync();
-      expect(src.contains('bool get kCatalogBuysInStore => catalogBuysInStore('),
-          isTrue,
-          reason: 'IPA собирается с STORE=github — одного kStore мало');
+      expect(
+        src.contains('bool get kCatalogBuysInStore => catalogBuysInStore('),
+        isTrue,
+        reason: 'IPA собирается с STORE=github — одного kStore мало',
+      );
     });
 
     test('платный набор на iPhone показывается, когда его можно купить', () {
       final src = File('lib/models/mood_pack.dart').readAsStringSync();
       expect(src.contains('bool buysInStore = false'), isTrue);
-      final call = File('lib/widgets/mood_pack_selector.dart').readAsStringSync();
-      expect(call.contains('buysInStore: kCatalogBuysInStore'), isTrue,
-          reason: 'иначе набор так и остался бы скрытым на iPhone');
-    });
-
-    test('покупка на iPhone идёт через магазин, а не на сайт', () {
-      final src = File('lib/widgets/mood_pack_selector.dart').readAsStringSync();
-      expect(src.contains('if (Platform.isIOS && !kCatalogBuysInStore) return;'),
-          isTrue,
-          reason: 'внешняя оплата на iPhone — 3.1.1');
+      final call = File(
+        'lib/widgets/mood_pack_selector.dart',
+      ).readAsStringSync();
+      expect(
+        call.contains('buysInStore: kCatalogBuysInStore'),
+        isTrue,
+        reason: 'иначе набор так и остался бы скрытым на iPhone',
+      );
     });
 
     test('цена на кнопке одна и от магазина', () {
@@ -87,8 +84,11 @@ void main() {
         'lib/screens/home/widgets/mood_picker_dialog.dart',
       ]) {
         final src = File(path).readAsStringSync();
-        expect(src.contains('catalogPriceLabel('), isTrue,
-            reason: '$path показывает цену мимо правила');
+        expect(
+          src.contains('catalogPriceLabel('),
+          isTrue,
+          reason: '$path показывает цену мимо правила',
+        );
       }
     });
   });

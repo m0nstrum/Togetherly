@@ -19,10 +19,9 @@ void main() {
     return source.substring(start, end);
   }
 
-  Set<String> tags(String source) => RegExp(r"UnfoldShared\(\s*tag: '(\w+)'")
-      .allMatches(source)
-      .map((match) => match.group(1)!)
-      .toSet();
+  Set<String> tags(String source) => RegExp(
+    r"UnfoldShared\(\s*tag: '(\w+)'",
+  ).allMatches(source).map((match) => match.group(1)!).toSet();
 
   test('плитка «Чат» на экране связи', () {
     final screen = read('lib/screens/connect_partner_screen.dart');
@@ -45,7 +44,11 @@ void main() {
 
   test('плитки профиля: магазин, достижения, подарки, лента', () {
     final profile = read('lib/screens/profile_screen.dart');
-    final tile = part(profile, 'Widget _quickTile({', 'Widget _quickTileBody({');
+    final tile = part(
+      profile,
+      'Widget _quickTile({',
+      'Widget _quickTileBody({',
+    );
     expect(tile, contains('UnfoldSource('));
     for (final open in [
       'void _openMemoryLane(',
@@ -57,8 +60,11 @@ void main() {
       expect(body, contains('UnfoldSourceState? from'), reason: open);
       expect(body, contains('unfoldFrom<void>('), reason: open);
     }
-    final achievements =
-        part(profile, 'Widget _achievementsTile(', 'AchievementsScreen(');
+    final achievements = part(
+      profile,
+      'Widget _achievementsTile(',
+      'AchievementsScreen(',
+    );
     expect(achievements, contains('unfoldFrom<void>('));
   });
 
@@ -87,8 +93,11 @@ void main() {
 
     final screen = read('lib/screens/chest_screen.dart');
     final art = part(screen, 'Widget _chestArt(', 'Widget _dots(');
-    expect(art, contains('tag: chestUnfoldTag(slot.chest)'),
-        reason: 'метки на главной и на экране считает одна функция');
+    expect(
+      art,
+      contains('tag: chestUnfoldTag(slot.chest)'),
+      reason: 'метки на главной и на экране считает одна функция',
+    );
   });
 
   test('общий переход подключён в теме приложения на обеих платформах', () {
@@ -99,13 +108,17 @@ void main() {
     expect(main, contains('UnfoldTouch.install();'));
     final theme = part(main, 'pageTransitionsTheme:', '),\n      dialogTheme');
     expect(
-        RegExp(r'TargetPlatform\.android: UnfoldPageTransitionsBuilder\(')
-            .hasMatch(theme),
-        isTrue);
+      RegExp(
+        r'TargetPlatform\.android: UnfoldPageTransitionsBuilder\(',
+      ).hasMatch(theme),
+      isTrue,
+    );
     expect(
-        RegExp(r'TargetPlatform\.iOS: UnfoldPageTransitionsBuilder\(')
-            .hasMatch(theme),
-        isTrue);
+      RegExp(
+        r'TargetPlatform\.iOS: UnfoldPageTransitionsBuilder\(',
+      ).hasMatch(theme),
+      isTrue,
+    );
     expect(theme, contains('fallback: PredictiveBackPageTransitionsBuilder()'));
     expect(theme, contains('fallback: CupertinoPageTransitionsBuilder()'));
   });
@@ -115,11 +128,17 @@ void main() {
     final bar = part(chat, 'Widget _buildTopBar(', 'Widget _headerAvatarPill(');
     expect(bar, contains('UnfoldSource('));
     expect(bar, contains('_openPartnerProfile(who)'));
-    final open =
-        part(chat, 'void _openPartnerProfile(', 'Widget build(BuildContext');
+    final open = part(
+      chat,
+      'void _openPartnerProfile(',
+      'Widget build(BuildContext',
+    );
     expect(open, contains('unfoldFrom<void>('));
-    expect(open, contains('coupleDaysTogether('),
-        reason: '«дней вместе» считает общая формула, а не своя');
+    expect(
+      open,
+      contains('coupleDaysTogether('),
+      reason: '«дней вместе» считает общая формула, а не своя',
+    );
 
     final hero = read('lib/screens/profile/profile_hero.dart');
     expect(tags(chat), containsAll(<String>['avatar', 'name']));

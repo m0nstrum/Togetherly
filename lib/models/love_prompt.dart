@@ -10,5 +10,4 @@ bool showLovePrompt({
   required bool partnerDone,
   required bool mineDone,
   required bool dismissed,
-}) =>
-    partnerDone && !mineDone && !dismissed;
+}) => partnerDone && !mineDone && !dismissed;

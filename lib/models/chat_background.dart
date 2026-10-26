@@ -168,8 +168,11 @@ class _DawnPainter extends CustomPainter {
     }
 
     glow(Offset(size.width * 0.1, 0), cs.primary.withValues(alpha: 0.16), 0.6);
-    glow(Offset(size.width * 0.95, size.height),
-        cs.tertiary.withValues(alpha: 0.13), 0.55);
+    glow(
+      Offset(size.width * 0.95, size.height),
+      cs.tertiary.withValues(alpha: 0.13),
+      0.55,
+    );
   }
 
   @override
@@ -191,8 +194,12 @@ class _HeartsPainter extends CustomPainter {
       final offset = row.isEven ? 0.0 : step / 2;
       for (double x = -20 * k + offset; x < size.width + step; x += step) {
         final wobble = (((row * 7 + x) % 13) - 6) * k;
-        _heart(canvas, Offset(x, y + wobble),
-            (13 + (wobble.abs() % 4)) * k, paint);
+        _heart(
+          canvas,
+          Offset(x, y + wobble),
+          (13 + (wobble.abs() % 4)) * k,
+          paint,
+        );
       }
       row++;
     }
@@ -201,10 +208,22 @@ class _HeartsPainter extends CustomPainter {
   void _heart(Canvas canvas, Offset c, double s, Paint paint) {
     final p = Path()
       ..moveTo(c.dx, c.dy + s * 0.75)
-      ..cubicTo(c.dx - s * 1.2, c.dy - s * 0.2, c.dx - s * 0.5, c.dy - s * 1.1,
-          c.dx, c.dy - s * 0.35)
-      ..cubicTo(c.dx + s * 0.5, c.dy - s * 1.1, c.dx + s * 1.2, c.dy - s * 0.2,
-          c.dx, c.dy + s * 0.75)
+      ..cubicTo(
+        c.dx - s * 1.2,
+        c.dy - s * 0.2,
+        c.dx - s * 0.5,
+        c.dy - s * 1.1,
+        c.dx,
+        c.dy - s * 0.35,
+      )
+      ..cubicTo(
+        c.dx + s * 0.5,
+        c.dy - s * 1.1,
+        c.dx + s * 1.2,
+        c.dy - s * 0.2,
+        c.dx,
+        c.dy + s * 0.75,
+      )
       ..close();
     canvas.drawPath(p, paint);
   }
@@ -228,7 +247,11 @@ class _WeavePainter extends CustomPainter {
     // Диагональ в одну сторону: перекрестие даёт клетку, а она уже спорит с
     // прямоугольными пузырями.
     for (double x = -size.height; x < size.width + size.height; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x + size.height, size.height), paint);
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x + size.height, size.height),
+        paint,
+      );
     }
   }
 
@@ -322,7 +345,9 @@ class _NightPainter extends CustomPainter {
         Offset(x, y),
         r,
         Paint()
-          ..color = cs.onSurface.withValues(alpha: 0.05 + rnd.nextDouble() * 0.07),
+          ..color = cs.onSurface.withValues(
+            alpha: 0.05 + rnd.nextDouble() * 0.07,
+          ),
       );
     }
   }

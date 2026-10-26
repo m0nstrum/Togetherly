@@ -72,8 +72,11 @@ class _PixelSizeScreenState extends State<PixelSizeScreen> {
                   child: SizedBox(
                     width: 42,
                     height: 42,
-                    child: Icon(Icons.arrow_back_rounded,
-                        size: 20, color: t.textPrimary),
+                    child: Icon(
+                      Icons.arrow_back_rounded,
+                      size: 20,
+                      color: t.textPrimary,
+                    ),
                   ),
                 ),
               ),
@@ -116,9 +119,7 @@ class _PixelSizeScreenState extends State<PixelSizeScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  for (final p in _presets) _preset(t, p.$1, p.$2),
-                ],
+                children: [for (final p in _presets) _preset(t, p.$1, p.$2)],
               ),
               const SizedBox(height: 18),
               Expanded(child: _preview(t, g)),

@@ -11,22 +11,22 @@ import 'package:love_app/models/vessel_sharing.dart';
 final _day = DateTime(2026, 8, 1);
 
 VesselDay _full() => VesselDay(
-      date: _day,
-      mineMood: const Color(0xFFFF7E8B),
-      partnerMood: const Color(0xFF4CC38A),
-      chatted: true,
-      intimacy: true,
-      period: true,
-      partnerPeriod: true,
-      memories: const [MemoryType.photo, MemoryType.music],
-    );
+  date: _day,
+  mineMood: const Color(0xFFFF7E8B),
+  partnerMood: const Color(0xFF4CC38A),
+  chatted: true,
+  intimacy: true,
+  period: true,
+  partnerPeriod: true,
+  memories: const [MemoryType.photo, MemoryType.music],
+);
 
 void main() {
   test('снятая галочка убирает свой этаж', () {
-    final out = vesselForSharing([_full()], show: {
-      VesselFloor.mine,
-      VesselFloor.partner,
-    });
+    final out = vesselForSharing(
+      [_full()],
+      show: {VesselFloor.mine, VesselFloor.partner},
+    );
     final d = out.single;
     expect(d.mineMood, isNotNull);
     expect(d.partnerMood, isNotNull);

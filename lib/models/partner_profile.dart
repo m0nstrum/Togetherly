@@ -117,17 +117,17 @@ DateTime? _memoDate(Object? raw) {
 String _memoText(Object? raw) => (raw ?? '').toString().trim();
 
 GiftMemo _memoOf(Map<String, dynamic> r) => GiftMemo(
-      giftKey: (r['gift_key'] ?? '').toString(),
-      sentAt: _memoDate(r['created']),
-      senderUid: _memoText(r['sender_uid']),
-      note: _memoText(r['note']),
-      photo: _memoText(r['photo']),
-      sound: SoundClip.fromGiftRecord(r),
-      reply: _memoText(r['reply']),
-      place: _memoText(r['place']),
-      date: _memoDate(r['date']),
-      state: _memoText(r['state']),
-    );
+  giftKey: (r['gift_key'] ?? '').toString(),
+  sentAt: _memoDate(r['created']),
+  senderUid: _memoText(r['sender_uid']),
+  note: _memoText(r['note']),
+  photo: _memoText(r['photo']),
+  sound: SoundClip.fromGiftRecord(r),
+  reply: _memoText(r['reply']),
+  place: _memoText(r['place']),
+  date: _memoDate(r['date']),
+  state: _memoText(r['state']),
+);
 
 /// Все полученные подарки одного вида — свежие сверху.
 ///

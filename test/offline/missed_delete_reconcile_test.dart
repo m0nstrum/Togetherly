@@ -16,13 +16,13 @@ void main() {
   late LocalStore store;
 
   RecordModel memory(String id, {required String group}) => RecordModel({
-        'id': id,
-        'collectionName': 'memories',
-        'group_id': group,
-        'deleted': false,
-        'created_at': '2026-08-19 07:00:00.000Z',
-        'updated': '2026-08-19 07:00:00.000Z',
-      });
+    'id': id,
+    'collectionName': 'memories',
+    'group_id': group,
+    'deleted': false,
+    'created_at': '2026-08-19 07:00:00.000Z',
+    'updated': '2026-08-19 07:00:00.000Z',
+  });
 
   setUp(() async {
     store = LocalStore.instance;
@@ -55,8 +55,12 @@ void main() {
     await store.upsert('memories', memory('mine', group: 'g1'));
 
     // Записи ещё нет на сервере: она лежит в очереди отправки.
-    await store.reconcileScope('memories', scope, const [],
-        protectIds: {'mine'});
+    await store.reconcileScope(
+      'memories',
+      scope,
+      const [],
+      protectIds: {'mine'},
+    );
 
     expect(await store.getRecord('memories', 'mine'), isNotNull);
   });

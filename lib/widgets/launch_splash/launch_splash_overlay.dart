@@ -69,7 +69,11 @@ class _LaunchSplashOverlayState extends State<LaunchSplashOverlay> {
         if (ready != null)
           Positioned.fill(
             child: AbsorbPointer(
-              child: LaunchSplashView(splash: ready.splash, images: ready.images, onDone: _finish),
+              child: LaunchSplashView(
+                splash: ready.splash,
+                images: ready.images,
+                onDone: _finish,
+              ),
             ),
           ),
       ],

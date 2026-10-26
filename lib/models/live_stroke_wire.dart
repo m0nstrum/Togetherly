@@ -45,24 +45,24 @@ class LiveStrokeMeta {
   final StrokeBrush brush;
 
   Map<String, dynamic> toMap() => {
-        'colorValue': colorValue,
-        'strokeWidth': strokeWidth,
-        'isEraser': isEraser,
-        'isFilledShape': isFilledShape,
-        if (shapeType != null) 'shapeType': shapeType!.name,
-        if (layer != null) 'layer': layer,
-        if (brush != StrokeBrush.pen) 'brush': brush.name,
-      };
+    'colorValue': colorValue,
+    'strokeWidth': strokeWidth,
+    'isEraser': isEraser,
+    'isFilledShape': isFilledShape,
+    if (shapeType != null) 'shapeType': shapeType!.name,
+    if (layer != null) 'layer': layer,
+    if (brush != StrokeBrush.pen) 'brush': brush.name,
+  };
 
   static LiveStrokeMeta fromMap(Map<String, dynamic> m) => LiveStrokeMeta(
-        colorValue: (m['colorValue'] as num?)?.toInt() ?? 0xFF000000,
-        strokeWidth: (m['strokeWidth'] as num?)?.toDouble() ?? 4.0,
-        isEraser: m['isEraser'] == true,
-        isFilledShape: m['isFilledShape'] == true,
-        shapeType: parseShapeType(m['shapeType'] as String?),
-        layer: (m['layer'] as num?)?.toInt(),
-        brush: parseStrokeBrush(m['brush'] as String?),
-      );
+    colorValue: (m['colorValue'] as num?)?.toInt() ?? 0xFF000000,
+    strokeWidth: (m['strokeWidth'] as num?)?.toDouble() ?? 4.0,
+    isEraser: m['isEraser'] == true,
+    isFilledShape: m['isFilledShape'] == true,
+    shapeType: parseShapeType(m['shapeType'] as String?),
+    layer: (m['layer'] as num?)?.toInt(),
+    brush: parseStrokeBrush(m['brush'] as String?),
+  );
 }
 
 /// Сборка пакетов. Мета едет в каждом: она стоит полсотни байт, а без неё
@@ -76,29 +76,27 @@ class LiveStrokeWire {
     required int from,
     required List<DrawPoint> points,
     required LiveStrokeMeta meta,
-  }) =>
-      {
-        ...meta.toMap(),
-        'sid': sid,
-        'seq': seq,
-        'from': from,
-        'pts': points.map((p) => p.toMap()).toList(),
-        'ts': _now(),
-      };
+  }) => {
+    ...meta.toMap(),
+    'sid': sid,
+    'seq': seq,
+    'from': from,
+    'pts': points.map((p) => p.toMap()).toList(),
+    'ts': _now(),
+  };
 
   static Map<String, dynamic> keyframe({
     required String sid,
     required int seq,
     required List<DrawPoint> points,
     required LiveStrokeMeta meta,
-  }) =>
-      {
-        ...meta.toMap(),
-        'sid': sid,
-        'seq': seq,
-        'points': points.map((p) => p.toMap()).toList(),
-        'ts': _now(),
-      };
+  }) => {
+    ...meta.toMap(),
+    'sid': sid,
+    'seq': seq,
+    'points': points.map((p) => p.toMap()).toList(),
+    'ts': _now(),
+  };
 
   static Map<String, dynamic> done({
     required String sid,
@@ -106,16 +104,15 @@ class LiveStrokeWire {
     required List<DrawPoint> points,
     required LiveStrokeMeta meta,
     required int orderIndex,
-  }) =>
-      {
-        ...meta.toMap(),
-        'sid': sid,
-        'seq': seq,
-        'points': points.map((p) => p.toMap()).toList(),
-        'orderIndex': orderIndex,
-        'done': true,
-        'ts': _now(),
-      };
+  }) => {
+    ...meta.toMap(),
+    'sid': sid,
+    'seq': seq,
+    'points': points.map((p) => p.toMap()).toList(),
+    'orderIndex': orderIndex,
+    'done': true,
+    'ts': _now(),
+  };
 
   static int _now() => DateTime.now().millisecondsSinceEpoch;
 }

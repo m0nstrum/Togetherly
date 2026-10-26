@@ -76,7 +76,8 @@ class DailyTaskService extends ChangeNotifier {
       final raw = prefs.getString('$_prefsKey:$_groupId');
       if (raw == null || raw.isEmpty) return;
       final local = DailyTaskProgress.fromMap(
-          Map<String, dynamic>.from(jsonDecode(raw) as Map));
+        Map<String, dynamic>.from(jsonDecode(raw) as Map),
+      );
       // Серверный прогресс главнее: у партнёра могли закрыться другие задания.
       if (_progress.doneOn(DateTime.now()).isEmpty) {
         _progress = local;
@@ -92,7 +93,9 @@ class DailyTaskService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
-          '$_prefsKey:$_groupId', jsonEncode(_progress.toMap()));
+        '$_prefsKey:$_groupId',
+        jsonEncode(_progress.toMap()),
+      );
     } catch (e) {
       debugPrint('DailyTaskService._saveLocal failed: $e');
     }
@@ -131,8 +134,10 @@ class DailyTaskService extends ChangeNotifier {
   /// [fromTaskId] — задание, из которого открыли форму. Оно главнее типа: к
   /// ответу на «Чем ты восхищаешься в {p}?» человек прикладывает снимок, и пин
   /// становится `photo`, а текстовое задание оставалось незакрытым.
-  Future<DailyTask?> onMemoryCreated(MemoryType type,
-      {String? fromTaskId}) async {
+  Future<DailyTask?> onMemoryCreated(
+    MemoryType type, {
+    String? fromTaskId,
+  }) async {
     if (_groupId.isEmpty) return null;
     final now = DateTime.now();
     final extra = bonus;
@@ -149,9 +154,9 @@ class DailyTaskService extends ChangeNotifier {
     notifyListeners();
 
     unawaited(_saveLocal());
-    unawaited(_data.updateGroupFields(_groupId, {
-      'daily_tasks': _progress.toMap(),
-    }));
+    unawaited(
+      _data.updateGroupFields(_groupId, {'daily_tasks': _progress.toMap()}),
+    );
     // Бонус монеты не просит: сервер платит максимум за три задания в сутки,
     // а четвёртый запрос только отбился бы отказом.
     if (closedId != extra?.id) {

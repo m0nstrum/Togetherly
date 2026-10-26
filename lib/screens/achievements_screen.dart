@@ -49,8 +49,9 @@ class AchievementsScreen extends StatelessWidget {
         body: ValueListenableBuilder<AchievementStats>(
           valueListenable: AchievementService.instance.stats,
           builder: (context, stats, _) {
-            final unlocked =
-                PairAchievement.all.where((a) => a.isUnlockedBy(stats)).length;
+            final unlocked = PairAchievement.all
+                .where((a) => a.isUnlockedBy(stats))
+                .length;
             return ListView(
               padding: EdgeInsets.fromLTRB(
                 16,
@@ -80,12 +81,12 @@ class AchievementsScreen extends StatelessWidget {
   }
 
   String _metricTitle(AppStrings s, AchievementMetric m) => switch (m) {
-        AchievementMetric.daysTogether => s.achMetricDays,
-        AchievementMetric.memories => s.achMetricMemories,
-        AchievementMetric.messages => s.achMetricMessages,
-        AchievementMetric.drawings => s.achMetricDrawings,
-        AchievementMetric.streakDays => s.achMetricStreak,
-      };
+    AchievementMetric.daysTogether => s.achMetricDays,
+    AchievementMetric.memories => s.achMetricMemories,
+    AchievementMetric.messages => s.achMetricMessages,
+    AchievementMetric.drawings => s.achMetricDrawings,
+    AchievementMetric.streakDays => s.achMetricStreak,
+  };
 
   /// Сводка — сплошной цвет темы. `primaryContainer` тут не годится: у палитр,
   /// нарисованных руками, он почти равен фону страницы, и блок пропадает.

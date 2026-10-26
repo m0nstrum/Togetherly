@@ -54,7 +54,9 @@ Widget _header(AppTheme theme, {required String status}) {
           isPaired: true,
           myAvatarUrl: '',
           myDisplayName: 'Саша',
-          partners: const [GroupMember(uid: 'p1', name: 'Кристина', avatar: '')],
+          partners: const [
+            GroupMember(uid: 'p1', name: 'Кристина', avatar: ''),
+          ],
           myMood: const MemberMood(),
           moodOf: (_) => const MemberMood(),
           statusBadgeText: status,
@@ -66,8 +68,12 @@ Widget _header(AppTheme theme, {required String status}) {
   );
 }
 
-Future<void> _shoot(WidgetTester tester, Widget child, String name,
-    {Size size = _narrow}) async {
+Future<void> _shoot(
+  WidgetTester tester,
+  Widget child,
+  String name, {
+  Size size = _narrow,
+}) async {
   tester.view.physicalSize = size * 3;
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -135,8 +141,10 @@ void main() {
     );
     await tester.pump();
     expect(tester.takeException(), isNull);
-    expect(tester.getSize(find.byType(MissYouButton)).height,
-        kHeaderControlHeight);
+    expect(
+      tester.getSize(find.byType(MissYouButton)).height,
+      kHeaderControlHeight,
+    );
   });
 
   testWidgets('снимок: светлая тема', (tester) async {
@@ -149,8 +157,12 @@ void main() {
 
   testWidgets('снимок: обычный телефон, оба счёта', (tester) async {
     // 412 dp — типичный экран. Здесь в пилюле помещается «моё / партнёра».
-    await _shoot(tester, _header(light, status: 'Встречаемся'), 'wide',
-        size: const Size(412, 120));
+    await _shoot(
+      tester,
+      _header(light, status: 'Встречаемся'),
+      'wide',
+      size: const Size(412, 120),
+    );
   });
 
   testWidgets('на узком экране «Встречаемся» не режется', (tester) async {
@@ -169,7 +181,9 @@ void main() {
     // оно тогда, когда отведённого МЕНЬШЕ собственной ширины — это и проверяем.
     expect(
       text.size.width,
-      greaterThanOrEqualTo(text.getMaxIntrinsicWidth(kHeaderControlHeight) - 0.5),
+      greaterThanOrEqualTo(
+        text.getMaxIntrinsicWidth(kHeaderControlHeight) - 0.5,
+      ),
       reason: 'слово не помещается и будет обрезано',
     );
   });

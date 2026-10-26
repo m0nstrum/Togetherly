@@ -41,7 +41,7 @@ MusicSource musicSourceOf(String? url) {
       lower.contains('vk.ru/music')) {
     name = 'VK Музыка';
   }
-  final external = name != null ||
-      (lower.startsWith('http') && !lower.contains('firebase'));
+  final external =
+      name != null || (lower.startsWith('http') && !lower.contains('firebase'));
   return MusicSource(name: name, external: external, playable: true);
 }

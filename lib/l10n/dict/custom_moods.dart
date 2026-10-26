@@ -222,13 +222,20 @@ const Map<String, Map<String, String>> customMoodsStrings = {
     'de': 'Euer eigenes Set',
   },
   'customMoodEmptyText': {
-    'ru': 'Эмодзи, фото или рисунок с вашей подписью. Набор общий: партнёр видит его и выбирает из него.',
-    'en': 'An emoji, a photo or a drawing with your caption. The set is shared: your partner sees it and picks from it too.',
-    'pt': 'Um emoji, uma foto ou um desenho com a sua legenda. O conjunto é dos dois: seu par também vê e escolhe nele.',
-    'it': 'Un’emoji, una foto o un disegno con la tua didascalia. Il set è condiviso: anche il tuo partner lo vede e ci sceglie.',
-    'es': 'Un emoji, una foto o un dibujo con tu texto. El conjunto es compartido: tu pareja también lo ve y elige de él.',
-    'fr': 'Un emoji, une photo ou un dessin avec ta légende. Le jeu est partagé : ton partenaire le voit et y choisit aussi.',
-    'de': 'Ein Emoji, ein Foto oder eine Zeichnung mit deinem Namen dafür. Das Set teilt ihr euch: Dein Partner sieht es und wählt auch daraus.',
+    'ru':
+        'Эмодзи, фото или рисунок с вашей подписью. Набор общий: партнёр видит его и выбирает из него.',
+    'en':
+        'An emoji, a photo or a drawing with your caption. The set is shared: your partner sees it and picks from it too.',
+    'pt':
+        'Um emoji, uma foto ou um desenho com a sua legenda. O conjunto é dos dois: seu par também vê e escolhe nele.',
+    'it':
+        'Un’emoji, una foto o un disegno con la tua didascalia. Il set è condiviso: anche il tuo partner lo vede e ci sceglie.',
+    'es':
+        'Un emoji, una foto o un dibujo con tu texto. El conjunto es compartido: tu pareja también lo ve y elige de él.',
+    'fr':
+        'Un emoji, une photo ou un dessin avec ta légende. Le jeu est partagé : ton partenaire le voit et y choisit aussi.',
+    'de':
+        'Ein Emoji, ein Foto oder eine Zeichnung mit deinem Namen dafür. Das Set teilt ihr euch: Dein Partner sieht es und wählt auch daraus.',
   },
   'customMoodCreate': {
     'ru': 'Создать настроение',
@@ -249,13 +256,20 @@ const Map<String, Map<String, String>> customMoodsStrings = {
     'de': 'Eigene Stimmungen',
   },
   'customMoodTeaserText': {
-    'ru': 'Эмодзи, фото или рисунок с вашей подписью. Заводит тот, у кого Togetherly+, а выбирают оба.',
-    'en': 'An emoji, a photo or a drawing with your caption. Whoever has Togetherly+ creates them, and you both pick from them.',
-    'pt': 'Um emoji, uma foto ou um desenho com a sua legenda. Quem tem Togetherly+ cria, e os dois escolhem.',
-    'it': 'Un’emoji, una foto o un disegno con la tua didascalia. Li crea chi ha Togetherly+, li scegliete tutti e due.',
-    'es': 'Un emoji, una foto o un dibujo con tu texto. Los crea quien tiene Togetherly+ y los elegís los dos.',
-    'fr': 'Un emoji, une photo ou un dessin avec ta légende. Celui qui a Togetherly+ les crée, et vous choisissez tous les deux.',
-    'de': 'Ein Emoji, ein Foto oder eine Zeichnung mit deinem Namen dafür. Anlegen kann, wer Togetherly+ hat, auswählen könnt ihr beide.',
+    'ru':
+        'Эмодзи, фото или рисунок с вашей подписью. Заводит тот, у кого Togetherly+, а выбирают оба.',
+    'en':
+        'An emoji, a photo or a drawing with your caption. Whoever has Togetherly+ creates them, and you both pick from them.',
+    'pt':
+        'Um emoji, uma foto ou um desenho com a sua legenda. Quem tem Togetherly+ cria, e os dois escolhem.',
+    'it':
+        'Un’emoji, una foto o un disegno con la tua didascalia. Li crea chi ha Togetherly+, li scegliete tutti e due.',
+    'es':
+        'Un emoji, una foto o un dibujo con tu texto. Los crea quien tiene Togetherly+ y los elegís los dos.',
+    'fr':
+        'Un emoji, une photo ou un dessin avec ta légende. Celui qui a Togetherly+ les crée, et vous choisissez tous les deux.',
+    'de':
+        'Ein Emoji, ein Foto oder eine Zeichnung mit deinem Namen dafür. Anlegen kann, wer Togetherly+ hat, auswählen könnt ihr beide.',
   },
   'customMoodUnlock': {
     'ru': 'Открыть с Togetherly+',
@@ -317,8 +331,10 @@ const Map<String, Map<String, String>> customMoodsStrings = {
     'pt': 'Só quem criou este humor pode editar ou remover.',
     'it': 'Solo chi ha creato questo umore può modificarlo o toglierlo.',
     'es': 'Solo quien creó este ánimo puede editarlo o quitarlo.',
-    'fr': 'Seule la personne qui a créé cette humeur peut la modifier ou la retirer.',
-    'de': 'Nur wer diese Stimmung angelegt hat, kann sie bearbeiten oder entfernen.',
+    'fr':
+        'Seule la personne qui a créé cette humeur peut la modifier ou la retirer.',
+    'de':
+        'Nur wer diese Stimmung angelegt hat, kann sie bearbeiten oder entfernen.',
   },
   'customMoodRemoveFailed': {
     'ru': 'Не получилось убрать',

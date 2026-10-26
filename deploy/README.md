@@ -77,7 +77,7 @@ NAT облака) — допишите coturn `--external-ip` и откройт�
 { "PB_URL": "https://tethered.example.org" }
 ```
 
-(`env/<name>.local.json`, см. [docs/fork/README.md](../docs/fork/README.md)).
+(`env/<name>.local.json`, см. [docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md)).
 `CENTRIFUGO_WS` по умолчанию — `wss://<домен>/connection/websocket`, как и
 маршрутизирует Caddy.
 
@@ -115,7 +115,7 @@ Centrifugo — Android с энергосбережением его убивае
    новый проект (Google Analytics — выключить).
 2. Добавить Android-приложение `io.github.m0nstrum.tethered` (SHA-1 не
    нужен) и скачать `google-services.json` — его содержимое в секрет
-   `GOOGLE_SERVICES_JSON` репозитория (docs/fork/README.md), пересобрать APK.
+   `GOOGLE_SERVICES_JSON` репозитория (docs/DEVELOPMENT.md), пересобрать APK.
 3. Project settings → Service accounts → Generate new private key: файл
    положить в `deploy/secrets/fcm-service-account.json`, в `.env` —
    `FCM_CREDENTIALS_FILE=/secrets/fcm-service-account.json`,
@@ -137,6 +137,17 @@ Caddy: пускает только по входу в приложение и т
 Учтите: трафик роликов идёт через ваш VPS, а в РФ это может подпадать под
 запрет средств обхода блокировок (149-ФЗ, ст. 15.8). По умолчанию выключено.
 Проверьте на деле, отдаёт ли YouTube ролики IP вашего дата-центра.
+
+## Приглашения по ссылке
+
+Ссылка `https://<домен>/invite/<код>` открывает страницу с кодом и сразу
+пробует приложение (`tethered://invite/<код>`). Куда вести тех, у кого
+приложения нет, задают `INVITE_PLAY_URL`, `INVITE_RUSTORE_URL`,
+`INVITE_APK_URL` в `.env` — пустые кнопки не показываются. Чтобы ссылка
+открывала приложение без страницы (App Links), укажите отпечатки подписи APK
+в `INVITE_ANDROID_FINGERPRINTS` (через запятую, `keytool -list -v -keystore …`);
+для iOS — `INVITE_IOS_APP_ID` вида `TeamID.BundleID`. Без них файлы
+`/.well-known/assetlinks.json` и `apple-app-site-association` не раздаются.
 
 ## Бэкапы
 

@@ -139,11 +139,8 @@ CanvasBackgroundSpec specOf(CanvasBackground bg) =>
 
 String backgroundToStorage(CanvasBackground bg) => bg.name;
 
-CanvasBackground backgroundFromStorage(String? raw) =>
-    CanvasBackground.values.firstWhere(
-      (b) => b.name == raw,
-      orElse: () => CanvasBackground.plain,
-    );
+CanvasBackground backgroundFromStorage(String? raw) => CanvasBackground.values
+    .firstWhere((b) => b.name == raw, orElse: () => CanvasBackground.plain);
 
 /// Рисует фон холста.
 ///

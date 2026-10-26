@@ -67,7 +67,9 @@ class CanvasWidgetService {
   Future<bool> pinToHomeScreen(String canvasId, {String size = '2x3'}) async {
     if (!Platform.isAndroid) return false;
     try {
-      final ok = await _channel.invokeMethod<bool>('pinCanvasWidget', {'size': size});
+      final ok = await _channel.invokeMethod<bool>('pinCanvasWidget', {
+        'size': size,
+      });
       return ok ?? false;
     } catch (e) {
       debugPrint('CanvasWidgetService: закрепление не вышло — $e');
@@ -98,8 +100,8 @@ class CanvasWidgetService {
     final wanted = activeId?.isNotEmpty == true
         ? activeId!
         : (pinned.isNotEmpty && picked.any((c) => c.id == pinned)
-            ? pinned
-            : picked.first.id);
+              ? pinned
+              : picked.first.id);
     final active = wanted;
     final signature = [
       groupId,
@@ -109,7 +111,9 @@ class CanvasWidgetService {
     if (!force && signature == _lastSignature) return;
 
     try {
-      final dir = Directory('${(await getApplicationSupportDirectory()).path}/$_dirName');
+      final dir = Directory(
+        '${(await getApplicationSupportDirectory()).path}/$_dirName',
+      );
       dir.createSync(recursive: true);
       final rev = DateTime.now().millisecondsSinceEpoch;
 
@@ -118,16 +122,22 @@ class CanvasWidgetService {
       final deadline = DateTime.now().add(const Duration(seconds: 10));
       final items = <CanvasWidgetItem>[];
       for (final meta in picked) {
-        final png = await _render(meta, await strokesOf(meta), deadline: deadline);
+        final png = await _render(
+          meta,
+          await strokesOf(meta),
+          deadline: deadline,
+        );
         if (png == null) continue;
         final file = File('${dir.path}/canvas_${_safe(meta.id)}_$rev.png');
         await file.writeAsBytes(png, flush: true);
-        items.add(CanvasWidgetItem(
-          id: meta.id,
-          name: meta.name,
-          path: file.path,
-          updatedMs: meta.updatedAt.millisecondsSinceEpoch,
-        ));
+        items.add(
+          CanvasWidgetItem(
+            id: meta.id,
+            name: meta.name,
+            path: file.path,
+            updatedMs: meta.updatedAt.millisecondsSinceEpoch,
+          ),
+        );
       }
       if (items.isEmpty) return;
 

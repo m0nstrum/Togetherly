@@ -36,18 +36,23 @@ Future<void> _font(String family, String path) async {
 /// Кадры из сборки грузятся настоящим вводом-выводом: даём ему пройти.
 Future<void> _loadImages(WidgetTester tester) async {
   for (var i = 0; i < 3; i++) {
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
     await tester.pump(const Duration(milliseconds: 400));
   }
 }
 
 Future<void> _shoot(WidgetTester tester, GlobalKey key, String name) async {
   await tester.runAsync(() async {
-    final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final img = await boundary.toImage(pixelRatio: 2);
     final png = await img.toByteData(format: ui.ImageByteFormat.png);
     Directory('build/achievements').createSync(recursive: true);
-    File('build/achievements/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
+    File(
+      'build/achievements/$name.png',
+    ).writeAsBytesSync(png!.buffer.asUint8List());
   });
 }
 
@@ -65,16 +70,16 @@ void main() {
   tearDown(AchievementUnlock.debugReset);
 
   Widget app(AppTheme theme, GlobalKey key, Widget home) => RepaintBoundary(
-        key: key,
-        child: ThemeScope(
-          theme: theme,
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: ProfileTheme.data(ProfileTheme.schemeFor(theme)),
-            home: home,
-          ),
-        ),
-      );
+    key: key,
+    child: ThemeScope(
+      theme: theme,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ProfileTheme.data(ProfileTheme.schemeFor(theme)),
+        home: home,
+      ),
+    ),
+  );
 
   void screen(WidgetTester tester, Size size, [double scale = 1]) {
     tester.view.devicePixelRatio = 2;
@@ -95,7 +100,9 @@ void main() {
       screen(tester, const Size(360, 1500));
       AchievementService.instance.stats.value = _stats;
       final key = GlobalKey();
-      await tester.pumpWidget(app(theme, key, AchievementsScreen(theme: theme)));
+      await tester.pumpWidget(
+        app(theme, key, AchievementsScreen(theme: theme)),
+      );
       await _loadImages(tester);
       await _shoot(tester, key, 'shelves-$name');
     });
@@ -103,26 +110,28 @@ void main() {
     testWidgets('лист $name', (tester) async {
       screen(tester, const Size(360, 760));
       final key = GlobalKey();
-      await tester.pumpWidget(app(
-        theme,
-        key,
-        Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: TextButton(
-                onPressed: () => showAchievementSheet(
-                  context,
-                  PairAchievement.byId('streak_7')!,
-                  stats: _stats,
-                  fresh: true,
-                  onSeeAll: () {},
+      await tester.pumpWidget(
+        app(
+          theme,
+          key,
+          Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () => showAchievementSheet(
+                    context,
+                    PairAchievement.byId('streak_7')!,
+                    stats: _stats,
+                    fresh: true,
+                    onSeeAll: () {},
+                  ),
+                  child: const Text('лист'),
                 ),
-                child: const Text('лист'),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.text('лист'));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(seconds: 2));
@@ -135,23 +144,25 @@ void main() {
     screen(tester, const Size(320, 640), 1.3);
     final theme = buildAppTheme(kPalettes[0], Brightness.light);
     final key = GlobalKey();
-    await tester.pumpWidget(app(
-      theme,
-      key,
-      Scaffold(
-        backgroundColor: ProfileTheme.schemeFor(theme).surfaceContainerHigh,
-        body: Align(
-          alignment: Alignment.bottomCenter,
-          child: AchievementSheetBody(
-            achievement: PairAchievement.byId('messages_25')!,
-            stats: _stats,
-            fresh: true,
-            position: 2,
-            total: 3,
+    await tester.pumpWidget(
+      app(
+        theme,
+        key,
+        Scaffold(
+          backgroundColor: ProfileTheme.schemeFor(theme).surfaceContainerHigh,
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: AchievementSheetBody(
+              achievement: PairAchievement.byId('messages_25')!,
+              stats: _stats,
+              fresh: true,
+              position: 2,
+              total: 3,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump(const Duration(seconds: 2));
     await _loadImages(tester);
     await _shoot(tester, key, 'sheet-320-13');
@@ -161,25 +172,27 @@ void main() {
     screen(tester, const Size(360, 300));
     final theme = buildAppTheme(kPalettes[0], Brightness.light);
     final key = GlobalKey();
-    await tester.pumpWidget(app(
-      theme,
-      key,
-      Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: TextButton(
-              onPressed: () => AchievementUnlock.show(
-                context,
-                PairAchievement.byId('messages_100')!,
-                homeOnTop: () => false,
-                stats: () => _stats,
+    await tester.pumpWidget(
+      app(
+        theme,
+        key,
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => AchievementUnlock.show(
+                  context,
+                  PairAchievement.byId('messages_100')!,
+                  homeOnTop: () => false,
+                  stats: () => _stats,
+                ),
+                child: const Text('островок'),
               ),
-              child: const Text('островок'),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('островок'));
     for (var i = 0; i < 8; i++) {
       await tester.pump(const Duration(milliseconds: 150));

@@ -10,9 +10,9 @@ import '../services/pocketbase_service.dart';
 import 'invite_code_state.dart';
 import 'relationship_status.dart';
 import 'waiting_state.dart';
-import '../fork/identity.dart'; // fork
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/identity.dart';
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 
 /// Пора ли выходить из группы, где кроме меня никого не осталось.
 ///
@@ -25,8 +25,7 @@ bool shouldLeaveOrphanGroup({
   required bool isPaired,
   required int partnersCount,
   required bool waitingMode,
-}) =>
-    isPaired && partnersCount == 0 && !waitingMode;
+}) => isPaired && partnersCount == 0 && !waitingMode;
 
 /// Правда ли, что меня выкинули из группы.
 ///
@@ -186,9 +185,11 @@ class Connection {
   String placeholderName = '';
   String placeholderAvatar = '';
   DateTime? returnDate;
+
   /// Постоянный код второго места. Не протухает: человек может вернуться и
   /// через два года.
   String claimToken = '';
+
   /// Заявка на второе место, которую надо подтвердить («это он?»).
   String claimUid = '';
   String claimName = '';
@@ -253,11 +254,13 @@ class Connection {
   /// 18–19 августа 2026 на такую ссылку зашли 30 раз с настоящих устройств —
   /// жалоба звучала как «партнёр не может перейти по пригласительной ссылке».
   String get inviteLink => Endpoints.current.inviteLink(
-      inviteCode, fragment: ForkE2E.inviteFragment(inviteCode)); // fork
+    inviteCode,
+    fragment: ForkE2E.inviteFragment(inviteCode),
+  );
 
   /// Прямой deep link без веб-хоста (для QR).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.
-  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode); // fork
+  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode);
 
   /// Max members allowed — always 2 (couples only)
   int get maxMembers => 2;
@@ -373,10 +376,18 @@ class Connection {
       'updatedAt': DateTime.now().toIso8601String(),
     };
     // Offline-first: оптимистично в кэш группы + в очередь (досыл при сети).
-    await LocalStore.instance
-        .patchRecordMapEntry('groups', pairId, 'member_moods', myUid, mood);
-    await OutboxService.instance.enqueue(
-        'groupSetMemberMood', {'groupId': pairId, 'uid': myUid, 'mood': mood});
+    await LocalStore.instance.patchRecordMapEntry(
+      'groups',
+      pairId,
+      'member_moods',
+      myUid,
+      mood,
+    );
+    await OutboxService.instance.enqueue('groupSetMemberMood', {
+      'groupId': pairId,
+      'uid': myUid,
+      'mood': mood,
+    });
   }
 
   /// Clear my mood
@@ -384,10 +395,18 @@ class Connection {
     if (pairId.isEmpty) return;
     memberMoods.remove(_uid);
     onChanged?.call();
-    await LocalStore.instance
-        .patchRecordMapEntry('groups', pairId, 'member_moods', _uid, null);
-    await OutboxService.instance.enqueue(
-        'groupSetMemberMood', {'groupId': pairId, 'uid': _uid, 'mood': null});
+    await LocalStore.instance.patchRecordMapEntry(
+      'groups',
+      pairId,
+      'member_moods',
+      _uid,
+      null,
+    );
+    await OutboxService.instance.enqueue('groupSetMemberMood', {
+      'groupId': pairId,
+      'uid': _uid,
+      'mood': null,
+    });
   }
 
   /// Моё самочувствие (актуальное).
@@ -431,9 +450,17 @@ class Connection {
       'updatedAt': DateTime.now().toIso8601String(),
     };
     await LocalStore.instance.patchRecordMapEntry(
-        'groups', pairId, 'member_ailments', myUid, ailment);
-    await OutboxService.instance.enqueue('groupSetMemberAilment',
-        {'groupId': pairId, 'uid': myUid, 'ailment': ailment});
+      'groups',
+      pairId,
+      'member_ailments',
+      myUid,
+      ailment,
+    );
+    await OutboxService.instance.enqueue('groupSetMemberAilment', {
+      'groupId': pairId,
+      'uid': myUid,
+      'ailment': ailment,
+    });
   }
 
   /// Снять своё самочувствие («Здоров(а)»).
@@ -441,10 +468,18 @@ class Connection {
     if (pairId.isEmpty) return;
     memberAilments.remove(_uid);
     onChanged?.call();
-    await LocalStore.instance
-        .patchRecordMapEntry('groups', pairId, 'member_ailments', _uid, null);
-    await OutboxService.instance.enqueue('groupSetMemberAilment',
-        {'groupId': pairId, 'uid': _uid, 'ailment': null});
+    await LocalStore.instance.patchRecordMapEntry(
+      'groups',
+      pairId,
+      'member_ailments',
+      _uid,
+      null,
+    );
+    await OutboxService.instance.enqueue('groupSetMemberAilment', {
+      'groupId': pairId,
+      'uid': _uid,
+      'ailment': null,
+    });
   }
 
   void setRelationshipType(
@@ -540,10 +575,13 @@ class Connection {
     currentStatus = status;
     onChanged?.call();
     final json = status.toJson();
-    await LocalStore.instance
-        .patchRecordFields('groups', pairId, {'current_status': json});
-    await OutboxService.instance
-        .enqueue('groupSetStatus', {'groupId': pairId, 'status': json});
+    await LocalStore.instance.patchRecordFields('groups', pairId, {
+      'current_status': json,
+    });
+    await OutboxService.instance.enqueue('groupSetStatus', {
+      'groupId': pairId,
+      'status': json,
+    });
   }
 
   /// Clear the current relationship status
@@ -551,10 +589,13 @@ class Connection {
     if (pairId.isEmpty) return;
     currentStatus = null;
     onChanged?.call();
-    await LocalStore.instance
-        .patchRecordFields('groups', pairId, {'current_status': null});
-    await OutboxService.instance
-        .enqueue('groupSetStatus', {'groupId': pairId, 'status': null});
+    await LocalStore.instance.patchRecordFields('groups', pairId, {
+      'current_status': null,
+    });
+    await OutboxService.instance.enqueue('groupSetStatus', {
+      'groupId': pairId,
+      'status': null,
+    });
   }
 
   /// Add a new custom status
@@ -595,7 +636,10 @@ class Connection {
     }
 
     onChanged?.call();
-    await PbDataService().addOrUpdateCustomStatus(pairId, updatedStatus.toJson());
+    await PbDataService().addOrUpdateCustomStatus(
+      pairId,
+      updatedStatus.toJson(),
+    );
   }
 
   /// Delete a custom status
@@ -708,8 +752,10 @@ class Connection {
   Future<void> ensureInviteCodeIsReal() async {
     if (inviteCode.isEmpty || _uid.isEmpty) return;
     final checked = inviteCode;
-    final mine =
-        await PbDataService().inviteCodeIsMine(checked, ownerUid: _uid);
+    final mine = await PbDataService().inviteCodeIsMine(
+      checked,
+      ownerUid: _uid,
+    );
     if (mine != false) return;
     debugPrint('Connection: код $checked на сервере не найден — перевыпуск');
     // Прежний код на сервере не живёт, сносить там нечего.
@@ -720,8 +766,11 @@ class Connection {
     // Пока шла сверка, код мог смениться (перевыпуск кнопкой): свежий не
     // трогаем.
     if (inviteCode != checked) return;
-    inviteCode =
-        codeAfterServerCheck(current: checked, mine: mine, fresh: fresh);
+    inviteCode = codeAfterServerCheck(
+      current: checked,
+      mine: mine,
+      fresh: fresh,
+    );
     onChanged?.call();
   }
 
@@ -736,15 +785,14 @@ class Connection {
     required String current,
     required bool? mine,
     required String fresh,
-  }) =>
-      mine == false ? fresh : current;
+  }) => mine == false ? fresh : current;
 
   /// Можно ли показывать код и делиться им. См. [InviteCodeState].
   InviteCodeState get inviteCodeState => inviteCodeStateOf(
-        code: inviteCode,
-        signedIn: _uid.isNotEmpty,
-        confirmed: ConfirmedInviteCodes.contains(inviteCode, ownerUid: _uid),
-      );
+    code: inviteCode,
+    signedIn: _uid.isNotEmpty,
+    confirmed: ConfirmedInviteCodes.contains(inviteCode, ownerUid: _uid),
+  );
 
   /// Код, который можно отдать партнёру: подтверждённый сервером в этом
   /// запуске, иначе пусто.
@@ -760,8 +808,7 @@ class Connection {
   static String codeAfterRegenerate({
     required String current,
     required String fresh,
-  }) =>
-      fresh.isEmpty ? current : fresh;
+  }) => fresh.isEmpty ? current : fresh;
 
   Future<void> regenerateCode() async {
     final code = await PbDataService().generateInviteCode(
@@ -1208,8 +1255,9 @@ class Connection {
       // единственные из полей пары пропадают из UI.
       'anniversaryDate': anniversaryDate?.toIso8601String(),
       'firstKissDate': firstKissDate?.toIso8601String(),
-      'memberBirthdays': memberBirthdays
-          .map((k, v) => MapEntry(k, v.toIso8601String())),
+      'memberBirthdays': memberBirthdays.map(
+        (k, v) => MapEntry(k, v.toIso8601String()),
+      ),
       // Пустое место кэшируем целиком: на холодном старте без сети карточка
       // должна показать, кого ждём и сколько осталось, а не пустоту.
       'waitingMode': waitingMode,
@@ -1223,10 +1271,7 @@ class Connection {
     };
   }
 
-  static Connection fromJson(
-    Map<String, dynamic> json,
-    Function()? onChanged,
-  ) {
+  static Connection fromJson(Map<String, dynamic> json, Function()? onChanged) {
     // Sanity guard against the "Group of 3" bug. Old builds could persist a
     // members list that contains: an entry with an empty uid, duplicates of
     // the same uid, or more entries than a couple should have. Restoring such

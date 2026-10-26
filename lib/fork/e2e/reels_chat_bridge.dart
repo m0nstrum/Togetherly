@@ -1,4 +1,4 @@
-/// Чат ленты вдвоём на ключе сессии (docs/fork/E2E.md §10.1).
+/// Чат ленты вдвоём на ключе сессии (docs/E2E.md §10.1).
 ///
 /// Лента рисует переписку сама — реплики поверх ролика и лист чата, — и
 /// менять это незачем. Но страница слала реплики открытым текстом через
@@ -12,6 +12,7 @@ import 'dart:convert';
 
 import '../../services/locale_service.dart';
 import '../../services/pocketbase_service.dart';
+import '../watch/pair_call.dart';
 import 'fork_e2e.dart';
 import 'room_chat.dart';
 import 'room_chat_ui.dart' show CentrifugoRoomTransport;
@@ -92,8 +93,15 @@ class ForkReelsChatBridge {
     }
     for (; _pushed < chat.messages.length; _pushed++) {
       final m = chat.messages[_pushed];
-      _push({'name': m.name, 'text': m.text, 'mine': m.mine});
+      _push({'name': _nameOf(m), 'text': m.text, 'mine': m.mine});
     }
+  }
+
+  /// B3: реплика без подписи (имя отправителя ещё не расшифровалось) —
+  /// подписываем известным именем партнёра, а не «Гость».
+  static String _nameOf(RoomMessage m) {
+    if (m.name.trim().isNotEmpty || m.mine) return m.name;
+    return ForkPairCall.instance.partnerName;
   }
 
   void _push(Map<String, dynamic> m) => unawaited(
@@ -113,7 +121,8 @@ class ForkReelsChatBridge {
         'A browser joined: its messages are hidden',
       );
     }
-    if (!chat.secure) return _t('Договариваемся о ключе…', 'Agreeing on a key…');
+    if (!chat.secure)
+      return _t('Договариваемся о ключе…', 'Agreeing on a key…');
     return _t(
       '🔒 Чат зашифрован ключом сеанса',
       '🔒 Chat is end-to-end encrypted',

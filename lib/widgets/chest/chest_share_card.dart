@@ -7,7 +7,7 @@ import '../../theme/fonts.dart';
 import 'chest_frames.dart';
 import 'chest_prize_image.dart';
 import 'chest_rays.dart';
-import '../../fork/config/endpoints.dart'; // fork
+import '../../fork/config/endpoints.dart';
 
 /// Сторона карточки: снимок ×3 даёт 1080×1920, как у сторис сосуда.
 const double kChestShareWidth = 360;
@@ -67,13 +67,20 @@ class ChestShareCard extends StatelessWidget {
     final onInv = cs.onInverseSurface;
     final onFill = AppThemes.onColor(fill, mode: cs.brightness);
     Widget pill(String text, {required bool strong}) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: strong ? fill : onInv.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Text(text, style: AppFonts.onest(size: 12.5, weight: 600, color: strong ? onFill : onInv)),
-        );
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: strong ? fill : onInv.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        text,
+        style: AppFonts.onest(
+          size: 12.5,
+          weight: 600,
+          color: strong ? onFill : onInv,
+        ),
+      ),
+    );
 
     // Картинка: системный размер шрифта на неё не влияет, иначе у человека с
     // крупным шрифтом название вылезало бы за плашку прямо в сторис.
@@ -89,7 +96,13 @@ class ChestShareCard extends StatelessWidget {
           child: Stack(
             children: [
               // Лучи расходятся из сундука, а он стоит выше середины.
-              Positioned.fill(child: ChestRays(scheme: cs, animate: false, focus: const Alignment(0, -0.28))),
+              Positioned.fill(
+                child: ChestRays(
+                  scheme: cs,
+                  animate: false,
+                  focus: const Alignment(0, -0.28),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 26, 22, 20),
                 child: Column(
@@ -110,9 +123,13 @@ class ChestShareCard extends StatelessWidget {
                               ),
                               ChestPrizeFlight(
                                 prize: prize,
-                                spot: track == null ? kChestPrizeRest : track!.lastWhere((s) => s != null)!,
+                                spot: track == null
+                                    ? kChestPrizeRest
+                                    : track!.lastWhere((s) => s != null)!,
                                 stage: _chest,
-                                peak: track == null ? null : ChestPrizeFlight.trackPeak(track!),
+                                peak: track == null
+                                    ? null
+                                    : ChestPrizeFlight.trackPeak(track!),
                               ),
                             ],
                           ),
@@ -122,24 +139,39 @@ class ChestShareCard extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                      decoration: BoxDecoration(color: cs.inverseSurface, borderRadius: BorderRadius.circular(22)),
+                      decoration: BoxDecoration(
+                        color: cs.inverseSurface,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
                       child: Column(
                         children: [
                           Text(
                             trKey('chestShareLabel').toUpperCase(),
                             textAlign: TextAlign.center,
                             style: AppFonts.onest(
-                                size: 11, weight: 700, letterSpacing: 1.1, color: onInv.withValues(alpha: 0.75)),
+                              size: 11,
+                              weight: 700,
+                              letterSpacing: 1.1,
+                              color: onInv.withValues(alpha: 0.75),
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             // Число держится за соседние слова: «на 7 дней» не
                             // рвётся на «на 7 / дней».
-                            title.replaceAllMapped(RegExp(r' (\d+) '), (m) => ' ${m[1]} '),
+                            title.replaceAllMapped(
+                              RegExp(r' (\d+) '),
+                              (m) => ' ${m[1]} ',
+                            ),
                             textAlign: TextAlign.center,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
-                            style: AppFonts.unbounded(size: 20, weight: 800, height: 1.15, color: onInv),
+                            style: AppFonts.unbounded(
+                              size: 20,
+                              weight: 800,
+                              height: 1.15,
+                              color: onInv,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Wrap(
@@ -148,7 +180,8 @@ class ChestShareCard extends StatelessWidget {
                             runSpacing: 6,
                             children: [
                               pill(tierLabel, strong: strongTier),
-                              if (chance.isNotEmpty) pill(chance, strong: false),
+                              if (chance.isNotEmpty)
+                                pill(chance, strong: false),
                             ],
                           ),
                         ],
@@ -158,13 +191,20 @@ class ChestShareCard extends StatelessWidget {
                     Text(
                       'Togetherly',
                       style: AppFonts.unbounded(
-                          size: 19, weight: 800, letterSpacing: -0.2, color: cs.onSecondaryContainer),
+                        size: 19,
+                        weight: 800,
+                        letterSpacing: -0.2,
+                        color: cs.onSecondaryContainer,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      Endpoints.current.siteHost, // fork
+                      Endpoints.current.siteHost,
                       style: AppFonts.onest(
-                          size: 10, weight: 500, color: cs.onSecondaryContainer.withValues(alpha: 0.75)),
+                        size: 10,
+                        weight: 500,
+                        color: cs.onSecondaryContainer.withValues(alpha: 0.75),
+                      ),
                     ),
                   ],
                 ),

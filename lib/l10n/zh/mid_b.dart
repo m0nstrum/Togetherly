@@ -59,7 +59,8 @@ const Map<String, String> midBZh = {
   'emailTypoBody': '你输入的是 {typed}。是不是想写 {fixed}？地址有错的话，重置密码的邮件就收不到了。',
   'emailTypoFix': '改正',
   'emailTypoKeep': '保持不变',
-  'emailTypoAccountBody': '你的账号邮箱是 {typed}，看起来写错了，重置密码的邮件到不了这个地址。要改成 {fixed} 吗？验证码会发到新地址。',
+  'emailTypoAccountBody':
+      '你的账号邮箱是 {typed}，看起来写错了，重置密码的邮件到不了这个地址。要改成 {fixed} 吗？验证码会发到新地址。',
   'emailTypoAccountHint': '好像写错了，点一下改正',
   'emailTypoLater': '以后再说',
 

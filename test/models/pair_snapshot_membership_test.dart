@@ -21,10 +21,7 @@ void main() {
     const myself = GroupMember(uid: me, name: 'Саша');
 
     test('меня в непустом составе нет — членство потеряно', () {
-      expect(
-        shouldDropMembership(members: [partner], myUid: me),
-        isTrue,
-      );
+      expect(shouldDropMembership(members: [partner], myUid: me), isTrue);
     });
 
     test('я в составе — членство на месте', () {
@@ -35,10 +32,7 @@ void main() {
     });
 
     test('пустой состав — это нет данных, а не изгнание', () {
-      expect(
-        shouldDropMembership(members: const [], myUid: me),
-        isFalse,
-      );
+      expect(shouldDropMembership(members: const [], myUid: me), isFalse);
     });
 
     test('свой uid неизвестен — сравнивать не с чем, связь не трогаем', () {

@@ -34,9 +34,13 @@ void main() {
       }
     }
 
-    expect(offenders, isEmpty,
-        reason: 'свой стиль заголовка секции вместо общего: '
-            '${offenders.toSet().join(', ')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'свой стиль заголовка секции вместо общего: '
+          '${offenders.toSet().join(', ')}',
+    );
   });
 
   test('стиль читается на всех палитрах', () {
@@ -45,8 +49,11 @@ void main() {
         final scheme = buildAppTheme(palette, brightness).scheme!;
         final style = ProfileTheme.sectionLabel(scheme);
         expect(style.fontSize, 12);
-        expect(style.letterSpacing, greaterThan(0.5),
-            reason: 'капсу нужна разрядка, иначе буквы слипаются');
+        expect(
+          style.letterSpacing,
+          greaterThan(0.5),
+          reason: 'капсу нужна разрядка, иначе буквы слипаются',
+        );
         expect(style.color, scheme.primary);
       }
     }

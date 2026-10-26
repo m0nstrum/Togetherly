@@ -69,8 +69,8 @@ ColoringOutline prepareColoringOutline(List<int> bytes) {
 
   // Ужимаем заранее: дальше идёт попиксельный проход и заливка, а на снимке
   // 4000×3000 это секунды даже в isolate.
-  final scaled = (decoded.width > kColoringMaxSide ||
-          decoded.height > kColoringMaxSide)
+  final scaled =
+      (decoded.width > kColoringMaxSide || decoded.height > kColoringMaxSide)
       ? img.copyResize(
           decoded,
           width: decoded.width >= decoded.height ? kColoringMaxSide : null,
@@ -79,7 +79,11 @@ ColoringOutline prepareColoringOutline(List<int> bytes) {
         )
       : decoded;
 
-  final out = img.Image(width: scaled.width, height: scaled.height, numChannels: 4);
+  final out = img.Image(
+    width: scaled.width,
+    height: scaled.height,
+    numChannels: 4,
+  );
   for (var y = 0; y < scaled.height; y++) {
     for (var x = 0; x < scaled.width; x++) {
       final p = scaled.getPixel(x, y);
@@ -123,7 +127,12 @@ bool _leaks(img.Image im) {
 
   bool isBackground(int x, int y) => im.getPixel(x, y).a < 32;
 
-  for (final corner in [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]) {
+  for (final corner in [
+    [0, 0],
+    [w - 1, 0],
+    [0, h - 1],
+    [w - 1, h - 1],
+  ]) {
     final x = corner[0], y = corner[1];
     if (isBackground(x, y) && visited[y * w + x] == 0) {
       stack.add(y * w + x);
@@ -136,7 +145,12 @@ bool _leaks(img.Image im) {
     final idx = stack.removeLast();
     filled++;
     final x = idx % w, y = idx ~/ w;
-    for (final d in const [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (final d in const [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
       final nx = x + d[0], ny = y + d[1];
       if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
       final ni = ny * w + nx;

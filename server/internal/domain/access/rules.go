@@ -4,7 +4,7 @@
 // pocketbase/collections_schema.json (через `@request.auth.group_ids`) и в
 // pocketbase/apply_acl.py (через join к groups). Форк берёт первый вариант —
 // он опирается на скрытое поле `users.group_ids`, которое ведёт хук
-// groups_membership, и не требует тяжёлых join'ов. Миграция применяет эти
+// bindMembership, и не требует тяжёлых join'ов. Миграция применяет эти
 // правила поверх импортированной схемы, так что источник истины — этот файл.
 //
 // Правило — фильтр PocketBase. nil — доступ только суперпользователю
@@ -83,6 +83,19 @@ func immutableAuthored(groupField, authorField string) Rules {
 	return r
 }
 
+// heldUntilDue — отложенное сообщение («отправить утром») до срока видит
+// только автор: флаг `held` ставит и снимает сервер. Правка и удаление —
+// тоже: ответ на PATCH отдаёт запись целиком мимо правила View.
+func heldUntilDue(r Rules, authorField string) Rules {
+	hidden := ` && (held = false || ` + authorField + ` = @request.auth.id)`
+	for _, rule := range []**string{&r.List, &r.View, &r.Update, &r.Delete} {
+		if *rule != nil {
+			*rule = s(**rule + hidden)
+		}
+	}
+	return r
+}
+
 // own — запись принадлежит человеку из поля ownerField.
 func own(ownerField string) Rules {
 	return same(authed + ` && ` + ownerField + ` = @request.auth.id`)
@@ -93,7 +106,7 @@ func own(ownerField string) Rules {
 var Collections = map[string]Rules{
 	// Пара. Список и чтение — по своему members (до появления group_ids у
 	// создателя группа уже должна быть ему видна). Состав при правке
-	// защищает хук groups_guard, при создании — страж на Go (только ты).
+	// защищает bindGroupsGuard, при создании — страж на Go (только ты).
 	"groups": {
 		List:   s(authed + ` && members ?~ @request.auth.id`),
 		View:   s(authed + ` && members ?~ @request.auth.id`),
@@ -114,8 +127,9 @@ var Collections = map[string]Rules{
 
 	"memories":        memberAuthored("group_id", "author_uid"),
 	"memory_comments": personalAuthored("group_id", "author_uid"),
+	"wish_comments":   personalAuthored("group_id", "author_uid"),
 	"mood_entries":    personalAuthored("group_id", "user_uid"),
-	"chat_messages":   memberAuthored("group_id", "user_uid"),
+	"chat_messages":   heldUntilDue(memberAuthored("group_id", "user_uid"), "user_uid"),
 	"chat_reads":      personalAuthored("group_id", "user_uid"),
 	"chat_typing":     personalAuthored("group_id", "user_uid"),
 	"widget_data":     personalAuthored("group_id", "user_uid"),
@@ -206,7 +220,7 @@ var Collections = map[string]Rules{
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
 	},
 
-	// E2E (docs/fork/E2E.md). Ключ аккаунта и список устройств видят свои и
+	// E2E (docs/E2E.md). Ключ аккаунта и список устройств видят свои и
 	// партнёры по парам; правка — только своя, версию списка держит страж.
 	"e2e_identities": {
 		List:   s(authed + ` && (user_uid = @request.auth.id || @request.auth.live_group_ids.members ?~ user_uid)`),
@@ -229,6 +243,8 @@ var Collections = map[string]Rules{
 		Delete: s(liveMemberExpr("group_id") + ` && user_uid = @request.auth.id`),
 	},
 	"e2e_backups": own("user_uid"),
+	// Привязка устройства по QR (§5.3): только свои записи.
+	"e2e_links": own("user_uid"),
 
 	// Токены FCM устройств (PLAN S12): пишет и читает только сервер через
 	// /api/fork/push-token — чужой токен не прочитать и не подменить.

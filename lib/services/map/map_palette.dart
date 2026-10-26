@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 /// Смесь двух цветов в sRGB с округлением каналов — так же считал макет, и
 /// так же считают тесты: `t = 0` даёт [a], `t = 1` даёт [b].
 Color mixColor(Color a, Color b, double t) {
-  int ch(double x, double y) => (x * 255 + (y * 255 - x * 255) * t).round().clamp(0, 255);
+  int ch(double x, double y) =>
+      (x * 255 + (y * 255 - x * 255) * t).round().clamp(0, 255);
   return Color.fromARGB(255, ch(a.r, b.r), ch(a.g, b.g), ch(a.b, b.b));
 }
 
@@ -141,8 +142,25 @@ class MapPalette {
 
   /// Отпечаток цветов: по нему кэшируется собранная тема карты.
   String get key => [
-        land, residential, park, wood, water, building, buildingLine, road,
-        roadCase, motorway, motorwayCase, rail, country, region, city, town,
-        village, state, waterText, roadText,
-      ].map((c) => c.toARGB32().toRadixString(16)).join();
+    land,
+    residential,
+    park,
+    wood,
+    water,
+    building,
+    buildingLine,
+    road,
+    roadCase,
+    motorway,
+    motorwayCase,
+    rail,
+    country,
+    region,
+    city,
+    town,
+    village,
+    state,
+    waterText,
+    roadText,
+  ].map((c) => c.toARGB32().toRadixString(16)).join();
 }

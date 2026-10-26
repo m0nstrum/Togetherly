@@ -8,6 +8,8 @@ import 'package:love_app/services/locale_service.dart';
 /// `pt` и `pt-BR`, и `pt-PT` — колонка словаря одна на всех, а говорящих в
 /// Бразилии на порядок больше.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings pt;
 
   setUp(() {

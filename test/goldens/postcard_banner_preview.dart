@@ -42,7 +42,11 @@ void main() {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Label('Было: primaryContainer', cs),
-                  _Banner(cs: cs, fill: cs.primaryContainer, ink: cs.onPrimaryContainer),
+                  _Banner(
+                    cs: cs,
+                    fill: cs.primaryContainer,
+                    ink: cs.onPrimaryContainer,
+                  ),
                   const SizedBox(height: 22),
                   _Label('secondaryContainer', cs),
                   _Banner(
@@ -79,8 +83,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/postcard-banner.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/postcard-banner.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }
@@ -93,12 +98,12 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(left: 6, bottom: 8),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-        ),
-      );
+    padding: const EdgeInsets.only(left: 6, bottom: 8),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+    ),
+  );
 }
 
 class _Banner extends StatelessWidget {
@@ -125,7 +130,9 @@ class _Banner extends StatelessWidget {
               color: ink.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(17),
             ),
-            child: Center(child: Icon(Icons.mail_rounded, color: ink, size: 26)),
+            child: Center(
+              child: Icon(Icons.mail_rounded, color: ink, size: 26),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -135,13 +142,18 @@ class _Banner extends StatelessWidget {
                 Text(
                   'Создать открытку',
                   style: TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w800, color: ink),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: ink,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Соберите открытку и отправьте партнёру',
                   style: TextStyle(
-                      fontSize: 12.5, color: ink.withValues(alpha: 0.82)),
+                    fontSize: 12.5,
+                    color: ink.withValues(alpha: 0.82),
+                  ),
                 ),
               ],
             ),

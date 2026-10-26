@@ -106,22 +106,27 @@ class RelationshipTips {
     // ── Настроение партнёра ────────────────────────────────────────────────
     final mood = c.partnerMoodScore;
     if (mood != null && mood <= 2) {
-      tips.add(const RelationshipTip(
-        id: 'mood_low',
-        title: 'День у неё так себе',
-        body: 'Спросите, как она, и просто выслушайте. Совет не обязателен — '
-            'иногда хватает того, что кто-то рядом.',
-        weight: 100,
-        action: 'chat',
-      ));
+      tips.add(
+        const RelationshipTip(
+          id: 'mood_low',
+          title: 'День у неё так себе',
+          body:
+              'Спросите, как она, и просто выслушайте. Совет не обязателен — '
+              'иногда хватает того, что кто-то рядом.',
+          weight: 100,
+          action: 'chat',
+        ),
+      );
     } else if (mood == null) {
-      tips.add(const RelationshipTip(
-        id: 'mood_unknown',
-        title: 'Как она сегодня — неизвестно',
-        body: 'Спросите сами: живой вопрос лучше отметки в календаре.',
-        weight: 40,
-        action: 'chat',
-      ));
+      tips.add(
+        const RelationshipTip(
+          id: 'mood_unknown',
+          title: 'Как она сегодня — неизвестно',
+          body: 'Спросите сами: живой вопрос лучше отметки в календаре.',
+          weight: 40,
+          action: 'chat',
+        ),
+      );
     }
 
     // ── Цикл ───────────────────────────────────────────────────────────────
@@ -131,23 +136,29 @@ class RelationshipTips {
     if (c.cycleVisible) {
       switch (c.cycle) {
         case CyclePhaseHint.period:
-          tips.add(const RelationshipTip(
-            id: 'cycle_period',
-            title: 'Эти дни бывают тяжёлыми',
-            body: 'Возьмите на себя что-нибудь бытовое, принесите чай, '
-                'предложите вечер без планов. Спросите, чего ей хочется.',
-            weight: 90,
-            action: 'chat',
-          ));
+          tips.add(
+            const RelationshipTip(
+              id: 'cycle_period',
+              title: 'Эти дни бывают тяжёлыми',
+              body:
+                  'Возьмите на себя что-нибудь бытовое, принесите чай, '
+                  'предложите вечер без планов. Спросите, чего ей хочется.',
+              weight: 90,
+              action: 'chat',
+            ),
+          );
         case CyclePhaseHint.soon:
-          tips.add(const RelationshipTip(
-            id: 'cycle_soon',
-            title: 'Скоро те самые дни',
-            body: 'Хороший момент сделать что-то заранее: заказать её любимое '
-                'или освободить вечер.',
-            weight: 55,
-            action: 'gift',
-          ));
+          tips.add(
+            const RelationshipTip(
+              id: 'cycle_soon',
+              title: 'Скоро те самые дни',
+              body:
+                  'Хороший момент сделать что-то заранее: заказать её любимое '
+                  'или освободить вечер.',
+              weight: 55,
+              action: 'gift',
+            ),
+          );
         case CyclePhaseHint.regular:
         case CyclePhaseHint.unknown:
           break;
@@ -157,64 +168,76 @@ class RelationshipTips {
     // ── Внимание друг к другу ──────────────────────────────────────────────
     final silence = c.daysSinceChat;
     if (silence != null && silence >= 2) {
-      tips.add(RelationshipTip(
-        id: 'silence',
-        title: silence >= 5 ? 'Тишина затянулась' : 'Давно не переписывались',
-        body: 'Напишите первым — необязательно по делу. Достаточно «думаю о '
-            'тебе».',
-        weight: 70,
-        action: 'chat',
-      ));
+      tips.add(
+        RelationshipTip(
+          id: 'silence',
+          title: silence >= 5 ? 'Тишина затянулась' : 'Давно не переписывались',
+          body:
+              'Напишите первым — необязательно по делу. Достаточно «думаю о '
+              'тебе».',
+          weight: 70,
+          action: 'chat',
+        ),
+      );
     }
 
     final miss = c.daysSinceMiss;
     if (miss != null && miss >= 7) {
-      tips.add(const RelationshipTip(
-        id: 'miss_gap',
-        title: 'Давно не отправляли «скучаю»',
-        body: 'Одно касание — и она узнает. Мелочь, а работает.',
-        weight: 50,
-        action: 'miss',
-      ));
+      tips.add(
+        const RelationshipTip(
+          id: 'miss_gap',
+          title: 'Давно не отправляли «скучаю»',
+          body: 'Одно касание — и она узнает. Мелочь, а работает.',
+          weight: 50,
+          action: 'miss',
+        ),
+      );
     }
 
     final memory = c.daysSinceMemory;
     if (memory != null && memory >= 10) {
-      tips.add(const RelationshipTip(
-        id: 'memory_gap',
-        title: 'Воспоминаний давно не прибавлялось',
-        body: 'Добавьте фото или пару строк о том, что было на неделе. Через '
-            'год это будет дороже, чем кажется сейчас.',
-        weight: 45,
-        action: 'memory',
-      ));
+      tips.add(
+        const RelationshipTip(
+          id: 'memory_gap',
+          title: 'Воспоминаний давно не прибавлялось',
+          body:
+              'Добавьте фото или пару строк о том, что было на неделе. Через '
+              'год это будет дороже, чем кажется сейчас.',
+          weight: 45,
+          action: 'memory',
+        ),
+      );
     }
 
     // ── Даты ───────────────────────────────────────────────────────────────
     final toAnniversary = c.daysToAnniversary;
     if (toAnniversary != null && toAnniversary >= 0 && toAnniversary <= 14) {
-      tips.add(RelationshipTip(
-        id: 'anniversary_soon',
-        title: toAnniversary == 0
-            ? 'Годовщина сегодня'
-            : 'До годовщины $toAnniversary дн.',
-        body: toAnniversary == 0
-            ? 'Скажите об этом первым.'
-            : 'Успеваете придумать что-то, кроме цветов в последний час.',
-        weight: 60,
-        action: 'gift',
-      ));
+      tips.add(
+        RelationshipTip(
+          id: 'anniversary_soon',
+          title: toAnniversary == 0
+              ? 'Годовщина сегодня'
+              : 'До годовщины $toAnniversary дн.',
+          body: toAnniversary == 0
+              ? 'Скажите об этом первым.'
+              : 'Успеваете придумать что-то, кроме цветов в последний час.',
+          weight: 60,
+          action: 'gift',
+        ),
+      );
     }
 
     final days = c.daysTogether;
     if (days != null && days > 0 && (days % 100 == 0 || days % 365 == 0)) {
-      tips.add(RelationshipTip(
-        id: 'round_date',
-        title: 'Сегодня $days дней вместе',
-        body: 'Круглая дата — хороший повод сказать это вслух.',
-        weight: 65,
-        action: 'chat',
-      ));
+      tips.add(
+        RelationshipTip(
+          id: 'round_date',
+          title: 'Сегодня $days дней вместе',
+          body: 'Круглая дата — хороший повод сказать это вслух.',
+          weight: 65,
+          action: 'chat',
+        ),
+      );
     }
 
     tips.sort((a, b) => b.weight.compareTo(a.weight));

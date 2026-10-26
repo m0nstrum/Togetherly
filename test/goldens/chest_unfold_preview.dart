@@ -60,15 +60,17 @@ class _Home extends StatelessWidget {
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     key: const ValueKey('card'),
-                    onTap: () => Navigator.of(context).push(unfoldFrom<void>(
-                      source,
-                      (_) => ChestScreen(
-                        theme: theme,
-                        groupId: 'g',
-                        debugSeasons: [season],
-                        initialSeason: season,
+                    onTap: () => Navigator.of(context).push(
+                      unfoldFrom<void>(
+                        source,
+                        (_) => ChestScreen(
+                          theme: theme,
+                          groupId: 'g',
+                          debugSeasons: [season],
+                          initialSeason: season,
+                        ),
                       ),
-                    )),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(6, 10, 16, 10),
                       child: Row(
@@ -87,18 +89,24 @@ class _Home extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(season.nameIn('ru'),
-                                    style: TextStyle(
-                                        fontFamily: 'Unbounded',
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700,
-                                        color: night.ink)),
+                                Text(
+                                  season.nameIn('ru'),
+                                  style: TextStyle(
+                                    fontFamily: 'Unbounded',
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    color: night.ink,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
-                                Text(season.hintIn('ru'),
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        height: 1.35,
-                                        color: night.ink)),
+                                Text(
+                                  season.hintIn('ru'),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    height: 1.35,
+                                    color: night.ink,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -123,17 +131,19 @@ void main() {
   setUpAll(() async {
     await _loadFont('Onest', 'assets/fonts/Onest.ttf');
     await _loadFont('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _loadFont('MaterialIcons',
-        '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _loadFont(
+      'MaterialIcons',
+      '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
   });
 
   testWidgets('сундук летит с главной на экран и обратно', (tester) async {
     if (!File('$dir/chest.json').existsSync()) return;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (_) async => Directory.systemTemp.path,
-    );
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (_) async => Directory.systemTemp.path,
+        );
     SharedPreferences.setMockInitialValues({'chest_sound': false});
     await tester.runAsync(() => ChestSound.instance.load());
     LocaleService.instance.setLanguage(AppLanguage.ru);
@@ -141,8 +151,9 @@ void main() {
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
 
-    final spec = jsonDecode(File('$dir/chest.json').readAsStringSync())
-        as Map<String, dynamic>;
+    final spec =
+        jsonDecode(File('$dir/chest.json').readAsStringSync())
+            as Map<String, dynamic>;
     final files = <String, String>{};
     for (final f in Directory(dir).listSync().whereType<File>()) {
       final name = f.uri.pathSegments.last;
@@ -154,20 +165,25 @@ void main() {
 
     final root = GlobalKey();
     final theme = buildAppTheme(
-        kPalettes.firstWhere((p) => p.name == 'Розовая'), Brightness.light);
-    await tester.pumpWidget(RepaintBoundary(
-      key: root,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ProfileTheme.data(theme.scheme!),
-        home: _Home(theme: theme, season: season),
+      kPalettes.firstWhere((p) => p.name == 'Розовая'),
+      Brightness.light,
+    );
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: root,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ProfileTheme.data(theme.scheme!),
+          home: _Home(theme: theme, season: season),
+        ),
       ),
-    ));
+    );
 
     /// Кадры сундука разжимаются по-настоящему, не в поддельном времени.
     Future<void> run(int ms) async {
       await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)));
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
       await tester.pump(Duration(milliseconds: ms));
     }
 
@@ -182,8 +198,9 @@ void main() {
             root.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-        File('build/chest-unfold/$name.png')
-            .writeAsBytesSync(bytes!.buffer.asUint8List());
+        File(
+          'build/chest-unfold/$name.png',
+        ).writeAsBytesSync(bytes!.buffer.asUint8List());
       });
     }
 

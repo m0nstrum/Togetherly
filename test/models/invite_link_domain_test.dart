@@ -21,10 +21,11 @@ void main() {
 
   test('нигде в lib не осталось выдачи ссылок с duckdns', () {
     final offenders = <String>[];
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       final lines = file.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i];
@@ -38,7 +39,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Эти строки выдают приглашение со служебным поддоменом: '
+      reason:
+          'Эти строки выдают приглашение со служебным поддоменом: '
           '$offenders. Домен приглашения — togetherly.day.',
     );
   });
@@ -65,7 +67,7 @@ void main() {
     test('у готового кода всё по-прежнему', () {
       final c = Connection(id: 'g1', inviteCode: 'HQ792S');
       expect(c.inviteLink, 'https://togetherly.day/invite/HQ792S');
-      expect(c.inviteDeepLink, 'tethered://invite/HQ792S'); // fork
+      expect(c.inviteDeepLink, 'tethered://invite/HQ792S');
     });
   });
 }

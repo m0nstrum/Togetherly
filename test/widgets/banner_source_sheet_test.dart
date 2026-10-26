@@ -7,6 +7,8 @@ import 'package:love_app/services/locale_service.dart';
 import 'package:love_app/services/plus_access.dart';
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   final cs = ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B));
 
   setUp(() => LocaleService.instance.setLanguage(AppLanguage.ru));
@@ -20,18 +22,20 @@ void main() {
     tester.view.physicalSize = Size(width * 3, 900 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      builder: (c, child) => MediaQuery(
-        data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
-        child: child!,
-      ),
-      home: Scaffold(
-        body: Align(
-          alignment: Alignment.bottomCenter,
-          child: BannerSourceSheet(cs: cs, gifGate: gate),
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (c, child) => MediaQuery(
+          data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: BannerSourceSheet(cs: cs, gifGate: gate),
+          ),
         ),
       ),
-    ));
+    );
   }
 
   testWidgets('без Плюса GIF с замком и подписью Togetherly+', (tester) async {
@@ -56,20 +60,22 @@ void main() {
 
   testWidgets('нажатие на строку отдаёт выбор', (tester) async {
     BannerSource? picked;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => TextButton(
-            onPressed: () async => picked = await showBannerSourceSheet(
-              context,
-              cs: cs,
-              gifGate: PlusGate.locked,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async => picked = await showBannerSourceSheet(
+                context,
+                cs: cs,
+                gifGate: PlusGate.locked,
+              ),
+              child: const Text('баннер'),
             ),
-            child: const Text('баннер'),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('баннер'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Анимированный GIF'));

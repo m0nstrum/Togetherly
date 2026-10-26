@@ -23,6 +23,6 @@ double contrastRatio(Color a, Color b) {
 /// Белый или тёмный — что читаемее на [background].
 Color readableTextOn(Color background) =>
     contrastRatio(background, const Color(0xFFFFFFFF)) >=
-            contrastRatio(background, kDarkBubbleText)
-        ? const Color(0xFFFFFFFF)
-        : kDarkBubbleText;
+        contrastRatio(background, kDarkBubbleText)
+    ? const Color(0xFFFFFFFF)
+    : kDarkBubbleText;

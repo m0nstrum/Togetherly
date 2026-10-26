@@ -36,8 +36,10 @@ void main() {
 
     test('шаг крупнее: дорога до работы не стоит сотни включений GPS', () {
       expect(t.distanceFilter, greaterThanOrEqualTo(50));
-      expect(t.distanceFilter,
-          greaterThan(liveLocationTuning(foreground: true).distanceFilter));
+      expect(
+        t.distanceFilter,
+        greaterThan(liveLocationTuning(foreground: true).distanceFilter),
+      );
     });
 
     test('система НЕ вправе усыплять обновления: из этого сна их будит только '
@@ -60,8 +62,10 @@ void main() {
   });
 
   test('профиль меняется вместе с состоянием приложения', () {
-    expect(liveLocationTuning(foreground: true),
-        isNot(equals(liveLocationTuning(foreground: false))));
+    expect(
+      liveLocationTuning(foreground: true),
+      isNot(equals(liveLocationTuning(foreground: false))),
+    );
   });
 
   group('Android', () {
@@ -81,11 +85,15 @@ void main() {
       expect(t.interval, greaterThanOrEqualTo(const Duration(seconds: 45)));
     });
 
-    test('шаг крупнее экранного, но точность спутниковая: метка нужна верная',
-        () {
-      expect(t.distanceFilter,
-          greaterThan(liveLocationTuning(foreground: true).distanceFilter));
-      expect(t.highAccuracy, isTrue);
-    });
+    test(
+      'шаг крупнее экранного, но точность спутниковая: метка нужна верная',
+      () {
+        expect(
+          t.distanceFilter,
+          greaterThan(liveLocationTuning(foreground: true).distanceFilter),
+        );
+        expect(t.highAccuracy, isTrue);
+      },
+    );
   });
 }

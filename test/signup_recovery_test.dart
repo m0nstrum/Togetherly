@@ -23,8 +23,11 @@ void main() {
         statusCode: 400,
         response: {
           'data': {
-            'email': {'code': 'validation_not_unique', 'message': 'Value must be unique.'}
-          }
+            'email': {
+              'code': 'validation_not_unique',
+              'message': 'Value must be unique.',
+            },
+          },
         },
       );
       expect(AuthFailure.of(e), AuthFailure.emailTaken);
@@ -52,13 +55,17 @@ void main() {
     });
 
     test('таймаут создания проверяется входом', () {
-      final afterTimeout = signUp.substring(signUp.indexOf('on TimeoutException'));
+      final afterTimeout = signUp.substring(
+        signUp.indexOf('on TimeoutException'),
+      );
       expect(afterTimeout, contains('authWithPassword'));
     });
 
     test('занятая почта проверяется входом', () {
       expect(signUp, contains('AuthFailure.emailTaken'));
-      final afterTaken = signUp.substring(signUp.indexOf('AuthFailure.emailTaken'));
+      final afterTaken = signUp.substring(
+        signUp.indexOf('AuthFailure.emailTaken'),
+      );
       expect(afterTaken, contains('authWithPassword'));
     });
 

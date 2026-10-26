@@ -675,19 +675,26 @@ const Map<String, Map<String, String>> widgetScreenStrings = {
   // iOS 15 и 16: расширения виджетов там нет вовсе (собрано с минимальной 17).
   // Без этой строки человек ищет поломку в своём телефоне.
   'iosWidgetsNeedIos17': {
-    'ru': 'Виджеты Togetherly работают с iOS 17. На вашей системе их не '
+    'ru':
+        'Виджеты Togetherly работают с iOS 17. На вашей системе их не '
         'показывает сама iOS — они появятся, если обновить телефон.',
-    'en': 'Togetherly widgets need iOS 17. On your version iOS itself doesn’t '
+    'en':
+        'Togetherly widgets need iOS 17. On your version iOS itself doesn’t '
         'show them — they appear after a system update.',
-    'pt': 'Os widgets do Togetherly precisam do iOS 17. Na sua versão o próprio '
+    'pt':
+        'Os widgets do Togetherly precisam do iOS 17. Na sua versão o próprio '
         'iOS não os mostra — eles aparecem depois de atualizar o sistema.',
-    'it': 'I widget di Togetherly richiedono iOS 17. Sulla tua versione è iOS '
+    'it':
+        'I widget di Togetherly richiedono iOS 17. Sulla tua versione è iOS '
         'stesso a non mostrarli: compaiono dopo l’aggiornamento del sistema.',
-    'es': 'Los widgets de Togetherly necesitan iOS 17. En tu versión es el '
+    'es':
+        'Los widgets de Togetherly necesitan iOS 17. En tu versión es el '
         'propio iOS el que no los muestra: aparecen tras actualizar el sistema.',
-    'fr': 'Les widgets Togetherly demandent iOS 17. Sur ta version, c’est iOS '
+    'fr':
+        'Les widgets Togetherly demandent iOS 17. Sur ta version, c’est iOS '
         'qui ne les affiche pas — ils reviendront après une mise à jour.',
-    'de': 'Togetherly-Widgets brauchen iOS 17. Auf deiner Version zeigt iOS sie '
+    'de':
+        'Togetherly-Widgets brauchen iOS 17. Auf deiner Version zeigt iOS sie '
         'selbst nicht an — nach einem Systemupdate sind sie da.',
   },
   'addWidgetFromHomeHint': {
@@ -1701,13 +1708,19 @@ const Map<String, Map<String, String>> widgetScreenStrings = {
     'de': 'Diese Zeichnung liegt neben den Symbolen',
   },
   'drawAddToWidgetUnsupported': {
-    'ru': 'Лончер не умеет добавлять виджеты сам. Добавьте его долгим нажатием по столу.',
-    'en': 'Your launcher cannot pin widgets. Add it by holding the home screen.',
+    'ru':
+        'Лончер не умеет добавлять виджеты сам. Добавьте его долгим нажатием по столу.',
+    'en':
+        'Your launcher cannot pin widgets. Add it by holding the home screen.',
     'pt': 'Seu launcher não fixa widgets. Adicione segurando a tela inicial.',
-    'it': 'Il launcher non aggiunge widget da solo. Aggiungilo tenendo premuta la schermata.',
-    'es': 'Tu launcher no fija widgets. Añádelo manteniendo pulsada la pantalla.',
-    'fr': 'Votre launcher ne peut pas épingler de widget. Ajoutez-le en maintenant l écran.',
-    'de': 'Der Launcher kann Widgets nicht anheften. Lege es per langem Druck an.',
+    'it':
+        'Il launcher non aggiunge widget da solo. Aggiungilo tenendo premuta la schermata.',
+    'es':
+        'Tu launcher no fija widgets. Añádelo manteniendo pulsada la pantalla.',
+    'fr':
+        'Votre launcher ne peut pas épingler de widget. Ajoutez-le en maintenant l écran.',
+    'de':
+        'Der Launcher kann Widgets nicht anheften. Lege es per langem Druck an.',
   },
   'canvasWidgetTitle': {
     'ru': 'Рисунок на столе',
@@ -1755,12 +1768,18 @@ const Map<String, Map<String, String>> widgetScreenStrings = {
     'de': 'Fotos aus den Tagesaufgaben',
   },
   'partnerTaskPhotosHint': {
-    'ru': 'Снимки, которые {name} выкладывает в заданиях дня, тоже появятся в виджете',
+    'ru':
+        'Снимки, которые {name} выкладывает в заданиях дня, тоже появятся в виджете',
     'en': 'Photos {name} posts in daily tasks will also show up in the widget',
-    'pt': 'As fotos que {name} publica nas tarefas do dia também vão aparecer no widget',
-    'it': 'Anche le foto che {name} pubblica nei compiti del giorno appariranno nel widget',
-    'es': 'Las fotos que {name} sube en las tareas del día también aparecerán en el widget',
-    'fr': 'Les photos que {name} publie dans les défis du jour apparaîtront aussi dans le widget',
-    'de': 'Fotos, die {name} in den Tagesaufgaben teilt, erscheinen auch im Widget',
+    'pt':
+        'As fotos que {name} publica nas tarefas do dia também vão aparecer no widget',
+    'it':
+        'Anche le foto che {name} pubblica nei compiti del giorno appariranno nel widget',
+    'es':
+        'Las fotos que {name} sube en las tareas del día también aparecerán en el widget',
+    'fr':
+        'Les photos que {name} publie dans les défis du jour apparaîtront aussi dans le widget',
+    'de':
+        'Fotos, die {name} in den Tagesaufgaben teilt, erscheinen auch im Widget',
   },
 };

@@ -31,5 +31,4 @@ bool mascotGestureIsTap({
   required Duration held,
   double slop = 12,
   Duration limit = const Duration(milliseconds: 400),
-}) =>
-    travel <= slop && held < limit;
+}) => travel <= slop && held < limit;

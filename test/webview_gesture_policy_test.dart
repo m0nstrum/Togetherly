@@ -9,10 +9,16 @@ import 'package:flutter_test/flutter_test.dart';
 /// DoNotBlockGesture (Flutter 3.47+) в копии плагина в third_party.
 void main() {
   test('браузер комнаты зарегистрирован с DoNotBlockGesture', () {
-    final src = File('third_party/flutter_inappwebview_ios/ios/flutter_inappwebview_ios/'
-            'Sources/flutter_inappwebview_ios/InAppWebViewFlutterPlugin.swift')
-        .readAsStringSync();
-    expect(src, contains('FlutterPlatformViewGestureRecognizersBlockingPolicyDoNotBlockGesture'));
+    final src = File(
+      'third_party/flutter_inappwebview_ios/ios/flutter_inappwebview_ios/'
+      'Sources/flutter_inappwebview_ios/InAppWebViewFlutterPlugin.swift',
+    ).readAsStringSync();
+    expect(
+      src,
+      contains(
+        'FlutterPlatformViewGestureRecognizersBlockingPolicyDoNotBlockGesture',
+      ),
+    );
   });
 
   test('копия плагина подключена вместо пакета из pub.dev', () {
@@ -23,9 +29,15 @@ void main() {
   test('CI собирает на Flutter с этой политикой', () {
     for (final f in Directory('.github/workflows').listSync()) {
       if (f is! File || !f.path.endsWith('.yml')) continue;
-      for (final m in RegExp(r'flutter-version: (\d+)\.(\d+)').allMatches(f.readAsStringSync())) {
+      for (final m in RegExp(
+        r'flutter-version: (\d+)\.(\d+)',
+      ).allMatches(f.readAsStringSync())) {
         final major = int.parse(m.group(1)!), minor = int.parse(m.group(2)!);
-        expect(major > 3 || (major == 3 && minor >= 47), isTrue, reason: '${f.path}: ${m.group(0)}');
+        expect(
+          major > 3 || (major == 3 && minor >= 47),
+          isTrue,
+          reason: '${f.path}: ${m.group(0)}',
+        );
       }
     }
   });

@@ -20,8 +20,8 @@ class BannerCache {
   BannerCache({
     required BaseCacheManager manager,
     required Future<String?> Function(String ref) resolve,
-  })  : _manager = manager,
-        _resolve = resolve;
+  }) : _manager = manager,
+       _resolve = resolve;
 
   static BannerCache _instance = BannerCache(
     manager: BannerCacheManager.instance,

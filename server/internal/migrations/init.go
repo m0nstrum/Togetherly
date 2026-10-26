@@ -106,6 +106,9 @@ func withAutodates(c map[string]any) {
 // правило обязано быть описано: забытая коллекция — ошибка, а не тихий
 // доступ «только суперпользователю» или «всем».
 func ApplyRules(app core.App) error {
+	if err := ensureRuleFields(app); err != nil {
+		return err
+	}
 	cols, err := app.FindAllCollections()
 	if err != nil {
 		return err
@@ -127,6 +130,18 @@ func ApplyRules(app core.App) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// ensureRuleFields заводит поля, на которые опираются правила: их ставит
+// каждая миграция правил, в том числе первая на пустой базе.
+func ensureRuleFields(app core.App) error {
+	col, err := app.FindCollectionByNameOrId("chat_messages")
+	if err != nil || col.Fields.GetByName("held") != nil {
+		return nil
+	}
+	// held — отложенное сообщение до срока (chat_held.go).
+	col.Fields.Add(&core.BoolField{Name: "held"})
+	return app.Save(col)
 }
 
 const jsonMax = 5_000_000
@@ -171,7 +186,7 @@ func extendUsers(app core.App) error {
 	} {
 		add(&core.JSONField{Name: n, MaxSize: jsonMax})
 	}
-	// Пары пользователя. Ведёт хук groups_membership, на нём держатся правила
+	// Пары пользователя. Ведёт bindMembership, на нём держатся правила
 	// доступа всех парных коллекций. Клиенту не отдаётся.
 	add(&core.RelationField{Name: "live_group_ids", CollectionId: groups.Id, MaxSelect: 1000, Hidden: true})
 	add(&core.RelationField{Name: "group_ids", CollectionId: groups.Id, MaxSelect: 1000, Hidden: true})

@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-import 'pocketbase_service.dart';
+import 'pb_media_service.dart';
 
 /// Чем закончилось сохранение фигурки — экрану нужно сказать разное.
 ///
@@ -32,45 +32,38 @@ class NoteExportOutcome {
 
 /// Сохранение фигурки в галерею телефона.
 ///
-/// Скачивается не тот файл, что лежит в чате, а собранный сервером: квадратный
-/// ролик, внутри которого фигурка вырезана по своей форме, а в правом нижнем
-/// углу стоит подпись. Так же отдаёт свой кружок Telegram — видео остаётся
-/// круглым, а файл обычным квадратным, который откроет любая галерея.
-///
-/// Собирать это на устройстве нечем: маску и подпись накладывает ffmpeg, а его
-/// в приложении нет — двенадцать мегабайт к сборке ради редкой кнопки не стоят
-/// того. Сервер держит готовый файл рядом, поэтому второе сохранение той же
-/// фигурки приходит сразу.
+/// У апстрима файл собирал сервер (ffmpeg: квадрат, маска формы, подпись). В
+/// форке файл фигурки зашифрован ключом пары, и серверу его не прочесть,
+/// поэтому в галерею уходит сам ролик фигурки — расшифрованный локальным
+/// прокси, без маски.
 class NoteExportService {
   const NoteExportService._();
 
-  /// Готовый ролик может собираться до пары секунд — на первой фигурке ffmpeg
-  /// работает с нуля.
+  /// Файл фигурки — несколько мегабайт через медленную сеть.
   static const Duration _timeout = Duration(seconds: 90);
 
-  static Future<NoteExportOutcome> saveToGallery(String messageId) async {
-    if (messageId.isEmpty) {
+  static Future<NoteExportOutcome> saveToGallery(
+    String messageId,
+    String noteUrl,
+  ) async {
+    if (messageId.isEmpty || noteUrl.isEmpty) {
       return const NoteExportOutcome(NoteExportResult.saveFailed);
     }
-    final pb = PocketBaseService.instance.pb;
-    final token = pb.authStore.token;
-    if (token.isEmpty) {
+    final src = await PbMediaService.instance.resolveUrlAuthed(noteUrl);
+    if (src == null || src.isEmpty) {
       return const NoteExportOutcome(NoteExportResult.serverFailed);
     }
 
     File? temp;
     var bytes = 0;
     try {
-      final res = await http
-          .get(
-            Uri.parse('${pb.baseURL}/api/note/export?msg=$messageId'),
-            headers: {'Authorization': token},
-          )
-          .timeout(_timeout);
+      final res = await http.get(Uri.parse(src)).timeout(_timeout);
       if (res.statusCode != 200 || res.bodyBytes.isEmpty) {
-        debugPrint('NoteExport: ${res.statusCode} ${res.body}');
-        return NoteExportOutcome(NoteExportResult.serverFailed,
-            status: res.statusCode);
+        debugPrint('NoteExport: ${res.statusCode}');
+        return NoteExportOutcome(
+          NoteExportResult.serverFailed,
+          status: res.statusCode,
+        );
       }
 
       bytes = res.bodyBytes.length;
@@ -94,14 +87,20 @@ class NoteExportService {
       if (e.type != GalExceptionType.accessDenied) {
         // Отказ галереи прилетает только с чужих телефонов и только словами
         // «не сохраняется». Пусть приезжает сам, с типом и размером файла.
-        unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-          s.level = SentryLevel.warning;
-          s.setContexts('note_export', {
-            'gal': e.type.name,
-            'bytes': bytes,
-            'message': messageId,
-          });
-        }));
+        unawaited(
+          Sentry.captureException(
+            e,
+            stackTrace: st,
+            withScope: (s) {
+              s.level = SentryLevel.warning;
+              s.setContexts('note_export', {
+                'gal': e.type.name,
+                'bytes': bytes,
+                'message': messageId,
+              });
+            },
+          ),
+        );
       }
       return NoteExportOutcome(
         e.type == GalExceptionType.accessDenied
@@ -111,17 +110,30 @@ class NoteExportService {
       );
     } catch (e, st) {
       debugPrint('NoteExport failed: $e');
-      unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-        s.level = SentryLevel.warning;
-        s.setContexts('note_export', {'bytes': bytes, 'message': messageId});
-      }));
-      return NoteExportOutcome(NoteExportResult.saveFailed,
-          reason: e.runtimeType.toString());
+      unawaited(
+        Sentry.captureException(
+          e,
+          stackTrace: st,
+          withScope: (s) {
+            s.level = SentryLevel.warning;
+            s.setContexts('note_export', {
+              'bytes': bytes,
+              'message': messageId,
+            });
+          },
+        ),
+      );
+      return NoteExportOutcome(
+        NoteExportResult.saveFailed,
+        reason: e.runtimeType.toString(),
+      );
     } finally {
       // Копия в галерее уже своя, временный файл держать незачем.
       try {
         if (temp != null && await temp.exists()) await temp.delete();
-      } catch (_) {/* уберёт система */}
+      } catch (_) {
+        /* уберёт система */
+      }
     }
   }
 }

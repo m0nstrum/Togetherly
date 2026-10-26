@@ -6,23 +6,28 @@ import 'package:love_app/models/avatar_frame.dart';
 /// магазин, а ключ владения обязан совпадать с тем, что кладёт сундук
 /// (`chest.pb.js`: `"frame:" + id записи`).
 void main() {
-  Map<String, dynamic> row({Object? kind = 'frame', Object? data, Object? enabled = true}) => {
-        'id': 'frame_cat',
-        'kind': kind,
-        'enabled': enabled,
-        'price': 0,
-        'sort': 90,
-        'data': data ??
-            {
-              'key': 'cat',
-              'rarity': 'legendary',
-              'name': {'ru': 'Котик', 'en': 'Kitty'},
-              'desc': {'ru': 'Ушки дёргаются'},
-              'sm': 'https://x/sm.webp',
-              'lg': 'https://x/lg.webp',
-              'still': 'https://x/still.png',
-            },
-      };
+  Map<String, dynamic> row({
+    Object? kind = 'frame',
+    Object? data,
+    Object? enabled = true,
+  }) => {
+    'id': 'frame_cat',
+    'kind': kind,
+    'enabled': enabled,
+    'price': 0,
+    'sort': 90,
+    'data':
+        data ??
+        {
+          'key': 'cat',
+          'rarity': 'legendary',
+          'name': {'ru': 'Котик', 'en': 'Kitty'},
+          'desc': {'ru': 'Ушки дёргаются'},
+          'sm': 'https://x/sm.webp',
+          'lg': 'https://x/lg.webp',
+          'still': 'https://x/still.png',
+        },
+  };
 
   test('рамка из строки каталога — без цены, она не продаётся', () {
     final f = AvatarFrame.fromCatalog(row())!;

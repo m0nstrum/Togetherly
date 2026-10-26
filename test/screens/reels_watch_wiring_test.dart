@@ -7,7 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// событие. Отвалится одно звено — лента снова будет висеть молча.
 void main() {
   final feed = File('lib/services/reels/reels_feed.dart').readAsStringSync();
-  final room = File('lib/screens/together/watch_room_screen.dart').readAsStringSync();
+  final room = File(
+    'lib/screens/together/watch_room_screen.dart',
+  ).readAsStringSync();
 
   test('скрытая страница пишет загрузки, отказы и номера', () {
     expect(feed, contains('onLoadStop:'));

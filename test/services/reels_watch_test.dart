@@ -18,7 +18,11 @@ void main() {
       ..lastError = 'http 403'
       ..heard = 4;
 
-    final r = w.check(t0.add(const Duration(seconds: 26)), proxyOn: true, blocked: true);
+    final r = w.check(
+      t0.add(const Duration(seconds: 26)),
+      proxyOn: true,
+      blocked: true,
+    );
 
     expect(r, isNotNull);
     expect(r!['source'], 'tiktok');
@@ -35,27 +39,66 @@ void main() {
 
   test('номера пришли, но все отброшены — лента всё равно стоит', () {
     final w = watch()..heard = 12;
-    expect(w.check(t0.add(const Duration(seconds: 30)), proxyOn: false, blocked: false), isNotNull);
+    expect(
+      w.check(
+        t0.add(const Duration(seconds: 30)),
+        proxyOn: false,
+        blocked: false,
+      ),
+      isNotNull,
+    );
   });
 
   test('ролики пришли — молчим', () {
     final w = watch()..ids = 6;
-    expect(w.check(t0.add(const Duration(minutes: 2)), proxyOn: false, blocked: false), isNull);
+    expect(
+      w.check(
+        t0.add(const Duration(minutes: 2)),
+        proxyOn: false,
+        blocked: false,
+      ),
+      isNull,
+    );
   });
 
   test('25 секунд ещё не прошло — рано', () {
-    expect(watch().check(t0.add(const Duration(seconds: 20)), proxyOn: false, blocked: null), isNull);
+    expect(
+      watch().check(
+        t0.add(const Duration(seconds: 20)),
+        proxyOn: false,
+        blocked: null,
+      ),
+      isNull,
+    );
   });
 
   test('за одну ленту отчёт уходит один раз', () {
     final w = watch();
-    expect(w.check(t0.add(const Duration(seconds: 30)), proxyOn: false, blocked: null), isNotNull);
-    expect(w.check(t0.add(const Duration(seconds: 60)), proxyOn: false, blocked: null), isNull);
+    expect(
+      w.check(
+        t0.add(const Duration(seconds: 30)),
+        proxyOn: false,
+        blocked: null,
+      ),
+      isNotNull,
+    );
+    expect(
+      w.check(
+        t0.add(const Duration(seconds: 60)),
+        proxyOn: false,
+        blocked: null,
+      ),
+      isNull,
+    );
   });
 
   test('сбой включения прокси попадает в отчёт', () {
-    final r = watch().check(t0.add(const Duration(seconds: 30)),
-        proxyOn: false, blocked: true, proxyError: 'unsupported on iOS 16');
+    final r = watch().check(
+      t0.add(const Duration(seconds: 30)),
+      proxyOn: false,
+      blocked: true,
+      proxyError: 'unsupported on iOS 16',
+    );
     expect(r!['proxy_error'], 'unsupported on iOS 16');
   });
 }

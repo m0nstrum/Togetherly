@@ -29,22 +29,25 @@ class MascotRepository {
   /// camelCase-карта для PbData.upsertMascot (createdAt — DateTime, НЕ Timestamp:
   /// `Mascot.toFirestore` отдал бы Timestamp, который `_iso` не понимает).
   Map<String, dynamic> _input(Mascot m) => {
-        'id': m.id,
-        'name': m.name,
-        'imageUrl': m.imageUrl,
-        'defaultAsset': m.defaultAsset,
-        'createdBy': m.createdBy,
-        'createdAt': m.createdAt,
-        'isDefault': m.isDefault,
-        'recordStreak': m.recordStreak,
-      };
+    'id': m.id,
+    'name': m.name,
+    'imageUrl': m.imageUrl,
+    'defaultAsset': m.defaultAsset,
+    'createdBy': m.createdBy,
+    'createdAt': m.createdAt,
+    'isDefault': m.isDefault,
+    'recordStreak': m.recordStreak,
+  };
 
   // ── Галерея ────────────────────────────────────────────────────────────────
   /// Живая галерея группы (дефолтные первыми, затем по дате — сортировка в
   /// [PbRealtimeService.watchMascots]). Пустые id отфильтрованы.
-  Stream<List<Mascot>> watchGallery(String groupId) =>
-      _rt.watchMascots(groupId).map((recs) =>
-          recs.map(Mascot.fromPb).where((m) => m.id.isNotEmpty).toList());
+  Stream<List<Mascot>> watchGallery(String groupId) => _rt
+      .watchMascots(groupId)
+      .map(
+        (recs) =>
+            recs.map(Mascot.fromPb).where((m) => m.id.isNotEmpty).toList(),
+      );
 
   Future<void> save(String groupId, Mascot mascot) =>
       _data.upsertMascot(groupId, _input(mascot));
@@ -67,28 +70,34 @@ class MascotRepository {
     String? prevSig;
     return _rt
         .watchGroup(groupId)
-        .map((rec) =>
-            rec == null ? const GroupMascotState() : GroupMascotState.fromPb(rec))
+        .map(
+          (rec) => rec == null
+              ? const GroupMascotState()
+              : GroupMascotState.fromPb(rec),
+        )
         .where((s) {
-      // Покупки пары обязаны быть в подписи: без них покупка партнёра —
-      // единственное изменение записи — отсеивалась бы как «ничего нового»,
-      // и купленный персонаж открылся бы у второго только со следующей правкой
-      // группы.
-      final sig = '${s.activeMascotId}|${s.positionX}|${s.positionY}|'
-          '${s.scale}|${s.streakDays}|${s.streakLastOpenedDate}|${s.xp}|'
-          '${s.mascotStreaks}|${s.ownedFeatures.length}';
-      if (sig == prevSig) return false;
-      prevSig = sig;
-      return true;
-    });
+          // Покупки пары обязаны быть в подписи: без них покупка партнёра —
+          // единственное изменение записи — отсеивалась бы как «ничего нового»,
+          // и купленный персонаж открылся бы у второго только со следующей правкой
+          // группы.
+          final sig =
+              '${s.activeMascotId}|${s.positionX}|${s.positionY}|'
+              '${s.scale}|${s.streakDays}|${s.streakLastOpenedDate}|${s.xp}|'
+              '${s.mascotStreaks}|${s.ownedFeatures.length}';
+          if (sig == prevSig) return false;
+          prevSig = sig;
+          return true;
+        });
   }
 
   /// Активный маскот — состояние в group-доке: оптимистично в кэш + в очередь.
   Future<void> setActive(String groupId, String? mascotId) async {
     final cols = {'active_mascot_id': mascotId ?? ''};
     await LocalStore.instance.patchRecordFields('groups', groupId, cols);
-    await OutboxService.instance
-        .enqueue('groupUpdateFields', {'groupId': groupId, 'cols': cols});
+    await OutboxService.instance.enqueue('groupUpdateFields', {
+      'groupId': groupId,
+      'cols': cols,
+    });
   }
 
   /// Позиция/масштаб маскота — состояние в group-доке: оптимистично + очередь.
@@ -104,8 +113,10 @@ class MascotRepository {
       'mascot_scale': scale,
     };
     await LocalStore.instance.patchRecordFields('groups', groupId, cols);
-    await OutboxService.instance
-        .enqueue('groupUpdateFields', {'groupId': groupId, 'cols': cols});
+    await OutboxService.instance.enqueue('groupUpdateFields', {
+      'groupId': groupId,
+      'cols': cols,
+    });
   }
 
   /// Вернуть сгоревшую серию. Новые поля пары сразу ложатся в кэш: экран не

@@ -34,8 +34,10 @@ void main() {
     });
 
     test('регистр в идентификаторах ничего не меняет', () {
-      expect(coloringSideFor('AAA111', 'zzz999'),
-          coloringSideFor('aaa111', 'ZZZ999'));
+      expect(
+        coloringSideFor('AAA111', 'zzz999'),
+        coloringSideFor('aaa111', 'ZZZ999'),
+      );
     });
   });
 
@@ -44,13 +46,17 @@ void main() {
     const b = 'zzz999';
 
     test('обмен переворачивает сторону', () {
-      expect(coloringSideFor(a, b, swapped: true),
-          isNot(coloringSideFor(a, b)));
+      expect(
+        coloringSideFor(a, b, swapped: true),
+        isNot(coloringSideFor(a, b)),
+      );
     });
 
     test('после обмена половины остаются зеркальными', () {
-      expect(coloringSideFor(a, b, swapped: true),
-          isNot(coloringSideFor(b, a, swapped: true)));
+      expect(
+        coloringSideFor(a, b, swapped: true),
+        isNot(coloringSideFor(b, a, swapped: true)),
+      );
     });
 
     test('без партнёра обмен ничего не меняет: делить не на кого', () {

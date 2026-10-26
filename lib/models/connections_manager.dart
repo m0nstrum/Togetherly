@@ -3,14 +3,13 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/analytics_service.dart';
 import '../services/pb_data_service.dart';
 import '../services/pb_realtime_service.dart';
 import '../services/pocketbase_service.dart';
 import '../services/offline/offline_reset.dart';
 import 'connection.dart';
 import 'waiting_cancel.dart';
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/e2e/fork_e2e.dart';
 
 /// Индекс активной связи, приведённый к границам списка.
 ///
@@ -105,9 +104,7 @@ class ConnectionsManager extends ChangeNotifier {
     // Снимок: в теле есть await'ы (refreshPairStatus), во время которых
     // _connections может перестроиться.
     for (var connection in _connections.toList()) {
-      if (_loggedIn &&
-          connection.inviteCode.isEmpty &&
-          !connection.isSolo) {
+      if (_loggedIn && connection.inviteCode.isEmpty && !connection.isSolo) {
         await _ensureServerCode(connection);
       }
 
@@ -276,7 +273,6 @@ class ConnectionsManager extends ChangeNotifier {
     await _saveLocal();
     notifyListeners();
     debugPrint('acceptCodeAndCreateGroup: SUCCESS, paired=$pairId');
-    unawaited(AnalyticsService.instance.logPairConnected(groupId: pairId));
     return true;
   }
 
@@ -644,7 +640,7 @@ class ConnectionsManager extends ChangeNotifier {
       final rec = recById[remotePairId];
       final membersList =
           (rec?.data['members'] as List?)?.map((e) => e.toString()).toList() ??
-              const <String>[];
+          const <String>[];
       final newPartnerUids = membersList
           .where((uid) => uid.isNotEmpty && uid != myUid)
           .toSet();
@@ -705,9 +701,6 @@ class ConnectionsManager extends ChangeNotifier {
 
       await _saveLocal();
       notifyListeners();
-      unawaited(
-        AnalyticsService.instance.logPairConnected(groupId: remotePairId),
-      );
     }
 
     // Обрабатываем удалённые pairId — партнёр мог выйти/распустить и группа
@@ -744,10 +737,9 @@ class ConnectionsManager extends ChangeNotifier {
       // нормальный коннекшн, а соло очищаем.
       if (existingSolo.pairId.isNotEmpty || existingSolo.isPaired) {
         final orphanedPairId = existingSolo.pairId;
-        final alreadyExists = orphanedPairId.isNotEmpty &&
-            _connections.any(
-              (c) => !c.isSolo && c.pairId == orphanedPairId,
-            );
+        final alreadyExists =
+            orphanedPairId.isNotEmpty &&
+            _connections.any((c) => !c.isSolo && c.pairId == orphanedPairId);
 
         if (!alreadyExists && orphanedPairId.isNotEmpty) {
           // Создаём новый нормальный коннекшн и переносим все данные соло
@@ -847,9 +839,9 @@ class ConnectionsManager extends ChangeNotifier {
     // повторные вызовы (ретрай/двойной тап) плодили по несколько пустых
     // «ожидающих партнёра» подключений → «создало 5 подключений».
     final existing = _connections.cast<Connection?>().firstWhere(
-          (c) => !c!.isSolo && !c.isPaired && c.pairId.isEmpty,
-          orElse: () => null,
-        );
+      (c) => !c!.isSolo && !c.isPaired && c.pairId.isEmpty,
+      orElse: () => null,
+    );
     if (existing != null) {
       existing.relationshipType = type;
       if (type == RelationshipType.custom) {
@@ -908,8 +900,9 @@ class ConnectionsManager extends ChangeNotifier {
 
     // Adjust active index if needed
     if (_activeConnectionIndex >= _connections.length) {
-      _activeConnectionIndex =
-          _connections.isEmpty ? 0 : _connections.length - 1;
+      _activeConnectionIndex = _connections.isEmpty
+          ? 0
+          : _connections.length - 1;
     }
 
     await _saveLocal();
@@ -929,16 +922,18 @@ class ConnectionsManager extends ChangeNotifier {
 
   /// Удаляет из локального списка связи, распущенные партнёром (solo не трогаем).
   void _removeDisbandedConnections() {
-    final disbanded =
-        _connections.where((c) => c.justDisbanded && !c.isSolo).toList();
+    final disbanded = _connections
+        .where((c) => c.justDisbanded && !c.isSolo)
+        .toList();
     if (disbanded.isEmpty) return;
     for (final c in disbanded) {
       c.dispose();
       _connections.remove(c);
     }
     if (_activeConnectionIndex >= _connections.length) {
-      _activeConnectionIndex =
-          _connections.isEmpty ? 0 : _connections.length - 1;
+      _activeConnectionIndex = _connections.isEmpty
+          ? 0
+          : _connections.length - 1;
     }
   }
 
@@ -956,14 +951,14 @@ class ConnectionsManager extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// Куда встать после перестройки списка.
   ///
   /// `indexOf` отдаёт −1, когда связи в списке уже нет: за время `await` её
   /// успели убрать. Класть −1 в активный индекс нельзя — на нём падает всё,
   /// что обращается к списку по этому индексу.
   int _indexOfOrKeep(Connection? target) {
-    if (target == null) return clampedActiveIndex(_activeConnectionIndex, _connections.length);
+    if (target == null)
+      return clampedActiveIndex(_activeConnectionIndex, _connections.length);
     final found = _connections.indexOf(target);
     if (found >= 0) return found;
     return clampedActiveIndex(_activeConnectionIndex, _connections.length);
@@ -973,11 +968,14 @@ class ConnectionsManager extends ChangeNotifier {
     if (_connections.length <= 1) return;
     _activeConnectionIndex =
         (clampedActiveIndex(_activeConnectionIndex, _connections.length) + 1) %
-            _connections.length;
+        _connections.length;
 
     // Generate invite code if the connection doesn't have one.
-    final connection = _connections[
-        clampedActiveIndex(_activeConnectionIndex, _connections.length)];
+    final connection =
+        _connections[clampedActiveIndex(
+          _activeConnectionIndex,
+          _connections.length,
+        )];
     if (connection.inviteCode.isEmpty && !connection.isSolo && _loggedIn) {
       await _ensureServerCode(connection);
     }
@@ -1005,8 +1003,10 @@ class ConnectionsManager extends ChangeNotifier {
     // `indexOf`, а прежняя проверка стерегла только верхнюю границу — и
     // `_connections[-1]` ронял приложение (падения на 1.26.0+188 в ночь
     // 14 августа 2026, тот же RangeError, что чинили в августе у геттера).
-    return _connections[
-            clampedActiveIndex(_activeConnectionIndex, _connections.length)]
+    return _connections[clampedActiveIndex(
+          _activeConnectionIndex,
+          _connections.length,
+        )]
         .isSolo;
   }
 
@@ -1049,8 +1049,7 @@ class ConnectionsManager extends ChangeNotifier {
         final List<dynamic> connectionsJson = jsonDecode(connectionsStr);
         _connections.clear();
         for (var json in connectionsJson) {
-          final connection =
-              Connection.fromJson(json, _onConnectionChanged);
+          final connection = Connection.fromJson(json, _onConnectionChanged);
           _connections.add(connection);
         }
       }

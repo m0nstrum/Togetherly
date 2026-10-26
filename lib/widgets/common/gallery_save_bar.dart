@@ -69,7 +69,11 @@ class _GallerySaveBarState extends State<GallerySaveBar> {
       takenAt: widget.takenAt ?? DateTime.now(),
       file: _file,
     );
-    final job = await saveToGallery(context, title: widget.title, items: [item]);
+    final job = await saveToGallery(
+      context,
+      title: widget.title,
+      items: [item],
+    );
     if (!mounted) return;
     if (job == null) {
       // Отказ в доступе или уже в галерее: журнал скажет, что из этого
@@ -121,7 +125,9 @@ class _GallerySaveBarState extends State<GallerySaveBar> {
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2.5, color: scheme.onPrimary),
+                    strokeWidth: 2.5,
+                    color: scheme.onPrimary,
+                  ),
                 )
               : Icon(icon, size: 22),
           label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),

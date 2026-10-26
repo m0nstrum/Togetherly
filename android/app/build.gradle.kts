@@ -1,7 +1,7 @@
 import java.util.Properties
 import java.io.FileInputStream
-import java.net.URI // fork
-import java.util.Base64 // fork
+import java.net.URI
+import java.util.Base64
 
 plugins {
     id("com.android.application")
@@ -13,7 +13,7 @@ plugins {
     id("com.google.gms.google-services") apply false
 }
 
-// ── fork: Tethered ── (docs/fork/TOUCHPOINTS.md)
+// ── fork: Tethered ── (docs/history/TOUCHPOINTS.md)
 // Своя идентичность, чтобы форк ставился рядом с приложением апстрима и не
 // перехватывал его ссылки. namespace (пакет Kotlin-кода) не меняем: это
 // внутреннее имя, и смена потянула бы перенос всех исходников.
@@ -100,8 +100,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = forkApplicationId // fork
-        manifestPlaceholders += forkManifestPlaceholders // fork
+        applicationId = forkApplicationId
+        manifestPlaceholders += forkManifestPlaceholders
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

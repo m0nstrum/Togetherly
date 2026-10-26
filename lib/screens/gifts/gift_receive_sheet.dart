@@ -147,7 +147,9 @@ class _GiftReceiveSheetState extends State<GiftReceiveSheet>
       // fork: M6 — отказ не молчит
       ForkNotice.failure(
         context,
-        res.error == GiftError.network ? ForkFailure.network : ForkFailure.unknown,
+        res.error == GiftError.network
+            ? ForkFailure.network
+            : ForkFailure.unknown,
         what: ruEn('Не удалось отклонить подарок', 'Couldn’t decline the gift'),
       );
     }

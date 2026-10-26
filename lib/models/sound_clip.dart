@@ -54,22 +54,22 @@ class SoundClip {
   bool get isLocalFile => !url.startsWith('pb://') && !url.startsWith('http');
 
   SoundClip withUrl(String next) => SoundClip(
-        url: next,
-        duration: duration,
-        peaks: peaks,
-        kind: kind,
-        title: title,
-        artist: artist,
-      );
+    url: next,
+    duration: duration,
+    peaks: peaks,
+    kind: kind,
+    title: title,
+    artist: artist,
+  );
 
   Map<String, dynamic> toJson() => {
-        'url': url,
-        'ms': duration.inMilliseconds,
-        'peaks': peaks,
-        'kind': kind.name,
-        if (title.isNotEmpty) 'title': title,
-        if (artist.isNotEmpty) 'artist': artist,
-      };
+    'url': url,
+    'ms': duration.inMilliseconds,
+    'peaks': peaks,
+    'kind': kind.name,
+    if (title.isNotEmpty) 'title': title,
+    if (artist.isNotEmpty) 'artist': artist,
+  };
 
   /// Звук из записи. Битое поле не роняет ленту: без ссылки звука нет вовсе.
   static SoundClip? fromJson(Object? raw) {

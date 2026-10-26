@@ -9,21 +9,23 @@ import 'package:love_app/models/data_export.dart';
 void main() {
   final now = DateTime.utc(2026, 8, 2, 15, 30);
 
-  Map<String, dynamic> bundle({Map<String, List<Map<String, dynamic>>>? parts}) =>
-      buildExportBundle(
-        takenAt: now,
-        appVersion: '1.23.0+158',
-        uid: 'u1',
-        sections: parts ??
-            {
-              'profile': [
-                {'id': 'u1', 'name': 'Саша', 'email': 'sasha@example.com'}
-              ],
-              'messages': [
-                {'id': 'm1', 'text': 'привет', 'ts': 1},
-              ],
-            },
-      );
+  Map<String, dynamic> bundle({
+    Map<String, List<Map<String, dynamic>>>? parts,
+  }) => buildExportBundle(
+    takenAt: now,
+    appVersion: '1.23.0+158',
+    uid: 'u1',
+    sections:
+        parts ??
+        {
+          'profile': [
+            {'id': 'u1', 'name': 'Саша', 'email': 'sasha@example.com'},
+          ],
+          'messages': [
+            {'id': 'm1', 'text': 'привет', 'ts': 1},
+          ],
+        },
+  );
 
   group('buildExportBundle', () {
     test('кладёт дату, версию и владельца', () {
@@ -49,17 +51,19 @@ void main() {
     test('вычищает служебные токены', () {
       // Токен сессии и ключ шифрования кэша в архиве человеку не нужны, а
       // утекают из него легко: файл уходит в мессенджер одним нажатием.
-      final b = bundle(parts: {
-        'profile': [
-          {
-            'id': 'u1',
-            'name': 'Саша',
-            'token': 'секрет',
-            'password_hash': 'x',
-            'cache_key': 'y',
-          }
-        ]
-      });
+      final b = bundle(
+        parts: {
+          'profile': [
+            {
+              'id': 'u1',
+              'name': 'Саша',
+              'token': 'секрет',
+              'password_hash': 'x',
+              'cache_key': 'y',
+            },
+          ],
+        },
+      );
       final row = (b['data'] as Map)['profile'][0] as Map<String, dynamic>;
       expect(row.containsKey('token'), isFalse);
       expect(row.containsKey('password_hash'), isFalse);

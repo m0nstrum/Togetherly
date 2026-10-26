@@ -7,7 +7,6 @@ import '../models/memory.dart';
 import '../models/sound_clip.dart';
 import '../models/memory_sticker.dart';
 import '../utils/pair_time.dart';
-import 'analytics_service.dart';
 import 'daily_task_service.dart';
 import 'level_service.dart';
 import 'offline/local_store.dart';
@@ -50,8 +49,10 @@ class MemoryRepository {
           try {
             out.add(Memory.fromPb(rec));
           } catch (e) {
-            Sentry.captureException(e,
-                hint: Hint.withMap({'memory_id': rec.id, 'group_id': groupId}));
+            Sentry.captureException(
+              e,
+              hint: Hint.withMap({'memory_id': rec.id, 'group_id': groupId}),
+            );
           }
         }
         return out;
@@ -70,21 +71,20 @@ class MemoryRepository {
   /// «Сырой» ряд колонок коллекции `memories` для кэша (= тело upsertMemory без
   /// серверных id/created/updated). [Memory.fromPb] читает его без изменений.
   Map<String, dynamic> _row(String groupId, Memory m) => {
-        'id': m.id,
-        'group_id': groupId,
-        'type': m.type.name,
-        'author_uid': m.authorUid,
-        'author_name': m.authorName,
-        'author_avatar': m.authorAvatar,
-        'created_at': PairTime.write(m.createdAt),
-        'edited_at':
-            m.editedAt == null ? null : PairTime.write(m.editedAt!),
-        'tz': m.zone.isEmpty ? PairTime.zoneNow() : m.zone,
-        'added_at': m.addedAt == null ? null : PairTime.write(m.addedAt!),
-        'is_pinned': m.isPinned,
-        'deleted': false,
-        'data': m.toJson(),
-      };
+    'id': m.id,
+    'group_id': groupId,
+    'type': m.type.name,
+    'author_uid': m.authorUid,
+    'author_name': m.authorName,
+    'author_avatar': m.authorAvatar,
+    'created_at': PairTime.write(m.createdAt),
+    'edited_at': m.editedAt == null ? null : PairTime.write(m.editedAt!),
+    'tz': m.zone.isEmpty ? PairTime.zoneNow() : m.zone,
+    'added_at': m.addedAt == null ? null : PairTime.write(m.addedAt!),
+    'is_pinned': m.isPinned,
+    'deleted': false,
+    'data': m.toJson(),
+  };
 
   // ── Запись ───────────────────────────────────────────────────────────────
   /// Создаёт воспоминание (id генерится локально и принимается сервером).
@@ -120,6 +120,7 @@ class MemoryRepository {
     String? movieRatingKp,
     String? movieInfoUrl,
     int? rating,
+
     /// Звук к фото или видео, уже залитый (`pb://`) или ждущий сети (`localfile://`).
     SoundClip? sound,
     bool isAdult = false,
@@ -127,9 +128,11 @@ class MemoryRepository {
     bool sealed = false,
     DateTime? openAt,
     DateTime? customDate,
+
     /// Задание дня, из строки которого открыли форму: оно закроется даже если
     /// тип пина оказался другим (текст плюс снимок — это уже `photo`).
     String? dailyTaskId,
+
     /// false — запись сделало само приложение (копия сообщения, фото или
     /// песни с виджета), а не человек: такая не закрывает задание дня.
     /// Иначе утреннее сообщение в виджете отмечало «Вспомни любимый момент»,
@@ -143,11 +146,13 @@ class MemoryRepository {
       // фото «уходит в виджет, но не в воспоминания»). После фолбэка userId на
       // JWT (см. PocketBaseService.userId) uid==null означает реально нет
       // сессии — фиксируем, чтобы такие случаи были видимы, а не терялись молча.
-      unawaited(Sentry.captureMessage(
-        'MemoryRepository.add dropped: uid=${uid == null ? "null" : "ok"}, '
-        'groupId=${groupId.isEmpty ? "empty" : "ok"}, type=${type.name}',
-        withScope: (s) => s.level = SentryLevel.warning,
-      ));
+      unawaited(
+        Sentry.captureMessage(
+          'MemoryRepository.add dropped: uid=${uid == null ? "null" : "ok"}, '
+          'groupId=${groupId.isEmpty ? "empty" : "ok"}, type=${type.name}',
+          withScope: (s) => s.level = SentryLevel.warning,
+        ),
+      );
       return null;
     }
     final memory = Memory(
@@ -200,21 +205,27 @@ class MemoryRepository {
     // 1) оптимистично в кэш → лента показывает сразу (и офлайн)
     await _cache.upsertRaw('memories', memory.id, _row(groupId, memory));
     // 2) в очередь: только сама запись. `memories_count` ведёт сервер
-    // (counters.pb.js по create/delete в `memories`) — пока цифру считал клиент
+    // (bindCounters по create/delete в `memories`) — пока цифру считал клиент
     // отдельной операцией очереди, любая её потеря расходилась с лентой
     // навсегда: у каждой четвёртой пары «воспоминаний 2, показывает 1».
-    await _outbox.enqueue('memoryUpsert',
-        {'groupId': groupId, 'id': memory.id, 'data': memory.toJson()});
+    await _outbox.enqueue('memoryUpsert', {
+      'groupId': groupId,
+      'id': memory.id,
+      'data': memory.toJson(),
+    });
     // XP/аналитика — best-effort (онлайн); офлайн просто не начислится.
     unawaited(LevelService.instance.award(XpAction.addMemory));
     // Задание дня закрывается тем же пином: тип совпал — задание засчитано,
     // монету выдаёт сервер. Пин чужого типа не делает ничего, но пин из самой
     // строки задания закрывает её независимо от типа.
     if (countsForDailyTask || dailyTaskId != null) {
-      unawaited(DailyTaskService.instance
-          .onMemoryCreated(type, fromTaskId: dailyTaskId));
+      unawaited(
+        DailyTaskService.instance.onMemoryCreated(
+          type,
+          fromTaskId: dailyTaskId,
+        ),
+      );
     }
-    unawaited(AnalyticsService.instance.logMemoryAdded(type: type.name));
     return memory;
   }
 
@@ -233,6 +244,7 @@ class MemoryRepository {
     String? bookAuthor,
     int? rating,
     String? imageUrl,
+
     /// Новый список кадров записи после правки; первый — обложка.
     List<String>? imageUrls,
     bool? isPinned,
@@ -292,16 +304,18 @@ class MemoryRepository {
     row['edited_at'] = map['editedAt'];
 
     await _cache.upsertRaw('memories', memoryId, row);
-    await _outbox.enqueue(
-        'memoryUpsert', {'groupId': groupId, 'id': memoryId, 'data': map});
+    await _outbox.enqueue('memoryUpsert', {
+      'groupId': groupId,
+      'id': memoryId,
+      'data': map,
+    });
   }
 
   Future<void> togglePin({
     required String groupId,
     required String memoryId,
     required bool isPinned,
-  }) =>
-      update(groupId: groupId, memoryId: memoryId, isPinned: isPinned);
+  }) => update(groupId: groupId, memoryId: memoryId, isPinned: isPinned);
 
   /// Переключает «Избранное» для ТЕКУЩЕГО пользователя (персонально). Оптимистично
   /// в кэш + идемпотентная set-saved операция в очередь (на сервере приводит
@@ -330,8 +344,11 @@ class MemoryRepository {
     map['savedBy'] = saved;
     row['data'] = map;
     await _cache.upsertRaw('memories', memoryId, row);
-    await _outbox.enqueue('memorySetSaved',
-        {'memoryId': memoryId, 'uid': uid, 'saved': willSave});
+    await _outbox.enqueue('memorySetSaved', {
+      'memoryId': memoryId,
+      'uid': uid,
+      'saved': willSave,
+    });
   }
 
   /// Ставит или снимает реакцию: тот же значок снимает, другой — заменяет.
@@ -356,8 +373,11 @@ class MemoryRepository {
     map['reactions'] = next;
     row['data'] = map;
     await _cache.upsertRaw('memories', memoryId, row);
-    await _outbox.enqueue('memorySetReaction',
-        {'memoryId': memoryId, 'uid': uid, 'reaction': next[uid] ?? ''});
+    await _outbox.enqueue('memorySetReaction', {
+      'memoryId': memoryId,
+      'uid': uid,
+      'reaction': next[uid] ?? '',
+    });
   }
 
   /// Ставит или переставляет наклейку: сразу на экране, потом на сервере.
@@ -415,11 +435,17 @@ class MemoryRepository {
     String? musicCoverUrl,
   }) async {
     await _cache.deleteRecord('memories', memoryId);
-    final refs = [imageUrl, videoUrl, musicUrl, musicCoverUrl]
-        .whereType<String>()
-        .toList();
-    await _outbox.enqueue('memoryDelete',
-        {'groupId': groupId, 'id': memoryId, 'mediaRefs': refs});
+    final refs = [
+      imageUrl,
+      videoUrl,
+      musicUrl,
+      musicCoverUrl,
+    ].whereType<String>().toList();
+    await _outbox.enqueue('memoryDelete', {
+      'groupId': groupId,
+      'id': memoryId,
+      'mediaRefs': refs,
+    });
   }
 
   // ── Комментарии ──────────────────────────────────────────────────────────
@@ -486,8 +512,11 @@ class MemoryRepository {
         'tz': zone,
       },
     });
-    await _outbox.enqueue('memoryBumpComments',
-        {'groupId': groupId, 'memoryId': memoryId, 'by': 1});
+    await _outbox.enqueue('memoryBumpComments', {
+      'groupId': groupId,
+      'memoryId': memoryId,
+      'by': 1,
+    });
   }
 
   Future<void> deleteComment(String commentId) async {

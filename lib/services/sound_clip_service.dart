@@ -64,7 +64,9 @@ class SoundClipService {
     ];
     if (values.isEmpty) return List<double>.filled(buckets, 0);
     return List<double>.generate(
-        buckets, (i) => values[(i * values.length ~/ buckets)]);
+      buckets,
+      (i) => values[(i * values.length ~/ buckets)],
+    );
   }
 
   /// Вырезает кусок песни. Длина больше [limit] режется до предела.

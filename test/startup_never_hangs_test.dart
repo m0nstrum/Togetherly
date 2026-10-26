@@ -16,20 +16,31 @@ void main() {
 
     final syncAt = source.indexOf('syncFromServer()');
     expect(syncAt, isNot(-1), reason: 'вызов пропал — обновите сторожа');
-    expect(source.substring(syncAt - 40, syncAt), contains('unawaited('),
-        reason: 'профиль с сервера догружается в фоне, заставка его не ждёт');
+    expect(
+      source.substring(syncAt - 40, syncAt),
+      contains('unawaited('),
+      reason: 'профиль с сервера догружается в фоне, заставка его не ждёт',
+    );
 
     final initAt = source.indexOf('Future<void> _init() async');
     final init = source.substring(initAt, source.indexOf('\n  }\n', initAt));
-    expect(init.contains('await PbDataService()'), isFalse,
-        reason: 'проверка версии идёт в фоне');
+    expect(
+      init.contains('await PbDataService()'),
+      isFalse,
+      reason: 'проверка версии идёт в фоне',
+    );
     expect(init.contains('unawaited(_checkMinBuild())'), isTrue);
 
     final user = File('lib/models/user_data.dart').readAsStringSync();
-    final load = user.substring(user.indexOf('Future<void> loadFromPrefs('),
-        user.indexOf('Future<void> syncFromServer('));
-    expect(load.contains('await _syncFromFirestore'), isFalse,
-        reason: 'чтение профиля с телефона не ждёт сервер');
+    final load = user.substring(
+      user.indexOf('Future<void> loadFromPrefs('),
+      user.indexOf('Future<void> syncFromServer('),
+    );
+    expect(
+      load.contains('await _syncFromFirestore'),
+      isFalse,
+      reason: 'чтение профиля с телефона не ждёт сервер',
+    );
     expect(load.contains('await syncFromServer'), isFalse);
   });
 
@@ -39,9 +50,15 @@ void main() {
     expect(initAt, isNot(-1));
 
     final head = source.substring(initAt, initAt + 800);
-    expect(head, contains('Timer('),
-        reason: 'нужна страховка, снимающая заставку по времени');
-    expect(head, contains('_loading = false'),
-        reason: 'страховка обязана именно снимать заставку');
+    expect(
+      head,
+      contains('Timer('),
+      reason: 'нужна страховка, снимающая заставку по времени',
+    );
+    expect(
+      head,
+      contains('_loading = false'),
+      reason: 'страховка обязана именно снимать заставку',
+    );
   });
 }

@@ -45,11 +45,10 @@ void main() {
 
     test('после закрытия первого листа пикер снова доступен', () async {
       var calls = 0;
-      Future<List<XFile>?> pick() =>
-          safePick<List<XFile>>(() async {
-            calls++;
-            return <XFile>[];
-          });
+      Future<List<XFile>?> pick() => safePick<List<XFile>>(() async {
+        calls++;
+        return <XFile>[];
+      });
 
       expect(await pick(), isEmpty);
       expect(await pick(), isEmpty);
@@ -107,10 +106,11 @@ void main() {
       r'\.pick(Image|Video|Media|MultipleMedia|MultiImage)\(',
     );
     final offenders = <String>[];
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       final rest = stripSafePick(file.readAsStringSync());
       for (final m in picker.allMatches(rest)) {
         final line = '\n'.allMatches(rest.substring(0, m.start)).length + 1;

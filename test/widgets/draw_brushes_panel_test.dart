@@ -40,10 +40,16 @@ Widget _panel({
 }) {
   return MaterialApp(
     theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7E8B), brightness: brightness),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFFFF7E8B),
+        brightness: brightness,
+      ),
     ),
     home: MediaQuery(
-      data: MediaQueryData(size: Size(width, 800), textScaler: TextScaler.linear(textScale)),
+      data: MediaQueryData(
+        size: Size(width, 800),
+        textScaler: TextScaler.linear(textScale),
+      ),
       child: Scaffold(
         body: Align(
           alignment: Alignment.bottomCenter,
@@ -81,7 +87,10 @@ Widget _panel({
                 labelThickness: 'Толщина',
                 labelEraserThickness: 'Толщина ластика',
                 labelColor: 'Цвет',
-                toolLabels: const {DrawQuickTool.brush: 'Кисть', DrawQuickTool.eraser: 'Ластик'},
+                toolLabels: const {
+                  DrawQuickTool.brush: 'Кисть',
+                  DrawQuickTool.eraser: 'Ластик',
+                },
                 onTool: (_) {},
                 onWidth: (_) {},
                 onColor: (_) {},
@@ -114,7 +123,9 @@ Widget _panel({
 }
 
 void main() {
-  testWidgets('у кисти ряд из пяти образцов, под ним имя и подпись', (tester) async {
+  testWidgets('у кисти ряд из пяти образцов, под ним имя и подпись', (
+    tester,
+  ) async {
     StrokeBrush? picked;
     await tester.pumpWidget(_panel(onBrush: (b) => picked = b));
     for (final brush in StrokeBrush.values) {
@@ -129,7 +140,9 @@ void main() {
 
   testWidgets('у ластика свои режимы и толщина, цвета нет', (tester) async {
     EraserMode? picked;
-    await tester.pumpWidget(_panel(tool: DrawQuickTool.eraser, onEraserMode: (m) => picked = m));
+    await tester.pumpWidget(
+      _panel(tool: DrawQuickTool.eraser, onEraserMode: (m) => picked = m),
+    );
     expect(find.byKey(const ValueKey('brush-pen')), findsNothing);
     for (final mode in EraserMode.values) {
       expect(find.byKey(ValueKey('eraser-${mode.name}')), findsOneWidget);
@@ -142,7 +155,9 @@ void main() {
     expect(picked, EraserMode.whole);
   });
 
-  testWidgets('на пиксельном холсте нет ряда кистей и мягкого ластика', (tester) async {
+  testWidgets('на пиксельном холсте нет ряда кистей и мягкого ластика', (
+    tester,
+  ) async {
     await tester.pumpWidget(_panel(pixel: true));
     expect(find.byKey(const ValueKey('brush-pen')), findsNothing);
     await tester.pumpWidget(_panel(pixel: true, tool: DrawQuickTool.eraser));
@@ -150,24 +165,30 @@ void main() {
     expect(find.byKey(const ValueKey('eraser-whole')), findsOneWidget);
   });
 
-  testWidgets('у остальных инструментов ряда кистей нет, цвет на месте', (tester) async {
+  testWidgets('у остальных инструментов ряда кистей нет, цвет на месте', (
+    tester,
+  ) async {
     await tester.pumpWidget(_panel(tool: DrawQuickTool.fill));
     expect(find.byKey(const ValueKey('brush-pen')), findsNothing);
     expect(find.text('ЦВЕТ'), findsOneWidget);
   });
 
   for (final brightness in Brightness.values) {
-    testWidgets('320 точек, шрифт 1,3, ${brightness.name}: всё влезает', (tester) async {
+    testWidgets('320 точек, шрифт 1,3, ${brightness.name}: всё влезает', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(320, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       for (final tool in [DrawQuickTool.brush, DrawQuickTool.eraser]) {
-        await tester.pumpWidget(_panel(
-          tool: tool,
-          brush: StrokeBrush.calligraphy,
-          brightness: brightness,
-          textScale: 1.3,
-        ));
+        await tester.pumpWidget(
+          _panel(
+            tool: tool,
+            brush: StrokeBrush.calligraphy,
+            brightness: brightness,
+            textScale: 1.3,
+          ),
+        );
         expect(tester.takeException(), isNull, reason: tool.name);
       }
     });

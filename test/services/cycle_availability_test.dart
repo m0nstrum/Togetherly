@@ -15,12 +15,22 @@ void main() {
   test('доступ к циклу не зависит от пола', () {
     final source = File('lib/services/cycle_service.dart').readAsStringSync();
     final start = source.indexOf('static bool availableFor');
-    expect(start, greaterThan(-1), reason: 'правило доступа должно быть на месте');
+    expect(
+      start,
+      greaterThan(-1),
+      reason: 'правило доступа должно быть на месте',
+    );
     final rule = source.substring(start, start + 200);
 
-    expect(rule.contains('Gender'), isFalse,
-        reason: 'пол в условии доступа больше не участвует');
-    expect(rule.contains('PlusService.instance.visible'), isTrue,
-        reason: 'условие одно — Togetherly+');
+    expect(
+      rule.contains('Gender'),
+      isFalse,
+      reason: 'пол в условии доступа больше не участвует',
+    );
+    expect(
+      rule.contains('PlusService.instance.visible'),
+      isTrue,
+      reason: 'условие одно — Togetherly+',
+    );
   });
 }

@@ -8,8 +8,18 @@ String forkRuCountWord(int count, String one, String few, String many) {
   return many;
 }
 
-String forkDaysWord(int n) => ruEn(forkRuCountWord(n, 'день', 'дня', 'дней'), n == 1 ? 'day' : 'days');
-String forkMemoriesWord(int n) => ruEn(forkRuCountWord(n, 'воспоминание', 'воспоминания', 'воспоминаний'), n == 1 ? 'memory' : 'memories');
-String forkMessagesWord(int n) => ruEn(forkRuCountWord(n, 'сообщение', 'сообщения', 'сообщений'), n == 1 ? 'message' : 'messages');
+String forkDaysWord(int n) =>
+    ruEn(forkRuCountWord(n, 'день', 'дня', 'дней'), n == 1 ? 'day' : 'days');
+String forkMemoriesWord(int n) => ruEn(
+  forkRuCountWord(n, 'воспоминание', 'воспоминания', 'воспоминаний'),
+  n == 1 ? 'memory' : 'memories',
+);
+String forkMessagesWord(int n) => ruEn(
+  forkRuCountWord(n, 'сообщение', 'сообщения', 'сообщений'),
+  n == 1 ? 'message' : 'messages',
+);
 
-String forkCanvasesWord(int n) => ruEn(forkRuCountWord(n, 'холст', 'холста', 'холстов'), n == 1 ? 'canvas' : 'canvases');
+String forkCanvasesWord(int n) => ruEn(
+  forkRuCountWord(n, 'холст', 'холста', 'холстов'),
+  n == 1 ? 'canvas' : 'canvases',
+);

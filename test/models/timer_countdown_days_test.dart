@@ -2,17 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/timer_item.dart';
 
 TimerItem _countdown(DateTime target) => TimerItem(
-      id: 't',
-      title: 'До встречи',
-      startDate: target,
-      isCountdown: true,
-    );
+  id: 't',
+  title: 'До встречи',
+  startDate: target,
+  isCountdown: true,
+);
 
-TimerItem _countup(DateTime start) => TimerItem(
-      id: 't',
-      title: 'Вместе',
-      startDate: start,
-    );
+TimerItem _countup(DateTime start) =>
+    TimerItem(id: 't', title: 'Вместе', startDate: start);
 
 void main() {
   group('обратный отсчёт считает СУТКИ, а не календарные дни', () {
@@ -21,7 +18,9 @@ void main() {
     // рядом — из настоящего остатка, и они расходились на целый день.
 
     test('осталось 2 дня и 5 часов — показываем 2', () {
-      final t = _countdown(DateTime.now().add(const Duration(days: 2, hours: 5)));
+      final t = _countdown(
+        DateTime.now().add(const Duration(days: 2, hours: 5)),
+      );
       expect(t.daysElapsed, 2);
     });
 
@@ -33,12 +32,16 @@ void main() {
     test('день уходит вместе с последними сутками, а не в полночь', () {
       // Событие через 1 день и 1 час. Календарь мог насчитать и два дня — если
       // событие завтра, а час перевалил за полночь.
-      final t = _countdown(DateTime.now().add(const Duration(days: 1, hours: 1)));
+      final t = _countdown(
+        DateTime.now().add(const Duration(days: 1, hours: 1)),
+      );
       expect(t.daysElapsed, 1);
     });
 
     test('крупное число и часы рядом не расходятся', () {
-      final t = _countdown(DateTime.now().add(const Duration(days: 3, hours: 7)));
+      final t = _countdown(
+        DateTime.now().add(const Duration(days: 3, hours: 7)),
+      );
       expect(t.daysElapsed, t.timeElapsed.inDays);
     });
 
@@ -60,8 +63,11 @@ void main() {
 
     test('вчерашний вечер — уже день, даже если суток не прошло', () {
       final now = DateTime.now();
-      final lateYesterday = DateTime(now.year, now.month, now.day)
-          .subtract(const Duration(hours: 2));
+      final lateYesterday = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(const Duration(hours: 2));
       final t = _countup(lateYesterday);
       expect(t.daysElapsed, 1);
     });

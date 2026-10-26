@@ -37,28 +37,74 @@ class _SymbolPickerScreenState extends State<SymbolPickerScreen> {
   /// ребёнка, переезда, учёбы или дороги.
   static const Map<String, List<String>> _sets = {
     'love': [
-      'favorite', 'favorite_border', 'heart_plus', 'volunteer_activism',
-      'diamond', 'celebration', 'local_florist', 'spa', 'wine_bar',
-      'nightlife', 'photo_camera', 'mail',
+      'favorite',
+      'favorite_border',
+      'heart_plus',
+      'volunteer_activism',
+      'diamond',
+      'celebration',
+      'local_florist',
+      'spa',
+      'wine_bar',
+      'nightlife',
+      'photo_camera',
+      'mail',
     ],
     'holidays': [
-      'cake', 'celebration', 'festival', 'card_giftcard', 'redeem',
-      'local_activity', 'emoji_events', 'auto_awesome', 'icecream',
-      'local_bar', 'stars', 'confirmation_number',
+      'cake',
+      'celebration',
+      'festival',
+      'card_giftcard',
+      'redeem',
+      'local_activity',
+      'emoji_events',
+      'auto_awesome',
+      'icecream',
+      'local_bar',
+      'stars',
+      'confirmation_number',
     ],
     'home': [
-      'home', 'house', 'cottage', 'apartment', 'key', 'chair', 'bed',
-      'kitchen', 'yard', 'pets', 'door_front', 'local_laundry_service',
+      'home',
+      'house',
+      'cottage',
+      'apartment',
+      'key',
+      'chair',
+      'bed',
+      'kitchen',
+      'yard',
+      'pets',
+      'door_front',
+      'local_laundry_service',
     ],
     'road': [
-      'flight', 'flight_takeoff', 'luggage', 'travel_explore', 'map',
-      'directions_car', 'train', 'sailing', 'beach_access', 'hiking',
-      'landscape', 'photo_camera',
+      'flight',
+      'flight_takeoff',
+      'luggage',
+      'travel_explore',
+      'map',
+      'directions_car',
+      'train',
+      'sailing',
+      'beach_access',
+      'hiking',
+      'landscape',
+      'photo_camera',
     ],
     'work': [
-      'work', 'school', 'menu_book', 'business_center', 'badge', 'handshake',
-      'savings', 'payments', 'fitness_center', 'rocket_launch',
-      'track_changes', 'military_tech',
+      'work',
+      'school',
+      'menu_book',
+      'business_center',
+      'badge',
+      'handshake',
+      'savings',
+      'payments',
+      'fitness_center',
+      'rocket_launch',
+      'track_changes',
+      'military_tech',
     ],
   };
 
@@ -172,11 +218,13 @@ class _SymbolPickerScreenState extends State<SymbolPickerScreen> {
                     child: Text(
                       searching
                           ? (items.isEmpty
-                              ? s.symbolSearchEmpty
-                              : s.symbolSearchFound(items.length))
+                                ? s.symbolSearchEmpty
+                                : s.symbolSearchFound(items.length))
                           : s.symbolSetHint,
-                      style:
-                          TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -189,10 +237,10 @@ class _SymbolPickerScreenState extends State<SymbolPickerScreen> {
                       ),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                      ),
+                            crossAxisCount: 5,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                          ),
                       // Список ограничиваем: по запросу «a» подходит половина
                       // каталога, и рисовать её целиком незачем — уточнить
                       // запрос быстрее, чем пролистать тысячу значков.
@@ -215,8 +263,7 @@ class _SymbolPickerScreenState extends State<SymbolPickerScreen> {
                               child: SymbolIcon(
                                 name,
                                 size: 26,
-                                color:
-                                    selected ? cs.onPrimary : cs.onSurface,
+                                color: selected ? cs.onPrimary : cs.onSurface,
                               ),
                             ),
                           ),
@@ -231,10 +278,10 @@ class _SymbolPickerScreenState extends State<SymbolPickerScreen> {
   }
 
   String _setLabel(String key, AppStrings s) => switch (key) {
-        'love' => s.symbolSetLove,
-        'holidays' => s.symbolSetHolidays,
-        'home' => s.symbolSetHome,
-        'road' => s.symbolSetRoad,
-        _ => s.symbolSetWork,
-      };
+    'love' => s.symbolSetLove,
+    'holidays' => s.symbolSetHolidays,
+    'home' => s.symbolSetHome,
+    'road' => s.symbolSetRoad,
+    _ => s.symbolSetWork,
+  };
 }

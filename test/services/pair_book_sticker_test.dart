@@ -31,30 +31,60 @@ void main() {
     expect(await bookStickerPng(Uint8List.fromList([1, 2, 3])), isNull);
   });
 
-  test('наклейки записи идут в книгу на своих местах, свои — скруглёнными',
-      () async {
-    final pic = Uint8List.fromList([7]);
-    final loaded = <String>[];
-    final out = await bookStickers(
-      const [
-        MemorySticker(id: 'a', uid: 'me', image: _bunny, x: .9, y: .1, size: .3, angle: .2, at: 1),
-        MemorySticker(id: 'b', uid: 'jb', image: _own, x: .2, y: .8, size: .4, angle: -.3, at: 2),
-        MemorySticker(
-            id: 'c', uid: 'jb', image: 'assets/images/mood_packs/bunny/cool.webp', x: .5, y: .5, at: 3),
-      ],
-      (image) async {
-        loaded.add(image);
-        return image.endsWith('cool.webp') ? null : pic;
-      },
-    );
-    expect(out.length, 2, reason: 'не доехавшая картинка пропускается');
-    expect(out.first.x, .9);
-    expect(out.first.y, .1);
-    expect(out.first.size, .3);
-    expect(out.first.angle, .2);
-    expect(out.first.rounded, isFalse);
-    expect(out.last.rounded, isTrue);
-    expect(identical(out.first.image, pic), isTrue);
-    expect(loaded, [_bunny, _own, 'assets/images/mood_packs/bunny/cool.webp']);
-  });
+  test(
+    'наклейки записи идут в книгу на своих местах, свои — скруглёнными',
+    () async {
+      final pic = Uint8List.fromList([7]);
+      final loaded = <String>[];
+      final out = await bookStickers(
+        const [
+          MemorySticker(
+            id: 'a',
+            uid: 'me',
+            image: _bunny,
+            x: .9,
+            y: .1,
+            size: .3,
+            angle: .2,
+            at: 1,
+          ),
+          MemorySticker(
+            id: 'b',
+            uid: 'jb',
+            image: _own,
+            x: .2,
+            y: .8,
+            size: .4,
+            angle: -.3,
+            at: 2,
+          ),
+          MemorySticker(
+            id: 'c',
+            uid: 'jb',
+            image: 'assets/images/mood_packs/bunny/cool.webp',
+            x: .5,
+            y: .5,
+            at: 3,
+          ),
+        ],
+        (image) async {
+          loaded.add(image);
+          return image.endsWith('cool.webp') ? null : pic;
+        },
+      );
+      expect(out.length, 2, reason: 'не доехавшая картинка пропускается');
+      expect(out.first.x, .9);
+      expect(out.first.y, .1);
+      expect(out.first.size, .3);
+      expect(out.first.angle, .2);
+      expect(out.first.rounded, isFalse);
+      expect(out.last.rounded, isTrue);
+      expect(identical(out.first.image, pic), isTrue);
+      expect(loaded, [
+        _bunny,
+        _own,
+        'assets/images/mood_packs/bunny/cool.webp',
+      ]);
+    },
+  );
 }

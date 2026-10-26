@@ -149,7 +149,8 @@ const Map<String, String> smallCZh = {
 
   // common
   'brokenInstallTitle': 'Togetherly 没有完整安装',
-  'brokenInstallBody': '应用的部分文件没有装到这部手机上。从旧手机迁移应用、应用分身或在 Google Play 以外的地方安装时，都可能出现这种情况。请从 Google Play 重新安装：你们保存的一切都存在我们这边，登录后就会回来。',
+  'brokenInstallBody':
+      '应用的部分文件没有装到这部手机上。从旧手机迁移应用、应用分身或在 Google Play 以外的地方安装时，都可能出现这种情况。请从 Google Play 重新安装：你们保存的一切都存在我们这边，登录后就会回来。',
   'brokenInstallAction': '从 Google Play 重新安装',
   'save': '保存',
   'cancel': '取消',
@@ -194,14 +195,14 @@ const Map<String, String> smallCZh = {
   // home_layout
   'homeLayoutTitle': '主屏幕',
   'homeLayoutTabsHint': '底部标签：长按一行即可拖动。首页、连接和我的无法隐藏。',
-  'homeLayoutBlocksHint': '首页模块：长按一行即可拖动，开关可以隐藏模块。在首页上也能长按模块直接拖动。日历、计时器和它下面的按钮位置固定。',
+  'homeLayoutBlocksHint':
+      '首页模块：长按一行即可拖动，开关可以隐藏模块。在首页上也能长按模块直接拖动。日历、计时器和它下面的按钮位置固定。',
   'homeLayoutPlusLock': '开通 Togetherly+ 后可以隐藏和调整模块',
   'homeLayoutPlusOpen': '开通 Togetherly+ 解锁',
   'homeLayoutReset': '恢复默认',
   'homeLayoutActionsSub': '计时器下方的按钮',
   'homeActionDraw': '画画',
   'homeActionMood': '心情',
-  'homeActionWallet': 'Togetherly Wallet',
   'homeActionCalendar': '心情日历',
   'homeActionPost': '照片',
   'homeBlockChest': '每周宝箱',

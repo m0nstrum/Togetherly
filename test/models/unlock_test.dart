@@ -36,13 +36,20 @@ void main() {
     });
 
     test('Открывается по Togetherly+', () {
-      final u = Unlock.fromJson({'type': 'premium', 'price': 120, 'plus': true});
+      final u = Unlock.fromJson({
+        'type': 'premium',
+        'price': 120,
+        'plus': true,
+      });
       expect(u.plusIncluded, isTrue);
     });
 
     test('Битая цена не пускает элемент в продажу', () {
       expect(Unlock.fromJson({'type': 'premium', 'price': 'дорого'}).price, 0);
-      expect(Unlock.fromJson({'type': 'premium', 'price': -5}).isForSale, isFalse);
+      expect(
+        Unlock.fromJson({'type': 'premium', 'price': -5}).isForSale,
+        isFalse,
+      );
     });
   });
 
@@ -64,15 +71,21 @@ void main() {
     });
 
     test('А с флагом в каталоге — открывает', () {
-      final withPlus =
-          Unlock.fromJson({'type': 'premium', 'price': 120, 'plus': true});
+      final withPlus = Unlock.fromJson({
+        'type': 'premium',
+        'price': 120,
+        'plus': true,
+      });
       expect(withPlus.isUnlocked(level: 1, owned: false, plus: true), isTrue);
       expect(withPlus.isUnlocked(level: 1, owned: false, plus: false), isFalse);
     });
 
     test('Купленное остаётся у человека и без Плюса', () {
-      final withPlus =
-          Unlock.fromJson({'type': 'premium', 'price': 120, 'plus': true});
+      final withPlus = Unlock.fromJson({
+        'type': 'premium',
+        'price': 120,
+        'plus': true,
+      });
       expect(withPlus.isUnlocked(level: 1, owned: true, plus: false), isTrue);
     });
   });

@@ -40,7 +40,9 @@ class OwnMoodsBar extends StatelessWidget {
     final cs = ProfileTheme.schemeFor(t);
     final quiet = locked || full;
     final bg = quiet ? cs.surfaceContainerHighest : t.fillColor;
-    final fg = quiet ? cs.onSurface : AppThemes.onColor(t.fillColor, mode: t.brightness);
+    final fg = quiet
+        ? cs.onSurface
+        : AppThemes.onColor(t.fillColor, mode: t.brightness);
     return Padding(
       padding: const EdgeInsets.fromLTRB(2, 4, 0, 2),
       child: Row(
@@ -48,7 +50,13 @@ class OwnMoodsBar extends StatelessWidget {
           Expanded(
             child: Text(
               meta,
-              style: TextStyle(fontFamily: 'Onest', fontSize: 13, fontWeight: FontWeight.w600, height: 1.3, color: cs.onSurfaceVariant),
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -66,9 +74,21 @@ class OwnMoodsBar extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(locked ? Icons.lock_rounded : Icons.add_rounded, size: locked ? 16 : 20, color: fg),
+                      Icon(
+                        locked ? Icons.lock_rounded : Icons.add_rounded,
+                        size: locked ? 16 : 20,
+                        color: fg,
+                      ),
                       const SizedBox(width: 6),
-                      Text(newLabel, style: TextStyle(fontFamily: 'Onest', fontSize: 14, fontWeight: FontWeight.w700, color: fg)),
+                      Text(
+                        newLabel,
+                        style: TextStyle(
+                          fontFamily: 'Onest',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: fg,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -91,7 +111,12 @@ class OwnMoodsEmpty extends StatelessWidget {
   final String text;
   final VoidCallback? onCreate;
 
-  const OwnMoodsEmpty({super.key, required this.title, required this.text, this.onCreate});
+  const OwnMoodsEmpty({
+    super.key,
+    required this.title,
+    required this.text,
+    this.onCreate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +145,12 @@ class OwnMoodsEmpty extends StatelessWidget {
             child: Text(
               text,
               textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Onest', fontSize: 14, height: 1.45, color: cs.onSurfaceVariant),
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 14,
+                height: 1.45,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ),
           if (onCreate != null) ...[
@@ -150,15 +180,17 @@ class OwnMoodsFan extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = ProfileTheme.schemeFor(context.appTheme);
     Widget tile(Widget child, Color color) => SizedBox(
-          width: _tile,
-          height: _tile,
-          child: ClipPath(
-            clipper: ShapeBorderClipper(
-              shape: RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(_tile * 0.34)),
-            ),
-            child: ColoredBox(color: color, child: child),
+      width: _tile,
+      height: _tile,
+      child: ClipPath(
+        clipper: ShapeBorderClipper(
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(_tile * 0.34),
           ),
-        );
+        ),
+        child: ColoredBox(color: color, child: child),
+      ),
+    );
     return ExcludeSemantics(
       child: SizedBox(
         width: 236,
@@ -173,7 +205,10 @@ class OwnMoodsFan extends StatelessWidget {
                 child: tile(
                   Center(
                     child: MediaQuery.withNoTextScaling(
-                      child: const Text('🤯', style: TextStyle(fontSize: 50, height: 1)),
+                      child: const Text(
+                        '🤯',
+                        style: TextStyle(fontSize: 50, height: 1),
+                      ),
                     ),
                   ),
                   moodScoreTint(2, cs, alpha: 0.30),
@@ -185,14 +220,21 @@ class OwnMoodsFan extends StatelessWidget {
               top: 10,
               child: Transform.rotate(
                 angle: 9 * math.pi / 180,
-                child: tile(MoodStrokesView(strokes: sleepyDoodle()), Colors.white),
+                child: tile(
+                  MoodStrokesView(strokes: sleepyDoodle()),
+                  Colors.white,
+                ),
               ),
             ),
             Positioned(
               left: 74,
               top: 2,
               child: tile(
-                Icon(Icons.photo_rounded, size: 44, color: cs.onTertiaryContainer),
+                Icon(
+                  Icons.photo_rounded,
+                  size: 44,
+                  color: cs.onTertiaryContainer,
+                ),
                 cs.tertiaryContainer,
               ),
             ),
@@ -217,22 +259,43 @@ List<MoodStroke> sleepyDoodle() {
       }(),
   ];
   List<Offset> arc(double cx) => [
-        for (var k = 0; k <= 30; k++) Offset(cx + 0.066 * math.cos(math.pi * k / 30), 0.523 + 0.035 * math.sin(math.pi * k / 30)),
-      ];
+    for (var k = 0; k <= 30; k++)
+      Offset(
+        cx + 0.066 * math.cos(math.pi * k / 30),
+        0.523 + 0.035 * math.sin(math.pi * k / 30),
+      ),
+  ];
   final mouth = [
-    for (var k = 0; k <= 40; k++) Offset(0.5 + 0.027 * math.cos(2 * math.pi * k / 40), 0.703 + 0.031 * math.sin(2 * math.pi * k / 40)),
+    for (var k = 0; k <= 40; k++)
+      Offset(
+        0.5 + 0.027 * math.cos(2 * math.pi * k / 40),
+        0.703 + 0.031 * math.sin(2 * math.pi * k / 40),
+      ),
   ];
   MoodStroke zed(double x, double y, double k) => MoodStroke(
-        points: [Offset(x, y), Offset(x + 0.078 * k, y), Offset(x, y + 0.078 * k), Offset(x + 0.078 * k, y + 0.078 * k)],
-        color: sky,
-        width: 0.02 * k + 0.006,
-      );
+    points: [
+      Offset(x, y),
+      Offset(x + 0.078 * k, y),
+      Offset(x, y + 0.078 * k),
+      Offset(x + 0.078 * k, y + 0.078 * k),
+    ],
+    color: sky,
+    width: 0.02 * k + 0.006,
+  );
   return [
     MoodStroke(points: head, color: ink, width: 0.03),
     MoodStroke(points: arc(0.38), color: ink, width: 0.026),
     MoodStroke(points: arc(0.62), color: ink, width: 0.026),
-    MoodStroke(points: const [Offset(0.31, 0.655), Offset(0.35, 0.655)], color: pink, width: 0.065),
-    MoodStroke(points: const [Offset(0.65, 0.655), Offset(0.69, 0.655)], color: pink, width: 0.065),
+    MoodStroke(
+      points: const [Offset(0.31, 0.655), Offset(0.35, 0.655)],
+      color: pink,
+      width: 0.065,
+    ),
+    MoodStroke(
+      points: const [Offset(0.65, 0.655), Offset(0.69, 0.655)],
+      color: pink,
+      width: 0.065,
+    ),
     MoodStroke(points: mouth, color: ink, width: 0.022),
     zed(0.70, 0.14, 1),
     zed(0.82, 0.045, 0.7),

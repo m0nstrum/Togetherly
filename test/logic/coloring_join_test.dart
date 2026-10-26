@@ -22,27 +22,25 @@ void main() {
     String picture = 'cafe',
     DateTime? at,
     Map<String, bool> done = const {},
-  }) =>
-      ColoringSheet(
-        canvasId: canvasId,
-        pictureId: picture,
-        lastActivity: at ?? arseniyStart,
-        done: done,
-      );
+  }) => ColoringSheet(
+    canvasId: canvasId,
+    pictureId: picture,
+    lastActivity: at ?? arseniyStart,
+    done: done,
+  );
 
   ColoringSheet? pick(
     List<ColoringSheet> sheets, {
     String picture = 'cafe',
     Set<String>? listed,
     DateTime? now,
-  }) =>
-      coloringSheetToJoin(
-        sheets,
-        pictureId: picture,
-        members: members,
-        listed: listed ?? {for (final s in sheets) s.canvasId},
-        now: now ?? dariaPick,
-      );
+  }) => coloringSheetToJoin(
+    sheets,
+    pictureId: picture,
+    members: members,
+    listed: listed ?? {for (final s in sheets) s.canvasId},
+    now: now ?? dariaPick,
+  );
 
   group('coloringSheetToJoin', () {
     test('лист партнёра, начатый 17 секунд назад, — туда и ведём', () {
@@ -55,14 +53,18 @@ void main() {
     });
 
     test('лист старше окна не предлагаем', () {
-      final old = sheet('canvas_1',
-          at: dariaPick.subtract(coloringJoinWindow + const Duration(minutes: 1)));
+      final old = sheet(
+        'canvas_1',
+        at: dariaPick.subtract(coloringJoinWindow + const Duration(minutes: 1)),
+      );
       expect(pick([old]), isNull);
     });
 
     test('лист внутри окна предлагаем', () {
-      final recent = sheet('canvas_1',
-          at: dariaPick.subtract(coloringJoinWindow - const Duration(minutes: 1)));
+      final recent = sheet(
+        'canvas_1',
+        at: dariaPick.subtract(coloringJoinWindow - const Duration(minutes: 1)),
+      );
       expect(pick([recent])?.canvasId, 'canvas_1');
     });
 
@@ -97,8 +99,10 @@ void main() {
     });
 
     test('лист из будущего (часы разъехались) всё равно подходит', () {
-      final ahead = sheet('canvas_1',
-          at: dariaPick.add(const Duration(minutes: 3)));
+      final ahead = sheet(
+        'canvas_1',
+        at: dariaPick.add(const Duration(minutes: 3)),
+      );
       expect(pick([ahead])?.canvasId, 'canvas_1');
     });
 
@@ -119,7 +123,10 @@ void main() {
       expect(s!.canvasId, 'canvas_1789307787542');
       expect(s.pictureId, 'cafe');
       expect(s.done, {partner: true});
-      expect(s.lastActivity.toUtc(), DateTime.utc(2026, 9, 22, 17, 28, 17, 325, 524));
+      expect(
+        s.lastActivity.toUtc(),
+        DateTime.utc(2026, 9, 22, 17, 28, 17, 325, 524),
+      );
     });
 
     test('карта готовности строкой JSON тоже читается', () {
@@ -138,17 +145,21 @@ void main() {
         'coloring_id': 'cafe',
         'updated_at': '',
       });
-      expect(s!.lastActivity, DateTime.fromMillisecondsSinceEpoch(1789307787542));
+      expect(
+        s!.lastActivity,
+        DateTime.fromMillisecondsSinceEpoch(1789307787542),
+      );
     });
 
     test('холст без раскраски — не кандидат', () {
       expect(
-          ColoringSheet.fromMetaRow({
-            'canvas_id': 'canvas_1',
-            'coloring_id': '',
-            'updated_at': '2026-09-22 17:28:17Z',
-          }),
-          isNull);
+        ColoringSheet.fromMetaRow({
+          'canvas_id': 'canvas_1',
+          'coloring_id': '',
+          'updated_at': '2026-09-22 17:28:17Z',
+        }),
+        isNull,
+      );
     });
   });
 }

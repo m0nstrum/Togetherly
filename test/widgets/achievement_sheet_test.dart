@@ -24,20 +24,21 @@ Widget _sheet(
   int position = 1,
   int total = 1,
   VoidCallback? onSeeAll,
-}) =>
-    achievementApp(Scaffold(
-      body: Align(
-        alignment: Alignment.bottomCenter,
-        child: AchievementSheetBody(
-          achievement: PairAchievement.byId(id)!,
-          stats: stats,
-          fresh: fresh,
-          position: position,
-          total: total,
-          onSeeAll: onSeeAll,
-        ),
+}) => achievementApp(
+  Scaffold(
+    body: Align(
+      alignment: Alignment.bottomCenter,
+      child: AchievementSheetBody(
+        achievement: PairAchievement.byId(id)!,
+        stats: stats,
+        fresh: fresh,
+        position: position,
+        total: total,
+        onSeeAll: onSeeAll,
       ),
-    ));
+    ),
+  ),
+);
 
 void main() {
   setUpAll(() => useLanguage('ru'));
@@ -78,7 +79,9 @@ void main() {
     expect(find.text('Отлично'), findsOneWidget);
   });
 
-  testWidgets('открытое из списка подписано «Получено» и закрывается', (tester) async {
+  testWidgets('открытое из списка подписано «Получено» и закрывается', (
+    tester,
+  ) async {
     await tester.pumpWidget(_sheet('streak_7', fresh: false));
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('ПОЛУЧЕНО'), findsOneWidget);
@@ -93,7 +96,9 @@ void main() {
     expect(find.text('Отлично'), findsNothing);
   });
 
-  testWidgets('«Все достижения» есть только там, где его просили', (tester) async {
+  testWidgets('«Все достижения» есть только там, где его просили', (
+    tester,
+  ) async {
     await tester.pumpWidget(_sheet('streak_7'));
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('Все достижения'), findsNothing);
@@ -105,33 +110,43 @@ void main() {
     expect(opened, 1);
   });
 
-  testWidgets('семья собрана целиком — вместо цели строка об этом', (tester) async {
-    await tester.pumpWidget(_sheet(
-      'streak_365',
-      stats: const AchievementStats(streakDays: 400),
-    ));
+  testWidgets('семья собрана целиком — вместо цели строка об этом', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _sheet('streak_365', stats: const AchievementStats(streakDays: 400)),
+    );
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('Здесь всё получено'), findsOneWidget);
   });
 
   for (final lang in ['ru', 'de']) {
-    testWidgets('320 точек и шрифт 1.3 без переполнений ($lang)', (tester) async {
+    testWidgets('320 точек и шрифт 1.3 без переполнений ($lang)', (
+      tester,
+    ) async {
       await useLanguage(lang);
       addTearDown(() => useLanguage('ru'));
       useScreen(tester, const Size(320, 640), textScale: 1.3);
-      for (final id in ['memories_250', 'messages_25', 'together_100', 'streak_365']) {
-        await tester.pumpWidget(_sheet(
-          id,
-          stats: const AchievementStats(
-            daysTogether: 120,
-            memories: 260,
-            messages: 30,
-            streakDays: 365,
+      for (final id in [
+        'memories_250',
+        'messages_25',
+        'together_100',
+        'streak_365',
+      ]) {
+        await tester.pumpWidget(
+          _sheet(
+            id,
+            stats: const AchievementStats(
+              daysTogether: 120,
+              memories: 260,
+              messages: 30,
+              streakDays: 365,
+            ),
+            position: 1,
+            total: 3,
+            onSeeAll: () {},
           ),
-          position: 1,
-          total: 3,
-          onSeeAll: () {},
-        ));
+        );
         await tester.pump(const Duration(seconds: 2));
         expect(tester.takeException(), isNull, reason: '$id, $lang');
       }

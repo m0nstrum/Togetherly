@@ -93,10 +93,7 @@ class HomeWidgetService {
 
   /// Читает widget_data одного участника из PocketBase (коллекция widget_data) →
   /// модель WidgetData. null если строки нет.
-  Future<WidgetData?> _readWidgetData(
-    String groupId,
-    String userUid,
-  ) async {
+  Future<WidgetData?> _readWidgetData(String groupId, String userUid) async {
     if (groupId.isEmpty || userUid.isEmpty) return null;
     final rec = await PbDataService().loadWidget(groupId, userUid);
     return rec == null ? null : WidgetData.fromPb(rec);
@@ -110,8 +107,10 @@ class HomeWidgetService {
     String currentUserUid,
   ) async {
     try {
-      final pair =
-          await PbDataService().loadPairMapById(groupId, currentUserUid);
+      final pair = await PbDataService().loadPairMapById(
+        groupId,
+        currentUserUid,
+      );
       if (pair == null) return null;
       final members = (pair['members'] as List?) ?? const [];
       for (final m in members) {
@@ -232,16 +231,13 @@ class HomeWidgetService {
   StreamSubscription<String?>? _ownerSub;
 
   void watchOwner() {
-    _ownerSub ??= PocketBaseService().authChanges.listen(
-      (uid) {
-        // `null` — «не знаю, кто это»: запись сессии не восстановилась, а токен
-        // жив. Раньше такое событие читалось как выход и стирало виджеты у
-        // человека, который никуда не выходил (18.08.2026).
-        if (uid == null) return;
-        unawaited(applyOwnerEvent(uid));
-      },
-      onError: (Object e) => debugPrint('HomeWidgetService.watchOwner: $e'),
-    );
+    _ownerSub ??= PocketBaseService().authChanges.listen((uid) {
+      // `null` — «не знаю, кто это»: запись сессии не восстановилась, а токен
+      // жив. Раньше такое событие читалось как выход и стирало виджеты у
+      // человека, который никуда не выходил (18.08.2026).
+      if (uid == null) return;
+      unawaited(applyOwnerEvent(uid));
+    }, onError: (Object e) => debugPrint('HomeWidgetService.watchOwner: $e'));
   }
 
   /// Сбросить кэш widget-данных (вызывать когда заведомо знаем, что фото поменялось).
@@ -299,8 +295,10 @@ class HomeWidgetService {
     } catch (e) {
       debugPrint('HomeWidgetService.backgroundRefreshAll groups failed: $e');
     }
-    for (final target
-        in pairsToRefresh(groups: allGroups, activeGroupId: groupId)) {
+    for (final target in pairsToRefresh(
+      groups: allGroups,
+      activeGroupId: groupId,
+    )) {
       try {
         await refreshLoveWidgetFromServer(
           target.groupId,
@@ -439,7 +437,9 @@ class HomeWidgetService {
     Future<void> put(String key, String value) async {
       if (shared) await HomeWidget.saveWidgetData<String>(key, value);
       await HomeWidget.saveWidgetData<String>(
-          pairWidgetKey(groupId, key), value);
+        pairWidgetKey(groupId, key),
+        value,
+      );
     }
 
     if (media.myPhoto != null) await put('my_photo_url', media.myPhoto!);
@@ -453,7 +453,9 @@ class HomeWidgetService {
     if (groupId.isNotEmpty) {
       if (shared) {
         await HomeWidget.saveWidgetData<String>(
-            kPairWidgetLatestGroupKey, groupId);
+          kPairWidgetLatestGroupKey,
+          groupId,
+        );
       }
       await HomeWidget.saveWidgetData<String>(pairWidgetReadyKey(groupId), '1');
     }
@@ -463,7 +465,8 @@ class HomeWidgetService {
     // этого шага оборванная закачка утащила бы за собой и свежий статус.
     await HomeWidget.updateWidget(
       name: 'LoveWidgetProvider',
-      androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
+      androidName: 'LoveWidgetProvider',
+      qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
     );
 
     // Картинки кладём файлами в контейнер: виджет умеет только файлы. Половину
@@ -476,11 +479,18 @@ class HomeWidgetService {
       _savePairImage(groupId, 'partner_photo_path', media.partnerPhoto, shared),
       _savePairImage(groupId, 'my_avatar_path', media.myAvatar, shared),
       _savePairImage(
-          groupId, 'partner_avatar_path', media.partnerAvatar, shared),
+        groupId,
+        'partner_avatar_path',
+        media.partnerAvatar,
+        shared,
+      ),
+      _savePairEmoji(groupId, 'my_mood_emoji_path', media.myMoodEmoji, shared),
       _savePairEmoji(
-          groupId, 'my_mood_emoji_path', media.myMoodEmoji, shared),
-      _savePairEmoji(groupId, 'partner_mood_emoji_path',
-          media.partnerMoodEmoji, shared),
+        groupId,
+        'partner_mood_emoji_path',
+        media.partnerMoodEmoji,
+        shared,
+      ),
     ]);
     try {
       await images.timeout(const Duration(seconds: 40));
@@ -491,31 +501,47 @@ class HomeWidgetService {
       // секунд после того, как тексты уже на столе. Догоняем отдельным
       // обновлением, иначе свежая фотография пролежала бы в контейнере до
       // следующего прохода.
-      unawaited(images.then((_) async {
-        try {
-          await HomeWidget.updateWidget(
-            name: 'LoveWidgetProvider',
-            androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
-          );
-          debugPrint('refreshLoveWidgetFromServer: картинки догнали');
-        } catch (e, st) {
-          // Картинки доехали, а перерисовать виджет не вышло: на столе
-          // останется старое фото до следующего прохода. Раньше это глоталось
-          // молча, и жалоба «фото в виджете не меняется» не оставляла следа.
-          debugPrint('refreshLoveWidgetFromServer: перерисовать не вышло — $e');
-          unawaited(Sentry.captureException(e, stackTrace: st, withScope: (s) {
-            s.level = SentryLevel.warning;
-            s.setTag('widget', 'love_redraw_after_images');
-          }));
-        }
-      }).catchError((Object e) {
-        debugPrint('refreshLoveWidgetFromServer: догнать не вышло — $e');
-      }));
+      unawaited(
+        images
+            .then((_) async {
+              try {
+                await HomeWidget.updateWidget(
+                  name: 'LoveWidgetProvider',
+                  androidName: 'LoveWidgetProvider',
+                  qualifiedAndroidName: ForkIdentity.widgetClass(
+                    'LoveWidgetProvider',
+                  ),
+                );
+                debugPrint('refreshLoveWidgetFromServer: картинки догнали');
+              } catch (e, st) {
+                // Картинки доехали, а перерисовать виджет не вышло: на столе
+                // останется старое фото до следующего прохода. Раньше это глоталось
+                // молча, и жалоба «фото в виджете не меняется» не оставляла следа.
+                debugPrint(
+                  'refreshLoveWidgetFromServer: перерисовать не вышло — $e',
+                );
+                unawaited(
+                  Sentry.captureException(
+                    e,
+                    stackTrace: st,
+                    withScope: (s) {
+                      s.level = SentryLevel.warning;
+                      s.setTag('widget', 'love_redraw_after_images');
+                    },
+                  ),
+                );
+              }
+            })
+            .catchError((Object e) {
+              debugPrint('refreshLoveWidgetFromServer: догнать не вышло — $e');
+            }),
+      );
     }
 
     await HomeWidget.updateWidget(
       name: 'LoveWidgetProvider',
-      androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
+      androidName: 'LoveWidgetProvider',
+      qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
     );
 
     // Сетка фото — из того же пробуждения. В фоне её не обновлял никто: она
@@ -533,7 +559,11 @@ class HomeWidgetService {
   // первой и сносил её снимок уборкой старых файлов — пары воевали за один
   // файл, и виджет первой оставался с путём в пустоту.
   Future<void> _savePairImage(
-      String groupId, String key, String? url, bool shared) async {
+    String groupId,
+    String key,
+    String? url,
+    bool shared,
+  ) async {
     final path = await pairImagePath(pairWidgetKey(groupId, key), url);
     if (path == null) return;
     if (shared) await HomeWidget.saveWidgetData<String>(key, path);
@@ -541,7 +571,11 @@ class HomeWidgetService {
   }
 
   Future<void> _savePairEmoji(
-      String groupId, String key, String? assetPath, bool shared) async {
+    String groupId,
+    String key,
+    String? assetPath,
+    bool shared,
+  ) async {
     final path = await pairEmojiPath(pairWidgetKey(groupId, key), assetPath);
     if (path == null) return;
     if (shared) await HomeWidget.saveWidgetData<String>(key, path);
@@ -557,8 +591,9 @@ class HomeWidgetService {
     String partnerUid,
   ) async {
     final myWd = await _readWidgetData(groupId, myUid);
-    final partnerWd =
-        partnerUid.isEmpty ? null : await _readWidgetData(groupId, partnerUid);
+    final partnerWd = partnerUid.isEmpty
+        ? null
+        : await _readWidgetData(groupId, partnerUid);
     // Одно правило на все три места, где собирается виджет настроения:
     // подпись по полу владельца («Устал», а не «Устала»), оценка и цвет — по
     // картинке из каталога. См. moodHalfPayload.
@@ -591,9 +626,13 @@ class HomeWidgetService {
     final g = groupId.isEmpty ? 'solo' : groupId;
     await HomeWidget.saveWidgetData<String>('tgmood_${g}_my_label', mine.label);
     await HomeWidget.saveWidgetData<String>(
-        'tgmood_${g}_partner_label', theirs.label);
+      'tgmood_${g}_partner_label',
+      theirs.label,
+    );
     await HomeWidget.saveWidgetData<String>(
-        'tgmood_${g}_partner_name', partnerWd?.displayName ?? '');
+      'tgmood_${g}_partner_name',
+      partnerWd?.displayName ?? '',
+    );
     await HomeWidget.saveWidgetData<String>('tgmood_latest_group', g);
     await _reloadLockWidget('LockMoodWidget');
   }
@@ -605,15 +644,22 @@ class HomeWidgetService {
   /// экрана блокировки показывали числа того дня, когда приложение открывали
   /// последний раз.
   Future<void> _refreshLockCountersFromServer(
-      String groupId, String myUid, String partnerUid) async {
+    String groupId,
+    String myUid,
+    String partnerUid,
+  ) async {
     if (groupId.isEmpty || myUid.isEmpty) return;
     try {
       final counts = await PbDataService().getMissYouCounts(groupId);
       final g = groupId;
       await HomeWidget.saveWidgetData<String>(
-          'miss_${g}_my_count', '${counts[myUid] ?? 0}');
+        'miss_${g}_my_count',
+        '${counts[myUid] ?? 0}',
+      );
       await HomeWidget.saveWidgetData<String>(
-          'miss_${g}_partner_count', '${counts[partnerUid] ?? 0}');
+        'miss_${g}_partner_count',
+        '${counts[partnerUid] ?? 0}',
+      );
       await HomeWidget.saveWidgetData<String>('miss_latest_group', g);
       await _reloadLockWidget('LockMissWidget');
       // Дни расширение считает само от метки старта — её достаточно освежить.
@@ -626,15 +672,20 @@ class HomeWidgetService {
   Future<void> _updateAllPhotoWidgetProviders() async {
     await HomeWidget.updateWidget(
       name: 'PhotoDayWidgetProvider',
-      androidName: 'PhotoDayWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('PhotoDayWidgetProvider'), // fork
+      androidName: 'PhotoDayWidgetProvider',
+      qualifiedAndroidName: ForkIdentity.widgetClass('PhotoDayWidgetProvider'),
     );
     await HomeWidget.updateWidget(
       name: 'SelfPhotoWidgetProvider',
-      androidName: 'SelfPhotoWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('SelfPhotoWidgetProvider'), // fork
+      androidName: 'SelfPhotoWidgetProvider',
+      qualifiedAndroidName: ForkIdentity.widgetClass('SelfPhotoWidgetProvider'),
     );
     await HomeWidget.updateWidget(
       name: 'PartnerPhotoWidgetProvider',
-      androidName: 'PartnerPhotoWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('PartnerPhotoWidgetProvider'), // fork
+      androidName: 'PartnerPhotoWidgetProvider',
+      qualifiedAndroidName: ForkIdentity.widgetClass(
+        'PartnerPhotoWidgetProvider',
+      ),
     );
   }
 
@@ -643,7 +694,6 @@ class HomeWidgetService {
 
   /// Последний известный индекс темы приложения — fallback в syncTimer.
   int _lastThemeIndex = 0;
-
 
   // ════════════════════════════════════════════════════════════════════════
   //  ПРИВЯЗКА ВИДЖЕТОВ К ГРУППАМ
@@ -681,7 +731,8 @@ class HomeWidgetService {
       // Уборка — дело десятое, ждать её нельзя: свежий снимок важнее
       // вычищенных остатков, а канал платформы иногда молчит.
       await _iosMediaChannel
-          .invokeMethod('clearAppGroupMedia', {'prefix': prefix}).timeout(_ioStep);
+          .invokeMethod('clearAppGroupMedia', {'prefix': prefix})
+          .timeout(_ioStep);
     } catch (e) {
       debugPrint('HomeWidgetService.clearAppGroupMedia failed: $e');
     }
@@ -720,7 +771,9 @@ class HomeWidgetService {
     try {
       return await _preparePairImage(key, url).timeout(_imageBudget);
     } on TimeoutException {
-      debugPrint('pairImagePath($key): не уложились в ${_imageBudget.inSeconds}с');
+      debugPrint(
+        'pairImagePath($key): не уложились в ${_imageBudget.inSeconds}с',
+      );
       // Ключ не трогаем: на столе останется прежний снимок, а не пустота.
       final prefs = await SharedPreferences.getInstance();
       final prev = prefs.getString('${key}_cached_wpath') ?? '';
@@ -841,8 +894,10 @@ class HomeWidgetService {
       }
       _cleanupOldPairPhotos(dir, key, '$uniqueName.jpg');
 
-      final widgetPath =
-          await _toWidgetReadablePath(file.path, uniqueName).timeout(_ioStep);
+      final widgetPath = await _toWidgetReadablePath(
+        file.path,
+        uniqueName,
+      ).timeout(_ioStep);
       await prefs.setString('${key}_cached_url', url);
       await prefs.setString('${key}_cached_wpath', widgetPath);
       debugPrint('pairImagePath: $key → $widgetPath');
@@ -921,8 +976,10 @@ class HomeWidgetService {
         return await _toWidgetReadablePath(cachedPath, key);
       }
       // Картинку настроения просят оба виджет-сервиса — берём со склада.
-      final resp =
-          await WidgetPhotoStore.instance.bytesFor(url, () async => url);
+      final resp = await WidgetPhotoStore.instance.bytesFor(
+        url,
+        () async => url,
+      );
       if (resp != null && resp.isNotEmpty) {
         final dir = await getApplicationSupportDirectory();
         final file = File('${dir.path}/$key.webp');
@@ -965,15 +1022,19 @@ class HomeWidgetService {
       // расширение виджета держат считанные секунды, а на занятом телефоне
       // ответ приходит не всегда. Без предела здесь вставала подготовка
       // картинки целиком — та же беда, что чинилась на Android.
-      final res = await _iosMediaChannel.invokeMethod<String>(
-        'copyToAppGroup',
-        {'srcPath': localPath, 'name': name},
-      ).timeout(_ioStep);
+      final res = await _iosMediaChannel
+          .invokeMethod<String>('copyToAppGroup', {
+            'srcPath': localPath,
+            'name': name,
+          })
+          .timeout(_ioStep);
       return (res != null && res.isNotEmpty) ? res : '';
     } on TimeoutException {
       // Наружу пробрасываем: у вызывающего есть прежний снимок, и он лучше
       // пустоты. Молча вернуть '' значило бы стереть фотографию с экрана.
-      debugPrint('HomeWidgetService._toWidgetReadablePath: мост молчит ($name)');
+      debugPrint(
+        'HomeWidgetService._toWidgetReadablePath: мост молчит ($name)',
+      );
       rethrow;
     } catch (e) {
       debugPrint('HomeWidgetService._toWidgetReadablePath failed: $e');
@@ -1134,7 +1195,10 @@ class HomeWidgetService {
       _photoDayWidgetKey(widgetId, 'kind'),
     );
     if (homeWidgetStored != null && homeWidgetStored.isNotEmpty) {
-      await prefs.setString(_photoDayWidgetKey(widgetId, 'kind'), homeWidgetStored);
+      await prefs.setString(
+        _photoDayWidgetKey(widgetId, 'kind'),
+        homeWidgetStored,
+      );
       return homeWidgetStored;
     }
     final legacyDisplay = prefs.getString(
@@ -1171,7 +1235,7 @@ class HomeWidgetService {
     //    в т.ч. в фоновом isolate с холодным кэшем (топ чтений в Firebase).
     String partnerUid =
         (await HomeWidget.getWidgetData<String>('love_widget_partner_uid')) ??
-            '';
+        '';
     String partnerName = '';
     if (partnerUid.isEmpty || partnerUid == currentUserUid) {
       // Fallback: вывести партнёра из участников группы (старый путь, +1 чтение).
@@ -1241,10 +1305,7 @@ class HomeWidgetService {
       return null;
     }
 
-    final result = {
-      'authorName': wd.displayName,
-      'authorUid': currentUserUid,
-    };
+    final result = {'authorName': wd.displayName, 'authorUid': currentUserUid};
     _myDataCache[cacheKey] = _CachedWidgetData(result);
     return result;
   }
@@ -1515,17 +1576,32 @@ class HomeWidgetService {
         'days_${g}_count',
         daysCount.toString(),
       );
-      await HomeWidget.saveWidgetData<String>('days_${g}_couple_names', coupleNames);
-      await HomeWidget.saveWidgetData<String>('days_${g}_relationship_emoji', emoji);
-      await HomeWidget.saveWidgetData<String>('days_${g}_start_date', startDate);
+      await HomeWidget.saveWidgetData<String>(
+        'days_${g}_couple_names',
+        coupleNames,
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'days_${g}_relationship_emoji',
+        emoji,
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'days_${g}_start_date',
+        startDate,
+      );
       await _saveDaysStartMs(g, start);
       // Пустым не затираем: у натива пустая строка значащая — она означает
       // «пара по умолчанию», то есть парень и девушка.
       if (shouldWriteGender(myGender)) {
-        await HomeWidget.saveWidgetData<String>('days_${g}_my_gender', myGender);
+        await HomeWidget.saveWidgetData<String>(
+          'days_${g}_my_gender',
+          myGender,
+        );
       }
       if (shouldWriteGender(partnerGender)) {
-        await HomeWidget.saveWidgetData<String>('days_${g}_partner_gender', partnerGender);
+        await HomeWidget.saveWidgetData<String>(
+          'days_${g}_partner_gender',
+          partnerGender,
+        );
       }
       // Верхняя подпись собирается здесь, а натив только рисует: у него нет ни
       // локализации, ни календарных границ лет. Пустая строка — сознательное
@@ -1546,9 +1622,14 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('days_counter_latest_group', g);
       await HomeWidget.updateWidget(
         name: 'DaysCounterWidgetProvider',
-        androidName: 'DaysCounterWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('DaysCounterWidgetProvider'), // fork
+        androidName: 'DaysCounterWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'DaysCounterWidgetProvider',
+        ),
       );
-      debugPrint('HomeWidgetService: days counter synced — $daysCount days (group=$groupId)');
+      debugPrint(
+        'HomeWidgetService: days counter synced — $daysCount days (group=$groupId)',
+      );
     } catch (e) {
       debugPrint('HomeWidgetService.syncDaysCounter failed: $e');
     }
@@ -1566,7 +1647,10 @@ class HomeWidgetService {
     final ms = start == null || start.isAfter(DateTime.now())
         ? 0
         : start.millisecondsSinceEpoch;
-    await HomeWidget.saveWidgetData<String>('days_${g}_start_ms', ms.toString());
+    await HomeWidget.saveWidgetData<String>(
+      'days_${g}_start_ms',
+      ms.toString(),
+    );
   }
 
   static const _daysPhotosEnabledKey = 'days_widget_photos_enabled';
@@ -1613,13 +1697,16 @@ class HomeWidgetService {
       if (enabled) {
         // Ждём аватарки не дольше полуминуты: по медленной сети ожидание
         // затягивалось, а экран всё это время держал тумблер заблокированным.
-        myPath = await _cachePhotoFromUrl(myAvatarUrl, 'days_avatar_my_$g',
-                maxSide: 400)
-            .timeout(const Duration(seconds: 30), onTimeout: () => '');
+        myPath = await _cachePhotoFromUrl(
+          myAvatarUrl,
+          'days_avatar_my_$g',
+          maxSide: 400,
+        ).timeout(const Duration(seconds: 30), onTimeout: () => '');
         partnerPath = await _cachePhotoFromUrl(
-                partnerAvatarUrl, 'days_avatar_partner_$g',
-                maxSide: 400)
-            .timeout(const Duration(seconds: 30), onTimeout: () => '');
+          partnerAvatarUrl,
+          'days_avatar_partner_$g',
+          maxSide: 400,
+        ).timeout(const Duration(seconds: 30), onTimeout: () => '');
       }
       // Включаем только когда обе аватарки реально закэшировались.
       final usePhotos = daysPhotosApplied(
@@ -1636,7 +1723,10 @@ class HomeWidgetService {
         'days_${g}_use_photos',
         usePhotos ? '1' : '0',
       );
-      await HomeWidget.saveWidgetData<String>('days_${g}_my_avatar_path', myPath);
+      await HomeWidget.saveWidgetData<String>(
+        'days_${g}_my_avatar_path',
+        myPath,
+      );
       await HomeWidget.saveWidgetData<String>(
         'days_${g}_partner_avatar_path',
         partnerPath,
@@ -1644,7 +1734,10 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('days_counter_latest_group', g);
       await HomeWidget.updateWidget(
         name: 'DaysCounterWidgetProvider',
-        androidName: 'DaysCounterWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('DaysCounterWidgetProvider'), // fork
+        androidName: 'DaysCounterWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'DaysCounterWidgetProvider',
+        ),
       );
       debugPrint(
         'HomeWidgetService.setDaysCounterPhotos: enabled=$enabled usePhotos=$usePhotos group=$g',
@@ -1687,7 +1780,8 @@ class HomeWidgetService {
       );
       await HomeWidget.updateWidget(
         name: 'StreakWidgetProvider',
-        androidName: 'StreakWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('StreakWidgetProvider'), // fork
+        androidName: 'StreakWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('StreakWidgetProvider'),
       );
       debugPrint(
         'HomeWidgetService: streak synced — $streakDays days '
@@ -1791,11 +1885,15 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('petal_timer_latest_group', g);
       await HomeWidget.updateWidget(
         name: 'TimerWidgetProvider',
-        androidName: 'TimerWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'), // fork
+        androidName: 'TimerWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'PetalTimerWidgetProvider',
-        androidName: 'PetalTimerWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('PetalTimerWidgetProvider'), // fork
+        androidName: 'PetalTimerWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'PetalTimerWidgetProvider',
+        ),
       );
       debugPrint(
         'HomeWidgetService: timer synced — ${timer.title}, days=${timer.daysElapsed}, startMs=${timer.startDate.millisecondsSinceEpoch}, group=$g',
@@ -1841,7 +1939,10 @@ class HomeWidgetService {
       'mile_anni_sub': l.anniversarySub,
     };
     for (final e in pairs.entries) {
-      await HomeWidget.saveWidgetData<String>('together_${g}_${e.key}', e.value);
+      await HomeWidget.saveWidgetData<String>(
+        'together_${g}_${e.key}',
+        e.value,
+      );
     }
   }
 
@@ -1849,6 +1950,7 @@ class HomeWidgetService {
     required String groupId,
     required int days,
     required String startDate,
+
     /// Дата начала. Расширение считает дни от неё само, поэтому «Вместе» и
     /// его собрат на экране блокировки не застывают, пока приложение закрыто.
     DateTime? start,
@@ -1867,12 +1969,17 @@ class HomeWidgetService {
       final g = groupId.isEmpty ? 'solo' : groupId;
       await HomeWidget.saveWidgetData<String>('together_${g}_days', '$days');
       await _saveTrack(g, start, anniversaryDate);
-      await HomeWidget.saveWidgetData<String>('together_${g}_start_date', startDate);
+      await HomeWidget.saveWidgetData<String>(
+        'together_${g}_start_date',
+        startDate,
+      );
       // Число выше остаётся для сборок расширения постарше; свежие считают
       // дни сами — от этой метки, каждый день, без приложения.
       if (start != null) {
         await HomeWidget.saveWidgetData<String>(
-            'together_${g}_start_ms', '${start.millisecondsSinceEpoch}');
+          'together_${g}_start_ms',
+          '${start.millisecondsSinceEpoch}',
+        );
       }
 
       // Настоящие аватарки для размера 2×2. Кружок с инициалом остаётся
@@ -1880,25 +1987,39 @@ class HomeWidgetService {
       if (myAvatarUrl.isNotEmpty || partnerAvatarUrl.isNotEmpty) {
         final myPath = myAvatarUrl.isEmpty
             ? ''
-            : await _cachePhotoFromUrl(myAvatarUrl, 'together_avatar_my_$g',
-                maxSide: 400);
+            : await _cachePhotoFromUrl(
+                myAvatarUrl,
+                'together_avatar_my_$g',
+                maxSide: 400,
+              );
         final partnerPath = partnerAvatarUrl.isEmpty
             ? ''
             : await _cachePhotoFromUrl(
-                partnerAvatarUrl, 'together_avatar_partner_$g',
-                maxSide: 400);
+                partnerAvatarUrl,
+                'together_avatar_partner_$g',
+                maxSide: 400,
+              );
         await HomeWidget.saveWidgetData<String>(
-            'together_${g}_my_avatar_path', myPath);
+          'together_${g}_my_avatar_path',
+          myPath,
+        );
         await HomeWidget.saveWidgetData<String>(
-            'together_${g}_partner_avatar_path', partnerPath);
+          'together_${g}_partner_avatar_path',
+          partnerPath,
+        );
       }
       if (myInitial.isNotEmpty) {
-        await HomeWidget.saveWidgetData<String>('together_${g}_my_initial', myInitial);
+        await HomeWidget.saveWidgetData<String>(
+          'together_${g}_my_initial',
+          myInitial,
+        );
         _cachedMyInitial = myInitial;
       }
       if (partnerInitial.isNotEmpty) {
         await HomeWidget.saveWidgetData<String>(
-            'together_${g}_partner_initial', partnerInitial);
+          'together_${g}_partner_initial',
+          partnerInitial,
+        );
         _cachedPartnerInitial = partnerInitial;
       }
       if (names.isNotEmpty) {
@@ -1907,13 +2028,18 @@ class HomeWidgetService {
       }
       if (anniversary.isNotEmpty) {
         await HomeWidget.saveWidgetData<String>(
-            'together_${g}_anniversary', anniversary);
+          'together_${g}_anniversary',
+          anniversary,
+        );
       }
       await HomeWidget.saveWidgetData<String>('together_latest_group', g);
       // Размеров три и провайдера три — будим каждый, иначе обновится только
       // тот виджет, что стоит на рабочем столе в «основном» размере.
-      for (final n in const ['TogetherWidget2x2Provider',
-          'TogetherWidget4x2Provider', 'TogetherWidget4x4Provider']) {
+      for (final n in const [
+        'TogetherWidget2x2Provider',
+        'TogetherWidget4x2Provider',
+        'TogetherWidget4x4Provider',
+      ]) {
         await HomeWidget.updateWidget(
           name: n,
           androidName: n,
@@ -2019,19 +2145,27 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('tgmood_${g}_my_label', myLabel);
       await HomeWidget.saveWidgetData<String>('tgmood_${g}_my_id', myMoodId);
       await HomeWidget.saveWidgetData<String>(
-          'tgmood_${g}_partner_label', partnerLabel);
+        'tgmood_${g}_partner_label',
+        partnerLabel,
+      );
       await HomeWidget.saveWidgetData<String>(
-          'tgmood_${g}_partner_name', partnerName);
+        'tgmood_${g}_partner_name',
+        partnerName,
+      );
       await HomeWidget.saveWidgetData<String>(
         'tgmood_${g}_week',
         week.map((d) => '${d.first}/${d.last}').join(','),
       );
       await HomeWidget.saveWidgetData<String>(
-          'tgmood_${g}_matched', '$matchedDays');
+        'tgmood_${g}_matched',
+        '$matchedDays',
+      );
       await HomeWidget.saveWidgetData<String>('tgmood_latest_group', g);
 
-      for (final n in const ['MoodTilesWidget2x2Provider',
-          'MoodTilesWidget4x2Provider']) {
+      for (final n in const [
+        'MoodTilesWidget2x2Provider',
+        'MoodTilesWidget4x2Provider',
+      ]) {
         await HomeWidget.updateWidget(
           name: n,
           androidName: n,
@@ -2070,10 +2204,14 @@ class HomeWidgetService {
 
       await HomeWidget.saveWidgetData<String>('tgmood_${g}_pending_mood', '');
       await HomeWidget.saveWidgetData<String>(
-          'tgmood_${g}_my_label', option.localizedLabel);
+        'tgmood_${g}_my_label',
+        option.localizedLabel,
+      );
       await HomeWidget.saveWidgetData<String>('tgmood_${g}_my_id', option.id);
-      for (final n in const ['MoodTilesWidget2x2Provider',
-          'MoodTilesWidget4x2Provider']) {
+      for (final n in const [
+        'MoodTilesWidget2x2Provider',
+        'MoodTilesWidget4x2Provider',
+      ]) {
         await HomeWidget.updateWidget(
           name: n,
           androidName: n,
@@ -2091,7 +2229,8 @@ class HomeWidgetService {
     if (g == 'solo') return;
     try {
       final pending =
-          await HomeWidget.getWidgetData<String>('tgmood_${g}_pending_mood') ?? '';
+          await HomeWidget.getWidgetData<String>('tgmood_${g}_pending_mood') ??
+          '';
       if (pending.isEmpty) return;
       await applyMoodFromWidget(groupId: g, moodId: pending);
     } catch (e) {
@@ -2120,22 +2259,40 @@ class HomeWidgetService {
         fromMs: fromMs,
       );
       await HomeWidget.saveWidgetData<String>(
-          'tgcd_${g}_events', encodeCountdownEvents(events));
+        'tgcd_${g}_events',
+        encodeCountdownEvents(events),
+      );
       await HomeWidget.saveWidgetData<String>('tgcd_${g}_from_ms', '$fromMs');
       await HomeWidget.saveWidgetData<String>(
-          'tgcd_${g}_title', tick?.event.title ?? '');
+        'tgcd_${g}_title',
+        tick?.event.title ?? '',
+      );
       await HomeWidget.saveWidgetData<String>(
-          'tgcd_${g}_date', tick?.event.dateLabel ?? '');
-      await HomeWidget.saveWidgetData<String>('tgcd_${g}_days', '${tick?.days ?? 0}');
-      await HomeWidget.saveWidgetData<String>('tgcd_${g}_hours', '${tick?.hours ?? 0}');
+        'tgcd_${g}_date',
+        tick?.event.dateLabel ?? '',
+      );
       await HomeWidget.saveWidgetData<String>(
-          'tgcd_${g}_minutes', '${tick?.minutes ?? 0}');
+        'tgcd_${g}_days',
+        '${tick?.days ?? 0}',
+      );
       await HomeWidget.saveWidgetData<String>(
-          'tgcd_${g}_percent', '${tick?.percent ?? 0}');
+        'tgcd_${g}_hours',
+        '${tick?.hours ?? 0}',
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'tgcd_${g}_minutes',
+        '${tick?.minutes ?? 0}',
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'tgcd_${g}_percent',
+        '${tick?.percent ?? 0}',
+      );
       await HomeWidget.saveWidgetData<String>('tgcd_latest_group', g);
 
-      for (final n in const ['CountdownWidget2x2Provider',
-          'CountdownWidget4x2Provider']) {
+      for (final n in const [
+        'CountdownWidget2x2Provider',
+        'CountdownWidget4x2Provider',
+      ]) {
         await HomeWidget.updateWidget(
           name: n,
           androidName: n,
@@ -2162,19 +2319,32 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('miss_${g}_my_count', '$myCount');
       // Фотография партнёра для полоски 4×1; пусто — останется кружок с буквой.
       if (partnerAvatarUrl.isNotEmpty) {
-        final path =
-            await _cachePhotoFromUrl(partnerAvatarUrl, 'miss_avatar_partner_$g');
+        final path = await _cachePhotoFromUrl(
+          partnerAvatarUrl,
+          'miss_avatar_partner_$g',
+        );
         await HomeWidget.saveWidgetData<String>(
-            'miss_${g}_partner_avatar_path', path);
+          'miss_${g}_partner_avatar_path',
+          path,
+        );
       }
       await HomeWidget.saveWidgetData<String>(
-          'miss_${g}_partner_count', '$partnerCount');
-      await HomeWidget.saveWidgetData<String>('miss_${g}_partner_name', partnerName);
+        'miss_${g}_partner_count',
+        '$partnerCount',
+      );
       await HomeWidget.saveWidgetData<String>(
-          'miss_${g}_partner_initial', partnerInitial);
+        'miss_${g}_partner_name',
+        partnerName,
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'miss_${g}_partner_initial',
+        partnerInitial,
+      );
       await HomeWidget.saveWidgetData<String>('miss_${g}_last_time', lastTime);
       await HomeWidget.saveWidgetData<String>(
-          'miss_${g}_sent_today', sentToday ? '1' : '0');
+        'miss_${g}_sent_today',
+        sentToday ? '1' : '0',
+      );
 
       // Слова собирает приложение: «Скучаю», «Отправлено» и «последний раз
       // в 20:41» лежали в Kotlin и Swift по-русски, и немец читал русский.
@@ -2189,16 +2359,19 @@ class HomeWidgetService {
         'when_label': sentToday
             ? s.tgMissJustNow
             : lastTime.isEmpty
-                ? ''
-                : s.tgMissLastAt.replaceAll('{time}', lastTime),
+            ? ''
+            : s.tgMissLastAt.replaceAll('{time}', lastTime),
         'today_label': s.tgMissToday,
       };
       for (final e in texts.entries) {
         await HomeWidget.saveWidgetData<String>('miss_${g}_${e.key}', e.value);
       }
       await HomeWidget.saveWidgetData<String>('miss_latest_group', g);
-      for (final n in const ['MissWidget2x2Provider',
-          'MissWidget4x2Provider', 'MissWidget4x1Provider']) {
+      for (final n in const [
+        'MissWidget2x2Provider',
+        'MissWidget4x2Provider',
+        'MissWidget4x1Provider',
+      ]) {
         await HomeWidget.updateWidget(
           name: n,
           androidName: n,
@@ -2251,7 +2424,12 @@ class HomeWidgetService {
       final myName = (me?['displayName'] as String?) ?? '';
       if (note == null) {
         await syncNote(
-          groupId: groupId, text: '', author: '', time: '', myName: myName);
+          groupId: groupId,
+          text: '',
+          author: '',
+          time: '',
+          myName: myName,
+        );
         return;
       }
       final hh = note.at.hour.toString().padLeft(2, '0');
@@ -2291,7 +2469,9 @@ class HomeWidgetService {
     // перезаписывает поле json целиком.
     final existing = await PbDataService().loadWidget(groupId, uid);
     final raw = existing?.data['data'];
-    final data = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    final data = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
     data['note'] = {
       'text': text,
       'author': myName,
@@ -2306,7 +2486,10 @@ class HomeWidgetService {
       time: '$hh:$mm',
       myName: myName,
     );
-    await HomeWidget.saveWidgetData<String>('note_${groupId}_pending_send', '0');
+    await HomeWidget.saveWidgetData<String>(
+      'note_${groupId}_pending_send',
+      '0',
+    );
   }
 
   /// Достаёт свежую заметку из данных обоих участников.
@@ -2314,7 +2497,8 @@ class HomeWidgetService {
   /// Возвращает null, если её нет ни у кого: тогда листик остаётся с
   /// приглашением написать.
   ({String text, String author, DateTime at})? latestNote(
-      Iterable<Map<String, dynamic>> widgetDataRecords) {
+    Iterable<Map<String, dynamic>> widgetDataRecords,
+  ) {
     ({String text, String author, DateTime at})? best;
     for (final rec in widgetDataRecords) {
       final data = rec['data'];
@@ -2324,7 +2508,8 @@ class HomeWidgetService {
       final text = (note['text'] ?? '').toString();
       if (text.isEmpty) continue;
       final at = DateTime.fromMillisecondsSinceEpoch(
-          (note['at'] as num?)?.toInt() ?? 0);
+        (note['at'] as num?)?.toInt() ?? 0,
+      );
       if (best == null || at.isAfter(best.at)) {
         best = (text: text, author: (note['author'] ?? '').toString(), at: at);
       }
@@ -2361,14 +2546,19 @@ class HomeWidgetService {
     final g = groupId.isEmpty ? 'solo' : groupId;
     if (g == 'solo') return;
     try {
-      final pending =
-          await HomeWidget.getWidgetData<String>('miss_${g}_pending_send');
+      final pending = await HomeWidget.getWidgetData<String>(
+        'miss_${g}_pending_send',
+      );
       if (pending != '1') return;
 
       final uid = PocketBaseService().userId ?? '';
       if (uid.isEmpty) return;
 
-      final ok = await PbDataService().incrementMissYou(g, uid, vibe: 'miss_you');
+      final ok = await PbDataService().incrementMissYou(
+        g,
+        uid,
+        vibe: 'miss_you',
+      );
       if (!ok) return;
 
       await HomeWidget.saveWidgetData<String>('miss_${g}_pending_send', '0');
@@ -2396,8 +2586,11 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('miss_${g}_my_count', '$next');
       await HomeWidget.saveWidgetData<String>('miss_${g}_sent_today', '1');
       await HomeWidget.saveWidgetData<String>('miss_${g}_last_time', '$hh:$mm');
-      for (final n in const ['MissWidget2x2Provider',
-          'MissWidget4x2Provider', 'MissWidget4x1Provider']) {
+      for (final n in const [
+        'MissWidget2x2Provider',
+        'MissWidget4x2Provider',
+        'MissWidget4x1Provider',
+      ]) {
         await HomeWidget.updateWidget(
           name: n,
           androidName: n,
@@ -2414,7 +2607,10 @@ class HomeWidgetService {
   String _cachedCoupleNames = '';
 
   /// всегда обновлялись вместе при любом изменении активного таймера.
-  Future<void> syncTimerAndDays(TimerItem timer, {required String groupId}) async {
+  Future<void> syncTimerAndDays(
+    TimerItem timer, {
+    required String groupId,
+  }) async {
     await syncTimer(timer, groupId: groupId);
     // Days Counter: обновляем дни, дату И гендерные данные из кеша,
     // чтобы картинка пары всегда соответствовала полу пользователей.
@@ -2436,27 +2632,37 @@ class HomeWidgetService {
       // На Android это правил следующий фоновый проход, на iPhone фонового
       // обновления нет вовсе — пустота доживала до перезапуска приложения.
       if (shouldWriteGender(_cachedMyGender)) {
-        await HomeWidget.saveWidgetData<String>('days_${g}_my_gender', _cachedMyGender);
+        await HomeWidget.saveWidgetData<String>(
+          'days_${g}_my_gender',
+          _cachedMyGender,
+        );
       }
       if (shouldWriteGender(_cachedPartnerGender)) {
         await HomeWidget.saveWidgetData<String>(
-            'days_${g}_partner_gender', _cachedPartnerGender);
+          'days_${g}_partner_gender',
+          _cachedPartnerGender,
+        );
       }
       await HomeWidget.saveWidgetData<String>('days_counter_latest_group', g);
       // «Вместе» из нового каталога считает дни от того же активного таймера,
       // а не от даты, когда пара сошлась в приложении.
-      unawaited(syncTogether(
-        groupId: groupId,
-        days: timer.daysElapsed.abs(),
-        startDate: 'С ${_formatDateLong(timer.startDate)}',
-        start: timer.startDate,
-        myInitial: _cachedMyInitial,
-        partnerInitial: _cachedPartnerInitial,
-        names: _cachedCoupleNames,
-      ));
+      unawaited(
+        syncTogether(
+          groupId: groupId,
+          days: timer.daysElapsed.abs(),
+          startDate: 'С ${_formatDateLong(timer.startDate)}',
+          start: timer.startDate,
+          myInitial: _cachedMyInitial,
+          partnerInitial: _cachedPartnerInitial,
+          names: _cachedCoupleNames,
+        ),
+      );
       await HomeWidget.updateWidget(
         name: 'DaysCounterWidgetProvider',
-        androidName: 'DaysCounterWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('DaysCounterWidgetProvider'), // fork
+        androidName: 'DaysCounterWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'DaysCounterWidgetProvider',
+        ),
       );
       debugPrint(
         'HomeWidgetService.syncTimerAndDays: days=${timer.daysElapsed.abs()} myGender=$_cachedMyGender partnerGender=$_cachedPartnerGender group=$g',
@@ -2476,14 +2682,21 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('timer_solo_date', '');
       await HomeWidget.saveWidgetData<String>('timer_solo_start_ms', '0');
       await HomeWidget.saveWidgetData<String>('timer_latest_group', 'solo');
-      await HomeWidget.saveWidgetData<String>('petal_timer_latest_group', 'solo');
+      await HomeWidget.saveWidgetData<String>(
+        'petal_timer_latest_group',
+        'solo',
+      );
       await HomeWidget.updateWidget(
         name: 'TimerWidgetProvider',
-        androidName: 'TimerWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'), // fork
+        androidName: 'TimerWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'PetalTimerWidgetProvider',
-        androidName: 'PetalTimerWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('PetalTimerWidgetProvider'), // fork
+        androidName: 'PetalTimerWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'PetalTimerWidgetProvider',
+        ),
       );
       debugPrint('HomeWidgetService: timer widget cleared');
     } catch (e) {
@@ -2504,7 +2717,8 @@ class HomeWidgetService {
   }) async {
     try {
       final viewerUid = PocketBaseService().userId ?? '';
-      final viewerName = (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
+      final viewerName =
+          (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
 
       List<String> localPaths = [];
       final dir = await getApplicationSupportDirectory();
@@ -2529,8 +2743,10 @@ class HomeWidgetService {
             final suffix = widgetId != null ? '_${widgetId}_$i' : '_$i';
             final target = File('${dir.path}/widget_photo_day$suffix.jpg');
             await file.copy(target.path);
-            final readable =
-                await _toWidgetReadablePath(target.path, 'photo_day$suffix');
+            final readable = await _toWidgetReadablePath(
+              target.path,
+              'photo_day$suffix',
+            );
             if (readable.isNotEmpty) localPaths.add(readable);
           }
         }
@@ -2554,8 +2770,9 @@ class HomeWidgetService {
         final rotationType = await getPhotoDayWidgetRotationType(widgetId);
         if (rotationType == 'time') {
           final tsKey = 'fclts_$widgetId';
-          final rotationIntervalMin =
-              await getPhotoDayWidgetRotationInterval(widgetId);
+          final rotationIntervalMin = await getPhotoDayWidgetRotationInterval(
+            widgetId,
+          );
           final lastAdvanceMs = prefs.getInt(tsKey) ?? 0;
           final nowMs = DateTime.now().millisecondsSinceEpoch;
           if (nowMs - lastAdvanceMs >= rotationIntervalMin * 60 * 1000) {
@@ -2658,7 +2875,8 @@ class HomeWidgetService {
       }
 
       final viewerUid = PocketBaseService().userId ?? '';
-      final viewerName = (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
+      final viewerName =
+          (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
 
       if (widgetId != null) {
         // Determine kind from widgetId
@@ -2699,7 +2917,10 @@ class HomeWidgetService {
       // iPhone читает «Фото дня» своим ключом: у виджета там нет экземпляров с
       // настройками, как на Android, — есть один снимок и каталог выбора.
       if (Platform.isIOS) {
-        await HomeWidget.saveWidgetData<String>('ios_photo_day_path', localPath);
+        await HomeWidget.saveWidgetData<String>(
+          'ios_photo_day_path',
+          localPath,
+        );
         await HomeWidget.saveWidgetData<String>(
           'ios_photo_day_author',
           authorName,
@@ -2713,7 +2934,7 @@ class HomeWidgetService {
                     'id': 'ios_day_0',
                     'label': caption.isEmpty ? 'Фото дня' : caption,
                     'path': localPath,
-                  }
+                  },
                 ]),
         );
       }
@@ -2775,11 +2996,13 @@ class HomeWidgetService {
 
       // overrideKind предотвращает race condition: если kind ещё не записан Kotlin-ом,
       // getPhotoDayWidgetKind вернёт 'self' по умолчанию и permanently сломает виджет.
-      final selectedKind = overrideKind ?? await getPhotoDayWidgetKind(widgetId);
+      final selectedKind =
+          overrideKind ?? await getPhotoDayWidgetKind(widgetId);
 
       // Сохраняем текущий профиль (viewer) для различения моего/партнёрского фото
       final currentUserUid = PocketBaseService().userId ?? '';
-      final currentUserName = (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
+      final currentUserName =
+          (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
 
       await _savePhotoDayWidgetData(widgetId, {
         'viewer_uid': currentUserUid,
@@ -2862,7 +3085,8 @@ class HomeWidgetService {
   }) async {
     try {
       final currentUserUid = PocketBaseService().userId ?? '';
-      final currentUserName = (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
+      final currentUserName =
+          (PbAuthService().currentProfile()?['displayName'] as String? ?? '');
 
       final selectedKind = await getPhotoDayWidgetKind(widgetId);
 
@@ -2900,7 +3124,8 @@ class HomeWidgetService {
 
         // Single photo — cache and display directly.
         final selectedUrl = ownUrls.first;
-        final localPath = (selectedUrl.startsWith('http') ||
+        final localPath =
+            (selectedUrl.startsWith('http') ||
                 selectedUrl.startsWith('gs://') ||
                 selectedUrl.startsWith('sb://') ||
                 selectedUrl.startsWith('pb://'))
@@ -3029,8 +3254,14 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('user_0_label', moodLabel);
       // Group-prefixed score, color and label keys (read by MoodWidgetProvider)
       await HomeWidget.saveWidgetData<int>('mood_${g}_user_0_score', moodScore);
-      await HomeWidget.saveWidgetData<String>('mood_${g}_user_0_color', moodColor);
-      await HomeWidget.saveWidgetData<String>('mood_${g}_user_0_label', moodLabel);
+      await HomeWidget.saveWidgetData<String>(
+        'mood_${g}_user_0_color',
+        moodColor,
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'mood_${g}_user_0_label',
+        moodLabel,
+      );
 
       // ── Настроение партнёра ──
       String partnerLocalPath = '';
@@ -3056,9 +3287,18 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>('user_1_name', partnerUserName);
       await HomeWidget.saveWidgetData<String>('user_1_label', partnerMoodLabel);
       // Group-prefixed score, color and label keys (read by MoodWidgetProvider)
-      await HomeWidget.saveWidgetData<int>('mood_${g}_user_1_score', partnerMoodScore);
-      await HomeWidget.saveWidgetData<String>('mood_${g}_user_1_color', partnerMoodColor);
-      await HomeWidget.saveWidgetData<String>('mood_${g}_user_1_label', partnerMoodLabel);
+      await HomeWidget.saveWidgetData<int>(
+        'mood_${g}_user_1_score',
+        partnerMoodScore,
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'mood_${g}_user_1_color',
+        partnerMoodColor,
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'mood_${g}_user_1_label',
+        partnerMoodLabel,
+      );
       await HomeWidget.saveWidgetData<int>(
         'partner_mood_score',
         partnerMoodScore,
@@ -3086,7 +3326,8 @@ class HomeWidgetService {
 
       await HomeWidget.updateWidget(
         name: 'MoodWidgetProvider',
-        androidName: 'MoodWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'), // fork
+        androidName: 'MoodWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
       );
       debugPrint(
         'HomeWidgetService: mood synced — me=$moodLabel, partner=$partnerMoodLabel',
@@ -3121,7 +3362,8 @@ class HomeWidgetService {
 
       await HomeWidget.updateWidget(
         name: 'MoodWidgetProvider',
-        androidName: 'MoodWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'), // fork
+        androidName: 'MoodWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
       );
       debugPrint(
         'HomeWidgetService: group mood synced for ${members.length} users',
@@ -3168,7 +3410,10 @@ class HomeWidgetService {
       );
 
       if (daysLabel != null)
-        await HomeWidget.saveWidgetData<String>('stats_${g}_days_label', daysLabel);
+        await HomeWidget.saveWidgetData<String>(
+          'stats_${g}_days_label',
+          daysLabel,
+        );
       if (memoriesLabel != null)
         await HomeWidget.saveWidgetData<String>(
           'stats_${g}_memories_label',
@@ -3190,9 +3435,14 @@ class HomeWidgetService {
 
       await HomeWidget.updateWidget(
         name: 'RelationshipStatsWidgetProvider',
-        androidName: 'RelationshipStatsWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('RelationshipStatsWidgetProvider'), // fork
+        androidName: 'RelationshipStatsWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'RelationshipStatsWidgetProvider',
+        ),
       );
-      debugPrint('HomeWidgetService: relationship stats synced (group=$groupId)');
+      debugPrint(
+        'HomeWidgetService: relationship stats synced (group=$groupId)',
+      );
     } catch (e) {
       debugPrint('HomeWidgetService.syncRelationshipStats failed: $e');
     }
@@ -3214,7 +3464,8 @@ class HomeWidgetService {
       final ts = prefs.getInt(_relStatsPrefKey(groupId, 'ts'));
       if (ts == null) return null;
       final age = DateTime.now().difference(
-          DateTime.fromMillisecondsSinceEpoch(ts));
+        DateTime.fromMillisecondsSinceEpoch(ts),
+      );
       if (age > _relStatsCacheTtl) return null;
       return _CachedRelStats(
         memoriesCount: prefs.getInt(_relStatsPrefKey(groupId, 'mem')) ?? 0,
@@ -3230,8 +3481,10 @@ class HomeWidgetService {
   Future<void> _saveRelStatsToPrefs(String groupId, _CachedRelStats s) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_relStatsPrefKey(groupId, 'ts'),
-          s.timestamp.millisecondsSinceEpoch);
+      await prefs.setInt(
+        _relStatsPrefKey(groupId, 'ts'),
+        s.timestamp.millisecondsSinceEpoch,
+      );
       await prefs.setInt(_relStatsPrefKey(groupId, 'mem'), s.memoriesCount);
       await prefs.setInt(_relStatsPrefKey(groupId, 'drw'), s.drawingsCount);
       await prefs.setInt(_relStatsPrefKey(groupId, 'msy'), s.missYouCount);
@@ -3324,6 +3577,7 @@ class HomeWidgetService {
     required List<TimerItem> activeTimers,
     TimerItem? activeSysTimer,
     DateTime? activeStartDate,
+
     /// Годовщина из профиля пары. Без неё виджет считал от даты коннекта и
     /// показывал «9 дней» там, где приложение показывает 196.
     DateTime? anniversary,
@@ -3356,7 +3610,10 @@ class HomeWidgetService {
 
       // Выбираем «активный» таймер один раз — тот же самый идёт и в Timer-виджет,
       // и в Days Counter, чтобы они гарантированно показывали одно и то же.
-      final activeTimer = await _resolveActiveTimer(activeTimers, activeGroupId);
+      final activeTimer = await _resolveActiveTimer(
+        activeTimers,
+        activeGroupId,
+      );
 
       // ── Заметка на двоих ──
       // Текст общий: берём свежую запись из данных обоих участников, иначе
@@ -3369,8 +3626,9 @@ class HomeWidgetService {
       {
         // Дата считается общим правилом: пользовательский таймер как есть,
         // иначе самая ранняя из таймера, коннекта и годовщины.
-        final customStart =
-            (activeTimer != null && !activeTimer.isSystem) ? activeTimer.startDate : null;
+        final customStart = (activeTimer != null && !activeTimer.isSystem)
+            ? activeTimer.startDate
+            : null;
         final start = widgetDaysStart(
           customTimerStart: customStart,
           systemTimerStart: activeTimer?.isSystem == true
@@ -3405,7 +3663,9 @@ class HomeWidgetService {
       }
 
       // ── Days Counter ──
-      debugPrint('  days_counter → syncing (activeGroup=$activeGroupId, timer=${activeTimer?.title})');
+      debugPrint(
+        '  days_counter → syncing (activeGroup=$activeGroupId, timer=${activeTimer?.title})',
+      );
       await _syncDaysCounterWithTimer(
         activeGroupId: activeGroupId,
         activeTimer: activeTimer,
@@ -3420,9 +3680,16 @@ class HomeWidgetService {
       );
 
       // ── Timer ──
-      debugPrint('  timer → syncing (activeGroup=$activeGroupId, timer=${activeTimer?.title})');
+      debugPrint(
+        '  timer → syncing (activeGroup=$activeGroupId, timer=${activeTimer?.title})',
+      );
       if (activeTimer != null) {
-        await syncTimer(activeTimer, groupId: activeGroupId, isRomantic: isRomantic, themeIndex: themeIndex);
+        await syncTimer(
+          activeTimer,
+          groupId: activeGroupId,
+          isRomantic: isRomantic,
+          themeIndex: themeIndex,
+        );
       } else {
         await _syncTimerFromMemory(
           activeTimers: activeTimers,
@@ -3449,7 +3716,9 @@ class HomeWidgetService {
           // In solo mode: sync solo-marked and unbound widgets.
           // In pair mode: sync only unbound (null) and widgets bound to this group.
           final shouldSync = activeGroupId.isEmpty
-              ? (widgetGroupId == null || widgetGroupId.isEmpty || widgetGroupId == 'solo')
+              ? (widgetGroupId == null ||
+                    widgetGroupId.isEmpty ||
+                    widgetGroupId == 'solo')
               : (widgetGroupId == null || widgetGroupId == activeGroupId);
           if (shouldSync) {
             debugPrint(
@@ -3473,7 +3742,9 @@ class HomeWidgetService {
         // основным сделан пользовательский таймер, системный хранит дату пары
         // (≈сегодня) → виджет показывал 0.
         startDate:
-            activeTimer?.startDate ?? activeSysTimer?.startDate ?? activeStartDate,
+            activeTimer?.startDate ??
+            activeSysTimer?.startDate ??
+            activeStartDate,
       );
 
       // ── Mood — привязан к пользователю, не к группе ──
@@ -3548,7 +3819,8 @@ class HomeWidgetService {
     if (start != null) {
       await syncDaysCounter(
         groupId: activeGroupId,
-        daysCount: coupleDaysTogether(
+        daysCount:
+            coupleDaysTogether(
               timerStart: activeTimer?.startDate ?? activeSysTimer?.startDate,
               groupStart: activeStartDate,
               anniversary: anniversary,
@@ -3589,7 +3861,9 @@ class HomeWidgetService {
   }) async {
     // If a non-system timer is set as default, use it (user's custom primary timer).
     // This mirrors _syncTimerFromMemory so both widgets show the same timer's data.
-    final customDefault = activeTimers.where((t) => t.isDefault && !t.isSystem).firstOrNull;
+    final customDefault = activeTimers
+        .where((t) => t.isDefault && !t.isSystem)
+        .firstOrNull;
     if (customDefault != null) {
       await syncDaysCounter(
         groupId: activeGroupId,
@@ -3667,14 +3941,29 @@ class HomeWidgetService {
         orElse: () => activeTimers.first,
       ),
     );
-    await syncTimer(timer, groupId: groupId, isRomantic: isRomantic, themeIndex: themeIndex);
+    await syncTimer(
+      timer,
+      groupId: groupId,
+      isRomantic: isRomantic,
+      themeIndex: themeIndex,
+    );
   }
 
   /// «1 ноября» — без года, для строки годовщины.
   String _formatDateShort(DateTime d) {
     const months = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+      'января',
+      'февраля',
+      'марта',
+      'апреля',
+      'мая',
+      'июня',
+      'июля',
+      'августа',
+      'сентября',
+      'октября',
+      'ноября',
+      'декабря',
     ];
     return '${d.day} ${months[d.month - 1]}';
   }
@@ -3682,15 +3971,24 @@ class HomeWidgetService {
   /// «1 ноября 2025» — как в хендофе виджета «Вместе».
   String _formatDateLong(DateTime d) {
     const months = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+      'января',
+      'февраля',
+      'марта',
+      'апреля',
+      'мая',
+      'июня',
+      'июля',
+      'августа',
+      'сентября',
+      'октября',
+      'ноября',
+      'декабря',
     ];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
 
   String _formatDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
-
 
   // ════════════════════════════════════════════════════════════════════════
   //  ВСПОМОГАТЕЛЬНЫЕ
@@ -3701,24 +3999,33 @@ class HomeWidgetService {
     try {
       await HomeWidget.updateWidget(
         name: 'LoveWidgetProvider',
-        androidName: 'LoveWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'), // fork
+        androidName: 'LoveWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('LoveWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'DaysCounterWidgetProvider',
-        androidName: 'DaysCounterWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('DaysCounterWidgetProvider'), // fork
+        androidName: 'DaysCounterWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'DaysCounterWidgetProvider',
+        ),
       );
       await HomeWidget.updateWidget(
         name: 'TimerWidgetProvider',
-        androidName: 'TimerWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'), // fork
+        androidName: 'TimerWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('TimerWidgetProvider'),
       );
       await _updateAllPhotoWidgetProviders();
       await HomeWidget.updateWidget(
         name: 'MoodWidgetProvider',
-        androidName: 'MoodWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'), // fork
+        androidName: 'MoodWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass('MoodWidgetProvider'),
       );
       await HomeWidget.updateWidget(
         name: 'RelationshipStatsWidgetProvider',
-        androidName: 'RelationshipStatsWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('RelationshipStatsWidgetProvider'), // fork
+        androidName: 'RelationshipStatsWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'RelationshipStatsWidgetProvider',
+        ),
       );
     } catch (e) {
       debugPrint('HomeWidgetService.updateAllProviders failed: $e');
@@ -3756,7 +4063,8 @@ class HomeWidgetService {
     final ui.Size? size = await _imageSize(bytes);
     int targetW = maxSide, targetH = maxSide;
     if (size != null && size.width > 0 && size.height > 0) {
-      final double scale = maxSide / (size.width > size.height ? size.width : size.height);
+      final double scale =
+          maxSide / (size.width > size.height ? size.width : size.height);
       if (scale < 1) {
         targetW = (size.width * scale).round().clamp(1, maxSide);
         targetH = (size.height * scale).round().clamp(1, maxSide);
@@ -3787,7 +4095,8 @@ class HomeWidgetService {
       debugPrint('HomeWidgetService._shrinkForWidget: кодек не справился ($e)');
     }
 
-    if (compressed == null || compressed.isEmpty ||
+    if (compressed == null ||
+        compressed.isEmpty ||
         compressed.length > kMaxWidgetPhotoBytes) {
       // Запасной путь отдаёт JPEG, а не PNG: PNG кадра 1200×1200 весит два-четыре
       // мегабайта, `widgetPhotoPayload` его отбраковывал, и при крупном оригинале
@@ -3798,10 +4107,14 @@ class HomeWidgetService {
       // и когда мост занят, ответа можно не дождаться никогда.
       Uint8List? byEngine;
       try {
-        byEngine = await compute(_shrinkJob, _ShrinkJob(bytes, targetW))
-            .timeout(const Duration(seconds: 20));
+        byEngine = await compute(
+          _shrinkJob,
+          _ShrinkJob(bytes, targetW),
+        ).timeout(const Duration(seconds: 20));
       } catch (e) {
-        debugPrint('HomeWidgetService._shrinkForWidget: изолят не справился ($e)');
+        debugPrint(
+          'HomeWidgetService._shrinkForWidget: изолят не справился ($e)',
+        );
       }
       if (byEngine != null && byEngine.isNotEmpty) compressed = byEngine;
     }
@@ -3813,11 +4126,16 @@ class HomeWidgetService {
     try {
       // Оба вызова идут в движок и на занятом устройстве возвращаются не
       // сразу. Без предела здесь вставала вся подготовка картинки.
-      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes)
-          .timeout(const Duration(seconds: 8));
-      final descriptor = await ui.ImageDescriptor.encoded(buffer)
-          .timeout(const Duration(seconds: 8));
-      final size = ui.Size(descriptor.width.toDouble(), descriptor.height.toDouble());
+      final buffer = await ui.ImmutableBuffer.fromUint8List(
+        bytes,
+      ).timeout(const Duration(seconds: 8));
+      final descriptor = await ui.ImageDescriptor.encoded(
+        buffer,
+      ).timeout(const Duration(seconds: 8));
+      final size = ui.Size(
+        descriptor.width.toDouble(),
+        descriptor.height.toDouble(),
+      );
       descriptor.dispose();
       return size;
     } catch (e) {
@@ -3841,16 +4159,23 @@ class HomeWidgetService {
     int maxSide = 1200,
   }) async {
     try {
-      return await _cachePhotoFromUrlInner(url, key, maxSide: maxSide)
-          .timeout(_imageBudget);
+      return await _cachePhotoFromUrlInner(
+        url,
+        key,
+        maxSide: maxSide,
+      ).timeout(_imageBudget);
     } on TimeoutException {
-      debugPrint('_cachePhotoFromUrl($key): не уложились в ${_imageBudget.inSeconds}с');
+      debugPrint(
+        '_cachePhotoFromUrl($key): не уложились в ${_imageBudget.inSeconds}с',
+      );
       try {
         final dir = await getApplicationSupportDirectory().timeout(_ioStep);
         final prev = File('${dir.path}/widget_$key.jpg');
         if (prev.existsSync()) {
-          return await _toWidgetReadablePath(prev.path, 'cache_$key')
-              .timeout(_ioStep);
+          return await _toWidgetReadablePath(
+            prev.path,
+            'cache_$key',
+          ).timeout(_ioStep);
         }
       } catch (_) {}
       return '';
@@ -3923,7 +4248,9 @@ class HomeWidgetService {
       if (bytes != null && bytes.length >= kMinWidgetPhotoBytes) {
         final shrunk = await _shrinkForWidget(bytes, maxSide);
         if (shrunk == null) {
-          debugPrint('_cachePhotoFromUrl($key): снимок не ужался, файл не пишем');
+          debugPrint(
+            '_cachePhotoFromUrl($key): снимок не ужался, файл не пишем',
+          );
           return file.existsSync()
               ? await _toWidgetReadablePath(file.path, 'cache_$key')
               : '';
@@ -3938,12 +4265,15 @@ class HomeWidgetService {
       }
       // Download failed — fall back to previously cached file if it exists
       if (file.existsSync()) {
-        debugPrint('HomeWidgetService: склад пуст для $url, оставляем прежний файл');
+        debugPrint(
+          'HomeWidgetService: склад пуст для $url, оставляем прежний файл',
+        );
         return await _toWidgetReadablePath(file.path, 'cache_$key');
       }
     } catch (e) {
       debugPrint('HomeWidgetService._cachePhotoFromUrl failed: $e');
-      if (file.existsSync()) return await _toWidgetReadablePath(file.path, 'cache_$key');
+      if (file.existsSync())
+        return await _toWidgetReadablePath(file.path, 'cache_$key');
     }
     return '';
   }
@@ -4023,7 +4353,10 @@ class HomeWidgetService {
 
       await HomeWidget.updateWidget(
         name: 'LockScreenMoodWidgetProvider',
-        androidName: 'LockScreenMoodWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('LockScreenMoodWidgetProvider'), // fork
+        androidName: 'LockScreenMoodWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'LockScreenMoodWidgetProvider',
+        ),
       );
       debugPrint(
         'HomeWidgetService: lock screen mood synced — '
@@ -4107,7 +4440,10 @@ class HomeWidgetService {
 
       await HomeWidget.updateWidget(
         name: 'PhotoGridWidgetProvider',
-        androidName: 'PhotoGridWidgetProvider', qualifiedAndroidName: ForkIdentity.widgetClass('PhotoGridWidgetProvider'), // fork
+        androidName: 'PhotoGridWidgetProvider',
+        qualifiedAndroidName: ForkIdentity.widgetClass(
+          'PhotoGridWidgetProvider',
+        ),
       );
       debugPrint(
         'HomeWidgetService.refreshPhotoGrid: count=$count, urls=$urls, widgets=$widgetIds',
@@ -4153,7 +4489,10 @@ class HomeWidgetService {
       (await HomeWidget.getWidgetData<String>(kPartnerTaskPhotosKey)) == '1';
 
   Future<void> setPartnerTaskPhotos(bool on) async {
-    await HomeWidget.saveWidgetData<String>(kPartnerTaskPhotosKey, on ? '1' : '0');
+    await HomeWidget.saveWidgetData<String>(
+      kPartnerTaskPhotosKey,
+      on ? '1' : '0',
+    );
     _taskPhotosCache.clear();
     invalidateWidgetDataCache();
   }
@@ -4169,10 +4508,12 @@ class HomeWidgetService {
   }) async {
     try {
       if (!await getPartnerTaskPhotos()) return sent;
-      final g = groupId ??
+      final g =
+          groupId ??
           (await HomeWidget.getWidgetData<String>('love_widget_group_id')) ??
           '';
-      final p = partnerUid ??
+      final p =
+          partnerUid ??
           (await HomeWidget.getWidgetData<String>('love_widget_partner_uid')) ??
           '';
       if (g.isEmpty || p.isEmpty) return sent;
@@ -4247,7 +4588,8 @@ class HomeWidgetService {
       final day = iosDayPhoto(
         mine: myPhotos,
         theirs: partnerPhotos,
-        myName: PbAuthService().currentProfile()?['displayName'] as String? ?? '',
+        myName:
+            PbAuthService().currentProfile()?['displayName'] as String? ?? '',
         partnerName: partnerName,
       );
       dayPhotoUrl = day.url;
@@ -4298,12 +4640,16 @@ class HomeWidgetService {
 
       if (mine != null) {
         await put(
-            'ios_self_photo_path', mine.isEmpty ? '' : mine.first['path']!);
+          'ios_self_photo_path',
+          mine.isEmpty ? '' : mine.first['path']!,
+        );
         await put('ios_photo_catalog_self', jsonEncode(mine));
       }
       if (theirs != null) {
-        await put('ios_partner_photo_path',
-            theirs.isEmpty ? '' : theirs.first['path']!);
+        await put(
+          'ios_partner_photo_path',
+          theirs.isEmpty ? '' : theirs.first['path']!,
+        );
         await put('ios_partner_photo_author', partnerName);
         await put('ios_photo_catalog_partner', jsonEncode(theirs));
       }
@@ -4320,8 +4666,9 @@ class HomeWidgetService {
         final grid = <String>[];
         for (var i = 0; i < 4; i++) {
           final url = i < gridPhotos.length ? gridPhotos[i] : '';
-          final path =
-              url.isEmpty ? '' : await _cachePhotoFromUrl(url, 'ios_grid_$i');
+          final path = url.isEmpty
+              ? ''
+              : await _cachePhotoFromUrl(url, 'ios_grid_$i');
           grid.add(path);
           await put('ios_photo_grid_$i', path);
         }
@@ -4338,7 +4685,11 @@ class HomeWidgetService {
         'PhotoDayWidgetProvider',
         'PhotoGridWidgetProvider',
       ]) {
-        await HomeWidget.updateWidget(name: name, androidName: name, qualifiedAndroidName: ForkIdentity.widgetClass(name)) /* fork */;
+        await HomeWidget.updateWidget(
+          name: name,
+          androidName: name,
+          qualifiedAndroidName: ForkIdentity.widgetClass(name),
+        ) /* fork */;
       }
       debugPrint(
         'HomeWidgetService.syncIosPhotoWidgets: свои ${mine?.length ?? '—'}, '
@@ -4403,8 +4754,10 @@ class HomeWidgetService {
         return await _toWidgetReadablePath(file.path, moodName);
       }
       // Та же картинка настроения, что у widget_service: один склад на двоих.
-      final resp =
-          await WidgetPhotoStore.instance.bytesFor(url, () async => url);
+      final resp = await WidgetPhotoStore.instance.bytesFor(
+        url,
+        () async => url,
+      );
       if (resp != null && resp.isNotEmpty) {
         await file.writeAsBytes(resp);
         debugPrint('HomeWidgetService: mood url downloaded → ${file.path}');
@@ -4424,7 +4777,8 @@ class _CachedWidgetData {
   final DateTime timestamp;
   _CachedWidgetData(this.data) : timestamp = DateTime.now();
   bool get isFresh =>
-      DateTime.now().difference(timestamp) < HomeWidgetService._widgetDataCacheTtl;
+      DateTime.now().difference(timestamp) <
+      HomeWidgetService._widgetDataCacheTtl;
 }
 
 class _CachedRelStats {
@@ -4439,7 +4793,8 @@ class _CachedRelStats {
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
   bool get isFresh =>
-      DateTime.now().difference(timestamp) < HomeWidgetService._relStatsCacheTtl;
+      DateTime.now().difference(timestamp) <
+      HomeWidgetService._relStatsCacheTtl;
 }
 
 /// Задание для изолята: байты снимка и предел по большей стороне.

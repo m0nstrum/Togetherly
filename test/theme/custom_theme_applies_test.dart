@@ -27,25 +27,33 @@ void main() {
   const blue = Color(0xFF2962FF);
 
   AppTheme themeOf(Color seed, Brightness brightness) {
-    final palette = paletteFor(
-      customPaletteIndex(0),
-      [CustomTheme(seed: seed, name: 'Из фото')],
-    );
+    final palette = paletteFor(customPaletteIndex(0), [
+      CustomTheme(seed: seed, name: 'Из фото'),
+    ]);
     return buildAppTheme(palette, brightness, flavor: SchemeFlavor.soft);
   }
 
   test('зелёный из фотографии красит тему зелёным, а не розовым', () {
     final t = themeOf(green, Brightness.light);
-    expect(hueGap(hueOf(t.fillColor), hueOf(green)), lessThan(25),
-        reason: 'заливка ушла от цвета человека: ${t.fillColor}');
-    expect(hueGap(hueOf(t.primary), hueOf(green)), lessThan(25),
-        reason: 'надпись ушла от цвета человека: ${t.primary}');
+    expect(
+      hueGap(hueOf(t.fillColor), hueOf(green)),
+      lessThan(25),
+      reason: 'заливка ушла от цвета человека: ${t.fillColor}',
+    );
+    expect(
+      hueGap(hueOf(t.primary), hueOf(green)),
+      lessThan(25),
+      reason: 'надпись ушла от цвета человека: ${t.primary}',
+    );
   });
 
   test('своя тема отличается от палитры по умолчанию', () {
     final mine = themeOf(blue, Brightness.light);
-    final fallback = buildAppTheme(paletteByIndex(0), Brightness.light,
-        flavor: SchemeFlavor.soft);
+    final fallback = buildAppTheme(
+      paletteByIndex(0),
+      Brightness.light,
+      flavor: SchemeFlavor.soft,
+    );
     expect(mine.fillColor, isNot(fallback.fillColor));
     expect(mine.bgGradient.first, isNot(fallback.bgGradient.first));
   });
@@ -53,8 +61,11 @@ void main() {
   test('в тёмном режиме цвет остаётся своим', () {
     final t = themeOf(blue, Brightness.dark);
     expect(t.brightness, Brightness.dark);
-    expect(hueGap(hueOf(t.fillColor), hueOf(blue)), lessThan(25),
-        reason: 'тёмная своя тема потеряла оттенок: ${t.fillColor}');
+    expect(
+      hueGap(hueOf(t.fillColor), hueOf(blue)),
+      lessThan(25),
+      reason: 'тёмная своя тема потеряла оттенок: ${t.fillColor}',
+    );
   });
 
   test('две свои темы дают разные цвета', () {

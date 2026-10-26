@@ -53,8 +53,10 @@ class PostcardEditable extends StatelessWidget {
 }
 
 PostcardTextBlock _block(List<PostcardTextBlock> blocks, String id) =>
-    blocks.firstWhere((b) => b.id == id,
-        orElse: () => PostcardTextBlock(id: id, label: id, text: ''));
+    blocks.firstWhere(
+      (b) => b.id == id,
+      orElse: () => PostcardTextBlock(id: id, label: id, text: ''),
+    );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Билет
@@ -81,125 +83,130 @@ class TicketPostcard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, c) {
-          final w = c.maxWidth;
-          final s = LocaleService.current;
-          return Container(
-            color: _paper,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(w * .08, w * .09, w * .08, w * .04),
+    builder: (context, c) {
+      final w = c.maxWidth;
+      final s = LocaleService.current;
+      return Container(
+        color: _paper,
+        child: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  w * .08,
+                  w * .09,
+                  w * .08,
+                  w * .04,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.pcTicketRoute.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: w * .033,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: w * .006,
+                        color: _faded,
+                      ),
+                    ),
+                    SizedBox(height: w * .025),
+                    PostcardEditable(
+                      block: _block(blocks, 'names'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _block(blocks, 'names').text,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontFamily: 'Unbounded',
+                            fontSize: w * .13,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -w * .005,
+                            height: 1.05,
+                            color: _ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: w * .028),
+                    PostcardEditable(
+                      block: _block(blocks, 'message'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      child: Text(
+                        _block(blocks, 'message').text,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Onest',
+                          fontSize: w * .05,
+                          height: 1.35,
+                          color: const Color(0xFF4A3B28),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Линия отрыва с высечками по краям — по ней билет и узнаётся.
+            SizedBox(
+              height: w * .07,
+              child: CustomPaint(
+                size: Size(w, w * .07),
+                painter: _PerforationPainter(),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(w * .08, 0, w * .08, w * .08),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          s.pcTicketRoute.toUpperCase(),
+                          '$days',
+                          style: TextStyle(
+                            fontFamily: 'Unbounded',
+                            fontSize: w * .2,
+                            fontWeight: FontWeight.w800,
+                            height: .9,
+                            letterSpacing: -w * .008,
+                            color: _ink,
+                          ),
+                        ),
+                        SizedBox(height: w * .022),
+                        Text(
+                          _block(blocks, 'days_label').text.toUpperCase(),
                           style: TextStyle(
                             fontFamily: 'Onest',
-                            fontSize: w * .033,
+                            fontSize: w * .032,
                             fontWeight: FontWeight.w600,
                             letterSpacing: w * .006,
                             color: _faded,
                           ),
                         ),
-                        SizedBox(height: w * .025),
-                        PostcardEditable(
-                          block: _block(blocks, 'names'),
-                          isEditing: isEditing,
-                          onTap: onBlockTap,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              _block(blocks, 'names').text,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontFamily: 'Unbounded',
-                                fontSize: w * .13,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -w * .005,
-                                height: 1.05,
-                                color: _ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: w * .028),
-                        PostcardEditable(
-                          block: _block(blocks, 'message'),
-                          isEditing: isEditing,
-                          onTap: onBlockTap,
-                          child: Text(
-                            _block(blocks, 'message').text,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'Onest',
-                              fontSize: w * .05,
-                              height: 1.35,
-                              color: const Color(0xFF4A3B28),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                ),
-                // Линия отрыва с высечками по краям — по ней билет и узнаётся.
-                SizedBox(
-                  height: w * .07,
-                  child: CustomPaint(
-                    size: Size(w, w * .07),
-                    painter: _PerforationPainter(),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(w * .08, 0, w * .08, w * .08),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '$days',
-                              style: TextStyle(
-                                fontFamily: 'Unbounded',
-                                fontSize: w * .2,
-                                fontWeight: FontWeight.w800,
-                                height: .9,
-                                letterSpacing: -w * .008,
-                                color: _ink,
-                              ),
-                            ),
-                            SizedBox(height: w * .022),
-                            Text(
-                              _block(blocks, 'days_label').text.toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'Onest',
-                                fontSize: w * .032,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: w * .006,
-                                color: _faded,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      _Stamp(size: w * .22, date: DateTime.now()),
-                    ],
-                  ),
-                ),
-              ],
+                  _Stamp(size: w * .22, date: DateTime.now()),
+                ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       );
+    },
+  );
 }
 
 /// Пунктир отрыва и две круглые высечки по краям.
@@ -254,20 +261,24 @@ class _Stamp extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$d·$m',
-                style: TextStyle(
-                  fontFamily: 'Onest',
-                  fontSize: size * .17,
-                  fontWeight: FontWeight.w700,
-                  color: TicketPostcard._stamp,
-                )),
-            Text('${date.year}',
-                style: TextStyle(
-                  fontFamily: 'Onest',
-                  fontSize: size * .17,
-                  fontWeight: FontWeight.w700,
-                  color: TicketPostcard._stamp,
-                )),
+            Text(
+              '$d·$m',
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: size * .17,
+                fontWeight: FontWeight.w700,
+                color: TicketPostcard._stamp,
+              ),
+            ),
+            Text(
+              '${date.year}',
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: size * .17,
+                fontWeight: FontWeight.w700,
+                color: TicketPostcard._stamp,
+              ),
+            ),
           ],
         ),
       ),
@@ -303,136 +314,139 @@ class ReceiptPostcard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, c) {
-          final w = c.maxWidth;
-          final s = LocaleService.current;
-          final now = DateTime.now();
-          final date = '${now.day.toString().padLeft(2, '0')}.'
-              '${now.month.toString().padLeft(2, '0')}.${now.year}';
+    builder: (context, c) {
+      final w = c.maxWidth;
+      final s = LocaleService.current;
+      final now = DateTime.now();
+      final date =
+          '${now.day.toString().padLeft(2, '0')}.'
+          '${now.month.toString().padLeft(2, '0')}.${now.year}';
 
-          return Container(
-            color: _paper,
-            child: Stack(
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(w * .09, w * .07, w * .09, w * .085),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+      return Container(
+        color: _paper,
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(w * .09, w * .07, w * .09, w * .085),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  PostcardEditable(
+                    block: _block(blocks, 'names'),
+                    isEditing: isEditing,
+                    onTap: onBlockTap,
+                    child: Text(
+                      _block(blocks, 'names').text.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: _mono,
+                        fontSize: w * .055,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: w * .012,
+                        color: _ink,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: w * .018),
+                  Text(
+                    '$date · ${s.pcReceiptShift(days)}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: _mono,
+                      fontSize: w * .033,
+                      letterSpacing: w * .004,
+                      color: _faded,
+                    ),
+                  ),
+                  SizedBox(height: w * .025),
+                  _rule(w),
+                  for (final line in _block(blocks, 'items').text.split('\n'))
+                    if (line.trim().isNotEmpty) _row(w, line),
+                  _rule(w),
+                  SizedBox(height: w * .01),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
                     children: [
-                      PostcardEditable(
-                        block: _block(blocks, 'names'),
-                        isEditing: isEditing,
-                        onTap: onBlockTap,
+                      Expanded(
                         child: Text(
-                          _block(blocks, 'names').text.toUpperCase(),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
+                          s.pcReceiptTotal.toUpperCase(),
                           style: TextStyle(
                             fontFamily: _mono,
-                            fontSize: w * .055,
+                            fontSize: w * .045,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: w * .012,
                             color: _ink,
                           ),
                         ),
                       ),
-                      SizedBox(height: w * .018),
                       Text(
-                        '$date · ${s.pcReceiptShift(days)}',
-                        textAlign: TextAlign.center,
+                        '$days',
                         style: TextStyle(
-                          fontFamily: _mono,
-                          fontSize: w * .033,
-                          letterSpacing: w * .004,
-                          color: _faded,
-                        ),
-                      ),
-                      SizedBox(height: w * .025),
-                      _rule(w),
-                      for (final line in _block(blocks, 'items').text.split('\n'))
-                        if (line.trim().isNotEmpty) _row(w, line),
-                      _rule(w),
-                      SizedBox(height: w * .01),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              s.pcReceiptTotal.toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: _mono,
-                                fontSize: w * .045,
-                                fontWeight: FontWeight.w700,
-                                color: _ink,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '$days',
-                            style: TextStyle(
-                              fontFamily: 'Unbounded',
-                              fontSize: w * .115,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -w * .005,
-                              color: _ink,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        _block(blocks, 'days_label').text,
-                        style: TextStyle(
-                          fontFamily: _mono,
-                          fontSize: w * .036,
-                          color: _faded,
-                        ),
-                      ),
-                      const Spacer(),
-                      PostcardEditable(
-                        block: _block(blocks, 'message'),
-                        isEditing: isEditing,
-                        onTap: onBlockTap,
-                        child: Text(
-                          _block(blocks, 'message').text.toUpperCase(),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: _mono,
-                            fontSize: w * .031,
-                            letterSpacing: w * .008,
-                            color: _faded,
-                          ),
+                          fontFamily: 'Unbounded',
+                          fontSize: w * .115,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -w * .005,
+                          color: _ink,
                         ),
                       ),
                     ],
                   ),
-                ),
-                // Оторванный низ ленты.
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: w * .045,
-                  child: CustomPaint(painter: _TornEdgePainter(_paper)),
-                ),
-              ],
+                  Text(
+                    _block(blocks, 'days_label').text,
+                    style: TextStyle(
+                      fontFamily: _mono,
+                      fontSize: w * .036,
+                      color: _faded,
+                    ),
+                  ),
+                  const Spacer(),
+                  PostcardEditable(
+                    block: _block(blocks, 'message'),
+                    isEditing: isEditing,
+                    onTap: onBlockTap,
+                    child: Text(
+                      _block(blocks, 'message').text.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: _mono,
+                        fontSize: w * .031,
+                        letterSpacing: w * .008,
+                        color: _faded,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
-      );
-
-  Widget _rule(double w) => Padding(
-        padding: EdgeInsets.symmetric(vertical: w * .014),
-        child: CustomPaint(
-          size: Size(double.infinity, 1),
-          painter: _DashedRulePainter(),
+            // Оторванный низ ленты.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: w * .045,
+              child: CustomPaint(painter: _TornEdgePainter(_paper)),
+            ),
+          ],
         ),
       );
+    },
+  );
+
+  Widget _rule(double w) => Padding(
+    padding: EdgeInsets.symmetric(vertical: w * .014),
+    child: CustomPaint(
+      size: Size(double.infinity, 1),
+      painter: _DashedRulePainter(),
+    ),
+  );
 
   Widget _row(double w, String line) {
     // «Название — 128»: считаем последнюю группу цифр значением, остальное
     // названием. Так строку можно править в одном поле, без формы из полей.
-    final match = RegExp(r'^(.*?)[\s—-]*(\d+|[^\d\s]{1,12})$').firstMatch(line.trim());
+    final match = RegExp(
+      r'^(.*?)[\s—-]*(\d+|[^\d\s]{1,12})$',
+    ).firstMatch(line.trim());
     final left = (match?.group(1) ?? line).trim();
     final right = (match?.group(2) ?? '').trim();
     return Padding(
@@ -445,13 +459,19 @@ class ReceiptPostcard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  fontFamily: _mono, fontSize: w * .034, color: _ink),
+                fontFamily: _mono,
+                fontSize: w * .034,
+                color: _ink,
+              ),
             ),
           ),
           Text(
             right,
             style: TextStyle(
-                fontFamily: _mono, fontSize: w * .034, color: _ink),
+              fontFamily: _mono,
+              fontSize: w * .034,
+              color: _ink,
+            ),
           ),
         ],
       ),
@@ -528,96 +548,95 @@ class TelegramPostcard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, c) {
-          final w = c.maxWidth;
-          final s = LocaleService.current;
-          final now = DateTime.now();
-          final months = s.cycleMonthsGenitive;
+    builder: (context, c) {
+      final w = c.maxWidth;
+      final s = LocaleService.current;
+      final now = DateTime.now();
+      final months = s.cycleMonthsGenitive;
 
-          return Container(
-            color: _paper,
-            child: CustomPaint(
-              painter: _AirmailBorderPainter(w * .035),
-              child: Padding(
-                padding: EdgeInsets.all(w * .095),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+      return Container(
+        color: _paper,
+        child: CustomPaint(
+          painter: _AirmailBorderPainter(w * .035),
+          child: Padding(
+            padding: EdgeInsets.all(w * .095),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(s.pcTelegramTitle.toUpperCase(),
-                            style: _meta(w)),
-                        Text('№ $days', style: _meta(w)),
-                      ],
+                    Text(s.pcTelegramTitle.toUpperCase(), style: _meta(w)),
+                    Text('№ $days', style: _meta(w)),
+                  ],
+                ),
+                SizedBox(height: w * .028),
+                Container(height: 1, color: _rule),
+                Expanded(
+                  child: Center(
+                    child: PostcardEditable(
+                      block: _block(blocks, 'message'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      child: Text(
+                        _block(blocks, 'message').text.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'Unbounded',
+                          fontSize: w * .075,
+                          fontWeight: FontWeight.w700,
+                          height: 1.35,
+                          letterSpacing: w * .002,
+                          color: _ink,
+                        ),
+                      ),
                     ),
-                    SizedBox(height: w * .028),
-                    Container(height: 1, color: _rule),
+                  ),
+                ),
+                Container(height: 1, color: _rule),
+                SizedBox(height: w * .035),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
                     Expanded(
-                      child: Center(
-                        child: PostcardEditable(
-                          block: _block(blocks, 'message'),
-                          isEditing: isEditing,
-                          onTap: onBlockTap,
-                          child: Text(
-                            _block(blocks, 'message').text.toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'Unbounded',
-                              fontSize: w * .075,
-                              fontWeight: FontWeight.w700,
-                              height: 1.35,
-                              letterSpacing: w * .002,
-                              color: _ink,
-                            ),
+                      child: PostcardEditable(
+                        block: _block(blocks, 'names'),
+                        isEditing: isEditing,
+                        onTap: onBlockTap,
+                        child: Text(
+                          _block(blocks, 'names').text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Unbounded',
+                            fontSize: w * .062,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -w * .002,
+                            color: _ink,
                           ),
                         ),
                       ),
                     ),
-                    Container(height: 1, color: _rule),
-                    SizedBox(height: w * .035),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: PostcardEditable(
-                            block: _block(blocks, 'names'),
-                            isEditing: isEditing,
-                            onTap: onBlockTap,
-                            child: Text(
-                              _block(blocks, 'names').text,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Unbounded',
-                                fontSize: w * .062,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -w * .002,
-                                color: _ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${now.day} ${months[now.month - 1]} ${now.year}',
-                          style: _meta(w),
-                        ),
-                      ],
+                    Text(
+                      '${now.day} ${months[now.month - 1]} ${now.year}',
+                      style: _meta(w),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 
   TextStyle _meta(double w) => TextStyle(
-        fontFamily: 'Onest',
-        fontSize: w * .032,
-        fontWeight: FontWeight.w600,
-        letterSpacing: w * .006,
-        color: _faded,
-      );
+    fontFamily: 'Onest',
+    fontSize: w * .032,
+    fontWeight: FontWeight.w600,
+    letterSpacing: w * .006,
+    color: _faded,
+  );
 }
 
 /// Сине-красная кайма авиапочты по периметру.
@@ -653,7 +672,12 @@ class _AirmailBorderPainter extends CustomPainter {
     }
 
     // Середину закрываем бумагой, оставляя только кайму по краю.
-    final inner = Rect.fromLTWH(band, band, size.width - band * 2, size.height - band * 2);
+    final inner = Rect.fromLTWH(
+      band,
+      band,
+      size.width - band * 2,
+      size.height - band * 2,
+    );
     canvas.drawRect(inner, Paint()..color = TelegramPostcard._paper);
     canvas.restore();
   }
@@ -688,127 +712,131 @@ class ParcelPostcard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, c) {
-          final w = c.maxWidth;
-          final s = LocaleService.current;
-          final now = DateTime.now();
-          final track = 'RU $days '
-              '${now.day.toString().padLeft(2, '0')}${now.month.toString().padLeft(2, '0')} '
-              '${now.year % 100} RU';
+    builder: (context, c) {
+      final w = c.maxWidth;
+      final s = LocaleService.current;
+      final now = DateTime.now();
+      final track =
+          'RU $days '
+          '${now.day.toString().padLeft(2, '0')}${now.month.toString().padLeft(2, '0')} '
+          '${now.year % 100} RU';
 
-          return Container(
-            color: _box,
-            padding: EdgeInsets.all(w * .07),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      return Container(
+        color: _box,
+        padding: EdgeInsets.all(w * .07),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.favorite_border_rounded,
-                        size: w * .055, color: _care),
-                    SizedBox(width: w * .022),
-                    Expanded(
-                      child: Text(
-                        s.pcParcelCare.toUpperCase(),
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontFamily: 'Onest',
-                          fontSize: w * .034,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: w * .005,
-                          color: _care,
-                        ),
-                      ),
-                    ),
-                  ],
+                Icon(
+                  Icons.favorite_border_rounded,
+                  size: w * .055,
+                  color: _care,
                 ),
-                SizedBox(height: w * .045),
+                SizedBox(width: w * .022),
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _label,
-                      borderRadius: BorderRadius.circular(w * .02),
-                    ),
-                    padding: EdgeInsets.all(w * .05),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          s.pcParcelTo.toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'Onest',
-                            fontSize: w * .032,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: w * .006,
-                            color: _faded,
-                          ),
-                        ),
-                        SizedBox(height: w * .012),
-                        PostcardEditable(
-                          block: _block(blocks, 'names'),
-                          isEditing: isEditing,
-                          onTap: onBlockTap,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              _block(blocks, 'names').text,
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontFamily: 'Unbounded',
-                                fontSize: w * .095,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -w * .004,
-                                height: 1.1,
-                                color: _ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: w * .035),
-                        Container(height: 1, color: const Color(0xFFE4DCC9)),
-                        SizedBox(height: w * .03),
-                        PostcardEditable(
-                          block: _block(blocks, 'message'),
-                          isEditing: isEditing,
-                          onTap: onBlockTap,
-                          child: Text(
-                            _block(blocks, 'message').text,
-                            style: TextStyle(
-                              fontFamily: 'Onest',
-                              fontSize: w * .042,
-                              height: 1.45,
-                              color: const Color(0xFF5C4E3A),
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          height: w * .13,
-                          child: CustomPaint(
-                            size: Size(double.infinity, w * .13),
-                            painter: _BarcodePainter(days),
-                          ),
-                        ),
-                        SizedBox(height: w * .022),
-                        Text(
-                          track,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: w * .033,
-                            letterSpacing: w * .012,
-                            color: const Color(0xFF5C4E3A),
-                          ),
-                        ),
-                      ],
+                  child: Text(
+                    s.pcParcelCare.toUpperCase(),
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'Onest',
+                      fontSize: w * .034,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: w * .005,
+                      color: _care,
                     ),
                   ),
                 ),
               ],
             ),
-          );
-        },
+            SizedBox(height: w * .045),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _label,
+                  borderRadius: BorderRadius.circular(w * .02),
+                ),
+                padding: EdgeInsets.all(w * .05),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.pcParcelTo.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: w * .032,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: w * .006,
+                        color: _faded,
+                      ),
+                    ),
+                    SizedBox(height: w * .012),
+                    PostcardEditable(
+                      block: _block(blocks, 'names'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _block(blocks, 'names').text,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontFamily: 'Unbounded',
+                            fontSize: w * .095,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -w * .004,
+                            height: 1.1,
+                            color: _ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: w * .035),
+                    Container(height: 1, color: const Color(0xFFE4DCC9)),
+                    SizedBox(height: w * .03),
+                    PostcardEditable(
+                      block: _block(blocks, 'message'),
+                      isEditing: isEditing,
+                      onTap: onBlockTap,
+                      child: Text(
+                        _block(blocks, 'message').text,
+                        style: TextStyle(
+                          fontFamily: 'Onest',
+                          fontSize: w * .042,
+                          height: 1.45,
+                          color: const Color(0xFF5C4E3A),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      height: w * .13,
+                      child: CustomPaint(
+                        size: Size(double.infinity, w * .13),
+                        painter: _BarcodePainter(days),
+                      ),
+                    ),
+                    SizedBox(height: w * .022),
+                    Text(
+                      track,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: w * .033,
+                        letterSpacing: w * .012,
+                        color: const Color(0xFF5C4E3A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       );
+    },
+  );
 }
 
 /// Штрихкод, у которого ширины полос считаются от числа дней: у каждой пары

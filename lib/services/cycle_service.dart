@@ -66,7 +66,8 @@ class CycleService extends ChangeNotifier {
     }
     try {
       _consent = CycleConsent.fromMap(
-          Map<String, dynamic>.from(jsonDecode(raw) as Map));
+        Map<String, dynamic>.from(jsonDecode(raw) as Map),
+      );
     } catch (_) {
       _consent = const CycleConsent.absent();
     }
@@ -81,8 +82,8 @@ class CycleService extends ChangeNotifier {
 
   /// Человек согласился вести цикл в приложении.
   Future<void> grantConsent() => _saveConsent(
-        CycleConsent.granted(at: DateTime.now(), version: kCycleConsentVersion),
-      );
+    CycleConsent.granted(at: DateTime.now(), version: kCycleConsentVersion),
+  );
 
   /// Отзыв согласия. Отзывать должно быть так же просто, как соглашаться,
   /// поэтому вместе с флагом стираются и сами отметки: держать их дальше
@@ -135,16 +136,14 @@ class CycleService extends ChangeNotifier {
   static CycleForecast? forecastOf(
     Iterable<CycleEntry> entries, {
     DateTime? today,
-  }) =>
-      CycleMath.predict(_periodDaysOf(entries), today: today);
+  }) => CycleMath.predict(_periodDaysOf(entries), today: today);
 
   /// Чем помечен день у владельца [entries] — для раскраски его сетки.
   static CyclePhase phaseOf(
     Iterable<CycleEntry> entries,
     DateTime day, {
     DateTime? today,
-  }) =>
-      CycleMath.phaseOn(_periodDaysOf(entries), day, today: today);
+  }) => CycleMath.phaseOn(_periodDaysOf(entries), day, today: today);
 
   /// Дни, когда у меня отмечены месячные, — вход для всех расчётов.
   List<DateTime> get _periodDays => _periodDaysOf(_mine);

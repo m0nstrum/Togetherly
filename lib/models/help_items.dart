@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../dict_strings.dart';
-import '../fork/flags.dart'; // fork
 
 /// Справка «Как сделать»: ответы на то, о чём чаще всего пишут в приёмную.
 ///
@@ -10,7 +9,7 @@ import '../fork/flags.dart'; // fork
 /// путь, три шага и кнопка, которая открывает нужное место. Тексты взяты из
 /// ответов приёмной, а подписи в шагах совпадают с подписями на экранах.
 
-enum HelpTopic { pair, together, widgets, account, plus }
+enum HelpTopic { pair, together, widgets, account }
 
 /// Куда ведёт кнопка «Открыть» под ответом.
 enum HelpAction {
@@ -20,9 +19,6 @@ enum HelpAction {
   tabWatch,
   tabProfile,
   settings,
-  plusSheet,
-  plusSite,
-  telegram,
 }
 
 class HelpItem {
@@ -39,8 +35,8 @@ class HelpItem {
   String get question => trKey('help.$id.q');
   String get path => fillHelpLabels(trKey('help.$id.path'));
   List<String> get steps => [
-        for (final n in [1, 2, 3]) fillHelpLabels(trKey('help.$id.s$n')),
-      ];
+    for (final n in [1, 2, 3]) fillHelpLabels(trKey('help.$id.s$n')),
+  ];
 }
 
 /// `{connect}` → подпись с экрана на текущем языке. Так шаг зовёт кнопку тем
@@ -50,53 +46,79 @@ String fillHelpLabels(String text) =>
 
 String helpTopicLabel(HelpTopic t) => trKey('help.topic.${t.name}');
 
-/// Вопросы для этой сборки.
-///
-/// [plusInStore] — Плюс покупается через магазин (Google Play и iPhone):
-/// тогда ответ ведёт в настройки, и ни слова о внешней оплате, иначе магазин
-/// снимет приложение. В сборках с сайта и RuStore — ссылка на lava.top.
-List<HelpItem> helpItems({required bool plusInStore}) => [
-      const HelpItem('unpair', HelpTopic.pair, Icons.link_off_rounded,
-          HelpAction.tabConnect),
-      const HelpItem('startDate', HelpTopic.pair, Icons.event_rounded,
-          HelpAction.tabHome),
-      const HelpItem('draw', HelpTopic.together, Icons.brush_rounded,
-          HelpAction.tabHome),
-      const HelpItem('watch', HelpTopic.together, Icons.live_tv_rounded,
-          HelpAction.tabWatch),
-      const HelpItem('tasks', HelpTopic.together, Icons.task_alt_rounded,
-          HelpAction.tabHome),
-      const HelpItem('widgetPhoto', HelpTopic.widgets,
-          Icons.hide_image_rounded, HelpAction.tabWidgets),
-      const HelpItem('widgetStale', HelpTopic.widgets, Icons.widgets_rounded,
-          HelpAction.tabWidgets),
-      const HelpItem('password', HelpTopic.account, Icons.lock_rounded,
-          HelpAction.settings),
-      const HelpItem(
-          'resetMail', HelpTopic.account, Icons.mark_email_unread_rounded),
-      const HelpItem('email', HelpTopic.account, Icons.mark_email_read_rounded,
-          HelpAction.settings),
-      const HelpItem('gender', HelpTopic.account, Icons.transgender_rounded,
-          HelpAction.tabProfile),
-      // fork: Telegram автора и покупка Плюса в форке не показываются.
-      if (!ForkFlags.hideUpstreamChannels)
-      const HelpItem('telegram', HelpTopic.account, Icons.send_rounded,
-          HelpAction.telegram),
-      if (!ForkFlags.allFree)
-      plusInStore
-          ? const HelpItem('plusStore', HelpTopic.plus,
-              Icons.workspace_premium_rounded, HelpAction.plusSheet)
-          : const HelpItem('plusSite', HelpTopic.plus,
-              Icons.workspace_premium_rounded, HelpAction.plusSite),
-    ];
+/// Вопросы справки.
+List<HelpItem> helpItems() => [
+  const HelpItem(
+    'unpair',
+    HelpTopic.pair,
+    Icons.link_off_rounded,
+    HelpAction.tabConnect,
+  ),
+  const HelpItem(
+    'startDate',
+    HelpTopic.pair,
+    Icons.event_rounded,
+    HelpAction.tabHome,
+  ),
+  const HelpItem(
+    'draw',
+    HelpTopic.together,
+    Icons.brush_rounded,
+    HelpAction.tabHome,
+  ),
+  const HelpItem(
+    'watch',
+    HelpTopic.together,
+    Icons.live_tv_rounded,
+    HelpAction.tabWatch,
+  ),
+  const HelpItem(
+    'tasks',
+    HelpTopic.together,
+    Icons.task_alt_rounded,
+    HelpAction.tabHome,
+  ),
+  const HelpItem(
+    'widgetPhoto',
+    HelpTopic.widgets,
+    Icons.hide_image_rounded,
+    HelpAction.tabWidgets,
+  ),
+  const HelpItem(
+    'widgetStale',
+    HelpTopic.widgets,
+    Icons.widgets_rounded,
+    HelpAction.tabWidgets,
+  ),
+  const HelpItem(
+    'password',
+    HelpTopic.account,
+    Icons.lock_rounded,
+    HelpAction.settings,
+  ),
+  const HelpItem(
+    'resetMail',
+    HelpTopic.account,
+    Icons.mark_email_unread_rounded,
+  ),
+  const HelpItem(
+    'email',
+    HelpTopic.account,
+    Icons.mark_email_read_rounded,
+    HelpAction.settings,
+  ),
+  const HelpItem(
+    'gender',
+    HelpTopic.account,
+    Icons.transgender_rounded,
+    HelpAction.tabProfile,
+  ),
+];
 
 /// Два вопроса крупными плитками наверху: о них спрашивают чаще всего.
-/// С октября 2026 в приёмную чаще всего пишут «у нас 0 дней вместе», поэтому
-/// дата начала стоит сразу за Плюсом, а удаление пары ушло в список.
 List<HelpItem> helpPopular(List<HelpItem> items) => [
-      for (final id in ['plusStore', 'plusSite', 'startDate', 'unpair'])
-        ...items.where((i) => i.id == id),
-    ].take(2).toList();
+  for (final id in ['startDate', 'unpair']) ...items.where((i) => i.id == id),
+].take(2).toList();
 
 /// Поиск по вопросу, пути и шагам, без учёта регистра и «ё».
 bool helpMatches(HelpItem item, String query) {

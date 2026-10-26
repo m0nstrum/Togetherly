@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart' show ClientException;
 
-import '../../fork/e2e/account_password.dart'; // fork
-import '../../fork/e2e/fork_e2e.dart'; // fork
+import '../../fork/e2e/account_password.dart';
+import '../../fork/e2e/fork_e2e.dart';
 import '../../models/password_change.dart';
 import '../../services/locale_service.dart';
 import '../../services/pb_auth_service.dart';
@@ -60,11 +60,11 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
   }
 
   String _textFor(PasswordChangeProblem p) => switch (p) {
-        PasswordChangeProblem.noCurrent => _s.passwordCurrent,
-        PasswordChangeProblem.tooShort => _s.passwordTooShort,
-        PasswordChangeProblem.mismatch => _s.passwordsDiffer,
-        PasswordChangeProblem.same => _s.passwordSameAsOld,
-      };
+    PasswordChangeProblem.noCurrent => _s.passwordCurrent,
+    PasswordChangeProblem.tooShort => _s.passwordTooShort,
+    PasswordChangeProblem.mismatch => _s.passwordsDiffer,
+    PasswordChangeProblem.same => _s.passwordSameAsOld,
+  };
 
   Future<void> _save() async {
     final problem = passwordChangeProblem(
@@ -77,8 +77,10 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       return;
     }
     // fork: правила пароля бэкапа ключей (lib/fork/e2e/account_password.dart).
-    final weak = await ForkAccountPassword.problems(_fresh.text,
-        email: ForkE2E.email);
+    final weak = await ForkAccountPassword.problems(
+      _fresh.text,
+      email: ForkE2E.email,
+    );
     if (!mounted) return;
     if (weak.isNotEmpty) {
       setState(() => _error = ForkAccountPassword.describe(weak));
@@ -89,8 +91,10 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       _error = '';
     });
     try {
-      await PbAuthService()
-          .changePassword(current: _current.text, fresh: _fresh.text);
+      await PbAuthService().changePassword(
+        current: _current.text,
+        fresh: _fresh.text,
+      );
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -184,8 +188,9 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       obscureText: true,
       autofocus: autofocus,
       enabled: !_busy,
-      textInputAction:
-          onSubmit == null ? TextInputAction.next : TextInputAction.done,
+      textInputAction: onSubmit == null
+          ? TextInputAction.next
+          : TextInputAction.done,
       onSubmitted: onSubmit == null ? null : (_) => onSubmit(),
       decoration: InputDecoration(
         labelText: label,

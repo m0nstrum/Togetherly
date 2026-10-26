@@ -30,7 +30,10 @@ void main() {
         // Окно с запасом — у вызова бывает и десяток аргументов с
         // комментариями между ними.
         final around = lines
-            .sublist((i - 3).clamp(0, lines.length), (i + 12).clamp(0, lines.length))
+            .sublist(
+              (i - 3).clamp(0, lines.length),
+              (i + 12).clamp(0, lines.length),
+            )
             .join('\n');
         if (!around.contains('isFinite')) {
           offenders.add('${entity.path}:${i + 1}');
@@ -41,7 +44,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Сторона маскота берётся у родителя без проверки isFinite: '
+      reason:
+          'Сторона маскота берётся у родителя без проверки isFinite: '
           '${offenders.join(', ')}',
     );
   });

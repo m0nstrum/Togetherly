@@ -22,13 +22,13 @@ class WatchEntry {
   });
 
   factory WatchEntry.fromRecord(RecordModel r) => WatchEntry(
-        id: r.id,
-        url: (r.data['url'] ?? '').toString(),
-        kind: (r.data['kind'] ?? '').toString(),
-        title: (r.data['title'] ?? '').toString(),
-        thumb: (r.data['thumb'] ?? '').toString(),
-        seconds: ((r.data['seconds'] ?? 0) as num).round(),
-      );
+    id: r.id,
+    url: (r.data['url'] ?? '').toString(),
+    kind: (r.data['kind'] ?? '').toString(),
+    title: (r.data['title'] ?? '').toString(),
+    thumb: (r.data['thumb'] ?? '').toString(),
+    seconds: ((r.data['seconds'] ?? 0) as num).round(),
+  );
 
   /// Что показать в ленте, когда площадка не отдала название.
   String get label {
@@ -51,10 +51,15 @@ class WatchHistoryService {
   static PocketBase get _pb => PocketBaseService.instance.pb;
 
   /// Последние просмотры пары, свежие сверху.
-  static Future<List<WatchEntry>> recent(String groupId, {int limit = 12}) async {
+  static Future<List<WatchEntry>> recent(
+    String groupId, {
+    int limit = 12,
+  }) async {
     if (groupId.isEmpty) return const [];
     try {
-      final res = await _pb.collection(_col).getList(
+      final res = await _pb
+          .collection(_col)
+          .getList(
             page: 1,
             perPage: limit,
             filter: 'group_id = "$groupId"',
@@ -92,15 +97,18 @@ class WatchHistoryService {
 
     try {
       // fork (E2E): адрес лежит шифром — сервер его не сравнит, ищем у себя.
-      final found = (await _pb.collection(_col).getList(
-            page: 1,
-            perPage: 200,
-            sort: '-updated',
-            filter: 'group_id = "$groupId"',
-          ))
-          .items
-          .where((r) => r.data['url'] == url)
-          .toList();
+      final found =
+          (await _pb
+                  .collection(_col)
+                  .getList(
+                    page: 1,
+                    perPage: 200,
+                    sort: '-updated',
+                    filter: 'group_id = "$groupId"',
+                  ))
+              .items
+              .where((r) => r.data['url'] == url)
+              .toList();
       if (found.isNotEmpty) {
         // Название и обложку не затираем пустыми: их отдаёт не каждая площадка.
         final old = found.first;

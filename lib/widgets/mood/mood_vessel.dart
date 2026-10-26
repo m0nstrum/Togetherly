@@ -98,8 +98,10 @@ class _MoodVesselState extends State<MoodVessel>
     // прошлого периода.
     // Черта прошлого периода тоже должна помещаться: без неё «обгони себя
     // вчерашнего» превращается в пустое обещание — пунктир уезжал за крышку.
-    final needFloors = [top, widget.previousLevel ?? 0]
-        .reduce((a, b) => a > b ? a : b);
+    final needFloors = [
+      top,
+      widget.previousLevel ?? 0,
+    ].reduce((a, b) => a > b ? a : b);
     final wanted = needFloors == 0
         ? 180.0
         : (needFloors + 1) * 26.0 + pad * 2 + border * 2;
@@ -144,8 +146,16 @@ class _MoodVesselState extends State<MoodVessel>
                   child: _PreviousLine(color: cs.primary),
                 ),
               for (var i = 0; i < blocks.length; i++)
-                _fallingBlock(blocks[i], i, blocks.length, colWidth, floor,
-                    gap, cs, height),
+                _fallingBlock(
+                  blocks[i],
+                  i,
+                  blocks.length,
+                  colWidth,
+                  floor,
+                  gap,
+                  cs,
+                  height,
+                ),
             ],
           );
         },
@@ -169,8 +179,11 @@ class _MoodVesselState extends State<MoodVessel>
     final start = total == 1 ? 0.0 : (index / total) * 0.7;
     final curve = CurvedAnimation(
       parent: _fall,
-      curve: Interval(start, (start + 0.3).clamp(0.0, 1.0),
-          curve: Motion.emphasizedIn),
+      curve: Interval(
+        start,
+        (start + 0.3).clamp(0.0, 1.0),
+        curve: Motion.emphasizedIn,
+      ),
     );
 
     return Positioned(
@@ -210,9 +223,14 @@ class _Block extends StatelessWidget {
     final floors = [
       for (final spec in day.floorKinds)
         switch (spec.kind) {
-          VesselFloor.mine => (Icons.emoji_emotions_rounded, day.mineMood ?? cs.primary),
-          VesselFloor.partner =>
-            (Icons.emoji_emotions_rounded, day.partnerMood ?? cs.secondary),
+          VesselFloor.mine => (
+            Icons.emoji_emotions_rounded,
+            day.mineMood ?? cs.primary,
+          ),
+          VesselFloor.partner => (
+            Icons.emoji_emotions_rounded,
+            day.partnerMood ?? cs.secondary,
+          ),
           // Разговор и воспоминания — такие же события дня, как настроение:
           // без них сосуд отвечал только «отмечались ли мы», а спрашивают его
           // про «сколько нас было друг у друга».
@@ -225,19 +243,20 @@ class _Block extends StatelessWidget {
           // Значок берётся общий на всё приложение (`memoryTypeIcon`): песня в
           // ленте, в чате и здесь обязана выглядеть одинаково.
           VesselFloor.memory => (
-              memoryTypeIcon(spec.memoryType ?? MemoryType.photo),
-              cs.tertiary,
-            ),
+            memoryTypeIcon(spec.memoryType ?? MemoryType.photo),
+            cs.tertiary,
+          ),
           // Месячные красятся теми же цветами, что точки в календаре: свои
           // красные, партнёрские сливовые, и различаются по тону — в паре из
           // двух девушек иначе не понять, чей это этаж.
-          VesselFloor.cycle =>
-            (Icons.water_drop_rounded,
-                CycleColors.period(brightness, partner: false)),
+          VesselFloor.cycle => (
+            Icons.water_drop_rounded,
+            CycleColors.period(brightness, partner: false),
+          ),
           VesselFloor.partnerCycle => (
-              Icons.water_drop_rounded,
-              CycleColors.period(brightness, partner: true),
-            ),
+            Icons.water_drop_rounded,
+            CycleColors.period(brightness, partner: true),
+          ),
           VesselFloor.intimacy => (Icons.favorite_rounded, cs.primary),
         },
     ];
@@ -271,8 +290,10 @@ class _Block extends StatelessWidget {
                           // Значок красится по самой заливке: тональный
                           // контейнер светлый, и белым по нему не видно
                           // ничего.
-                          color: AppThemes.onColor(color, mode: brightness)
-                              .withValues(alpha: 0.92),
+                          color: AppThemes.onColor(
+                            color,
+                            mode: brightness,
+                          ).withValues(alpha: 0.92),
                         ),
                       ),
                     ),
@@ -292,8 +313,10 @@ class _Block extends StatelessWidget {
                   // Число лежит на САМОМ НИЖНЕМ этаже, и красится по нему:
                   // белым по светлому тональному контейнеру числа не видно
                   // вовсе.
-                  color: AppThemes.onColor(floors.first.$2, mode: brightness)
-                      .withValues(alpha: 0.75),
+                  color: AppThemes.onColor(
+                    floors.first.$2,
+                    mode: brightness,
+                  ).withValues(alpha: 0.75),
                 ),
               ),
             ),
@@ -311,10 +334,8 @@ class _PreviousLine extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 1.5,
-        child: CustomPaint(painter: _DashPainter(color)),
-      );
+  Widget build(BuildContext context) =>
+      SizedBox(height: 1.5, child: CustomPaint(painter: _DashPainter(color)));
 }
 
 class _DashPainter extends CustomPainter {

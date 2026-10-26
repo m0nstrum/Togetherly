@@ -17,7 +17,11 @@ void main() {
 
     test('Символы вне алфавита не проходят', () {
       expect(RedeemCode.digits('TG-0O1I'), 'TG');
-      expect(RedeemCode.digits('ТГ-4F2A'), '4F2A', reason: 'кириллица не в счёт');
+      expect(
+        RedeemCode.digits('ТГ-4F2A'),
+        '4F2A',
+        reason: 'кириллица не в счёт',
+      );
     });
 
     test('Длиннее кода не набрать', () {

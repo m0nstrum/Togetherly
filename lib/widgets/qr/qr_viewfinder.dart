@@ -107,7 +107,10 @@ class _ViewfinderPainter extends CustomPainter {
       width: side,
       height: side,
     );
-    final window = RRect.fromRectAndRadius(rect, const Radius.circular(_radius));
+    final window = RRect.fromRectAndRadius(
+      rect,
+      const Radius.circular(_radius),
+    );
 
     // Вуаль с дыркой: чётно-нечётное правило вырезает окно из залитого
     // прямоугольника одним слоем, без наложения четырёх полос по краям.

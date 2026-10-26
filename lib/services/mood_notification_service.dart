@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../fork/push/notif_tap.dart'; // fork: общий колбэк нажатий
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -33,7 +34,10 @@ class MoodNotificationService {
         '@drawable/ic_notification',
       );
       const initSettings = InitializationSettings(android: androidSettings);
-      await _plugin.initialize(settings: initSettings);
+      await _plugin.initialize(
+        settings: initSettings,
+        onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
+      );
 
       final androidPlugin = _plugin
           .resolvePlatformSpecificImplementation<
@@ -43,9 +47,15 @@ class MoodNotificationService {
       // Удаляем устаревшие каналы, чтобы importance не кэшировался.
       // Wrapped separately so a missing API doesn't abort init.
       try {
-        await androidPlugin?.deleteNotificationChannel(channelId: 'mood_lock_screen_v2');
-        await androidPlugin?.deleteNotificationChannel(channelId: 'mood_lock_screen_v1');
-        await androidPlugin?.deleteNotificationChannel(channelId: 'mood_lock_screen');
+        await androidPlugin?.deleteNotificationChannel(
+          channelId: 'mood_lock_screen_v2',
+        );
+        await androidPlugin?.deleteNotificationChannel(
+          channelId: 'mood_lock_screen_v1',
+        );
+        await androidPlugin?.deleteNotificationChannel(
+          channelId: 'mood_lock_screen',
+        );
       } catch (_) {}
 
       // HIGH importance — единственный надёжный способ показать уведомление
@@ -162,28 +172,49 @@ class MoodNotificationService {
 
   String _moodToEmoji(String label) {
     final l = label.toLowerCase();
-    if (l.contains('сча') || l.contains('счасть') || l.contains('happ')) return '😊';
-    if (l.contains('люблю') || l.contains('влюб') || l.contains('love') || l.contains('star')) return '🥰';
+    if (l.contains('сча') || l.contains('счасть') || l.contains('happ'))
+      return '😊';
+    if (l.contains('люблю') ||
+        l.contains('влюб') ||
+        l.contains('love') ||
+        l.contains('star'))
+      return '🥰';
     if (l.contains('целую') || l.contains('kiss')) return '😘';
-    if (l.contains('смех') || l.contains('laughing') || l.contains('rofl')) return '😂';
+    if (l.contains('смех') || l.contains('laughing') || l.contains('rofl'))
+      return '😂';
     if (l.contains('гордость') || l.contains('pride')) return '😏';
     if (l.contains('подмигив') || l.contains('wink')) return '😜';
-    if (l.contains('смущен') || l.contains('blush') || l.contains('embarr')) return '😊';
-    if (l.contains('нет эмоц') || l.contains('no mood') || l.contains('unamused')) return '😐';
+    if (l.contains('смущен') || l.contains('blush') || l.contains('embarr'))
+      return '😊';
+    if (l.contains('нет эмоц') ||
+        l.contains('no mood') ||
+        l.contains('unamused'))
+      return '😐';
     if (l.contains('скучаю') || l.contains('missing')) return '🥺';
-    if (l.contains('очень груст') || l.contains('very sad') || l.contains('sobbing')) return '😭';
+    if (l.contains('очень груст') ||
+        l.contains('very sad') ||
+        l.contains('sobbing'))
+      return '😭';
     if (l.contains('груст') || l.contains('sad')) return '😢';
     if (l.contains('обида') || l.contains('hurt')) return '😤';
     if (l.contains('тревог') || l.contains('anxious')) return '😰';
-    if (l.contains('болен') || l.contains('sick') || l.contains('fever')) return '🤒';
-    if (l.contains('страх') || l.contains('scared') || l.contains('fear')) return '😨';
-    if (l.contains('злость') || l.contains('злост') || l.contains('angry') || l.contains('rage')) return '😠';
+    if (l.contains('болен') || l.contains('sick') || l.contains('fever'))
+      return '🤒';
+    if (l.contains('страх') || l.contains('scared') || l.contains('fear'))
+      return '😨';
+    if (l.contains('злость') ||
+        l.contains('злост') ||
+        l.contains('angry') ||
+        l.contains('rage'))
+      return '😠';
     if (l.contains('дьявол') || l.contains('devil')) return '😈';
-    if (l.contains('крутой') || l.contains('cool') || l.contains('спок')) return '😎';
+    if (l.contains('крутой') || l.contains('cool') || l.contains('спок'))
+      return '😎';
     if (l.contains('врунишка') || l.contains('liar')) return '🤥';
     if (l.contains('слюни') || l.contains('drooling')) return '🤤';
     if (l.contains('удивление') || l.contains('surprised')) return '😲';
-    if (l.contains('устал') || l.contains('tired') || l.contains('dead')) return '😵';
+    if (l.contains('устал') || l.contains('tired') || l.contains('dead'))
+      return '😵';
     if (l.contains('плач') || l.contains('cry')) return '😭';
     return '😶';
   }

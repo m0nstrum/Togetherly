@@ -79,21 +79,25 @@ const _fallback = FadeForwardsPageTransitionsBuilder();
 Future<void> _pumpApp(WidgetTester tester) async {
   await tester.binding.setSurfaceSize(_screen);
   addTearDown(() => tester.binding.setSurfaceSize(null));
-  await tester.pumpWidget(MaterialApp(
-    navigatorKey: _navigator,
-    theme: ThemeData(
-      scaffoldBackgroundColor: const Color(0xFFF7F3F0),
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android:
-              UnfoldPageTransitionsBuilder(fallback: _fallback),
-          TargetPlatform.iOS:
-              UnfoldPageTransitionsBuilder(fallback: _fallback),
-        },
+  await tester.pumpWidget(
+    MaterialApp(
+      navigatorKey: _navigator,
+      theme: ThemeData(
+        scaffoldBackgroundColor: const Color(0xFFF7F3F0),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: UnfoldPageTransitionsBuilder(
+              fallback: _fallback,
+            ),
+            TargetPlatform.iOS: UnfoldPageTransitionsBuilder(
+              fallback: _fallback,
+            ),
+          },
+        ),
       ),
+      home: const _First(),
     ),
-    home: const _First(),
-  ));
+  );
 }
 
 /// Нажатие и первый видимый кадр (самый первый кадр маршрута за сценой).
@@ -105,16 +109,19 @@ Future<void> _tapButton(WidgetTester tester) async {
 
 double _opacityOf(WidgetTester tester, String text) => tester
     .widget<Opacity>(
-        find.ancestor(of: find.text(text), matching: find.byType(Opacity)).first)
+      find.ancestor(of: find.text(text), matching: find.byType(Opacity)).first,
+    )
     .opacity;
 
 Future<void> _backGesture(String method, [Map<String, Object?>? arguments]) {
   return TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .handlePlatformMessage(
-    'flutter/backgesture',
-    const StandardMethodCodec().encodeMethodCall(MethodCall(method, arguments)),
-    (_) {},
-  );
+        'flutter/backgesture',
+        const StandardMethodCodec().encodeMethodCall(
+          MethodCall(method, arguments),
+        ),
+        (_) {},
+      );
 }
 
 void main() {
@@ -129,11 +136,17 @@ void main() {
     expect(tester.getRect(find.byKey(_button)), _buttonRect);
 
     await _tapButton(tester);
-    expect(tester.getRect(find.byKey(_window)), _buttonRect,
-        reason: 'первый кадр обязан совпасть с кнопкой, иначе виден скачок');
+    expect(
+      tester.getRect(find.byKey(_window)),
+      _buttonRect,
+      reason: 'первый кадр обязан совпасть с кнопкой, иначе виден скачок',
+    );
     final clip = tester.widget<ClipRRect>(find.byKey(_window));
-    expect(clip.borderRadius, BorderRadius.circular(16),
-        reason: 'окно начинается со скругления самой кнопки');
+    expect(
+      clip.borderRadius,
+      BorderRadius.circular(16),
+      reason: 'окно начинается со скругления самой кнопки',
+    );
 
     await tester.pump(const Duration(milliseconds: 60));
     final growing = tester.getRect(find.byKey(_window));
@@ -149,49 +162,71 @@ void main() {
     await _pumpApp(tester);
     await _tapButton(tester);
 
-    final tint = tester.widget<ColoredBox>(find
-        .descendant(of: find.byKey(_window), matching: find.byType(ColoredBox))
-        .last);
+    final tint = tester.widget<ColoredBox>(
+      find
+          .descendant(
+            of: find.byKey(_window),
+            matching: find.byType(ColoredBox),
+          )
+          .last,
+    );
     expect(tint.color, const Color(0xFFF7F3F0));
   });
 
   testWidgets('чёрный экран называет свой цвет окна сам', (tester) async {
     await tester.binding.setSurfaceSize(_screen);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF7F3F0),
-        pageTransitionsTheme: const PageTransitionsTheme(builders: {
-          TargetPlatform.android:
-              UnfoldPageTransitionsBuilder(fallback: _fallback),
-        }),
-      ),
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const UnfoldTint(
-                    color: Colors.black,
-                    child: Scaffold(backgroundColor: Colors.black),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          scaffoldBackgroundColor: const Color(0xFFF7F3F0),
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: UnfoldPageTransitionsBuilder(
+                fallback: _fallback,
+              ),
+            },
+          ),
+        ),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const UnfoldTint(
+                      color: Colors.black,
+                      child: Scaffold(backgroundColor: Colors.black),
+                    ),
                   ),
                 ),
+                child: Container(
+                  key: _button,
+                  width: 120,
+                  height: 48,
+                  color: Colors.teal,
+                ),
               ),
-              child: Container(
-                  key: _button, width: 120, height: 48, color: Colors.teal),
             ),
           ),
         ),
       ),
-    ));
+    );
     await _tapButton(tester);
 
-    final tint = tester.widget<ColoredBox>(find
-        .descendant(of: find.byKey(_window), matching: find.byType(ColoredBox))
-        .last);
-    expect(tint.color, Colors.black,
-        reason: 'светлая заливка под чёрным плеером дала бы вспышку');
+    final tint = tester.widget<ColoredBox>(
+      find
+          .descendant(
+            of: find.byKey(_window),
+            matching: find.byType(ColoredBox),
+          )
+          .last,
+    );
+    expect(
+      tint.color,
+      Colors.black,
+      reason: 'светлая заливка под чёрным плеером дала бы вспышку',
+    );
     await tester.pumpAndSettle();
   });
 
@@ -206,11 +241,13 @@ void main() {
     expect(_opacityOf(tester, 'шестой блок'), 1);
   });
 
-  testWidgets('экран, открытый не касанием, идёт штатным переходом',
-      (tester) async {
+  testWidgets('экран, открытый не касанием, идёт штатным переходом', (
+    tester,
+  ) async {
     await _pumpApp(tester);
-    _navigator.currentState!
-        .push(MaterialPageRoute<void>(builder: (_) => const _Second()));
+    _navigator.currentState!.push(
+      MaterialPageRoute<void>(builder: (_) => const _Second()),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
 
@@ -246,18 +283,24 @@ void main() {
     await _pumpApp(tester);
     await _tapButton(tester);
     await tester.pumpAndSettle();
-    tester.state<_FirstState>(find.byType(_First, skipOffstage: false))
+    tester
+        .state<_FirstState>(find.byType(_First, skipOffstage: false))
         .hideButton();
     await tester.pump();
 
     await tester.tap(find.text('назад'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    expect(tester.getRect(find.byKey(_window)), Offset.zero & _screen,
-        reason: 'складываться некуда: окно не летит в пустое место');
-    final fade = tester.widget<Opacity>(find
-        .ancestor(of: find.byKey(_window), matching: find.byType(Opacity))
-        .first);
+    expect(
+      tester.getRect(find.byKey(_window)),
+      Offset.zero & _screen,
+      reason: 'складываться некуда: окно не летит в пустое место',
+    );
+    final fade = tester.widget<Opacity>(
+      find
+          .ancestor(of: find.byKey(_window), matching: find.byType(Opacity))
+          .first,
+    );
     expect(fade.opacity, lessThan(0.8));
     expect(fade.opacity, greaterThan(0));
 
@@ -271,17 +314,22 @@ void main() {
     await tester.pumpAndSettle();
 
     // То же касание уже израсходовано: следующий экран открыт программно.
-    _navigator.currentState!
-        .push(MaterialPageRoute<void>(builder: (_) => const Scaffold()));
+    _navigator.currentState!.push(
+      MaterialPageRoute<void>(builder: (_) => const Scaffold()),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
-    expect(find.byKey(_window), findsOneWidget,
-        reason: 'окно на экране одно — от первого перехода');
+    expect(
+      find.byKey(_window),
+      findsOneWidget,
+      reason: 'окно на экране одно — от первого перехода',
+    );
     await tester.pumpAndSettle();
   });
 
-  testWidgets('при «уменьшить движение» работает штатный переход',
-      (tester) async {
+  testWidgets('при «уменьшить движение» работает штатный переход', (
+    tester,
+  ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
@@ -308,28 +356,37 @@ void main() {
     // некуда, и складываться в исчезнувшую кнопку незачем.
     await tester.binding.setSurfaceSize(_screen);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(
-        pageTransitionsTheme: const PageTransitionsTheme(builders: {
-          TargetPlatform.android:
-              UnfoldPageTransitionsBuilder(fallback: _fallback),
-        }),
-      ),
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute<void>(builder: (_) => const _Second()),
-                (_) => false,
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: UnfoldPageTransitionsBuilder(
+                fallback: _fallback,
               ),
-              child: Container(
-                  key: _button, width: 120, height: 48, color: Colors.teal),
+            },
+          ),
+        ),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute<void>(builder: (_) => const _Second()),
+                  (_) => false,
+                ),
+                child: Container(
+                  key: _button,
+                  width: 120,
+                  height: 48,
+                  color: Colors.teal,
+                ),
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await _tapButton(tester);
     await tester.pump(const Duration(milliseconds: 60));
 
@@ -338,8 +395,9 @@ void main() {
     expect(find.text('первый блок'), findsOneWidget);
   });
 
-  testWidgets('системный жест «назад» Android ведёт тот же экран',
-      (tester) async {
+  testWidgets('системный жест «назад» Android ведёт тот же экран', (
+    tester,
+  ) async {
     await _pumpApp(tester);
     await _tapButton(tester);
     await tester.pumpAndSettle();
@@ -355,10 +413,15 @@ void main() {
       'swipeEdge': 0,
     });
     await tester.pump();
-    expect(tester.getRect(find.byKey(_window)).width,
-        lessThan(_screen.width * 0.8));
-    expect(find.byKey(_button), findsOneWidget,
-        reason: 'под сжатым экраном виден прежний');
+    expect(
+      tester.getRect(find.byKey(_window)).width,
+      lessThan(_screen.width * 0.8),
+    );
+    expect(
+      find.byKey(_button),
+      findsOneWidget,
+      reason: 'под сжатым экраном виден прежний',
+    );
 
     await _backGesture('commitBackGesture');
     await tester.pump();
@@ -366,8 +429,9 @@ void main() {
     expect(find.byKey(_window), findsNothing);
   });
 
-  testWidgets('отменённый системный жест оставляет экран открытым',
-      (tester) async {
+  testWidgets('отменённый системный жест оставляет экран открытым', (
+    tester,
+  ) async {
     await _pumpApp(tester);
     await _tapButton(tester);
     await tester.pumpAndSettle();
@@ -393,8 +457,9 @@ void main() {
     setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.iOS);
     tearDown(() => debugDefaultTargetPlatformOverride = null);
 
-    testWidgets('жест от левого края сжимает экран и уводит назад',
-        (tester) async {
+    testWidgets('жест от левого края сжимает экран и уводит назад', (
+      tester,
+    ) async {
       await _pumpApp(tester);
       await tester.tap(find.byKey(_button));
       await tester.pumpAndSettle();
@@ -403,8 +468,10 @@ void main() {
       await finger.moveBy(const Offset(30, 0));
       await finger.moveBy(const Offset(120, 0));
       await tester.pump();
-      expect(tester.getRect(find.byKey(_window)).width,
-          lessThan(_screen.width * 0.9));
+      expect(
+        tester.getRect(find.byKey(_window)).width,
+        lessThan(_screen.width * 0.9),
+      );
 
       await finger.up();
       await tester.pumpAndSettle();

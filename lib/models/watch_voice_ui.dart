@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import '../services/watch_voice_service.dart';
 
 /// Что показывает полоса голоса в комнате совместного просмотра.
@@ -15,7 +14,8 @@ class WatchVoiceBarModel {
   bool get showsCallButton => true;
 
   /// Микрофон можно выключить и до ответа.
-  bool get showsMicAndSpeaker => state == VoiceCallState.live || state == VoiceCallState.connecting;
+  bool get showsMicAndSpeaker =>
+      state == VoiceCallState.live || state == VoiceCallState.connecting;
 
   /// Нажатие на кнопку прервёт разговор, а не начнёт его.
   bool get callEndsTalk =>

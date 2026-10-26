@@ -77,14 +77,15 @@ class VesselDay {
   /// Этажи блока снизу вверх: настроения, месячные, разговор, воспоминания по
   /// видам, близость сверху.
   List<VesselFloorSpec> get floorKinds => [
-        if (mineMood != null) const VesselFloorSpec(VesselFloor.mine),
-        if (partnerMood != null) const VesselFloorSpec(VesselFloor.partner),
-        if (period) const VesselFloorSpec(VesselFloor.cycle),
-        if (partnerPeriod) const VesselFloorSpec(VesselFloor.partnerCycle),
-        if (chatted) const VesselFloorSpec(VesselFloor.chat),
-        for (final t in memoryKinds) VesselFloorSpec(VesselFloor.memory, memoryType: t),
-        if (intimacy) const VesselFloorSpec(VesselFloor.intimacy),
-      ];
+    if (mineMood != null) const VesselFloorSpec(VesselFloor.mine),
+    if (partnerMood != null) const VesselFloorSpec(VesselFloor.partner),
+    if (period) const VesselFloorSpec(VesselFloor.cycle),
+    if (partnerPeriod) const VesselFloorSpec(VesselFloor.partnerCycle),
+    if (chatted) const VesselFloorSpec(VesselFloor.chat),
+    for (final t in memoryKinds)
+      VesselFloorSpec(VesselFloor.memory, memoryType: t),
+    if (intimacy) const VesselFloorSpec(VesselFloor.intimacy),
+  ];
 
   /// Сколько этажей в блоке. Ноль — дня в кладке нет вовсе.
   int get floors => floorsOverride ?? floorKinds.length;
@@ -172,17 +173,16 @@ List<VesselDay> buildVesselDays({
   required List<CycleEntry> partnerCycle,
   Map<String, List<MemoryType>> memories = const {},
   Set<String> chatDays = const {},
-}) =>
-    buildVesselRange(
-      from: DateTime(month.year, month.month),
-      to: DateTime(month.year, month.month + 1, 0),
-      mineMoods: mineMoods,
-      partnerMoods: partnerMoods,
-      myCycle: myCycle,
-      partnerCycle: partnerCycle,
-      memories: memories,
-      chatDays: chatDays,
-    );
+}) => buildVesselRange(
+  from: DateTime(month.year, month.month),
+  to: DateTime(month.year, month.month + 1, 0),
+  mineMoods: mineMoods,
+  partnerMoods: partnerMoods,
+  myCycle: myCycle,
+  partnerCycle: partnerCycle,
+  memories: memories,
+  chatDays: chatDays,
+);
 
 /// Дни любого отрезка, собранные из отметок настроения, цикла, ленты и чата.
 ///
@@ -220,20 +220,24 @@ List<VesselDay> buildVesselRange({
   final first = DateTime(from.year, from.month, from.day);
   final last = DateTime(to.year, to.month, to.day);
   final out = <VesselDay>[];
-  for (var date = first;
-      !date.isAfter(last);
-      date = DateTime(date.year, date.month, date.day + 1)) {
+  for (
+    var date = first;
+    !date.isAfter(last);
+    date = DateTime(date.year, date.month, date.day + 1)
+  ) {
     final key = vesselDayKey(date);
-    out.add(VesselDay(
-      date: date,
-      mineMood: mineMoods[key],
-      partnerMood: partnerMoods[key],
-      intimacy: intimacy.contains(key),
-      period: periods.contains(key),
-      partnerPeriod: partnerPeriods.contains(key),
-      memories: memories[key] ?? const [],
-      chatted: chatDays.contains(key),
-    ));
+    out.add(
+      VesselDay(
+        date: date,
+        mineMood: mineMoods[key],
+        partnerMood: partnerMoods[key],
+        intimacy: intimacy.contains(key),
+        period: periods.contains(key),
+        partnerPeriod: partnerPeriods.contains(key),
+        memories: memories[key] ?? const [],
+        chatted: chatDays.contains(key),
+      ),
+    );
   }
   return out;
 }
@@ -265,22 +269,25 @@ List<VesselDay> buildVesselYear({
     final alive = days.where((d) => !d.isEmpty).toList();
     final mine = alive.where((d) => d.mineMood != null).length;
     final theirs = alive.where((d) => d.partnerMood != null).length;
-    out.add(VesselDay(
-      date: DateTime(year, m),
-      // Цвет месяца — от самого частого настроения в нём: блок должен читаться
-      // так же, как дневной, а не быть серой колонкой.
-      mineMood: mine > 0 ? _commonColor(alive.map((d) => d.mineMood)) : null,
-      partnerMood:
-          theirs > 0 ? _commonColor(alive.map((d) => d.partnerMood)) : null,
-      intimacy: alive.any((d) => d.intimacy),
-      period: alive.any((d) => d.period),
-      partnerPeriod: alive.any((d) => d.partnerPeriod),
-      // Месяц наследует ВИДЫ записей, а не их число: блок года и так стоит на
-      // своей высоте (`floorsOverride`), а значки говорят, чем месяц был занят.
-      memories: [for (final d in days) ...d.memories],
-      chatted: alive.any((d) => d.chatted),
-      floorsOverride: alive.isEmpty ? 0 : (alive.length / 3).ceil(),
-    ));
+    out.add(
+      VesselDay(
+        date: DateTime(year, m),
+        // Цвет месяца — от самого частого настроения в нём: блок должен читаться
+        // так же, как дневной, а не быть серой колонкой.
+        mineMood: mine > 0 ? _commonColor(alive.map((d) => d.mineMood)) : null,
+        partnerMood: theirs > 0
+            ? _commonColor(alive.map((d) => d.partnerMood))
+            : null,
+        intimacy: alive.any((d) => d.intimacy),
+        period: alive.any((d) => d.period),
+        partnerPeriod: alive.any((d) => d.partnerPeriod),
+        // Месяц наследует ВИДЫ записей, а не их число: блок года и так стоит на
+        // своей высоте (`floorsOverride`), а значки говорят, чем месяц был занят.
+        memories: [for (final d in days) ...d.memories],
+        chatted: alive.any((d) => d.chatted),
+        floorsOverride: alive.isEmpty ? 0 : (alive.length / 3).ceil(),
+      ),
+    );
   }
   return out;
 }

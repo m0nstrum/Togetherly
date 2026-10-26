@@ -9,10 +9,14 @@ import 'gift.dart';
 /// доехать. Главная брала первый подарок списка, и незнакомый прятал
 /// карточку целиком вместе со всеми знакомыми под ним (TOG-10, 21.10.2026).
 /// Отданную рамку показывает свой лист, её сборка знает всегда.
-List<Map<String, dynamic>> shownIncomingGifts(List<Map<String, dynamic>> gifts) => [
+List<Map<String, dynamic>> shownIncomingGifts(
+  List<Map<String, dynamic>> gifts,
+) => [
   for (final g in gifts)
     if (_showable((g['gift_key'] ?? '').toString())) g,
 ];
 
 bool _showable(String key) =>
-    key.isNotEmpty && (FrameGiftService.frameKeyOf(key) != null || GiftCatalog.byKey(key) != null);
+    key.isNotEmpty &&
+    (FrameGiftService.frameKeyOf(key) != null ||
+        GiftCatalog.byKey(key) != null);

@@ -12,17 +12,24 @@ class ChestTelemetry {
 
   /// Шаг открытия. Попадает в отчёт о любом следующем сбое.
   static void step(String openId, String step, {Map<String, Object?>? data}) {
-    Sentry.addBreadcrumb(Breadcrumb(
-      category: 'chest',
-      message: step,
-      level: SentryLevel.info,
-      data: {'open_id': openId, ...?data},
-    ));
+    Sentry.addBreadcrumb(
+      Breadcrumb(
+        category: 'chest',
+        message: step,
+        level: SentryLevel.info,
+        data: {'open_id': openId, ...?data},
+      ),
+    );
   }
 
   /// Сундук не открылся или открывался слишком долго. Код уходит тегом,
   /// чтобы события в панели группировались по причине.
-  static void failure(String openId, String step, String code, {Map<String, Object?>? data}) {
+  static void failure(
+    String openId,
+    String step,
+    String code, {
+    Map<String, Object?>? data,
+  }) {
     Sentry.captureMessage(
       'chest: не открылся — $code',
       level: SentryLevel.warning,

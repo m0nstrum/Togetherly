@@ -51,8 +51,14 @@ Future<SaveJob?> saveToGallery(
   var list = items;
   // «Фото» на iPhone звук не принимает — он уходит через «Поделиться».
   if (Platform.isIOS && list.any((i) => i.file.kind == SaveKind.audio)) {
-    final audio = [for (final i in list) if (i.file.kind == SaveKind.audio) i];
-    list = [for (final i in list) if (i.file.kind != SaveKind.audio) i];
+    final audio = [
+      for (final i in list)
+        if (i.file.kind == SaveKind.audio) i,
+    ];
+    list = [
+      for (final i in list)
+        if (i.file.kind != SaveKind.audio) i,
+    ];
     if (list.isEmpty) {
       await shareMemoryMedia(
         context,
@@ -63,13 +69,17 @@ Future<SaveJob?> saveToGallery(
     }
   }
 
-  final pending = [for (final i in list) if (!ledger.containsFile(i.file)) i];
+  final pending = [
+    for (final i in list)
+      if (!ledger.containsFile(i.file)) i,
+  ];
   if (pending.isEmpty) {
     await AppDialog.info(
       context,
       title: trKey('saveNothingLeft'),
-      message: trKey('saveDateNote')
-          .replaceAll('{date}', memoryDateLabel(list.first.takenAt)),
+      message: trKey(
+        'saveDateNote',
+      ).replaceAll('{date}', memoryDateLabel(list.first.takenAt)),
       icon: Icons.download_done_rounded,
     );
     return null;
@@ -87,8 +97,9 @@ Future<SaveJob?> saveToGallery(
     if (!context.mounted) return null;
     final ok = await AppDialog.confirm(
       context,
-      title: trKey('mobileDataTitle')
-          .replaceAll('{n}', '${(bytes / (1024 * 1024)).round()}'),
+      title: trKey(
+        'mobileDataTitle',
+      ).replaceAll('{n}', '${(bytes / (1024 * 1024)).round()}'),
       message: trKey('mobileDataBody'),
       confirmLabel: trKey('mobileDataGo'),
       icon: Icons.signal_cellular_alt_rounded,
@@ -114,7 +125,8 @@ Future<SaveJob?> saveToGallery(
 Future<bool> _onMobileDataOnly() async {
   try {
     final r = await Connectivity().checkConnectivity();
-    final fast = r.contains(ConnectivityResult.wifi) ||
+    final fast =
+        r.contains(ConnectivityResult.wifi) ||
         r.contains(ConnectivityResult.ethernet);
     return !fast && r.contains(ConnectivityResult.mobile);
   } catch (_) {
@@ -145,7 +157,8 @@ Future<_AdultChoice?> _askAdult(BuildContext context) {
                     icon: const Icon(Icons.visibility_off_rounded, size: 20),
                     label: Text(trKey('adultHidden')),
                     style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(54)),
+                      minimumSize: const Size.fromHeight(54),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -154,7 +167,8 @@ Future<_AdultChoice?> _askAdult(BuildContext context) {
                 child: FilledButton(
                   onPressed: () => Navigator.of(ctx).pop(_AdultChoice.save),
                   style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(54)),
+                    minimumSize: const Size.fromHeight(54),
+                  ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(trKey('adultSave'), maxLines: 1),

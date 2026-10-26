@@ -213,7 +213,8 @@ class _ForkCallScreenState extends State<ForkCallScreen> {
                       onTap: _v.routing
                           ? null
                           : () async {
-                              if (!await _v.toggleSpeaker() && context.mounted) {
+                              if (!await _v.toggleSpeaker() &&
+                                  context.mounted) {
                                 ForkNotice.failure(
                                   context,
                                   ForkFailure.unknown,
@@ -291,20 +292,46 @@ class _RoundButton extends StatelessWidget {
         : Colors.white24;
     final fg = active && !danger && !positive ? Colors.black87 : Colors.white;
     return Semantics(
-      label: label, button: true, enabled: onTap != null, selected: active,
-      onTap: onTap, excludeSemantics: true,
-      child: Tooltip(message: label, excludeFromSemantics: true,
-        child: Material(color: Colors.transparent,
-          child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16),
-            child: Opacity(opacity: onTap == null ? .4 : 1,
-              child: Padding(padding: const EdgeInsets.all(4),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Container(width: 68, height: 68,
-                    decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-                    child: Icon(icon, color: fg, size: 30)),
-                  const SizedBox(height: 8),
-                  Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                ]),
+      label: label,
+      button: true,
+      enabled: onTap != null,
+      selected: active,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Opacity(
+              opacity: onTap == null ? .4 : 1,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 68,
+                      height: 68,
+                      decoration: BoxDecoration(
+                        color: bg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: fg, size: 30),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

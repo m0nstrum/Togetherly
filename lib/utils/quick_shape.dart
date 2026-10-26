@@ -60,7 +60,8 @@ QuickShape? recognizeQuickShape(
     for (final p in points) {
       worst = math.max(worst, _distanceToSegment(p, first, last));
     }
-    if (worst <= chord * tolerance) return QuickShape(DrawShapeType.line, first, last);
+    if (worst <= chord * tolerance)
+      return QuickShape(DrawShapeType.line, first, last);
     return null;
   }
 

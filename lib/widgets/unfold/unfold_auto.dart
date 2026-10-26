@@ -61,8 +61,9 @@ class UnfoldPageTransitionsBuilder extends PageTransitionsBuilder {
   /// Общий выключатель: при `false` все экраны идут через [fallback].
   static bool enabled = true;
 
-  static final Expando<_UnfoldSession> _sessions =
-      Expando<_UnfoldSession>('unfold session');
+  static final Expando<_UnfoldSession> _sessions = Expando<_UnfoldSession>(
+    'unfold session',
+  );
 
   // Длительность у строителя одна на все маршруты, поэтому берём штатную:
   // пружина окна успокаивается раньше, а запасной переход идёт как шёл.
@@ -73,7 +74,10 @@ class UnfoldPageTransitionsBuilder extends PageTransitionsBuilder {
   Duration get reverseTransitionDuration => fallback.reverseTransitionDuration;
 
   _UnfoldSession _begin(
-      PageRoute<dynamic> route, BuildContext context, Animation<double> animation) {
+    PageRoute<dynamic> route,
+    BuildContext context,
+    Animation<double> animation,
+  ) {
     final session = _UnfoldSession(route)
       ..auto = true
       ..openMs = transitionDuration.inMilliseconds.toDouble()
@@ -110,9 +114,17 @@ class UnfoldPageTransitionsBuilder extends PageTransitionsBuilder {
       // Экран под растущим окном стоит на месте, поэтому уход «вбок» под
       // следующий экран здесь выключен целиком.
       return fallback.buildTransitions<T>(
-          route, context, animation, kAlwaysDismissedAnimation, child);
+        route,
+        context,
+        animation,
+        kAlwaysDismissedAnimation,
+        child,
+      );
     }
     return _UnfoldTransition(
-        session: session, animation: animation, child: child);
+      session: session,
+      animation: animation,
+      child: child,
+    );
   }
 }

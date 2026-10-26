@@ -26,12 +26,14 @@ import 'package:love_app/utils/photo_orientation.dart';
 Uint8List shot(int orientation, {int width = 40, int height = 20}) {
   final im = img.Image(width: width, height: height);
   img.fill(im, color: img.ColorRgb8(255, 0, 0));
-  img.fillRect(im,
-      x1: width ~/ 2,
-      y1: 0,
-      x2: width - 1,
-      y2: height - 1,
-      color: img.ColorRgb8(0, 0, 255));
+  img.fillRect(
+    im,
+    x1: width ~/ 2,
+    y1: 0,
+    x2: width - 1,
+    y2: height - 1,
+    color: img.ColorRgb8(0, 0, 255),
+  );
   if (orientation > 0) im.exif.imageIfd.orientation = orientation;
   return img.encodeJpg(im);
 }
@@ -63,10 +65,16 @@ void main() {
     expect(baked, isNotNull, reason: 'кадр помечен зеркальным — работа есть');
 
     final out = img.decodeImage(baked!)!;
-    expect(leftEdge(out), 'синий',
-        reason: 'половины обязаны поменяться местами');
-    expect(readExifOrientation(baked), anyOf(0, 1),
-        reason: 'пометку нельзя оставлять: иначе отразят второй раз');
+    expect(
+      leftEdge(out),
+      'синий',
+      reason: 'половины обязаны поменяться местами',
+    );
+    expect(
+      readExifOrientation(baked),
+      anyOf(0, 1),
+      reason: 'пометку нельзя оставлять: иначе отразят второй раз',
+    );
   });
 
   test('повёрнутый кадр печётся поворотом, стороны не путаются', () {
@@ -90,8 +98,11 @@ void main() {
 
   test('подготовка фото зовёт печать ориентации, а не только угол', () {
     final source = File('lib/utils/photo_crop.dart').readAsStringSync();
-    expect(source, contains('bakeExifOrientation'),
-        reason: 'зеркальность обязана печься в пиксели');
+    expect(
+      source,
+      contains('bakeExifOrientation'),
+      reason: 'зеркальность обязана печься в пиксели',
+    );
     expect(
       source.contains('autoCorrectionAngle') &&
           !source.contains('orientationIsMirrored'),
@@ -120,18 +131,27 @@ void main() {
     final video = File('${dir.path}/clip.mp4')..writeAsBytesSync([0, 1, 2, 3]);
 
     expect(await uprightPhotoFile(plain.path), isNull);
-    expect(await uprightPhotoFile(rotated.path), isNull,
-        reason: 'поворот и так печёт быстрый нативный путь');
-    expect(await uprightPhotoFile(video.path), isNull,
-        reason: 'видео трогать нечем и незачем');
+    expect(
+      await uprightPhotoFile(rotated.path),
+      isNull,
+      reason: 'поворот и так печёт быстрый нативный путь',
+    );
+    expect(
+      await uprightPhotoFile(video.path),
+      isNull,
+      reason: 'видео трогать нечем и незачем',
+    );
     expect(await uprightPhotoFile('${dir.path}/нет-такого.jpg'), isNull);
     await dir.delete(recursive: true);
   });
 
   test('выбор фото проходит через выправление, а не мимо', () {
     final safePick = File('lib/utils/safe_pick.dart').readAsStringSync();
-    expect(safePick, contains('uprightPhotoFile'),
-        reason: 'единая точка на все шестнадцать мест выбора');
+    expect(
+      safePick,
+      contains('uprightPhotoFile'),
+      reason: 'единая точка на все шестнадцать мест выбора',
+    );
 
     // Пикер зовут только через safePick — иначе фото пройдёт мимо правки.
     final bypass = <String>[];
@@ -139,7 +159,11 @@ void main() {
       if (file is! File || !file.path.endsWith('.dart')) continue;
       if (file.path.endsWith('safe_pick.dart')) continue;
       final text = file.readAsStringSync();
-      for (final line in const ['picker.pickImage(', 'picker.pickMultiImage(', 'picker.pickMedia(']) {
+      for (final line in const [
+        'picker.pickImage(',
+        'picker.pickMultiImage(',
+        'picker.pickMedia(',
+      ]) {
         if (!text.contains(line)) continue;
         for (final piece in text.split(line).skip(1)) {
           final before = text.substring(0, text.indexOf(line + piece));

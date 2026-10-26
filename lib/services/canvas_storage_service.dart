@@ -36,8 +36,10 @@ class CanvasStorageService {
 
   /// Returns all canvases for [uid] in [groupId], newest first.
   /// Seeds a default "main" canvas on first call.
-  Future<List<CanvasMeta>> getCanvases(String uid,
-      {String groupId = ''}) async {
+  Future<List<CanvasMeta>> getCanvases(
+    String uid, {
+    String groupId = '',
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_key(uid, groupId));
@@ -75,7 +77,8 @@ class CanvasStorageService {
       // Новый холст сразу с листом. У старых поле пустое — их рисунки
       // остаются в прежней геометрии. Раскраске нужен квадрат: её контур
       // нарисован 1:1, при другом формате половины разъедутся.
-      sheetRatio: sheetRatio ??
+      sheetRatio:
+          sheetRatio ??
           ((pixelW != null && pixelH != null) ? pixelW / pixelH : 4 / 5),
     );
     await _save(uid, groupId, [meta, ...canvases]);
@@ -196,13 +199,10 @@ class CanvasStorageService {
     _catalogueSub?.cancel();
     if (groupId.isEmpty) return;
 
-    _catalogueSub = _canvas.watchCatalogue(groupId).listen(
-      (remoteList) async {
-        await _mergeRemoteCanvases(uid, groupId, remoteList);
-        onRemoteChange?.call();
-      },
-      onError: (e) => debugPrint('[Storage] catalogue error: $e'),
-    );
+    _catalogueSub = _canvas.watchCatalogue(groupId).listen((remoteList) async {
+      await _mergeRemoteCanvases(uid, groupId, remoteList);
+      onRemoteChange?.call();
+    }, onError: (e) => debugPrint('[Storage] catalogue error: $e'));
   }
 
   /// Stop the remote listener (e.g. when the gallery screen is disposed).
@@ -264,13 +264,16 @@ class CanvasStorageService {
         // сразу, у второго — приезжают вместе с каталогом.
         final e = localById[id]!;
         final needsGrid = pixelW != null && pixelH != null && !e.isPixel;
-        final needsSheet = sheetRatio != null && sheetRatio > 0 && e.sheetRatio == null;
+        final needsSheet =
+            sheetRatio != null && sheetRatio > 0 && e.sheetRatio == null;
 
         // Холсты, нарисованные до того, как лист начали возить на сервер,
         // знает только их автор. Досылаем пропорцию один раз — иначе
         // партнёр так и будет открывать их растянутыми.
-        if (sheetRatio == null && e.sheetRatio != null && groupId.isNotEmpty
-            && _sheetSent.add(id)) {
+        if (sheetRatio == null &&
+            e.sheetRatio != null &&
+            groupId.isNotEmpty &&
+            _sheetSent.add(id)) {
           _canvas.upsertCatalogue(
             groupId,
             id,
@@ -420,7 +423,10 @@ class CanvasStorageService {
   }
 
   Future<void> _save(
-      String uid, String groupId, List<CanvasMeta> canvases) async {
+    String uid,
+    String groupId,
+    List<CanvasMeta> canvases,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _key(uid, groupId),

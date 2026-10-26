@@ -15,10 +15,10 @@ import 'package:love_app/services/movie_search_service.dart';
 const _base = 'https://togetherly.day';
 
 http.Response _json(Object body, int code) => http.Response.bytes(
-      utf8.encode(jsonEncode(body)),
-      code,
-      headers: {'content-type': 'application/json; charset=utf-8'},
-    );
+  utf8.encode(jsonEncode(body)),
+  code,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
 
 const _serverDoc = {
   'id': 258687,
@@ -60,7 +60,7 @@ MockClient _client(_Calls calls, http.Response Function(Uri) server) =>
       calls.headers.add(req.headers);
       if (req.url.host == 'api.poiskkino.dev') {
         return _json({
-          'docs': [_poiskkinoDoc]
+          'docs': [_poiskkinoDoc],
         }, 200);
       }
       return server(req.url);
@@ -75,10 +75,13 @@ void main() {
         base: _base,
         token: 'tok',
         lang: 'ru',
-        client: _client(calls, (_) => _json({
-              'docs': [_serverDoc],
-              'source': 'wikidata'
-            }, 200)),
+        client: _client(
+          calls,
+          (_) => _json({
+            'docs': [_serverDoc],
+            'source': 'wikidata',
+          }, 200),
+        ),
       );
       expect(res, hasLength(1));
       final m = res.single;
@@ -88,8 +91,11 @@ void main() {
       expect(m.genres, 'фантастика, драма');
       expect(m.country, 'США');
       expect(m.infoUrl, 'https://www.kinopoisk.ru/film/258687/');
-      expect(calls.uris.any((u) => u.host == 'api.poiskkino.dev'), isFalse,
-          reason: 'сервер ответил — в poiskkino ходить незачем');
+      expect(
+        calls.uris.any((u) => u.host == 'api.poiskkino.dev'),
+        isFalse,
+        reason: 'сервер ответил — в poiskkino ходить незачем',
+      );
     });
 
     test('запрос несёт сессию и язык человека', () async {
@@ -108,19 +114,24 @@ void main() {
       expect(calls.headers.first['Authorization'], 'tok');
     });
 
-    test('сервер ничего не нашёл — это ответ, а не повод идти в poiskkino',
-        () async {
-      final calls = _Calls();
-      final res = await MovieSearchService.searchWith(
-        'ыыыфыв',
-        base: _base,
-        token: 'tok',
-        lang: 'ru',
-        client: _client(calls, (_) => _json({'docs': [], 'source': 'none'}, 200)),
-      );
-      expect(res, isEmpty);
-      expect(calls.uris.any((u) => u.host == 'api.poiskkino.dev'), isFalse);
-    });
+    test(
+      'сервер ничего не нашёл — это ответ, а не повод идти в poiskkino',
+      () async {
+        final calls = _Calls();
+        final res = await MovieSearchService.searchWith(
+          'ыыыфыв',
+          base: _base,
+          token: 'tok',
+          lang: 'ru',
+          client: _client(
+            calls,
+            (_) => _json({'docs': [], 'source': 'none'}, 200),
+          ),
+        );
+        expect(res, isEmpty);
+        expect(calls.uris.any((u) => u.host == 'api.poiskkino.dev'), isFalse);
+      },
+    );
 
     test('частые поиски — это лимит, а не поломка', () async {
       await expectLater(
@@ -131,8 +142,13 @@ void main() {
           lang: 'ru',
           client: _client(_Calls(), (_) => _json({'code': 429}, 429)),
         ),
-        throwsA(isA<MovieSearchException>()
-            .having((e) => e.rateLimited, 'rateLimited', isTrue)),
+        throwsA(
+          isA<MovieSearchException>().having(
+            (e) => e.rateLimited,
+            'rateLimited',
+            isTrue,
+          ),
+        ),
       );
     });
 
@@ -144,62 +160,69 @@ void main() {
           token: 'tok',
           lang: 'ru',
           client: _client(
-              _Calls(),
-              (_) => _json({
-                    'code': 503,
-                    'data': {'reason': 'quota'}
-                  }, 503)),
+            _Calls(),
+            (_) => _json({
+              'code': 503,
+              'data': {'reason': 'quota'},
+            }, 503),
+          ),
         ),
-        throwsA(isA<MovieSearchException>()
-            .having((e) => e.rateLimited, 'rateLimited', isTrue)),
+        throwsA(
+          isA<MovieSearchException>().having(
+            (e) => e.rateLimited,
+            'rateLimited',
+            isTrue,
+          ),
+        ),
       );
     });
   });
 
-  group('запасной путь', () {
+  // Своего ключа poiskkino в тестах нет (`KINOPOISK_TOKEN`), а общий ключ
+  // апстрима форк не берёт: без сервера форма уходит в ручной ввод.
+  group('запасной путь без своего ключа', () {
     for (final code in [404, 401, 500, 502]) {
-      test('сервер ответил $code — ищем в poiskkino', () async {
-        final calls = _Calls();
-        final res = await MovieSearchService.searchWith(
-          'матрица',
-          base: _base,
-          token: 'tok',
-          lang: 'ru',
-          client: _client(calls, (_) => _json({'code': code}, code)),
-        );
-        expect(res.single.title, 'Матрица');
-        expect(res.single.infoUrl, 'https://www.kinopoisk.ru/film/301/');
-      });
-    }
-
-    test('сервер недоступен — ищем в poiskkino', () async {
-      final res = await MovieSearchService.searchWith(
-        'матрица',
-        base: _base,
-        token: 'tok',
-        lang: 'ru',
-        client: MockClient((req) async {
-          if (req.url.host == 'api.poiskkino.dev') {
-            return _json({
-              'docs': [_poiskkinoDoc]
-            }, 200);
-          }
-          throw http.ClientException('connection refused');
-        }),
+      test(
+        'сервер ответил $code — «не настроено», poiskkino не трогаем',
+        () async {
+          final calls = _Calls();
+          await expectLater(
+            MovieSearchService.searchWith(
+              'матрица',
+              base: _base,
+              token: 'tok',
+              lang: 'ru',
+              client: _client(calls, (_) => _json({'code': code}, code)),
+            ),
+            throwsA(
+              isA<MovieSearchException>().having(
+                (e) => e.notConfigured,
+                'notConfigured',
+                isTrue,
+              ),
+            ),
+          );
+          expect(
+            calls.uris.map((u) => u.host),
+            isNot(contains('api.poiskkino.dev')),
+          );
+        },
       );
-      expect(res.single.title, 'Матрица');
-    });
+    }
 
     test('без сессии сервер не спрашиваем', () async {
       final calls = _Calls();
-      await MovieSearchService.searchWith(
-        'матрица',
-        base: _base,
-        token: '',
-        lang: 'ru',
-        client: _client(calls, (_) => fail('сервер без сессии ответит 401')),
+      await expectLater(
+        MovieSearchService.searchWith(
+          'матрица',
+          base: _base,
+          token: '',
+          lang: 'ru',
+          client: _client(calls, (_) => fail('сервер без сессии ответит 401')),
+        ),
+        throwsA(isA<MovieSearchException>()),
       );
-      expect(calls.uris.single.host, 'api.poiskkino.dev');
+      expect(calls.uris, isEmpty);
     });
   });
 

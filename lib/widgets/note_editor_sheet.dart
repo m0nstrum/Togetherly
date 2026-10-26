@@ -39,8 +39,10 @@ Future<void> showNoteEditorSheet(
               Navigator.pop(ctx);
               // Пишем локально до похода на сервер: листик на рабочем столе
               // должен обновиться сразу, а не после ответа сети.
-              await HomeWidgetService.instance
-                  .saveNoteFromWidget(groupId: g, text: text);
+              await HomeWidgetService.instance.saveNoteFromWidget(
+                groupId: g,
+                text: text,
+              );
             },
             style: FilledButton.styleFrom(shape: const StadiumBorder()),
             child: Text(s.save),

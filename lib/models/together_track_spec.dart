@@ -49,7 +49,8 @@ List<({Offset center, double radius})> togetherHalftoneDots(Size size) {
   for (var y = step / 2; y < size.height; y += step) {
     for (var x = step / 2; x < size.width; x += step) {
       final t = Offset(x, y).distance / far;
-      final r = (t - TogetherTrackSpec.dotStart) * TogetherTrackSpec.dotMaxRadius;
+      final r =
+          (t - TogetherTrackSpec.dotStart) * TogetherTrackSpec.dotMaxRadius;
       if (r < TogetherTrackSpec.dotMin) continue;
       out.add((center: Offset(x, y), radius: r));
     }
@@ -58,5 +59,6 @@ List<({Offset center, double radius})> togetherHalftoneDots(Size size) {
 }
 
 /// Центры отметок вертикальной ленты: [rows] строк, точка — в середине своей.
-List<double> togetherColumnStops(int rows) =>
-    [for (var i = 0; i < rows; i++) (i + 0.5) / rows];
+List<double> togetherColumnStops(int rows) => [
+  for (var i = 0; i < rows; i++) (i + 0.5) / rows,
+];

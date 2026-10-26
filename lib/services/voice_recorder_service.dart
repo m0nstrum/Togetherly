@@ -86,23 +86,23 @@ class VoiceRecorderService {
   /// Настройки записи. К воспоминанию пишем чище и без шумодава: шум вокруг —
   /// часть атмосферы, а шумодав превращает напетое в бульканье.
   static RecordConfig configFor(VoiceQuality quality) => switch (quality) {
-        VoiceQuality.chat => const RecordConfig(
-            encoder: AudioEncoder.aacLc,
-            bitRate: 32000,
-            sampleRate: 22050,
-            numChannels: 1,
-            noiseSuppress: true,
-            echoCancel: true,
-          ),
-        VoiceQuality.memory => const RecordConfig(
-            encoder: AudioEncoder.aacLc,
-            bitRate: 64000,
-            sampleRate: 44100,
-            numChannels: 1,
-            noiseSuppress: false,
-            echoCancel: false,
-          ),
-      };
+    VoiceQuality.chat => const RecordConfig(
+      encoder: AudioEncoder.aacLc,
+      bitRate: 32000,
+      sampleRate: 22050,
+      numChannels: 1,
+      noiseSuppress: true,
+      echoCancel: true,
+    ),
+    VoiceQuality.memory => const RecordConfig(
+      encoder: AudioEncoder.aacLc,
+      bitRate: 64000,
+      sampleRate: 44100,
+      numChannels: 1,
+      noiseSuppress: false,
+      echoCancel: false,
+    ),
+  };
 
   /// Начинает запись. Бросает [VoiceRecordException], если микрофон не дали
   /// или он занят — тишина в ответ здесь хуже всего: человек держит палец и не
@@ -120,7 +120,8 @@ class VoiceRecorderService {
       debugPrint('VoiceRecorder.hasPermission failed: $e');
       throw const VoiceRecordException(VoiceRecordError.failed);
     }
-    if (!allowed) throw const VoiceRecordException(VoiceRecordError.noPermission);
+    if (!allowed)
+      throw const VoiceRecordException(VoiceRecordError.noPermission);
 
     final dir = await getTemporaryDirectory();
     final path =
@@ -141,9 +142,11 @@ class VoiceRecorderService {
       _elapsed.add(elapsedNow);
       // Полосе записи нужны только последние замеры — она рисует бегущую волну,
       // а не всю запись целиком.
-      _levels.add(_amps.length <= 32
-          ? List<double>.of(_amps)
-          : _amps.sublist(_amps.length - 32));
+      _levels.add(
+        _amps.length <= 32
+            ? List<double>.of(_amps)
+            : _amps.sublist(_amps.length - 32),
+      );
     }, onError: (e) => debugPrint('VoiceRecorder amplitude: $e'));
 
     _limitTimer = Timer(limit ?? maxDuration, () {
@@ -189,7 +192,9 @@ class VoiceRecorderService {
       try {
         final f = File(path);
         if (await f.exists()) await f.delete();
-      } catch (_) {/* файла нет — и хорошо */}
+      } catch (_) {
+        /* файла нет — и хорошо */
+      }
     }
   }
 

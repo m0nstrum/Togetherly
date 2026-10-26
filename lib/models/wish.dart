@@ -1,6 +1,8 @@
 import 'package:pocketbase/pocketbase.dart';
 
 import 'wish_category.dart';
+import 'wish_due.dart';
+import 'wish_place.dart';
 
 /// Общее желание пары: фильм, который ждут, место, куда хотят, или что-то своё.
 ///
@@ -26,6 +28,12 @@ class Wish {
     this.url = '',
     this.image = '',
     this.shop = '',
+    this.due = WishDue.none,
+    this.also = const [],
+    this.pos,
+    this.skip = '',
+    this.place,
+    this.memoryId = '',
     required this.createdAt,
   });
 
@@ -81,6 +89,32 @@ class Wish {
   /// Название магазина из ссылки — подпись под ценой.
   final String shop;
 
+  /// «Когда» (docs/WISHLIST.md): дата, месяц или «когда-нибудь». Правит
+  /// автор.
+  final WishDue due;
+
+  /// «Я тоже хочу»: кто, кроме автора, отметил желание своим. Ставит сам
+  /// партнёр, поэтому поле общее — как отметка «сбылось».
+  final List<String> also;
+
+  /// Место в общем порядке карточек (перетаскивание). Null — порядка ещё не
+  /// задавали: такие желания идут по дате добавления, сверху новые.
+  final double? pos;
+
+  /// Неделя (`2026-W43`), на которую пара попросила другое «желание
+  /// недели»: в эту неделю желание не выпадает. Общее поле.
+  final String skip;
+
+  /// Точка «Места» на карте. Правит автор.
+  final WishPlace? place;
+
+  /// Воспоминание, к которому привязано сбывшееся. Привязывает любой из
+  /// пары — сразу или позже, не обязательно.
+  final String memoryId;
+
+  /// Хотят оба: автор и кто-то ещё.
+  bool get wantedByBoth => also.any((u) => u.isNotEmpty && u != authorUid);
+
   bool get hasPrice => price > 0;
 
   /// Цена как в карточке: «12 990 ₽».
@@ -104,10 +138,19 @@ class Wish {
     return builtinWishKind(categoryId)?.symbol ?? 'star';
   }
 
-  /// Мечты: сверху то, что задумали недавно.
+  /// Мечты в общем порядке пары. Желания без места (новые, записи прежних
+  /// сборок) — сверху, свежие первыми: только что добавленное должно быть
+  /// видно сразу, а не уехать в конец списка.
   static List<Wish> dreaming(Iterable<Wish> all) {
     final list = all.where((w) => !w.done).toList();
-    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    list.sort((a, b) {
+      final ap = a.pos, bp = b.pos;
+      if (ap == null && bp == null) return b.createdAt.compareTo(a.createdAt);
+      if (ap == null) return -1;
+      if (bp == null) return 1;
+      final c = ap.compareTo(bp);
+      return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
+    });
     return list;
   }
 
@@ -125,6 +168,17 @@ class Wish {
     return list;
   }
 
+  static List<String> _uids(String raw) => [
+    for (final u in raw.split(','))
+      if (u.trim().isNotEmpty) u.trim(),
+  ];
+
+  static double? _pos(Object? raw) {
+    if (raw is num) return raw.toDouble();
+    final s = (raw ?? '').toString();
+    return s.isEmpty ? null : double.tryParse(s);
+  }
+
   static DateTime? _date(Object? raw) {
     if (raw is DateTime) return raw;
     final s = raw?.toString() ?? '';
@@ -133,69 +187,87 @@ class Wish {
   }
 
   factory Wish.fromPb(RecordModel rec) => Wish(
-        id: rec.id,
-        title: rec.getStringValue('title'),
-        note: rec.getStringValue('note'),
-        categoryId: rec.getStringValue('category').isEmpty
-            ? 'other'
-            : rec.getStringValue('category'),
-        symbol: rec.getStringValue('symbol'),
-        authorUid: rec.getStringValue('author_uid'),
-        done: rec.getBoolValue('done'),
-        doneAt: _date(rec.getStringValue('done_at')),
-        doneBy: rec.getStringValue('done_by'),
-        doneNote: rec.getStringValue('done_note'),
-        isItem: rec.getStringValue('kind') == 'item',
-        price: rec.getIntValue('price'),
-        currency: rec.getStringValue('currency'),
-        url: rec.getStringValue('url'),
-        image: rec.getStringValue('image'),
-        shop: rec.getStringValue('shop'),
-        createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
-      );
+    id: rec.id,
+    title: rec.getStringValue('title'),
+    note: rec.getStringValue('note'),
+    categoryId: rec.getStringValue('category').isEmpty
+        ? 'other'
+        : rec.getStringValue('category'),
+    symbol: rec.getStringValue('symbol'),
+    authorUid: rec.getStringValue('author_uid'),
+    done: rec.getBoolValue('done'),
+    doneAt: _date(rec.getStringValue('done_at')),
+    doneBy: rec.getStringValue('done_by'),
+    doneNote: rec.getStringValue('done_note'),
+    isItem: rec.getStringValue('kind') == 'item',
+    price: rec.getIntValue('price'),
+    currency: rec.getStringValue('currency'),
+    url: rec.getStringValue('url'),
+    image: rec.getStringValue('image'),
+    shop: rec.getStringValue('shop'),
+    due: WishDue.parse(rec.getStringValue('due')),
+    also: _uids(rec.getStringValue('also')),
+    pos: _pos(rec.getStringValue('pos')),
+    skip: rec.getStringValue('skip'),
+    place: WishPlace.parse(rec.getStringValue('place')),
+    memoryId: rec.getStringValue('memory'),
+    createdAt: _date(rec.getStringValue('created')) ?? DateTime.now(),
+  );
 
   factory Wish.fromMap(Map<String, dynamic> map) => Wish(
-        id: (map['id'] ?? '') as String,
-        title: (map['title'] ?? '') as String,
-        note: (map['note'] ?? '') as String,
-        categoryId: ((map['category'] ?? '') as String).isEmpty
-            ? 'other'
-            : map['category'] as String,
-        symbol: (map['symbol'] ?? '') as String,
-        authorUid: (map['author_uid'] ?? '') as String,
-        done: (map['done'] as bool?) ?? false,
-        doneAt: _date(map['done_at']),
-        doneBy: (map['done_by'] ?? '') as String,
-        doneNote: (map['done_note'] ?? '') as String,
-        isItem: (map['kind'] ?? '') == 'item',
-        price: (map['price'] as num?)?.toInt() ?? 0,
-        currency: (map['currency'] ?? '') as String,
-        url: (map['url'] ?? '') as String,
-        image: (map['image'] ?? '') as String,
-        shop: (map['shop'] ?? '') as String,
-        createdAt: _date(map['created']) ?? DateTime.now(),
-      );
+    id: (map['id'] ?? '') as String,
+    title: (map['title'] ?? '') as String,
+    note: (map['note'] ?? '') as String,
+    categoryId: ((map['category'] ?? '') as String).isEmpty
+        ? 'other'
+        : map['category'] as String,
+    symbol: (map['symbol'] ?? '') as String,
+    authorUid: (map['author_uid'] ?? '') as String,
+    done: (map['done'] as bool?) ?? false,
+    doneAt: _date(map['done_at']),
+    doneBy: (map['done_by'] ?? '') as String,
+    doneNote: (map['done_note'] ?? '') as String,
+    isItem: (map['kind'] ?? '') == 'item',
+    price: (map['price'] as num?)?.toInt() ?? 0,
+    currency: (map['currency'] ?? '') as String,
+    url: (map['url'] ?? '') as String,
+    image: (map['image'] ?? '') as String,
+    shop: (map['shop'] ?? '') as String,
+    due: WishDue.parse(map['due']?.toString()),
+    also: _uids((map['also'] ?? '').toString()),
+    pos: _pos(map['pos']),
+    skip: (map['skip'] ?? '').toString(),
+    place: WishPlace.parse(map['place']?.toString()),
+    memoryId: (map['memory'] ?? '').toString(),
+    createdAt: _date(map['created']) ?? DateTime.now(),
+  );
 
   Map<String, dynamic> toMap({required String groupId}) => {
-        'id': id,
-        'group_id': groupId,
-        'author_uid': authorUid,
-        'title': title,
-        if (note.isNotEmpty) 'note': note,
-        'category': categoryId,
-        if (symbol.isNotEmpty) 'symbol': symbol,
-        'done': done,
-        if (doneAt != null) 'done_at': doneAt!.toIso8601String(),
-        if (doneBy.isNotEmpty) 'done_by': doneBy,
-        if (doneNote.isNotEmpty) 'done_note': doneNote,
-        'kind': isItem ? 'item' : 'deed',
-        if (price > 0) 'price': price,
-        if (currency.isNotEmpty) 'currency': currency,
-        if (url.isNotEmpty) 'url': url,
-        if (image.isNotEmpty) 'image': image,
-        if (shop.isNotEmpty) 'shop': shop,
-        'created': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'group_id': groupId,
+    'author_uid': authorUid,
+    'title': title,
+    if (note.isNotEmpty) 'note': note,
+    'category': categoryId,
+    if (symbol.isNotEmpty) 'symbol': symbol,
+    'done': done,
+    if (doneAt != null) 'done_at': doneAt!.toIso8601String(),
+    if (doneBy.isNotEmpty) 'done_by': doneBy,
+    if (doneNote.isNotEmpty) 'done_note': doneNote,
+    'kind': isItem ? 'item' : 'deed',
+    if (price > 0) 'price': price,
+    if (currency.isNotEmpty) 'currency': currency,
+    if (url.isNotEmpty) 'url': url,
+    if (image.isNotEmpty) 'image': image,
+    if (shop.isNotEmpty) 'shop': shop,
+    if (due.isSet) 'due': due.encode(),
+    if (also.isNotEmpty) 'also': also.join(','),
+    if (pos != null) 'pos': posText(pos!),
+    if (skip.isNotEmpty) 'skip': skip,
+    if (place != null) 'place': place!.encode(),
+    if (memoryId.isNotEmpty) 'memory': memoryId,
+    'created': createdAt.toIso8601String(),
+  };
 
   Wish copyWith({
     String? title,
@@ -212,54 +284,73 @@ class Wish {
     String? url,
     String? image,
     String? shop,
-  }) =>
-      Wish(
-        id: id,
-        title: title ?? this.title,
-        note: note ?? this.note,
-        categoryId: categoryId ?? this.categoryId,
-        symbol: symbol ?? this.symbol,
-        authorUid: authorUid,
-        done: done ?? this.done,
-        doneAt: doneAt ?? this.doneAt,
-        doneBy: doneBy ?? this.doneBy,
-        doneNote: doneNote ?? this.doneNote,
-        isItem: isItem ?? this.isItem,
-        price: price ?? this.price,
-        currency: currency ?? this.currency,
-        url: url ?? this.url,
-        image: image ?? this.image,
-        shop: shop ?? this.shop,
-        createdAt: createdAt,
-      );
+    WishDue? due,
+    List<String>? also,
+    double? pos,
+    String? skip,
+    WishPlace? place,
+    bool noPlace = false,
+    String? memoryId,
+  }) => Wish(
+    id: id,
+    title: title ?? this.title,
+    note: note ?? this.note,
+    categoryId: categoryId ?? this.categoryId,
+    symbol: symbol ?? this.symbol,
+    authorUid: authorUid,
+    done: done ?? this.done,
+    doneAt: doneAt ?? this.doneAt,
+    doneBy: doneBy ?? this.doneBy,
+    doneNote: doneNote ?? this.doneNote,
+    isItem: isItem ?? this.isItem,
+    price: price ?? this.price,
+    currency: currency ?? this.currency,
+    url: url ?? this.url,
+    image: image ?? this.image,
+    shop: shop ?? this.shop,
+    due: due ?? this.due,
+    also: also ?? this.also,
+    pos: pos ?? this.pos,
+    skip: skip ?? this.skip,
+    place: noPlace ? null : place ?? this.place,
+    memoryId: memoryId ?? this.memoryId,
+    createdAt: createdAt,
+  );
 
-  Wish markDone({required String by, DateTime? at}) => copyWith(
-        done: true,
-        doneAt: at ?? DateTime.now(),
-        doneBy: by,
-      );
+  Wish markDone({required String by, DateTime? at}) =>
+      copyWith(done: true, doneAt: at ?? DateTime.now(), doneBy: by);
 
   /// Промах по чекбоксу отменяют кнопкой в снекбаре — след отметки стирается
   /// целиком, иначе в архиве останется чужое имя и дата. Поля вещи при этом
   /// остаются: автор снимает галочку полным `wishUpsert`, и без них вещь
   /// уехала бы на сервер делом, без картинки, цены и ссылки.
   Wish undone() => Wish(
-        id: id,
-        title: title,
-        note: note,
-        categoryId: categoryId,
-        symbol: symbol,
-        authorUid: authorUid,
-        done: false,
-        doneAt: null,
-        doneBy: '',
-        doneNote: '',
-        isItem: isItem,
-        price: price,
-        currency: currency,
-        url: url,
-        image: image,
-        shop: shop,
-        createdAt: createdAt,
-      );
+    id: id,
+    title: title,
+    note: note,
+    categoryId: categoryId,
+    symbol: symbol,
+    authorUid: authorUid,
+    done: false,
+    doneAt: null,
+    doneBy: '',
+    doneNote: '',
+    isItem: isItem,
+    price: price,
+    currency: currency,
+    url: url,
+    image: image,
+    shop: shop,
+    due: due,
+    also: also,
+    pos: pos,
+    skip: skip,
+    place: place,
+    memoryId: memoryId,
+    createdAt: createdAt,
+  );
+
+  /// Место в порядке строкой: шифруется текстом, лишние нули не нужны.
+  static String posText(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 }

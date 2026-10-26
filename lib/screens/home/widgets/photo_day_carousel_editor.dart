@@ -109,7 +109,8 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
     if (remaining <= 0) return;
 
     try {
-      final List<XFile> picked = await safePick(
+      final List<XFile> picked =
+          await safePick(
             () => _picker.pickMultiImage(
               imageQuality: 85,
               maxWidth: 1920,
@@ -269,17 +270,25 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
                         children: [
                           Text(
                             LocaleService.current.widgetPhotoTitle,
-                            style: AppFonts.onest(size: 18, weight: 700, color: t.primary),
+                            style: AppFonts.onest(
+                              size: 18,
+                              weight: 700,
+                              color: t.primary,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             _paths.isEmpty
                                 ? LocaleService.current.addOneToTenPhotos
                                 : _paths.length == 1
-                                    ? LocaleService.current.onePhotoNoCarousel
-                                    : LocaleService.current
-                                        .photoCountCarousel(_paths.length),
-                            style: AppFonts.onest(size: 12, color: t.textSecondary),
+                                ? LocaleService.current.onePhotoNoCarousel
+                                : LocaleService.current.photoCountCarousel(
+                                    _paths.length,
+                                  ),
+                            style: AppFonts.onest(
+                              size: 12,
+                              color: t.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -295,7 +304,11 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
                       ),
                       child: Text(
                         '${_paths.length}/${PhotoDayCarouselEditor.kMaxPhotos}',
-                        style: AppFonts.onest(size: 12, weight: 700, color: t.primary),
+                        style: AppFonts.onest(
+                          size: 12,
+                          weight: 700,
+                          color: t.primary,
+                        ),
                       ),
                     ),
                   ],
@@ -340,7 +353,10 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
                             Expanded(
                               child: Text(
                                 LocaleService.current.addMorePhotosCarouselHint,
-                                style: AppFonts.onest(size: 11, color: t.textSecondary),
+                                style: AppFonts.onest(
+                                  size: 11,
+                                  color: t.textSecondary,
+                                ),
                               ),
                             ),
                           ],
@@ -355,14 +371,19 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline_rounded,
-                          size: 16, color: Colors.red.shade400),
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 16,
+                        color: Colors.red.shade400,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           LocaleService.current.carouselSaveFailed,
                           style: AppFonts.onest(
-                              size: 12, color: Colors.red.shade400),
+                            size: 12,
+                            color: Colors.red.shade400,
+                          ),
                         ),
                       ),
                     ],
@@ -378,12 +399,14 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
                     child: ElevatedButton(
                       // Кнопка активна, когда есть что сохранить ИЛИ когда есть
                       // что удалить (изначально были фото, а теперь список пуст).
-                      onPressed: (_isSaving ||
-                              (_paths.isEmpty && !_hadInitialPhotos))
+                      onPressed:
+                          (_isSaving || (_paths.isEmpty && !_hadInitialPhotos))
                           ? null
                           : _save,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _paths.isEmpty ? Colors.red.shade400 : t.primary,
+                        backgroundColor: _paths.isEmpty
+                            ? Colors.red.shade400
+                            : t.primary,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: t.surfaceMuted,
                         shape: RoundedRectangleBorder(
@@ -459,10 +482,7 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
         final v = Curves.easeInOut.transform(animation.value);
         return Transform.scale(
           scale: 1 + 0.03 * v,
-          child: Material(
-            color: Colors.transparent,
-            child: child,
-          ),
+          child: Material(color: Colors.transparent, child: child),
         );
       },
     );
@@ -483,10 +503,7 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
           ReorderableDragStartListener(
             index: index,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
               child: Icon(
                 Icons.drag_handle_rounded,
                 size: 20,
@@ -506,7 +523,11 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
               children: [
                 Text(
                   LocaleService.current.photoNumber(index + 1),
-                  style: AppFonts.onest(size: 13, weight: 600, color: t.textPrimary),
+                  style: AppFonts.onest(
+                    size: 13,
+                    weight: 600,
+                    color: t.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -590,10 +611,7 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
         decoration: BoxDecoration(
           color: t.primary.withOpacity(0.06),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: t.primary.withOpacity(0.3),
-            width: 1.2,
-          ),
+          border: Border.all(color: t.primary.withOpacity(0.3), width: 1.2),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -715,8 +733,15 @@ class _PhotoDayCarouselEditorState extends State<PhotoDayCarouselEditor> {
             Flexible(
               child: Text(
                 title,
-                style: AppFonts.onest(size: 12, color: isSelected ? t.primary : t.textSecondary).copyWith(fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.w400),
+                style:
+                    AppFonts.onest(
+                      size: 12,
+                      color: isSelected ? t.primary : t.textSecondary,
+                    ).copyWith(
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -815,7 +840,9 @@ class _PhotoThumbState extends State<_PhotoThumb> {
     // Офлайн-медиа: файл лежит на устройстве, ссылка своя.
     if (MediaCache.instance.isLocalRef(p)) {
       final local = MediaCache.instance.localPath(p);
-      return local != null ? _file(t, local) : _mark(t, Icons.broken_image_rounded);
+      return local != null
+          ? _file(t, local)
+          : _mark(t, Icons.broken_image_rounded);
     }
 
     if (_isRemote(p)) {
@@ -838,12 +865,11 @@ class _PhotoThumbState extends State<_PhotoThumb> {
   }
 
   Widget _file(AppTheme t, String path) => Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _mark(t, Icons.broken_image_rounded),
-      );
+    File(path),
+    fit: BoxFit.cover,
+    errorBuilder: (_, __, ___) => _mark(t, Icons.broken_image_rounded),
+  );
 
-  Widget _mark(AppTheme t, IconData icon) => Center(
-        child: Icon(icon, size: 18, color: t.textMuted),
-      );
+  Widget _mark(AppTheme t, IconData icon) =>
+      Center(child: Icon(icon, size: 18, color: t.textMuted));
 }

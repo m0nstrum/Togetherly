@@ -212,7 +212,9 @@ class MascotAnim {
         for (final e in (data['extra_idles'] as List? ?? const []))
           if (rows.contains(e.toString())) e.toString(),
       ]),
-      nightIdle: rows.contains(data['night_idle']) ? data['night_idle'] as String : '',
+      nightIdle: rows.contains(data['night_idle'])
+          ? data['night_idle'] as String
+          : '',
       seasonIdles: Map.unmodifiable(<int, String>{
         for (final e in ((data['season_idles'] as Map?) ?? const {}).entries)
           if (int.tryParse(e.key.toString()) != null &&

@@ -105,7 +105,6 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
     await prefs.setStringList(_kCollapsedKey, _collapsed.toList());
   }
 
-
   /// Раскладка по папкам. Пиксельные идут первыми — они анимированные и живее
   /// остальных; свои рисунки следом, потому что их заводили руками.
   List<_Folder> _folders() {
@@ -127,14 +126,30 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
     }
 
     return [
-      _Folder('pixel', ruEn('Пиксельные', 'Pixel'), Icons.grid_view_rounded,
-          pixel),
-      _Folder('own', ruEn('Наши рисунки', 'Our drawings'),
-          Icons.brush_outlined, own),
-      _Folder('bundled', ruEn('Встроенные', 'Built-in'),
-          Icons.auto_awesome_outlined, bundled),
-      _Folder('catalog', ruEn('Каталог', 'Catalog'),
-          Icons.collections_bookmark_outlined, catalog),
+      _Folder(
+        'pixel',
+        ruEn('Пиксельные', 'Pixel'),
+        Icons.grid_view_rounded,
+        pixel,
+      ),
+      _Folder(
+        'own',
+        ruEn('Наши рисунки', 'Our drawings'),
+        Icons.brush_outlined,
+        own,
+      ),
+      _Folder(
+        'bundled',
+        ruEn('Встроенные', 'Built-in'),
+        Icons.auto_awesome_outlined,
+        bundled,
+      ),
+      _Folder(
+        'catalog',
+        ruEn('Каталог', 'Catalog'),
+        Icons.collections_bookmark_outlined,
+        catalog,
+      ),
     ];
   }
 
@@ -162,8 +177,10 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
           ForkNotice.error(
             context,
             e,
-            what: ruEn('Картинка маскота не загрузилась, правка отменена',
-                'The mascot image didn’t load, editing cancelled'),
+            what: ruEn(
+              'Картинка маскота не загрузилась, правка отменена',
+              'The mascot image didn’t load, editing cancelled',
+            ),
             retry: () => _openDrawScreen(editMascot: editMascot),
           );
         }
@@ -268,7 +285,10 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
     if (bytes == null || bytes.isEmpty) return;
 
     final defaultName = rawName
-        .replaceAll(RegExp(r'\.(png|jpe?g|heic|webp)$', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(r'\.(png|jpe?g|heic|webp)$', caseSensitive: false),
+          '',
+        )
         .replaceAll('_', ' ')
         .replaceAll('-', ' ');
 
@@ -344,7 +364,10 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
-          24, 20, 24, 20 + MediaQuery.of(context).padding.bottom,
+          24,
+          20,
+          24,
+          20 + MediaQuery.of(context).padding.bottom,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -356,7 +379,11 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
                 color: _t.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.layers_clear_rounded, color: _t.primary, size: 24),
+              child: Icon(
+                Icons.layers_clear_rounded,
+                color: _t.primary,
+                size: 24,
+              ),
             ),
             const SizedBox(height: 14),
             Text(
@@ -367,7 +394,11 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
             Text(
               LocaleService.current.transparentBgBody,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: _t.textSecondary, height: 1.5),
+              style: TextStyle(
+                fontSize: 14,
+                color: _t.textSecondary,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 22),
             SizedBox(
@@ -385,7 +416,10 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
                 ),
                 child: Text(
                   LocaleService.current.gotIt,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -397,7 +431,6 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
   }
 
   Future<String?> _showImportNameDialog(String defaultName) async {
-
     return AppDialog.prompt(
       context,
       title: LocaleService.current.mascotNameTitle,
@@ -425,14 +458,14 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
   /// главной у обоих, серию они растят вдвоём, и требовать вторую оплату за то
   /// же самое было бы издевательством.
   bool _isUnlocked(Mascot mascot) => widget.user.unlocksCatalogItem(
-        mascot.unlock,
-        kMascotFeatureKind,
-        mascot.id,
-        LevelService.instance.level,
-        boughtByPair: _svc.state.owns(
-          Unlock.featureKey(kMascotFeatureKind, mascot.id),
-        ),
-      );
+    mascot.unlock,
+    kMascotFeatureKind,
+    mascot.id,
+    LevelService.instance.level,
+    boughtByPair: _svc.state.owns(
+      Unlock.featureKey(kMascotFeatureKind, mascot.id),
+    ),
+  );
 
   /// Предложить купить платного маскота за монеты.
   ///
@@ -446,8 +479,12 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ruEn('Не хватает монет: нужно $price, у вас $coins',
-              'Not enough coins: $price needed, you have $coins')),
+          content: Text(
+            ruEn(
+              'Не хватает монет: нужно $price, у вас $coins',
+              'Not enough coins: $price needed, you have $coins',
+            ),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -457,15 +494,19 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
     final ok = await AppDialog.confirm(
       context,
       title: mascot.localizedName,
-      message: ruEn('Открыть этого персонажа навсегда за $price монет?',
-          'Unlock this character forever for $price coins?'),
+      message: ruEn(
+        'Открыть этого персонажа навсегда за $price монет?',
+        'Unlock this character forever for $price coins?',
+      ),
       confirmLabel: ruEn('Купить', 'Buy'),
       icon: Icons.pets_rounded,
     );
     if (!ok || !mounted) return;
 
-    final bought =
-        await widget.user.purchaseCatalogItem(kMascotFeatureKind, mascot.id);
+    final bought = await widget.user.purchaseCatalogItem(
+      kMascotFeatureKind,
+      mascot.id,
+    );
     if (!mounted) return;
 
     if (!bought) {
@@ -493,8 +534,10 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
       }
       final msg = mascot.unlock.isPremium
           ? ruEn('Пока не продаётся', 'Not for sale yet')
-          : ruEn('Откроется на уровне ${mascot.unlock.requiredLevel}',
-              'Unlocks at level ${mascot.unlock.requiredLevel}');
+          : ruEn(
+              'Откроется на уровне ${mascot.unlock.requiredLevel}',
+              'Unlocks at level ${mascot.unlock.requiredLevel}',
+            );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -524,7 +567,6 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
   }
 
   Future<void> _rename(Mascot mascot) async {
-
     final newName = await AppDialog.prompt(
       context,
       title: LocaleService.current.rename,
@@ -532,7 +574,9 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
       initial: mascot.localizedName,
       maxLength: 30,
     );
-    if (newName != null && newName.isNotEmpty && newName != mascot.localizedName) {
+    if (newName != null &&
+        newName.isNotEmpty &&
+        newName != mascot.localizedName) {
       await _svc.renameMascot(mascot, newName);
     }
   }
@@ -572,9 +616,7 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(
-          SnackBar(content: Text(ForkFailure.of(e).text)),
-        );
+        ).showSnackBar(SnackBar(content: Text(ForkFailure.of(e).text)));
       }
     }
   }
@@ -615,10 +657,11 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
                     ),
                     padding: const EdgeInsets.all(6),
                     child: _MascotThumbnail(
-                        mascot: mascot,
-                        size: 60,
-                        service: _svc,
-                        sleep: widget.user.sleepOf(mascot.id)),
+                      mascot: mascot,
+                      size: 60,
+                      service: _svc,
+                      sleep: widget.user.sleepOf(mascot.id),
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -639,10 +682,12 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
                           mascot.recordStreak > 0
                               ? s.recordStreakDays(mascot.recordStreak)
                               : isActive
-                                  ? ruEn('Сейчас на экране', 'On screen now')
-                                  : ruEn('Ждёт своей очереди', 'Waiting'),
+                              ? ruEn('Сейчас на экране', 'On screen now')
+                              : ruEn('Ждёт своей очереди', 'Waiting'),
                           style: TextStyle(
-                              fontSize: 13.5, color: cs.onSurfaceVariant),
+                            fontSize: 13.5,
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -738,46 +783,50 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
     for (final f in _folders()) {
       final items = searching
           ? f.items
-              .where((m) => m.localizedName.toLowerCase().contains(_query))
-              .toList()
+                .where((m) => m.localizedName.toLowerCase().contains(_query))
+                .toList()
           : f.items;
       if (items.isEmpty) continue;
 
       final open = searching || !_collapsed.contains(f.key);
-      folders.add(_FolderHeader(
-        title: f.title,
-        icon: f.icon,
-        count: items.length,
-        open: open,
-        scheme: cs,
-        // Во время поиска сворачивать нечего: список и так отфильтрован.
-        onTap: searching ? null : () => _toggleFolder(f.key),
-      ));
+      folders.add(
+        _FolderHeader(
+          title: f.title,
+          icon: f.icon,
+          count: items.length,
+          open: open,
+          scheme: cs,
+          // Во время поиска сворачивать нечего: список и так отфильтрован.
+          onTap: searching ? null : () => _toggleFolder(f.key),
+        ),
+      );
       if (open) {
-        folders.add(GridView.builder(
-          // Запас прогрева: без него ряд за краем экрана начинал готовиться
-          // ровно тогда, когда его уже листают.
-          cacheExtent: 600,
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.82,
+        folders.add(
+          GridView.builder(
+            // Запас прогрева: без него ряд за краем экрана начинал готовиться
+            // ровно тогда, когда его уже листают.
+            cacheExtent: 600,
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.82,
+            ),
+            itemCount: items.length,
+            itemBuilder: (ctx, i) => _MascotCard(
+              mascot: items[i],
+              isActive: _svc.state.activeMascotId == items[i].id,
+              theme: _t,
+              service: _svc,
+              sleep: widget.user.sleepOf(items[i].id),
+              unlocked: _isUnlocked(items[i]),
+              onTap: () => _showActions(items[i]),
+            ),
           ),
-          itemCount: items.length,
-          itemBuilder: (ctx, i) => _MascotCard(
-            mascot: items[i],
-            isActive: _svc.state.activeMascotId == items[i].id,
-            theme: _t,
-            service: _svc,
-            sleep: widget.user.sleepOf(items[i].id),
-            unlocked: _isUnlocked(items[i]),
-            onTap: () => _showActions(items[i]),
-          ),
-        ));
+        );
       }
     }
 
@@ -786,8 +835,10 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Text(
-            ruEn('Никого с таким именем. Попробуйте другое слово.',
-                'Nobody with that name. Try another word.'),
+            ruEn(
+              'Никого с таким именем. Попробуйте другое слово.',
+              'Nobody with that name. Try another word.',
+            ),
             textAlign: TextAlign.center,
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
           ),
@@ -800,11 +851,15 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
     // Подписана псевдонимом и без ссылки на Телеграм — по просьбе самой
     // художницы (1 августа): аудитория выросла, и настоящая фамилия рядом с
     // переходом в личный аккаунт приводила к ней незнакомых людей.
-    folders.add(_ArtistCredit(
-      scheme: cs,
-      text: ruEn('Художница маскотов «От нас» — Meller1',
-          'Mascots marked «${LocaleService.current.fromUs}» drawn by Meller1'),
-    ));
+    folders.add(
+      _ArtistCredit(
+        scheme: cs,
+        text: ruEn(
+          'Художница маскотов «От нас» — Meller1',
+          'Mascots marked «${LocaleService.current.fromUs}» drawn by Meller1',
+        ),
+      ),
+    );
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
@@ -856,8 +911,10 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  LocaleService.current
-                      .mascotsCount(_svc.mascotCount, MascotService.maxMascots),
+                  LocaleService.current.mascotsCount(
+                    _svc.mascotCount,
+                    MascotService.maxMascots,
+                  ),
                   style: TextStyle(fontSize: 13, color: _t.textSecondary),
                 ),
                 if (_svc.isGalleryFull)
@@ -928,7 +985,11 @@ class _StreakBanner extends StatelessWidget {
   final bool fresh;
   final AppTheme theme;
 
-  const _StreakBanner({required this.streak, required this.theme, this.fresh = false});
+  const _StreakBanner({
+    required this.streak,
+    required this.theme,
+    this.fresh = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1040,8 +1101,10 @@ class _MascotCard extends StatelessWidget {
           // Выбранная ячейка отличается тоном подложки и обводкой, а не
           // тенью: теней в проекте нет, глубину даёт тональная поверхность.
           color: isActive
-              ? Color.alphaBlend(theme.primary.withValues(alpha: 0.10),
-                  theme.cardSurface)
+              ? Color.alphaBlend(
+                  theme.primary.withValues(alpha: 0.10),
+                  theme.cardSurface,
+                )
               : theme.cardSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -1079,7 +1142,9 @@ class _MascotCard extends StatelessWidget {
                           // Ценник тональной поверхностью и внизу карточки:
                           // чёрная плашка по центру закрывала самого персонажа
                           // и не жила ни в одной теме.
-                          color: Theme.of(context).colorScheme.secondaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -1091,11 +1156,13 @@ class _MascotCard extends StatelessWidget {
                             if (mascot.unlock.isPremium)
                               CoinImage(side: 13)
                             else
-                              Icon(Icons.lock_rounded,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSecondaryContainer,
-                                  size: 12),
+                              Icon(
+                                Icons.lock_rounded,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer,
+                                size: 12,
+                              ),
                             const SizedBox(width: 3),
                             Text(
                               // Цена прямо на плитке: замок без числа заставляет
@@ -1103,14 +1170,15 @@ class _MascotCard extends StatelessWidget {
                               mascot.unlock.isForSale
                                   ? '${mascot.unlock.price}'
                                   : mascot.unlock.isPremium
-                                      ? ruEn('платный', 'paid')
-                                      : ruEn(
-                                          'Ур. ${mascot.unlock.requiredLevel}',
-                                          'Lv ${mascot.unlock.requiredLevel}'),
+                                  ? ruEn('платный', 'paid')
+                                  : ruEn(
+                                      'Ур. ${mascot.unlock.requiredLevel}',
+                                      'Lv ${mascot.unlock.requiredLevel}',
+                                    ),
                               style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSecondaryContainer,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1180,13 +1248,20 @@ class _MascotCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SymbolIcon('workspace_premium',
-                            size: 12, color: theme.textMuted),
+                        SymbolIcon(
+                          'workspace_premium',
+                          size: 12,
+                          color: theme.textMuted,
+                        ),
                         const SizedBox(width: 3),
                         Text(
-                          LocaleService.current
-                              .recordStreakBadge(mascot.recordStreak),
-                          style: TextStyle(fontSize: 10, color: theme.textMuted),
+                          LocaleService.current.recordStreakBadge(
+                            mascot.recordStreak,
+                          ),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.textMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -1240,7 +1315,10 @@ class _MascotThumbnail extends StatelessWidget {
       // В галерее показываем ступень, до которой пара дожила с этим маскотом:
       // взрослый вид у всех подряд обесценивал бы рост.
       final level = MascotAnim.levelForStreak(
-          mascot.recordStreak > 0 ? mascot.recordStreak : service.state.activeStreak);
+        mascot.recordStreak > 0
+            ? mascot.recordStreak
+            : service.state.activeStreak,
+      );
       if (size.isFinite) {
         return PixelMascotView(
           anim: animated,
@@ -1265,7 +1343,7 @@ class _MascotThumbnail extends StatelessWidget {
     }
     if (mascot.catalogUrl != null) {
       return CachedNetworkImage(
-      cacheManager: OfflineImageCacheManager.instance,
+        cacheManager: OfflineImageCacheManager.instance,
         imageUrl: mascot.catalogUrl!,
         width: size == double.infinity ? null : size,
         height: size == double.infinity ? null : size,
@@ -1349,7 +1427,6 @@ Future<File> fetchCachedImageFile(String url) async {
   return cached;
 }
 
-
 /// Папка галереи: название, значок и её маскоты.
 class _Folder {
   const _Folder(this.key, this.title, this.icon, this.items);
@@ -1406,8 +1483,10 @@ class _FolderHeader extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: scheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(999),
@@ -1426,8 +1505,11 @@ class _FolderHeader extends StatelessWidget {
                   AnimatedRotation(
                     turns: open ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 22, color: scheme.onSurfaceVariant),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 22,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ],
@@ -1496,7 +1578,6 @@ class _SearchField extends StatelessWidget {
   }
 }
 
-
 /// Пункт листа действий: крупная строка со значком, заливкой и радиусом 20.
 ///
 /// Главное действие красится primaryContainer, опасное — errorContainer:
@@ -1523,13 +1604,13 @@ class _SheetAction extends StatelessWidget {
     final bg = destructive
         ? scheme.errorContainer
         : primary
-            ? scheme.primaryContainer
-            : scheme.surfaceContainerHigh;
+        ? scheme.primaryContainer
+        : scheme.surfaceContainerHigh;
     final fg = destructive
         ? scheme.onErrorContainer
         : primary
-            ? scheme.onPrimaryContainer
-            : scheme.onSurface;
+        ? scheme.onPrimaryContainer
+        : scheme.onSurface;
 
     return Material(
       color: bg,
@@ -1562,7 +1643,6 @@ class _SheetAction extends StatelessWidget {
     );
   }
 }
-
 
 /// Подвал галереи: подпись художницы и кнопки «загрузить» и «нарисовать».
 class _GalleryFooter extends StatelessWidget {
@@ -1656,16 +1736,12 @@ class _GalleryFooter extends StatelessWidget {
   }
 }
 
-
 /// Подпись художницы — последний блок списка.
 ///
 /// Стоит именно в прокрутке, а не в подвале: в подвале она соперничала с
 /// кнопками за место и мозолила глаза, хотя нужна раз в жизни.
 class _ArtistCredit extends StatelessWidget {
-  const _ArtistCredit({
-    required this.scheme,
-    required this.text,
-  });
+  const _ArtistCredit({required this.scheme, required this.text});
 
   final ColorScheme scheme;
   final String text;

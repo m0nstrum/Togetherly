@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/streak_restore.dart';
 
-/// Правило то же, что на сервере (`_возврат_серии` в hotpath.py и
-/// pocketbase/hotpath/test_streak_restore.py): приложение показывает кнопку
+/// Правило то же, что на сервере (`RestoreStreak` в
+/// server/internal/usecase/groupops): приложение показывает кнопку
 /// «Вернуть серию» только там, где сервер согласится её вернуть.
 void main() {
   final now = DateTime(2026, 9, 22, 20);
@@ -28,24 +28,33 @@ void main() {
     });
 
     test('после сброса возвращается сумма прежней и новой серии', () {
-      final offer = streakRestoreOffer(
-        {'s': 2, 'd': '2026-09-22', 'lost': 12, 'lost_d': '2026-09-21'},
-        now,
-      );
+      final offer = streakRestoreOffer({
+        's': 2,
+        'd': '2026-09-22',
+        'lost': 12,
+        'lost_d': '2026-09-21',
+      }, now);
       expect(offer?.days, 14);
     });
 
     test('через три дня после сброса возврата нет', () {
-      final entry = {'s': 1, 'd': '2026-09-22', 'lost': 12, 'lost_d': '2026-09-18'};
+      final entry = {
+        's': 1,
+        'd': '2026-09-22',
+        'lost': 12,
+        'lost_d': '2026-09-18',
+      };
       expect(streakRestoreOffer(entry, now), isNull);
     });
 
     test('ключ предложения свой у каждого обрыва', () {
       final a = streakRestoreOffer({'s': 12, 'd': '2026-09-20'}, now)!;
-      final b = streakRestoreOffer(
-        {'s': 1, 'd': '2026-09-22', 'lost': 12, 'lost_d': '2026-09-22'},
-        now,
-      )!;
+      final b = streakRestoreOffer({
+        's': 1,
+        'd': '2026-09-22',
+        'lost': 12,
+        'lost_d': '2026-09-22',
+      }, now)!;
       expect(a.key, isNot(b.key));
     });
 

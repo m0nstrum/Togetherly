@@ -63,8 +63,9 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = Directory('build/qr-preview')..createSync(recursive: true);
-      File('${dir.path}/test-invite-$code.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
+      File(
+        '${dir.path}/test-invite-$code.png',
+      ).writeAsBytesSync(data!.buffer.asUint8List());
     });
   });
 }

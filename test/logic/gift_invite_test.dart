@@ -21,7 +21,10 @@ void main() {
   });
 
   test('письмо ждёт сутки, завтрак — до утра', () {
-    expect(GiftCatalog.byKey('letter')!.deliverAfter, const Duration(hours: 24));
+    expect(
+      GiftCatalog.byKey('letter')!.deliverAfter,
+      const Duration(hours: 24),
+    );
     expect(GiftCatalog.byKey('croissant')!.deliversAtMorning, isTrue);
   });
 

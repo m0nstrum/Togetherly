@@ -1,5 +1,5 @@
 /// Копилка пары: капли от роликов обоих, десять — каждому по открытию
-/// сундука без рекламы (`pocketbase/pb_hooks/pair_jar.js`).
+/// сундука без рекламы (`server/pb_hooks/pair_jar.js`).
 ///
 /// Сервер отдаёт её в `/api/chest/state` (поле `jar`) и в ответе награды за
 /// ролик `/api/coins/ad-reward` — там же `added` и `filled`.
@@ -51,5 +51,10 @@ class PairJar {
     );
   }
 
-  PairJar withBonus(int value) => PairJar(size: size, drops: drops, bonus: value < 0 ? 0 : value, capped: capped);
+  PairJar withBonus(int value) => PairJar(
+    size: size,
+    drops: drops,
+    bonus: value < 0 ? 0 : value,
+    capped: capped,
+  );
 }

@@ -176,12 +176,14 @@ abstract final class ForkE2E {
   static final Map<String, String> _groupHints = {};
 
   /// HTTP-клиент PocketBase с шифрованием полей.
-  static http.Client httpClient() => ForkOutboxHttpClient(E2EHttpClient(
-    http.Client(),
-    codec: codec,
-    context: _context,
-    newId: newPbId,
-  ));
+  static http.Client httpClient() => ForkOutboxHttpClient(
+    E2EHttpClient(
+      http.Client(),
+      codec: codec,
+      context: _context,
+      newId: newPbId,
+    ),
+  );
 
   /// Есть ли ключ пары [groupId], чтобы записать в неё шифром. Нет —
   /// запись в очереди не уйдёт никогда (UX_AUDIT C1): экран должен сказать
@@ -381,7 +383,7 @@ abstract final class ForkE2E {
   /// Имя заглушки, которое видит сервер: настоящее уходит следом шифром.
   static const String waitingNameOnServer = '…';
 
-  /// Заглушка пары с пустым местом — шифром ключа пары: сервер (waiting.pb.js)
+  /// Заглушка пары с пустым местом — шифром ключа пары: сервер (handler.Waiting)
   /// заводит пару с [waitingNameOnServer], а имя, фото и дату возвращения
   /// пишем правкой записи. Ключ одиночной пары заводится при синхронизации.
   /// `returnDate == ''` — стереть дату.
@@ -504,7 +506,7 @@ abstract final class ForkE2E {
   }
 
   /// Коллекции пары, где своё старое перешифровывает сам автор: править
-  /// чужое сервер не даёт (chat_guard.pb.js, правила цикла).
+  /// чужое сервер не даёт (authorship.go сервера, правила цикла).
   /// Коллекция → поле автора.
   static const Map<String, String> migrated = {
     'chat_messages': 'user_uid',

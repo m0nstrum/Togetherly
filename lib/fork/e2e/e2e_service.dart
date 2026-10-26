@@ -1,4 +1,4 @@
-/// Обмен ключами пары (docs/fork/E2E.md §5–6, PLAN S8).
+/// Обмен ключами пары (docs/E2E.md §5–6, PLAN S8).
 ///
 /// Сервис не знает про PocketBase: всё общение с сервером — через
 /// [E2EBackend]. Так его можно проверить двумя «установками» и сервером,
@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 
 import 'backup.dart';
 import 'crypto.dart';
+import 'device_link.dart';
 import 'devices.dart';
 import 'envelope.dart';
 import 'key_store.dart';
@@ -97,6 +98,15 @@ abstract interface class E2EBackend {
   /// Бэкап ключей (`e2e_backups.data`); null — нет.
   Future<Map<String, dynamic>?> backup(String uid);
   Future<void> putBackup(String uid, Map<String, dynamic> data);
+
+  /// Привязка устройства по QR (`e2e_links`, §5.3).
+  Future<void> putLink(Map<String, dynamic> body);
+
+  /// null — записи нет (истекла или удалена). [FormatException] — не
+  /// разбирается.
+  Future<LinkRecord?> link(String id);
+  Future<void> putLinkPayload(String id, String payload);
+  Future<void> deleteLink(String id);
 }
 
 /// Что видно на экране сверки.
@@ -162,6 +172,13 @@ class SasFinished extends SasState {
     required this.match,
   });
   final bool match;
+}
+
+/// Привязка устройства истекла, отменена или уже выполнена.
+class E2ELinkExpired implements Exception {
+  const E2ELinkExpired();
+  @override
+  String toString() => 'E2ELinkExpired';
 }
 
 class E2EService implements E2EKeyring {
@@ -231,12 +248,134 @@ class E2EService implements E2EKeyring {
         needsRestore.value = true;
         return;
       }
+      // T3: бэкапа нет, но ключи аккаунта уже опубликованы — значит, они
+      // есть на другом телефоне. Молча новые ключи выбили бы его из списка
+      // устройств: спрашиваем — привязать с него по QR или начать заново.
+      if (await _hasPublishedKeys()) {
+        restoreMethod = null;
+        needsRestore.value = true;
+        return;
+      }
     }
     _keys = (loaded ?? E2EKeys.generate(crypto, b64(crypto.random(9))))
       ..deriveSelf(crypto, uid);
     backupMethod.value = keys.backup?.method;
     await _publish();
     await store.save(keys);
+  }
+
+  Future<bool> _hasPublishedKeys() async {
+    try {
+      final rec = await backend.identity(uid);
+      return rec != null &&
+          rec.devices.devices.any((d) => d.kind == DeviceKind.full) &&
+          _verifies(rec.devices, rec.accountKey, uid, 0);
+    } on FormatException {
+      return false;
+    }
+  }
+
+  // --- привязка устройства по QR (§5.3) ---
+
+  LinkOffer? _linkOffer;
+
+  /// Новое устройство: завести привязку и получить QR для старого.
+  Future<LinkQr> linkStart() async {
+    if (_keys != null) throw StateError('ключи на устройстве уже есть');
+    await linkCancel();
+    final offer = LinkOffer.create(crypto, uid);
+    await backend.putLink(offer.record(crypto));
+    _linkOffer = offer;
+    return offer.qr;
+  }
+
+  /// Новое устройство: пришли ли ключи со старого. true — привязано, ключи
+  /// на устройстве. Привязка истекла — [E2ELinkExpired]; пакет чужой или
+  /// ключ аккаунта не тот, что опубликован, — [E2EVerifyError].
+  Future<bool> linkPoll() async {
+    final offer = _linkOffer;
+    if (offer == null) return false;
+    final rec = await backend.link(offer.qr.linkId);
+    if (rec == null) throw const E2ELinkExpired();
+    if (rec.payload.isEmpty) return false;
+    final bundle = offer.open(crypto, rec.payload);
+    final secret = bundle.accountSecret;
+    if (secret.length != 64)
+      throw E2EVerifyError('ключ аккаунта не разбирается');
+    final account = KeyPair(
+      publicKey: Uint8List.fromList(secret.sublist(32)),
+      secretKey: crypto.keyFromBytes(secret),
+    );
+    // Секрет и открытая часть — одна пара, и это тот ключ аккаунта, что
+    // уже опубликован: иначе нас привязали бы к чужому аккаунту.
+    final probe = utf8Bytes('tethered-link-probe|$uid');
+    final published = await backend.identity(uid);
+    if (!crypto.verify(
+          probe,
+          crypto.sign(probe, account.secretKey),
+          account.publicKey,
+        ) ||
+        published == null ||
+        !bytesEqual(published.accountKey, account.publicKey) ||
+        !_verifies(published.devices, published.accountKey, uid, 0)) {
+      throw E2EVerifyError('ключ аккаунта не совпал с опубликованным');
+    }
+    final prev = _keys;
+    _keys = E2EKeys(
+      account: account,
+      device: offer.device,
+      pairKeys: {for (final k in bundle.pairKeys) k.keyId: k},
+      peers: bundle.peers,
+      backup: bundle.backup,
+    )..deriveSelf(crypto, uid);
+    try {
+      await _publish();
+      await store.save(keys);
+    } catch (_) {
+      _keys = prev;
+      rethrow;
+    }
+    _linkOffer = null;
+    _serverBackup = null;
+    try {
+      await backend.deleteLink(offer.qr.linkId);
+    } catch (_) {
+      // запись истечёт сама (e2eretention)
+    }
+    backupMethod.value = keys.backup?.method;
+    needsRestore.value = false;
+    return true;
+  }
+
+  /// Новое устройство: передумали — запись привязки больше не нужна.
+  Future<void> linkCancel() async {
+    final offer = _linkOffer;
+    _linkOffer = null;
+    if (offer == null) return;
+    try {
+      await backend.deleteLink(offer.qr.linkId);
+    } catch (_) {} // тихо: запись истечёт сама (e2eretention), отмена не ошибка
+  }
+
+  /// Старое устройство: отдать ключи устройству из [qr]. QR другого
+  /// аккаунта или ключи устройства не от этого QR — [E2EVerifyError];
+  /// привязка истекла или уже выполнена — [E2ELinkExpired].
+  Future<void> linkApprove(LinkQr qr) async {
+    if (qr.uid != uid) throw E2EVerifyError('QR другого аккаунта');
+    final rec = await backend.link(qr.linkId);
+    if (rec == null || rec.payload.isNotEmpty) throw const E2ELinkExpired();
+    final payload = sealLinkBundle(
+      crypto,
+      qr: qr,
+      record: rec,
+      bundle: LinkBundle(
+        accountSecret: keys.account.secretKey.extractBytes(),
+        pairKeys: keys.pairKeys.values.toList(),
+        backup: keys.backup,
+        peers: keys.peers,
+      ),
+    );
+    await backend.putLinkPayload(qr.linkId, payload);
   }
 
   // --- бэкап ключей (§7) ---

@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -49,7 +48,6 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
 
   AppStrings get _s => LocaleService.current;
 
-
   String _tr(String ru, String en) => ruEn(ru, en);
 
   /// Свои рисунки открывает Togetherly+.
@@ -70,8 +68,7 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
   /// Уже загруженные рисунки остаются на месте и после того, как Плюс кончился:
   /// они лежат на устройстве, и прятать их задним числом значит отобрать
   /// сделанное. Закрыта только загрузка новых.
-  List<ColoringUpload> get _ownItems =>
-      _ownVisible ? _uploads.items : const [];
+  List<ColoringUpload> get _ownItems => _ownVisible ? _uploads.items : const [];
 
   @override
   void initState() {
@@ -97,16 +94,19 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
       // Стена: сначала экран Плюса, галерею не открываем вовсе.
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              PlusScreen(scheme: ProfileTheme.themeFor(widget.theme).colorScheme),
+          builder: (_) => PlusScreen(
+            scheme: ProfileTheme.themeFor(widget.theme).colorScheme,
+          ),
           settings: const RouteSettings(name: '/plus'),
         ),
       );
       return;
     }
     final picked = await safePick(
-      () => ImagePicker()
-          .pickImage(source: ImageSource.gallery, imageQuality: 100),
+      () => ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
+      ),
     );
     if (picked == null || !mounted) return;
     await _uploads.add(File(picked.path), title: _s.coloringOwnDefaultName);
@@ -167,7 +167,8 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
                 mainAxisSpacing: 12,
                 childAspectRatio: 0.82,
               ),
-              itemCount: ColoringPicture.all.length +
+              itemCount:
+                  ColoringPicture.all.length +
                   (_ownVisible ? _ownItems.length + 1 : 0),
               itemBuilder: (_, i) {
                 if (!_ownVisible) return _card(cs, ColoringPicture.all[i]);
@@ -176,8 +177,7 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
                 if (own < _ownItems.length) {
                   return _ownCard(cs, _ownItems[own]);
                 }
-                return _card(
-                    cs, ColoringPicture.all[i - 1 - _ownItems.length]);
+                return _card(cs, ColoringPicture.all[i - 1 - _ownItems.length]);
               },
             ),
           ],
@@ -233,7 +233,6 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
     );
   }
 
-
   /// Кнопка «загрузить свою» — такой же плиткой, чтобы сетка не рвалась.
   Widget _addOwnCard(ColorScheme cs) {
     final locked = _gate != PlusGate.open;
@@ -247,9 +246,7 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              locked
-                  ? Icons.lock_rounded
-                  : Icons.add_photo_alternate_rounded,
+              locked ? Icons.lock_rounded : Icons.add_photo_alternate_rounded,
               size: 34,
               color: cs.onPrimaryContainer,
             ),
@@ -299,17 +296,19 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
         borderRadius: BorderRadius.circular(20),
         onTap: item.isReady
             ? () => Navigator.pop(
-                  context,
-                  ColoringChoice(
-                    picture: ColoringPicture.own(
-                      id: item.id,
-                      title: item.title,
-                      ratio: item.ratio,
-                    ),
-                    mode: _mode,
+                context,
+                ColoringChoice(
+                  picture: ColoringPicture.own(
+                    id: item.id,
+                    title: item.title,
+                    ratio: item.ratio,
                   ),
-                )
-            : failed ? () => _uploads.retry(item.id) : null,
+                  mode: _mode,
+                ),
+              )
+            : failed
+            ? () => _uploads.retry(item.id)
+            : null,
         onLongPress: () => _uploads.remove(item.id),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -343,9 +342,10 @@ class _ColoringCatalogueScreenState extends State<ColoringCatalogueScreen> {
                 Text(
                   _s.coloringOwnProcessing,
                   style: TextStyle(
-                      fontFamily: 'Onest',
-                      fontSize: 11,
-                      color: cs.onSurfaceVariant),
+                    fontFamily: 'Onest',
+                    fontSize: 11,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ],

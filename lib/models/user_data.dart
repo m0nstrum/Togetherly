@@ -26,9 +26,10 @@ import 'avatar_frame.dart';
 import 'pair_book.dart' show kPairBookAdultKey;
 import '../services/avatar_frames.dart';
 import '../services/home_layout_service.dart';
-import '../fork/push/fcm_wake.dart'; // fork
+import '../fork/push/fcm_wake.dart';
 import '../fork/watch/pair_call.dart'; // fork (UX C0)
-import '../fork/own_name.dart'; // fork
+import '../fork/own_name.dart';
+import '../fork/wishes/wish_reminders.dart';
 
 enum Gender { male, female, unspecified }
 
@@ -46,6 +47,7 @@ class UserData extends ChangeNotifier {
   String _avatarUrl = '';
   String _bannerUrl = '';
   Gender? _gender;
+
   /// Произвольный пол для «Свой пол» (когда [_gender] == unspecified).
   String? _customGender;
   bool _isRegistered = false;
@@ -137,6 +139,7 @@ class UserData extends ChangeNotifier {
       _customGender = (g == 'unspecified') ? null : g;
     }
   }
+
   bool get isRegistered => _isRegistered;
   bool get hasSeenWelcome => _hasSeenWelcome;
 
@@ -168,15 +171,17 @@ class UserData extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-        'mascotSleep', jsonEncode(MascotSleep.encode(_mascotSleep)));
+      'mascotSleep',
+      jsonEncode(MascotSleep.encode(_mascotSleep)),
+    );
 
     final uid = PocketBaseService().userId ?? '';
     if (uid.isEmpty) return;
-    await PbDataService().updateUserProfile(
-      uid,
-      {'mascotSleep': MascotSleep.encode(_mascotSleep)},
-    );
+    await PbDataService().updateUserProfile(uid, {
+      'mascotSleep': MascotSleep.encode(_mascotSleep),
+    });
   }
+
   String get uid => _uid;
   String? get badge => _badge;
 
@@ -235,8 +240,11 @@ class UserData extends ChangeNotifier {
   int get themeId {
     if (_themeId >= 0 &&
         _themeId < kPalettes.length &&
-        paletteOpen(kPalettes[_themeId],
-            registeredAt: registeredAt, now: clock())) {
+        paletteOpen(
+          kPalettes[_themeId],
+          registeredAt: registeredAt,
+          now: clock(),
+        )) {
       return _themeId;
     }
     if (isCustomPaletteIndex(_themeId) &&
@@ -262,8 +270,12 @@ class UserData extends ChangeNotifier {
     final sig = Object.hash(idx, palette.accent, b, _themeFlavor, _amoled);
     if (_themeCache == null || _themeCacheSig != sig) {
       _themeCacheSig = sig;
-      _themeCache =
-          buildAppTheme(palette, b, flavor: _themeFlavor, amoled: _amoled);
+      _themeCache = buildAppTheme(
+        palette,
+        b,
+        flavor: _themeFlavor,
+        amoled: _amoled,
+      );
     }
     return _themeCache!;
   }
@@ -357,11 +369,13 @@ class UserData extends ChangeNotifier {
   /// между авто-начислением на старте и синком профиля).
   void _seedClaimFlagsFromServer(dynamic lastDailyMs, dynamic lastMemoryMs) {
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (lastDailyMs is num && lastDailyMs > 0 &&
+    if (lastDailyMs is num &&
+        lastDailyMs > 0 &&
         now - lastDailyMs.toInt() < _coinCooldownMs) {
       _dailyBonusClaimedThisSession = true;
     }
-    if (lastMemoryMs is num && lastMemoryMs > 0 &&
+    if (lastMemoryMs is num &&
+        lastMemoryMs > 0 &&
         now - lastMemoryMs.toInt() < _coinCooldownMs) {
       _memoryRewardClaimedThisSession = true;
     }
@@ -461,27 +475,28 @@ class UserData extends ChangeNotifier {
     _frame = clear ? null : key;
     await _saveLocal();
     notifyListeners();
-    await PbDataService().updateUserProfile(
-        PocketBaseService().userId ?? "", {'frame': _frame ?? ''});
+    await PbDataService().updateUserProfile(PocketBaseService().userId ?? "", {
+      'frame': _frame ?? '',
+    });
   }
 
   /// Доступна ли иконка: куплена, выдана наградой или открыта Togetherly+.
   /// Наградные значки покупка не открывает — см. [PlusAccess.ownsIcon].
   bool ownsIcon(String id) => PlusAccess.ownsIcon(
-        id: id,
-        plus: PlusService.instance.active,
-        owned: _ownedIcons,
-        granted: _grantedBadges,
-      );
+    id: id,
+    plus: PlusService.instance.active,
+    owned: _ownedIcons,
+    granted: _grantedBadges,
+  );
 
   /// Все доступные пользователю иконки, без дублей. С Togetherly+ сюда входит
   /// весь платный набор, кроме наградных.
   Set<String> get availableIcons => {
-        ..._ownedIcons,
-        ..._grantedBadges,
-        if (PlusService.instance.active)
-          ...ProfileIcon.purchasable.map((i) => i.id),
-      };
+    ..._ownedIcons,
+    ..._grantedBadges,
+    if (PlusService.instance.active)
+      ...ProfileIcon.purchasable.map((i) => i.id),
+  };
 
   // ── Одноразовые фичи ─────────────────────────────────────────────────────
   /// ID фичи: свои фото пары на виджете «Дни вместе» (зеркало FEATURE_PRICES).
@@ -580,8 +595,7 @@ class UserData extends ChangeNotifier {
       _adRewardsDate = today;
       _adRewardsToday = 0;
     }
-    _adRewardsToday =
-        granted ? _adRewardsToday + 1 : adRewardsDailyLimit;
+    _adRewardsToday = granted ? _adRewardsToday + 1 : adRewardsDailyLimit;
     _saveLocal();
     notifyListeners();
   }
@@ -589,7 +603,9 @@ class UserData extends ChangeNotifier {
   /// Перезагружает coins/ownedThemes с сервера.
   Future<void> refreshCoinsFromServer() async {
     try {
-      final data = await PbDataService().loadUserProfileMap(PocketBaseService().userId ?? "");
+      final data = await PbDataService().loadUserProfileMap(
+        PocketBaseService().userId ?? "",
+      );
       if (data == null) return;
       final cloudCoins = data['coins'];
       if (cloudCoins is num) _coins = cloudCoins.toInt();
@@ -621,7 +637,10 @@ class UserData extends ChangeNotifier {
       if (cloudAdDate is String) _adRewardsDate = cloudAdDate;
       final cloudGrants = data['adGrants'];
       if (cloudGrants is String) _adGrants = AdGrants.parse(cloudGrants);
-      _seedClaimFlagsFromServer(data['lastDailyBonusMs'], data['lastMemoryRewardMs']);
+      _seedClaimFlagsFromServer(
+        data['lastDailyBonusMs'],
+        data['lastMemoryRewardMs'],
+      );
       await _saveLocal();
       notifyListeners();
     } catch (e) {
@@ -645,13 +664,16 @@ class UserData extends ChangeNotifier {
   /// Награда за добавление воспоминания (1 🪙/день).
   /// Возвращает кол-во начисленных монет, или 0 если cooldown/ошибка.
   Future<int> claimMemoryReward() async {
-    if (_memoryRewardClaimedThisSession || _memoryRewardClaimInProgress) return 0;
+    if (_memoryRewardClaimedThisSession || _memoryRewardClaimInProgress)
+      return 0;
     _memoryRewardClaimInProgress = true;
     try {
       final r = await PbCoinsService().memoryReward();
       if (r == null) return 0;
       _applyServerResult(r);
-      final amount = (r['ok'] == true) ? (r['awarded'] as num?)?.toInt() ?? 0 : 0;
+      final amount = (r['ok'] == true)
+          ? (r['awarded'] as num?)?.toInt() ?? 0
+          : 0;
       if (amount > 0) {
         _memoryRewardClaimedThisSession = true;
         notifyListeners();
@@ -710,10 +732,10 @@ class UserData extends ChangeNotifier {
       final next = (r['nextAt'] as num?)?.toInt() ?? 0;
       final days = next <= 0
           ? 0
-          : DateTime.fromMillisecondsSinceEpoch(next)
-                  .difference(DateTime.now())
-                  .inDays +
-              1;
+          : DateTime.fromMillisecondsSinceEpoch(
+                  next,
+                ).difference(DateTime.now()).inDays +
+                1;
       return AdGrantResult.cooldown(days);
     }
     return AdGrantResult.rateLimited;
@@ -771,12 +793,11 @@ class UserData extends ChangeNotifier {
     String id,
     int level, {
     bool boughtByPair = false,
-  }) =>
-      unlock.isUnlocked(
-        level: level,
-        owned: boughtByPair || ownsCatalogItem(kind, id),
-        plus: PlusService.instance.active,
-      );
+  }) => unlock.isUnlocked(
+    level: level,
+    owned: boughtByPair || ownsCatalogItem(kind, id),
+    plus: PlusService.instance.active,
+  );
 
   /// Купить элемент каталога за монеты. Цену считает сервер по записи в
   /// каталоге — клиентскому числу он не верит.
@@ -801,7 +822,9 @@ class UserData extends ChangeNotifier {
     if (!clear && !ownsIcon(id)) return; // нельзя закрепить чужую иконку
     _badge = clear ? null : id;
     await _saveLocal();
-    await PbDataService().updateUserProfile(PocketBaseService().userId ?? "", {'badge': _badge ?? ''});
+    await PbDataService().updateUserProfile(PocketBaseService().userId ?? "", {
+      'badge': _badge ?? '',
+    });
     notifyListeners();
   }
 
@@ -814,7 +837,7 @@ class UserData extends ChangeNotifier {
   /// запуске.
   ///
   /// **`granted_badges` пишет только сервер.** Поле в списке защищённых
-  /// (`users_guard.pb.js`), клиентский PATCH его молча не сохраняет. Раньше это
+  /// (`bindUsersGuard` на сервере), клиентский PATCH его молча не сохраняет. Раньше это
   /// давало вечное поздравление: локально значок добавлялся, уведомление
   /// показывалось, на сервер список не уезжал, а следующий синк затирал
   /// локальный набор серверным пустым — и круг повторялся при каждом запуске
@@ -904,8 +927,9 @@ class UserData extends ChangeNotifier {
       _themeId = prefs.getInt('themeId') ?? -1;
       _customThemes = parseCustomThemes(prefs.getString('customThemes'));
       final hadThemeMode = prefs.containsKey('themeMode');
-      _themeMode = AppThemeMode.values[
-          (prefs.getInt('themeMode') ?? AppThemeMode.light.index)
+      _themeMode =
+          AppThemeMode.values[(prefs.getInt('themeMode') ??
+                  AppThemeMode.light.index)
               .clamp(0, AppThemeMode.values.length - 1)];
       // Миграция на модель «акцент × режим»: старые ТЁМНЫЕ темы (индексы 20–24)
       // теперь просто акценты. Кто на них сидел и ещё не выбирал режим — остаётся
@@ -914,8 +938,9 @@ class UserData extends ChangeNotifier {
         _themeMode = AppThemeMode.dark;
         await prefs.setInt('themeMode', AppThemeMode.dark.index);
       }
-      _themeFlavor = SchemeFlavor.values[
-          (prefs.getInt('themeFlavor') ?? SchemeFlavor.soft.index)
+      _themeFlavor =
+          SchemeFlavor.values[(prefs.getInt('themeFlavor') ??
+                  SchemeFlavor.soft.index)
               .clamp(0, SchemeFlavor.values.length - 1)];
       _amoled = prefs.getBool('amoled') ?? false;
       _blobAnimationEnabled = prefs.getBool('blobAnimationEnabled') ?? true;
@@ -987,10 +1012,15 @@ class UserData extends ChangeNotifier {
 
   Future<void> _syncFromFirestore() async {
     try {
-      final data = await PbDataService().loadUserProfileMap(PocketBaseService().userId ?? "");
+      final data = await PbDataService().loadUserProfileMap(
+        PocketBaseService().userId ?? "",
+      );
       if (data != null) {
-        _displayName = data['displayName'] ?? _displayName;
-        ForkOwnName.value = _displayName; // fork
+        // fork (B3): пока ключ не открылся, сервер отдаёт шифр или пустоту —
+        // они не должны затирать имя, иначе партнёр видит «Гость».
+        final serverName = '${data['displayName'] ?? ''}';
+        if (ForkOwnName.usable(serverName)) _displayName = serverName.trim();
+        ForkOwnName.value = _displayName;
         _email = data['email'] ?? _email;
         // Only overwrite local avatar if Firestore has a real non-empty value.
         // An empty string in Firestore means the field was accidentally cleared —
@@ -1038,7 +1068,9 @@ class UserData extends ChangeNotifier {
         final cloudAdDate = data['adRewardsDate'];
         if (cloudAdDate is String) _adRewardsDate = cloudAdDate;
         _seedClaimFlagsFromServer(
-            data['lastDailyBonusMs'], data['lastMemoryRewardMs']);
+          data['lastDailyBonusMs'],
+          data['lastMemoryRewardMs'],
+        );
 
         final created = parseRegisteredAt(data['created']);
         if (created != null) _registeredAt = created;
@@ -1066,12 +1098,22 @@ class UserData extends ChangeNotifier {
         // edited their profile after connecting (fixes 'Partner' fallback).
         final myUid = PocketBaseService().userId ?? '';
         if (_displayName.isNotEmpty) {
-          unawaited(PbDataService()
-              .updateMemberFieldInGroups(myUid, 'member_names', _displayName));
+          unawaited(
+            PbDataService().updateMemberFieldInGroups(
+              myUid,
+              'member_names',
+              _displayName,
+            ),
+          );
         }
         if (_avatarUrl.isNotEmpty) {
-          unawaited(PbDataService()
-              .updateMemberFieldInGroups(myUid, 'member_avatars', _avatarUrl));
+          unawaited(
+            PbDataService().updateMemberFieldInGroups(
+              myUid,
+              'member_avatars',
+              _avatarUrl,
+            ),
+          );
         }
         // Оформление уходит на сервер при входе, иначе статистика знала бы
         // только тех, кто менял тему после обновления. Отправляем лишь при
@@ -1105,7 +1147,9 @@ class UserData extends ChangeNotifier {
       }
       if (_registeredAt != null) {
         await prefs.setInt(
-            'registeredAt', _registeredAt!.millisecondsSinceEpoch);
+          'registeredAt',
+          _registeredAt!.millisecondsSinceEpoch,
+        );
       }
       if (_badge != null) {
         await prefs.setString('badge', _badge!);
@@ -1124,7 +1168,9 @@ class UserData extends ChangeNotifier {
       await prefs.setInt('adRewardsToday', _adRewardsToday);
       await prefs.setString('adRewardsDate', _adRewardsDate);
       await prefs.setString(
-          'mascotSleep', jsonEncode(MascotSleep.encode(_mascotSleep)));
+        'mascotSleep',
+        jsonEncode(MascotSleep.encode(_mascotSleep)),
+      );
       await prefs.setStringList(
         'ownedThemes',
         _ownedThemes.map((e) => e.toString()).toList(),
@@ -1173,7 +1219,7 @@ class UserData extends ChangeNotifier {
     }
 
     _displayName = displayName;
-    ForkOwnName.value = _displayName; // fork
+    ForkOwnName.value = _displayName;
     _email = email;
     _gender = gender;
     _customGender = customGender;
@@ -1193,13 +1239,15 @@ class UserData extends ChangeNotifier {
     // уводим обогащение в фон с таймаутами; оно обновит UI через notifyListeners.
     final uid = PocketBaseService().userId ?? '';
     if (PocketBaseService().isLoggedIn && uid.isNotEmpty) {
-      unawaited(_enrichAfterLogin(
-        uid: uid,
-        displayName: displayName,
-        gender: gender,
-        avatarUrl: avatarUrl,
-        isNewUser: isNewUser,
-      ));
+      unawaited(
+        _enrichAfterLogin(
+          uid: uid,
+          displayName: displayName,
+          gender: gender,
+          avatarUrl: avatarUrl,
+          isNewUser: isNewUser,
+        ),
+      );
     }
   }
 
@@ -1214,14 +1262,16 @@ class UserData extends ChangeNotifier {
   }) async {
     const t = Duration(seconds: 12);
     try {
-      await PbDataService().updateUserProfile(uid, {
-        'displayName': displayName,
-        'gender': genderToStorage(),
-        'avatarUrl': avatarUrl,
-        // Сброс пары для нового юзера (email/пароль — поля auth, не трогаем тут).
-        if (isNewUser) 'pairId': '',
-        if (isNewUser) 'pairIds': <String>[],
-      }).timeout(t);
+      await PbDataService()
+          .updateUserProfile(uid, {
+            'displayName': displayName,
+            'gender': genderToStorage(),
+            'avatarUrl': avatarUrl,
+            // Сброс пары для нового юзера (email/пароль — поля auth, не трогаем тут).
+            if (isNewUser) 'pairId': '',
+            if (isNewUser) 'pairIds': <String>[],
+          })
+          .timeout(t);
     } catch (e) {
       debugPrint('UserData._enrichAfterLogin updateProfile failed: $e');
     }
@@ -1257,7 +1307,7 @@ class UserData extends ChangeNotifier {
     Gender? gender,
   }) async {
     if (displayName != null) _displayName = displayName;
-    ForkOwnName.value = _displayName; // fork
+    ForkOwnName.value = _displayName;
     if (email != null) _email = email;
     if (avatarUrl != null) _avatarUrl = avatarUrl;
     if (bannerUrl != null) _bannerUrl = bannerUrl;
@@ -1280,11 +1330,17 @@ class UserData extends ChangeNotifier {
       // the update via the group real-time listener.
       if (displayName != null) {
         await PbDataService().updateMemberFieldInGroups(
-            uid, 'member_names', _displayName);
+          uid,
+          'member_names',
+          _displayName,
+        );
       }
       if (avatarUrl != null) {
         await PbDataService().updateMemberFieldInGroups(
-            uid, 'member_avatars', _avatarUrl);
+          uid,
+          'member_avatars',
+          _avatarUrl,
+        );
       }
     }
     notifyListeners();
@@ -1292,7 +1348,8 @@ class UserData extends ChangeNotifier {
 
   Future<void> setThemeId(int id) async {
     final ownCustom =
-        isCustomPaletteIndex(id) && customPaletteSlot(id) < _customThemes.length;
+        isCustomPaletteIndex(id) &&
+        customPaletteSlot(id) < _customThemes.length;
     if (!ownCustom && (id < 0 || id >= AppThemes.all.length)) return;
     _themeId = id;
     await _saveLocal();
@@ -1306,7 +1363,10 @@ class UserData extends ChangeNotifier {
   /// котором интерфейс обязан сказать заранее, а не молча проглотить выбор.
   Future<bool> addCustomThemeColor(Color seed, {String name = ''}) async {
     if (_customThemes.length >= kMaxCustomThemes) return false;
-    final next = addCustomTheme(_customThemes, CustomTheme(seed: seed, name: name));
+    final next = addCustomTheme(
+      _customThemes,
+      CustomTheme(seed: seed, name: name),
+    );
     _customThemes = next;
     _themeId = customPaletteIndex(next.length - 1);
     await _saveCustomThemes();
@@ -1316,8 +1376,11 @@ class UserData extends ChangeNotifier {
   Future<void> updateCustomThemeAt(int slot, Color seed, {String? name}) async {
     if (slot < 0 || slot >= _customThemes.length) return;
     final was = _customThemes[slot];
-    _customThemes = replaceCustomTheme(_customThemes, slot,
-        CustomTheme(seed: seed, name: name ?? was.name));
+    _customThemes = replaceCustomTheme(
+      _customThemes,
+      slot,
+      CustomTheme(seed: seed, name: name ?? was.name),
+    );
     await _saveCustomThemes();
   }
 
@@ -1334,10 +1397,9 @@ class UserData extends ChangeNotifier {
     await _saveLocal();
     final uid = PocketBaseService().userId ?? '';
     if (uid.isEmpty) return;
-    await PbDataService().updateUserProfile(
-      uid,
-      {'customThemes': _customThemes.map((t) => t.toJson()).toList()},
-    );
+    await PbDataService().updateUserProfile(uid, {
+      'customThemes': _customThemes.map((t) => t.toJson()).toList(),
+    });
   }
 
   Future<void> setBlobAnimationEnabled(bool value) async {
@@ -1349,10 +1411,13 @@ class UserData extends ChangeNotifier {
   Future<void> updateBirthDate(DateTime? date) async {
     // Только календарный день: час пришёл бы из старого значения в prefs и
     // разошёлся бы с тем, что лежит на сервере.
-    _birthDate = date == null ? null : DateTime(date.year, date.month, date.day);
+    _birthDate = date == null
+        ? null
+        : DateTime(date.year, date.month, date.day);
     await _saveLocal();
-    await PbDataService()
-        .updateUserProfile(PocketBaseService().userId ?? "", {'birthDate': _birthDate});
+    await PbDataService().updateUserProfile(PocketBaseService().userId ?? "", {
+      'birthDate': _birthDate,
+    });
     notifyListeners();
   }
 
@@ -1364,14 +1429,16 @@ class UserData extends ChangeNotifier {
   Future<void> updateGender(Gender gender, {String? customGender}) async {
     _gender = gender;
     final custom = customGender?.trim();
-    _customGender = (gender == Gender.unspecified && custom != null && custom.isNotEmpty)
+    _customGender =
+        (gender == Gender.unspecified && custom != null && custom.isNotEmpty)
         ? custom
         : null;
     await _saveLocal();
     final uid = PocketBaseService().userId ?? '';
     if (uid.isNotEmpty) {
-      await PbDataService()
-          .updateUserProfile(uid, {'gender': genderToStorage()});
+      await PbDataService().updateUserProfile(uid, {
+        'gender': genderToStorage(),
+      });
     }
     notifyListeners();
   }
@@ -1379,7 +1446,8 @@ class UserData extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await ForkPushToken.forget(); // fork: телефон больше не будит этот аккаунт
-    await ForkPairCall.instance.unbind(); // fork (UX C0): разговор и канал пары — не следующему входу
+    await ForkPairCall.instance
+        .unbind(); // fork (UX C0): разговор и канал пары — не следующему входу
     PocketBaseService().signOut();
     // Виджеты рабочего стола живут в хранилище УСТРОЙСТВА и выход бы пережили:
     // на столе осталась бы прошлая пара, а на iPhone обновить её некому
@@ -1393,9 +1461,11 @@ class UserData extends ChangeNotifier {
     // SSE-подписка с уже невалидной сессией остались бы висеть после выхода.
     await PushBackgroundService().stop();
     await WidgetBackgroundRefreshService.instance.cancel();
+    // fork: напоминания вишлиста несут названия желаний — не следующему.
+    await WishReminders.instance.reset();
     _isRegistered = false;
     _displayName = '';
-    ForkOwnName.value = ''; // fork
+    ForkOwnName.value = '';
     _email = '';
     _avatarUrl = '';
     _bannerUrl = '';

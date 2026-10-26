@@ -51,8 +51,7 @@ abstract final class YearRingSpec {
     required double inner,
     required int digits,
     required double max,
-  }) =>
-      math.min(max, inner * numberShare / (math.max(digits, 1) * digitEm));
+  }) => math.min(max, inner * numberShare / (math.max(digits, 1) * digitEm));
 
   /// Кегль строки, которой отведено [width] точек: базовый, пока строка
   /// помещается, дальше уменьшается, а не режется многоточием.
@@ -61,8 +60,7 @@ abstract final class YearRingSpec {
     required int chars,
     required double width,
     double em = letterEm,
-  }) =>
-      chars <= 0 ? base : math.min(base, width / (chars * em));
+  }) => chars <= 0 ? base : math.min(base, width / (chars * em));
 
   /// Конец дуги: сегодняшний день на кольце. Старт на двенадцати часах, по
   /// часовой. Возле этой точки на фоне стоит свечение.

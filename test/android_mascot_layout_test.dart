@@ -18,10 +18,9 @@ void main() {
 
   test('каждый id из провайдера есть во всех четырёх разметках', () {
     expect(provider.existsSync(), isTrue, reason: 'нет ${provider.path}');
-    final ids = RegExp(r'R\.id\.([a-z0-9_]+)')
-        .allMatches(provider.readAsStringSync())
-        .map((m) => m.group(1)!)
-        .toSet();
+    final ids = RegExp(
+      r'R\.id\.([a-z0-9_]+)',
+    ).allMatches(provider.readAsStringSync()).map((m) => m.group(1)!).toSet();
     expect(ids, isNotEmpty);
 
     for (final name in layouts) {
@@ -44,9 +43,14 @@ void main() {
     // Так лёг 4×4, где `stage` и `sub` были картинками (20.09.2026).
     final types = <String, Map<String, String>>{};
     for (final name in layouts) {
-      final xml = File('android/app/src/main/res/layout/$name.xml').readAsStringSync();
+      final xml = File(
+        'android/app/src/main/res/layout/$name.xml',
+      ).readAsStringSync();
       final found = <String, String>{};
-      for (final m in RegExp(r'<(\w+)[^>]*?android:id="@\+id/(\w+)"', dotAll: true).allMatches(xml)) {
+      for (final m in RegExp(
+        r'<(\w+)[^>]*?android:id="@\+id/(\w+)"',
+        dotAll: true,
+      ).allMatches(xml)) {
         found[m.group(2)!] = m.group(1)!;
       }
       types[name] = found;
@@ -60,7 +64,8 @@ void main() {
         expect(
           type,
           expected,
-          reason: 'в $name.xml «$id» это $type, а в ${layouts.first}.xml — $expected',
+          reason:
+              'в $name.xml «$id» это $type, а в ${layouts.first}.xml — $expected',
         );
       });
     }
@@ -80,8 +85,9 @@ void main() {
   });
 
   test('все четыре приёмника объявлены в манифесте', () {
-    final manifest =
-        File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
     for (final size in ['4x1', '2x2', '4x2', '4x4']) {
       expect(
         manifest.contains('.MascotWidget${size}Provider'),
@@ -98,13 +104,26 @@ void main() {
 
   test('персонаж оживает: прокрутка кадров и тап по нему', () {
     final code = provider.readAsStringSync();
-    expect(code.contains('ACTION_PLAY'), isTrue, reason: 'нет действия прокрутки');
-    expect(code.contains('WidgetAnimPlayer.playPixel'), isTrue,
-        reason: 'кадры крутит не общий проигрыватель');
-    expect(code.contains('goAsync()'), isTrue,
-        reason: 'прокрутка в главном потоке приёмника уронит виджет по ANR');
-    expect(code.contains('setOnClickPendingIntent(R.id.mascot'), isTrue,
-        reason: 'тап по зверьку не оживляет его');
+    expect(
+      code.contains('ACTION_PLAY'),
+      isTrue,
+      reason: 'нет действия прокрутки',
+    );
+    expect(
+      code.contains('WidgetAnimPlayer.playPixel'),
+      isTrue,
+      reason: 'кадры крутит не общий проигрыватель',
+    );
+    expect(
+      code.contains('goAsync()'),
+      isTrue,
+      reason: 'прокрутка в главном потоке приёмника уронит виджет по ANR',
+    );
+    expect(
+      code.contains('setOnClickPendingIntent(R.id.mascot'),
+      isTrue,
+      reason: 'тап по зверьку не оживляет его',
+    );
   });
 
   test('ночь выбирается по окну сна, а не по зашитым часам', () {

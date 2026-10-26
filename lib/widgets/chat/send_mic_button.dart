@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../dict_strings.dart' show ruEn; // fork
-import '../../fork/ui/chat_hints.dart'; // fork
-import '../memory_save/floating_note.dart'; // fork
+import '../../dict_strings.dart' show ruEn;
+import '../../fork/ui/chat_hints.dart';
+import '../memory_save/floating_note.dart';
 import 'note_shape_view.dart';
 import 'note_shapes.dart';
 
@@ -71,7 +71,7 @@ class SendMicButton extends StatefulWidget {
 
   /// Палец поднялся: [cancelled] — стереть, [locked] — оставить запись идти.
   final void Function({required bool cancelled, required bool locked})
-      onRecordEnd;
+  onRecordEnd;
 
   const SendMicButton({
     super.key,
@@ -233,10 +233,14 @@ class _SendMicButtonState extends State<SendMicButton> {
     if (widget.editing) return ruEn('Сохранить правку', 'Save edit');
     if (widget.hasText) return ruEn('Отправить', 'Send');
     return widget.noteMode
-        ? ruEn('Записать кружок: удерживайте кнопку',
-            'Record a video note: hold the button')
-        : ruEn('Записать голосовое: удерживайте кнопку',
-            'Record a voice message: hold the button');
+        ? ruEn(
+            'Записать кружок: удерживайте кнопку',
+            'Record a video note: hold the button',
+          )
+        : ruEn(
+            'Записать голосовое: удерживайте кнопку',
+            'Record a voice message: hold the button',
+          );
   }
 
   /// Что нарисовано на кнопке прямо сейчас.
@@ -255,14 +259,16 @@ class _SendMicButtonState extends State<SendMicButton> {
       cancelling
           ? Icons.delete_outline_rounded
           : locking
-              ? Icons.lock_rounded
-              : widget.editing
-                  ? Icons.check_rounded
-                  : widget.hasText
-                      ? Icons.send_rounded
-                      : Icons.mic_rounded,
-      key: ValueKey('${cancelling}_${locking}_'
-          '${widget.editing}_${widget.hasText}'),
+          ? Icons.lock_rounded
+          : widget.editing
+          ? Icons.check_rounded
+          : widget.hasText
+          ? Icons.send_rounded
+          : Icons.mic_rounded,
+      key: ValueKey(
+        '${cancelling}_${locking}_'
+        '${widget.editing}_${widget.hasText}',
+      ),
       color: fg,
       size: 21,
     );
@@ -298,60 +304,64 @@ class _SendMicButtonState extends State<SendMicButton> {
           )
         : Offset.zero;
 
-    return Semantics( // fork (UX C8)
+    return Semantics(
+      // fork (UX C8)
       button: true,
       label: _semanticLabel(),
       onTap: active ? widget.onSend : widget.onModeToggle,
-      onLongPress: widget.hasText && !widget.editing ? widget.onSendLater : null,
+      onLongPress: widget.hasText && !widget.editing
+          ? widget.onSendLater
+          : null,
       excludeSemantics: true,
       child: Transform.translate(
-      offset: follow,
-      child: AnimatedScale(
-        scale: _pressing ? 1.28 : (active ? 1 : 0.94),
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutBack,
-        // Запись начинается от касания, а не после долгого нажатия. Раньше
-        // стоял onLongPress: полсекунды кнопка молчала, и человек успевал
-        // решить, что она не работает. Listener берёт палец сразу и держит
-        // его до отпускания, поэтому короткое касание тоже пишет — просто
-        // очень недолго.
-        child: Listener(
-          onPointerDown: active
-              ? null
-              : (e) {
-                  _origin = e.position;
-                  _press();
-                },
-          onPointerMove: active ? null : (e) => _move(e.position - _origin),
-          onPointerUp: active ? null : (_) => _end(),
-          onPointerCancel: active ? null : (_) => _end(),
-          child: GestureDetector(
-            onTap: active ? widget.onSend : null,
-            onLongPress: widget.hasText && !widget.editing
-                ? widget.onSendLater
-                : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                switchInCurve: Curves.easeOutBack,
-                transitionBuilder: (child, anim) => RotationTransition(
-                  turns: Tween<double>(begin: 0.6, end: 1).animate(anim),
-                  child: ScaleTransition(
-                    scale: anim,
-                    child: FadeTransition(opacity: anim, child: child),
+        offset: follow,
+        child: AnimatedScale(
+          scale: _pressing ? 1.28 : (active ? 1 : 0.94),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutBack,
+          // Запись начинается от касания, а не после долгого нажатия. Раньше
+          // стоял onLongPress: полсекунды кнопка молчала, и человек успевал
+          // решить, что она не работает. Listener берёт палец сразу и держит
+          // его до отпускания, поэтому короткое касание тоже пишет — просто
+          // очень недолго.
+          child: Listener(
+            onPointerDown: active
+                ? null
+                : (e) {
+                    _origin = e.position;
+                    _press();
+                  },
+            onPointerMove: active ? null : (e) => _move(e.position - _origin),
+            onPointerUp: active ? null : (_) => _end(),
+            onPointerCancel: active ? null : (_) => _end(),
+            child: GestureDetector(
+              onTap: active ? widget.onSend : null,
+              onLongPress: widget.hasText && !widget.editing
+                  ? widget.onSendLater
+                  : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  switchInCurve: Curves.easeOutBack,
+                  transitionBuilder: (child, anim) => RotationTransition(
+                    turns: Tween<double>(begin: 0.6, end: 1).animate(anim),
+                    child: ScaleTransition(
+                      scale: anim,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
                   ),
+                  child: _glyph(cancelling, locking, fg),
                 ),
-                child: _glyph(cancelling, locking, fg),
               ),
             ),
           ),
         ),
       ),
-    ));
+    );
   }
 }

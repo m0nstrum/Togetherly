@@ -10,17 +10,16 @@ import 'package:love_app/services/locale_service.dart';
 const _langs = ['ru', 'en', 'pt', 'it', 'es', 'fr', 'de'];
 
 Iterable<String> _keysOf(HelpItem i) => [
-      'help.${i.id}.q',
-      'help.${i.id}.path',
-      for (final n in [1, 2, 3]) 'help.${i.id}.s$n',
-    ];
+  'help.${i.id}.q',
+  'help.${i.id}.path',
+  for (final n in [1, 2, 3]) 'help.${i.id}.s$n',
+];
 
 void main() {
-  final store = helpItems(plusInStore: true);
-  final site = helpItems(plusInStore: false);
+  final store = helpItems();
 
   test('у каждого ответа вопрос, путь и три шага на всех семи языках', () {
-    for (final item in {...store, ...site}) {
+    for (final item in store) {
       for (final key in _keysOf(item)) {
         for (final lang in _langs) {
           expect(helpStrings[key]?[lang], isNotNull, reason: '$key/$lang');
@@ -40,30 +39,14 @@ void main() {
       for (final lang in _langs) {
         for (final m in label.allMatches(entry.value[lang] ?? '')) {
           final key = m.group(1)!;
-          expect(kStrings[key]?[lang], isNotNull,
-              reason: '${entry.key}/$lang ссылается на $key');
+          expect(
+            kStrings[key]?[lang],
+            isNotNull,
+            reason: '${entry.key}/$lang ссылается на $key',
+          );
         }
       }
     }
-  });
-
-  test('в магазинных сборках ни слова о lava.top', () {
-    for (final item in store) {
-      for (final key in _keysOf(item)) {
-        for (final lang in _langs) {
-          expect(helpStrings[key]![lang]!.toLowerCase(), isNot(contains('lava')),
-              reason: '$key/$lang');
-        }
-      }
-      expect(item.action, isNot(HelpAction.plusSite));
-    }
-  });
-
-  test('в сборках с сайта Плюс ведёт на lava.top', () {
-    final plus = site.singleWhere((i) => i.topic == HelpTopic.plus);
-    expect(plus.action, HelpAction.plusSite);
-    expect(store.singleWhere((i) => i.topic == HelpTopic.plus).action,
-        HelpAction.plusSheet);
   });
 
   test('поиск прощает окончания, регистр и «ё»', () async {
@@ -88,7 +71,6 @@ void main() {
   });
 
   test('наверху два самых частых вопроса', () {
-    expect(helpPopular(store).map((i) => i.id), ['plusStore', 'startDate']);
-    expect(helpPopular(site).map((i) => i.id), ['plusSite', 'startDate']);
+    expect(helpPopular(store).map((i) => i.id), ['startDate', 'unpair']);
   });
 }

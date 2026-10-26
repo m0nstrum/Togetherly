@@ -19,13 +19,12 @@ void main() {
     String? photo,
     String avatar = '',
     String emoji = '',
-  }) =>
-      WidgetData(
-        uid: uid,
-        photoUrl: photo,
-        avatarUrl: avatar,
-        moodEmoji: emoji,
-      );
+  }) => WidgetData(
+    uid: uid,
+    photoUrl: photo,
+    avatarUrl: avatar,
+    moodEmoji: emoji,
+  );
 
   test('своих данных нет — свои картинки не трогаем', () {
     final m = pairWidgetMedia(
@@ -54,7 +53,11 @@ void main() {
       my: person('me', photo: null, emoji: 'assets/mood/happy.webp'),
       partner: person('you'),
     );
-    expect(m.myPhoto, '', reason: 'человек убрал фото — виджет обязан это показать');
+    expect(
+      m.myPhoto,
+      '',
+      reason: 'человек убрал фото — виджет обязан это показать',
+    );
     expect(m.myMoodEmoji, 'assets/mood/happy.webp');
     expect(m.partnerPhoto, '');
   });
@@ -71,8 +74,11 @@ void main() {
 
   test('фото-виджеты iPhone: без данных половины список null, а не пустой', () {
     final m = pairWidgetMedia(my: null, partner: person('you'));
-    expect(m.myIosPhotos, isNull,
-        reason: 'пустой список стирает ios_self_photo_path и каталог выбора');
+    expect(
+      m.myIosPhotos,
+      isNull,
+      reason: 'пустой список стирает ios_self_photo_path и каталог выбора',
+    );
     expect(m.partnerIosPhotos, isEmpty);
   });
 }

@@ -18,16 +18,21 @@ void main() {
 
     test('кнопки ряда прячутся и переживают сохранение', () {
       final l = const HomeLayout()
-          .withAction(HomeAction.wallet, shown: false)
+          .withAction(HomeAction.calendar, shown: false)
           .withAction(HomeAction.draw, shown: false);
-      expect(l.showsAction(HomeAction.wallet), isFalse);
+      expect(l.showsAction(HomeAction.calendar), isFalse);
       expect(l.showsAction(HomeAction.mood), isTrue);
       expect(l.isDefault, isFalse);
       final back = HomeLayout.fromJson(l.toJson());
-      expect(back.hiddenActions, {HomeAction.wallet, HomeAction.draw});
+      expect(back.hiddenActions, {HomeAction.calendar, HomeAction.draw});
       expect(l.effective(plus: false).hiddenActions, isEmpty);
-      expect(l.withAction(HomeAction.wallet, shown: true)
-          .withAction(HomeAction.draw, shown: true).isDefault, isTrue);
+      expect(
+        l
+            .withAction(HomeAction.calendar, shown: true)
+            .withAction(HomeAction.draw, shown: true)
+            .isDefault,
+        isTrue,
+      );
     });
 
     test('порядок вкладок: перестановка, панель и сохранение', () {
@@ -43,26 +48,43 @@ void main() {
       expect(back.tabOrder, l.tabOrder);
       expect(back.hiddenTabs, {HomeTab.watch});
       // Главную, «Связь» и профиль не спрятать, даже подсунув в сохранённое.
-      expect(const HomeLayout().withTab(HomeTab.home, shown: false).isDefault,
-          isTrue);
       expect(
-          HomeLayout.fromJson({'hiddenTabs': ['profile', 'widgets']})
-              .hiddenTabs,
-          {HomeTab.widgets});
+        const HomeLayout().withTab(HomeTab.home, shown: false).isDefault,
+        isTrue,
+      );
+      expect(
+        HomeLayout.fromJson({
+          'hiddenTabs': ['profile', 'widgets'],
+        }).hiddenTabs,
+        {HomeTab.widgets},
+      );
       // В сохранённом не было вкладки — она встала на своё место.
       expect(
-          HomeLayout.fromJson({'tabOrder': ['profile', 'home', 'connect']})
-              .tabOrder,
-          [HomeTab.profile, HomeTab.home, HomeTab.widgets, HomeTab.watch,
-            HomeTab.connect]);
-      expect(const HomeLayout().tabMoved(1, 4).tabOrder,
-          [HomeTab.home, HomeTab.watch, HomeTab.connect, HomeTab.widgets,
-            HomeTab.profile]);
+        HomeLayout.fromJson({
+          'tabOrder': ['profile', 'home', 'connect'],
+        }).tabOrder,
+        [
+          HomeTab.profile,
+          HomeTab.home,
+          HomeTab.widgets,
+          HomeTab.watch,
+          HomeTab.connect,
+        ],
+      );
+      expect(const HomeLayout().tabMoved(1, 4).tabOrder, [
+        HomeTab.home,
+        HomeTab.watch,
+        HomeTab.connect,
+        HomeTab.widgets,
+        HomeTab.profile,
+      ]);
     });
 
     test('сохранённое без порядка не падает', () {
       // Старая запись или чужое поле: порядка нет, блоки встают как обычно.
-      final l = HomeLayout.fromJson({'hiddenTabs': ['watch']});
+      final l = HomeLayout.fromJson({
+        'hiddenTabs': ['watch'],
+      });
       expect(l.order, HomeLayout.defaultOrder);
       expect(l.hiddenTabs, {HomeTab.watch});
       expect(l.hiddenActions, isEmpty);
@@ -73,7 +95,10 @@ void main() {
       // желания выключены с сервера).
       final l = const HomeLayout().withBlock(HomeBlock.map, shown: false);
       final shown = [
-        HomeBlock.chest, HomeBlock.mascot, HomeBlock.tasks, HomeBlock.lane,
+        HomeBlock.chest,
+        HomeBlock.mascot,
+        HomeBlock.tasks,
+        HomeBlock.lane,
       ];
       // Ленту наверх.
       final up = l.dragged(shown, 3, 0);
@@ -85,8 +110,12 @@ void main() {
       // Маскоты за задания: карта осталась между сундуком и заданиями.
       final mid = l.dragged(shown, 1, 3);
       expect(mid.order, [
-        HomeBlock.chest, HomeBlock.map, HomeBlock.tasks, HomeBlock.wishes,
-        HomeBlock.mascot, HomeBlock.lane,
+        HomeBlock.chest,
+        HomeBlock.map,
+        HomeBlock.tasks,
+        HomeBlock.wishes,
+        HomeBlock.mascot,
+        HomeBlock.lane,
       ]);
       // Отпустили на месте — ничего не изменилось.
       expect(l.dragged(shown, 2, 2).order, l.order);
@@ -119,11 +148,15 @@ void main() {
       // Все блоки на месте ровно по разу, известный порядок сохранён.
       expect(l.order.toSet(), HomeBlock.values.toSet());
       expect(l.order.length, HomeBlock.values.length);
-      expect(l.order.indexOf(HomeBlock.lane) < l.order.indexOf(HomeBlock.chest),
-          isTrue);
+      expect(
+        l.order.indexOf(HomeBlock.lane) < l.order.indexOf(HomeBlock.chest),
+        isTrue,
+      );
       // Пропавший mascot встал сразу за chest, как в порядке по умолчанию.
-      expect(l.order.indexOf(HomeBlock.mascot),
-          l.order.indexOf(HomeBlock.chest) + 1);
+      expect(
+        l.order.indexOf(HomeBlock.mascot),
+        l.order.indexOf(HomeBlock.chest) + 1,
+      );
       expect(l.hiddenBlocks, {HomeBlock.map});
       expect(l.hiddenTabs, isEmpty);
       expect(HomeLayout.fromJson('битое').isDefault, isTrue);
@@ -133,8 +166,10 @@ void main() {
   group('рамка в подарке', () {
     test('ключ рамки из gift_key', () {
       expect(FrameGiftService.frameKeyOf('frame_wreath'), 'wreath');
-      expect(FrameGiftService.frameKeyOf(FrameGiftService.giftKeyOf('cat')),
-          'cat');
+      expect(
+        FrameGiftService.frameKeyOf(FrameGiftService.giftKeyOf('cat')),
+        'cat',
+      );
       expect(FrameGiftService.frameKeyOf('frame_'), isNull);
       expect(FrameGiftService.frameKeyOf('heart'), isNull);
     });
@@ -149,12 +184,20 @@ void main() {
       expect(r.ok, isTrue);
       expect(r.coins, 15);
       expect(r.ownedFeatures, ['frame:frame_cat']);
-      final no = FrameGiftResult.fromJson({'ok': false, 'error': 'partner_has'});
+      final no = FrameGiftResult.fromJson({
+        'ok': false,
+        'error': 'partner_has',
+      });
       expect(no.ok, isFalse);
       expect(no.error, 'partner_has');
       expect(FrameGiftQuote.fromJson({'ok': false}), isNull);
-      final q = FrameGiftQuote.fromJson(
-          {'ok': true, 'price': 40, 'partnerHas': true, 'adLeft': 2, 'coins': 9})!;
+      final q = FrameGiftQuote.fromJson({
+        'ok': true,
+        'price': 40,
+        'partnerHas': true,
+        'adLeft': 2,
+        'coins': 9,
+      })!;
       expect(q.price, 40);
       expect(q.partnerHas, isTrue);
       expect(q.adLeft, 2);

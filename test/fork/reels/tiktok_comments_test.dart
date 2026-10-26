@@ -27,7 +27,7 @@ void main() {
           'nickname': 'Зритель',
           'unique_id': 'viewer',
           'avatar_thumb': {
-            'url_list': ['https://p19.tiktokcdn.com/a.jpg']
+            'url_list': ['https://p19.tiktokcdn.com/a.jpg'],
           },
           'uid': '123',
           'sec_uid': 'secret',
@@ -41,7 +41,7 @@ void main() {
         'user': {
           'unique_id': 'only_id',
           'avatar_thumb': {
-            'url_list': ['http://insecure/a.jpg']
+            'url_list': ['http://insecure/a.jpg'],
           },
         },
       },
@@ -69,25 +69,40 @@ void main() {
     expect(items.last['name'], 'only_id');
     expect(items.last['avatar'], '', reason: 'только https');
     expect(items.last['photo'], isTrue);
-    expect(jsonEncode(r), isNot(contains('secret')), reason: 'лишнее о людях не уходит');
+    expect(
+      jsonEncode(r),
+      isNot(contains('secret')),
+      reason: 'лишнее о людях не уходит',
+    );
   });
 
   test('закрыто по стране, ошибка площадки, мусор', () {
-    expect(ForkTikTokComments.parse('{"statusMsg":"ru_cross_border_block"}')['why'], 'blocked');
+    expect(
+      ForkTikTokComments.parse('{"statusMsg":"ru_cross_border_block"}')['why'],
+      'blocked',
+    );
     expect(ForkTikTokComments.parse('{"status_code":10204}')['why'], 'blocked');
     expect(ForkTikTokComments.parse('{"status_code":5}')['why'], 'failed');
     expect(ForkTikTokComments.parse('<html>')['why'], 'failed');
-    expect(ForkTikTokComments.parse('{"status_code":0}'), {'ok': true, 'total': 0, 'cursor': 0, 'more': false, 'items': []});
+    expect(ForkTikTokComments.parse('{"status_code":0}'), {
+      'ok': true,
+      'total': 0,
+      'cursor': 0,
+      'more': false,
+      'items': [],
+    });
   });
 
   test('запросы: номера проверяются, пустой ответ повторяется', () async {
     final asked = <String>[];
     var empty = 1;
-    final c = ForkTikTokComments(fetch: (path) async {
-      asked.add(path);
-      if (empty-- > 0) return '';
-      return sample;
-    });
+    final c = ForkTikTokComments(
+      fetch: (path) async {
+        asked.add(path);
+        if (empty-- > 0) return '';
+        return sample;
+      },
+    );
     expect((await c.page(id: '../evil'))['ok'], isFalse);
     expect((await c.page(id: '7697839909842767111', cid: 'x'))['ok'], isFalse);
     expect(asked, isEmpty, reason: 'чужое в адрес не попадает');
@@ -95,10 +110,15 @@ void main() {
     final r = await c.page(id: '7697839909842767111', cursor: 20);
     expect(r['ok'], isTrue);
     expect(asked, hasLength(2), reason: 'пустое тело — ещё одна попытка');
-    expect(asked.last, '/api/comment/list/?aid=1988&aweme_id=7697839909842767111&count=20&cursor=20');
+    expect(
+      asked.last,
+      '/api/comment/list/?aid=1988&aweme_id=7697839909842767111&count=20&cursor=20',
+    );
 
     await c.page(id: '7697839909842767111', cid: '7697856144556000008');
-    expect(asked.last,
-        '/api/comment/list/reply/?aid=1988&item_id=7697839909842767111&comment_id=7697856144556000008&count=10&cursor=0');
+    expect(
+      asked.last,
+      '/api/comment/list/reply/?aid=1988&item_id=7697839909842767111&comment_id=7697856144556000008&count=10&cursor=0',
+    );
   });
 }

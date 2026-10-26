@@ -199,7 +199,6 @@ class AppTheme {
 // Чтобы добавить новую — создай AppTheme ниже и добавь в [all].
 // ─────────────────────────────────────────────────────────────────────────────
 abstract final class AppThemes {
-
   // ── 0: Розовая ────────────────────────────────────────────────────────────
   static const pink = AppTheme(
     index: 0,
@@ -606,7 +605,10 @@ abstract final class AppThemes {
     primary: Color(0xFF7C5CFF), // электрик-фиолетовый
     primaryLight: Color(0xFFECE7FF),
     bgGradient: [Color(0xFFF0ECFF), Color(0xFFF5FBFF)], // ночь → рассвет
-    heroGradient: [Color(0xFF6A4DE0), Color(0xFF2BE0A0)], // фиолет → неон-зелёное сияние
+    heroGradient: [
+      Color(0xFF6A4DE0),
+      Color(0xFF2BE0A0),
+    ], // фиолет → неон-зелёное сияние
     heroGlassOpacity: 0.22,
     heroToggleBorder: true,
     heroToggleSelectedColor: Color(0xFF5B3FD6),
@@ -631,7 +633,10 @@ abstract final class AppThemes {
     primary: Color(0xFF893439), // шелковистый бордо
     primaryLight: Color(0xFFF7E7E8),
     bgGradient: [Color(0xFFFBF0F1), Color(0xFFFFF9FA)],
-    heroGradient: [Color(0xFFA8484F), Color(0xFF6E262B)], // шёлк → глубокий бордо
+    heroGradient: [
+      Color(0xFFA8484F),
+      Color(0xFF6E262B),
+    ], // шёлк → глубокий бордо
     heroGlassOpacity: 0.22,
     heroToggleBorder: true,
     heroToggleSelectedColor: Color(0xFF6E262B),
@@ -656,7 +661,10 @@ abstract final class AppThemes {
     primary: Color(0xFF0EA5A5), // равновесная cyan-бирюза
     primaryLight: Color(0xFFDCF5F4),
     bgGradient: [Color(0xFFE6F6F5), Color(0xFFF2FBFA)],
-    heroGradient: [Color(0xFF46D6D0), Color(0xFF0B7E7E)], // яркий cyan → глубокий teal
+    heroGradient: [
+      Color(0xFF46D6D0),
+      Color(0xFF0B7E7E),
+    ], // яркий cyan → глубокий teal
     heroGlassOpacity: 0.20,
     heroToggleBorder: true,
     heroToggleSelectedColor: Color(0xFF0A6E6E),
@@ -718,23 +726,36 @@ abstract final class AppThemes {
     // кнопка «Я скучаю». Средней светлоты (≈как роза), чтобы белый текст поверх
     // читался, и контрастный как иконка на тёмном (≈6.5 на карточке).
     primary: Color(0xFF5FB3A9),
-    primaryLight: Color(0xFF1B2221), // нейтральный тёмный «light»-фон чипов/контейнеров
-    bgGradient: [Color(0xFF141718), Color(0xFF0C0E0F)], // нейтральный почти-чёрный уголь
+    primaryLight: Color(
+      0xFF1B2221,
+    ), // нейтральный тёмный «light»-фон чипов/контейнеров
+    bgGradient: [
+      Color(0xFF141718),
+      Color(0xFF0C0E0F),
+    ], // нейтральный почти-чёрный уголь
     // Приподнятый нейтральный графит, матовый — объём даёт слой+ребро, без свечения.
     heroGradient: [Color(0xFF252B2D), Color(0xFF161A1B)],
     heroGlassOpacity: 0.10,
     heroToggleBorder: true,
     heroToggleSelectedColor: Color(0xFF5FB3A9),
-    cardSurface: Color(0xFF1F2426), // поверхность карточки, ΔL*≈8 над фоном — видно
+    cardSurface: Color(
+      0xFF1F2426,
+    ), // поверхность карточки, ΔL*≈8 над фоном — видно
     cardBorder: Color(0xFF343A3C), // чёткое нейтральное ребро вместо ореола
     iconDraw: Color(0xFF5FB3A9),
     iconMood: Color(0xFF5FB3A9),
     iconCalendar: Color(0xFF5FB3A9),
     iconPost: Color(0xFF5FB3A9),
     navActiveBg: Color(0xFF28302F),
-    navActiveIcon: Color(0xFF7FC7BC), // тил чуть светлее для активного состояния
-    promptButtonColor: Color(0xFF5FB3A9), // «Я скучаю» — тил, белый текст поверх
-    timerDialBackground: Color(0xFF28302F), // дорожка таймера / фон ячейки «сегодня»
+    navActiveIcon: Color(
+      0xFF7FC7BC,
+    ), // тил чуть светлее для активного состояния
+    promptButtonColor: Color(
+      0xFF5FB3A9,
+    ), // «Я скучаю» — тил, белый текст поверх
+    timerDialBackground: Color(
+      0xFF28302F,
+    ), // дорожка таймера / фон ячейки «сегодня»
     isPremium: true,
     price: 30,
     // ── тёмные токены (кремово-нейтральный текст, muted до нормы AA) ──────────
@@ -763,23 +784,33 @@ abstract final class AppThemes {
     // Акцент — карамельный латте: активная навигация, «сегодня», заливки, иконки,
     // кнопка «Я скучаю». Средней светлоты (белый текст поверх читается).
     primary: Color(0xFFC79A6B),
-    primaryLight: Color(0xFF2A1F18), // тёплый тёмный «light»-фон чипов/контейнеров
+    primaryLight: Color(
+      0xFF2A1F18,
+    ), // тёплый тёмный «light»-фон чипов/контейнеров
     bgGradient: [Color(0xFF1E1512), Color(0xFF110B09)], // глубокий эспрессо
     // Приподнятый мокко, матовый — объём даёт слой+ребро, без свечения.
     heroGradient: [Color(0xFF33251E), Color(0xFF1F1611)],
     heroGlassOpacity: 0.10,
     heroToggleBorder: true,
     heroToggleSelectedColor: Color(0xFFC79A6B),
-    cardSurface: Color(0xFF2A1E19), // поверхность карточки (мокко), ΔL*≈8 над фоном
+    cardSurface: Color(
+      0xFF2A1E19,
+    ), // поверхность карточки (мокко), ΔL*≈8 над фоном
     cardBorder: Color(0xFF40312A), // чёткое тёплое ребро вместо ореола
     iconDraw: Color(0xFFC79A6B),
     iconMood: Color(0xFFC79A6B),
     iconCalendar: Color(0xFFC79A6B),
     iconPost: Color(0xFFC79A6B),
     navActiveBg: Color(0xFF362822),
-    navActiveIcon: Color(0xFFD9B489), // латте чуть светлее для активного состояния
-    promptButtonColor: Color(0xFFC79A6B), // «Я скучаю» — латте, белый текст поверх
-    timerDialBackground: Color(0xFF362822), // дорожка таймера / фон ячейки «сегодня»
+    navActiveIcon: Color(
+      0xFFD9B489,
+    ), // латте чуть светлее для активного состояния
+    promptButtonColor: Color(
+      0xFFC79A6B,
+    ), // «Я скучаю» — латте, белый текст поверх
+    timerDialBackground: Color(
+      0xFF362822,
+    ), // дорожка таймера / фон ячейки «сегодня»
     isPremium: true,
     price: 30,
     // ── тёмные токены (кремово-молочный текст, тёплый подтон, muted до нормы AA) ─
@@ -804,7 +835,10 @@ abstract final class AppThemes {
     name: 'Тёмный лес',
     primary: Color(0xFF6EAE84),
     primaryLight: Color(0xFF18201B),
-    bgGradient: [Color(0xFF0F1611), Color(0xFF080C09)], // глубокий хвойный уголь
+    bgGradient: [
+      Color(0xFF0F1611),
+      Color(0xFF080C09),
+    ], // глубокий хвойный уголь
     heroGradient: [Color(0xFF232C27), Color(0xFF141A16)],
     heroGlassOpacity: 0.10,
     heroToggleBorder: true,

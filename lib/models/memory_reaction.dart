@@ -23,7 +23,11 @@ const List<MemoryReaction> kMemoryReactions = [
   MemoryReaction('mood', Icons.mood_rounded, 'reactionMood'),
   MemoryReaction('wow', Icons.sentiment_very_satisfied_rounded, 'reactionWow'),
   MemoryReaction('fire', Icons.local_fire_department_rounded, 'reactionFire'),
-  MemoryReaction('cry', Icons.sentiment_very_dissatisfied_rounded, 'reactionCry'),
+  MemoryReaction(
+    'cry',
+    Icons.sentiment_very_dissatisfied_rounded,
+    'reactionCry',
+  ),
   MemoryReaction('star', Icons.auto_awesome_rounded, 'reactionStar'),
 ];
 

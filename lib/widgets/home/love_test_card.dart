@@ -23,8 +23,7 @@ class LoveTestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final who =
-        partnerName.isEmpty ? trKey('love_partner') : partnerName;
+    final who = partnerName.isEmpty ? trKey('love_partner') : partnerName;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 14, 20),

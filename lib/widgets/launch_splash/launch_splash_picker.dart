@@ -152,7 +152,9 @@ class _LaunchSplashPickerState extends State<LaunchSplashPicker> {
                   selected: selected == splash.key,
                   busy: _downloading == splash.key,
                   title: splash.nameFor(lang),
-                  sub: trKey('splashSeconds').replaceAll('{s}', _seconds(splash.ms, lang)),
+                  sub: trKey(
+                    'splashSeconds',
+                  ).replaceAll('{s}', _seconds(splash.ms, lang)),
                   art: _art(cs, splash),
                   onTap: () => _pick(splash),
                 ),
@@ -185,14 +187,23 @@ class _LaunchSplashPickerState extends State<LaunchSplashPicker> {
         fit: StackFit.expand,
         children: [
           CustomPaint(painter: _NonePainter(cs.surface, cs.primary)),
-          LaunchSplashView(key: ValueKey(playing), splash: playing, images: images, onDone: _stop),
+          LaunchSplashView(
+            key: ValueKey(playing),
+            splash: playing,
+            images: images,
+            onDone: _stop,
+          ),
         ],
       );
     }
     final still = splash.stillUrl;
     final night = ColoredBox(color: splash.night);
     if (still == null) return night;
-    return Image.network(still, fit: BoxFit.cover, errorBuilder: (_, _, _) => night);
+    return Image.network(
+      still,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => night,
+    );
   }
 
   Widget _tile(
@@ -227,7 +238,8 @@ class _LaunchSplashPickerState extends State<LaunchSplashPicker> {
                     fit: StackFit.expand,
                     children: [
                       art,
-                      if (busy) Center(child: M3Loading(size: 32, color: cs.primary)),
+                      if (busy)
+                        Center(child: M3Loading(size: 32, color: cs.primary)),
                       // Обводка рисуется поверх кадра: у выбранного толще и цвета темы.
                       IgnorePointer(
                         child: DecoratedBox(
@@ -247,8 +259,15 @@ class _LaunchSplashPickerState extends State<LaunchSplashPicker> {
                           child: Container(
                             width: 22,
                             height: 22,
-                            decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
-                            child: Icon(Icons.check_rounded, size: 16, color: cs.onPrimary),
+                            decoration: BoxDecoration(
+                              color: cs.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.check_rounded,
+                              size: 16,
+                              color: cs.onPrimary,
+                            ),
                           ),
                         ),
                     ],
@@ -317,5 +336,6 @@ class _NonePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_NonePainter old) => old.background != background || old.blob != blob;
+  bool shouldRepaint(_NonePainter old) =>
+      old.background != background || old.blob != blob;
 }

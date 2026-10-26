@@ -22,7 +22,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final source = File('lib/services/home_widget_service.dart').readAsStringSync();
+  final source = File(
+    'lib/services/home_widget_service.dart',
+  ).readAsStringSync();
 
   String bodyOf(String name) {
     final start = source.indexOf('Future<void> $name(');
@@ -35,13 +37,19 @@ void main() {
   final body = bodyOf('refreshLoveWidgetFromServer');
 
   test('фон собирает тексты общим сборщиком, а не своим списком', () {
-    expect(body.contains('pairWidgetPayload('), isTrue,
-        reason: 'иначе список ключей разъедется с передним планом');
+    expect(
+      body.contains('pairWidgetPayload('),
+      isTrue,
+      reason: 'иначе список ключей разъедется с передним планом',
+    );
   });
 
   test('фон обновляет картинки половин', () {
-    expect(body.contains('pairWidgetMedia('), isTrue,
-        reason: 'фото, аватарки и значки настроения в фоне не обновлялись');
+    expect(
+      body.contains('pairWidgetMedia('),
+      isTrue,
+      reason: 'фото, аватарки и значки настроения в фоне не обновлялись',
+    );
   });
 
   test('фон кладёт в контейнер файлы, а не только ссылки', () {
@@ -53,8 +61,11 @@ void main() {
       'my_mood_emoji_path',
       'partner_mood_emoji_path',
     ]) {
-      expect(body.contains(key), isTrue,
-          reason: 'ключ $key не наполняется в фоне — виджет рисует пустоту');
+      expect(
+        body.contains(key),
+        isTrue,
+        reason: 'ключ $key не наполняется в фоне — виджет рисует пустоту',
+      );
     }
   });
 
@@ -67,19 +78,28 @@ void main() {
     final firstImage = body.indexOf('_savePairImage(');
     expect(firstUpdate, greaterThan(0));
     expect(firstImage, greaterThan(0));
-    expect(firstUpdate, lessThan(firstImage),
-        reason: 'иначе оборванное пробуждение не обновит и текст');
+    expect(
+      firstUpdate,
+      lessThan(firstImage),
+      reason: 'иначе оборванное пробуждение не обновит и текст',
+    );
   });
 
   test('картинки в фоне ограничены по времени', () {
-    expect(body.contains('timeout('), isTrue,
-        reason: 'без предела iOS гасит движок посреди закачки');
+    expect(
+      body.contains('timeout('),
+      isTrue,
+      reason: 'без предела iOS гасит движок посреди закачки',
+    );
   });
 
   test('своего списка текстовых ключей в фоне больше нет', () {
     for (final key in const ['my_status', 'partner_status', 'my_music_title']) {
-      expect(body.contains("'$key'"), isFalse,
-          reason: 'ключ $key снова пишется вручную мимо общего сборщика');
+      expect(
+        body.contains("'$key'"),
+        isFalse,
+        reason: 'ключ $key снова пишется вручную мимо общего сборщика',
+      );
     }
   });
 
@@ -88,8 +108,13 @@ void main() {
   // кэша первой и сносил её файл уборкой старых снимков: пары воевали за один
   // и тот же файл, и виджет первой оставался с путём в пустоту.
   test('у каждой пары своя запись кэша и свой файл', () {
-    final saver = source.substring(source.indexOf('Future<void> _savePairImage'));
-    expect(saver.contains('pairImagePath(pairWidgetKey(groupId, key)'), isTrue,
-        reason: 'иначе вторая пара сносит файл первой');
+    final saver = source.substring(
+      source.indexOf('Future<void> _savePairImage'),
+    );
+    expect(
+      saver.contains('pairImagePath(pairWidgetKey(groupId, key)'),
+      isTrue,
+      reason: 'иначе вторая пара сносит файл первой',
+    );
   });
 }

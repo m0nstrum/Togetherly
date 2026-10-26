@@ -129,8 +129,9 @@ class ProfileHero extends StatelessWidget {
         ConstrainedBox(
           // Тело не короче свисающего аватара: иначе его низ снова окажется
           // за границей и перестанет нажиматься.
-          constraints:
-              const BoxConstraints(minHeight: _bannerHeight + _overhang + 2),
+          constraints: const BoxConstraints(
+            minHeight: _bannerHeight + _overhang + 2,
+          ),
           child: _body(),
         ),
         Positioned(
@@ -255,7 +256,8 @@ class ProfileHero extends StatelessWidget {
             if (onHelp != null)
               Positioned(
                 top: 4,
-                right: (onPickBanner != null ? 48 : 4) +
+                right:
+                    (onPickBanner != null ? 48 : 4) +
                     (onSettings != null ? 44 : 0),
                 child: _bannerButton(
                   icon: Icons.help_rounded,

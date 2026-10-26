@@ -24,10 +24,14 @@ ChatMsg _note(String id, {String uid = 'her', int ts = 1000, int seenAt = 0}) =>
     );
 
 Future<void> _pump(WidgetTester t, Widget child) async {
-  await t.pumpWidget(MaterialApp(
-    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink)),
-    home: Scaffold(body: Center(child: child)),
-  ));
+  await t.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
+      ),
+      home: Scaffold(body: Center(child: child)),
+    ),
+  );
   await t.pump(const Duration(milliseconds: 50));
 }
 
@@ -40,36 +44,56 @@ void main() {
   group('подпись отправки своего кружка', () {
     test('провал главнее всего, живая работа главнее очереди', () {
       const c = NoteSendState(NoteSendPhase.compressing, .4);
-      expect(noteSendView(mine: true, pending: true, poisoned: true, active: c),
-          NoteSendView.failed);
-      expect(noteSendView(mine: true, pending: true, poisoned: false, active: c),
-          NoteSendView.compressing);
       expect(
-          noteSendView(
-              mine: true,
-              pending: true,
-              poisoned: false,
-              active: const NoteSendState(NoteSendPhase.uploading)),
-          NoteSendView.uploading);
-      expect(noteSendView(mine: true, pending: true, poisoned: false, active: null),
-          NoteSendView.waiting);
-      expect(noteSendView(mine: true, pending: false, poisoned: false, active: null),
-          NoteSendView.none);
-      expect(noteSendView(mine: false, pending: true, poisoned: true, active: c),
-          NoteSendView.none);
+        noteSendView(mine: true, pending: true, poisoned: true, active: c),
+        NoteSendView.failed,
+      );
+      expect(
+        noteSendView(mine: true, pending: true, poisoned: false, active: c),
+        NoteSendView.compressing,
+      );
+      expect(
+        noteSendView(
+          mine: true,
+          pending: true,
+          poisoned: false,
+          active: const NoteSendState(NoteSendPhase.uploading),
+        ),
+        NoteSendView.uploading,
+      );
+      expect(
+        noteSendView(mine: true, pending: true, poisoned: false, active: null),
+        NoteSendView.waiting,
+      );
+      expect(
+        noteSendView(mine: true, pending: false, poisoned: false, active: null),
+        NoteSendView.none,
+      );
+      expect(
+        noteSendView(mine: false, pending: true, poisoned: true, active: c),
+        NoteSendView.none,
+      );
     });
 
     test('кружку и голосовому очередь даёт время на сжатие и загрузку', () {
       // Общие 20 секунд обрывали почти каждый кружок: кодек жмёт дольше.
-      expect(outboxOpTimeout('chatNote'), greaterThanOrEqualTo(const Duration(minutes: 5)));
-      expect(outboxOpTimeout('chatVoice'), greaterThan(const Duration(seconds: 20)));
+      expect(
+        outboxOpTimeout('chatNote'),
+        greaterThanOrEqualTo(const Duration(minutes: 5)),
+      );
+      expect(
+        outboxOpTimeout('chatVoice'),
+        greaterThan(const Duration(seconds: 20)),
+      );
       expect(outboxOpTimeout('chatUpsert'), const Duration(seconds: 20));
     });
 
     testWidgets('пока жмётся — проценты вместо галочек', (t) async {
       addTearDown(() => NoteSendStatus.instance.clear('mine1'));
-      NoteSendStatus.instance
-          .set('mine1', const NoteSendState(NoteSendPhase.compressing, .4));
+      NoteSendStatus.instance.set(
+        'mine1',
+        const NoteSendState(NoteSendPhase.compressing, .4),
+      );
       await _pump(
         t,
         NoteBubble(
@@ -83,7 +107,10 @@ void main() {
       );
       expect(find.text('Сжимаю · 40%'), findsOneWidget);
       expect(find.byIcon(Icons.done_rounded), findsNothing);
-      NoteSendStatus.instance.set('mine1', const NoteSendState(NoteSendPhase.uploading));
+      NoteSendStatus.instance.set(
+        'mine1',
+        const NoteSendState(NoteSendPhase.uploading),
+      );
       await t.pump();
       expect(find.text('Отправляю…'), findsOneWidget);
       NoteSendStatus.instance.clear('mine1');
@@ -92,8 +119,9 @@ void main() {
     });
   });
 
-  testWidgets('«развернуть» и подсказка звука — только у включённого кружка',
-      (t) async {
+  testWidgets('«развернуть» и подсказка звука — только у включённого кружка', (
+    t,
+  ) async {
     final player = FakeNotePlayer();
     await _pump(
       t,
@@ -138,9 +166,14 @@ void main() {
     test('свои и уже просмотренные пропускаем, в прошлое не уходим', () {
       expect(nextUnseenNote(msgs, finishedId: 'd', myUid: 'me'), isNull);
       expect(
-          nextUnseenNote(msgs,
-              finishedId: 'a', myUid: 'me', seenLocally: {'b'})?.id,
-          'd');
+        nextUnseenNote(
+          msgs,
+          finishedId: 'a',
+          myUid: 'me',
+          seenLocally: {'b'},
+        )?.id,
+        'd',
+      );
       expect(nextUnseenNote(msgs, finishedId: 'нет', myUid: 'me'), isNull);
     });
   });

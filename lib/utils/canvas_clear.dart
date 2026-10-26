@@ -13,5 +13,4 @@ bool clearWipesCanvas({
   required bool metaSeen,
   required int? seen,
   required int? incoming,
-}) =>
-    metaSeen && incoming != null && incoming != seen;
+}) => metaSeen && incoming != null && incoming != seen;

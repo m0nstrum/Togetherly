@@ -28,14 +28,14 @@ Future<void> _loadFont(String family, List<String> paths) async {
 }
 
 Memory _m(String id, int day, {bool adult = false}) => Memory(
-      id: id,
-      groupId: 'g',
-      authorUid: 'u',
-      authorName: 'Аня',
-      type: MemoryType.photo,
-      createdAt: DateTime(2026, 5, day),
-      isAdult: adult,
-    );
+  id: id,
+  groupId: 'g',
+  authorUid: 'u',
+  authorName: 'Аня',
+  type: MemoryType.photo,
+  createdAt: DateTime(2026, 5, day),
+  isAdult: adult,
+);
 
 void main() {
   setUpAll(() async {
@@ -54,29 +54,31 @@ void main() {
   testWidgets('переключатель 18+ в книге пары', (tester) async {
     final key = GlobalKey();
     await tester.binding.setSurfaceSize(const Size(360, 560));
-    await tester.pumpWidget(RepaintBoundary(
-      key: key,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: PairBookScreen(
-          memories: [_m('a', 1), _m('b', 2), _m('hot', 3, adult: true)],
-          theme: AppThemes.pink,
-          coupleTitle: 'Аня и Петя',
-          secretUnlocked: true,
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: PairBookScreen(
+            memories: [_m('a', 1), _m('b', 2), _m('hot', 3, adult: true)],
+            theme: AppThemes.pink,
+            coupleTitle: 'Аня и Петя',
+            secretUnlocked: true,
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
     Future<void> shot(String name) => tester.runAsync(() async {
-          final b =
-              key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-          final img = await b.toImage(pixelRatio: 2);
-          final data = await img.toByteData(format: ui.ImageByteFormat.png);
-          File('build/pair-book-adult/$name.png')
-            ..createSync(recursive: true)
-            ..writeAsBytesSync(data!.buffer.asUint8List());
-        });
+      final b =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final img = await b.toImage(pixelRatio: 2);
+      final data = await img.toByteData(format: ui.ImageByteFormat.png);
+      File('build/pair-book-adult/$name.png')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(data!.buffer.asUint8List());
+    });
 
     await shot('off');
     await tester.tap(find.byType(Switch));

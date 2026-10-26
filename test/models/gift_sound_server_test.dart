@@ -11,13 +11,12 @@ void main() {
       for (final gift in [...GiftCatalog.all, ...GiftCatalog.chest])
         if (gift.carriesSound) gift.key,
     };
-    final hook = File('pocketbase/pb_hooks/gifts.pb.js').readAsStringSync();
+    final hook = File('server/pb_hooks/gifts.pb.js').readAsStringSync();
     final table = RegExp(r'const SOUND_GIFTS = \{([^}]*)\}').firstMatch(hook);
     expect(table, isNotNull, reason: 'в gifts.pb.js нет таблицы SOUND_GIFTS');
-    final server = RegExp(r'(\w+)\s*:\s*true')
-        .allMatches(table!.group(1)!)
-        .map((m) => m.group(1))
-        .toSet();
+    final server = RegExp(
+      r'(\w+)\s*:\s*true',
+    ).allMatches(table!.group(1)!).map((m) => m.group(1)).toSet();
     expect(server, local);
   });
 }

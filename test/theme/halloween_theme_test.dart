@@ -53,12 +53,17 @@ void main() {
       expect(t.bgPattern, isNotNull, reason: f.name);
       expect(t.scheme!.surface, page, reason: f.name);
       final ink = AppThemes.onColor(t.fillColor, mode: t.brightness);
-      expect(contrastRatio(ink, t.fillColor), greaterThanOrEqualTo(4.5),
-          reason: f.name);
+      expect(
+        contrastRatio(ink, t.fillColor),
+        greaterThanOrEqualTo(4.5),
+        reason: f.name,
+      );
       // Значок, а не надпись: норма WCAG 1.4.11 для значков — 3:1.
-      expect(contrastRatio(t.navActiveIcon, t.navActiveBg),
-          greaterThanOrEqualTo(3.0),
-          reason: '${f.name}: значок активной вкладки');
+      expect(
+        contrastRatio(t.navActiveIcon, t.navActiveBg),
+        greaterThanOrEqualTo(3.0),
+        reason: '${f.name}: значок активной вкладки',
+      );
     }
   });
 
@@ -83,8 +88,11 @@ void main() {
       'surfaceVariant': (s.onSurfaceVariant, s.surfaceContainerHighest),
     };
     for (final e in pairs.entries) {
-      expect(contrastRatio(e.value.$1, e.value.$2), greaterThanOrEqualTo(4.5),
-          reason: e.key);
+      expect(
+        contrastRatio(e.value.$1, e.value.$2),
+        greaterThanOrEqualTo(4.5),
+        reason: e.key,
+      );
     }
   });
 
@@ -104,8 +112,11 @@ void main() {
   test('узор виден на ночи, а текст поверх него читается', () {
     final t = buildAppTheme(hw, Brightness.dark);
     final line = Color.alphaBlend(t.bgPattern!.tint, page);
-    expect(contrastRatio(line, page), greaterThan(1.3),
-        reason: 'контуры пропадают на фоне');
+    expect(
+      contrastRatio(line, page),
+      greaterThan(1.3),
+      reason: 'контуры пропадают на фоне',
+    );
     expect(contrastRatio(t.textPrimary, line), greaterThanOrEqualTo(7));
     expect(contrastRatio(t.textSecondary, line), greaterThanOrEqualTo(4.5));
   });

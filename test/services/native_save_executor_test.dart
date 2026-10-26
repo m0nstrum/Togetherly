@@ -14,12 +14,12 @@ import 'package:love_app/services/native_save_executor.dart';
 const _channel = MethodChannel('test/gallery');
 
 SaveItem _item(String ref, {int i = 0}) => SaveItem(
-      memoryId: 'm1',
-      takenAt: DateTime(2026, 9, 5, 13, 5, 7),
-      latitude: 46.9,
-      longitude: 29.1,
-      file: MediaFile(ref: ref, kind: SaveKind.photo, index: i),
-    );
+  memoryId: 'm1',
+  takenAt: DateTime(2026, 9, 5, 13, 5, 7),
+  latitude: 46.9,
+  longitude: 29.1,
+  file: MediaFile(ref: ref, kind: SaveKind.photo, index: i),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -30,12 +30,15 @@ void main() {
   late List<Map<String, Object?>> results;
 
   NativeSaveExecutor exec() => NativeSaveExecutor(
-        channel: _channel,
-        pollEvery: const Duration(milliseconds: 2),
-        sourceOf: (f) async => f.ref.startsWith('localfile://')
-            ? {'path': f.ref.substring('localfile://'.length)}
-            : {'url': 'https://togetherly.day/api/files/${f.key.substring(5)}?token=t'},
-      );
+    channel: _channel,
+    pollEvery: const Duration(milliseconds: 2),
+    sourceOf: (f) async => f.ref.startsWith('localfile://')
+        ? {'path': f.ref.substring('localfile://'.length)}
+        : {
+            'url':
+                'https://togetherly.day/api/files/${f.key.substring(5)}?token=t',
+          },
+  );
 
   setUp(() {
     calls = [];
@@ -47,7 +50,9 @@ void main() {
           final out = List<Map<String, Object?>>.of(results);
           return {'results': out, 'pending': 0};
         case 'engineAck':
-          final keys = List<String>.from((call.arguments as Map)['keys'] as List);
+          final keys = List<String>.from(
+            (call.arguments as Map)['keys'] as List,
+          );
           results.removeWhere((r) => keys.contains(r['key']));
           return null;
         default:
@@ -65,16 +70,26 @@ void main() {
     final submit = calls.firstWhere((c) => c.method == 'engineSubmit');
     final a = Map<String, Object?>.from(submit.arguments as Map);
     expect(a['key'], 'pb://media/r/f.webp');
-    expect(a['url'], startsWith('https://togetherly.day/api/files/media/r/f.webp'));
+    expect(
+      a['url'],
+      startsWith('https://togetherly.day/api/files/media/r/f.webp'),
+    );
     expect(a['kind'], 'photo');
     expect(a['takenAt'], DateTime(2026, 9, 5, 13, 5, 7).millisecondsSinceEpoch);
     expect(a['latitude'], 46.9);
     expect(a['name'], 'Togetherly_20260905_130507_01.webp');
     expect(a['album'], 'Tethered'); // fork: branded gallery album
     expect(a['title'], 'Лето');
-    expect((a['labels'] as Map).keys, containsAll(['saving', 'done', 'failed', 'stop']));
+    expect(
+      (a['labels'] as Map).keys,
+      containsAll(['saving', 'done', 'failed', 'stop']),
+    );
 
-    results.add({'key': 'pb://media/r/f.webp', 'code': 'OK', 'uri': 'content://1'});
+    results.add({
+      'key': 'pb://media/r/f.webp',
+      'code': 'OK',
+      'uri': 'content://1',
+    });
     expect(await f, 'content://1');
     await Future<void>.delayed(const Duration(milliseconds: 5));
     final ack = calls.lastWhere((c) => c.method == 'engineAck');
@@ -86,7 +101,8 @@ void main() {
     final f = e.run(_item('localfile:///data/x/1.jpg'), hidden: false);
     await Future<void>.delayed(const Duration(milliseconds: 5));
     final a = Map<String, Object?>.from(
-        calls.firstWhere((c) => c.method == 'engineSubmit').arguments as Map);
+      calls.firstWhere((c) => c.method == 'engineSubmit').arguments as Map,
+    );
     expect(a['path'], '/data/x/1.jpg');
     expect(a.containsKey('url'), isFalse);
     results.add({'key': 'localfile:///data/x/1.jpg', 'code': 'OK', 'uri': ''});
@@ -107,7 +123,11 @@ void main() {
   test('обрыв после всех нативных повторов — обычная ошибка', () async {
     final e = exec();
     final f = e.run(_item('pb://media/r/a.webp'), hidden: false);
-    results.add({'key': 'pb://media/r/a.webp', 'code': 'FAILED', 'error': 'HTTP 404'});
+    results.add({
+      'key': 'pb://media/r/a.webp',
+      'code': 'FAILED',
+      'error': 'HTTP 404',
+    });
     await expectLater(f, throwsA(isA<Exception>()));
   });
 
@@ -136,7 +156,9 @@ void main() {
     messenger.setMockMethodCallHandler(_channel, null);
     final e = exec();
     await expectLater(
-        e.run(_item('pb://media/r/a.webp'), hidden: false), throwsA(anything));
+      e.run(_item('pb://media/r/a.webp'), hidden: false),
+      throwsA(anything),
+    );
     expect(await e.recover(), isEmpty);
   });
 }

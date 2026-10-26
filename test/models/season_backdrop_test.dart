@@ -3,10 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/season_backdrop.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
-Map<String, dynamic> _row({Map<String, dynamic>? data, String kind = 'backdrop'}) => {
+Map<String, dynamic> _row({
+  Map<String, dynamic>? data,
+  String kind = 'backdrop',
+}) => {
   'id': 'backdrop_hw',
   'kind': kind,
-  'data': data ??
+  'data':
+      data ??
       {
         'key': 'hw',
         'from': '2026-10-08',
@@ -18,7 +22,11 @@ Map<String, dynamic> _row({Map<String, dynamic>? data, String kind = 'backdrop'}
         'blur': 14,
         'light': {'tone': 15, 'chroma': 40, 'opacity': 0.78},
         'dark': {'tone': 88, 'chroma': 22, 'opacity': 0.42},
-        'files': {'mask': 'https://x/mask.webp', 'blur': 'https://x/blur.webp', 'hand': 'https://x/hand.webp'},
+        'files': {
+          'mask': 'https://x/mask.webp',
+          'blur': 'https://x/blur.webp',
+          'hand': 'https://x/hand.webp',
+        },
       },
 };
 
@@ -38,20 +46,42 @@ void main() {
 
     test('чужой вид, нет картинки или ключа — null, а не падение', () {
       expect(SeasonBackdrop.fromCatalog(_row(kind: 'chest')), isNull);
-      expect(SeasonBackdrop.fromCatalog(_row(data: {'key': 'hw', 'until': '2026-11-01', 'files': {}})), isNull);
-      expect(SeasonBackdrop.fromCatalog(_row(data: {'files': {'mask': 'm'}, 'until': '2026-11-01'})), isNull);
-      expect(SeasonBackdrop.fromCatalog({'kind': 'backdrop', 'data': 'мусор'}), isNull);
+      expect(
+        SeasonBackdrop.fromCatalog(
+          _row(data: {'key': 'hw', 'until': '2026-11-01', 'files': {}}),
+        ),
+        isNull,
+      );
+      expect(
+        SeasonBackdrop.fromCatalog(
+          _row(
+            data: {
+              'files': {'mask': 'm'},
+              'until': '2026-11-01',
+            },
+          ),
+        ),
+        isNull,
+      );
+      expect(
+        SeasonBackdrop.fromCatalog({'kind': 'backdrop', 'data': 'мусор'}),
+        isNull,
+      );
     });
 
     test('кривые числа подменяются умолчаниями, фазы влезают в петлю', () {
-      final b = SeasonBackdrop.fromCatalog(_row(data: {
-        'key': 'hw',
-        'until': '2026-11-01',
-        'cycleMs': 3000,
-        'inMs': 'много',
-        'holdMs': 9000,
-        'files': {'mask': 'm'},
-      }))!;
+      final b = SeasonBackdrop.fromCatalog(
+        _row(
+          data: {
+            'key': 'hw',
+            'until': '2026-11-01',
+            'cycleMs': 3000,
+            'inMs': 'много',
+            'holdMs': 9000,
+            'files': {'mask': 'm'},
+          },
+        ),
+      )!;
       expect(b.inMs + b.holdMs + b.outMs, lessThanOrEqualTo(b.cycleMs));
       expect(b.light.opacity, inInclusiveRange(0, 1));
       expect(b.handUrl, isNull);
@@ -67,16 +97,50 @@ void main() {
       expect(b.isOn(DateTime(2026, 11, 1, 0, 0)), isFalse);
     });
     test('без начала — с любого дня до конца; без конца — не показываем', () {
-      final noFrom = SeasonBackdrop.fromCatalog(_row(data: {'key': 'hw', 'until': '2026-11-01', 'files': {'mask': 'm'}}))!;
+      final noFrom = SeasonBackdrop.fromCatalog(
+        _row(
+          data: {
+            'key': 'hw',
+            'until': '2026-11-01',
+            'files': {'mask': 'm'},
+          },
+        ),
+      )!;
       expect(noFrom.isOn(DateTime(2020, 1, 1)), isTrue);
-      final noUntil = SeasonBackdrop.fromCatalog(_row(data: {'key': 'hw', 'from': '2026-10-01', 'files': {'mask': 'm'}}))!;
+      final noUntil = SeasonBackdrop.fromCatalog(
+        _row(
+          data: {
+            'key': 'hw',
+            'from': '2026-10-01',
+            'files': {'mask': 'm'},
+          },
+        ),
+      )!;
       expect(noUntil.isOn(DateTime(2026, 10, 9)), isFalse);
     });
     test('из нескольких выбирается тот, что идёт сейчас', () {
-      final other = SeasonBackdrop.fromCatalog(_row(data: {'key': 'ny', 'from': '2026-12-20', 'until': '2027-01-10', 'files': {'mask': 'm'}}))!;
-      expect(SeasonBackdrop.activeOf([other, b], DateTime(2026, 10, 20))?.key, 'hw');
-      expect(SeasonBackdrop.activeOf([other, b], DateTime(2026, 12, 25))?.key, 'ny');
-      expect(SeasonBackdrop.activeOf([other, b], DateTime(2026, 11, 20)), isNull);
+      final other = SeasonBackdrop.fromCatalog(
+        _row(
+          data: {
+            'key': 'ny',
+            'from': '2026-12-20',
+            'until': '2027-01-10',
+            'files': {'mask': 'm'},
+          },
+        ),
+      )!;
+      expect(
+        SeasonBackdrop.activeOf([other, b], DateTime(2026, 10, 20))?.key,
+        'hw',
+      );
+      expect(
+        SeasonBackdrop.activeOf([other, b], DateTime(2026, 12, 25))?.key,
+        'ny',
+      );
+      expect(
+        SeasonBackdrop.activeOf([other, b], DateTime(2026, 11, 20)),
+        isNull,
+      );
     });
   });
 
@@ -112,37 +176,52 @@ void main() {
 
   group('призрак по «Скучаю»', () {
     test('trigger miss с сервера; без поля — прежняя петля', () {
-      final miss = SeasonBackdrop.fromCatalog(_row(data: {
-        'key': 'hw',
-        'until': '2026-11-01',
-        'trigger': 'miss',
-        'inMs': 1600,
-        'holdMs': 3500,
-        'outMs': 2600,
-        'files': {'mask': 'm'},
-      }))!;
+      final miss = SeasonBackdrop.fromCatalog(
+        _row(
+          data: {
+            'key': 'hw',
+            'until': '2026-11-01',
+            'trigger': 'miss',
+            'inMs': 1600,
+            'holdMs': 3500,
+            'outMs': 2600,
+            'files': {'mask': 'm'},
+          },
+        ),
+      )!;
       expect(miss.onMissYou, isTrue);
       expect(SeasonBackdrop.fromCatalog(_row())!.onMissYou, isFalse);
     });
 
-    test('один проход: проявился, постоял, растворился и больше не возвращается', () {
-      final b = SeasonBackdrop.fromCatalog(_row(data: {
-        'key': 'hw',
-        'until': '2026-11-01',
-        'trigger': 'miss',
-        'inMs': 1600,
-        'holdMs': 3500,
-        'outMs': 2600,
-        'files': {'mask': 'm'},
-      }))!;
-      expect(b.onceAt(0).opacity, 0);
-      expect(b.onceAt(800).opacity, inExclusiveRange(0, 1));
-      expect(b.onceAt(3000).opacity, 1);
-      expect(b.onceAt(6500).opacity, inExclusiveRange(0, 1));
-      expect(b.onceAt(7700).opacity, 0);
-      expect(b.onceAt(16000 + 3000).opacity, 0, reason: 'петли нет — призрак не возвращается сам');
-      expect(b.onceDurationMs, 7700);
-    });
+    test(
+      'один проход: проявился, постоял, растворился и больше не возвращается',
+      () {
+        final b = SeasonBackdrop.fromCatalog(
+          _row(
+            data: {
+              'key': 'hw',
+              'until': '2026-11-01',
+              'trigger': 'miss',
+              'inMs': 1600,
+              'holdMs': 3500,
+              'outMs': 2600,
+              'files': {'mask': 'm'},
+            },
+          ),
+        )!;
+        expect(b.onceAt(0).opacity, 0);
+        expect(b.onceAt(800).opacity, inExclusiveRange(0, 1));
+        expect(b.onceAt(3000).opacity, 1);
+        expect(b.onceAt(6500).opacity, inExclusiveRange(0, 1));
+        expect(b.onceAt(7700).opacity, 0);
+        expect(
+          b.onceAt(16000 + 3000).opacity,
+          0,
+          reason: 'петли нет — призрак не возвращается сам',
+        );
+        expect(b.onceDurationMs, 7700);
+      },
+    );
   });
 
   group('цвет от темы', () {
@@ -159,12 +238,16 @@ void main() {
       expect(b.opacity(Brightness.dark), 0.42);
     });
     test('явный цвет с сервера сильнее расчёта', () {
-      final fixed = SeasonBackdrop.fromCatalog(_row(data: {
-        'key': 'hw',
-        'until': '2026-11-01',
-        'files': {'mask': 'm'},
-        'light': {'color': '#123456', 'opacity': 0.5},
-      }))!;
+      final fixed = SeasonBackdrop.fromCatalog(
+        _row(
+          data: {
+            'key': 'hw',
+            'until': '2026-11-01',
+            'files': {'mask': 'm'},
+            'light': {'color': '#123456', 'opacity': 0.5},
+          },
+        ),
+      )!;
       expect(fixed.tint(Brightness.light, pink), const Color(0xFF123456));
     });
   });

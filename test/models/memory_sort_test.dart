@@ -23,28 +23,34 @@ void main() {
 
   List<_Item> sorted(MemorySort order, List<_Item> items) {
     final copy = [...items];
-    copy.sort((a, b) => compareMemories(
-          order,
-          aEvent: a.eventDate,
-          bEvent: b.eventDate,
-          aAdded: a.addedAt,
-          bAdded: b.addedAt,
-        ));
+    copy.sort(
+      (a, b) => compareMemories(
+        order,
+        aEvent: a.eventDate,
+        bEvent: b.eventDate,
+        aAdded: a.addedAt,
+        bAdded: b.addedAt,
+      ),
+    );
     return copy;
   }
 
   group('compareMemories', () {
     test('по дате события сверху то, что произошло позже', () {
-      final list = sorted(MemorySort.eventDate,
-          [oldEventAddedToday, freshEventAddedLong]);
+      final list = sorted(MemorySort.eventDate, [
+        oldEventAddedToday,
+        freshEventAddedLong,
+      ]);
       expect(list.first.name, 'вчерашний ужин');
     });
 
     test('по добавлению сверху то, что занесли последним', () {
       // Просьба тестера: свадьбу 2019 года добавили сегодня, и в ленте по
       // дате события она уезжает в самый низ.
-      final list = sorted(MemorySort.addedAt,
-          [freshEventAddedLong, oldEventAddedToday]);
+      final list = sorted(MemorySort.addedAt, [
+        freshEventAddedLong,
+        oldEventAddedToday,
+      ]);
       expect(list.first.name, 'свадьба 2019');
     });
 

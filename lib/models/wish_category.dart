@@ -39,35 +39,35 @@ class WishKind {
   }
 
   factory WishKind.fromPb(RecordModel rec) => WishKind(
-        id: rec.id,
-        symbol: rec.getStringValue('symbol').isEmpty
-            ? 'star'
-            : rec.getStringValue('symbol'),
-        titleRu: rec.getStringValue('title'),
-        titleEn: rec.getStringValue('title'),
-        note: rec.getStringValue('note'),
-        custom: true,
-        authorUid: rec.getStringValue('author_uid'),
-      );
+    id: rec.id,
+    symbol: rec.getStringValue('symbol').isEmpty
+        ? 'star'
+        : rec.getStringValue('symbol'),
+    titleRu: rec.getStringValue('title'),
+    titleEn: rec.getStringValue('title'),
+    note: rec.getStringValue('note'),
+    custom: true,
+    authorUid: rec.getStringValue('author_uid'),
+  );
 
   Map<String, dynamic> toMap({required String groupId}) => {
-        'id': id,
-        'group_id': groupId,
-        'author_uid': authorUid,
-        'title': titleRu,
-        'symbol': symbol,
-        if (note.isNotEmpty) 'note': note,
-      };
+    'id': id,
+    'group_id': groupId,
+    'author_uid': authorUid,
+    'title': titleRu,
+    'symbol': symbol,
+    if (note.isNotEmpty) 'note': note,
+  };
 
   WishKind copyWith({String? title, String? symbol, String? note}) => WishKind(
-        id: id,
-        symbol: symbol ?? this.symbol,
-        titleRu: title ?? titleRu,
-        titleEn: title ?? titleEn,
-        note: note ?? this.note,
-        custom: custom,
-        authorUid: authorUid,
-      );
+    id: id,
+    symbol: symbol ?? this.symbol,
+    titleRu: title ?? titleRu,
+    titleEn: title ?? titleEn,
+    note: note ?? this.note,
+    custom: custom,
+    authorUid: authorUid,
+  );
 }
 
 /// Пять встроенных категорий — тот же порядок, что в макете.
@@ -103,10 +103,12 @@ WishKind resolveWishKind({
     if (k.id == categoryId) return k;
   }
   final fallback = builtinWishKind('other')!;
-  return symbol.isEmpty ? fallback : WishKind(
-        id: fallback.id,
-        symbol: symbol,
-        titleRu: fallback.titleRu,
-        titleEn: fallback.titleEn,
-      );
+  return symbol.isEmpty
+      ? fallback
+      : WishKind(
+          id: fallback.id,
+          symbol: symbol,
+          titleRu: fallback.titleRu,
+          titleEn: fallback.titleEn,
+        );
 }

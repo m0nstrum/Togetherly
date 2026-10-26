@@ -23,7 +23,8 @@ List<VesselDay> vesselForSharing(
   List<VesselDay> days, {
   required Set<VesselFloor> show,
 }) {
-  final cycle = show.contains(VesselFloor.cycle) ||
+  final cycle =
+      show.contains(VesselFloor.cycle) ||
       show.contains(VesselFloor.partnerCycle);
   return [
     for (final d in days)

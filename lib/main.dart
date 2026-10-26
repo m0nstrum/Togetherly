@@ -25,7 +25,6 @@ import 'theme/app_theme.dart';
 import 'theme/app_palettes.dart';
 import 'theme/profile_theme.dart';
 import 'theme/theme_scope.dart';
-import 'services/analytics_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/shared_link_service.dart';
 import 'services/pb_push_service.dart';
@@ -64,10 +63,9 @@ import 'widgets/launch_splash/launch_splash_overlay.dart';
 import 'widgets/offline_sync_banner.dart';
 import 'services/pair_jar_service.dart';
 import 'widgets/chest/jar_toast.dart';
-import 'fork/flags.dart'; // fork (PLAN 1.9)
-import 'fork/config/endpoints.dart'; // fork
-import 'fork/crash_reports.dart'; // fork
-import 'fork/e2e/fork_e2e.dart'; // fork
+import 'fork/config/endpoints.dart';
+import 'fork/crash_reports.dart';
+import 'fork/e2e/fork_e2e.dart';
 import 'fork/ui/session_note.dart'; // fork (UX A13)
 
 // ATT/трекинг убран НАМЕРЕННО: приложение НЕ отслеживает пользователей
@@ -193,7 +191,7 @@ Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
           await HomeWidget.getWidgetData<String>('love_widget_group_id') ?? '';
       final partnerUid =
           await HomeWidget.getWidgetData<String>('love_widget_partner_uid') ??
-              '';
+          '';
       if (myUid.isEmpty || groupId.isEmpty) return;
       await HomeWidgetService.instance.backgroundRefreshAll(
         groupId: groupId,
@@ -308,12 +306,14 @@ void main() async {
   // authRefresh, ожидая медленный/перегруженный сервер (на слабой связи — до
   // таймаута), и UI не показывался даже при наличии локального кэша. userId ниже
   // берётся из persisted-сессии, поэтому в готовности signInSilently не нуждается.
-  unawaited(PbAuthService().signInSilently().then((_) {
-    // Не уложился в таймаут — сессия остаётся живой, но без записи профиля:
-    // имя и аватар пусты, срок пары считается не от той даты. Пробуем ещё раз,
-    // уже отдельным запросом (правило пауз — в session_restore.dart).
-    unawaited(PbAuthService().ensureProfileLoaded());
-  }));
+  unawaited(
+    PbAuthService().signInSilently().then((_) {
+      // Не уложился в таймаут — сессия остаётся живой, но без записи профиля:
+      // имя и аватар пусты, срок пары считается не от той даты. Пробуем ещё раз,
+      // уже отдельным запросом (правило пауз — в session_restore.dart).
+      unawaited(PbAuthService().ensureProfileLoaded());
+    }),
+  );
   // Привязываем кэш к владельцу: если на устройстве сменился аккаунт — кэш
   // полностью чистится (защита от утечки данных между пользователями).
   await LocalStore.instance.ensureOwner(PocketBaseService().userId);
@@ -463,8 +463,9 @@ void main() async {
     // где он и рождается.
     if (supportsWidgetInteractivity(Platform.operatingSystemVersion)) {
       unawaited(
-        HomeWidget.registerInteractivityCallback(_homeWidgetBackgroundCallback)
-            .catchError((Object e) {
+        HomeWidget.registerInteractivityCallback(
+          _homeWidgetBackgroundCallback,
+        ).catchError((Object e) {
           debugPrint('Старт: интерактивность виджетов недоступна — $e');
           return null;
         }),
@@ -479,11 +480,6 @@ void main() async {
     // активной паре (там известен контекст). Не блокируем старт.
     unawaited(WidgetBackgroundRefreshService.instance.init());
   }
-
-  // Аналитика отключена (firebase_analytics убран при уходе с Firebase) —
-  // AnalyticsService теперь no-op shell. Привязку userId оставляем как заглушку
-  // на случай будущей серверной аналитики на PocketBase.
-  unawaited(AnalyticsService.instance.setUserId(PocketBaseService().userId));
 
   // Deep links — инициализация
   DeepLinkService().init();
@@ -523,10 +519,6 @@ void main() async {
   // диска мгновенно, свежий список тянем фоном. Новые паки/эмоции приезжают без
   // обновления приложения. Офлайн/без credentials — остаются встроенные паки.
   await CatalogService.instance.init();
-
-  // Своя аналитика: экраны считает NavigatorObserver, события уходят пачками
-  // раз в минуту. До входа ничего не отправляется.
-  unawaited(AnalyticsService.instance.init());
 
   // Магазин покупок поднимаем на старте, а не при открытии экрана.
   //
@@ -573,10 +565,15 @@ void main() async {
   // Заставка при запуске: только выбранная, по датам и уже лежащая на диске.
   // Сети здесь нет. Картинки разжимаются здесь, пока видна системная
   // заставка; при «уменьшить движение» заставки нет вовсе.
-  LaunchSplashOverlay.pending = await LaunchSplashService.instance.prepareLaunch(
-    DateTime.now(),
-    calm: WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations,
-  );
+  LaunchSplashOverlay.pending = await LaunchSplashService.instance
+      .prepareLaunch(
+        DateTime.now(),
+        calm: WidgetsBinding
+            .instance
+            .platformDispatcher
+            .accessibilityFeatures
+            .disableAnimations,
+      );
   runApp(const LoveApp());
 }
 
@@ -816,12 +813,13 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
 
   Future<void> _checkMinBuild() async {
     // fork: do not lock people out without an available fork release.
-    if (!ForkFlags.upstreamUpdates && Endpoints.current.releasesUrl.isEmpty) return;
+    if (Endpoints.current.releasesUrl.isEmpty) return;
     try {
       // fail-open: нет ответа или ошибка — не блокируем.
-      final minBuild = await PbDataService()
-          .fetchMinSupportedBuild()
-          .timeout(const Duration(seconds: 15), onTimeout: () => 0);
+      final minBuild = await PbDataService().fetchMinSupportedBuild().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => 0,
+      );
       if (minBuild <= 0) return;
       final info = await PackageInfo.fromPlatform();
       final current = int.tryParse(info.buildNumber) ?? 0;
@@ -841,7 +839,9 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
     // него не спасал.
     Timer(const Duration(seconds: 10), () {
       if (mounted && _loading) {
-        debugPrint('Старт: заставка снята по страховке, инициализация затянулась');
+        debugPrint(
+          'Старт: заставка снята по страховке, инициализация затянулась',
+        );
         setState(() => _loading = false);
       }
     });
@@ -957,15 +957,16 @@ class _LoveAppState extends State<LoveApp> with WidgetsBindingObserver {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        navigatorObservers: [AnalyticsService.instance.observer],
         // Глобальная плашка «офлайн / ожидает синхронизации» поверх любого экрана.
         // fork: app lock covers Navigator routes and dialog overlays (PLAN 3.1).
         builder: (context, child) => ForkAppLockGate(
           child: ForkPipOrphanGuard(
             child: LaunchSplashOverlay(
-          child: ThemeScope(
-            theme: _userData.theme,
-            child: OfflineSyncBanner(child: child ?? const SizedBox.shrink()),
+              child: ThemeScope(
+                theme: _userData.theme,
+                child: OfflineSyncBanner(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             ),
           ),

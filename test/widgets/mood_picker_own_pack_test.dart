@@ -22,10 +22,22 @@ import '../helpers/fake_custom_mood_store.dart';
 const _emo = 'assets/images/new emodji';
 
 List<CustomMood> _three() => [
-      ownMood('pug', label: 'Под пледом', score: 3, image: '$_emo/Смущен.webp'),
-      ownMood('boom', label: 'Взрыв мозга', score: 2, emoji: '🤯', image: '$_emo/Удивление.webp'),
-      ownMood('bear', label: 'Злюка до кофе', score: 1, author: 'partner', image: '$_emo/Злость.webp'),
-    ];
+  ownMood('pug', label: 'Под пледом', score: 3, image: '$_emo/Смущен.webp'),
+  ownMood(
+    'boom',
+    label: 'Взрыв мозга',
+    score: 2,
+    emoji: '🤯',
+    image: '$_emo/Удивление.webp',
+  ),
+  ownMood(
+    'bear',
+    label: 'Злюка до кофе',
+    score: 1,
+    author: 'partner',
+    image: '$_emo/Злость.webp',
+  ),
+];
 
 Widget _sheet({
   required FakeCustomMoodStore store,
@@ -73,7 +85,11 @@ Widget _sheet({
   );
 }
 
-Future<void> _size(WidgetTester tester, double width, {double height = 760}) async {
+Future<void> _size(
+  WidgetTester tester,
+  double width, {
+  double height = 760,
+}) async {
   tester.view.physicalSize = Size(width * 3, height * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -82,22 +98,30 @@ Future<void> _size(WidgetTester tester, double width, {double height = 760}) asy
 Finder get _ownChip => find.byKey(const Key('mood-pack-own'));
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     LocaleService.instance.setLanguage(AppLanguage.ru);
     await MoodPackService.instance.setSelectedPack(MoodPack.classic.id);
   });
 
-  testWidgets('«Свои» стоят первой таблеткой, перед «Классическими»', (tester) async {
+  testWidgets('«Свои» стоят первой таблеткой, перед «Классическими»', (
+    tester,
+  ) async {
     await _size(tester, 360);
     await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three())));
     await tester.pumpAndSettle();
     final own = tester.getTopLeft(_ownChip);
-    final classic = tester.getTopLeft(find.byKey(const Key('mood-pack-classic')));
+    final classic = tester.getTopLeft(
+      find.byKey(const Key('mood-pack-classic')),
+    );
     expect(own.dx, lessThan(classic.dx));
   });
 
-  testWidgets('в «Классических» своих настроений нет: раздел «Свои» ушёл', (tester) async {
+  testWidgets('в «Классических» своих настроений нет: раздел «Свои» ушёл', (
+    tester,
+  ) async {
     await _size(tester, 360);
     await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three())));
     await tester.pumpAndSettle();
@@ -108,28 +132,35 @@ void main() {
     expect(find.text(s.moodBandBright), findsOneWidget);
   });
 
-  testWidgets('выбрали «Свои»: свои настроения по разделам, место в наборе, выбор запомнен', (tester) async {
-    await _size(tester, 360);
-    await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three())));
-    await tester.pumpAndSettle();
-    await tester.tap(_ownChip);
-    await tester.pumpAndSettle();
+  testWidgets(
+    'выбрали «Свои»: свои настроения по разделам, место в наборе, выбор запомнен',
+    (tester) async {
+      await _size(tester, 360);
+      await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three())));
+      await tester.pumpAndSettle();
+      await tester.tap(_ownChip);
+      await tester.pumpAndSettle();
 
-    final s = LocaleService.current;
-    expect(find.text('Под пледом'), findsOneWidget);
-    expect(find.text('Взрыв мозга'), findsOneWidget);
-    expect(find.text('Злюка до кофе'), findsOneWidget);
-    expect(find.text(s.moodBandEven), findsOneWidget);
-    expect(find.text(s.moodBandSad), findsOneWidget);
-    expect(find.text(s.moodBandHeavy), findsOneWidget);
-    expect(
-      find.text(trKey('customMoodSetCount').replaceAll('{n}', '3').replaceAll('{max}', '$kOwnMoodLimit')),
-      findsOneWidget,
-    );
-    // Встроенных эмоций в своём наборе нет.
-    expect(find.text(MoodOption.all.first.localizedLabel), findsNothing);
-    expect(MoodPackService.instance.selectedPackId, kOwnMoodPackId);
-  });
+      final s = LocaleService.current;
+      expect(find.text('Под пледом'), findsOneWidget);
+      expect(find.text('Взрыв мозга'), findsOneWidget);
+      expect(find.text('Злюка до кофе'), findsOneWidget);
+      expect(find.text(s.moodBandEven), findsOneWidget);
+      expect(find.text(s.moodBandSad), findsOneWidget);
+      expect(find.text(s.moodBandHeavy), findsOneWidget);
+      expect(
+        find.text(
+          trKey(
+            'customMoodSetCount',
+          ).replaceAll('{n}', '3').replaceAll('{max}', '$kOwnMoodLimit'),
+        ),
+        findsOneWidget,
+      );
+      // Встроенных эмоций в своём наборе нет.
+      expect(find.text(MoodOption.all.first.localizedLabel), findsNothing);
+      expect(MoodPackService.instance.selectedPackId, kOwnMoodPackId);
+    },
+  );
 
   testWidgets('выбранные «Свои» открываются сразу своими', (tester) async {
     await _size(tester, 360);
@@ -139,33 +170,43 @@ void main() {
     expect(find.text('Под пледом'), findsOneWidget);
   });
 
-  testWidgets('без Плюса и без своих: пример и вход в Плюс, выбор не запоминается', (tester) async {
-    await _size(tester, 360);
-    await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(), gate: PlusGate.locked));
-    await tester.pumpAndSettle();
-    await tester.tap(_ownChip);
-    await tester.pumpAndSettle();
-    expect(find.text(trKey('customMoodTeaserTitle')), findsOneWidget);
-    expect(find.text(trKey('customMoodUnlock')), findsOneWidget);
-    expect(find.text(trKey('customMoodCreate')), findsNothing);
-    expect(MoodPackService.instance.selectedPackId, MoodPack.classic.id);
+  testWidgets(
+    'без Плюса и без своих: пример и вход в Плюс, выбор не запоминается',
+    (tester) async {
+      await _size(tester, 360);
+      await tester.pumpWidget(
+        _sheet(store: FakeCustomMoodStore(), gate: PlusGate.locked),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(_ownChip);
+      await tester.pumpAndSettle();
+      expect(find.text(trKey('customMoodTeaserTitle')), findsOneWidget);
+      expect(find.text(trKey('customMoodUnlock')), findsOneWidget);
+      expect(find.text(trKey('customMoodCreate')), findsNothing);
+      expect(MoodPackService.instance.selectedPackId, MoodPack.classic.id);
 
-    // Другая таблетка возвращает обычный набор.
-    await tester.tap(find.byKey(const Key('mood-pack-classic')));
-    await tester.pumpAndSettle();
-    expect(find.text(trKey('customMoodTeaserTitle')), findsNothing);
-  });
+      // Другая таблетка возвращает обычный набор.
+      await tester.tap(find.byKey(const Key('mood-pack-classic')));
+      await tester.pumpAndSettle();
+      expect(find.text(trKey('customMoodTeaserTitle')), findsNothing);
+    },
+  );
 
-  testWidgets('без Плюса, но с настроениями партнёра: выбирать можно, новые заводит тот, у кого Плюс', (tester) async {
-    await _size(tester, 360);
-    await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three()), gate: PlusGate.locked));
-    await tester.pumpAndSettle();
-    await tester.tap(_ownChip);
-    await tester.pumpAndSettle();
-    expect(find.text('Под пледом'), findsOneWidget);
-    expect(find.text(trKey('customMoodLockedMeta')), findsOneWidget);
-    expect(MoodPackService.instance.selectedPackId, kOwnMoodPackId);
-  });
+  testWidgets(
+    'без Плюса, но с настроениями партнёра: выбирать можно, новые заводит тот, у кого Плюс',
+    (tester) async {
+      await _size(tester, 360);
+      await tester.pumpWidget(
+        _sheet(store: FakeCustomMoodStore(_three()), gate: PlusGate.locked),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(_ownChip);
+      await tester.pumpAndSettle();
+      expect(find.text('Под пледом'), findsOneWidget);
+      expect(find.text(trKey('customMoodLockedMeta')), findsOneWidget);
+      expect(MoodPackService.instance.selectedPackId, kOwnMoodPackId);
+    },
+  );
 
   testWidgets('с Плюсом и без своих: зовём создать первое', (tester) async {
     await _size(tester, 360);
@@ -179,7 +220,9 @@ void main() {
 
   testWidgets('где Плюса нет вовсе, таблетки «Свои» нет', (tester) async {
     await _size(tester, 360);
-    await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three()), gate: PlusGate.hidden));
+    await tester.pumpWidget(
+      _sheet(store: FakeCustomMoodStore(_three()), gate: PlusGate.hidden),
+    );
     await tester.pumpAndSettle();
     expect(_ownChip, findsNothing);
   });
@@ -200,7 +243,9 @@ void main() {
     expect(find.text('Под пледом'), findsNothing);
   });
 
-  testWidgets('удержание чужого: убрать его может только автор', (tester) async {
+  testWidgets('удержание чужого: убрать его может только автор', (
+    tester,
+  ) async {
     await _size(tester, 360);
     await MoodPackService.instance.setSelectedPack(kOwnMoodPackId);
     await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three())));
@@ -212,44 +257,74 @@ void main() {
     await tester.longPress(find.text('Злюка до кофе'));
     await tester.pumpAndSettle();
     expect(find.text(LocaleService.current.customMoodDelete), findsNothing);
-    expect(find.text(trKey('customMoodOnlyAuthor').replaceAll('{name}', 'Аня')), findsOneWidget);
+    expect(
+      find.text(trKey('customMoodOnlyAuthor').replaceAll('{name}', 'Аня')),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('полный набор: «Новое» объясняет, а не открывает лист', (tester) async {
+  testWidgets('полный набор: «Новое» объясняет, а не открывает лист', (
+    tester,
+  ) async {
     await _size(tester, 360);
-    final full = [for (var i = 0; i < kOwnMoodLimit; i++) ownMood('m$i', label: 'Своё $i', score: 1 + i % 5)];
+    final full = [
+      for (var i = 0; i < kOwnMoodLimit; i++)
+        ownMood('m$i', label: 'Своё $i', score: 1 + i % 5),
+    ];
     await MoodPackService.instance.setSelectedPack(kOwnMoodPackId);
     await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(full)));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('own-moods-new')));
     await tester.pump();
-    expect(find.text(LocaleService.current.customMoodLimitReached), findsOneWidget);
+    expect(
+      find.text(LocaleService.current.customMoodLimitReached),
+      findsOneWidget,
+    );
     expect(find.text(LocaleService.current.customMoodTitle), findsNothing);
     await tester.pump(const Duration(seconds: 3));
   });
 
   for (final lang in [AppLanguage.ru, AppLanguage.de]) {
     for (final b in Brightness.values) {
-      testWidgets('320 точек, шрифт 1.3, ${lang.name}, ${b.name}: свой набор, пустой и пример без переполнения', (tester) async {
-        LocaleService.instance.setLanguage(lang);
-        await _size(tester, 320, height: 700);
-        await MoodPackService.instance.setSelectedPack(kOwnMoodPackId);
-        await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(_three()), brightness: b, scale: 1.3, current: '$_emo/Смущен.webp'));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(find.byKey(const Key('own-moods-new')), findsOneWidget);
+      testWidgets(
+        '320 точек, шрифт 1.3, ${lang.name}, ${b.name}: свой набор, пустой и пример без переполнения',
+        (tester) async {
+          LocaleService.instance.setLanguage(lang);
+          await _size(tester, 320, height: 700);
+          await MoodPackService.instance.setSelectedPack(kOwnMoodPackId);
+          await tester.pumpWidget(
+            _sheet(
+              store: FakeCustomMoodStore(_three()),
+              brightness: b,
+              scale: 1.3,
+              current: '$_emo/Смущен.webp',
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(find.byKey(const Key('own-moods-new')), findsOneWidget);
 
-        await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(), brightness: b, scale: 1.3));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
+          await tester.pumpWidget(
+            _sheet(store: FakeCustomMoodStore(), brightness: b, scale: 1.3),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
 
-        await tester.pumpWidget(_sheet(store: FakeCustomMoodStore(), gate: PlusGate.locked, brightness: b, scale: 1.3));
-        await tester.pumpAndSettle();
-        await tester.tap(_ownChip);
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(find.text(trKey('customMoodUnlock')), findsOneWidget);
-      });
+          await tester.pumpWidget(
+            _sheet(
+              store: FakeCustomMoodStore(),
+              gate: PlusGate.locked,
+              brightness: b,
+              scale: 1.3,
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(_ownChip);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(find.text(trKey('customMoodUnlock')), findsOneWidget);
+        },
+      );
     }
   }
 }

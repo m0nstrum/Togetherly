@@ -8,37 +8,45 @@ import 'package:love_app/widgets/chat/note_shapes.dart';
 /// Лента форм на экране съёмки. Круг бесплатный, остальные девять идут с
 /// Togetherly+ — и человек должен видеть это ДО того, как выберет форму и
 /// упрётся в отказ.
-Future<void> _pump(WidgetTester tester, PlusGate gate,
-    {bool open = true, ValueChanged<NoteShape>? onShape}) async {
-  await tester.pumpWidget(MaterialApp(
-    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink)),
-    home: Scaffold(
-      body: NoteRecorderOverlay(
-        controller: null,
-        shape: kNoteShapes.first,
-        onShape: onShape ?? (_) {},
-        elapsed: ValueNotifier<Duration>(Duration.zero),
-        recording: false,
-        paused: false,
-        locked: false,
-        cancelling: false,
-        mirrored: false,
-        torchOn: false,
-        canFlip: false,
-        canTorch: false,
-        plusGate: gate,
-        error: null,
-        onRetry: () {},
-        onFlip: () {},
-        onTorch: () {},
-        onMirror: () {},
-        onPauseToggle: () {},
-        onCancel: () {},
-        onSend: () {},
-        onClose: () {},
+Future<void> _pump(
+  WidgetTester tester,
+  PlusGate gate, {
+  bool open = true,
+  ValueChanged<NoteShape>? onShape,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
+      ),
+      home: Scaffold(
+        body: NoteRecorderOverlay(
+          controller: null,
+          shape: kNoteShapes.first,
+          onShape: onShape ?? (_) {},
+          elapsed: ValueNotifier<Duration>(Duration.zero),
+          recording: false,
+          paused: false,
+          locked: false,
+          cancelling: false,
+          mirrored: false,
+          torchOn: false,
+          canFlip: false,
+          canTorch: false,
+          plusGate: gate,
+          error: null,
+          onRetry: () {},
+          onFlip: () {},
+          onTorch: () {},
+          onMirror: () {},
+          onPauseToggle: () {},
+          onCancel: () {},
+          onSend: () {},
+          onClose: () {},
+        ),
       ),
     ),
-  ));
+  );
   await tester.pump(const Duration(milliseconds: 50));
   if (open) {
     await tester.tap(find.byIcon(Icons.expand_less_rounded));
@@ -64,7 +72,9 @@ void main() {
     expect(find.byIcon(Icons.lock_rounded), findsNothing);
   });
 
-  testWidgets('лента свёрнута в одну кнопку, пока её не раскрыли', (tester) async {
+  testWidgets('лента свёрнута в одну кнопку, пока её не раскрыли', (
+    tester,
+  ) async {
     await _pump(tester, PlusGate.locked, open: false);
     expect(find.byIcon(Icons.lock_rounded), findsNothing);
     expect(find.byIcon(Icons.expand_less_rounded), findsOneWidget);

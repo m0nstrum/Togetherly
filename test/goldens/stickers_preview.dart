@@ -37,19 +37,49 @@ const _fx = 'test/fixtures/custom_mood';
 class _FixtureBundle extends CachingAssetBundle {
   @override
   Future<ByteData> load(String key) async {
-    if (key.startsWith('test/fixtures/')) return ByteData.sublistView(File(key).readAsBytesSync());
+    if (key.startsWith('test/fixtures/'))
+      return ByteData.sublistView(File(key).readAsBytesSync());
     return rootBundle.load(key);
   }
 }
 
 List<CustomMood> _own() => [
-      ownMood('pug', label: 'Под пледом', image: '$_fx/pug.webp'),
-      ownMood('boom', label: 'Взрыв мозга', score: 2, emoji: '🤯', image: '$_fx/boom.webp'),
-      ownMood('sleepy', label: 'Сонная булка', author: 'partner', image: '$_fx/sleepy.webp'),
-      ownMood('pizza', label: 'Хочу пиццу', score: 4, emoji: '🍕', image: '$_fx/pizza.webp'),
-      ownMood('bear', label: 'Злюка до кофе', score: 1, author: 'partner', image: '$_fx/bear.webp'),
-      ownMood('heart', label: 'Скучаю по тебе', score: 4, author: 'partner', image: '$_fx/heart.webp'),
-    ];
+  ownMood('pug', label: 'Под пледом', image: '$_fx/pug.webp'),
+  ownMood(
+    'boom',
+    label: 'Взрыв мозга',
+    score: 2,
+    emoji: '🤯',
+    image: '$_fx/boom.webp',
+  ),
+  ownMood(
+    'sleepy',
+    label: 'Сонная булка',
+    author: 'partner',
+    image: '$_fx/sleepy.webp',
+  ),
+  ownMood(
+    'pizza',
+    label: 'Хочу пиццу',
+    score: 4,
+    emoji: '🍕',
+    image: '$_fx/pizza.webp',
+  ),
+  ownMood(
+    'bear',
+    label: 'Злюка до кофе',
+    score: 1,
+    author: 'partner',
+    image: '$_fx/bear.webp',
+  ),
+  ownMood(
+    'heart',
+    label: 'Скучаю по тебе',
+    score: 4,
+    author: 'partner',
+    image: '$_fx/heart.webp',
+  ),
+];
 
 Future<void> _loadFont(String family, String path) async {
   final loader = FontLoader(family)
@@ -63,15 +93,33 @@ const _bunnyPride = 'assets/images/mood_packs/bunny/pride.webp';
 
 final _stickers = [
   const MemorySticker(
-      id: 'a', uid: 'me', image: _bunnyCool, x: .92, y: .06, size: .34, angle: .16, at: 1),
+    id: 'a',
+    uid: 'me',
+    image: _bunnyCool,
+    x: .92,
+    y: .06,
+    size: .34,
+    angle: .16,
+    at: 1,
+  ),
   const MemorySticker(
-      id: 'b', uid: 'jb', image: _pinkLove, x: .04, y: .82, size: .29, angle: -.19, at: 2),
+    id: 'b',
+    uid: 'jb',
+    image: _pinkLove,
+    x: .04,
+    y: .82,
+    size: .29,
+    angle: -.19,
+    at: 2,
+  ),
 ];
 
 /// Картинки декодируются вне тестовых часов: даём им время и перерисовываем.
 Future<void> _settle(WidgetTester tester) async {
   for (var i = 0; i < 6; i++) {
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
     await tester.pump(const Duration(milliseconds: 100));
   }
 }
@@ -79,11 +127,14 @@ Future<void> _settle(WidgetTester tester) async {
 Future<void> _shot(WidgetTester tester, GlobalKey key, String name) async {
   await _settle(tester);
   await tester.runAsync(() async {
-    final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final image = await boundary.toImage(pixelRatio: 2);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     Directory('build/stickers').createSync(recursive: true);
-    File('build/stickers/$name.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+    File(
+      'build/stickers/$name.png',
+    ).writeAsBytesSync(bytes!.buffer.asUint8List());
   });
 }
 
@@ -94,8 +145,10 @@ void main() {
     await LocaleService.instance.setLanguage(AppLanguage.ru);
     await _loadFont('Onest', 'assets/fonts/Onest.ttf');
     await _loadFont('Unbounded', 'assets/fonts/Unbounded.ttf');
-    await _loadFont('MaterialIcons',
-        '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    await _loadFont(
+      'MaterialIcons',
+      '${Platform.environment['HOME']}/snap/flutter/common/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
   });
 
   for (final b in Brightness.values) {
@@ -114,154 +167,208 @@ void main() {
       late BuildContext appContext;
 
       Widget cover() => ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: AspectRatio(
-              aspectRatio: 3 / 2,
-              child: hasPhoto
-                  ? Image.file(File(photoPath), fit: BoxFit.cover)
-                  : ColoredBox(color: cs.secondaryContainer),
-            ),
-          );
+        borderRadius: BorderRadius.circular(22),
+        child: AspectRatio(
+          aspectRatio: 3 / 2,
+          child: hasPhoto
+              ? Image.file(File(photoPath), fit: BoxFit.cover)
+              : ColoredBox(color: cs.secondaryContainer),
+        ),
+      );
 
       Widget header(String who, String ago) => Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: cs.secondaryContainer,
-                child: Text(who[0],
-                    style: TextStyle(color: cs.onSecondaryContainer, fontWeight: FontWeight.w700)),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: cs.secondaryContainer,
+              child: Text(
+                who[0],
+                style: TextStyle(
+                  color: cs.onSecondaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              const SizedBox(width: 10),
-              Text(who,
-                  style: TextStyle(
-                      fontFamily: 'Onest',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: theme.textPrimary)),
-              Text('  ·  $ago',
-                  style: TextStyle(fontFamily: 'Onest', fontSize: 12, color: theme.textMuted)),
-            ]),
-          );
+            ),
+            const SizedBox(width: 10),
+            Text(
+              who,
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: theme.textPrimary,
+              ),
+            ),
+            Text(
+              '  ·  $ago',
+              style: TextStyle(
+                fontFamily: 'Onest',
+                fontSize: 12,
+                color: theme.textMuted,
+              ),
+            ),
+          ],
+        ),
+      );
 
       Widget feed() => ListView(
-            padding: const EdgeInsets.fromLTRB(16, 56, 16, 16),
-            children: [
-              StickerCardScope(
-                key: cardKey,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.cardSurface,
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      header('THET1ME', '3 ч. назад'),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Text('Рыцари семи королевств',
-                            style: TextStyle(
-                                fontFamily: 'Unbounded',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: theme.textPrimary)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-                        child: Text('Хороший сериал по факту',
-                            style: TextStyle(fontFamily: 'Onest', fontSize: 15, color: theme.textPrimary)),
-                      ),
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: StickerAnchor(
-                          stickers: _stickers,
-                          onTap: (_, _) {},
-                          // Своё настроение пары: в ленте его адрес — файл
-                          // сервера, здесь картинка из fixtures.
-                          child: Stack(clipBehavior: Clip.none, children: [
-                            cover(),
-                            const Positioned(
-                              left: 168,
-                              top: 84,
-                              child: StickerPicture(
-                                  image: '$_fx/pug.webp', side: 92, angle: .12, rounded: true),
-                            ),
-                          ]),
-                        ),
-                      ),
-                      const SizedBox(height: 62),
-                    ],
-                  ),
-                ),
+        padding: const EdgeInsets.fromLTRB(16, 56, 16, 16),
+        children: [
+          StickerCardScope(
+            key: cardKey,
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.cardSurface,
+                borderRadius: BorderRadius.circular(28),
               ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: theme.cardSurface,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    header('JB SHARAN', '2 д. назад'),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: StickerAnchor(
-                        stickers: const [
-                          MemorySticker(
-                              id: 'c', uid: 'me', image: _bunnyPride, x: .88, y: .7, size: .26, angle: .12),
-                        ],
-                        child: NotePin(
-                          scheme: cs,
-                          fill: theme.fillColor,
-                          body: 'Купила билеты на субботу, не планируй ничего',
-                          bodyBuilder: (t, s) => Text(t, style: s),
-                        ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  header('THET1ME', '3 ч. назад'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(
+                      'Рыцари семи королевств',
+                      style: TextStyle(
+                        fontFamily: 'Unbounded',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textPrimary,
                       ),
                     ),
-                  ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+                    child: Text(
+                      'Хороший сериал по факту',
+                      style: TextStyle(
+                        fontFamily: 'Onest',
+                        fontSize: 15,
+                        color: theme.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: StickerAnchor(
+                      stickers: _stickers,
+                      onTap: (_, _) {},
+                      // Своё настроение пары: в ленте его адрес — файл
+                      // сервера, здесь картинка из fixtures.
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          cover(),
+                          const Positioned(
+                            left: 168,
+                            top: 84,
+                            child: StickerPicture(
+                              image: '$_fx/pug.webp',
+                              side: 92,
+                              angle: .12,
+                              rounded: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 62),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.only(bottom: 14),
+            decoration: BoxDecoration(
+              color: theme.cardSurface,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                header('JB SHARAN', '2 д. назад'),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: StickerAnchor(
+                    stickers: const [
+                      MemorySticker(
+                        id: 'c',
+                        uid: 'me',
+                        image: _bunnyPride,
+                        x: .88,
+                        y: .7,
+                        size: .26,
+                        angle: .12,
+                      ),
+                    ],
+                    child: NotePin(
+                      scheme: cs,
+                      fill: theme.fillColor,
+                      body: 'Купила билеты на субботу, не планируй ничего',
+                      bodyBuilder: (t, s) => Text(t, style: s),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: DefaultAssetBundle(
+            bundle: _FixtureBundle(),
+            child: ThemeScope(
+              theme: theme,
+              child: MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: ProfileTheme.data(cs),
+                home: Builder(
+                  builder: (context) {
+                    appContext = context;
+                    return Scaffold(
+                      backgroundColor: b == Brightness.dark
+                          ? Colors.black
+                          : cs.surface,
+                      body: feed(),
+                    );
+                  },
                 ),
               ),
-            ],
-          );
-
-      await tester.pumpWidget(RepaintBoundary(
-        key: key,
-        child: DefaultAssetBundle(
-          bundle: _FixtureBundle(),
-          child: ThemeScope(
-            theme: theme,
-            child: MaterialApp(
-              debugShowCheckedModeBanner: false,
-              theme: ProfileTheme.data(cs),
-              home: Builder(builder: (context) {
-                appContext = context;
-                return Scaffold(
-                  backgroundColor: b == Brightness.dark ? Colors.black : cs.surface,
-                  body: feed(),
-                );
-              }),
             ),
           ),
         ),
-      ));
+      );
       await _shot(tester, key, 'feed-${b.name}');
 
       // Наклеивание: новая наклейка посередине обложки.
       final card = cardKey.currentState!;
       final block = card.anchor!.globalRect!;
       final rect = card.globalRect!;
-      placeStickerOnCard(appContext,
-          block: block,
-          card: rect,
-          sticker: const MemorySticker(
-              id: 'n', uid: 'me', image: _bunnyPride, x: .42, y: .55, size: .33, angle: -.1),
-          isNew: true,
-          others: card.anchor!.shown);
+      placeStickerOnCard(
+        appContext,
+        block: block,
+        card: rect,
+        sticker: const MemorySticker(
+          id: 'n',
+          uid: 'me',
+          image: _bunnyPride,
+          x: .42,
+          y: .55,
+          size: .33,
+          angle: -.1,
+        ),
+        isNew: true,
+        others: card.anchor!.shown,
+      );
       await tester.pump(const Duration(milliseconds: 400));
       await _shot(tester, key, 'place-${b.name}');
       Navigator.of(appContext).pop();
@@ -274,8 +381,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       // Лист выезжает дольше полсекунды: жмём, когда он встал.
-      showStickerPicker(appContext,
-          groupId: 'g1', store: FakeCustomMoodStore(_own()), plusGate: PlusGate.open);
+      showStickerPicker(
+        appContext,
+        groupId: 'g1',
+        store: FakeCustomMoodStore(_own()),
+        plusGate: PlusGate.open,
+      );
       await _settle(tester);
       await tester.tap(find.byKey(const Key('sticker-pack-own')));
       await tester.pump(const Duration(milliseconds: 400));
@@ -283,8 +394,12 @@ void main() {
       Navigator.of(appContext).pop();
       await tester.pump(const Duration(milliseconds: 400));
 
-      showStickerPicker(appContext,
-          groupId: 'g1', store: FakeCustomMoodStore(), plusGate: PlusGate.locked);
+      showStickerPicker(
+        appContext,
+        groupId: 'g1',
+        store: FakeCustomMoodStore(),
+        plusGate: PlusGate.locked,
+      );
       await _settle(tester);
       await tester.tap(find.byKey(const Key('sticker-pack-own')));
       await tester.pump(const Duration(milliseconds: 400));

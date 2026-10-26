@@ -83,7 +83,9 @@ class ProfileIcon {
   /// маленькой анимации, крупнее — большая. Нужного размера нет — берём, какой есть.
   String? urlFor(double logicalSize, {bool animated = true}) {
     if (!animated) return stillUrl ?? smUrl ?? lgUrl;
-    return logicalSize <= 64 ? (smUrl ?? lgUrl ?? stillUrl) : (lgUrl ?? smUrl ?? stillUrl);
+    return logicalSize <= 64
+        ? (smUrl ?? lgUrl ?? stillUrl)
+        : (lgUrl ?? smUrl ?? stillUrl);
   }
 
   /// Значок из строки каталога. Чужой вид, выключенная запись, пустой ключ или

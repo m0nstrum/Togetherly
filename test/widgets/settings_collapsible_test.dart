@@ -18,9 +18,7 @@ void main() {
             prefsKey: 'about',
             title: 'О приложении',
             icon: Icons.help_rounded,
-            children: [
-              SettingsRow(icon: Icons.info_rounded, title: 'Версия'),
-            ],
+            children: [SettingsRow(icon: Icons.info_rounded, title: 'Версия')],
           ),
         ],
       ),
@@ -72,6 +70,9 @@ void main() {
     await tester.tap(find.text('О ПРИЛОЖЕНИИ'));
     await tester.pumpAndSettle();
 
-    expect(await UiPrefs.collapsedSections(), isNot(contains('settings:about')));
+    expect(
+      await UiPrefs.collapsedSections(),
+      isNot(contains('settings:about')),
+    );
   });
 }

@@ -7,10 +7,6 @@
 	     в sandbox-окружении. При aps-environment=production FCM/APNs шлёт пуши в
 	     production-гейтвей, который sandbox-токен не принимает → уведомления молча
 	     теряются. Для TestFlight/App Store (Release/Profile) остаётся production. -->
-	<key>com.apple.developer.applesignin</key>
-	<array>
-		<string>Default</string>
-	</array>
 
 	<key>aps-environment</key>
 	<string>development</string>

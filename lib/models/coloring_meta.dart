@@ -11,5 +11,4 @@ bool coloringMetaNeedsPicture({
   required bool remoteExists,
   required String? remote,
   required String? local,
-}) =>
-    remoteExists && (local ?? '').isNotEmpty && (remote ?? '').isEmpty;
+}) => remoteExists && (local ?? '').isNotEmpty && (remote ?? '').isEmpty;

@@ -29,7 +29,9 @@ void main() {
   });
 
   test('сервис: согласие проверяется до старта, «Выключить» шлёт стоп', () {
-    final src = File('lib/services/live_location_service.dart').readAsStringSync();
+    final src = File(
+      'lib/services/live_location_service.dart',
+    ).readAsStringSync();
     expect(src, contains('LocationConsent.allows(_uid, partnerUid)'));
     expect(src, contains("'t': 'stop'"));
     expect(src, contains("data['t'] == 'stop'"));

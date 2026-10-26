@@ -1,4 +1,3 @@
-// fork: tracked customization; see docs/fork/TOUCHPOINTS.md.
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -106,94 +105,104 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         children: [
           // Пятна тональных поверхностей: тот же приём, что на главной —
           // глубина цветом, без градиентов и теней.
-          Positioned.fill(child: _Blobs(scheme: cs, still: still)),
+          Positioned.fill(
+            child: _Blobs(scheme: cs, still: still),
+          ),
           SafeArea(
-            child: LayoutBuilder(builder: (context, box) => SingleChildScrollView(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 48,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: AnimatedOpacity(
-                      opacity: _last ? 0 : 1,
-                      duration: const Duration(milliseconds: 250),
-                      child: TextButton(
-                        onPressed: _last
-                            ? null
-                            : () => _ctrl.animateToPage(
-                                  _pages - 1,
-                                  duration: const Duration(milliseconds: 500),
-                                  curve: const Cubic(0.05, 0.7, 0.1, 1),
-                                ),
-                        child: Text(
-                          s.skip,
-                          style: AppFonts.onest(
-                              size: 14, weight: 600, color: cs.onSurfaceVariant),
+            child: LayoutBuilder(
+              builder: (context, box) => SingleChildScrollView(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 48,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: AnimatedOpacity(
+                          opacity: _last ? 0 : 1,
+                          duration: const Duration(milliseconds: 250),
+                          child: TextButton(
+                            onPressed: _last
+                                ? null
+                                : () => _ctrl.animateToPage(
+                                    _pages - 1,
+                                    duration: const Duration(milliseconds: 500),
+                                    curve: const Cubic(0.05, 0.7, 0.1, 1),
+                                  ),
+                            child: Text(
+                              s.skip,
+                              style: AppFonts.onest(
+                                size: 14,
+                                weight: 600,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                SizedBox(
-                  height: (box.maxHeight * .4).clamp(260.0, 320.0),
-                  child: PageView(
-                    controller: _ctrl,
-                    children: [
-                      _DuoScene(scheme: cs, still: still),
-                      _MorphScene(scheme: cs, theme: theme, still: still),
-                      _DialScene(scheme: cs, theme: theme, still: still),
-                    ],
-                  ),
-                ),
-                _Copy(
-                  scheme: cs,
-                  title: titles[_page],
-                  subtitle: subtitles[_page],
-                ),
-                const SizedBox(height: 18),
-                _Dots(scheme: cs, pos: _pos, count: _pages),
-                const SizedBox(height: 18),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: _FillingButton(
-                    // Кнопка наливается по мере пролистывания: к третьему
-                    // экрану она залита целиком. Это и полоса прогресса, и
-                    // обещание, что идти осталось недолго.
-                    progress: ((_pos + 1) / _pages).clamp(0.0, 1.0),
-                    theme: theme,
-                    label: _last ? s.createAccount : s.welcomeNext,
-                    onTap: _next,
-                  ),
-                ),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: AnimatedOpacity(
-                    opacity: 1,
-                    duration: const Duration(milliseconds: 250),
-                    child: TextButton(
-                      onPressed: () => _navigate(setup: false),
-                      child: Text(
-                        s.alreadyHaveAccount,
-                        style: AppFonts.onest(
-                            size: 14, weight: 600, color: cs.primary),
+                    SizedBox(
+                      height: (box.maxHeight * .4).clamp(260.0, 320.0),
+                      child: PageView(
+                        controller: _ctrl,
+                        children: [
+                          _DuoScene(scheme: cs, still: still),
+                          _MorphScene(scheme: cs, theme: theme, still: still),
+                          _DialScene(scheme: cs, theme: theme, still: still),
+                        ],
                       ),
                     ),
-                  ),
+                    _Copy(
+                      scheme: cs,
+                      title: titles[_page],
+                      subtitle: subtitles[_page],
+                    ),
+                    const SizedBox(height: 18),
+                    _Dots(scheme: cs, pos: _pos, count: _pages),
+                    const SizedBox(height: 18),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: _FillingButton(
+                        // Кнопка наливается по мере пролистывания: к третьему
+                        // экрану она залита целиком. Это и полоса прогресса, и
+                        // обещание, что идти осталось недолго.
+                        progress: ((_pos + 1) / _pages).clamp(0.0, 1.0),
+                        theme: theme,
+                        label: _last ? s.createAccount : s.welcomeNext,
+                        onTap: _next,
+                      ),
+                    ),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: AnimatedOpacity(
+                        opacity: 1,
+                        duration: const Duration(milliseconds: 250),
+                        child: TextButton(
+                          onPressed: () => _navigate(setup: false),
+                          child: Text(
+                            s.alreadyHaveAccount,
+                            style: AppFonts.onest(
+                              size: 14,
+                              weight: 600,
+                              color: cs.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      s.privateSecure,
+                      style: AppFonts.onest(
+                        size: 10,
+                        weight: 600,
+                        letterSpacing: 2.4,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
-                Text(
-                  s.privateSecure,
-                  style: AppFonts.onest(
-                    size: 10,
-                    weight: 600,
-                    letterSpacing: 2.4,
-                    color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
-            )),
           ),
         ],
       ),
@@ -236,7 +245,10 @@ class _Copy extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: AppFonts.onest(
-                size: 14, height: 1.45, color: scheme.onSurfaceVariant),
+              size: 14,
+              height: 1.45,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -306,7 +318,10 @@ class _FillingButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        height: (MediaQuery.textScalerOf(context).scale(16) * 2 + 24).clamp(56, double.infinity),
+        height: (MediaQuery.textScalerOf(context).scale(16) * 2 + 24).clamp(
+          56,
+          double.infinity,
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(99),
           child: Stack(
@@ -333,10 +348,18 @@ class _FillingButton extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(child: Text(
-                      label, maxLines: 2, textAlign: TextAlign.center,
-                      style: AppFonts.onest(size: 16, weight: 700, color: ink),
-                    )),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                        style: AppFonts.onest(
+                          size: 16,
+                          weight: 700,
+                          color: ink,
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Icon(Icons.arrow_forward_rounded, size: 19, color: ink),
                   ],
@@ -405,12 +428,24 @@ class _BlobPainter extends CustomPainter {
       canvas.drawCircle(c + Offset(dx, dy), r, Paint()..color = color);
     }
 
-    blob(Offset(size.width * 0.18, size.height * 0.1), size.width * 0.42,
-        scheme.primaryContainer, 0);
-    blob(Offset(size.width * 0.95, size.height * 0.62), size.width * 0.34,
-        scheme.secondaryContainer, 0.35);
-    blob(Offset(size.width * 0.05, size.height * 0.55), size.width * 0.2,
-        scheme.tertiaryContainer, 0.7);
+    blob(
+      Offset(size.width * 0.18, size.height * 0.1),
+      size.width * 0.42,
+      scheme.primaryContainer,
+      0,
+    );
+    blob(
+      Offset(size.width * 0.95, size.height * 0.62),
+      size.width * 0.34,
+      scheme.secondaryContainer,
+      0.35,
+    );
+    blob(
+      Offset(size.width * 0.05, size.height * 0.55),
+      size.width * 0.2,
+      scheme.tertiaryContainer,
+      0.7,
+    );
   }
 
   @override
@@ -462,18 +497,38 @@ class _DuoSceneState extends State<_DuoScene>
   /// Кружки разъезжаются и снова сходятся: 0—12% стоят врозь, к 42% съезжаются
   /// с лёгким перелётом по размеру, до 80% держат пару, дальше расходятся.
   static const _gapStops = <(double, double)>[
-    (0, 118), (0.12, 118), (0.42, 31), (0.5, 31),
-    (0.8, 31), (0.92, 118), (1, 118),
+    (0, 118),
+    (0.12, 118),
+    (0.42, 31),
+    (0.5, 31),
+    (0.8, 31),
+    (0.92, 118),
+    (1, 118),
   ];
   static const _scaleStops = <(double, double)>[
-    (0, 0.92), (0.12, 0.92), (0.42, 1.04), (0.5, 1),
-    (0.8, 1), (0.92, 0.92), (1, 0.92),
+    (0, 0.92),
+    (0.12, 0.92),
+    (0.42, 1.04),
+    (0.5, 1),
+    (0.8, 1),
+    (0.92, 0.92),
+    (1, 0.92),
   ];
   static const _sparkFade = <(double, double)>[
-    (0, 0), (0.4, 0), (0.52, 1), (0.7, 1), (0.88, 0), (1, 0),
+    (0, 0),
+    (0.4, 0),
+    (0.52, 1),
+    (0.7, 1),
+    (0.88, 0),
+    (1, 0),
   ];
   static const _sparkScale = <(double, double)>[
-    (0, 0.4), (0.4, 0.4), (0.52, 1.15), (0.7, 1), (0.88, 0.6), (1, 0.6),
+    (0, 0.4),
+    (0.4, 0.4),
+    (0.52, 1.15),
+    (0.7, 1),
+    (0.88, 0.6),
+    (1, 0.6),
   ];
 
   @override
@@ -535,8 +590,11 @@ class _DuoSceneState extends State<_DuoScene>
                   opacity: _at(t, _sparkFade, Curves.easeOut).clamp(0.0, 1.0),
                   child: Transform.scale(
                     scale: _at(t, _sparkScale, Curves.easeOut),
-                    child: Icon(Icons.favorite_rounded,
-                        size: 34, color: cs.primary),
+                    child: Icon(
+                      Icons.favorite_rounded,
+                      size: 34,
+                      color: cs.primary,
+                    ),
                   ),
                 ),
               ],
@@ -588,11 +646,12 @@ class _RingPainter extends CustomPainter {
   final double t;
 
   static const _fade = <(double, double)>[
-    (0, 0), (0.45, 0), (0.55, 0.5), (1, 0),
+    (0, 0),
+    (0.45, 0),
+    (0.55, 0.5),
+    (1, 0),
   ];
-  static const _scale = <(double, double)>[
-    (0, 0.7), (0.45, 0.7), (1, 2.1),
-  ];
+  static const _scale = <(double, double)>[(0, 0.7), (0.45, 0.7), (1, 2.1)];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -643,20 +702,40 @@ class _MorphSceneState extends State<_MorphScene>
   /// Три фазы по три секунды: капля, карточка, круг. Доли скругления взяты из
   /// макета (46/54/50% → 28 px → 50%), поворот тоже.
   static const _radius = <(double, double)>[
-    (0, 0.48), (0.22, 0.48), (0.33, 0.13), (0.55, 0.13),
-    (0.66, 0.5), (0.88, 0.5), (1, 0.48),
+    (0, 0.48),
+    (0.22, 0.48),
+    (0.33, 0.13),
+    (0.55, 0.13),
+    (0.66, 0.5),
+    (0.88, 0.5),
+    (1, 0.48),
   ];
   static const _turn = <(double, double)>[
-    (0, 0), (0.22, 0), (0.33, -0.105), (0.55, -0.105),
-    (0.66, 0.07), (0.88, 0.07), (1, 0),
+    (0, 0),
+    (0.22, 0),
+    (0.33, -0.105),
+    (0.55, -0.105),
+    (0.66, 0.07),
+    (0.88, 0.07),
+    (1, 0),
   ];
 
   /// Значок держится свои три секунды и уходит: `show` из макета.
   static const _iconFade = <(double, double)>[
-    (0, 0), (0.02, 0), (0.06, 1), (0.28, 1), (0.33, 0), (1, 0),
+    (0, 0),
+    (0.02, 0),
+    (0.06, 1),
+    (0.28, 1),
+    (0.33, 0),
+    (1, 0),
   ];
   static const _iconScale = <(double, double)>[
-    (0, 0.7), (0.02, 0.7), (0.06, 1), (0.28, 1), (0.33, 0.7), (1, 0.7),
+    (0, 0.7),
+    (0.02, 0.7),
+    (0.06, 1),
+    (0.28, 1),
+    (0.33, 0.7),
+    (1, 0.7),
   ];
 
   static const _icons = [
@@ -715,11 +794,17 @@ class _MorphSceneState extends State<_MorphScene>
                 children: [
                   for (var i = 0; i < _icons.length; i++)
                     Opacity(
-                      opacity: _at((t - i / 3) % 1.0, _iconFade, Curves.easeInOut)
-                          .clamp(0.0, 1.0),
+                      opacity: _at(
+                        (t - i / 3) % 1.0,
+                        _iconFade,
+                        Curves.easeInOut,
+                      ).clamp(0.0, 1.0),
                       child: Transform.scale(
-                        scale: _at((t - i / 3) % 1.0, _iconScale,
-                            Curves.easeInOut),
+                        scale: _at(
+                          (t - i / 3) % 1.0,
+                          _iconScale,
+                          Curves.easeInOut,
+                        ),
                         child: Icon(_icons[i], size: 86, color: ink),
                       ),
                     ),
@@ -808,7 +893,10 @@ class _DialSceneState extends State<_DialScene>
                 Text(
                   '$filled',
                   style: AppFonts.unbounded(
-                      size: 30, weight: 800, color: cs.onSurface),
+                    size: 30,
+                    weight: 800,
+                    color: cs.onSurface,
+                  ),
                 ),
                 Positioned(
                   bottom: 6,
@@ -864,11 +952,11 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final k = _at(
-      (t - delay).clamp(0.0, 1.0),
-      const [(0.0, 0.0), (0.1, 1.0), (1.0, 1.0)],
-      _emphasized,
-    );
+    final k = _at((t - delay).clamp(0.0, 1.0), const [
+      (0.0, 0.0),
+      (0.1, 1.0),
+      (1.0, 1.0),
+    ], _emphasized);
     return Opacity(
       opacity: k.clamp(0.0, 1.0),
       child: Transform.translate(
@@ -876,15 +964,19 @@ class _Pill extends StatelessWidget {
         child: Container(
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration:
-              BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(99),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 15, color: ink),
               const SizedBox(width: 6),
-              Text(label,
-                  style: AppFonts.onest(size: 12, weight: 600, color: ink)),
+              Text(
+                label,
+                style: AppFonts.onest(size: 12, weight: 600, color: ink),
+              ),
             ],
           ),
         ),

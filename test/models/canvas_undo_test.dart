@@ -3,14 +3,14 @@ import 'package:love_app/models/canvas_undo.dart';
 import 'package:love_app/models/draw_stroke.dart';
 
 DrawStroke _s(String id, String user, int order, {int layer = 0}) => DrawStroke(
-      id: id,
-      userId: user,
-      colorValue: 0xFF000000,
-      strokeWidth: 4,
-      points: const [],
-      orderIndex: order,
-      layer: layer,
-    );
+  id: id,
+  userId: user,
+  colorValue: 0xFF000000,
+  strokeWidth: 4,
+  points: const [],
+  orderIndex: order,
+  layer: layer,
+);
 
 /// Кнопка «отменить» на холсте одна, а действий три: нарисовать штрих,
 /// подвинуть нарисованное и стереть линию целиком. Снимать надо последнее
@@ -60,30 +60,43 @@ void main() {
     test('после смены id отмена снимает этот штрих', () {
       final seqs = {'local_1': 5};
       adoptStrokeId(seqs, {}, from: 'local_1', to: 'srv_1');
-      expect(undoTarget(strokeSeq: ownStrokeSeq(seqs, 'srv_1')), UndoTarget.stroke);
+      expect(
+        undoTarget(strokeSeq: ownStrokeSeq(seqs, 'srv_1')),
+        UndoTarget.stroke,
+      );
     });
   });
 
   test('свой штрих без номера (загружен с диска) всё равно отменяется', () {
-    expect(undoTarget(strokeSeq: ownStrokeSeq(const {}, 'old')), UndoTarget.stroke);
+    expect(
+      undoTarget(strokeSeq: ownStrokeSeq(const {}, 'old')),
+      UndoTarget.stroke,
+    );
   });
 
   // Владелец, 21.10.2026: «почему не сделать отмену» линий прошлого захода.
   // Одиночный холст поднимал их в историю, общий начинал с пустой.
-  test('общий холст: в историю отмены встают свои линии по порядку рисования', () {
-    final strokes = [
-      _s('b', 'me', 3, layer: 1),
-      _s('p', 'partner', 2),
-      _s('a', 'me', 1),
-      _s('c', 'me', 5),
-    ];
-    expect(ownStrokeHistory(strokes, 'me'), ['a', 'b', 'c'],
-        reason: 'отмена идёт от последнего нарисованного, слой тут ни при чём');
-  });
+  test(
+    'общий холст: в историю отмены встают свои линии по порядку рисования',
+    () {
+      final strokes = [
+        _s('b', 'me', 3, layer: 1),
+        _s('p', 'partner', 2),
+        _s('a', 'me', 1),
+        _s('c', 'me', 5),
+      ];
+      expect(
+        ownStrokeHistory(strokes, 'me'),
+        ['a', 'b', 'c'],
+        reason: 'отмена идёт от последнего нарисованного, слой тут ни при чём',
+      );
+    },
+  );
 
   test('свой штрих без номера старше любой правки этого захода', () {
     expect(
-        undoTarget(strokeSeq: ownStrokeSeq(const {}, 'old'), editSeq: 1),
-        UndoTarget.edit);
+      undoTarget(strokeSeq: ownStrokeSeq(const {}, 'old'), editSeq: 1),
+      UndoTarget.edit,
+    );
   });
 }

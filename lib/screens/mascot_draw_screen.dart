@@ -653,8 +653,10 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
             _prevDrawingImage!.height.toDouble(),
           ),
           containRect(
-            source: Size(_prevDrawingImage!.width.toDouble(),
-                _prevDrawingImage!.height.toDouble()),
+            source: Size(
+              _prevDrawingImage!.width.toDouble(),
+              _prevDrawingImage!.height.toDouble(),
+            ),
             target: Size(w.toDouble(), h.toDouble()),
           ),
           Paint(),
@@ -865,8 +867,10 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
             _prevDrawingImage!.height.toDouble(),
           ),
           containRect(
-            source: Size(_prevDrawingImage!.width.toDouble(),
-                _prevDrawingImage!.height.toDouble()),
+            source: Size(
+              _prevDrawingImage!.width.toDouble(),
+              _prevDrawingImage!.height.toDouble(),
+            ),
             target: Size(w.toDouble(), h.toDouble()),
           ),
           Paint()..filterQuality = FilterQuality.high,
@@ -892,22 +896,20 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
       if (mounted)
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(
-          SnackBar(content: Text(ForkFailure.of(e).text)),
-        );
+        ).showSnackBar(SnackBar(content: Text(ForkFailure.of(e).text)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<String?> _showNameDialog() => AppDialog.prompt(
-        context,
-        title: LocaleService.current.mascotNameTitle,
-        hint: LocaleService.current.enterNameHint,
-        initial: widget.initialName ?? '',
-        confirmLabel: LocaleService.current.save,
-        maxLength: 30,
-      );
+    context,
+    title: LocaleService.current.mascotNameTitle,
+    hint: LocaleService.current.enterNameHint,
+    initial: widget.initialName ?? '',
+    confirmLabel: LocaleService.current.save,
+    maxLength: 30,
+  );
 
   // ── Custom colour picker ──────────────────────────────────────────────────
 
@@ -977,7 +979,11 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                    const Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Colors.orange,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -1276,10 +1282,7 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
                                 : _color.withAlpha(
                                     (_opacity * 255).round().clamp(0, 255),
                                   ),
-                            border: Border.all(
-                              color: _t.divider,
-                              width: 1,
-                            ),
+                            border: Border.all(color: _t.divider, width: 1),
                           ),
                         ),
                       ),
@@ -1371,10 +1374,7 @@ class _MascotDrawScreenState extends State<MascotDrawScreen> {
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _t.divider,
-                        width: 1.5,
-                      ),
+                      border: Border.all(color: _t.divider, width: 1.5),
                       gradient: const SweepGradient(
                         colors: [
                           Color(0xFFFF0000),

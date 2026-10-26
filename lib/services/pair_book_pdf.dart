@@ -124,13 +124,17 @@ Future<Uint8List> buildPairBookPdf({
             ),
             if (cover.subtitle.isNotEmpty) ...[
               pw.SizedBox(height: 14),
-              pw.Text(cover.subtitle,
-                  style: pw.TextStyle(fontSize: 15, color: _soft)),
+              pw.Text(
+                cover.subtitle,
+                style: pw.TextStyle(fontSize: 15, color: _soft),
+              ),
             ],
             if (cover.footer.isNotEmpty) ...[
               pw.SizedBox(height: 6),
-              pw.Text(cover.footer,
-                  style: pw.TextStyle(fontSize: 12, color: _soft)),
+              pw.Text(
+                cover.footer,
+                style: pw.TextStyle(fontSize: 12, color: _soft),
+              ),
             ],
           ],
         ),
@@ -148,8 +152,10 @@ Future<Uint8List> buildPairBookPdf({
         margin: const pw.EdgeInsets.fromLTRB(42, 46, 42, 42),
         footer: (context) => pw.Align(
           alignment: pw.Alignment.centerRight,
-          child: pw.Text('${context.pageNumber}',
-              style: pw.TextStyle(fontSize: 10, color: _soft)),
+          child: pw.Text(
+            '${context.pageNumber}',
+            style: pw.TextStyle(fontSize: 10, color: _soft),
+          ),
         ),
         build: (context) => [
           for (final day in days) ..._dayBlock(day, display, stickerImages),
@@ -165,16 +171,17 @@ List<pw.Widget> _dayBlock(
   BookPdfDay day,
   pw.Font display,
   Map<Uint8List, pw.ImageProvider?> stickerImages,
-) =>
-    [
-      pw.SizedBox(height: 10),
-      pw.Text(day.dateLabel,
-          style: pw.TextStyle(font: display, fontSize: 16, color: _accent)),
-      pw.SizedBox(height: 4),
-      pw.Divider(color: PdfColors.grey300, height: 12),
-      for (final entry in day.entries) ..._entryBlock(entry, stickerImages),
-      pw.SizedBox(height: 12),
-    ];
+) => [
+  pw.SizedBox(height: 10),
+  pw.Text(
+    day.dateLabel,
+    style: pw.TextStyle(font: display, fontSize: 16, color: _accent),
+  ),
+  pw.SizedBox(height: 4),
+  pw.Divider(color: PdfColors.grey300, height: 12),
+  for (final entry in day.entries) ..._entryBlock(entry, stickerImages),
+  pw.SizedBox(height: 12),
+];
 
 const double _photoWidth = 236;
 const double _photoHeight = 176;
@@ -208,13 +215,19 @@ List<pw.Widget> _entryBlock(
       final photo = pw.ClipRRect(
         horizontalRadius: 10,
         verticalRadius: 10,
-        child: pw.Image(pw.MemoryImage(bytes),
-            width: _photoWidth, height: _photoHeight, fit: pw.BoxFit.cover),
+        child: pw.Image(
+          pw.MemoryImage(bytes),
+          width: _photoWidth,
+          height: _photoHeight,
+          fit: pw.BoxFit.cover,
+        ),
       );
       // Наклейки стоят на первом кадре, как в открытой записи.
-      images.add(images.isEmpty && stickers.isNotEmpty
-          ? _stuckPhoto(photo, stickers)
-          : photo);
+      images.add(
+        images.isEmpty && stickers.isNotEmpty
+            ? _stuckPhoto(photo, stickers)
+            : photo,
+      );
     } catch (e) {
       debugPrint('pair book: снимок пропущен ($e)');
     }
@@ -222,12 +235,16 @@ List<pw.Widget> _entryBlock(
 
   return [
     if (entry.title.isNotEmpty)
-      pw.Text(entry.title,
-          style: pw.TextStyle(fontSize: 13, color: _ink, lineSpacing: 2)),
+      pw.Text(
+        entry.title,
+        style: pw.TextStyle(fontSize: 13, color: _ink, lineSpacing: 2),
+      ),
     if (entry.caption.isNotEmpty) ...[
       pw.SizedBox(height: 2),
-      pw.Text(entry.caption,
-          style: pw.TextStyle(fontSize: 11.5, color: _soft, lineSpacing: 2)),
+      pw.Text(
+        entry.caption,
+        style: pw.TextStyle(fontSize: 11.5, color: _soft, lineSpacing: 2),
+      ),
     ],
     if (images.isNotEmpty) ...[
       pw.SizedBox(height: 8),
@@ -260,8 +277,10 @@ const double kBookStickerOverhang = 36;
 /// пине, но свес не дальше [kBookStickerOverhang].
 ({double dx, double dy}) bookStickerTopLeft(BookPdfSticker s) {
   final side = s.size * _photoWidth;
-  double place(double center, double extent) => (center - side / 2)
-      .clamp(-kBookStickerOverhang, extent - side + kBookStickerOverhang);
+  double place(double center, double extent) => (center - side / 2).clamp(
+    -kBookStickerOverhang,
+    extent - side + kBookStickerOverhang,
+  );
   return (
     dx: place(s.x * _photoWidth, _photoWidth),
     dy: place(s.y * _photoHeight, _photoHeight),
@@ -273,30 +292,34 @@ const double kBookStickerOverhang = 36;
 pw.Widget _stuckPhoto(
   pw.Widget photo,
   List<(BookPdfSticker, pw.ImageProvider)> stickers,
-) =>
-    pw.SizedBox(
-      width: _photoWidth,
-      height: _photoHeight,
-      child: pw.Stack(
-        overflow: pw.Overflow.visible,
-        children: [
-          photo,
-          for (final (s, image) in stickers)
-            pw.Positioned(
-              left: bookStickerTopLeft(s).dx,
-              top: bookStickerTopLeft(s).dy,
-              child: _stickerPicture(s, image, s.size * _photoWidth),
-            ),
-        ],
-      ),
-    );
+) => pw.SizedBox(
+  width: _photoWidth,
+  height: _photoHeight,
+  child: pw.Stack(
+    overflow: pw.Overflow.visible,
+    children: [
+      photo,
+      for (final (s, image) in stickers)
+        pw.Positioned(
+          left: bookStickerTopLeft(s).dx,
+          top: bookStickerTopLeft(s).dy,
+          child: _stickerPicture(s, image, s.size * _photoWidth),
+        ),
+    ],
+  ),
+);
 
 pw.Widget _stickerPicture(
   BookPdfSticker s,
   pw.ImageProvider image,
   double side,
 ) {
-  pw.Widget picture = pw.Image(image, width: side, height: side, fit: pw.BoxFit.contain);
+  pw.Widget picture = pw.Image(
+    image,
+    width: side,
+    height: side,
+    fit: pw.BoxFit.contain,
+  );
   if (s.rounded) {
     picture = pw.ClipRRect(
       horizontalRadius: side * 0.26,

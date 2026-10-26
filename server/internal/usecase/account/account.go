@@ -69,6 +69,7 @@ var Personal = []struct{ Collection, Field string }{
 	{"e2e_grants", "user_uid"},
 	{"e2e_grants", "to_uid"},
 	{"e2e_handshake", "user_uid"},
+	{"e2e_links", "user_uid"},
 	{"push_tokens", "user_uid"},
 	{"fork_battery", "user_uid"},
 	{"fork_reels_matches", "author_uid"},

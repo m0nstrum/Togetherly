@@ -41,27 +41,29 @@ Future<void> _pump(
   tester.view.physicalSize = Size(width * 3, 900 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(MaterialApp(
-    theme: ProfileTheme.data(cs),
-    home: MediaQuery(
-      data: MediaQueryData(
-        size: Size(width, 900),
-        textScaler: TextScaler.linear(scale),
-      ),
-      child: Scaffold(
-        backgroundColor: cs.surfaceContainer,
-        body: Align(
-          alignment: Alignment.bottomCenter,
-          child: AddMemorySheetBody(
-            scheme: cs,
-            fill: theme.fillColor,
-            onType: onType ?? (_) {},
-            onCapsule: onCapsule ?? () {},
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ProfileTheme.data(cs),
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: Size(width, 900),
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: Scaffold(
+          backgroundColor: cs.surfaceContainer,
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: AddMemorySheetBody(
+              scheme: cs,
+              fill: theme.fillColor,
+              onType: onType ?? (_) {},
+              onCapsule: onCapsule ?? () {},
+            ),
           ),
         ),
       ),
     ),
-  ));
+  );
   await tester.pump();
 }
 
@@ -77,8 +79,9 @@ void main() {
   group('раскладка', () {
     for (final b in Brightness.values) {
       for (final (width, scale) in [(320.0, 1.3), (320.0, 1.0), (393.0, 1.0)]) {
-        testWidgets('${b.name}, $width dp, шрифт $scale — без переполнений',
-            (tester) async {
+        testWidgets('${b.name}, $width dp, шрифт $scale — без переполнений', (
+          tester,
+        ) async {
           await _pump(tester, brightness: b, width: width, scale: scale);
           expect(tester.takeException(), isNull);
         });
@@ -96,27 +99,34 @@ void main() {
     });
 
     for (final lang in ['ru', 'de', 'fr', 'es', 'it', 'pt', 'en']) {
-      testWidgets('подписи полки не рвутся посреди слова ($lang, 320 dp, 1.3)',
-          (tester) async {
-        await LocaleService.instance.setLanguage(AppLanguage.byCode(lang)!);
-        addTearDown(() => LocaleService.instance.setLanguage(AppLanguage.ru));
-        await _pump(tester, brightness: Brightness.light);
-        for (final t in AddMemorySheetBody.shelfTypes) {
-          final item = find.byKey(ValueKey('add-${t.name}'));
-          final p = tester.renderObject<RenderParagraph>(
-              find.descendant(of: item, matching: find.byType(RichText)).last);
-          final text = p.text.toPlainText();
-          final lines = p
-              .getBoxesForSelection(
-                  TextSelection(baseOffset: 0, extentOffset: text.length))
-              .map((b) => b.top.round())
-              .toSet()
-              .length;
-          final words = text.split(RegExp(r'[\s-]+')).length;
-          expect(lines, lessThanOrEqualTo(words),
-              reason: '«$text» разложилось на $lines строк: слово разорвано');
-        }
-      });
+      testWidgets(
+        'подписи полки не рвутся посреди слова ($lang, 320 dp, 1.3)',
+        (tester) async {
+          await LocaleService.instance.setLanguage(AppLanguage.byCode(lang)!);
+          addTearDown(() => LocaleService.instance.setLanguage(AppLanguage.ru));
+          await _pump(tester, brightness: Brightness.light);
+          for (final t in AddMemorySheetBody.shelfTypes) {
+            final item = find.byKey(ValueKey('add-${t.name}'));
+            final p = tester.renderObject<RenderParagraph>(
+              find.descendant(of: item, matching: find.byType(RichText)).last,
+            );
+            final text = p.text.toPlainText();
+            final lines = p
+                .getBoxesForSelection(
+                  TextSelection(baseOffset: 0, extentOffset: text.length),
+                )
+                .map((b) => b.top.round())
+                .toSet()
+                .length;
+            final words = text.split(RegExp(r'[\s-]+')).length;
+            expect(
+              lines,
+              lessThanOrEqualTo(words),
+              reason: '«$text» разложилось на $lines строк: слово разорвано',
+            );
+          }
+        },
+      );
     }
 
     testWidgets('полка — один ряд из пяти', (tester) async {
@@ -133,10 +143,12 @@ void main() {
     testWidgets('каждая кнопка ведёт в свой тип', (tester) async {
       final got = <MemoryType>[];
       var capsule = 0;
-      await _pump(tester,
-          brightness: Brightness.light,
-          onType: got.add,
-          onCapsule: () => capsule++);
+      await _pump(
+        tester,
+        brightness: Brightness.light,
+        onType: got.add,
+        onCapsule: () => capsule++,
+      );
       await tester.tap(find.byKey(const ValueKey('add-hero')));
       for (final t in AddMemorySheetBody.shelfTypes) {
         await tester.tap(find.byKey(ValueKey('add-${t.name}')));
@@ -185,14 +197,19 @@ void main() {
     });
 
     for (final b in Brightness.values) {
-      testWidgets('на главной кнопке растр цветом подписи (${b.name})',
-          (tester) async {
+      testWidgets('на главной кнопке растр цветом подписи (${b.name})', (
+        tester,
+      ) async {
         await _pump(tester, brightness: b);
         final theme = buildAppTheme(kPalettes[0], b);
-        final paint = tester.widget<CustomPaint>(find.descendant(
+        final paint = tester.widget<CustomPaint>(
+          find.descendant(
             of: find.byKey(const ValueKey('add-hero')),
             matching: find.byWidgetPredicate(
-                (w) => w is CustomPaint && w.painter is HalftonePainter)));
+              (w) => w is CustomPaint && w.painter is HalftonePainter,
+            ),
+          ),
+        );
         final painter = paint.painter! as HalftonePainter;
         expect(painter.color, AppThemes.onColor(theme.fillColor, mode: b));
         expect(painter.dark, b == Brightness.dark);
@@ -202,14 +219,22 @@ void main() {
     testWidgets('главная кнопка в заливке темы, подпись белым', (tester) async {
       await _pump(tester, brightness: Brightness.light);
       final theme = buildAppTheme(kPalettes[0], Brightness.light);
-      final hero = tester.widget<Material>(find.descendant(
-          of: find.byKey(const ValueKey('add-hero')),
-          matching: find.byType(Material)).first);
+      final hero = tester.widget<Material>(
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('add-hero')),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
       expect(hero.color, theme.fillColor);
-      final title = tester.widget<Text>(find.text(
-          LocaleService.current.addHeroTitle));
-      expect(title.style?.color,
-          AppThemes.onColor(theme.fillColor, mode: Brightness.light));
+      final title = tester.widget<Text>(
+        find.text(LocaleService.current.addHeroTitle),
+      );
+      expect(
+        title.style?.color,
+        AppThemes.onColor(theme.fillColor, mode: Brightness.light),
+      );
     });
   });
 

@@ -1,10 +1,10 @@
-/// Уведомления хуков сервера без APNs/FCM (docs/fork/PLAN.md, решение 2).
+/// Уведомления хуков сервера без APNs/FCM (docs/history/PLAN.md, решение 2).
 ///
 /// Зов в совместную ленту, «пойдём порисовать» и подобные события не живут
 /// записями в базе: апстрим доставлял их только пушем Firebase/Apple. В форке
-/// сервер кладёт их в канал `user:<uid>` Centrifugo
-/// (`server/hooks/apns_push.js` → `/internal/notify`), а здесь они
-/// превращаются в локальное уведомление — и в приложении, и в фоновом
+/// сервер кладёт их в канал `user:<uid>` Centrifugo (`usecase/notify`, для
+/// JS-хуков — `server/pb_hooks/apns_push.js` → `/internal/notify`), а здесь
+/// они превращаются в локальное уведомление — и в приложении, и в фоновом
 /// сервисе, который держит сокет.
 library;
 
@@ -99,7 +99,9 @@ abstract final class ForkPushRelay {
   }) {
     final at = int.tryParse('${data['at'] ?? ''}') ?? 0;
     final age = now().difference(DateTime.fromMillisecondsSinceEpoch(at));
-    if (at <= 0 || age.abs() > (touch ? const Duration(minutes: 2) : watchFresh)) return;
+    if (at <= 0 ||
+        age.abs() > (touch ? const Duration(minutes: 2) : watchFresh))
+      return;
     notify(
       'fork_${touch ? 'touch' : 'watch'}${data['group_id'] ?? ''}'.hashCode,
       touch

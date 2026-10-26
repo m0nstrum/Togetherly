@@ -97,10 +97,12 @@ class MemoryLanePreview extends StatelessWidget {
               GestureDetector(
                 onTap: () => _openMemoryLane(context),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: primary.withValues(alpha:0.08),
+                    color: primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -115,7 +117,11 @@ class MemoryLanePreview extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 3),
-                      Icon(Icons.chevron_right_rounded, size: 18, color: primary),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: primary,
+                      ),
                     ],
                   ),
                 ),
@@ -137,8 +143,11 @@ class MemoryLanePreview extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.photo_album_outlined,
-                        size: 32, color: Colors.grey.shade300),
+                    Icon(
+                      Icons.photo_album_outlined,
+                      size: 32,
+                      color: Colors.grey.shade300,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       LocaleService.current.noMemoriesYet,
@@ -218,8 +227,11 @@ class MemoryLanePreview extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.photo_library_outlined,
-                    size: 36, color: Colors.grey.shade300),
+                Icon(
+                  Icons.photo_library_outlined,
+                  size: 36,
+                  color: Colors.grey.shade300,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   LocaleService.current.memoriesWillAppear,
@@ -341,24 +353,27 @@ class _PreviewCard extends StatelessWidget {
             uid: memory.authorUid,
             size: 40,
             child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: primary.withValues(alpha:0.18), width: 1.5),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: primary.withValues(alpha: 0.18),
+                  width: 1.5,
+                ),
+              ),
+              child: ClipOval(
+                child: authorAvatar.isNotEmpty
+                    ? StorageImage(
+                        imageUrl: authorAvatar,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 120,
+                        memCacheHeight: 120,
+                        errorWidget: (_, _, _) => _avatarFallback(),
+                      )
+                    : _avatarFallback(),
+              ),
             ),
-            child: ClipOval(
-              child: authorAvatar.isNotEmpty
-                  ? StorageImage(
-                      imageUrl: authorAvatar,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 120,
-                      memCacheHeight: 120,
-                      errorWidget: (_, _, _) => _avatarFallback(),
-                    )
-                  : _avatarFallback(),
-            ),
-          ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -392,7 +407,7 @@ class _PreviewCard extends StatelessWidget {
   Widget _avatarFallback() {
     final letter = authorName.firstGraphemeUpper('♥');
     return Container(
-      color: primary.withValues(alpha:0.12),
+      color: primary.withValues(alpha: 0.12),
       alignment: Alignment.center,
       child: Text(
         letter,
@@ -410,7 +425,7 @@ class _PreviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: primary.withValues(alpha:0.10),
+        color: primary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -457,8 +472,11 @@ class _PreviewCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Icon(Icons.chat_bubble_outline_rounded,
-              size: 19, color: theme.textMuted),
+          Icon(
+            Icons.chat_bubble_outline_rounded,
+            size: 19,
+            color: theme.textMuted,
+          ),
           if (memory.commentsCount > 0) ...[
             const SizedBox(width: 5),
             Text(
@@ -471,8 +489,7 @@ class _PreviewCard extends StatelessWidget {
             ),
           ],
           const Spacer(),
-          Icon(Icons.bookmark_border_rounded,
-              size: 21, color: theme.textMuted),
+          Icon(Icons.bookmark_border_rounded, size: 21, color: theme.textMuted),
         ],
       ),
     );
@@ -498,10 +515,7 @@ class _PreviewCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _placeCard(),
-              _caption(),
-            ],
+            children: [_placeCard(), _caption()],
           ),
         );
       case MemoryType.book:
@@ -515,10 +529,7 @@ class _PreviewCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _videoThumb(),
-              _caption(),
-            ],
+            children: [_videoThumb(), _caption()],
           ),
         );
       case MemoryType.photo:
@@ -598,8 +609,11 @@ class _PreviewCard extends StatelessWidget {
         memCacheWidth: 500,
         errorWidget: (_, _, _) => Container(
           color: theme.surfaceMuted,
-          child: Icon(Icons.broken_image_rounded,
-              color: theme.textMuted, size: 22),
+          child: Icon(
+            Icons.broken_image_rounded,
+            color: theme.textMuted,
+            size: 22,
+          ),
         ),
       );
       return ClipRRect(
@@ -611,12 +625,15 @@ class _PreviewCard extends StatelessWidget {
             if (memory.isAdult) AdultVeil(child: image) else image,
             if (hasVideo && i == 0)
               const Center(
-                child: Icon(Icons.play_circle_fill_rounded,
-                    color: Colors.white, size: 34),
+                child: Icon(
+                  Icons.play_circle_fill_rounded,
+                  color: Colors.white,
+                  size: 34,
+                ),
               ),
             if (extra > 0)
               Container(
-                color: Colors.black.withValues(alpha:0.45),
+                color: Colors.black.withValues(alpha: 0.45),
                 alignment: Alignment.center,
                 child: Text(
                   '+$extra',
@@ -638,23 +655,27 @@ class _PreviewCard extends StatelessWidget {
     if (n == 2) {
       return SizedBox(
         height: 100,
-        child: Row(children: [
-          Expanded(child: tile(0)),
-          const SizedBox(width: gap),
-          Expanded(child: tile(1)),
-        ]),
+        child: Row(
+          children: [
+            Expanded(child: tile(0)),
+            const SizedBox(width: gap),
+            Expanded(child: tile(1)),
+          ],
+        ),
       );
     }
     final extra = n - 3;
     return SizedBox(
       height: 100,
-      child: Row(children: [
-        Expanded(child: tile(0)),
-        const SizedBox(width: gap),
-        Expanded(child: tile(1)),
-        const SizedBox(width: gap),
-        Expanded(child: tile(2, extra: extra)),
-      ]),
+      child: Row(
+        children: [
+          Expanded(child: tile(0)),
+          const SizedBox(width: gap),
+          Expanded(child: tile(1)),
+          const SizedBox(width: gap),
+          Expanded(child: tile(2, extra: extra)),
+        ],
+      ),
     );
   }
 
@@ -666,8 +687,11 @@ class _PreviewCard extends StatelessWidget {
         child: Container(
           color: Colors.grey.shade900,
           child: const Center(
-            child: Icon(Icons.play_circle_fill_rounded,
-                color: Colors.white, size: 40),
+            child: Icon(
+              Icons.play_circle_fill_rounded,
+              color: Colors.white,
+              size: 40,
+            ),
           ),
         ),
       ),
@@ -693,7 +717,7 @@ class _PreviewCard extends StatelessWidget {
               )
             else
               Container(color: Colors.grey.shade800),
-            Container(color: Colors.black.withValues(alpha:0.22)),
+            Container(color: Colors.black.withValues(alpha: 0.22)),
             Center(
               child: Container(
                 padding: const EdgeInsets.all(10),
@@ -786,7 +810,7 @@ class _PreviewCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: primary.withValues(alpha:0.10),
+              color: primary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(Icons.location_on_rounded, color: primary, size: 22),
@@ -810,7 +834,7 @@ class _PreviewCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: primary.withValues(alpha:0.10),
+                color: primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -887,8 +911,7 @@ class _PreviewCard extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontSize: 12, color: theme.textMuted),
+                      style: TextStyle(fontSize: 12, color: theme.textMuted),
                     ),
                   ),
                 if (memory.caption?.isNotEmpty == true)
@@ -915,7 +938,7 @@ class _PreviewCard extends StatelessWidget {
 
   Widget _coverFallback() {
     return Container(
-      color: primary.withValues(alpha:0.10),
+      color: primary.withValues(alpha: 0.10),
       alignment: Alignment.center,
       child: Icon(
         memory.type == MemoryType.book

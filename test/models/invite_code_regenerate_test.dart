@@ -11,9 +11,9 @@
 //      попыток создания падали — и человек оставался вовсе без кода.
 //   2. Пустой ответ клали в поле кода. Экран, увидев пустоту, просил перевыпуск
 //      заново — круг замыкался.
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/flat_source.dart';
 import 'package:love_app/models/connection.dart';
 
 void main() {
@@ -37,24 +37,32 @@ void main() {
     });
 
     test('первый код встаёт на пустое место', () {
-      expect(Connection.codeAfterRegenerate(current: '', fresh: 'QQ11WW'), 'QQ11WW');
+      expect(
+        Connection.codeAfterRegenerate(current: '', fresh: 'QQ11WW'),
+        'QQ11WW',
+      );
     });
   });
 
   test('прежний код сносится только после создания нового', () {
-    final src = File('lib/services/pb_data_service.dart').readAsStringSync();
-    final start = src.indexOf('Future<String> generateInviteCode(');
-    expect(start, greaterThan(0), reason: 'метод переименовали — поправьте сторожа');
+    final src = flatSource('lib/services/pb_data_service.dart');
+    final start = src.indexOf(flat('Future<String> generateInviteCode('));
+    expect(
+      start,
+      greaterThan(0),
+      reason: 'метод переименовали — поправьте сторожа',
+    );
     final body = src.substring(start, start + 2600);
 
-    final create = body.indexOf("collection('invite_codes').create(");
-    final delete = body.indexOf('deleteInviteCode(oldCode)');
+    final create = body.indexOf(flat("collection('invite_codes').create("));
+    final delete = body.indexOf(flat('deleteInviteCode(oldCode)'));
     expect(create, greaterThan(0), reason: 'создание кода не найдено');
     expect(delete, greaterThan(0), reason: 'удаление прежнего кода не найдено');
     expect(
       delete,
       greaterThan(create),
-      reason: 'удаление прежнего кода обязано идти ПОСЛЕ успешного создания: '
+      reason:
+          'удаление прежнего кода обязано идти ПОСЛЕ успешного создания: '
           'иначе неудачная попытка оставляет человека без кода вовсе',
     );
   });

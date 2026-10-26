@@ -36,7 +36,12 @@ void main() {
   }
 
   test('рисуется с зарядом, на зарядке и без него', () async {
-    for (final a in [art(), art(battery: 54), art(battery: 5), art(battery: 80, charging: true)]) {
+    for (final a in [
+      art(),
+      art(battery: 54),
+      art(battery: 5),
+      art(battery: 80, charging: true),
+    ]) {
       final rec = ui.PictureRecorder();
       a.paint(Canvas(rec));
       final img = await rec.endRecording().toImage(50, 50);
@@ -45,9 +50,15 @@ void main() {
   });
 
   test('сервис виджета передаёт только свежий заряд', () {
-    final src = File('lib/services/map/pair_map_widget_service.dart').readAsStringSync();
+    final src = File(
+      'lib/services/map/pair_map_widget_service.dart',
+    ).readAsStringSync();
     expect(src, contains('ForkBattery.instance.latest(groupId, partnerUid)'));
     expect(src, contains('battery.fresh(DateTime.now())'));
-    expect(src, contains('batteryShown?.level, batteryShown?.charging'), reason: 'смена заряда перерисовывает виджет');
+    expect(
+      src,
+      contains('batteryShown?.level, batteryShown?.charging'),
+      reason: 'смена заряда перерисовывает виджет',
+    );
   });
 }

@@ -24,12 +24,12 @@ class MascotFrameStrip {
   });
 
   Map<String, Object> get manifest => {
-        'cols': frames,
-        'rows': 1,
-        'cell': cell,
-        'frames': frames,
-        'step_ms': stepMs,
-      };
+    'cols': frames,
+    'rows': 1,
+    'cell': cell,
+    'frames': frames,
+    'step_ms': stepMs,
+  };
 }
 
 /// Кадры, которые уезжают на рабочий стол.
@@ -115,7 +115,10 @@ Future<MascotFrameStrip?> renderMascotStrip({
     );
   }
 
-  final image = await recorder.endRecording().toImage(anim.frame * frames, anim.frame);
+  final image = await recorder.endRecording().toImage(
+    anim.frame * frames,
+    anim.frame,
+  );
   try {
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     final bytes = data?.buffer.asUint8List();

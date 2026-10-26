@@ -3,13 +3,15 @@
 // Жалоба 14.08.2026: «а еще нет разделения по полу… у парня тоже "устала"».
 // В русском «Устал» и «Устала» — разные слова, и виджет с настроением показывал
 // парню женскую форму. Формы лежат в словаре под ключами `ru_m` / `es_f`.
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/flat_source.dart';
 import 'package:love_app/models/mood_entry.dart';
 import 'package:love_app/services/locale_service.dart';
 
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   MoodOption mood(String id) => MoodOption.byId(id)!;
 
   group('русский', () {
@@ -34,8 +36,14 @@ void main() {
     });
 
     test('настроения без рода не меняются', () {
-      expect(mood('happy').localizedLabelFor('male'), mood('happy').localizedLabel);
-      expect(mood('kiss').localizedLabelFor('female'), mood('kiss').localizedLabel);
+      expect(
+        mood('happy').localizedLabelFor('male'),
+        mood('happy').localizedLabel,
+      );
+      expect(
+        mood('kiss').localizedLabelFor('female'),
+        mood('kiss').localizedLabel,
+      );
     });
   });
 
@@ -103,21 +111,32 @@ void main() {
     });
 
     test('пол пользователя доезжает до подписей', () {
-      final src = File('lib/models/user_data.dart').readAsStringSync();
-      expect(src, contains('MoodGenders.mine = genderToStorage()'));
+      final src = flatSource('lib/models/user_data.dart');
+      expect(src, contains(flat('MoodGenders.mine = genderToStorage()')));
     });
 
     test('выбор настроения показывает и сохраняет подпись по своему полу', () {
-      final src = File('lib/screens/home/widgets/mood_picker_dialog.dart')
-          .readAsStringSync();
-      expect(src, isNot(contains('mood.localizedLabel')));
-      expect(src, contains('mood.myLabel'));
+      final src = flatSource(
+        'lib/screens/home/widgets/mood_picker_dialog.dart',
+      );
+      expect(src, isNot(contains(flat('mood.localizedLabel'))));
+      expect(src, contains(flat('mood.myLabel')));
     });
 
     test('шапка главной подписывает партнёра по его полу', () {
-      final src = File('lib/screens/home_screen.dart').readAsStringSync();
-      expect(src, contains('_memberMoodFromEntry(_moodService.myMoodToday, MoodGenders.mine)'));
-      expect(src, contains('_moodService.partnerMoodToday(uid), _partnerGender)'));
+      final src = flatSource('lib/screens/home_screen.dart');
+      expect(
+        src,
+        contains(
+          flat(
+            '_memberMoodFromEntry(_moodService.myMoodToday, MoodGenders.mine)',
+          ),
+        ),
+      );
+      expect(
+        src,
+        contains(flat('_moodService.partnerMoodToday(uid), _partnerGender)')),
+      );
     });
   });
 }

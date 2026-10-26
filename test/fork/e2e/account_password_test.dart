@@ -34,9 +34,19 @@ void main() {
   test('generated passwords are unique and satisfy the full policy', () async {
     final generated = <String>{};
     for (var i = 0; i < 8; i++) {
-      final password = await ForkAccountPassword.generate(email: 'alice@example.org', name: 'Alice');
+      final password = await ForkAccountPassword.generate(
+        email: 'alice@example.org',
+        name: 'Alice',
+      );
       expect(password.length, 24);
-      expect(await ForkAccountPassword.problems(password, email: 'alice@example.org', name: 'Alice'), isEmpty);
+      expect(
+        await ForkAccountPassword.problems(
+          password,
+          email: 'alice@example.org',
+          name: 'Alice',
+        ),
+        isEmpty,
+      );
       generated.add(password);
     }
     expect(generated, hasLength(8));

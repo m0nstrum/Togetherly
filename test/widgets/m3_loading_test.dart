@@ -39,14 +39,17 @@ void main() {
       expect(box.height, 56);
     });
 
-    testWidgets('Contained добавляет тональный круг вокруг фигуры',
-        (tester) async {
+    testWidgets('Contained добавляет тональный круг вокруг фигуры', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        host(const M3Loading(
-          color: Colors.white,
-          containerColor: Colors.black,
-          contained: true,
-        )),
+        host(
+          const M3Loading(
+            color: Colors.white,
+            containerColor: Colors.black,
+            contained: true,
+          ),
+        ),
       );
       await tester.pump();
 

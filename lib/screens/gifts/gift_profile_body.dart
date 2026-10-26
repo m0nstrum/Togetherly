@@ -95,8 +95,10 @@ class GiftProfileBodyState extends State<GiftProfileBody> {
       groupId: widget.isSelf ? '' : widget.groupId,
       uid: widget.uid,
     );
-    final miss =
-        await data.fetchMissYouFor(groupId: widget.groupId, uid: widget.uid);
+    final miss = await data.fetchMissYouFor(
+      groupId: widget.groupId,
+      uid: widget.uid,
+    );
     if (!mounted) return;
     setState(() {
       _gifts = gifts;
@@ -109,8 +111,7 @@ class GiftProfileBodyState extends State<GiftProfileBody> {
   }
 
   /// Есть ли у подарков этого вида слова — по этому полка ставит метку.
-  bool _hasTextOf(String key) =>
-      memosOfKey(_gifts, key).any((m) => m.hasText);
+  bool _hasTextOf(String key) => memosOfKey(_gifts, key).any((m) => m.hasText);
 
   void _openMemos(GiftTally tally) {
     showGiftMemoSheet(
@@ -247,15 +248,20 @@ class _Hero extends StatelessWidget {
         children: [
           avatar,
           const SizedBox(height: 10),
-          Text(name,
-              style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800,
-                  color: theme.textPrimary)),
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+              color: theme.textPrimary,
+            ),
+          ),
           if (daysTogether != null) ...[
             const SizedBox(height: 2),
-            Text(s.partnerDaysTogether(daysTogether!),
-                style: TextStyle(fontSize: 13.5, color: theme.textSecondary)),
+            Text(
+              s.partnerDaysTogether(daysTogether!),
+              style: TextStyle(fontSize: 13.5, color: theme.textSecondary),
+            ),
           ],
           const SizedBox(height: 14),
           Wrap(
@@ -264,9 +270,10 @@ class _Hero extends StatelessWidget {
             alignment: WrapAlignment.center,
             children: [
               _Chip(
-                  theme: theme,
-                  icon: Icons.card_giftcard_rounded,
-                  text: giftsChip),
+                theme: theme,
+                icon: Icons.card_giftcard_rounded,
+                text: giftsChip,
+              ),
               _Chip(theme: theme, icon: Icons.mail_rounded, text: missChip),
             ],
           ),
@@ -299,11 +306,14 @@ class _Chip extends StatelessWidget {
         children: [
           Icon(icon, size: 15, color: theme.primary),
           const SizedBox(width: 6),
-          Text(text,
-              style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: theme.textPrimary)),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: theme.textPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -339,20 +349,26 @@ class _Block extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(title,
-                    style: TextStyle(
-                        fontFamily: ProfileTheme.bodyFont,
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface)),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: ProfileTheme.bodyFont,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
               ),
               if (trailing != null)
-                Text(trailing!,
-                    style: TextStyle(
-                        fontFamily: ProfileTheme.displayFont,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: cs.primary)),
+                Text(
+                  trailing!,
+                  style: TextStyle(
+                    fontFamily: ProfileTheme.displayFont,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: cs.primary,
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 14),
@@ -402,9 +418,7 @@ class _Shelf extends StatelessWidget {
                   child: SizedBox(
                     width: 76,
                     height: 76,
-                    child: Center(
-                      child: GiftImage(t.gift.key, side: 46),
-                    ),
+                    child: Center(child: GiftImage(t.gift.key, side: 46)),
                   ),
                 ),
               ),
@@ -429,18 +443,23 @@ class _Shelf extends StatelessWidget {
                   right: -3,
                   top: -3,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: cs.primary,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text('${t.count}',
-                        style: TextStyle(
-                            fontFamily: ProfileTheme.displayFont,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: cs.onPrimary)),
+                    child: Text(
+                      '${t.count}',
+                      style: TextStyle(
+                        fontFamily: ProfileTheme.displayFont,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onPrimary,
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -462,11 +481,14 @@ class _Empty extends StatelessWidget {
     final cs = ProfileTheme.themeFor(theme).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Text(text,
-          style: TextStyle(
-              fontFamily: ProfileTheme.bodyFont,
-              fontSize: 13.5,
-              color: cs.onSurfaceVariant)),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: ProfileTheme.bodyFont,
+          fontSize: 13.5,
+          color: cs.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }

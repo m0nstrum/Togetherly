@@ -54,16 +54,24 @@ void main() {
   });
 
   test('редактор маскота вписывает набросок, а не растягивает', () {
-    final source =
-        File('lib/screens/mascot_draw_screen.dart').readAsStringSync();
-    final draws = RegExp(r'drawImageRect\(\s*\n\s*_prevDrawingImage!,(.*?)\);',
-            dotAll: true)
-        .allMatches(source);
-    expect(draws.length, 2,
-        reason: 'набросок композитится в двух местах: заливка и сохранение');
+    final source = File(
+      'lib/screens/mascot_draw_screen.dart',
+    ).readAsStringSync();
+    final draws = RegExp(
+      r'drawImageRect\(\s*\n\s*_prevDrawingImage!,(.*?)\);',
+      dotAll: true,
+    ).allMatches(source);
+    expect(
+      draws.length,
+      2,
+      reason: 'набросок композитится в двух местах: заливка и сохранение',
+    );
     for (final m in draws) {
-      expect(m.group(1), contains('containRect('),
-          reason: 'оба места кладут набросок по пропорциям');
+      expect(
+        m.group(1),
+        contains('containRect('),
+        reason: 'оба места кладут набросок по пропорциям',
+      );
     }
   });
 }

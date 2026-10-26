@@ -1,13 +1,15 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/flat_source.dart';
 import 'package:love_app/fork/watch/pair_call.dart';
 import 'package:love_app/main.dart' show LoveApp;
 
 /// UX_AUDIT C0, T4: звонок пары один на приложение, звонят из чата.
 void main() {
-  testWidgets('без пары и входа «позвонить» говорит почему, а не молчит', (t) async {
+  testWidgets('без пары и входа «позвонить» говорит почему, а не молчит', (
+    t,
+  ) async {
     await t.pumpWidget(
       MaterialApp(
         navigatorKey: LoveApp.rootNavigatorKey,
@@ -21,12 +23,30 @@ void main() {
   });
 
   test('чат, главная, выход и комната подключены к общему звонку', () {
-    String src(String p) => File(p).readAsStringSync();
-    expect(src('lib/screens/chat_screen.dart'), contains('ForkPairCall.instance.call(_groupId)'));
-    expect(src('lib/screens/home_screen.dart'), contains('ForkPairCall.instance.bind(groupId)'));
-    expect(src('lib/models/user_data.dart'), contains('ForkPairCall.instance.unbind()'));
+    String src(String p) => flatSource(p);
+    expect(
+      src('lib/screens/chat_screen.dart'),
+      contains(flat('ForkPairCall.instance.call(_groupId)')),
+    );
+    expect(
+      src('lib/screens/home_screen.dart'),
+      contains(flat('ForkPairCall.instance.bind(groupId)')),
+    );
+    expect(
+      src('lib/models/user_data.dart'),
+      contains(flat('ForkPairCall.instance.unbind()')),
+    );
     final room = src('lib/screens/together/watch_room_screen.dart');
-    expect(room, contains('ForkPairCall.instance.bind(widget.pairId, room: widget.room)'));
-    expect(room, isNot(contains('_voice?.dispose()')), reason: 'разговор переживает уход из комнаты');
+    expect(
+      room,
+      contains(
+        flat('ForkPairCall.instance.bind(widget.pairId, room: widget.room)'),
+      ),
+    );
+    expect(
+      room,
+      isNot(contains(flat('_voice?.dispose()'))),
+      reason: 'разговор переживает уход из комнаты',
+    );
   });
 }

@@ -14,21 +14,29 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final service =
-      File('lib/services/movie_search_service.dart').readAsStringSync();
-  final screen =
-      File('lib/screens/memory_movie_form_screen.dart').readAsStringSync();
+  final service = File(
+    'lib/services/movie_search_service.dart',
+  ).readAsStringSync();
+  final screen = File(
+    'lib/screens/memory_movie_form_screen.dart',
+  ).readAsStringSync();
 
   group('лимит поиска отличается от сломанного ключа', () {
     test('403 поднимает признак исчерпанного лимита, а не «нет ключа»', () {
-      expect(service.contains('rateLimited'), isTrue,
-          reason: 'признак лимита пропал');
+      expect(
+        service.contains('rateLimited'),
+        isTrue,
+        reason: 'признак лимита пропал',
+      );
       final at401 = service.indexOf('resp.statusCode == 401');
       final at403 = service.indexOf('resp.statusCode == 403');
       expect(at401, isPositive);
       expect(at403, isPositive);
-      expect(service.contains('statusCode == 401 || resp.statusCode == 403'),
-          isFalse, reason: 'коды снова слиплись в одну ветку');
+      expect(
+        service.contains('statusCode == 401 || resp.statusCode == 403'),
+        isFalse,
+        reason: 'коды снова слиплись в одну ветку',
+      );
     });
 
     test('экран показывает свой текст про сегодняшний лимит', () {
@@ -39,8 +47,11 @@ void main() {
       // Семь языков: русский, английский и пять остальных.
       final block = dict.substring(dict.indexOf("'movieQuotaOut'"));
       for (final lang in ['ru', 'en', 'pt', 'it', 'es', 'fr', 'de']) {
-        expect(block.substring(0, 700).contains("'$lang':"), isTrue,
-            reason: 'нет перевода на $lang');
+        expect(
+          block.substring(0, 700).contains("'$lang':"),
+          isTrue,
+          reason: 'нет перевода на $lang',
+        );
       }
     });
   });
@@ -54,8 +65,11 @@ void main() {
           offenders.add('строка ${i + 1}: ${lines[i].trim()}');
         }
       }
-      expect(offenders, isEmpty,
-          reason: 'на тёмной теме это светится:\n${offenders.join('\n')}');
+      expect(
+        offenders,
+        isEmpty,
+        reason: 'на тёмной теме это светится:\n${offenders.join('\n')}',
+      );
     });
 
     test('цвета берутся из схемы темы', () {
@@ -64,8 +78,11 @@ void main() {
     });
 
     test('кнопка ручного ввода тональная, а не полупрозрачная', () {
-      expect(screen.contains('FilledButton.tonalIcon'), isTrue,
-          reason: 'заливка в 8% на тёмной теме читалась выключенной');
+      expect(
+        screen.contains('FilledButton.tonalIcon'),
+        isTrue,
+        reason: 'заливка в 8% на тёмной теме читалась выключенной',
+      );
     });
   });
 }

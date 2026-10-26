@@ -5,9 +5,9 @@ import 'package:flutter/services.dart';
 
 import 'system_route_link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../fork/identity.dart'; // fork
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/identity.dart';
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 
 /// Сервис для обработки deep links
 class DeepLinkService {
@@ -50,7 +50,16 @@ class DeepLinkService {
   // не доезжает — приложение просто открывалось, а настроение не ставилось.
   // Поэтому раздаём такие ссылки отсюда, из единственного места, куда они
   // приходят наверняка.
-  static const _widgetHosts = {'mood', 'miss', 'note', 'memories', 'widgets', 'map', 'fork-miss', 'touch' /* fork: QS tiles */};
+  static const _widgetHosts = {
+    'mood',
+    'miss',
+    'note',
+    'memories',
+    'widgets',
+    'map',
+    'fork-miss',
+    'touch' /* fork: QS tiles */,
+  };
 
   /// Ссылка с виджета рабочего стола, а не приглашение и не письмо.
   static bool isWidgetAction(Uri uri) =>
@@ -134,7 +143,7 @@ class DeepLinkService {
       // tethered://invite/ABC123
       final code = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
       if (code != null && code.length == 6) {
-        ForkE2E.rememberFragment(code, uri.fragment); // fork
+        ForkE2E.rememberFragment(code, uri.fragment);
         _pendingInviteCode = code.toUpperCase();
         _inviteCodeController.add(code.toUpperCase());
       }
@@ -145,22 +154,20 @@ class DeepLinkService {
       // fork: свои хосты из конфига; Firebase-домена (и email-ссылок с него)
       // у форка нет.
       final isMainHost = Endpoints.current.ownHosts.contains(uri.host);
-      final isInvitePath = uri.pathSegments.isNotEmpty &&
-          uri.pathSegments.first == 'invite';
+      final isInvitePath =
+          uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'invite';
 
-      if (isMainHost && isInvitePath) { // fork
+      if (isMainHost && isInvitePath) {
         // https://<host>/invite/ABC123
-        final code =
-            uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
+        final code = uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
         if (code != null && code.length == 6) {
           debugPrint('DeepLinkService: invite code from web link: $code');
-          ForkE2E.rememberFragment(code, uri.fragment); // fork
+          ForkE2E.rememberFragment(code, uri.fragment);
           _pendingInviteCode = code.toUpperCase();
           _inviteCodeController.add(code.toUpperCase());
         }
         return;
       }
-
     }
   }
 

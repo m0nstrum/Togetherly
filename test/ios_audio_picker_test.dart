@@ -14,10 +14,11 @@ void main() {
   test('FileType.audio нигде не вызывается напрямую', () {
     final offenders = <String>[];
 
-    for (final file in Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))) {
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
       // Сам хелпер — единственное законное место: там ветка по платформе.
       if (file.path.endsWith('utils/audio_picker.dart')) continue;
       final source = file.readAsStringSync();
@@ -30,7 +31,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'На iOS это открывает медиатеку Apple Music и роняет приложение. '
+      reason:
+          'На iOS это открывает медиатеку Apple Music и роняет приложение. '
           'Берите pickAudioFile(): ${offenders.join(', ')}',
     );
   });

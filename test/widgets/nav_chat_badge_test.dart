@@ -9,22 +9,22 @@ import 'package:love_app/theme/app_theme.dart';
 /// оттуда кнопка чата. Значок садится на угол круглой кнопки и ведёт прямо в
 /// чат; сама круглая кнопка при этом работает как раньше.
 Widget _nav({VoidCallback? onChat, VoidCallback? onSide}) => MaterialApp(
-      home: Scaffold(
-        // Как в приложении: панель прижата к низу экрана и растёт вверх.
-        body: Align(
-          alignment: Alignment.bottomCenter,
-          child: HomeBottomNav(
-            selectedIndex: 0,
-            theme: AppThemes.pink,
-            isPaired: true,
-            onTap: (_) {},
-            onCreatePin: onSide ?? () {},
-            sideIsArrow: true,
-            onChat: onChat,
-          ),
-        ),
+  home: Scaffold(
+    // Как в приложении: панель прижата к низу экрана и растёт вверх.
+    body: Align(
+      alignment: Alignment.bottomCenter,
+      child: HomeBottomNav(
+        selectedIndex: 0,
+        theme: AppThemes.pink,
+        isPaired: true,
+        onTap: (_) {},
+        onCreatePin: onSide ?? () {},
+        sideIsArrow: true,
+        onChat: onChat,
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   testWidgets('значок чата стоит на круглой кнопке', (tester) async {
@@ -37,7 +37,9 @@ void main() {
   testWidgets('нажатие ведёт в чат, а не в ленту', (tester) async {
     var chatTaps = 0;
     var laneTaps = 0;
-    await tester.pumpWidget(_nav(onChat: () => chatTaps++, onSide: () => laneTaps++));
+    await tester.pumpWidget(
+      _nav(onChat: () => chatTaps++, onSide: () => laneTaps++),
+    );
     await tester.pump();
 
     await tester.tap(find.byKey(HomeBottomNav.chatBadgeKey));
@@ -54,10 +56,16 @@ void main() {
     final chat = tester.getRect(find.byKey(HomeBottomNav.chatBadgeKey));
     final side = tester.getRect(find.byIcon(Icons.arrow_forward_rounded));
 
-    expect(chat.bottom, lessThanOrEqualTo(side.top),
-        reason: 'это отдельная кнопка выше круглой, а не значок поверх неё');
-    expect((chat.center.dx - side.center.dx).abs(), lessThan(4),
-        reason: 'обе стоят по одной оси, столбиком');
+    expect(
+      chat.bottom,
+      lessThanOrEqualTo(side.top),
+      reason: 'это отдельная кнопка выше круглой, а не значок поверх неё',
+    );
+    expect(
+      (chat.center.dx - side.center.dx).abs(),
+      lessThan(4),
+      reason: 'обе стоят по одной оси, столбиком',
+    );
   });
 
   testWidgets('круглая кнопка не сдвинулась и не уменьшилась', (tester) async {
@@ -71,14 +79,26 @@ void main() {
     await tester.pump();
     final after = tester.getRect(find.byIcon(Icons.arrow_forward_rounded));
 
-    expect((after.width - before.width).abs(), lessThan(0.5),
-        reason: 'размер прежний');
-    expect((after.height - before.height).abs(), lessThan(0.5),
-        reason: 'размер прежний');
-    expect((after.center.dy - before.center.dy).abs(), lessThan(1),
-        reason: 'по вертикали на том же месте');
-    expect((after.center.dx - before.center.dx).abs(), lessThan(1),
-        reason: 'и по горизонтали тоже');
+    expect(
+      (after.width - before.width).abs(),
+      lessThan(0.5),
+      reason: 'размер прежний',
+    );
+    expect(
+      (after.height - before.height).abs(),
+      lessThan(0.5),
+      reason: 'размер прежний',
+    );
+    expect(
+      (after.center.dy - before.center.dy).abs(),
+      lessThan(1),
+      reason: 'по вертикали на том же месте',
+    );
+    expect(
+      (after.center.dx - before.center.dx).abs(),
+      lessThan(1),
+      reason: 'и по горизонтали тоже',
+    );
   });
 
   testWidgets('без обработчика значка нет', (tester) async {
@@ -89,8 +109,9 @@ void main() {
     expect(find.byKey(HomeBottomNav.chatBadgeKey), findsNothing);
   });
 
-  testWidgets('круглая кнопка продолжает работать сама по себе',
-      (tester) async {
+  testWidgets('круглая кнопка продолжает работать сама по себе', (
+    tester,
+  ) async {
     var laneTaps = 0;
     await tester.pumpWidget(_nav(onChat: () {}, onSide: () => laneTaps++));
     await tester.pump();

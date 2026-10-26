@@ -18,33 +18,40 @@ void main() {
     late BuildContext ctx;
 
     Future<void> pump(WidgetTester tester, double scale) async {
-      await tester.pumpWidget(MaterialApp(
-        home: MediaQuery(
-          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
-          child: Builder(builder: (c) {
-            ctx = c;
-            return const SizedBox.shrink();
-          }),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+            child: Builder(
+              builder: (c) {
+                ctx = c;
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
         ),
-      ));
+      );
     }
 
-    testWidgets('на 360 dp при обычном шрифте отношение прежнее',
-        (tester) async {
+    testWidgets('на 360 dp при обычном шрифте отношение прежнее', (
+      tester,
+    ) async {
       await pump(tester, 1.0);
       // Лист на 360 dp даёт сетке 320 точек — ровно тот случай, под который
       // подбиралось число 0.62.
       expect(moodTileRatio(ctx, 320), 0.62);
     });
 
-    testWidgets('на 320 dp ячейка подрастает даже при обычном шрифте',
-        (tester) async {
+    testWidgets('на 320 dp ячейка подрастает даже при обычном шрифте', (
+      tester,
+    ) async {
       await pump(tester, 1.0);
       expect(moodTileRatio(ctx, 280), lessThan(0.62));
     });
 
-    testWidgets('при шрифте 1.3 ячейка вмещает две строки подписи',
-        (tester) async {
+    testWidgets('при шрифте 1.3 ячейка вмещает две строки подписи', (
+      tester,
+    ) async {
       await pump(tester, 1.3);
       const gridWidth = 280.0;
       final ratio = moodTileRatio(ctx, gridWidth);
@@ -53,19 +60,27 @@ void main() {
       final cell = (gridWidth - 8 * 4) / 5;
       final height = cell / ratio;
       final need = cell + 6 + 11 * 1.3 * 1.2 * 2;
-      expect(height, greaterThanOrEqualTo(need),
-          reason: 'плитка, отступ и две строки подписи должны поместиться');
+      expect(
+        height,
+        greaterThanOrEqualTo(need),
+        reason: 'плитка, отступ и две строки подписи должны поместиться',
+      );
     });
   });
 
   group('сторожа исходников', () {
-    final widgetScreen =
-        File('lib/screens/widget_screen.dart').readAsStringSync();
+    final widgetScreen = File(
+      'lib/screens/widget_screen.dart',
+    ).readAsStringSync();
 
     test('превью каталога рисуется без масштабирования шрифта', () {
-      expect(widgetScreen.contains('MediaQuery.withNoTextScaling'), isTrue,
-          reason: 'превью виджета — картинка рабочего стола, а не текст '
-              'интерфейса: системный шрифт не должен её распирать');
+      expect(
+        widgetScreen.contains('MediaQuery.withNoTextScaling'),
+        isTrue,
+        reason:
+            'превью виджета — картинка рабочего стола, а не текст '
+            'интерфейса: системный шрифт не должен её распирать',
+      );
     });
 
     test('превью ужимается целиком, а не ломается на узком экране', () {
@@ -77,10 +92,15 @@ void main() {
     });
 
     test('пилюля выбора размера не держит жёсткую высоту', () {
-      expect(widgetScreen.contains('curve: Curves.easeOut,\n                  height: 36,'),
-          isFalse,
-          reason: 'высота сегмента считается по содержимому, иначе метка с '
-              'подписью не влезает при крупном шрифте');
+      expect(
+        widgetScreen.contains(
+          'curve: Curves.easeOut,\n                  height: 36,',
+        ),
+        isFalse,
+        reason:
+            'высота сегмента считается по содержимому, иначе метка с '
+            'подписью не влезает при крупном шрифте',
+      );
       expect(widgetScreen.contains('BoxConstraints(minHeight: 36)'), isTrue);
     });
 
@@ -95,10 +115,13 @@ void main() {
         final i = src.indexOf('relationshipMemoryLane');
         expect(i, greaterThan(0), reason: '$path потерял заголовок ленты');
         final before = src.substring(0, i);
-        expect(before.lastIndexOf('Expanded(') > before.lastIndexOf('Row('),
-            isTrue,
-            reason: 'в $path заголовок обязан стоять в Expanded, иначе ряд с '
-                'кнопкой «Посмотреть все» уносит на 108 пикселей вправо');
+        expect(
+          before.lastIndexOf('Expanded(') > before.lastIndexOf('Row('),
+          isTrue,
+          reason:
+              'в $path заголовок обязан стоять в Expanded, иначе ряд с '
+              'кнопкой «Посмотреть все» уносит на 108 пикселей вправо',
+        );
       }
     });
 
@@ -106,10 +129,13 @@ void main() {
       // С 19.09.2026 лист — полка в ряд, высоту задаёт подпись. Сетка с
       // childAspectRatio резала подписи при шрифте 1.3; рендер на 320 dp
       // держит test/widgets/add_memory_sheet_test.dart.
-      final lane = File('lib/screens/memory_lane_screen.dart').readAsStringSync();
+      final lane = File(
+        'lib/screens/memory_lane_screen.dart',
+      ).readAsStringSync();
       expect(lane.contains('AddMemorySheetBody('), isTrue);
-      final sheet =
-          File('lib/widgets/memory/add_memory_sheet.dart').readAsStringSync();
+      final sheet = File(
+        'lib/widgets/memory/add_memory_sheet.dart',
+      ).readAsStringSync();
       expect(sheet.contains('childAspectRatio'), isFalse);
     });
   });

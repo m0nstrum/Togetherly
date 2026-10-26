@@ -6,11 +6,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/m0nstrum/togetherly/server/internal/handler"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/notify"
 )
 
 type fakePub struct {
@@ -25,7 +27,7 @@ func (p *fakePub) Publish(_ context.Context, ch string, data any) error {
 
 func TestCompatNotify(t *testing.T) {
 	pub := &fakePub{}
-	h := handler.Compat(nil, nil, pub, nil)
+	h := handler.Compat(nil, nil, notify.New(nil, pub, time.Now), nil)
 	do := func(body string) int {
 		req := httptest.NewRequest(http.MethodPost, "/internal/notify", strings.NewReader(body))
 		req.RemoteAddr = "127.0.0.1:5555"

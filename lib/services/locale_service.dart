@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dict_strings.dart';
-import '../fork/flags.dart'; // fork (PLAN 2.3)
 import '../fork/identity.dart'; // fork (PLAN 2.1)
 
 import 'package:love_app/config/update_notes.dart';
@@ -82,8 +81,14 @@ class LocaleService extends ChangeNotifier {
 
   /// Что показывать в `MaterialApp.supportedLocales`: без этого системные части
   /// (выбор даты, меню копирования) остаются английскими при любом переводе.
-  static List<AppLanguage> get availableLanguages => ForkFlags.fullLanguageCatalog
-      ? AppLanguage.values : const [AppLanguage.ru, AppLanguage.en];
+  static List<AppLanguage> get availableLanguages => allLanguagesForTests
+      ? AppLanguage.values
+      : const [AppLanguage.ru, AppLanguage.en];
+
+  /// Переводы на остальные языки в сборке не показываются (PLAN 2.3), но
+  /// лежат в коде, и их тесты включают весь каталог этим флагом.
+  @visibleForTesting
+  static bool allLanguagesForTests = false;
 
   static AppLanguage supportedLanguage(AppLanguage lang) =>
       availableLanguages.contains(lang) ? lang : AppLanguage.en;
@@ -109,8 +114,10 @@ class LocaleService extends ChangeNotifier {
   /// а страна говорит иначе: латиноамериканская `es-419`, бразильская `pt-BR`,
   /// австрийская `de-AT` приходят разными кодами, а язык у них один.
   static AppLanguage detect(ui.Locale locale) {
-    if (!ForkFlags.fullLanguageCatalog) {
-      return locale.languageCode.toLowerCase() == 'ru' ? AppLanguage.ru : AppLanguage.en;
+    if (!allLanguagesForTests) {
+      return locale.languageCode.toLowerCase() == 'ru'
+          ? AppLanguage.ru
+          : AppLanguage.en;
     }
     final byLang = AppLanguage.byCode(locale.languageCode.toLowerCase());
     if (byLang != null) return byLang;
@@ -163,8 +170,11 @@ class LocaleService extends ChangeNotifier {
       final saved = prefs.getString('app_language');
       if (saved != null) {
         // Прежние сборки писали сюда 'ru' или 'en', новые — любой из семи кодов.
-        _language = supportedLanguage(AppLanguage.byCode(saved) ?? AppLanguage.en);
-        if (_language.code != saved) await prefs.setString('app_language', _language.code);
+        _language = supportedLanguage(
+          AppLanguage.byCode(saved) ?? AppLanguage.en,
+        );
+        if (_language.code != saved)
+          await prefs.setString('app_language', _language.code);
       } else {
         _language = detect(ui.PlatformDispatcher.instance.locale);
         // Персистим определённый по локали язык, чтобы фоновые изоляты
@@ -440,17 +450,6 @@ abstract class AppStrings {
   String get customMoodLimitReached;
 
   // Плашка Togetherly+ на главной
-  String get plusPromoTitle;
-  String get plusPromoBody;
-
-  /// Витрина плашки построчно.
-  String get plusPromoPerkMoods;
-  String get plusPromoPerkCycle;
-  String get plusPromoPerkStats;
-  String get plusPromoPerkWidgets;
-  String get plusPromoPerkNoAds;
-  String get plusPromoOpen;
-  String get plusPromoLater;
 
   // Порядок ленты воспоминаний
   /// Ярлык на карточке ленты: запись была ответом на задание дня.
@@ -1407,6 +1406,7 @@ abstract class AppStrings {
   String get awful;
   String get notEnoughData;
   String moodRecorded(String label);
+
   /// Установка приехала без докачиваемых частей — объясняем вместо Play Core.
   String get brokenInstallTitle;
   String get brokenInstallBody;
@@ -1788,12 +1788,15 @@ abstract class AppStrings {
   String get mascotStageBaby;
   String get mascotStageTeen;
   String get mascotStageAdult;
+
   /// «до взрослого 18 дней» — число со склонением подставляет реализация.
   String mascotWidgetToTeen(int days);
   String mascotWidgetToAdult(int days);
   String get mascotWidgetGrown;
+
   /// «12 дней серии».
   String mascotWidgetStreakLabel(int days);
+
   /// «не спит до 23:00» и «спит до 07:00»: обе подписи уезжают в виджет разом.
   String mascotWidgetAwakeUntil(String time);
   String mascotWidgetSleepsUntil(String time);
@@ -1808,12 +1811,15 @@ abstract class AppStrings {
   String get tgYearNoStartDate;
   String get tgYearMonthsLabel;
   String get tgYearMemoriesLabel;
+
   /// Надпись над обратным отсчётом в «Кольце года».
   String get tgYearUntilAnniversary;
+
   /// «годовщина {date}» — дату подставляет вызывающий.
   String get tgYearAnniversaryOn;
   String get tgYearMonthsShort;
   String tgYearDaysWord(int days);
+
   /// Слово «дней» после числа, со строчной там, где язык так пишет.
   String tgYearDaysUnit(int days);
   String tgYearDaysTogether(int days);
@@ -3654,7 +3660,8 @@ class _EnStrings extends DictStrings {
   String customRelWith(String label, String name) =>
       "You're now $label with $name!";
   @override
-  String joinMeLinkText(String link) => 'Join me on ${ForkIdentity.appName}! $link';
+  String joinMeLinkText(String link) =>
+      'Join me on ${ForkIdentity.appName}! $link';
   @override
   String membersCountBracket(int count) => 'MEMBERS ($count)';
 
@@ -4289,7 +4296,3 @@ class _EnStrings extends DictStrings {
 // Перевести числительные для языка значит переопределить здесь его методы; до
 // тех порядок такой: словарь наполняется первым, он закрывает 1419 строк из
 // 1600.
-
-
-
-

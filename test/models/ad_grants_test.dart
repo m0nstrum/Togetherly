@@ -22,12 +22,19 @@ void main() {
     final taken = now.subtract(const Duration(days: 10)).millisecondsSinceEpoch;
     final g = AdGrants.parse('{"theme":{"id":9,"until":0,"taken":$taken}}');
     expect(g.canTake(AdGrantKind.theme, now), isFalse);
-    expect(g.canTake(AdGrantKind.theme, now.add(const Duration(days: 5))), isTrue);
+    expect(
+      g.canTake(AdGrantKind.theme, now.add(const Duration(days: 5))),
+      isTrue,
+    );
   });
 
   test('Награды без кулдауна берутся всегда', () {
-    final taken = now.subtract(const Duration(minutes: 5)).millisecondsSinceEpoch;
-    final g = AdGrants.parse('{"canvas_bg":{"id":"rain","until":0,"taken":$taken}}');
+    final taken = now
+        .subtract(const Duration(minutes: 5))
+        .millisecondsSinceEpoch;
+    final g = AdGrants.parse(
+      '{"canvas_bg":{"id":"rain","until":0,"taken":$taken}}',
+    );
     expect(g.canTake(AdGrantKind.canvasBg, now), isTrue);
   });
 
@@ -48,8 +55,13 @@ void main() {
 
   test('Фон холста живёт до конца суток', () {
     final until = DateTime(2026, 8, 26, 23, 59, 59).millisecondsSinceEpoch;
-    final g = AdGrants.parse('{"canvas_bg":{"id":"rain","until":$until,"taken":0}}');
-    expect(g.activeFor(AdGrantKind.canvasBg, DateTime(2026, 8, 26, 20))?.id, 'rain');
+    final g = AdGrants.parse(
+      '{"canvas_bg":{"id":"rain","until":$until,"taken":0}}',
+    );
+    expect(
+      g.activeFor(AdGrantKind.canvasBg, DateTime(2026, 8, 26, 20))?.id,
+      'rain',
+    );
     expect(g.activeFor(AdGrantKind.canvasBg, DateTime(2026, 8, 27, 1)), isNull);
   });
 

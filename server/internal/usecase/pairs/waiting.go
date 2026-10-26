@@ -11,7 +11,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// Пара «с пустым местом» (waiting.pb.js): второе место держит заглушка, а
+// Пара «с пустым местом» (handler.Waiting): второе место держит заглушка, а
 // войти в него можно по коду (claim_token) с подтверждением хозяина.
 
 // codeAlphabet — без похожих символов (0/O, 1/I), как у hotpath.
@@ -28,7 +28,7 @@ func fail(status int, msg string) Result {
 	return Result{Status: status, Body: map[string]any{"success": false, "message": msg}}
 }
 
-// WaitingCreateInput — тело /internal/waiting-create.
+// WaitingCreateInput — пара с пустым местом.
 type WaitingCreateInput struct {
 	UID               string `json:"uid"`
 	PlaceholderName   string `json:"placeholder_name"`
@@ -149,7 +149,7 @@ func (s *Service) WaitingReset(ctx context.Context, groupID, uid string) (Result
 	return res, nil
 }
 
-// ClaimApproveInput — тело /internal/pair-claim-approve.
+// ClaimApproveInput — подтверждение заявки на второе место.
 type ClaimApproveInput struct {
 	GroupID     string `json:"group_id"`
 	ClaimUID    string `json:"claim_uid"`

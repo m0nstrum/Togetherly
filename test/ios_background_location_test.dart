@@ -17,29 +17,36 @@ import 'package:flutter_test/flutter_test.dart';
 /// заработает — теперь уже по вине разрешения.
 void main() {
   final plist = File('ios/Runner/Info.plist').readAsStringSync();
-  final service = File('lib/services/live_location_service.dart').readAsStringSync();
+  final service = File(
+    'lib/services/live_location_service.dart',
+  ).readAsStringSync();
 
   /// Значения массива `<key>имя</key><array>…</array>`.
   List<String> arrayOf(String key) {
-    final m = RegExp('<key>$key</key>\\s*<array>(.*?)</array>', dotAll: true)
-        .firstMatch(plist);
+    final m = RegExp(
+      '<key>$key</key>\\s*<array>(.*?)</array>',
+      dotAll: true,
+    ).firstMatch(plist);
     if (m == null) return const [];
-    return RegExp(r'<string>(.*?)</string>')
-        .allMatches(m.group(1)!)
-        .map((e) => e.group(1)!)
-        .toList();
+    return RegExp(
+      r'<string>(.*?)</string>',
+    ).allMatches(m.group(1)!).map((e) => e.group(1)!).toList();
   }
 
   String valueOf(String key) {
-    final m = RegExp('<key>$key</key>\\s*<string>(.*?)</string>', dotAll: true)
-        .firstMatch(plist);
+    final m = RegExp(
+      '<key>$key</key>\\s*<string>(.*?)</string>',
+      dotAll: true,
+    ).firstMatch(plist);
     return m?.group(1) ?? '';
   }
 
   test('код просит фоновую геолокацию — значит режим location объявлен', () {
-    final asksForBackground =
-        RegExp(r'allowBackgroundLocationUpdates:\s*true').hasMatch(service);
-    if (!asksForBackground) return; // фон выключили осознанно — проверять нечего
+    final asksForBackground = RegExp(
+      r'allowBackgroundLocationUpdates:\s*true',
+    ).hasMatch(service);
+    if (!asksForBackground)
+      return; // фон выключили осознанно — проверять нечего
     expect(
       arrayOf('UIBackgroundModes'),
       contains('location'),
@@ -52,9 +59,9 @@ void main() {
     // глотаем (иначе сборки без нативной части падали бы на каждом запросе), и
     // «Всегда» не спрашивается больше никогда.
     final appDelegate = File('ios/Runner/AppDelegate.swift').readAsStringSync();
-    final channel = RegExp(r"MethodChannel\(\s*'([a-z_/]+location_always)'")
-        .firstMatch(service)
-        ?.group(1);
+    final channel = RegExp(
+      r"MethodChannel\(\s*'([a-z_/]+location_always)'",
+    ).firstMatch(service)?.group(1);
     expect(channel, isNotNull, reason: 'канал пропал из Dart');
     expect(
       appDelegate.contains('"$channel"'),

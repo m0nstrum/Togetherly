@@ -15,7 +15,8 @@ library;
 /// Имя картинки пары. Повторяет ветку натива один в один — держим её здесь,
 /// чтобы правило можно было проверить тестом, а не глазами на телефоне.
 String coupleArtFor(String myGender, String partnerGender) {
-  if (myGender == 'female' && partnerGender == 'female') return 'widget_couple_ff';
+  if (myGender == 'female' && partnerGender == 'female')
+    return 'widget_couple_ff';
   if (myGender == 'male' && partnerGender == 'male') return 'widget_couple_mm';
   return 'widget_couple_mf';
 }

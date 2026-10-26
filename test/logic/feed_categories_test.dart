@@ -17,17 +17,16 @@ Memory _memory({
   required MemoryType type,
   bool sealed = false,
   DateTime? openAt,
-}) =>
-    Memory(
-      id: 'm1',
-      groupId: 'g1',
-      authorUid: 'u1',
-      authorName: 'Миша',
-      type: type,
-      createdAt: DateTime(2026, 3, 1),
-      sealed: sealed,
-      openAt: openAt,
-    );
+}) => Memory(
+  id: 'm1',
+  groupId: 'g1',
+  authorUid: 'u1',
+  authorName: 'Миша',
+  type: type,
+  createdAt: DateTime(2026, 3, 1),
+  sealed: sealed,
+  openAt: openAt,
+);
 
 void main() {
   final capsule = _memory(
@@ -78,8 +77,11 @@ void main() {
     });
 
     test('Капсулы идут первыми: за ними приходят из уведомления', () {
-      final keys =
-          presentFeedCategories([photo, note, capsule]).map((c) => c.key);
+      final keys = presentFeedCategories([
+        photo,
+        note,
+        capsule,
+      ]).map((c) => c.key);
       expect(keys.first, 'capsules');
     });
 
@@ -94,8 +96,11 @@ void main() {
       for (final c in kFeedCategories) {
         for (final code in codes) {
           final label = trDict(c.dictKey, code);
-          expect(label, isNot(c.dictKey),
-              reason: 'нет перевода ${c.dictKey} на $code');
+          expect(
+            label,
+            isNot(c.dictKey),
+            reason: 'нет перевода ${c.dictKey} на $code',
+          );
           expect(label.trim(), isNotEmpty);
         }
       }

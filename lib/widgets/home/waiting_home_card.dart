@@ -54,11 +54,16 @@ class WaitingHomeCard extends StatelessWidget {
         Container(
           width: 46,
           height: 46,
-          decoration:
-              BoxDecoration(color: cs.secondaryContainer, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: cs.secondaryContainer,
+            shape: BoxShape.circle,
+          ),
           alignment: Alignment.center,
-          child: Icon(Icons.hourglass_bottom_rounded,
-              size: 22, color: cs.onSecondaryContainer),
+          child: Icon(
+            Icons.hourglass_bottom_rounded,
+            size: 22,
+            color: cs.onSecondaryContainer,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -69,8 +74,8 @@ class WaitingHomeCard extends StatelessWidget {
                 days == null
                     ? name
                     : days <= 0
-                        ? s.waitingHomeToday
-                        : s.waitingDaysLeft(days),
+                    ? s.waitingHomeToday
+                    : s.waitingDaysLeft(days),
                 style: TextStyle(
                   fontFamily: ProfileTheme.displayFont,
                   fontSize: 20,

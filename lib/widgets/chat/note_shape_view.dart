@@ -246,10 +246,12 @@ class NoteShapeGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: size,
-        height: size,
-        child: CustomPaint(painter: _GlyphPainter(shape: shape, color: color)),
-      );
+    width: size,
+    height: size,
+    child: CustomPaint(
+      painter: _GlyphPainter(shape: shape, color: color),
+    ),
+  );
 }
 
 class _GlyphPainter extends CustomPainter {

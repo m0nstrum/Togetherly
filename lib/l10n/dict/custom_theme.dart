@@ -98,8 +98,10 @@ const Map<String, Map<String, String>> customThemeStrings = {
     'pt': 'Cabem cinco temas seus. Apague um para criar outro.',
     'it': 'Entrano cinque temi tuoi. Cancellane uno per crearne un altro.',
     'es': 'Caben cinco temas tuyos. Borra uno para crear otro.',
-    'fr': 'Cinq thèmes à toi tiennent ici. Supprime-en un pour en créer un autre.',
-    'de': 'Fünf eigene Themen passen hier. Lösche eines, um ein neues anzulegen.',
+    'fr':
+        'Cinq thèmes à toi tiennent ici. Supprime-en un pour en créer un autre.',
+    'de':
+        'Fünf eigene Themen passen hier. Lösche eines, um ein neues anzulegen.',
   },
   'customThemeDelete': {
     'ru': 'Удалить тему',
@@ -157,13 +159,18 @@ const Map<String, Map<String, String>> customThemeStrings = {
     'de': 'Euer Buch',
   },
   'plusBookBody': {
-    'ru': 'Воспоминания за выбранные даты одним PDF — с фотографиями и подписями',
-    'en': 'Memories from the dates you choose as one PDF, photos and captions included',
+    'ru':
+        'Воспоминания за выбранные даты одним PDF — с фотографиями и подписями',
+    'en':
+        'Memories from the dates you choose as one PDF, photos and captions included',
     'pt': 'Lembranças das datas que escolher num PDF, com fotos e legendas',
     'it': 'I ricordi delle date scelte in un PDF, con foto e didascalie',
-    'es': 'Los recuerdos de las fechas que elijas en un PDF, con fotos y textos',
-    'fr': 'Les souvenirs des dates choisies en un PDF, photos et légendes comprises',
-    'de': 'Erinnerungen der gewählten Tage als ein PDF, mit Fotos und Unterschriften',
+    'es':
+        'Los recuerdos de las fechas que elijas en un PDF, con fotos y textos',
+    'fr':
+        'Les souvenirs des dates choisies en un PDF, photos et légendes comprises',
+    'de':
+        'Erinnerungen der gewählten Tage als ein PDF, mit Fotos und Unterschriften',
   },
   'plusBannerTitle': {
     'ru': 'Живой баннер',

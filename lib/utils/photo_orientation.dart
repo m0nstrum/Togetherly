@@ -34,7 +34,9 @@ int readExifOrientation(Uint8List jpeg) {
 /// Отражён ли кадр. Ровно эти четыре ориентации несут зеркало — остальные
 /// только поворачивают, и с ними справляется быстрый нативный путь.
 bool orientationIsMirrored(int orientation) =>
-    orientation == 2 || orientation == 4 || orientation == 5 ||
+    orientation == 2 ||
+    orientation == 4 ||
+    orientation == 5 ||
     orientation == 7;
 
 /// Печёт ориентацию в пиксели: и поворот, и отражение. Возвращает JPEG без
@@ -82,7 +84,8 @@ Future<String?> uprightPhotoFile(String path) async {
     final baked = await compute(bakeExifOrientation, bytes);
     if (baked == null) return null;
 
-    final target = '${Directory.systemTemp.path}/'
+    final target =
+        '${Directory.systemTemp.path}/'
         '${DateTime.now().microsecondsSinceEpoch}_upright.jpg';
     await File(target).writeAsBytes(baked, flush: true);
     return target;
@@ -118,7 +121,8 @@ Future<String?> flipPhotoFile(String path) async {
     if (await file.length() > 40 * 1024 * 1024) return null;
     final flipped = await compute(flipPhotoBytes, await file.readAsBytes());
     if (flipped == null) return null;
-    final target = '${Directory.systemTemp.path}/'
+    final target =
+        '${Directory.systemTemp.path}/'
         '${DateTime.now().microsecondsSinceEpoch}_flipped.jpg';
     await File(target).writeAsBytes(flipped, flush: true);
     return target;

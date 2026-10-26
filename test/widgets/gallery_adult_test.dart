@@ -7,28 +7,36 @@ import 'package:love_app/widgets/memory/adult_veil.dart';
 /// все записи, и свайп из соседней записи приводил на снимок 18+ открытым.
 void main() {
   const plain = GalleryItem(url: 'https://x.test/a.jpg', memoryId: 'plain');
-  const adult1 =
-      GalleryItem(url: 'https://x.test/b.jpg', memoryId: 'hot', adult: true);
-  const adult2 =
-      GalleryItem(url: 'https://x.test/c.jpg', memoryId: 'hot', adult: true);
+  const adult1 = GalleryItem(
+    url: 'https://x.test/b.jpg',
+    memoryId: 'hot',
+    adult: true,
+  );
+  const adult2 = GalleryItem(
+    url: 'https://x.test/c.jpg',
+    memoryId: 'hot',
+    adult: true,
+  );
 
   Future<void> open(WidgetTester tester, int index) async {
     await tester.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(
-      home: FullscreenGallery(
-        items: const [plain, adult1, adult2],
-        initialIndex: index,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FullscreenGallery(
+          items: const [plain, adult1, adult2],
+          initialIndex: index,
+        ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
   // Завеса на самом кадре крупнее, чем на плитках плёнки.
-  Finder pageVeil() => find.byWidgetPredicate(
-      (w) => w is AdultVeil && w.iconSize > 20);
-  Finder stripVeil() => find.byWidgetPredicate(
-      (w) => w is AdultVeil && w.iconSize <= 20);
+  Finder pageVeil() =>
+      find.byWidgetPredicate((w) => w is AdultVeil && w.iconSize > 20);
+  Finder stripVeil() =>
+      find.byWidgetPredicate((w) => w is AdultVeil && w.iconSize <= 20);
 
   testWidgets('свайп на снимок 18+ показывает его под завесой', (tester) async {
     await open(tester, 0);
@@ -58,8 +66,9 @@ void main() {
     expect(pageVeil(), findsNothing);
   });
 
-  testWidgets('кадр, открытый касанием по закрытой миниатюре, уже раскрыт',
-      (tester) async {
+  testWidgets('кадр, открытый касанием по закрытой миниатюре, уже раскрыт', (
+    tester,
+  ) async {
     await open(tester, 1);
     expect(pageVeil(), findsNothing);
     expect(stripVeil(), findsNothing);

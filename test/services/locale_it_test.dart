@@ -7,6 +7,8 @@ import 'package:love_app/services/locale_service.dart';
 /// Порог множественного как в испанском (`== 1`), а не как во французском:
 /// «0 giorni», «1 giorno», «2 giorni». Первое число месяца пишется «1º».
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings it;
 
   setUp(() {

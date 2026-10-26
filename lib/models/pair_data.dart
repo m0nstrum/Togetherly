@@ -4,13 +4,13 @@ import 'connections_manager.dart';
 import 'connection.dart';
 import 'invite_code_state.dart';
 import '../services/nickname_service.dart';
-import '../fork/identity.dart'; // fork
+import '../fork/identity.dart';
 
 // Re-export for convenience
 export 'connection.dart'
     show RelationshipType, GroupMember, MemberMood, MemberAilment;
-import '../fork/config/endpoints.dart'; // fork
-import '../fork/e2e/fork_e2e.dart'; // fork
+import '../fork/config/endpoints.dart';
+import '../fork/e2e/fork_e2e.dart';
 export 'invite_code_state.dart' show InviteCodeState;
 
 /// Wrapper around ConnectionsManager for backward compatibility
@@ -67,7 +67,7 @@ class PairData extends ChangeNotifier {
   RelationshipType get relationshipType =>
       _active?.relationshipType ?? RelationshipType.couple;
 
-  // Лендинг приглашения отдаёт `pb_hooks/invite_web.pb.js` (страница,
+  // Лендинг приглашения отдаёт сервер (handler.InviteWeb: страница,
   // assetlinks, AASA), и на своём домене он уже живёт. Ссылку человек
   // отправляет партнёру — в ней должно стоять наше имя, а не служебный
   // поддомен duckdns.
@@ -79,12 +79,14 @@ class PairData extends ChangeNotifier {
   /// 18–19 августа 2026 на такую ссылку зашли 30 раз с настоящих устройств —
   /// жалоба звучала как «партнёр не может перейти по пригласительной ссылке».
   String get inviteLink => Endpoints.current.inviteLink(
-      inviteCode, fragment: ForkE2E.inviteFragment(inviteCode)); // fork
+    inviteCode,
+    fragment: ForkE2E.inviteFragment(inviteCode),
+  );
 
   /// Прямой deep link без веб-хоста: партнёр сканирует QR камерой → сразу в
   /// приложение (App Links-верификация не нужна, работает офлайн от Firebase).
   /// Прямой deep link без веб-хоста (для QR). Пустой код — пустая строка.
-  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode); // fork
+  String get inviteDeepLink => ForkIdentity.inviteDeepLink(inviteCode);
 
   // ── Multi-member getters ──
   List<GroupMember> get members => _active?.members ?? [];
@@ -96,6 +98,11 @@ class PairData extends ChangeNotifier {
   // ── Counter values ──
   int get daysInLove => _active?.daysInLove ?? 0;
   DateTime? get anniversaryDate => _active?.anniversaryDate;
+  DateTime? get firstKissDate => _active?.firstKissDate;
+
+  /// uid → дата рождения участников пары (D8: общий календарь).
+  Map<String, DateTime> get memberBirthdays =>
+      _active?.memberBirthdays ?? const {};
   int get monthsInLove => _active?.monthsInLove ?? 0;
   Duration get timeInLove => _active?.timeInLove ?? Duration.zero;
 

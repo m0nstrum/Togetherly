@@ -15,10 +15,14 @@ import 'package:flutter_test/flutter_test.dart';
 /// видео, а партнёр не видит его» (16.08.2026).
 void main() {
   test('каждая подписка клиента объявлена в rtCollections сборки', () {
-    final main = File('pocketbase/pb-cgo/main.go').readAsStringSync();
+    // fork: рассылку делает сервер форка (server/internal/domain/realtime),
+    // сборка pocketbase/pb-cgo в форке не запускается.
+    final main = File(
+      'server/internal/domain/realtime/channels.go',
+    ).readAsStringSync();
 
     final block = RegExp(
-      r'var rtCollections = map\[string\]bool\{([\s\S]*?)\}',
+      r'var published = map\[string\]bool\{([\s\S]*?)\n\}',
     ).firstMatch(main);
     expect(
       block,
@@ -59,9 +63,9 @@ void main() {
       missing,
       isEmpty,
       reason:
-          'Клиент подписан на эти коллекции, а сборка PocketBase их не '
-          'публикует: $missing. Дописать в rtCollections в '
-          'pocketbase/pb-cgo/main.go и пересобрать бинарь, иначе экран не '
+          'Клиент подписан на эти коллекции, а сервер их не публикует: '
+          '$missing. Дописать в published в '
+          'server/internal/domain/realtime/channels.go, иначе экран не '
           'обновится никогда и в журнале не будет ни одной ошибки.',
     );
   });

@@ -498,13 +498,20 @@ const Map<String, Map<String, String>> memoryLaneStrings = {
     'de': 'Die Datei ist zu groß. Wähle eine kleinere.',
   },
   'uploadFailedEmpty': {
-    'ru': 'Файл пустой. Если он в облаке, дождитесь загрузки на телефон и выберите его снова.',
-    'en': 'The file is empty. If it’s in the cloud, wait for it to download to your phone and pick it again.',
-    'pt': 'O arquivo está vazio. Se ele estiver na nuvem, espere baixar no celular e escolha de novo.',
-    'it': 'Il file è vuoto. Se è nel cloud, aspetta che si scarichi sul telefono e sceglilo di nuovo.',
-    'es': 'El archivo está vacío. Si está en la nube, espera a que se descargue en el móvil y elígelo de nuevo.',
-    'fr': 'Le fichier est vide. S’il est dans le cloud, attends qu’il soit téléchargé sur le téléphone et choisis-le à nouveau.',
-    'de': 'Die Datei ist leer. Liegt sie in der Cloud, warte, bis sie aufs Handy geladen ist, und wähle sie erneut.',
+    'ru':
+        'Файл пустой. Если он в облаке, дождитесь загрузки на телефон и выберите его снова.',
+    'en':
+        'The file is empty. If it’s in the cloud, wait for it to download to your phone and pick it again.',
+    'pt':
+        'O arquivo está vazio. Se ele estiver na nuvem, espere baixar no celular e escolha de novo.',
+    'it':
+        'Il file è vuoto. Se è nel cloud, aspetta che si scarichi sul telefono e sceglilo di nuovo.',
+    'es':
+        'El archivo está vacío. Si está en la nube, espera a que se descargue en el móvil y elígelo de nuevo.',
+    'fr':
+        'Le fichier est vide. S’il est dans le cloud, attends qu’il soit téléchargé sur le téléphone et choisis-le à nouveau.',
+    'de':
+        'Die Datei ist leer. Liegt sie in der Cloud, warte, bis sie aufs Handy geladen ist, und wähle sie erneut.',
   },
   'memoryAddedSuccess': {
     'ru': 'Воспоминание добавлено!',
@@ -857,7 +864,8 @@ const Map<String, Map<String, String>> memoryLaneStrings = {
     'pt': 'A busca esgotou a cota de hoje — escreva o título à mão',
     'it': 'La ricerca ha esaurito la quota di oggi — scrivi il titolo a mano',
     'es': 'La búsqueda agotó la cuota de hoy — escribe el título a mano',
-    'fr': 'La recherche a épuisé son quota du jour — renseigne le titre à la main',
+    'fr':
+        'La recherche a épuisé son quota du jour — renseigne le titre à la main',
     'de': 'Die Suche hat ihr Tageslimit erreicht — trag den Titel selbst ein',
   },
   'movieNoToken': {

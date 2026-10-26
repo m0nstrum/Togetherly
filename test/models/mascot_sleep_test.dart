@@ -7,8 +7,7 @@ import 'package:love_app/models/mascot_sleep.dart';
 /// Теперь у каждого персонажа своё окно, а разбор обязан выдерживать что
 /// угодно с сервера — поле правит сам человек, и старые записи его не имеют.
 void main() {
-  DateTime at(int hour, [int minute = 0]) =>
-      DateTime(2026, 8, 1, hour, minute);
+  DateTime at(int hour, [int minute = 0]) => DateTime(2026, 8, 1, hour, minute);
 
   group('Окно через полночь', () {
     const night = SleepWindow(from: 23 * 60, to: 7 * 60);

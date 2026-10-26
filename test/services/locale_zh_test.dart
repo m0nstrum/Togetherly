@@ -12,6 +12,8 @@ import 'package:love_app/services/locale_service.dart';
 /// Колонка лежит отдельно от разделов `lib/l10n/dict/`, поэтому новый ключ
 /// легко завести без перевода. Первый тест ловит именно это.
 void main() {
+  // Остальные языки в сборке скрыты (PLAN 2.3), переводы проверяем все.
+  LocaleService.allLanguagesForTests = true;
   late AppStrings zh;
 
   setUp(() {
@@ -66,7 +68,8 @@ void main() {
     final word = RegExp(r'[A-Za-z][A-Za-z0-9]*');
     final bad = <String>[];
     for (final e in kZhStrings.entries) {
-      if (RegExp('[а-яА-ЯёЁ]').hasMatch(e.value)) bad.add('${e.key}: кириллица');
+      if (RegExp('[а-яА-ЯёЁ]').hasMatch(e.value))
+        bad.add('${e.key}: кириллица');
       final clean = e.value
           .replaceAll(RegExp(r'\{[A-Za-z_]+\}'), '')
           .replaceAll(RegExp(r'\{[pi]:'), '{');
@@ -98,8 +101,10 @@ void main() {
     expect(zh.longWeekdays.last, '星期日');
     expect(zh.dayLogDate(DateTime(2001, 3, 8)), '3月8日');
     expect(zh.chatDateHeader(DateTime(2001, 3, 8)), '2001年3月8日');
-    expect(zh.formatDateAt(zh.fullMonths[3], 8, 2001, '12:30'),
-        '2001年3月8日 12:30');
+    expect(
+      zh.formatDateAt(zh.fullMonths[3], 8, 2001, '12:30'),
+      '2001年3月8日 12:30',
+    );
   });
 
   test('подстановка в словарной строке доходит до экрана', () {
@@ -122,13 +127,15 @@ void main() {
     expect(LocaleService.detect(const Locale('en', 'CN')), AppLanguage.en);
   });
 
-  test('локаль приложения называет письмо — от неё зависит шрифт иероглифов',
-      () {
-    final l = AppLanguage.zh.locale;
-    expect(l.languageCode, 'zh');
-    expect(l.scriptCode, 'Hans');
-    expect(LocaleService.supportedLocales, contains(l));
-  });
+  test(
+    'локаль приложения называет письмо — от неё зависит шрифт иероглифов',
+    () {
+      final l = AppLanguage.zh.locale;
+      expect(l.languageCode, 'zh');
+      expect(l.scriptCode, 'Hans');
+      expect(LocaleService.supportedLocales, contains(l));
+    },
+  );
 
   test('тест «Умение любить» говорит о партнёре в его роде', () {
     for (final q in kLoveBank) {

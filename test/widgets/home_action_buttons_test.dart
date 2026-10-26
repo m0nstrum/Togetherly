@@ -32,10 +32,9 @@ void main() {
   testWidgets('тап зовёт снимок, удержание — ролик', (tester) async {
     var taps = 0;
     var holds = 0;
-    await tester.pumpWidget(host(
-      onPost: () => taps++,
-      onPostHold: () => holds++,
-    ));
+    await tester.pumpWidget(
+      host(onPost: () => taps++, onPostHold: () => holds++),
+    );
 
     // Кнопка фото — четвёртая в ряду.
     final photo = find.byType(GestureDetector).last;
@@ -54,11 +53,9 @@ void main() {
   testWidgets('без пары кнопки молчат', (tester) async {
     var taps = 0;
     var holds = 0;
-    await tester.pumpWidget(host(
-      onPost: () => taps++,
-      onPostHold: () => holds++,
-      paired: false,
-    ));
+    await tester.pumpWidget(
+      host(onPost: () => taps++, onPostHold: () => holds++, paired: false),
+    );
 
     // Ряд без пары рисуется приглушённым, но не отвечает: все четыре кнопки
     // пишут в коллекции с `group_id`, и без партнёра любое нажатие потерялось

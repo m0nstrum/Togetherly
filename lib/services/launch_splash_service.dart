@@ -32,8 +32,9 @@ class LaunchSplashService extends ChangeNotifier {
 
   /// Папка заставок; тест подменяет её временной.
   @visibleForTesting
-  static Future<Directory> Function() rootDir =
-      () async => Directory('${(await getApplicationSupportDirectory()).path}/launch_splash');
+  static Future<Directory> Function() rootDir = () async => Directory(
+    '${(await getApplicationSupportDirectory()).path}/launch_splash',
+  );
 
   /// Загрузка файла; null — не вышло. Тест подменяет её.
   @visibleForTesting
@@ -104,7 +105,9 @@ class LaunchSplashService extends ChangeNotifier {
         local[name] = file.path;
       }
       // Описание ложится последним: есть оно — значит, все файлы на месте.
-      await File('${dir.path}/splash.json').writeAsString(jsonEncode(splash.withFiles(local).toJson()));
+      await File(
+        '${dir.path}/splash.json',
+      ).writeAsString(jsonEncode(splash.withFiles(local).toJson()));
       _dropStale(dir, local.values.toSet());
       return true;
     } catch (e) {
@@ -121,7 +124,9 @@ class LaunchSplashService extends ChangeNotifier {
       if (_selected.isEmpty) return null;
       final manifest = File('${(await rootDir()).path}/$_selected/splash.json');
       if (!manifest.existsSync()) return null;
-      final splash = LaunchSplash.fromJson(jsonDecode(await manifest.readAsString()) as Map<String, dynamic>);
+      final splash = LaunchSplash.fromJson(
+        jsonDecode(await manifest.readAsString()) as Map<String, dynamic>,
+      );
       if (splash == null || !splash.isOn(now)) return null;
       for (final name in splash.fileNames) {
         final file = File(splash.files[name]!);
@@ -154,13 +159,20 @@ class LaunchSplashService extends ChangeNotifier {
   /// Картинки заставки, разжатые для проигрывателя. Все разом, а не по
   /// очереди: по очереди на эмуляторе они не успевали за полторы секунды.
   static Future<Map<String, ui.Image>> decode(LaunchSplash splash) async {
-    final names = [for (final name in splash.fileNames) if (name != 'still') name];
-    final images = await Future.wait(names.map((name) async {
-      final codec = await ui.instantiateImageCodec(await File(splash.files[name]!).readAsBytes());
-      final frame = await codec.getNextFrame();
-      codec.dispose();
-      return frame.image;
-    }));
+    final names = [
+      for (final name in splash.fileNames)
+        if (name != 'still') name,
+    ];
+    final images = await Future.wait(
+      names.map((name) async {
+        final codec = await ui.instantiateImageCodec(
+          await File(splash.files[name]!).readAsBytes(),
+        );
+        final frame = await codec.getNextFrame();
+        codec.dispose();
+        return frame.image;
+      }),
+    );
     return {for (var i = 0; i < names.length; i++) names[i]: images[i]};
   }
 
@@ -179,16 +191,22 @@ class LaunchSplashService extends ChangeNotifier {
     final job = decode(splash);
     try {
       final images = await job.timeout(limit);
-      debugPrint('LaunchSplash: ${splash.key} разжата за ${watch.elapsedMilliseconds} мс');
+      debugPrint(
+        'LaunchSplash: ${splash.key} разжата за ${watch.elapsedMilliseconds} мс',
+      );
       return LaunchSplashReady(splash, images);
     } catch (e) {
-      debugPrint('LaunchSplash: ${splash.key} не успела разжаться за ${limit.inMilliseconds} мс: $e');
+      debugPrint(
+        'LaunchSplash: ${splash.key} не успела разжаться за ${limit.inMilliseconds} мс: $e',
+      );
       // Опоздавшие картинки никому не нужны.
-      unawaited(job.then((images) {
-        for (final image in images.values) {
-          image.dispose();
-        }
-      }, onError: (_) {}));
+      unawaited(
+        job.then((images) {
+          for (final image in images.values) {
+            image.dispose();
+          }
+        }, onError: (_) {}),
+      );
       return null;
     }
   }
@@ -198,7 +216,8 @@ class LaunchSplashService extends ChangeNotifier {
       final root = await rootDir();
       if (!root.existsSync()) return;
       for (final entry in root.listSync()) {
-        if (entry is Directory && entry.uri.pathSegments.where((s) => s.isNotEmpty).last != keep) {
+        if (entry is Directory &&
+            entry.uri.pathSegments.where((s) => s.isNotEmpty).last != keep) {
           entry.deleteSync(recursive: true);
         }
       }
@@ -209,7 +228,9 @@ class LaunchSplashService extends ChangeNotifier {
 
   void _dropStale(Directory dir, Set<String> keep) {
     for (final entry in dir.listSync()) {
-      if (entry is File && !entry.path.endsWith('splash.json') && !keep.contains(entry.path)) {
+      if (entry is File &&
+          !entry.path.endsWith('splash.json') &&
+          !keep.contains(entry.path)) {
         entry.deleteSync();
       }
     }
@@ -217,14 +238,18 @@ class LaunchSplashService extends ChangeNotifier {
 
   /// Имя файла на диске — имя из адреса: у новой выкладки оно другое.
   static String _fileName(String url, String fallback) {
-    final last = Uri.tryParse(url)?.pathSegments.where((s) => s.isNotEmpty).lastOrNull ?? '';
+    final last =
+        Uri.tryParse(url)?.pathSegments.where((s) => s.isNotEmpty).lastOrNull ??
+        '';
     final safe = last.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '');
     return safe.isEmpty ? '$fallback.webp' : safe;
   }
 
   static Future<List<int>?> _fetch(String url) async {
     try {
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
+      final res = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 30));
       return res.statusCode == 200 ? res.bodyBytes : null;
     } catch (_) {
       return null;

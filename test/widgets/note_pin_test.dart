@@ -37,35 +37,40 @@ Future<ColorScheme> _pump(
   tester.view.physicalSize = Size(width * 3, 1400 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(MaterialApp(
-    theme: ProfileTheme.data(cs),
-    home: MediaQuery(
-      data: MediaQueryData(size: Size(width, 1400), textScaler: TextScaler.linear(scale)),
-      child: Scaffold(
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: NotePin(
-                scheme: cs,
-                fill: theme.fillColor,
-                title: title,
-                body: body,
-                bodyBuilder: (text, style) => Text(
-                  text,
-                  key: const ValueKey('note-body'),
-                  style: style,
-                  maxLines: 14,
-                  overflow: TextOverflow.ellipsis,
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ProfileTheme.data(cs),
+      home: MediaQuery(
+        data: MediaQueryData(
+          size: Size(width, 1400),
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: Scaffold(
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: NotePin(
+                  scheme: cs,
+                  fill: theme.fillColor,
+                  title: title,
+                  body: body,
+                  bodyBuilder: (text, style) => Text(
+                    text,
+                    key: const ValueKey('note-body'),
+                    style: style,
+                    maxLines: 14,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
-  ));
+  );
   await tester.pump();
   return cs;
 }
@@ -94,29 +99,57 @@ void main() {
     });
   });
 
-  testWidgets('лист цвета темы, кавычка цвета темы, без жёлтого и без рамок', (tester) async {
+  testWidgets('лист цвета темы, кавычка цвета темы, без жёлтого и без рамок', (
+    tester,
+  ) async {
     final cs = await _pump(tester);
     final pin = find.byType(NotePin);
     final colors = <Color>[];
-    for (final w in tester.widgetList<Container>(find.descendant(of: pin, matching: find.byType(Container)))) {
+    for (final w in tester.widgetList<Container>(
+      find.descendant(of: pin, matching: find.byType(Container)),
+    )) {
       final d = w.decoration;
       if (d is BoxDecoration) {
         expect(d.border, isNull, reason: 'рамок в заметке нет');
         if (d.color != null) colors.add(d.color!);
       }
     }
-    expect(colors, contains(cs.secondaryContainer), reason: 'лист — secondaryContainer темы');
-    expect(colors, isNot(contains(const Color(0xFFFCE08A))), reason: 'прошитого жёлтого больше нет');
+    expect(
+      colors,
+      contains(cs.secondaryContainer),
+      reason: 'лист — secondaryContainer темы',
+    );
+    expect(
+      colors,
+      isNot(contains(const Color(0xFFFCE08A))),
+      reason: 'прошитого жёлтого больше нет',
+    );
     final quote = tester.widget<Text>(find.text('“'));
     expect(quote.style?.color, isNotNull);
   });
 
   testWidgets('короткая — 21, обычная — 17', (tester) async {
     await _pump(tester);
-    expect(tester.widget<Text>(find.byKey(const ValueKey('note-body'))).style?.fontSize, 21);
-    await _pump(tester, title: 'Список на выходные', body: 'Купить хлеб\nЗабрать посылку');
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('note-body')))
+          .style
+          ?.fontSize,
+      21,
+    );
+    await _pump(
+      tester,
+      title: 'Список на выходные',
+      body: 'Купить хлеб\nЗабрать посылку',
+    );
     expect(find.text('Список на выходные'), findsOneWidget);
-    expect(tester.widget<Text>(find.byKey(const ValueKey('note-body'))).style?.fontSize, 17);
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('note-body')))
+          .style
+          ?.fontSize,
+      17,
+    );
   });
 
   testWidgets('пустая заметка подписана «Заметка»', (tester) async {
@@ -126,7 +159,9 @@ void main() {
 
   for (final b in Brightness.values) {
     for (final w in [320.0, 360.0]) {
-      testWidgets('без переполнений: ${b.name}, $w dp, шрифт 1.3', (tester) async {
+      testWidgets('без переполнений: ${b.name}, $w dp, шрифт 1.3', (
+        tester,
+      ) async {
         await _pump(tester, brightness: b, width: w, scale: 1.3);
         expect(tester.takeException(), isNull);
         await _pump(
@@ -134,7 +169,8 @@ void main() {
           brightness: b,
           width: w,
           scale: 1.3,
-          title: 'Очень длинный заголовок заметки, который не помещается в одну строку',
+          title:
+              'Очень длинный заголовок заметки, который не помещается в одну строку',
           body: List.filled(20, 'строка списка, довольно длинная').join('\n'),
         );
         expect(tester.takeException(), isNull);

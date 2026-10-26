@@ -11,11 +11,11 @@ import 'package:love_app/services/cycle_service.dart';
 /// цикл другой видит бесплатно.
 void main() {
   CycleEntry period(DateTime day) => CycleEntry(
-        id: day.toIso8601String(),
-        day: day,
-        kind: CycleKind.period,
-        shared: true,
-      );
+    id: day.toIso8601String(),
+    day: day,
+    kind: CycleKind.period,
+    shared: true,
+  );
 
   /// Два цикла по 28 дней — минимум, на котором считается прогноз.
   List<CycleEntry> twoCycles() {

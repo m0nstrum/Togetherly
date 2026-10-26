@@ -28,7 +28,10 @@ Map<String, dynamic> buildMapStyle(
     'landuse_residential': {'fill-color': _hex(p.residential)},
     'landcover_wood': {'fill-color': _hex(p.wood)},
     'waterway': {'line-color': water},
-    'building': {'fill-color': _hex(p.building), 'fill-outline-color': _hex(p.buildingLine)},
+    'building': {
+      'fill-color': _hex(p.building),
+      'fill-outline-color': _hex(p.buildingLine),
+    },
     'tunnel_motorway_casing': {'line-color': _hex(p.motorwayCase)},
     'tunnel_motorway_inner': {'line-color': _hex(p.motorway)},
     'aeroway-taxiway': {'line-color': _hex(p.roadCase)},
@@ -56,12 +59,30 @@ Map<String, dynamic> buildMapStyle(
     'boundary_3': {'line-color': _hex(p.region)},
     'boundary_2': {'line-color': _hex(p.country)},
     'boundary_disputed': {'line-color': _hex(p.region)},
-    'waterway_line_label': {'text-color': _hex(p.waterText), 'text-halo-color': water},
-    'water_name_point_label': {'text-color': _hex(p.waterText), 'text-halo-color': water},
-    'water_name_line_label': {'text-color': _hex(p.waterText), 'text-halo-color': water},
-    'highway-name-path': {'text-color': _hex(p.roadText), 'text-halo-color': land},
-    'highway-name-minor': {'text-color': _hex(p.roadText), 'text-halo-color': _hex(p.road)},
-    'highway-name-major': {'text-color': _hex(p.roadText), 'text-halo-color': _hex(p.road)},
+    'waterway_line_label': {
+      'text-color': _hex(p.waterText),
+      'text-halo-color': water,
+    },
+    'water_name_point_label': {
+      'text-color': _hex(p.waterText),
+      'text-halo-color': water,
+    },
+    'water_name_line_label': {
+      'text-color': _hex(p.waterText),
+      'text-halo-color': water,
+    },
+    'highway-name-path': {
+      'text-color': _hex(p.roadText),
+      'text-halo-color': land,
+    },
+    'highway-name-minor': {
+      'text-color': _hex(p.roadText),
+      'text-halo-color': _hex(p.road),
+    },
+    'highway-name-major': {
+      'text-color': _hex(p.roadText),
+      'text-halo-color': _hex(p.road),
+    },
     'airport': {'text-color': _hex(p.town), 'text-halo-color': land},
     'label_other': {'text-color': _hex(p.village), 'text-halo-color': land},
     'label_village': {'text-color': _hex(p.village), 'text-halo-color': land},
@@ -90,16 +111,14 @@ Map<String, dynamic> buildMapStyle(
     if (extra != null) paint.addAll(extra);
     layer['paint'] = paint;
     final layout = raw['layout'] as Map?;
-    if (layer['type'] == 'symbol' && layout != null && layout.containsKey('text-field')) {
+    if (layer['type'] == 'symbol' &&
+        layout != null &&
+        layout.containsKey('text-field')) {
       layer['layout'] = Map<String, dynamic>.from(layout)
         ..['text-field'] = name
         ..['text-font'] = const ['Onest'];
     }
     layers.add(layer);
   }
-  return {
-    ...base,
-    'id': 'togetherly-${p.key}-$lang',
-    'layers': layers,
-  };
+  return {...base, 'id': 'togetherly-${p.key}-$lang', 'layers': layers};
 }

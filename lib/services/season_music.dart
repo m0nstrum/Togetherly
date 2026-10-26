@@ -58,7 +58,10 @@ class SeasonMusic {
     _wantedFade = fadeMs;
     if (urls.isEmpty || !ChestSound.instance.enabled) return;
     try {
-      if (!kIsWeb && Platform.isIOS && await AVAudioSession().isOtherAudioPlaying) return;
+      if (!kIsWeb &&
+          Platform.isIOS &&
+          await AVAudioSession().isOtherAudioPlaying)
+        return;
       if (!_wanted) return;
       final cur = _cur;
       if (cur != null && listEquals(urls, _list)) {
@@ -82,7 +85,9 @@ class SeasonMusic {
   }
 
   Future<void> _startTrack(int i, int gen, {required int fadeMs}) async {
-    final file = await OfflineImageCacheManager.instance.getSingleFile(_list[i]).timeout(const Duration(seconds: 25));
+    final file = await OfflineImageCacheManager.instance
+        .getSingleFile(_list[i])
+        .timeout(const Duration(seconds: 25));
     if (gen != _gen || !_wanted) return;
     final p = AudioPlayer(handleAudioSessionActivation: false);
     try {
@@ -104,7 +109,9 @@ class SeasonMusic {
     // Следующая мелодия качается, пока играет эта: переход не ждёт сети.
     if (_list.length > 1) {
       unawaited(
-        OfflineImageCacheManager.instance.getSingleFile(_list[(i + 1) % _list.length]).then((_) {}, onError: (_) {}),
+        OfflineImageCacheManager.instance
+            .getSingleFile(_list[(i + 1) % _list.length])
+            .then((_) {}, onError: (_) {}),
       );
     }
     if (old != null) {
@@ -122,13 +129,17 @@ class SeasonMusic {
   }
 
   void _ensureWatch() {
-    _watch ??= Timer.periodic(const Duration(milliseconds: 250), (_) => _tick());
+    _watch ??= Timer.periodic(
+      const Duration(milliseconds: 250),
+      (_) => _tick(),
+    );
   }
 
   /// Пора ли перетекать в следующую мелодию.
   Future<void> _tick() async {
     final p = _cur;
-    if (!_wanted || p == null || _crossing || _list.length < 2 || !p.playing) return;
+    if (!_wanted || p == null || _crossing || _list.length < 2 || !p.playing)
+      return;
     if (DateTime.now().isBefore(_retryAt)) return;
     final dur = p.duration;
     if (dur == null) return;
@@ -136,7 +147,11 @@ class SeasonMusic {
     if (!ended && dur - p.position > Duration(milliseconds: _fadeMs)) return;
     _crossing = true;
     try {
-      await _startTrack((_index + 1) % _list.length, _gen, fadeMs: ended ? 1200 : _fadeMs);
+      await _startTrack(
+        (_index + 1) % _list.length,
+        _gen,
+        fadeMs: ended ? 1200 : _fadeMs,
+      );
     } catch (e) {
       // Нет сети для следующей — попробуем позже, текущая доиграет.
       _retryAt = DateTime.now().add(const Duration(seconds: 10));
@@ -196,7 +211,9 @@ class SeasonMusic {
   Future<void> prepareThunder(String? url) async {
     if (url == null || (_thunderUrl == url && _thunder != null)) return;
     try {
-      final file = await OfflineImageCacheManager.instance.getSingleFile(url).timeout(const Duration(seconds: 12));
+      final file = await OfflineImageCacheManager.instance
+          .getSingleFile(url)
+          .timeout(const Duration(seconds: 12));
       final p = AudioPlayer(handleAudioSessionActivation: false);
       await p.setFilePath(file.path);
       await _thunder?.dispose();
@@ -210,7 +227,11 @@ class SeasonMusic {
   Future<void> thunder(String? url) async {
     if (url == null || !ChestSound.instance.enabled) return;
     try {
-      if (!kIsWeb && Platform.isIOS && await AVAudioSession().isOtherAudioPlaying && _cur?.playing != true) return;
+      if (!kIsWeb &&
+          Platform.isIOS &&
+          await AVAudioSession().isOtherAudioPlaying &&
+          _cur?.playing != true)
+        return;
       if (_thunderUrl != url || _thunder == null) await prepareThunder(url);
       final p = _thunder;
       if (p == null) return;
@@ -233,7 +254,11 @@ class SeasonMusic {
       return;
     }
     try {
-      if (!kIsWeb && Platform.isIOS && await AVAudioSession().isOtherAudioPlaying && _cur?.playing != true) return;
+      if (!kIsWeb &&
+          Platform.isIOS &&
+          await AVAudioSession().isOtherAudioPlaying &&
+          _cur?.playing != true)
+        return;
       final p = _crackle!;
       await p.seek(Duration.zero);
       unawaited(p.play());
@@ -245,7 +270,9 @@ class SeasonMusic {
   Future<void> prepareCrackle(String? url) async {
     if (url == null || (_crackleUrl == url && _crackle != null)) return;
     try {
-      final file = await OfflineImageCacheManager.instance.getSingleFile(url).timeout(const Duration(seconds: 12));
+      final file = await OfflineImageCacheManager.instance
+          .getSingleFile(url)
+          .timeout(const Duration(seconds: 12));
       final p = AudioPlayer(handleAudioSessionActivation: false);
       await p.setFilePath(file.path);
       await _crackle?.dispose();

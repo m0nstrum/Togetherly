@@ -41,7 +41,11 @@ void main() {
     test('переживает запись без даты', () {
       // Сервер отдаёт `created` автополем, но в очереди отправки запись
       // рождается локально и может уйти в кэш до ответа.
-      final res = WishReservation.fromMap({'id': 'r2', 'wish_id': 'w2', 'uid': 'u1'});
+      final res = WishReservation.fromMap({
+        'id': 'r2',
+        'wish_id': 'w2',
+        'uid': 'u1',
+      });
       expect(res.wishId, 'w2');
       expect(res.createdAt, isNotNull);
     });

@@ -268,7 +268,8 @@ const Map<String, Map<String, String>> setupStrings = {
     'fr': 'Le mot de passe actuel ne convient pas',
     'de': 'Das aktuelle Passwort stimmt nicht',
   },
-  'passwordTooShort': { // fork (UX A15): минимум форка — 12
+  'passwordTooShort': {
+    // fork (UX A15): минимум форка — 12
     'ru': 'Пароль не короче 12 символов',
     'en': 'Password must be at least 12 characters',
     'pt': 'A senha precisa de 12 caracteres ou mais',
@@ -323,13 +324,20 @@ const Map<String, Map<String, String>> setupStrings = {
     'de': 'Wir schicken einen Link an die E-Mail des Kontos',
   },
   'changePasswordConfirm': {
-    'ru': 'Отправить письмо на {email}? По ссылке из него можно будет задать новый пароль.',
-    'en': 'Send an email to {email}? The link inside lets you set a new password.',
-    'pt': 'Enviar um e-mail para {email}? Pelo link dá para definir uma nova senha.',
-    'it': 'Inviare un’e-mail a {email}? Dal link potrai impostare una nuova password.',
-    'es': '¿Enviar un correo a {email}? Con el enlace podrás poner una contraseña nueva.',
-    'fr': 'Envoyer un e-mail à {email} ? Le lien permet de définir un nouveau mot de passe.',
-    'de': 'Eine E-Mail an {email} senden? Über den Link setzt du ein neues Passwort.',
+    'ru':
+        'Отправить письмо на {email}? По ссылке из него можно будет задать новый пароль.',
+    'en':
+        'Send an email to {email}? The link inside lets you set a new password.',
+    'pt':
+        'Enviar um e-mail para {email}? Pelo link dá para definir uma nova senha.',
+    'it':
+        'Inviare un’e-mail a {email}? Dal link potrai impostare una nuova password.',
+    'es':
+        '¿Enviar un correo a {email}? Con el enlace podrás poner una contraseña nueva.',
+    'fr':
+        'Envoyer un e-mail à {email} ? Le lien permet de définir un nouveau mot de passe.',
+    'de':
+        'Eine E-Mail an {email} senden? Über den Link setzt du ein neues Passwort.',
   },
   'passwordResetError': {
     'ru': 'Не удалось отправить письмо. Проверьте email и попробуйте позже.',
@@ -481,13 +489,20 @@ const Map<String, Map<String, String>> setupStrings = {
     'de': 'Prüf deine E-Mail',
   },
   'emailTypoBody': {
-    'ru': 'Вы ввели {typed}. Может быть, {fixed}? На адрес с опечаткой не дойдёт письмо для смены пароля.',
-    'en': 'You typed {typed}. Did you mean {fixed}? A password reset email can’t reach an address with a typo.',
-    'pt': 'Você digitou {typed}. Quis dizer {fixed}? O e-mail para trocar a senha não chega a um endereço com erro.',
-    'it': 'Hai scritto {typed}. Intendevi {fixed}? L’e-mail per cambiare password non arriva a un indirizzo sbagliato.',
-    'es': 'Escribiste {typed}. ¿Quisiste decir {fixed}? El correo para cambiar la contraseña no llega a una dirección con errores.',
-    'fr': 'Tu as saisi {typed}. Tu voulais dire {fixed} ? L’e-mail de changement de mot de passe n’arrive pas à une adresse erronée.',
-    'de': 'Du hast {typed} eingegeben. Meinst du {fixed}? An eine Adresse mit Tippfehler kommt keine Mail zum Zurücksetzen des Passworts.',
+    'ru':
+        'Вы ввели {typed}. Может быть, {fixed}? На адрес с опечаткой не дойдёт письмо для смены пароля.',
+    'en':
+        'You typed {typed}. Did you mean {fixed}? A password reset email can’t reach an address with a typo.',
+    'pt':
+        'Você digitou {typed}. Quis dizer {fixed}? O e-mail para trocar a senha não chega a um endereço com erro.',
+    'it':
+        'Hai scritto {typed}. Intendevi {fixed}? L’e-mail per cambiare password non arriva a un indirizzo sbagliato.',
+    'es':
+        'Escribiste {typed}. ¿Quisiste decir {fixed}? El correo para cambiar la contraseña no llega a una dirección con errores.',
+    'fr':
+        'Tu as saisi {typed}. Tu voulais dire {fixed} ? L’e-mail de changement de mot de passe n’arrive pas à une adresse erronée.',
+    'de':
+        'Du hast {typed} eingegeben. Meinst du {fixed}? An eine Adresse mit Tippfehler kommt keine Mail zum Zurücksetzen des Passworts.',
   },
   'emailTypoFix': {
     'ru': 'Исправить',
@@ -510,13 +525,20 @@ const Map<String, Map<String, String>> setupStrings = {
   // Аккаунт уже заведён на почту с опечаткой (около 1270 на проде, 04.10.2026):
   // предлагаем исправить, пока человек ещё помнит пароль.
   'emailTypoAccountBody': {
-    'ru': 'Почта аккаунта — {typed}. Похоже, в ней опечатка, и письмо для смены пароля туда не дойдёт. Исправить на {fixed}? Придёт код на новый адрес.',
-    'en': 'Your account email is {typed}. It looks like a typo, and a password reset email can’t reach it. Change it to {fixed}? We’ll send a code to the new address.',
-    'pt': 'O e-mail da conta é {typed}. Parece ter um erro, e o e-mail para trocar a senha não chega lá. Trocar para {fixed}? Enviaremos um código ao novo endereço.',
-    'it': 'L’e-mail dell’account è {typed}. Sembra esserci un errore e l’e-mail per cambiare password non arriverà. Cambiarla in {fixed}? Invieremo un codice al nuovo indirizzo.',
-    'es': 'El correo de la cuenta es {typed}. Parece tener un error y el correo para cambiar la contraseña no llegará. ¿Cambiarlo a {fixed}? Enviaremos un código a la nueva dirección.',
-    'fr': 'L’e-mail du compte est {typed}. Il semble contenir une faute, et l’e-mail de changement de mot de passe n’y arrivera pas. Le remplacer par {fixed} ? Un code sera envoyé à la nouvelle adresse.',
-    'de': 'Die E-Mail des Kontos ist {typed}. Sie scheint einen Tippfehler zu haben, eine Mail zum Zurücksetzen des Passworts kommt dort nicht an. Auf {fixed} ändern? Wir schicken einen Code an die neue Adresse.',
+    'ru':
+        'Почта аккаунта — {typed}. Похоже, в ней опечатка, и письмо для смены пароля туда не дойдёт. Исправить на {fixed}? Придёт код на новый адрес.',
+    'en':
+        'Your account email is {typed}. It looks like a typo, and a password reset email can’t reach it. Change it to {fixed}? We’ll send a code to the new address.',
+    'pt':
+        'O e-mail da conta é {typed}. Parece ter um erro, e o e-mail para trocar a senha não chega lá. Trocar para {fixed}? Enviaremos um código ao novo endereço.',
+    'it':
+        'L’e-mail dell’account è {typed}. Sembra esserci un errore e l’e-mail per cambiare password non arriverà. Cambiarla in {fixed}? Invieremo un codice al nuovo indirizzo.',
+    'es':
+        'El correo de la cuenta es {typed}. Parece tener un error y el correo para cambiar la contraseña no llegará. ¿Cambiarlo a {fixed}? Enviaremos un código a la nueva dirección.',
+    'fr':
+        'L’e-mail du compte est {typed}. Il semble contenir une faute, et l’e-mail de changement de mot de passe n’y arrivera pas. Le remplacer par {fixed} ? Un code sera envoyé à la nouvelle adresse.',
+    'de':
+        'Die E-Mail des Kontos ist {typed}. Sie scheint einen Tippfehler zu haben, eine Mail zum Zurücksetzen des Passworts kommt dort nicht an. Auf {fixed} ändern? Wir schicken einen Code an die neue Adresse.',
   },
   'emailTypoAccountHint': {
     'ru': 'Похоже, опечатка — нажмите, чтобы исправить',

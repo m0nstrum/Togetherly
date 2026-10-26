@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../fork/push/notif_tap.dart'; // fork: общий колбэк нажатий
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -62,26 +63,28 @@ class CapsuleNotificationService {
 
   Future<void> init() async {
     if (_initialized) return;
+    ForkNotifTap.other = _remember; // fork: общий колбэк нажатий
     tz.initializeTimeZones();
-    const androidSettings =
-        AndroidInitializationSettings('@drawable/ic_notification');
+    const androidSettings = AndroidInitializationSettings(
+      '@drawable/ic_notification',
+    );
     const iosSettings = DarwinInitializationSettings();
     await _plugin.initialize(
       settings: const InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
       ),
-      onDidReceiveNotificationResponse: (response) {
-        _remember(response.payload);
-      },
+      onDidReceiveNotificationResponse: ForkNotifTap.onResponse,
     );
     // Приложение могли поднять самим нажатием — забираем payload и оттуда.
     final launch = await _plugin.getNotificationAppLaunchDetails();
     if (launch?.didNotificationLaunchApp ?? false) {
       await _remember(launch?.notificationResponse?.payload);
     }
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
@@ -93,7 +96,8 @@ class CapsuleNotificationService {
     if (Platform.isIOS || Platform.isMacOS) {
       await _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     }
     _initialized = true;
@@ -101,8 +105,11 @@ class CapsuleNotificationService {
 
   /// Планирует уведомление на [openAt]. Повторные вызовы с тем же memoryId —
   /// no-op (id стабилен). Прошедшие даты игнорируются.
-  Future<void> schedule(String memoryId, DateTime openAt,
-      {String? capsuleTitle}) async {
+  Future<void> schedule(
+    String memoryId,
+    DateTime openAt, {
+    String? capsuleTitle,
+  }) async {
     final id = idForMemory(memoryId);
     if (_scheduled.contains(id)) return;
     if (!openAt.isAfter(DateTime.now())) return;
@@ -114,8 +121,10 @@ class CapsuleNotificationService {
     _scheduled.add(id);
     try {
       if (!_initialized) await init();
-      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       await requestNotificationPermissionSafely(androidPlugin);
       final s = LocaleService.current;
       final body = (capsuleTitle != null && capsuleTitle.trim().isNotEmpty)

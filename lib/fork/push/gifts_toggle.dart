@@ -24,7 +24,8 @@ class _ForkGiftsNotifRowState extends State<ForkGiftsNotifRow> {
   void initState() {
     super.initState();
     SharedPreferences.getInstance().then((p) {
-      if (mounted) setState(() => _on = p.getBool(ForkGiftsNotifRow.prefsKey) ?? true);
+      if (mounted)
+        setState(() => _on = p.getBool(ForkGiftsNotifRow.prefsKey) ?? true);
     }, onError: (_) {}); // тихо: без настроек остаётся «включено»
   }
 
@@ -42,7 +43,10 @@ class _ForkGiftsNotifRowState extends State<ForkGiftsNotifRow> {
   Widget build(BuildContext context) => SettingsRow(
     icon: Icons.card_giftcard_rounded,
     title: ruEn('Подарки', 'Gifts'),
-    subtitle: ruEn('Когда партнёр что-то дарит', 'When your partner sends a gift'),
+    subtitle: ruEn(
+      'Когда партнёр что-то дарит',
+      'When your partner sends a gift',
+    ),
     trailing: Switch(value: _on, onChanged: _set),
     onTap: () => _set(!_on),
   );

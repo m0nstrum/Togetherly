@@ -1,4 +1,4 @@
-import '../fork/l10n/count_words.dart'; // fork
+import '../fork/l10n/count_words.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -117,15 +117,20 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
   /// нет: сервис сам пропускает повтор, если ничего не изменилось.
   void _publishToWidget() {
     if (_canvases.isEmpty) return;
-    unawaited(CanvasWidgetService.instance.publish(
-      groupId: _groupId,
-      canvases: _canvases,
-      activeId: _canvases.first.id,
-      strokesOf: (meta) => _isPaired
-          ? CanvasRepository.instance
-              .previewStrokes(_groupId, meta.id, limit: kPreviewStrokeLimit)
-          : _storage.loadLocalStrokes(_uid, meta.id),
-    ));
+    unawaited(
+      CanvasWidgetService.instance.publish(
+        groupId: _groupId,
+        canvases: _canvases,
+        activeId: _canvases.first.id,
+        strokesOf: (meta) => _isPaired
+            ? CanvasRepository.instance.previewStrokes(
+                _groupId,
+                meta.id,
+                limit: kPreviewStrokeLimit,
+              )
+            : _storage.loadLocalStrokes(_uid, meta.id),
+      ),
+    );
   }
 
   // ── Actions ─────────────────────────────────────────────────────────────
@@ -143,7 +148,6 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
     );
     if (created && mounted) _load();
   }
-
 
   Future<void> _openCanvas(CanvasMeta meta, {ColoringChoice? coloring}) async {
     await Navigator.push(
@@ -218,9 +222,11 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
     }
     if (!mounted) return;
     // Не удалённые остаются выбранными: можно повторить одной кнопкой.
-    setState(() => _selected
-      ..clear()
-      ..addAll(failedIds));
+    setState(
+      () => _selected
+        ..clear()
+        ..addAll(failedIds),
+    );
     _load();
     if (failedIds.isNotEmpty) {
       ForkNotice.failure(
@@ -240,13 +246,12 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
   Future<String?> _showNameDialog({
     required String title,
     required String initial,
-  }) =>
-      AppDialog.prompt(
-        context,
-        title: title,
-        label: LocaleService.current.canvasNameLabel,
-        initial: initial,
-      );
+  }) => AppDialog.prompt(
+    context,
+    title: title,
+    label: LocaleService.current.canvasNameLabel,
+    initial: initial,
+  );
 
   // ── Build ────────────────────────────────────────────────────────────────
 
@@ -293,8 +298,8 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
                 child: _loading
                     ? Center(child: M3Loading(color: t.primaryLight))
                     : _canvases.isEmpty
-                        ? _buildEmpty(s, t)
-                        : _buildGrid(s, t),
+                    ? _buildEmpty(s, t)
+                    : _buildGrid(s, t),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -302,11 +307,16 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
                 child: _selectionMode
                     ? FilledButton.icon(
                         onPressed: _deleteSelected,
-                        icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 20,
+                        ),
                         label: Text(
                           s.delete,
                           style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: t.isDark
@@ -320,21 +330,21 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
                         ),
                       )
                     : FilledButton(
-                  onPressed: _createNewCanvas,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: t.primary,
-                    foregroundColor: _onPrimary(t),
-                    padding: const EdgeInsets.symmetric(vertical: 17),
-                    shape: const StadiumBorder(),
-                  ),
-                  child: Text(
-                    s.newCanvas,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                        onPressed: _createNewCanvas,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: t.primary,
+                          foregroundColor: _onPrimary(t),
+                          padding: const EdgeInsets.symmetric(vertical: 17),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(
+                          s.newCanvas,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -344,8 +354,9 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
   }
 
   /// Контрастный цвет поверх акцента: у светлых акцентов белый текст тонет.
-  Color _onPrimary(AppTheme t) =>
-      t.primary.computeLuminance() > 0.55 ? const Color(0xFF16161A) : Colors.white;
+  Color _onPrimary(AppTheme t) => t.primary.computeLuminance() > 0.55
+      ? const Color(0xFF16161A)
+      : Colors.white;
 
   /// Шапка режима выбора: выход, счётчик, переименование одного и «Все».
   Widget _selectionBar(AppStrings s, AppTheme t) {
@@ -379,13 +390,14 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
         if (one)
           IconButton(
             onPressed: () {
-              final meta =
-                  _canvases.firstWhere((c) => c.id == _selected.first);
+              final meta = _canvases.firstWhere((c) => c.id == _selected.first);
               setState(_selected.clear);
               _renameCanvas(meta);
             },
-            icon: Icon(Icons.drive_file_rename_outline_rounded,
-                color: t.textPrimary),
+            icon: Icon(
+              Icons.drive_file_rename_outline_rounded,
+              color: t.textPrimary,
+            ),
             tooltip: s.renameCanvas,
           ),
         TextButton(
@@ -395,27 +407,28 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
             foregroundColor: t.primary,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           ),
-          child: Text(s.selectAll,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          child: Text(
+            s.selectAll,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
       ],
     );
   }
 
   Widget _roundBack(AppTheme t) => Material(
-        color: t.cardSurface,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => Navigator.pop(context),
-          child: SizedBox(
-            width: 42,
-            height: 42,
-            child: Icon(Icons.arrow_back_rounded,
-                size: 20, color: t.textPrimary),
-          ),
-        ),
-      );
+    color: t.cardSurface,
+    shape: const CircleBorder(),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: () => Navigator.pop(context),
+      child: SizedBox(
+        width: 42,
+        height: 42,
+        child: Icon(Icons.arrow_back_rounded, size: 20, color: t.textPrimary),
+      ),
+    ),
+  );
 
   Widget _buildEmpty(AppStrings s, AppTheme t) {
     return Center(
@@ -469,7 +482,8 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
     return GestureDetector(
       // В режиме выбора касание отмечает холст, а не открывает его.
       onTap: () => _selectionMode ? _toggleSelected(meta) : _openCanvas(meta),
-      onLongPress: () => _selectionMode ? _toggleSelected(meta) : _showCardMenu(meta),
+      onLongPress: () =>
+          _selectionMode ? _toggleSelected(meta) : _showCardMenu(meta),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
@@ -479,108 +493,113 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
           ),
         ),
         child: ClipRRect(
-        borderRadius: BorderRadius.circular(21),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildThumbnail(meta, t),
-            // Затемнение снизу, чтобы подпись читалась на любом рисунке.
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 88,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.62),
-                      Colors.black.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    meta.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatDate(meta.updatedAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Отметка выбора
-            if (_selectionMode)
+          borderRadius: BorderRadius.circular(21),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildThumbnail(meta, t),
+              // Затемнение снизу, чтобы подпись читалась на любом рисунке.
               Positioned(
-                right: 10,
-                top: 10,
-                child: Container(
-                  width: 26,
-                  height: 26,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 88,
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: picked
-                        ? t.primary
-                        : Colors.black.withValues(alpha: 0.45),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: picked ? t.primary : Colors.white70,
-                      width: 2,
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.62),
+                        Colors.black.withValues(alpha: 0.0),
+                      ],
                     ),
                   ),
-                  child: picked
-                      ? Icon(Icons.check_rounded,
-                          size: 16, color: _onPrimary(t))
-                      : null,
                 ),
               ),
-            // Пиксельный холст помечаем: сетку потом не поменять, полезно
-            // видеть заранее.
-            if (meta.isPixel)
               Positioned(
-                left: 12,
-                top: 12,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(999),
+                left: 14,
+                right: 14,
+                bottom: 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      meta.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatDate(meta.updatedAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Отметка выбора
+              if (_selectionMode)
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: picked
+                          ? t.primary
+                          : Colors.black.withValues(alpha: 0.45),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: picked ? t.primary : Colors.white70,
+                        width: 2,
+                      ),
+                    ),
+                    child: picked
+                        ? Icon(
+                            Icons.check_rounded,
+                            size: 16,
+                            color: _onPrimary(t),
+                          )
+                        : null,
                   ),
-                  child: Text(
-                    '${meta.pixelW}×${meta.pixelH}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                ),
+              // Пиксельный холст помечаем: сетку потом не поменять, полезно
+              // видеть заранее.
+              if (meta.isPixel)
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${meta.pixelW}×${meta.pixelH}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -696,16 +715,19 @@ class _DrawGalleryScreenState extends State<DrawGalleryScreen> {
       activeId: meta.id,
       force: true,
       strokesOf: (m) => _isPaired
-          ? CanvasRepository.instance
-              .previewStrokes(_groupId, m.id, limit: kPreviewStrokeLimit)
+          ? CanvasRepository.instance.previewStrokes(
+              _groupId,
+              m.id,
+              limit: kPreviewStrokeLimit,
+            )
           : _storage.loadLocalStrokes(_uid, m.id),
     );
     final ok = await CanvasWidgetService.instance.pinToHomeScreen(meta.id);
     if (!mounted) return;
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_s.drawAddToWidgetUnsupported)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_s.drawAddToWidgetUnsupported)));
     }
   }
 

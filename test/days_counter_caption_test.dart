@@ -16,8 +16,9 @@ void main() {
   final kotlin = File(
     'android/app/src/main/kotlin/com/togetherly/love/DaysCounterWidgetProvider.kt',
   ).readAsStringSync();
-  final swift =
-      File('ios/TogetherlyWidget/DaysStreakStatsWidgets.swift').readAsStringSync();
+  final swift = File(
+    'ios/TogetherlyWidget/DaysStreakStatsWidgets.swift',
+  ).readAsStringSync();
 
   test('приложение отдаёт готовую подпись', () {
     expect(dart, contains("days_\${g}_caption"));

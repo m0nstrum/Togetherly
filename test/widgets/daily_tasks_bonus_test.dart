@@ -14,22 +14,26 @@ void main() {
     tester.view.physicalSize = const Size(320 * 3, 900 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: MediaQuery(
-        data: const MediaQueryData(
-            size: Size(320, 900), textScaler: TextScaler.linear(1.3)),
-        child: Scaffold(
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: DailyTasksCard(
-              groupId: 'g-bonus',
-              partnerName: 'Лера',
-              onOpenTask: (_) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 900),
+            textScaler: TextScaler.linear(1.3),
+          ),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: DailyTasksCard(
+                groupId: 'g-bonus',
+                partnerName: 'Лера',
+                onOpenTask: (_) {},
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump(const Duration(milliseconds: 300));
   }
 
@@ -49,8 +53,9 @@ void main() {
     expect(find.text('Бонус'), findsNothing);
   });
 
-  testWidgets('три закрыты — бонус четвёртой строкой, без переполнений',
-      (tester) async {
+  testWidgets('три закрыты — бонус четвёртой строкой, без переполнений', (
+    tester,
+  ) async {
     final s = DailyTaskService.instance..bind(groupId: 'g-bonus');
     setDone(s.today.map((t) => t.id));
     await pumpCard(tester);

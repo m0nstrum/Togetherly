@@ -24,12 +24,14 @@ class OfflineImageCacheManager extends CacheManager with ImageCacheManager {
   static final OfflineImageCacheManager instance = OfflineImageCacheManager._();
 
   OfflineImageCacheManager._()
-      : super(Config(
+    : super(
+        Config(
           key,
           stalePeriod: const Duration(days: 3650),
           maxNrOfCacheObjects: 5000,
           fileSystem: _PersistentFileSystem(key),
-        ));
+        ),
+      );
 }
 
 /// Кэш баннеров профиля, хозяин — `BannerCache`.
@@ -42,7 +44,8 @@ class BannerCacheManager extends CacheManager {
   static final BannerCacheManager instance = BannerCacheManager._();
 
   BannerCacheManager._()
-      : super(Config(
+    : super(
+        Config(
           key,
           // Файл под ссылкой баннера не меняется, уборка по давности не нужна.
           stalePeriod: const Duration(days: 3650),
@@ -50,7 +53,8 @@ class BannerCacheManager extends CacheManager {
           // уходят те, что дольше всех не открывали.
           maxNrOfCacheObjects: 60,
           fileSystem: _PersistentFileSystem(key),
-        ));
+        ),
+      );
 }
 
 /// Папка кэша картинок. На Android — `files/offline/<key>`: её система не
@@ -64,8 +68,7 @@ String imageCacheDirFor({
   required String temp,
   required String support,
   required String key,
-}) =>
-    android ? p.join(support, 'offline', key) : p.join(temp, key);
+}) => android ? p.join(support, 'offline', key) : p.join(temp, key);
 
 /// Где кэш лежал до 09.10.2026 — во временной папке пакета.
 @visibleForTesting
@@ -82,8 +85,15 @@ class _PersistentFileSystem implements FileSystem {
     const fs = LocalFileSystem();
     final temp = (await getTemporaryDirectory()).path;
     final android = io.Platform.isAndroid;
-    final support = android ? (await getApplicationSupportDirectory()).path : temp;
-    final path = imageCacheDirFor(android: android, temp: temp, support: support, key: key);
+    final support = android
+        ? (await getApplicationSupportDirectory()).path
+        : temp;
+    final path = imageCacheDirFor(
+      android: android,
+      temp: temp,
+      support: support,
+      key: key,
+    );
     final dir = fs.directory(path);
     if (android && !await dir.exists()) {
       // Уже скачанное переносим, а не качаем заново: обе папки на одном

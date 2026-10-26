@@ -88,21 +88,21 @@ class _PairBookScreenState extends State<PairBookScreen> {
   }
 
   List<Memory> get _picked => memoriesForBook(
-        widget.memories,
-        from: _range.from,
-        to: _range.to,
-        secretUnlocked: widget.secretUnlocked,
-        includeAdult: _includeAdult,
-      );
+    widget.memories,
+    from: _range.from,
+    to: _range.to,
+    secretUnlocked: widget.secretUnlocked,
+    includeAdult: _includeAdult,
+  );
 
   /// Есть ли в выбранном периоде записи 18+: без них переключатель не нужен.
   bool get _hasAdult => memoriesForBook(
-        widget.memories,
-        from: _range.from,
-        to: _range.to,
-        secretUnlocked: widget.secretUnlocked,
-        includeAdult: true,
-      ).any((m) => m.isAdult);
+    widget.memories,
+    from: _range.from,
+    to: _range.to,
+    secretUnlocked: widget.secretUnlocked,
+    includeAdult: true,
+  ).any((m) => m.isAdult);
 
   String get _periodLabel {
     final range = _range;
@@ -159,8 +159,9 @@ class _PairBookScreenState extends State<PairBookScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_s.bookFailed)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_s.bookFailed)));
     }
   }
 
@@ -181,10 +182,7 @@ class _PairBookScreenState extends State<PairBookScreen> {
       data: ProfileTheme.data(cs),
       child: Scaffold(
         backgroundColor: cs.surface,
-        appBar: AppBar(
-          title: Text(_s.bookTitle),
-          backgroundColor: cs.surface,
-        ),
+        appBar: AppBar(title: Text(_s.bookTitle), backgroundColor: cs.surface),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           children: [
@@ -230,16 +228,14 @@ class _PairBookScreenState extends State<PairBookScreen> {
             ],
             const SizedBox(height: 22),
             _summary(cs, picked.length),
-            if (_hasAdult) ...[
-              const SizedBox(height: 10),
-              _adultSwitch(cs),
-            ],
+            if (_hasAdult) ...[const SizedBox(height: 10), _adultSwitch(cs)],
             const SizedBox(height: 22),
             if (_busy) ...[
               Center(child: M3Loading(color: cs.primary)),
               const SizedBox(height: 12),
               LinearProgressIndicator(
-                  value: _total == 0 ? null : _done / _total),
+                value: _total == 0 ? null : _done / _total,
+              ),
               const SizedBox(height: 8),
               Center(
                 child: Text(
@@ -350,6 +346,7 @@ class _PairBookScreenState extends State<PairBookScreen> {
       });
       unawaited(_saveAdultChoice(value));
     }
+
     return Material(
       color: cs.surfaceContainerHigh,
       borderRadius: BorderRadius.circular(20),
@@ -387,10 +384,7 @@ class _PairBookScreenState extends State<PairBookScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Switch(
-                value: _includeAdult,
-                onChanged: _busy ? null : toggle,
-              ),
+              Switch(value: _includeAdult, onChanged: _busy ? null : toggle),
             ],
           ),
         ),
@@ -399,9 +393,9 @@ class _PairBookScreenState extends State<PairBookScreen> {
   }
 
   String _labelOf(BookPeriod period) => switch (period) {
-        BookPeriod.allTime => _s.bookPeriodAll,
-        BookPeriod.thisYear => _s.bookPeriodYear,
-        BookPeriod.thisMonth => _s.bookPeriodMonth,
-        BookPeriod.custom => _s.bookPeriodCustom,
-      };
+    BookPeriod.allTime => _s.bookPeriodAll,
+    BookPeriod.thisYear => _s.bookPeriodYear,
+    BookPeriod.thisMonth => _s.bookPeriodMonth,
+    BookPeriod.custom => _s.bookPeriodCustom,
+  };
 }

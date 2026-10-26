@@ -40,12 +40,8 @@ Future<WishKindDraft?> showWishCategorySheet(
   return showAppSheet<WishKindDraft>(
     context,
     background: scheme.surfaceContainer,
-    builder: (_) => _CategoryForm(
-      theme: theme,
-      scheme: scheme,
-      ru: ru,
-      existing: existing,
-    ),
+    builder: (_) =>
+        _CategoryForm(theme: theme, scheme: scheme, ru: ru, existing: existing),
   );
 }
 
@@ -67,10 +63,12 @@ class _CategoryForm extends StatefulWidget {
 }
 
 class _CategoryFormState extends State<_CategoryForm> {
-  late final TextEditingController _title =
-      TextEditingController(text: widget.existing?.titleRu ?? '');
-  late final TextEditingController _note =
-      TextEditingController(text: widget.existing?.note ?? '');
+  late final TextEditingController _title = TextEditingController(
+    text: widget.existing?.titleRu ?? '',
+  );
+  late final TextEditingController _note = TextEditingController(
+    text: widget.existing?.note ?? '',
+  );
   late String _symbol = widget.existing?.symbol ?? 'star';
 
   ColorScheme get _cs => widget.scheme;
@@ -87,7 +85,8 @@ class _CategoryFormState extends State<_CategoryForm> {
   Future<void> _pickSymbol() async {
     final picked = await Navigator.of(context).push<String>(
       MaterialPageRoute<String>(
-        builder: (_) => SymbolPickerScreen(theme: widget.theme, selected: _symbol),
+        builder: (_) =>
+            SymbolPickerScreen(theme: widget.theme, selected: _symbol),
       ),
     );
     if (picked != null && picked.isNotEmpty && mounted) {
@@ -98,11 +97,9 @@ class _CategoryFormState extends State<_CategoryForm> {
   void _submit() {
     final text = _title.text.trim();
     if (text.isEmpty) return;
-    Navigator.of(context).pop(WishKindDraft(
-      title: text,
-      symbol: _symbol,
-      note: _note.text.trim(),
-    ));
+    Navigator.of(
+      context,
+    ).pop(WishKindDraft(title: text, symbol: _symbol, note: _note.text.trim()));
   }
 
   @override
@@ -133,8 +130,11 @@ class _CategoryFormState extends State<_CategoryForm> {
                       width: 64,
                       height: 64,
                       child: Center(
-                        child: SymbolIcon(_symbol,
-                            size: 30, color: _cs.onPrimaryContainer),
+                        child: SymbolIcon(
+                          _symbol,
+                          size: 30,
+                          color: _cs.onPrimaryContainer,
+                        ),
                       ),
                     ),
                   ),
@@ -158,7 +158,11 @@ class _CategoryFormState extends State<_CategoryForm> {
               icon: Icon(Icons.search_rounded, size: 18, color: _cs.primary),
               label: Text(
                 _tr('Выбрать значок из 4381', 'Pick from 4381 icons'),
-                style: AppFonts.onest(size: 13.5, weight: 600, color: _cs.primary),
+                style: AppFonts.onest(
+                  size: 13.5,
+                  weight: 600,
+                  color: _cs.primary,
+                ),
               ),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
@@ -184,16 +188,20 @@ class _CategoryFormState extends State<_CategoryForm> {
                   style: FilledButton.styleFrom(
                     backgroundColor: _cs.primary,
                     foregroundColor: _cs.onPrimary,
-                    disabledBackgroundColor:
-                        _cs.onSurface.withValues(alpha: .12),
-                    disabledForegroundColor:
-                        _cs.onSurface.withValues(alpha: .38),
+                    disabledBackgroundColor: _cs.onSurface.withValues(
+                      alpha: .12,
+                    ),
+                    disabledForegroundColor: _cs.onSurface.withValues(
+                      alpha: .38,
+                    ),
                     shape: const StadiumBorder(),
                     textStyle: AppFonts.onest(size: 16, weight: 700),
                   ),
-                  child: Text(editing
-                      ? _tr('Сохранить', 'Save')
-                      : _tr('Создать', 'Create')),
+                  child: Text(
+                    editing
+                        ? _tr('Сохранить', 'Save')
+                        : _tr('Создать', 'Create'),
+                  ),
                 ),
               ),
             ),
@@ -227,8 +235,9 @@ class _CategoryFormState extends State<_CategoryForm> {
       controller: controller,
       autofocus: autofocus,
       maxLength: maxLength,
-      textInputAction:
-          onSubmitted == null ? TextInputAction.done : TextInputAction.go,
+      textInputAction: onSubmitted == null
+          ? TextInputAction.done
+          : TextInputAction.go,
       onSubmitted: onSubmitted,
       textCapitalization: TextCapitalization.sentences,
       style: AppFonts.onest(size: 16, color: _cs.onSurface),
@@ -240,11 +249,16 @@ class _CategoryFormState extends State<_CategoryForm> {
         filled: true,
         fillColor: _cs.surfaceContainerHighest,
         labelStyle: AppFonts.onest(size: 12, weight: 600, color: _cs.primary),
-        floatingLabelStyle:
-            AppFonts.onest(size: 12, weight: 600, color: _cs.primary),
+        floatingLabelStyle: AppFonts.onest(
+          size: 12,
+          weight: 600,
+          color: _cs.primary,
+        ),
         hintStyle: AppFonts.onest(size: 16, color: _cs.onSurfaceVariant),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,

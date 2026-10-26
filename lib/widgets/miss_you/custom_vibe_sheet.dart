@@ -74,7 +74,10 @@ class _CustomVibeSheetState extends State<_CustomVibeSheet> {
               ),
               child: Text(
                 widget.cancelLabel,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -90,7 +93,10 @@ class _CustomVibeSheetState extends State<_CustomVibeSheet> {
               ),
               child: Text(
                 widget.sendLabel,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -122,8 +128,10 @@ class _CustomVibeSheetState extends State<_CustomVibeSheet> {
               borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide(color: cs.primary, width: 2),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 16,
+            ),
           ),
           onSubmitted: (_) => _submit(),
         ),

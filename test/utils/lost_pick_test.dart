@@ -18,10 +18,7 @@ import 'package:love_app/utils/lost_pick.dart';
 void main() {
   group('lostPickFrom', () {
     test('файл вернулся и намерение известно — отдаём оба', () {
-      final got = lostPickFrom(
-        intent: 'memory',
-        files: [XFile('/tmp/a.jpg')],
-      );
+      final got = lostPickFrom(intent: 'memory', files: [XFile('/tmp/a.jpg')]);
 
       expect(got, isNotNull);
       expect(got!.intent, 'memory');
@@ -44,10 +41,7 @@ void main() {
     test('файл есть, а намерение потеряно — молчим', () {
       // Куда его класть, неизвестно: подсунуть снимок в случайную форму хуже,
       // чем не подсунуть вовсе.
-      expect(
-        lostPickFrom(intent: null, files: [XFile('/tmp/a.jpg')]),
-        isNull,
-      );
+      expect(lostPickFrom(intent: null, files: [XFile('/tmp/a.jpg')]), isNull);
     });
 
     test('чужое намерение не трогаем', () {

@@ -211,9 +211,12 @@ class _LoveShapePainter extends CustomPainter {
       final p2 = pts[(i + 1) % _n];
       final p3 = pts[(i + 2) % _n];
       path.cubicTo(
-        p1.dx + (p2.dx - p0.dx) / 5, p1.dy + (p2.dy - p0.dy) / 5,
-        p2.dx - (p3.dx - p1.dx) / 5, p2.dy - (p3.dy - p1.dy) / 5,
-        p2.dx, p2.dy,
+        p1.dx + (p2.dx - p0.dx) / 5,
+        p1.dy + (p2.dy - p0.dy) / 5,
+        p2.dx - (p3.dx - p1.dx) / 5,
+        p2.dy - (p3.dy - p1.dy) / 5,
+        p2.dx,
+        p2.dy,
       );
     }
     return path..close();

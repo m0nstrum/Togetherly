@@ -22,7 +22,9 @@ void main() {
 
   setUp(() {
     dir = io.Directory.systemTemp.createTempSync('storage_image_');
-    server = FakeBannerServer((_) => img.encodePng(img.Image(width: 4, height: 4)));
+    server = FakeBannerServer(
+      (_) => img.encodePng(img.Image(width: 4, height: 4)),
+    );
   });
 
   tearDown(() {
@@ -35,27 +37,27 @@ void main() {
   const ref = 'pb://media/abc123def456ghi/photo.png';
 
   Widget host() => const MaterialApp(
-        home: Center(
-          child: StorageImage(
-            imageUrl: ref,
-            width: 80,
-            height: 80,
-            placeholder: _waiting,
-          ),
-        ),
-      );
+    home: Center(
+      child: StorageImage(
+        imageUrl: ref,
+        width: 80,
+        height: 80,
+        placeholder: _waiting,
+      ),
+    ),
+  );
 
   Future<void> settle(WidgetTester tester) async {
     for (var i = 0; i < 6; i++) {
       await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 30)));
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
       await tester.pump();
     }
   }
 
-  bool drawsFromDisk(WidgetTester tester) => tester
-      .widgetList<Image>(find.byType(Image))
-      .any((w) {
+  bool drawsFromDisk(WidgetTester tester) =>
+      tester.widgetList<Image>(find.byType(Image)).any((w) {
         final p = w.image;
         final inner = p is ResizeImage ? p.imageProvider : p;
         return inner is FileImage;
@@ -67,8 +69,10 @@ void main() {
       (await tester.runAsync(() async {
         final manager = fakeBannerManager(dir, server);
         await manager.putFile(
-            'v2|$ref', img.encodePng(img.Image(width: 4, height: 4)),
-            fileExtension: 'png');
+          'v2|$ref',
+          img.encodePng(img.Image(width: 4, height: 4)),
+          fileExtension: 'png',
+        );
         return manager;
       }))!;
 
@@ -80,16 +84,21 @@ void main() {
     await tester.pumpWidget(host());
     await settle(tester);
 
-    expect(drawsFromDisk(tester), isTrue,
-        reason: 'снимок лежит на диске — ждать сеть незачем');
+    expect(
+      drawsFromDisk(tester),
+      isTrue,
+      reason: 'снимок лежит на диске — ждать сеть незачем',
+    );
     expect(find.text('ждём'), findsNothing);
     expect(server.downloads, isEmpty);
   });
 
-  testWidgets('без сети и с пустым кэшем — заглушка, не падение',
-      (tester) async {
-    StorageImage.debugCacheManager =
-        (await tester.runAsync(() async => fakeBannerManager(dir, server)))!;
+  testWidgets('без сети и с пустым кэшем — заглушка, не падение', (
+    tester,
+  ) async {
+    StorageImage.debugCacheManager = (await tester.runAsync(
+      () async => fakeBannerManager(dir, server),
+    ))!;
     StorageImage.debugResolve = (_) async => null;
 
     await tester.pumpWidget(host());
@@ -111,8 +120,11 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(host());
 
-    expect(drawsFromDisk(tester), isTrue,
-        reason: 'прокрутка ленты не должна мигать заглушкой');
+    expect(
+      drawsFromDisk(tester),
+      isTrue,
+      reason: 'прокрутка ленты не должна мигать заглушкой',
+    );
     // Новая плитка всё равно сверяется с кэшем; даём ей ответить.
     await settle(tester);
   });

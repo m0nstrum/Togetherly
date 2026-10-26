@@ -10,8 +10,8 @@ import 'package:love_app/widgets/offline_sync_banner.dart';
 /// от 26.07 — не рассказывать про очередь вовсе. Тест держит это решение, чтобы
 /// плашка не приехала обратно «заодно» с другой правкой.
 Widget _app() => MaterialApp(
-      home: OfflineSyncBanner(child: const Scaffold(body: SizedBox.expand())),
-    );
+  home: OfflineSyncBanner(child: const Scaffold(body: SizedBox.expand())),
+);
 
 void main() {
   tearDown(() {
@@ -38,10 +38,12 @@ void main() {
 
     // Язык в тестах не задан, поэтому принимаем обе локали.
     expect(
-      find.byWidgetPredicate((w) =>
-          w is Text &&
-          (w.data?.contains('овторить') == true ||
-              w.data?.contains('retry') == true)),
+      find.byWidgetPredicate(
+        (w) =>
+            w is Text &&
+            (w.data?.contains('овторить') == true ||
+                w.data?.contains('retry') == true),
+      ),
       findsOneWidget,
     );
   });

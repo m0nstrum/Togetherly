@@ -1,4 +1,4 @@
-/// Шифрование полей записей PocketBase (PLAN S9, docs/fork/E2E.md §8).
+/// Шифрование полей записей PocketBase (PLAN S9, docs/E2E.md §8).
 ///
 /// Каждое чувствительное текстовое поле шифруется на месте: в колонке лежит
 /// `e2e1.<key_id>.<nonce>.<ct>`. AAD привязывает шифртекст к коллекции, id
@@ -37,7 +37,7 @@ const String e2ePartialKey = 'e2e';
 
 /// Ключи `memories.data`, которые читает или пишет сервер: капсула
 /// (server/internal/domain/capsule `visible`, `sealed`/`openAt`), счётчик
-/// комментариев (comments_count.js), наклейки (правка на сервере).
+/// комментариев (bindCommentsCount на сервере), наклейки (правка на сервере).
 const Set<String> memoryOpenKeys = {
   'id',
   'groupId',
@@ -152,7 +152,17 @@ const Map<String, Map<String, SealedField>> e2eFields = {
     'currency': SealedField.text(),
     'price': SealedField.moved(cleared: 0, locked: 0),
     'done_at': SealedField.moved(),
+    // «Когда», «я тоже хочу», порядок (docs/WISHLIST.md).
+    'due': SealedField.text(),
+    'also': SealedField.text(),
+    'pos': SealedField.text(),
+    'skip': SealedField.text(),
+    'place': SealedField.text(),
+    'memory': SealedField.text(),
   },
+  // Срок «Дарю» — видит только дарящий, но даты всё равно шифром.
+  'wish_reservations': {'until': SealedField.text()},
+  'wish_comments': {'text': SealedField.text(locked: e2eLockedText)},
   'wish_categories': {
     'title': SealedField.text(),
     'note': SealedField.text(),

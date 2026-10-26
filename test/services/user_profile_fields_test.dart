@@ -17,10 +17,9 @@ Set<String> _allowedKeys(String source) {
   final start = source.indexOf('static Map<String, dynamic> userProfileRow(');
   expect(start, greaterThan(0), reason: 'функция на месте');
   final body = source.substring(start, source.indexOf('return row;', start));
-  return RegExp(r"put\('(\w+)'")
-      .allMatches(body)
-      .map((m) => m.group(1)!)
-      .toSet();
+  return RegExp(
+    r"put\('(\w+)'",
+  ).allMatches(body).map((m) => m.group(1)!).toSet();
 }
 
 /// Ключи, с которыми функцию зовут по всему приложению.
@@ -45,26 +44,30 @@ Map<String, List<String>> _usedKeys(Directory lib) {
 
 /// Ключи, которые клиент шлёт заведомо впустую.
 ///
-/// `grantedBadges` защищён стражем `users_guard.pb.js` — наградные значки
+/// `grantedBadges` защищён стражем `bindUsersGuard` (сервер) — наградные значки
 /// выдаёт только сервер, и клиентский PATCH там отвергается осознанно
 /// (см. комментарий у `UserData.grantSpecialBadge`).
 const Set<String> _knowinglyDropped = {'grantedBadges'};
 
 void main() {
   test('каждый ключ профиля доезжает до сервера, а не теряется молча', () {
-    final service =
-        File('lib/services/pb_data_service.dart').readAsStringSync();
+    final service = File(
+      'lib/services/pb_data_service.dart',
+    ).readAsStringSync();
     final allowed = _allowedKeys(service);
     final used = _usedKeys(Directory('lib'));
 
     expect(used, isNotEmpty, reason: 'вызовы функции нашлись');
     final lost = used.entries
-        .where((e) => !allowed.contains(e.key) && !_knowinglyDropped.contains(e.key))
+        .where(
+          (e) => !allowed.contains(e.key) && !_knowinglyDropped.contains(e.key),
+        )
         .toList();
     expect(
       lost,
       isEmpty,
-      reason: 'эти ключи выбрасываются молча: '
+      reason:
+          'эти ключи выбрасываются молча: '
           '${lost.map((e) => "${e.key} (${e.value.join(", ")})").join("; ")}',
     );
   });

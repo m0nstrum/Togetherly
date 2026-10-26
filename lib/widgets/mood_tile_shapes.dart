@@ -51,10 +51,7 @@ class CookieBorder extends OutlinedBorder {
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
     if (side.style == BorderStyle.none) return;
-    canvas.drawPath(
-      _path(rect.deflate(side.width / 2)),
-      side.toPaint(),
-    );
+    canvas.drawPath(_path(rect.deflate(side.width / 2)), side.toPaint());
   }
 
   @override
@@ -66,11 +63,8 @@ class CookieBorder extends OutlinedBorder {
       );
 
   @override
-  ShapeBorder scale(double t) => CookieBorder(
-        side: side.scale(t),
-        lobes: lobes,
-        amplitude: amplitude,
-      );
+  ShapeBorder scale(double t) =>
+      CookieBorder(side: side.scale(t), lobes: lobes, amplitude: amplitude);
 
   @override
   bool operator ==(Object other) =>
@@ -86,7 +80,7 @@ class CookieBorder extends OutlinedBorder {
 /// Форма невыбранной плитки: мягкий квадрат (суперэллипс из SDK).
 ShapeBorder moodTileShape({required bool selected, required double size}) =>
     selected
-        ? const CookieBorder()
-        : RoundedSuperellipseBorder(
-            borderRadius: BorderRadius.circular(size * 0.34),
-          );
+    ? const CookieBorder()
+    : RoundedSuperellipseBorder(
+        borderRadius: BorderRadius.circular(size * 0.34),
+      );

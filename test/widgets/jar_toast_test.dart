@@ -9,8 +9,15 @@ import 'package:love_app/widgets/chest/jar_toast.dart';
 // убирал строку только «если она уже нарисована» — а она ещё не была, и
 // после возврата из рекламы строка оставалась навсегда.
 void main() {
-  testWidgets('строка уходит, даже если её таймер сработал до первого кадра', (t) async {
-    await t.pumpWidget(MaterialApp(navigatorKey: LoveApp.rootNavigatorKey, home: const Scaffold()));
+  testWidgets('строка уходит, даже если её таймер сработал до первого кадра', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      MaterialApp(
+        navigatorKey: LoveApp.rootNavigatorKey,
+        home: const Scaffold(),
+      ),
+    );
     showJarToast(const PairJar(drops: [true, true], added: true));
     // Ни одного кадра до срока: время уходит вперёд одним шагом.
     await t.pump(const Duration(seconds: 5));
@@ -21,7 +28,12 @@ void main() {
   });
 
   testWidgets('в обычном случае строка видна и уходит сама', (t) async {
-    await t.pumpWidget(MaterialApp(navigatorKey: LoveApp.rootNavigatorKey, home: const Scaffold()));
+    await t.pumpWidget(
+      MaterialApp(
+        navigatorKey: LoveApp.rootNavigatorKey,
+        home: const Scaffold(),
+      ),
+    );
     showJarToast(const PairJar(drops: [true, true, false], added: true));
     for (var i = 0; i < 10; i++) {
       await t.pump(const Duration(milliseconds: 100));
@@ -33,7 +45,12 @@ void main() {
   });
 
   testWidgets('строку закрывают касанием, не дожидаясь таймера', (t) async {
-    await t.pumpWidget(MaterialApp(navigatorKey: LoveApp.rootNavigatorKey, home: const Scaffold()));
+    await t.pumpWidget(
+      MaterialApp(
+        navigatorKey: LoveApp.rootNavigatorKey,
+        home: const Scaffold(),
+      ),
+    );
     showJarToast(const PairJar(drops: [true, true, true, true], added: true));
     for (var i = 0; i < 8; i++) {
       await t.pump(const Duration(milliseconds: 100));
