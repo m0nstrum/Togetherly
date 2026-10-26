@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../fork/e2e/record_codec.dart';
+import '../../services/catch_up_driver.dart';
 import '../../services/centrifugo_service.dart';
 import '../../services/locale_service.dart';
 import 'pet_dialogue.dart';
@@ -68,7 +69,13 @@ class _PetHomeScreenState extends State<_PetHomeContent>
   String? _error, _speech;
   PetCare? _action;
   int _animation = 0, _generation = 0;
-  Timer? _bubbleTimer, _refreshTimer;
+  Timer? _bubbleTimer;
+
+  /// Догон того, что прошло мимо сокета: после переподключения и, пока
+  /// подписки на канал пары нет, раз в 15 с. Возврат в приложение экран
+  /// перечитывает сам ([didChangeAppLifecycleState]).
+  CatchUpDriver? _catchUp;
+  final StreamController<bool> _visible = StreamController<bool>.broadcast();
   RtUnsub? _unsubscribe;
   bool get _english => !LocaleService.instance.isRussian;
   String t(String ru, String en) => _english ? en : ru;
@@ -81,9 +88,15 @@ class _PetHomeScreenState extends State<_PetHomeContent>
     WidgetsBinding.instance.addObserver(this);
     unawaited(_refresh(greet: true));
     if (config.repository == null) unawaited(_listen());
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (_foreground) unawaited(_refresh());
-    });
+    final channel = 'pair:${config.groupId}';
+    _catchUp = CatchUpDriver(
+      catchUp: _refresh,
+      reconnected: CentrifugoService.instance.reconnected,
+      foreground: _visible.stream,
+      subscribed: () => CentrifugoService.instance.isSubscribed(channel),
+      // Возврат в приложение догоняет сам экран.
+      minAway: const Duration(days: 365),
+    );
   }
 
   Future<void> _listen() async {
@@ -109,6 +122,7 @@ class _PetHomeScreenState extends State<_PetHomeContent>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
+    _visible.add(_foreground);
     if (_foreground) {
       unawaited(_refresh());
     } else {
@@ -126,7 +140,8 @@ class _PetHomeScreenState extends State<_PetHomeContent>
   void dispose() {
     _generation++;
     _bubbleTimer?.cancel();
-    _refreshTimer?.cancel();
+    _catchUp?.dispose();
+    unawaited(_visible.close());
     _unsubscribe?.call();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
