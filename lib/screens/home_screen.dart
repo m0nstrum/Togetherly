@@ -118,6 +118,8 @@ import '../services/timer_service.dart';
 import '../services/notif_prefs_sync.dart';
 import '../services/pair_widget_payload.dart';
 import '../services/widget_service.dart';
+import '../features/pet_home/pet_home_screen.dart';
+import '../features/pet_home/pet_portrait.dart';
 import '../models/mascot.dart';
 import '../services/canvas_storage_service.dart';
 import 'draw_screen.dart';
@@ -1231,11 +1233,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openMascotGallery() {
+  void _openPetHome() {
+    final group = _pairData.pairId;
+    if (group.isEmpty) {
+      _openMascotGallery();
+      return;
+    }
+    final names = <String, String>{
+      for (final member in _pairData.members)
+        member.uid: _pairData.displayNameOf(member),
+      widget.userData.uid: widget.userData.displayName,
+    };
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/pet-home'),
+        builder: (_) => PetHomeScreen(
+          groupId: group,
+          uid: widget.userData.uid,
+          names: names,
+          family:
+              _pairData.relationshipType == RelationshipType.couple ||
+              _pairData.relationshipType == RelationshipType.married,
+          pet: PetPortrait(
+            service: _mascotService,
+            sleepOf: widget.userData.sleepOf,
+          ),
+          openGallery: () => _openMascotGallery(fromHome: true),
+          sharedXp: () => _mascotService.state.xp,
+          isCurrent: () => mounted && _pairData.pairId == group,
+        ),
+      ),
+    );
+  }
+
+  void _openMascotGallery({bool fromHome = false}) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => MascotGalleryScreen(
+          onOpenHome: fromHome
+              ? null
+              : () {
+                  Navigator.pop(context);
+                  _openPetHome();
+                },
           mascotService: _mascotService,
           theme: _t,
           myUid: widget.userData.uid,
@@ -1714,7 +1756,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ActiveMascotWidget(
               mascotService: _mascotService,
               theme: _t,
-              onOpenGallery: _openMascotGallery,
+              onOpenGallery: _openPetHome,
               sleepOf: widget.userData.sleepOf,
             ),
           // -- Theme preview banner (показывается только на главной вкладке) --
@@ -2344,7 +2386,7 @@ class _HomeScreenState extends State<HomeScreen> {
               restoreOffer: _mascotService.restoreOffer,
               onRestore: _openStreakRestore,
               isHidden: isHidden,
-              onTap: _openMascotGallery,
+              onTap: _openPetHome,
               sleepOf: widget.userData.sleepOf,
               onShowOverlay: showMascotOverlay,
             );
@@ -4311,7 +4353,9 @@ class _MascotButtonState extends State<_MascotButton>
                     else
                       Text(
                         mascot != null
-                            ? LocaleService.current.tapForGallery
+                            ? (LocaleService.instance.isRussian
+                                  ? 'Заглянуть домой'
+                                  : 'Visit our home')
                             : isLoading
                             ? LocaleService.current.loading
                             : LocaleService.current.selectMascot,

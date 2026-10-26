@@ -41,6 +41,7 @@ class MascotGalleryScreen extends StatefulWidget {
   final MascotService mascotService;
   final AppTheme theme;
   final String myUid;
+  final VoidCallback? onOpenHome;
 
   /// Кто смотрит: от него зависят окна сна персонажей, купленное и монеты.
   final UserData user;
@@ -51,6 +52,7 @@ class MascotGalleryScreen extends StatefulWidget {
     required this.theme,
     required this.myUid,
     required this.user,
+    this.onOpenHome,
   });
 
   @override
@@ -885,6 +887,14 @@ class _MascotGalleryScreenState extends State<MascotGalleryScreen> {
           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         actions: [
+          if (widget.onOpenHome != null)
+            IconButton(
+              tooltip: LocaleService.instance.isRussian
+                  ? 'Наш дом'
+                  : 'Our home',
+              onPressed: widget.onOpenHome,
+              icon: const Icon(Icons.cottage_outlined),
+            ),
           if (_uploading)
             const Padding(
               padding: EdgeInsets.all(14),
