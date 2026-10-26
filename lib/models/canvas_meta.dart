@@ -23,6 +23,17 @@ class CanvasMeta {
   /// поведение, лист получают только новые холсты.
   final double? sheetRatio;
 
+  /// Дошёл ли холст до каталога на сервере (TOG-12).
+  ///
+  /// false — заведён на этом телефоне, сервер его ещё не подтвердил: такой
+  /// холст досылается и не убирается, пока его нет в каталоге. true — сервер
+  /// его видел: пропал из каталога — значит его удалили, и он уходит отсюда.
+  /// null — запись старше поля, и дошла ли она, неизвестно: прежняя версия
+  /// заводила холст локально и слала в каталог без проверки ответа. Такой
+  /// холст ведёт себя как false: досылается и не убирается, пока сервер его
+  /// не подтвердит.
+  final bool? onServer;
+
   const CanvasMeta({
     required this.id,
     required this.name,
@@ -32,7 +43,11 @@ class CanvasMeta {
     this.pixelW,
     this.pixelH,
     this.sheetRatio,
+    this.onServer,
   });
+
+  /// Сервер видел этот холст (см. [onServer]).
+  bool get knownOnServer => onServer == true;
 
   /// true — холст в режиме пиксель-арта.
   bool get isPixel => (pixelW ?? 0) > 1 && (pixelH ?? 0) > 1;
@@ -46,6 +61,7 @@ class CanvasMeta {
     DateTime? updatedAt,
     String? previewBase64,
     bool clearPreview = false,
+    bool? onServer,
   }) => CanvasMeta(
     id: id,
     name: name ?? this.name,
@@ -55,6 +71,7 @@ class CanvasMeta {
     pixelW: pixelW,
     pixelH: pixelH,
     sheetRatio: sheetRatio,
+    onServer: onServer ?? this.onServer,
   );
 
   Map<String, dynamic> toJson() => {
@@ -66,6 +83,7 @@ class CanvasMeta {
     if (pixelW != null) 'pixelW': pixelW,
     if (pixelH != null) 'pixelH': pixelH,
     if (sheetRatio != null) 'sheetRatio': sheetRatio,
+    'onServer': ?onServer,
   };
 
   /// Отпечаток для сравнения списков: всё, что видно в карточке галереи.
@@ -90,5 +108,6 @@ class CanvasMeta {
     pixelW: (json['pixelW'] as num?)?.toInt(),
     pixelH: (json['pixelH'] as num?)?.toInt(),
     sheetRatio: (json['sheetRatio'] as num?)?.toDouble(),
+    onServer: json['onServer'] as bool?,
   );
 }

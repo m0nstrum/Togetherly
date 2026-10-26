@@ -11,7 +11,7 @@
     pb_data_service.dart (→ /api/group/x);
   - server/pb_hooks/*.pb.js: `routerAdd("METHOD", "/path"`;
   - server/internal/handler/*.go: Go-роуты.
-Встроенные роуты PocketBase (`/api/collections`, `/api/files`, `/api/realtime`,
+Встроенные роуты PocketBase (`/api/collections`, `/api/files`, `/api/health`, `/api/realtime`,
 `/api/oauth2-redirect`) и `/internal/*` не выводятся. Флаг `--fork` остался
 от времён апстрима и ничего не меняет.
 """
@@ -28,7 +28,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 # Внешние API, которые клиент зовёт напрямую, а не у нашего сервера.
 EXTERNAL = {"/api/oembed", "/api/search", "/api/video"}
 BUILTIN_PREFIXES = ("/api/collections", "/api/files", "/internal")
-BUILTIN = {"/api/realtime", "/api/oauth2-redirect", "/api/coins", "/api/group"}
+BUILTIN = {"/api/health", "/api/realtime", "/api/oauth2-redirect", "/api/coins", "/api/group"}
 
 
 def client_routes() -> dict[str, set[str]]:

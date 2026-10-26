@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../dict_strings.dart';
+import '../services/network/server_reach.dart';
 import '../services/offline/connectivity_service.dart';
 import '../services/media_service.dart';
 import '../services/offline/outbox_service.dart';
@@ -18,7 +19,9 @@ import '../main.dart' show LoveApp; // fork (UX A9)
 /// • сжатие видео — своя строка с реальной долей от кодека (десятки секунд, и
 ///   отправку затеял сам человек);
 /// • есть «ядовитые» операции (сервер упорно отверг) — КЛИКАБЕЛЬНАЯ плашка
-///   «повторить» (вызывает [OutboxService.retryPoison]), показывается сразу.
+///   «повторить» (вызывает [OutboxService.retryPoison]), показывается сразу;
+/// • интернет есть, а наш сервер в этой сети закрыт (TOG-16, [ServerReach]) —
+///   некликабельный совет про VPN; уходит сам, как только сервер ответил.
 ///
 /// **Про фоновую отправку молчим.** Плашку «Синхронизация…» чинили четырежды
 /// (таймаут на операцию, полосы, лимит попыток, счётчик живых операций), и она
@@ -67,6 +70,7 @@ class _SyncChips extends StatefulWidget {
 
 class _SyncChipsState extends State<_SyncChips> {
   StreamSubscription<bool>? _connSub;
+  late final ServerReach _reach = ServerReach.instance;
 
   @override
   void initState() {
@@ -78,6 +82,7 @@ class _SyncChipsState extends State<_SyncChips> {
     _connSub = ConnectivityService.instance.onOnlineChanged.listen(
       (_) => _onChange(),
     );
+    _reach.state.addListener(_onChange);
   }
 
   void _onChange() {
@@ -91,6 +96,7 @@ class _SyncChipsState extends State<_SyncChips> {
     MediaService.instance.compressProgress.removeListener(_onChange);
     ForkE2E.startFailed.removeListener(_onChange); // fork (UX A9)
     ForkE2E.service.removeListener(_onChange); // fork (UX A9)
+    _reach.state.removeListener(_onChange);
     _connSub?.cancel();
     super.dispose();
   }
@@ -98,13 +104,35 @@ class _SyncChipsState extends State<_SyncChips> {
   @override
   Widget build(BuildContext context) {
     final poison = OutboxService.instance.poisonCount.value;
-    final online = ConnectivityService.instance.isOnline;
+    final reach = _reach.state.value;
+    // Подключение к сети есть, а не отвечает никто — для человека это тоже
+    // «нет сети».
+    final online =
+        ConnectivityService.instance.isOnline &&
+        reach != ServerReachState.offline;
+    final serverDown = online && reach == ServerReachState.blocked;
     final compressing = MediaService.instance.compressProgress.value;
     final scheme = Theme.of(context).colorScheme;
 
     final chips = <Widget>[];
 
-    if (!online) {
+    if (serverDown) {
+      // Интернет есть, а наш сервер не отвечает (TOG-16). Без этой
+      // строки человек видел «Не сохранилось» и вечную загрузку и решал, что
+      // сломалось приложение. Касания плашка пропускает: она ложится поверх
+      // кнопки «назад», а первое же соединение сокета снимет плашку.
+      chips.add(
+        IgnorePointer(
+          child: _chip(
+            context,
+            icon: Icons.cloud_off_rounded,
+            text: trKey('serverBlockedChip'),
+            bg: scheme.errorContainer,
+            fg: scheme.onErrorContainer,
+          ),
+        ),
+      );
+    } else if (!online) {
       // Офлайн — показываем сразу (важное состояние).
       chips.add(
         IgnorePointer(
@@ -194,8 +222,10 @@ class _SyncChipsState extends State<_SyncChips> {
       child: chips.isEmpty
           ? const SizedBox.shrink()
           : Padding(
-              key: ValueKey('${!online}-${poison > 0}-${compressing != null}'),
-              padding: const EdgeInsets.only(top: 6),
+              key: ValueKey(
+                '${!online}-$blocked-${poison > 0}-${compressing != null}',
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -269,13 +299,18 @@ class _SyncChipsState extends State<_SyncChips> {
       else if (icon != null)
         Icon(icon, size: 15, color: fg),
       const SizedBox(width: 7),
-      Text(
-        text,
-        style: TextStyle(
-          color: fg,
-          fontSize: 12.5,
-          fontWeight: FontWeight.w600,
-          decoration: TextDecoration.none,
+      // Длинная строка (совет про VPN по-немецки при крупном шрифте)
+      // переносится, а не вылезает за край экрана.
+      Flexible(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: fg,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            decoration: TextDecoration.none,
+          ),
         ),
       ),
     ],

@@ -4,6 +4,8 @@ import 'dart:convert';
 
 import 'package:centrifuge/centrifuge.dart' as centrifuge;
 import 'package:flutter/foundation.dart';
+
+import 'network/server_reach.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'pocketbase_service.dart';
@@ -119,12 +121,15 @@ class CentrifugoService {
         _pb,
       ).refreshKey(); // fork: H3 fresh HTTPS clock/key after sleep
       if (kDebugMode) debugPrint('Centrifugo connected: ${e.client}');
+      ServerReach.instance.reached();
       if (_reconnects.onConnected() && !_reconnected.isClosed) {
         _reconnected.add(null);
       }
     });
     c.disconnected.listen((e) {
       if (kDebugMode) debugPrint('Centrifugo disconnected: ${e.reason}');
+      // Сорвалось — проверяем, нет ли сети или не закрыт ли сервер (TOG-16).
+      ServerReach.instance.missed();
       _reconnects.onDisconnected();
     });
     if (kDebugMode) {
@@ -142,6 +147,10 @@ class CentrifugoService {
   /// Сокет ожил после обрыва. Подписки, где потеря событий видна человеку,
   /// перечитывают по этому сигналу свой список.
   Stream<void> get reconnected => _reconnected.stream;
+
+  /// Подписка на [channel] сейчас живая: события канала доходят.
+  bool isSubscribed(String channel) =>
+      _channels[channel]?.isSubscribed ?? false;
 
   _ChannelHub _hub(String channel) {
     _ensureClient();
@@ -236,6 +245,9 @@ class _ChannelHub {
   final List<void Function(Map<String, dynamic>)> _rawListeners = [];
   StreamSubscription<centrifuge.PublicationEvent>? _pubSub;
   bool _subscribed = false;
+
+  bool get isSubscribed =>
+      _sub.state == centrifuge.SubscriptionState.subscribed;
 
   _ChannelHub(this._client, this.channel, this._pb) {
     _sub = _client.newSubscription(

@@ -927,10 +927,9 @@ class _HomeScreenState extends State<HomeScreen> {
       // cascade: Firestore re-emits → MoodService notifies → _onMoodServiceChanged
       // → pairData.setMood → PairData notifies → _handlePairChanged again → loop.
       if (groupChanged || _wasPaired != isPaired) {
-        // Unbind from old group first
-        await _timerService.unbindFromGroup();
-        // Bail if a newer call has already finished and bound to the correct group.
-        if (generation != _pairChangedGeneration) return;
+        // Таймеры от прежней пары отвязывает сам bindToGroup ниже. Отвязка
+        // через соло писала в виджет таймера пустоту на каждом запуске
+        // (TOG-24).
         _moodService.unbindFromGroup();
         await _widgetService.unbindFromGroup();
         if (generation != _pairChangedGeneration) return;
@@ -1122,7 +1121,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!plus && !_restoreAd.isReady) unawaited(_restoreAd.load());
 
     _restoreSheetOpen = true;
-    final agreed = await showModalBottomSheet<bool>(
+    final agreed = await showModalSheet<bool>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,

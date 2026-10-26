@@ -12,10 +12,12 @@ import '../../models/pair_data.dart';
 import '../../models/user_data.dart';
 import '../../services/locale_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_sheet.dart';
 import 'models/postcard_template.dart';
 import 'widgets/postcard_card.dart';
 import '../../services/pb_data_service.dart';
 import '../../services/miss_you_repository.dart';
+import '../../utils/couple_days.dart';
 
 class PostcardEditorScreen extends StatefulWidget {
   final UserData userData;
@@ -58,12 +60,10 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
   final GlobalKey _cardKey = GlobalKey();
   final GlobalKey _polaroidKey = GlobalKey();
 
-  int get _days {
-    final date = widget.timerStartDate ?? widget.pairData.startDate;
-    if (date == null) return 0;
-    return DateTime.now().difference(date).inDays;
-  }
-
+  int get _days => daysSinceStart(
+    widget.timerStartDate ?? widget.pairData.startDate,
+    DateTime.now(),
+  );
   String get _myName => widget.userData.displayName;
   String get _partnerName => widget.pairData.partnerDisplayName;
 
@@ -145,7 +145,7 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
     final block = _blocks.firstWhere((b) => b.id == blockId);
     final controller = TextEditingController(text: block.text);
 
-    showModalBottomSheet<void>(
+    showModalSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -182,21 +182,25 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: null,
-                style: AppFonts.onest(size: 16, color: _t.textPrimary),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: _t.primaryLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+              // Длинный текст листается внутри поля, а не выталкивает «Готово»
+              // за край листа на маленьком экране.
+              Flexible(
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLines: null,
+                  style: AppFonts.onest(size: 16, color: _t.textPrimary),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: _t.primaryLight,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ),

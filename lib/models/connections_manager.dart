@@ -26,6 +26,18 @@ int clampedActiveIndex(int index, int length) {
   return index;
 }
 
+/// Ушла ли пара из живого списка «моих групп».
+///
+/// Пропавшей считается только пара, которую список уже показывал. Пустой кэш
+/// отдаёт пустой список раньше сервера, и при закрытом сервере пара из него
+/// «распадалась»: главная показывала «Нет таймеров» и стирала виджеты
+/// (TOG-24). Настоящий распад ловит и слушатель самой группы, по ответу сервера.
+bool pairLeftList({
+  required String pairId,
+  required Set<String> shown,
+  required Set<String> now,
+}) => pairId.isNotEmpty && shown.contains(pairId) && !now.contains(pairId);
+
 /// Manages multiple connections/groups
 ///
 /// Перенесён с Firebase на PocketBase: личность — из PB-сессии, обнаружение пар
@@ -60,6 +72,9 @@ class ConnectionsManager extends ChangeNotifier {
   // null = ещё не обрабатывали (первый emit пройдёт даже при пустом списке).
   String? _lastPairKey;
 
+  // Группы, которые живой список уже показывал. См. [pairLeftList].
+  final Set<String> _listedGroupIds = {};
+
   // ── Идентичность (PocketBase) ──
   String get _uid => PocketBaseService().userId ?? '';
   bool get _loggedIn => PocketBaseService().isLoggedIn;
@@ -89,7 +104,6 @@ class ConnectionsManager extends ChangeNotifier {
   // ── Initialization ──
   Future<void> init({required String myName}) async {
     _loading = true;
-    notifyListeners();
 
     await _loadLocal();
 
@@ -100,6 +114,12 @@ class ConnectionsManager extends ChangeNotifier {
     if (_connections.length <= 1) {
       await _createNewConnection();
     }
+
+    // Пара из кэша объявляется сразу, а сервер поправит её следом. Ответа
+    // сервера ждать нельзя: в закрытой сети он молчит минутами, и всё это время
+    // главная читала пустое состояние как распад пары — «Нет таймеров», виджет
+    // таймера стёрт, счётчик дней убран из шторки (TOG-24).
+    notifyListeners();
 
     // Снимок: в теле есть await'ы (refreshPairStatus), во время которых
     // _connections может перестроиться.
@@ -624,6 +644,7 @@ class ConnectionsManager extends ChangeNotifier {
   Future<void> _handlePairUpdate(List<RecordModel> recs) async {
     final recById = {for (final r in recs) r.id: r};
     final remotePairIds = recById.keys.toSet();
+    _listedGroupIds.addAll(remotePairIds);
 
     // Ищем pairId, которые ещё не привязаны ни к одному connection
     final claimedIds = _connections
@@ -707,9 +728,12 @@ class ConnectionsManager extends ChangeNotifier {
     // исчезла из моего списка.
     bool removedAny = false;
     for (var connection in _connections) {
-      if (connection.pairId.isNotEmpty &&
-          !remotePairIds.contains(connection.pairId) &&
-          connection.isPaired) {
+      if (connection.isPaired &&
+          pairLeftList(
+            pairId: connection.pairId,
+            shown: _listedGroupIds,
+            now: remotePairIds,
+          )) {
         debugPrint(
           'Real-time: pairId ${connection.pairId} gone, marking as unpaired',
         );

@@ -240,6 +240,53 @@ const Map<String, Map<String, String>> loginStrings = {
     'de':
         'Die Verbindung wird unterwegs abgebrochen. Meistens liegt es am Anbieter: probiere mobile Daten, ein anderes Netz oder ein VPN.',
   },
+  // TOG-16: интернет у человека есть, а сервер не отвечает. Решает проверка
+  // сети (ServerReach), текст выбирает networkFailureText.
+  'serverBlockedVpn': {
+    'ru':
+        'Интернет есть, а сервер не отвечает. Возможно, он недоступен или ваша сеть его не пускает: попробуйте позже, через VPN или из другой сети.',
+    'en':
+        "You're online, but the server isn't answering. It may be down, or your network may be blocking it: try later, with a VPN, or on another network.",
+    'pt':
+        'Você está online, mas o servidor não responde. Ele pode estar fora do ar ou sua rede pode bloqueá-lo: tente mais tarde, com uma VPN ou em outra rede.',
+    'it':
+        'Sei online, ma il server non risponde. Potrebbe essere giù o la tua rete potrebbe bloccarlo: riprova più tardi, con una VPN o da un’altra rete.',
+    'es':
+        'Tienes internet, pero el servidor no responde. Puede estar caído o tu red puede bloquearlo: inténtalo más tarde, con una VPN o desde otra red.',
+    'fr':
+        'Tu es en ligne, mais le serveur ne répond pas. Il est peut-être en panne ou ton réseau le bloque : réessaie plus tard, avec un VPN ou sur un autre réseau.',
+    'de':
+        'Du bist online, aber der Server antwortet nicht. Er ist vielleicht down oder dein Netz sperrt ihn: versuche es später, mit einem VPN oder in einem anderen Netz.',
+  },
+  // Плашка поверх экранов: та же мысль одной строкой.
+  'serverBlockedChip': {
+    'ru': 'Сервер недоступен · интернет есть',
+    'en': "Server unreachable · you're online",
+    'pt': 'Servidor indisponível · você está online',
+    'it': 'Server irraggiungibile · sei online',
+    'es': 'Servidor no disponible · tienes internet',
+    'fr': 'Serveur injoignable · tu es en ligne',
+    'de': 'Server nicht erreichbar · du bist online',
+  },
+  'noInternet': {
+    'ru': 'Нет интернета. Проверьте подключение.',
+    'en': 'No internet. Check your connection.',
+    'pt': 'Sem internet. Confira sua conexão.',
+    'it': 'Niente internet. Controlla la connessione.',
+    'es': 'Sin internet. Revisa tu conexión.',
+    'fr': 'Pas d’internet. Vérifie ta connexion.',
+    'de': 'Kein Internet. Prüfe deine Verbindung.',
+  },
+  'serverSlowRetry': {
+    'ru': 'Сервер не успел ответить. Попробуйте ещё раз.',
+    'en': "The server didn't answer in time. Try again.",
+    'pt': 'O servidor não respondeu a tempo. Tente de novo.',
+    'it': 'Il server non ha risposto in tempo. Riprova.',
+    'es': 'El servidor no respondió a tiempo. Inténtalo otra vez.',
+    'fr': 'Le serveur n’a pas répondu à temps. Réessaie.',
+    'de':
+        'Der Server hat nicht rechtzeitig geantwortet. Versuche es noch einmal.',
+  },
   'googleNotResponding': {
     'ru': 'Google не отвечает. Проверьте интернет.',
     'en': 'Google not responding. Check your internet.',

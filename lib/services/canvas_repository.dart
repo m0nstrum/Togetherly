@@ -105,7 +105,8 @@ class CanvasRepository {
             .toList(),
       );
 
-  Future<void> upsertCatalogue(
+  /// true — сервер принял холст в каталог.
+  Future<bool> upsertCatalogue(
     String groupId,
     String canvasId, {
     required String name,
