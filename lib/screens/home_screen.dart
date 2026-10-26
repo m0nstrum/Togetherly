@@ -1122,7 +1122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!plus && !_restoreAd.isReady) unawaited(_restoreAd.load());
 
     _restoreSheetOpen = true;
-    final agreed = await showModalBottomSheet<bool>(
+    final agreed = await showModalSheet<bool>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,

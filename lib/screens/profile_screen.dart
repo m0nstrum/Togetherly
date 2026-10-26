@@ -2674,7 +2674,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       text: widget.userData.displayName,
     );
 
-    await showModalBottomSheet(
+    await showModalSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -3594,16 +3594,17 @@ class _ProfileScreenState extends State<ProfileScreen>
       return;
     }
 
-    await showModalBottomSheet(
+    await showModalSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: _t.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      clipBehavior: Clip.antiAlias,
       isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) => Container(
-          decoration: BoxDecoration(
-            color: _t.cardSurface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        // Связей бывает пять и больше: на маленьком экране список листается.
+        builder: (ctx, setSheet) => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,

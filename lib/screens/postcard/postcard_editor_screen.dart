@@ -12,6 +12,7 @@ import '../../models/pair_data.dart';
 import '../../models/user_data.dart';
 import '../../services/locale_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_sheet.dart';
 import 'models/postcard_template.dart';
 import 'widgets/postcard_card.dart';
 import '../../services/pb_data_service.dart';
@@ -144,7 +145,7 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
     final block = _blocks.firstWhere((b) => b.id == blockId);
     final controller = TextEditingController(text: block.text);
 
-    showModalBottomSheet<void>(
+    showModalSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -181,21 +182,25 @@ class _PostcardEditorScreenState extends State<PostcardEditorScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: null,
-                style: AppFonts.onest(size: 16, color: _t.textPrimary),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: _t.primaryLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+              // Длинный текст листается внутри поля, а не выталкивает «Готово»
+              // за край листа на маленьком экране.
+              Flexible(
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLines: null,
+                  style: AppFonts.onest(size: 16, color: _t.textPrimary),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: _t.primaryLight,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ),
