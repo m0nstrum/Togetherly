@@ -235,6 +235,8 @@ func (s *Service) RecordActivity(groupID, uid, today string) (Activity, error) {
 				entry["lost"], entry["lost_d"], entry["lost_g"] = was, start, lostGroup
 			}
 			entry["s"] = out.MascotStreak
+			// Preserve growth even when a catalog pet has no gallery record.
+			entry["best"] = max(was, out.MascotStreak, int(toFloat(prev["best"])), int(toFloat(prev["lost"])))
 			streaks[mascot] = entry
 			g.Set("mascot_streaks", streaks)
 		}
@@ -306,6 +308,7 @@ func (s *Service) RestoreStreak(groupID, uid, today string) (Restored, error) {
 		default:
 			return ErrNothingToRestore
 		}
+		next["best"] = max(was, int(toFloat(next["s"])), int(toFloat(entry["best"])))
 		streaks[mascot] = next
 		g.Set("mascot_streaks", streaks)
 		g.Set("streak_days", group)

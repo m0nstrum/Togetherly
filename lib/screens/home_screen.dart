@@ -7,7 +7,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/storage_image.dart';
 import 'package:exif/exif.dart';
 import 'package:flutter/material.dart';
-import '../widgets/common/ad_result.dart';
 import '../widgets/common/ailment_icon.dart';
 import '../widgets/common/email_typo_prompt.dart';
 import '../widgets/common/tab_fade.dart';
@@ -107,9 +106,7 @@ import '../services/daily_task_service.dart';
 import '../services/apns_service.dart';
 import '../services/fcm_service.dart';
 import '../services/platform_tag.dart';
-import '../models/streak_restore.dart';
 import '../services/plus_service.dart';
-import '../services/rewarded_ad_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/level_service.dart';
 import '../services/catalog_widget_sync.dart';
@@ -253,9 +250,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final MascotService _mascotService = MascotService();
 
   /// Ролик за возврат сгоревшей серии; грузится, когда возвращать есть что.
-  final RewardedAdService _restoreAd = RewardedAdService();
-  bool _restoreListening = false;
-  bool _restoreSheetOpen = false;
   AppLifecycleListener? _appLifecycleListener;
 
   // -- Memory Lane real-time --
@@ -565,8 +559,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _giftsUnsub = null;
     if (giftsOff != null) unawaited(giftsOff());
     CatalogService.instance.removeListener(_onCatalogForGifts);
-    if (_restoreListening) _mascotService.removeListener(_onMascotForRestore);
-    _restoreAd.dispose();
     _syncWidgetsDebounce?.cancel();
     _syncMoodWidgetDebounce?.cancel();
     _moodStreakRewardDebounce?.cancel();
@@ -1085,152 +1077,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // fork (UX C0): звонок пары слушает зов с любого экрана.
     ForkPairCall.instance.partnerName = _pairData.partnerDisplayName;
     unawaited(ForkPairCall.instance.bind(groupId));
-    if (!_restoreListening) {
-      _restoreListening = true;
-      _mascotService.addListener(_onMascotForRestore);
-    }
     // Record that someone opened the app today (streak tracking).
     _mascotService.recordDailyActivity();
-  }
-
-  static const String _kStreakRestoreSeen = 'streak_restore_seen';
-
-  /// Серия сгорела и её можно вернуть — приложение один раз на каждый обрыв
-  /// спрашивает «Вернуть серию?». Реклама включается только по «Да»; дальше
-  /// предложение живёт кнопкой у маскота.
-  Future<void> _onMascotForRestore() async {
-    final offer = _mascotService.restoreOffer;
-    if (offer == null || _restoreSheetOpen || !mounted) return;
-    if (!PlusService.instance.active && !_restoreAd.isReady) {
-      unawaited(_restoreAd.load());
-    }
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString(_kStreakRestoreSeen) == offer.key) return;
-    await prefs.setString(_kStreakRestoreSeen, offer.key);
-    if (!mounted || _restoreSheetOpen) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_openStreakRestore());
-    });
-  }
-
-  /// Вопрос «Вернуть серию?»: «Да, посмотреть рекламу» — и серия
-  /// возвращается у обоих. С Плюсом без рекламы.
-  Future<void> _openStreakRestore() async {
-    final offer = _mascotService.restoreOffer;
-    if (offer == null || _restoreSheetOpen || !mounted) return;
-    final s = LocaleService.current;
-    final cs = ProfileTheme.themeFor(_t).colorScheme;
-    final plus = PlusService.instance.active;
-    if (!plus && !_restoreAd.isReady) unawaited(_restoreAd.load());
-
-    _restoreSheetOpen = true;
-    final agreed = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      backgroundColor: cs.surfaceContainer,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.local_fire_department_rounded,
-                  color: cs.onPrimaryContainer,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                s.streakRestoreTitle,
-                style: Theme.of(ctx).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                plus
-                    ? s.streakRestoreBodyPlus(offer.days)
-                    : s.streakRestoreBody(offer.days),
-                style: Theme.of(
-                  ctx,
-                ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  icon: Icon(
-                    plus
-                        ? Icons.local_fire_department_rounded
-                        : Icons.play_arrow_rounded,
-                  ),
-                  label: Text(plus ? s.streakRestoreYes : s.streakRestoreWatch),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(s.streakRestoreNo),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    _restoreSheetOpen = false;
-    if (agreed != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-
-    if (!plus) {
-      if (!_restoreAd.isReady) {
-        unawaited(_restoreAd.load());
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(s.streakRestoreNoAd),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-      final earned = await _restoreAd.show(
-        uid: PocketBaseService().userId ?? '',
-      );
-      unawaited(_restoreAd.load());
-      if (!earned) {
-        if (mounted) await showAdNotEarned(context);
-        return;
-      }
-    }
-
-    final ok = await _mascotService.restoreStreak();
-    // Итог — когда экран рекламы уже закрылся.
-    if (!plus) await untilAppVisible();
-    if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? s.streakRestored(_mascotService.activeStreak)
-              : s.streakRestoreFailed,
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   void _openPetHome() {
@@ -2383,8 +2231,6 @@ class _HomeScreenState extends State<HomeScreen> {
               service: _mascotService,
               theme: _t,
               streak: _mascotService.state.activeStreak,
-              restoreOffer: _mascotService.restoreOffer,
-              onRestore: _openStreakRestore,
               isHidden: isHidden,
               onTap: _openPetHome,
               sleepOf: widget.userData.sleepOf,
@@ -4186,7 +4032,7 @@ class _MascotPreviewWidget extends StatelessWidget {
           return PixelMascotView(
             anim: animated,
             state: MascotAnimState.live,
-            level: MascotAnim.levelForStreak(service.activeStreak),
+            level: MascotAnim.levelForStreak(service.state.growthFor(mascot)),
             sleep: sleep,
             size: side.isFinite ? side : 64,
           );
@@ -4227,10 +4073,6 @@ class _MascotButton extends StatefulWidget {
   final VoidCallback onTap;
   final Future<void> Function()? onShowOverlay;
 
-  /// Серию можно вернуть за ролик — справа кнопка «Вернуть серию».
-  final StreakRestoreOffer? restoreOffer;
-  final Future<void> Function()? onRestore;
-
   /// Окно ночной сцены персонажа: у каждого своё, задаётся в настройках.
   final SleepWindow Function(String mascotId) sleepOf;
 
@@ -4243,8 +4085,6 @@ class _MascotButton extends StatefulWidget {
     required this.onTap,
     required this.sleepOf,
     this.onShowOverlay,
-    this.restoreOffer,
-    this.onRestore,
   });
 
   @override
@@ -4367,44 +4207,7 @@ class _MascotButtonState extends State<_MascotButton>
                   ],
                 ),
               ),
-              if (mascot != null && widget.restoreOffer != null)
-                GestureDetector(
-                  onTap: () => widget.onRestore?.call(),
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 4, right: 2),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cs.primary,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.local_fire_department_rounded,
-                            size: 15,
-                            color: cs.onPrimary,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            LocaleService.current.streakRestoreAction,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: cs.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-              else if (mascot != null)
+              if (mascot != null)
                 GestureDetector(
                   onTap: widget.isHidden
                       ? () => widget.onShowOverlay?.call()

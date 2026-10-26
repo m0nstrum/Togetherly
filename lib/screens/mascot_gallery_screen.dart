@@ -1047,7 +1047,11 @@ class _StreakBanner extends StatelessWidget {
                   Text(
                     alive
                         ? s.streakLabel(streak)
-                        : (fresh ? s.streakNew : s.streakBroken),
+                        : (fresh
+                              ? s.streakNew
+                              : (LocaleService.instance.isRussian
+                                    ? 'Дома всё хорошо'
+                                    : 'All is well at home')),
                     style: TextStyle(
                       fontFamily: 'Unbounded',
                       fontSize: 15,
@@ -1057,9 +1061,9 @@ class _StreakBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    alive
-                        ? s.streakKeepHint
-                        : (fresh ? s.streakNewHint : s.streakStartHint),
+                    LocaleService.instance.isRussian
+                        ? 'Заглядывайте, когда хочется. Рост питомца сохраняется.'
+                        : 'Visit whenever you like. Your pet keeps its growth.',
                     style: TextStyle(
                       fontSize: 12.5,
                       height: 1.3,
@@ -1324,11 +1328,7 @@ class _MascotThumbnail extends StatelessWidget {
       // по ширине) приходила бесконечность: лист раздувался и выглядел пустым.
       // В галерее показываем ступень, до которой пара дожила с этим маскотом:
       // взрослый вид у всех подряд обесценивал бы рост.
-      final level = MascotAnim.levelForStreak(
-        mascot.recordStreak > 0
-            ? mascot.recordStreak
-            : service.state.activeStreak,
-      );
+      final level = MascotAnim.levelForStreak(service.state.growthFor(mascot));
       if (size.isFinite) {
         return PixelMascotView(
           anim: animated,

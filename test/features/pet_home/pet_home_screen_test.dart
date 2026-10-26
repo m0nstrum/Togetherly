@@ -97,6 +97,8 @@ void main() {
   testWidgets('narrow screen, large type, keyboard and friends remain usable', (
     tester,
   ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -117,7 +119,10 @@ void main() {
     await tester.ensureVisible(find.text('Custom name'));
     await tester.tap(find.text('Custom name'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(TextField));
     await tester.enterText(find.byType(TextField), 'Лис');
+    tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+    addTearDown(tester.view.resetViewInsets);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.ensureVisible(find.text('Save'));

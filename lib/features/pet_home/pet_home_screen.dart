@@ -703,8 +703,9 @@ class _PetHomeScreenState extends State<PetHomeScreen>
               RadioGroup<String>(
                 groupValue: kind,
                 onChanged: (value) {
-                  if (!widget.readOnly && value != null)
+                  if (!widget.readOnly && value != null) {
                     update(() => kind = value);
+                  }
                 },
                 child: Column(
                   children: [

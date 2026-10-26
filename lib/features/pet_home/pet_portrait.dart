@@ -36,7 +36,7 @@ class PetPortrait extends StatelessWidget {
           builder: (context, c) => PixelMascotView(
             anim: anim,
             state: MascotAnimState.live,
-            level: MascotAnim.levelForStreak(service.activeStreak),
+            level: MascotAnim.levelForStreak(service.state.growthFor(mascot)),
             sleep: sleepOf(mascot.id),
             size: c.biggest.shortestSide,
           ),

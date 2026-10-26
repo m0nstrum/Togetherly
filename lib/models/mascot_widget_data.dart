@@ -81,7 +81,7 @@ class MascotWidgetData {
   /// Самая длинная серия пары: её показывает плитка 4×4.
   final int recordStreak;
 
-  /// Серия оборвалась: персонаж грустит, пока её не начнут заново.
+  /// Compatibility field for existing native widgets; publisher always sends false.
   final bool sad;
 
   final MascotSleepWindow sleep;
@@ -95,14 +95,16 @@ class MascotWidgetData {
     this.recordStreak = 0,
   });
 
-  MascotStage get stage => mascotStageOf(streakDays);
+  int get growthDays => recordStreak > streakDays ? recordStreak : streakDays;
+
+  MascotStage get stage => mascotStageOf(growthDays);
 
   int get level => stage.level;
 
-  int get daysToNextStage => mascotDaysToNextStage(streakDays);
+  int get daysToNextStage => mascotDaysToNextStage(growthDays);
 
-  int get percent => mascotStagePercent(streakDays);
+  int get percent => mascotStagePercent(growthDays);
 
   /// Ступень для атласа. Держит связь с `MascotAnim` на виду.
-  int get atlasLevel => MascotAnim.levelForStreak(_clampStreak(streakDays));
+  int get atlasLevel => MascotAnim.levelForStreak(_clampStreak(growthDays));
 }

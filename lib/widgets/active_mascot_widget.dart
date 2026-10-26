@@ -307,7 +307,7 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
   static const String _kStreakKey = 'mascot_anim_last_streak';
 
   /// Сверяет серию с прошлым разом и играет подходящую сцену: выросла — рост,
-  /// тот же день — радость, обнулилась — грусть. Состояние держим в prefs, а не
+  /// рост серии — радость; пропуски не наказывают. Состояние держим в prefs, а не
   /// в памяти: главную открывают заново после каждого убийства приложения.
   Future<void> _reactToStreak() async {
     final anim = CatalogService.instance.animById(_svc.activeMascot?.id);
@@ -322,11 +322,6 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
       // Каждая третья отметка — рост, остальные просто радость: иначе маскот
       // растёт на глазах каждый день и ступени теряют смысл.
       _setAnim(streak % 3 == 0 ? MascotAnimState.grow : MascotAnimState.happy);
-    } else if (streak == 0) {
-      _setAnim(MascotAnimState.sad);
-      Future.delayed(const Duration(seconds: 4), () {
-        if (mounted) _setAnim(MascotAnimState.live);
-      });
     }
   }
 
@@ -489,7 +484,7 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
               mascot: mascot,
               service: _svc,
               anim: _anim,
-              level: MascotAnim.levelForStreak(_svc.activeStreak),
+              level: MascotAnim.levelForStreak(_svc.state.growthFor(mascot)),
               sleep: widget.sleepOf(mascot.id),
               onAnimDone: () => _setAnim(MascotAnimState.live),
             ),

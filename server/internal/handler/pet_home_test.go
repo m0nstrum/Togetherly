@@ -3,10 +3,12 @@ package handler_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/m0nstrum/togetherly/server/internal/usecase/groupops"
 	"net/http"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/m0nstrum/togetherly/server/internal/handler"
 	"github.com/m0nstrum/togetherly/server/internal/testutil"
@@ -91,4 +93,35 @@ func TestPetHomeAccessCASAndRetry(t *testing.T) {
 	require.Equal(t, 403, code)
 	code, _ = testutil.Do(t, app, http.MethodGet, path, alice, "")
 	require.Equal(t, 200, code, "archive remains readable")
+}
+
+func TestPetGrowthSurvivesStreakReset(t *testing.T) {
+	w := newGroupWorld(t)
+	g, err := w.app.FindRecordById("groups", gPair)
+	require.NoError(t, err)
+	g.Set("active_mascot_id", "catalog_pet")
+	g.Set("streak_last_opened_date", "2026-10-01")
+	g.Set("mascot_streaks", map[string]any{"catalog_pet": map[string]any{"s": 30, "d": "2026-10-01"}})
+	require.NoError(t, w.app.Save(g))
+	svc := groupops.New(w.app, func() time.Time { return w.now })
+	_, err = svc.RecordActivity(gPair, gA, "2026-10-20")
+	require.NoError(t, err)
+	_, err = svc.RecordActivity(gPair, gB, "2026-10-20")
+	require.NoError(t, err)
+	g, err = w.app.FindRecordById("groups", gPair)
+	require.NoError(t, err)
+	var states map[string]map[string]any
+	require.NoError(t, g.UnmarshalJSONField("mascot_streaks", &states))
+	require.EqualValues(t, 1, states["catalog_pet"]["s"])
+	require.EqualValues(t, 30, states["catalog_pet"]["best"])
+	w.now = w.now.AddDate(0, 0, 1)
+	_, err = svc.RecordActivity(gPair, gA, "2026-10-21")
+	require.NoError(t, err)
+	_, err = svc.RecordActivity(gPair, gB, "2026-10-21")
+	require.NoError(t, err)
+	g, err = w.app.FindRecordById("groups", gPair)
+	require.NoError(t, err)
+	require.NoError(t, g.UnmarshalJSONField("mascot_streaks", &states))
+	require.EqualValues(t, 2, states["catalog_pet"]["s"])
+	require.EqualValues(t, 30, states["catalog_pet"]["best"])
 }

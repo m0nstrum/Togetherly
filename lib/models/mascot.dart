@@ -147,7 +147,7 @@ class GroupMascotState {
 
   /// Серия КАЖДОГО маскота: {mascot_id: {s: серия, d: "YYYY-MM-DD" посл. общего дня}}.
   /// Серия растёт когда оба партнёра зашли за день, привязана к активному маскоту;
-  /// пропуск дня → маскот «умирает» (см. [streakFor]).
+  /// пропуск сбрасывает только счётчик серии (см. [streakFor]).
   final Map<String, dynamic> mascotStreaks;
 
   /// Общий опыт пары (растёт за действия). Уровень/ранг выводятся из него.
@@ -198,7 +198,7 @@ class GroupMascotState {
   }
 
   /// Текущая серия конкретного маскота. Если последний общий день — НЕ сегодня и
-  /// не вчера, маскот «умер» → 0 (серия начнётся заново при следующем общем дне).
+  /// не вчера, счётчик серии → 0 (серия начнётся заново при следующем общем дне).
   int streakFor(String? mascotId) {
     if (mascotId == null || mascotId.isEmpty) return 0;
     final e = mascotStreaks[mascotId];
@@ -225,20 +225,22 @@ class GroupMascotState {
     return e is Map && ((e['s'] as num?)?.toInt() ?? 0) > 0;
   }
 
-  /// Computes the current mood based on when anyone last opened the app.
-  MascotMoodState get moodState {
-    if (streakLastOpenedDate == null) return MascotMoodState.sad;
-    final today = _localDateStr(DateTime.now());
-    final yesterday = _localDateStr(
-      DateTime.now().subtract(const Duration(days: 1)),
-    );
-    if (streakLastOpenedDate == today || streakLastOpenedDate == yesterday) {
-      return MascotMoodState.happy;
+  /// Absence never makes the pet unhappy. Streak is a separate counter.
+  MascotMoodState get moodState => MascotMoodState.happy;
+
+  /// Growth is permanent even if the current daily streak has reset.
+  int growthFor(Mascot mascot) {
+    final entry = mascotStreaks[mascot.id];
+    var best = mascot.recordStreak;
+    if (entry is Map) {
+      for (final key in ['s', 'best', 'lost']) {
+        final value = entry[key];
+        if (value is num && value.isFinite && value > best) {
+          best = value.toInt().clamp(0, 1000000);
+        }
+      }
     }
-    final lastDate = DateTime.tryParse(streakLastOpenedDate!);
-    if (lastDate == null) return MascotMoodState.sad;
-    final diff = DateTime.now().difference(lastDate).inDays;
-    return diff > 3 ? MascotMoodState.verySad : MascotMoodState.sad;
+    return best;
   }
 
   static String _localDateStr(DateTime dt) =>
