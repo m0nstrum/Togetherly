@@ -486,7 +486,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           scheme: _cs,
           onAction: _runHelpAction,
           // fork: своя поддержка, не бот автора апстрима.
-          onWriteUs: _openSupportMail,
+          onWriteUs: () => _openSupportMail(context),
         ),
         settings: const RouteSettings(name: '/help'),
       ),
@@ -521,7 +521,9 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   /// Письмо в поддержку: тема и версия подставляются сами, человеку остаётся
   /// описать проблему. Почтовика нет — показываем адрес и кладём в буфер.
-  Future<void> _openSupportMail() async {
+  /// [from] — контекст настроек, откуда нажали: вкладку профиля под ними могут
+  /// пересобрать, и её контекст уже пуст (TOG-33).
+  Future<void> _openSupportMail(BuildContext from) async {
     final info = await PackageInfo.fromPlatform();
     final subject = Uri.encodeComponent(
       'Togetherly ${info.version} (${info.buildNumber})',
@@ -536,15 +538,20 @@ class _ProfileScreenState extends State<ProfileScreen>
     await Clipboard.setData(
       const ClipboardData(text: SettingsScreen.supportEmail),
     );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    if (!from.mounted) return;
+    ScaffoldMessenger.of(from).showSnackBar(
       SnackBar(content: Text(_s.supportCopied(SettingsScreen.supportEmail))),
     );
   }
 
   /// Настройка панели быстрого доступа холста.
-  void _openDrawTools() {
-    Navigator.of(context).push(
+  ///
+  /// Открывается контекстом настроек [from], а не профиля: настройки — свой
+  /// маршрут поверх профиля, и у пересобранной вкладки профиля контекст пуст.
+  /// Так падало «Null check operator used on a null value» (Bugsink
+  /// 24.10.2026, 1.39.0, TOG-33).
+  void _openDrawTools(BuildContext from) {
+    Navigator.of(from).push(
       MaterialPageRoute<void>(
         builder: (_) => DrawToolsSettingsScreen(theme: _t),
       ),
@@ -552,7 +559,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   /// Письмо в официальный ящик: тема пустая, человек пишет сам.
-  Future<void> _openOfficialMail() async {
+  Future<void> _openOfficialMail(BuildContext from) async {
     const email = SettingsScreen.officialEmail;
     final uri = Uri.parse('mailto:$email');
     if (await canLaunchUrl(uri)) {
@@ -560,9 +567,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       return;
     }
     await Clipboard.setData(const ClipboardData(text: email));
-    if (!mounted) return;
+    if (!from.mounted) return;
     ScaffoldMessenger.of(
-      context,
+      from,
     ).showSnackBar(SnackBar(content: Text(_s.supportCopied(email))));
   }
 
@@ -1991,9 +1998,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             onPrivacyPolicy: _openPrivacyPolicy,
             onExport: () => _handleExportConfig(ctx),
             onTerms: _openTerms,
-            onSupport: _openSupportMail,
-            onOfficial: _openOfficialMail,
-            onDrawTools: _openDrawTools,
+            onSupport: () => _openSupportMail(ctx),
+            onOfficial: () => _openOfficialMail(ctx),
+            onDrawTools: () => _openDrawTools(ctx),
             onHelp: () => _openHelp(ctx),
             onChangeEmail: () async {
               final email = await showEmailChangeSheet(

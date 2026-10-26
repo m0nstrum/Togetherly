@@ -364,12 +364,12 @@ class _MoodPickerSheetState extends State<MoodPickerSheet> {
   }
 
   void _openPlus() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            PlusScreen(scheme: ProfileTheme.schemeFor(context.appTheme)),
-      ),
-    );
+    // Тема до перехода: лист выбора могут закрыть, пока окно Togetherly+
+    // открыто, а его перестройка читала бы пустой context (TOG-33).
+    final scheme = ProfileTheme.schemeFor(context.appTheme);
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => PlusScreen(scheme: scheme)));
   }
 
   /// «Новое»: заводит своё настроение или ведёт на экран Плюса.
