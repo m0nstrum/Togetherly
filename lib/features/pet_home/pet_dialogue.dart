@@ -143,7 +143,7 @@ const petLines = <String, List<String>>{
     'Мысли мягкие. День тоже.|Soft thoughts. Soft day.',
     'Что-то хорошее просто так.|Something nice, just because.',
     'У окна интересный свет.|Interesting light by the window.',
-    'Никаких срочных кошачьих дел.|No urgent pet business.',
+    'Никаких срочных дел.|No urgent pet business.',
     'Мне подходит этот ковёр.|This rug suits me.',
     'Планы на вечер: быть тут.|Evening plans: being here.',
     'Тихий час — это состояние души.|Nap time is a state of mind.',

@@ -14,9 +14,9 @@ void main() {
   );
 
   const labels = MascotWidgetLabels(
-    stage: 'подросток',
+    stage: 'взрослый',
     streak: 'дней серии',
-    next: 'до взрослого 18 дней',
+    next: 'взрослый',
     sleepDay: 'не спит до 23:00',
     sleepNight: 'спит до 07:00',
     record: 'рекорд',
@@ -39,7 +39,7 @@ void main() {
 
     expect(keys['mascot_grp1_name'], 'Пудя');
     expect(keys['mascot_grp1_streak'], '12');
-    expect(keys['mascot_grp1_progress'], '22');
+    expect(keys['mascot_grp1_progress'], '100');
     expect(keys['mascot_grp1_frame_px'], '48');
     expect(keys['mascot_grp1_frame_day'], '/data/mascot_widget/day.png');
     expect(keys['mascot_grp1_frame_night'], '/data/mascot_widget/night.png');
@@ -58,9 +58,9 @@ void main() {
       framePx: 48,
     );
 
-    expect(keys['mascot_grp1_stage_label'], 'подросток');
+    expect(keys['mascot_grp1_stage_label'], 'взрослый');
     expect(keys['mascot_grp1_streak_label'], 'дней серии');
-    expect(keys['mascot_grp1_next_label'], 'до взрослого 18 дней');
+    expect(keys['mascot_grp1_next_label'], 'взрослый');
     expect(keys['mascot_grp1_record_label'], 'рекорд');
   });
 

@@ -38,7 +38,7 @@ class PetPortrait extends StatelessWidget {
             state: MascotAnimState.live,
             level: MascotAnim.levelForStreak(service.state.growthFor(mascot)),
             sleep: sleepOf(mascot.id),
-            size: c.biggest.shortestSide,
+            size: c.biggest.shortestSide.isFinite ? c.biggest.shortestSide : 96,
           ),
         );
       }

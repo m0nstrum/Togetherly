@@ -8,7 +8,7 @@ import 'pet_home_model.dart';
 import 'pet_home_repository.dart';
 import 'pet_room.dart';
 
-class PetHomeScreen extends StatefulWidget {
+class PetHomeScreen extends StatelessWidget {
   const PetHomeScreen({
     super.key,
     required this.groupId,
@@ -31,13 +31,37 @@ class PetHomeScreen extends StatefulWidget {
   final bool Function()? isCurrent;
   final PetHomeRepository? repository;
   @override
-  State<PetHomeScreen> createState() => _PetHomeScreenState();
+  Widget build(BuildContext context) => Theme(
+    data: _homeTheme,
+    child: _PetHomeContent(key: ValueKey('$groupId/$uid'), screen: this),
+  );
 }
 
-class _PetHomeScreenState extends State<PetHomeScreen>
+class _PetHomeContent extends StatefulWidget {
+  const _PetHomeContent({super.key, required this.screen});
+  final PetHomeScreen screen;
+  @override
+  State<_PetHomeContent> createState() => _PetHomeScreenState();
+}
+
+final _homeTheme = ThemeData(
+  useMaterial3: true,
+  fontFamily: 'Onest',
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: petSage,
+    brightness: Brightness.light,
+    surface: petCream,
+    onSurface: petInk,
+    primary: const Color(0xFF67724E),
+  ),
+  scaffoldBackgroundColor: petCream,
+);
+
+class _PetHomeScreenState extends State<_PetHomeContent>
     with WidgetsBindingObserver {
+  PetHomeScreen get config => widget.screen;
   late final PetHomeRepository _repo =
-      widget.repository ?? PetHomeRepository.production();
+      config.repository ?? PetHomeRepository.production();
   final _dialogue = PetDialogue();
   PetHome? _home;
   bool _busy = false, _loading = false, _foreground = true;
@@ -49,14 +73,14 @@ class _PetHomeScreenState extends State<PetHomeScreen>
   bool get _english => !LocaleService.instance.isRussian;
   String t(String ru, String en) => _english ? en : ru;
   bool get _current =>
-      _repo.uid() == widget.uid && (widget.isCurrent?.call() ?? true);
-  bool get _canAct => _current && !widget.readOnly && !_busy && _home != null;
+      _repo.uid() == config.uid && (config.isCurrent?.call() ?? true);
+  bool get _canAct => _current && !config.readOnly && !_busy && _home != null;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_refresh(greet: true));
-    if (widget.repository == null) unawaited(_listen());
+    if (config.repository == null) unawaited(_listen());
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (_foreground) unawaited(_refresh());
     });
@@ -65,12 +89,12 @@ class _PetHomeScreenState extends State<PetHomeScreen>
   Future<void> _listen() async {
     try {
       final unsub = await CentrifugoService.instance.subscribeDelta(
-        'pair:${widget.groupId}',
+        'pair:${config.groupId}',
         'pet_homes',
         (_) {
           if (mounted && _foreground) unawaited(_refresh());
         },
-        match: (r) => r.data['group_id'] == widget.groupId,
+        match: (r) => r.data['group_id'] == config.groupId,
       );
       if (!mounted) {
         await unsub();
@@ -110,11 +134,11 @@ class _PetHomeScreenState extends State<PetHomeScreen>
 
   String _address(String uid) {
     var role = _home?.roles[uid];
-    if (!widget.family && (role?.kind == 'mom' || role?.kind == 'dad')) {
+    if (!config.family && (role?.kind == 'mom' || role?.kind == 'dad')) {
       role = const PetRole('name');
     }
     return (role ?? const PetRole('name')).address(
-      widget.names[uid] ?? '',
+      config.names[uid] ?? '',
       _english,
     );
   }
@@ -124,19 +148,23 @@ class _PetHomeScreenState extends State<PetHomeScreen>
     _loading = true;
     final generation = _generation;
     try {
-      final snapshot = await _repo.load(widget.groupId);
+      final snapshot = await _repo.load(config.groupId);
       if (!mounted || generation != _generation || !_current) return;
       final previous = _home;
       setState(() {
-        _home = snapshot.home..creditActivity(widget.sharedXp());
+        _home = snapshot.home..creditActivity(config.sharedXp());
         _error = null;
       });
       if (greet) {
         _say('welcome');
       } else if (previous != null &&
           snapshot.home.lastAt != previous.lastAt &&
-          snapshot.home.lastActor != widget.uid &&
+          snapshot.home.lastActor != config.uid &&
           snapshot.home.lastCare != null) {
+        setState(() {
+          _action = snapshot.home.lastCare;
+          _animation++;
+        });
         _say(snapshot.home.lastCare!.name, actor: snapshot.home.lastActor);
       }
     } catch (error) {
@@ -182,7 +210,7 @@ class _PetHomeScreenState extends State<PetHomeScreen>
       () => _speech = _dialogue.next(
         event,
         english: _english,
-        me: _address(actor ?? widget.uid),
+        me: _address(actor ?? config.uid),
       ),
     );
     _bubbleTimer = Timer(const Duration(seconds: 7), () {
@@ -210,9 +238,9 @@ class _PetHomeScreenState extends State<PetHomeScreen>
     final generation = ++_generation;
     try {
       final result = await _repo.change(
-        widget.groupId,
+        config.groupId,
         mutate,
-        xp: widget.sharedXp(),
+        xp: config.sharedXp(),
       );
       if (!mounted || generation != _generation || !_current) return;
       setState(() {
@@ -235,11 +263,20 @@ class _PetHomeScreenState extends State<PetHomeScreen>
     }
   }
 
+  void _poke() {
+    if (!_canAct) return;
+    setState(() {
+      _action = PetCare.pet;
+      _animation++;
+    });
+    _say('idle');
+  }
+
   void _care(PetCare care) {
     final now = DateTime.now().millisecondsSinceEpoch;
     unawaited(
       _change(
-        (h) => h.careFor(care, widget.uid, now),
+        (h) => h.careFor(care, config.uid, now),
         event: care.name,
         action: care,
       ),
@@ -250,18 +287,7 @@ class _PetHomeScreenState extends State<PetHomeScreen>
   Widget build(BuildContext context) {
     final home = _home;
     return Theme(
-      data: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Onest',
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: petSage,
-          brightness: Brightness.light,
-          surface: petCream,
-          onSurface: petInk,
-          primary: const Color(0xFF67724E),
-        ),
-        scaffoldBackgroundColor: petCream,
-      ),
+      data: _homeTheme,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: petCream,
@@ -276,7 +302,7 @@ class _PetHomeScreenState extends State<PetHomeScreen>
                 'Выбрать, нарисовать или загрузить питомца',
                 'Choose, draw or upload a pet',
               ),
-              onPressed: widget.openGallery,
+              onPressed: config.openGallery,
               icon: const Icon(Icons.photo_library_outlined),
             ),
             IconButton(
@@ -317,12 +343,15 @@ class _PetHomeScreenState extends State<PetHomeScreen>
                         children: [
                           PetRoom(
                             home: home,
-                            pet: widget.pet,
+                            pet: config.pet,
                             speech: _speech,
                             action: _action,
                             animationKey: _animation,
-                            onPet: _canAct ? () => _care(PetCare.pet) : null,
-                            petLabel: t('Питомец. Погладить', 'Pet. Stroke'),
+                            onPet: _canAct ? _poke : null,
+                            petLabel: t(
+                              'Питомец. Поздороваться',
+                              'Pet. Say hello',
+                            ),
                             speechLabel: t('Питомец говорит', 'Pet says'),
                           ),
                           Padding(
@@ -411,7 +440,7 @@ class _PetHomeScreenState extends State<PetHomeScreen>
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
                             child: Text(
-                              widget.readOnly
+                              config.readOnly
                                   ? t(
                                       'Дом сохранён в архиве связи.',
                                       'This connection’s home is archived.',
@@ -486,11 +515,22 @@ class _PetHomeScreenState extends State<PetHomeScreen>
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13),
-              ),
+              if (MediaQuery.textScalerOf(context).scale(13) < 18)
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                )
+              else
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 13),
+                ),
             ],
           ),
         ),
@@ -672,9 +712,9 @@ class _PetHomeScreenState extends State<PetHomeScreen>
   }
 
   Future<void> _roles() async {
-    final current = _home!.roles[widget.uid] ?? const PetRole('name');
+    final current = _home!.roles[config.uid] ?? const PetRole('name');
     var kind =
-        !widget.family && (current.kind == 'mom' || current.kind == 'dad')
+        !config.family && (current.kind == 'mom' || current.kind == 'dad')
         ? 'name'
         : current.kind;
     final text = TextEditingController(text: current.custom);
@@ -689,7 +729,7 @@ class _PetHomeScreenState extends State<PetHomeScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                widget.family
+                config.family
                     ? t(
                         'Можно выбрать семейное обращение или своё имя. Каждый выбирает за себя.',
                         'Choose a family role or your name. Everyone chooses their own.',
@@ -703,15 +743,15 @@ class _PetHomeScreenState extends State<PetHomeScreen>
               RadioGroup<String>(
                 groupValue: kind,
                 onChanged: (value) {
-                  if (!widget.readOnly && value != null) {
+                  if (!config.readOnly && value != null) {
                     update(() => kind = value);
                   }
                 },
                 child: Column(
                   children: [
                     for (final choice in [
-                      if (widget.family) 'mom',
-                      if (widget.family) 'dad',
+                      if (config.family) 'mom',
+                      if (config.family) 'dad',
                       'name',
                       'custom',
                     ])
@@ -720,13 +760,13 @@ class _PetHomeScreenState extends State<PetHomeScreen>
                           'mom' => t('Мама', 'Mom'),
                           'dad' => t('Папа', 'Dad'),
                           'name' => t(
-                            'Моё имя: ${widget.names[widget.uid] ?? ''}',
-                            'My name: ${widget.names[widget.uid] ?? ''}',
+                            'Моё имя: ${config.names[config.uid] ?? ''}',
+                            'My name: ${config.names[config.uid] ?? ''}',
                           ),
                           _ => t('Своё обращение', 'Custom name'),
                         }),
                         value: choice,
-                        enabled: !widget.readOnly,
+                        enabled: !config.readOnly,
                       ),
                   ],
                 ),
@@ -747,7 +787,7 @@ class _PetHomeScreenState extends State<PetHomeScreen>
               child: Text(t('Отмена', 'Cancel')),
             ),
             FilledButton(
-              onPressed: widget.readOnly
+              onPressed: config.readOnly
                   ? null
                   : () {
                       if (kind == 'custom' && text.text.trim().isEmpty) return;
@@ -763,7 +803,7 @@ class _PetHomeScreenState extends State<PetHomeScreen>
     await Future<void>.delayed(const Duration(milliseconds: 300));
     text.dispose();
     if (selected != null && mounted) {
-      await _change((h) => h.roles[widget.uid] = selected, event: 'welcome');
+      await _change((h) => h.roles[config.uid] = selected, event: 'welcome');
     }
   }
 }

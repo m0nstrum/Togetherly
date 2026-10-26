@@ -1,6 +1,8 @@
 /// Shared pet home. No need meters, decay, daily quotas, or expiring rewards.
 library;
 
+import 'package:characters/characters.dart';
+
 enum PetCare { feed, wash, play, pet }
 
 enum PetSlot { seat, bed, rug, plant, decor, picture }
@@ -44,10 +46,7 @@ class PetRole {
         ? data['kind'] as String
         : 'name',
     data['custom'] is String
-        ? (data['custom'] as String).substring(
-            0,
-            (data['custom'] as String).length.clamp(0, 40),
-          )
+        ? (data['custom'] as String).characters.take(40).toString()
         : '',
   );
 }

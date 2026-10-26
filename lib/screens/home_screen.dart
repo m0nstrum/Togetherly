@@ -1120,7 +1120,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => MascotGalleryScreen(
-          onOpenHome: fromHome
+          onOpenHome: fromHome || _pairData.pairId.isEmpty
               ? null
               : () {
                   Navigator.pop(context);
@@ -1604,7 +1604,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ActiveMascotWidget(
               mascotService: _mascotService,
               theme: _t,
-              onOpenGallery: _openPetHome,
+              onOpenHome: _openPetHome,
               sleepOf: widget.userData.sleepOf,
             ),
           // -- Theme preview banner (показывается только на главной вкладке) --

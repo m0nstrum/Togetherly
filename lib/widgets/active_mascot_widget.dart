@@ -30,7 +30,7 @@ final ValueNotifier<bool> mascotHiddenNotifier = ValueNotifier<bool>(false);
 class ActiveMascotWidget extends StatefulWidget {
   final MascotService mascotService;
   final AppTheme theme;
-  final VoidCallback onOpenGallery;
+  final VoidCallback onOpenHome;
 
   /// Окно ночной сцены персонажа: у каждого своё, задаётся в настройках.
   final SleepWindow Function(String mascotId) sleepOf;
@@ -39,7 +39,7 @@ class ActiveMascotWidget extends StatefulWidget {
     super.key,
     required this.mascotService,
     required this.theme,
-    required this.onOpenGallery,
+    required this.onOpenHome,
     required this.sleepOf,
   });
 
@@ -422,13 +422,15 @@ class _ActiveMascotWidgetState extends State<ActiveMascotWidget>
               ),
               ListTile(
                 leading: Icon(
-                  Icons.photo_library_outlined,
+                  Icons.cottage_outlined,
                   color: widget.theme.primary,
                 ),
-                title: Text(LocaleService.current.goToGallery),
+                title: Text(
+                  LocaleService.instance.isRussian ? 'Наш дом' : 'Our home',
+                ),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  widget.onOpenGallery();
+                  widget.onOpenHome();
                 },
               ),
               ListTile(

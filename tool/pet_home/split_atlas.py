@@ -1,6 +1,6 @@
 """Cut the approved generated 4x4 atlas; keep true alpha and remove stray dust.
 Usage: python tool/pet_home/split_atlas.py ATLAS.png ROOM.png
-Source originals remain in /workspace/generated_images (never overwrite them).
+Source originals: tool/pet_home/source/ (never overwrite them).
 """
 import sys
 from pathlib import Path

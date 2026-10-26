@@ -63,6 +63,12 @@ void main() {
     },
   );
 
+  test('custom nicknames preserve whole emoji graphemes', () {
+    final nickname = List.filled(40, '👨‍👩‍👧‍👦').join();
+    final role = PetRole.fromJson({'kind': 'custom', 'custom': nickname});
+    expect(role.custom, nickname);
+  });
+
   test('112 RU/EN lines cover every event, shuffle without repetition', () {
     final dialogue = PetDialogue(random: Random(17));
     expect(

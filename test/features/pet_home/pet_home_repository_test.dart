@@ -6,6 +6,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:love_app/fork/e2e/crypto.dart';
 import 'package:love_app/fork/e2e/envelope.dart';
 import 'package:love_app/fork/e2e/record_codec.dart';
+import 'package:love_app/fork/e2e/http_client.dart';
 import 'package:love_app/features/pet_home/pet_home_model.dart';
 import 'package:love_app/features/pet_home/pet_home_repository.dart';
 
@@ -42,8 +43,9 @@ void main() {
     conflict = lostResponse = false;
     writes = 0;
     final client = MockClient((request) async {
-      if (request.method == 'GET')
+      if (request.method == 'GET') {
         return http.Response(jsonEncode(stored), 200);
+      }
       writes++;
       final body = jsonDecode(request.body) as Map;
       expect(body['state'], startsWith('e2e1.'));
@@ -75,7 +77,11 @@ void main() {
       return http.Response(jsonEncode(stored), 200);
     });
     repo = PetHomeRepository(
-      pb: PocketBase('https://example.test', httpClientFactory: () => client),
+      pb: PocketBase(
+        'https://example.test',
+        httpClientFactory: () =>
+            E2EHttpClient(client, codec: () async => codec),
+      ),
       codec: () async => codec,
       uid: () => uid,
     );

@@ -5,6 +5,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:love_app/services/locale_service.dart';
 import 'package:love_app/features/pet_home/pet_home_model.dart';
 import 'package:love_app/features/pet_home/pet_home_repository.dart';
 import 'package:love_app/features/pet_home/pet_home_screen.dart';
@@ -18,9 +20,13 @@ class MemoryHome extends PetHomeRepository {
       );
   PetHome home = PetHome();
   int revision = 0;
+  int reads = 0;
   @override
-  Future<PetHomeSnapshot> load(String group) async =>
-      PetHomeSnapshot(revision, home.copy());
+  Future<PetHomeSnapshot> load(String group) async {
+    reads++;
+    return PetHomeSnapshot(revision, home.copy());
+  }
+
   @override
   Future<PetHomeSnapshot> change(
     String group,
@@ -133,9 +139,38 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets(
+    'returning reconciles partner care and background polling stops',
+    (tester) async {
+      final repo = MemoryHome();
+      await tester.pumpWidget(screen(repo));
+      await tester.pumpAndSettle();
+      final initial = repo.reads;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      repo.home.careFor(PetCare.feed, 'bob', 100);
+      await tester.pump(const Duration(seconds: 31));
+      expect(repo.reads, initial);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(repo.reads, greaterThan(initial));
+      expect(find.text('45 cozy points'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 8));
+      // Speech disappears, and the pet never schedules another demand.
+      expect(find.textContaining('Could not reach'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    },
+  );
+
   testWidgets('actual layered room preview and accessible action targets', (
     tester,
   ) async {
+    const preview = bool.fromEnvironment('PET_HOME_PREVIEW');
+    if (preview) {
+      SharedPreferences.setMockInitialValues({});
+      await LocaleService.instance.setLanguage(AppLanguage.ru);
+      addTearDown(() => LocaleService.instance.setLanguage(AppLanguage.en));
+    }
     tester.view.physicalSize = const Size(430, 932);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -148,7 +183,10 @@ void main() {
     final key = GlobalKey();
     await tester.pumpWidget(RepaintBoundary(key: key, child: screen(repo)));
     await tester.pumpAndSettle();
-    for (final label in ['Feed', 'Wash', 'Play', 'Stroke', 'Furnish']) {
+    for (final label
+        in preview
+            ? ['Кормить', 'Помыть', 'Играть', 'Погладить', 'Обустроить']
+            : ['Feed', 'Wash', 'Play', 'Stroke', 'Furnish']) {
       final size = tester.getSize(
         find
             .ancestor(of: find.text(label), matching: find.byType(TextButton))
