@@ -1,6 +1,7 @@
 package migrations_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -231,6 +232,82 @@ func TestLiveLocationInjection(t *testing.T) {
 		defer f.app.Cleanup()
 		assert.NotEqual(t, http.StatusOK, inject(t, f))
 	})
+}
+
+// D11: точку партнёра отдают только тому, кто делится сам, то есть держит
+// свою запись в том же канале. Своя точка видна всегда.
+func TestLiveLocationMutual(t *testing.T) {
+	f := newFixture(t)
+	defer f.app.Cleanup()
+	bobTok, err := f.bob.NewAuthToken()
+	require.NoError(t, err)
+	channel := "pair_" + f.alice.Id + "_" + f.bob.Id
+	base := "/api/collections/live_location/records"
+
+	col, err := f.app.FindCollectionByNameOrId("live_location")
+	require.NoError(t, err)
+	put := func(ch, uid string) *core.Record {
+		r := core.NewRecord(col)
+		r.Set("channel", ch)
+		r.Set("user_uid", uid)
+		r.Set("data", map[string]any{"c": "sealed"})
+		require.NoError(t, f.app.Save(r))
+		return r
+	}
+	bobPoint := put(channel, f.bob.Id)
+
+	sees := func(tok string) bool {
+		code, body := call(t, f.app, http.MethodGet, base+"?perPage=50", tok, "")
+		require.Equal(t, http.StatusOK, code, body)
+		inList := strings.Contains(body, bobPoint.Id)
+		code, _ = call(t, f.app, http.MethodGet, base+"/"+bobPoint.Id, tok, "")
+		assert.Equal(t, inList, code == http.StatusOK, "список и чтение расходятся")
+		return inList
+	}
+
+	t.Run("не делится — не видит", func(t *testing.T) {
+		assert.False(t, sees(f.aliceTok))
+	})
+
+	t.Run("запись в другом канале не открывает этот", func(t *testing.T) {
+		other := put(pairA, f.alice.Id)
+		defer func() { require.NoError(t, f.app.Delete(other)) }()
+		assert.False(t, sees(f.aliceTok))
+	})
+
+	var mine string
+	t.Run("включила показ — видит", func(t *testing.T) {
+		code, body := call(t, f.app, http.MethodPost, base, f.aliceTok,
+			`{"channel":"`+channel+`","user_uid":"`+f.alice.Id+`"}`)
+		require.Equal(t, http.StatusOK, code, body)
+		mine = recordID(t, body)
+		assert.True(t, sees(f.aliceTok))
+	})
+
+	t.Run("выключила — снова не видит", func(t *testing.T) {
+		code, _ := call(t, f.app, http.MethodDelete, base+"/"+mine, f.aliceTok, "")
+		require.Equal(t, http.StatusNoContent, code)
+		assert.False(t, sees(f.aliceTok))
+	})
+
+	t.Run("свою точку видно и без чужой", func(t *testing.T) {
+		assert.True(t, sees(bobTok))
+	})
+
+	t.Run("посторонний со своей записью в канале не видит", func(t *testing.T) {
+		put(channel, f.eve.Id)
+		assert.False(t, sees(f.eveTok))
+	})
+}
+
+func recordID(t testing.TB, body string) string {
+	t.Helper()
+	var rec struct {
+		ID string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(body), &rec))
+	require.NotEmpty(t, rec.ID)
+	return rec.ID
 }
 
 // У каждой коллекции схемы есть правила, выкинутых коллекций нет.

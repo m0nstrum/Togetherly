@@ -46,7 +46,7 @@ func TestRealtimeTokens(t *testing.T) {
 	}
 	room := realtime.RoomCode("rtpairaaaaaaaaa", secret)
 	for _, ch := range []string{"pair:rtpairaaaaaaaaa", "signal:rtpairaaaaaaaaa", "draw:rtpairaaaaaaaaa",
-		"user:rtalice00000001", "user:rtbob000000001x", "loc:pair_rtalice00000001_rtbob000000001x", "watch:" + room} {
+		"user:rtalice00000001", "user:rtbob000000001x", "watch:" + room} {
 		code, claims := sub(alice, ch)
 		if assert.Equal(t, http.StatusOK, code, ch) {
 			assert.Equal(t, ch, claims["channel"])
@@ -65,6 +65,26 @@ func TestRealtimeTokens(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, code)
 	code, _ = sub(eve, "loc:pair_rtalice00000001_rtbob000000001x")
 	assert.Equal(t, http.StatusForbidden, code, "чужая пара в геоканале")
+	// D11: геоканал — только тому, кто делится сам (своя запись в канале).
+	const loc = "pair_rtalice00000001_rtbob000000001x"
+	for _, ch := range []string{"loc:" + loc, "locsignal:" + loc} {
+		code, _ = sub(alice, ch)
+		assert.Equal(t, http.StatusForbidden, code, "не делится — "+ch)
+	}
+	col, err := app.FindCollectionByNameOrId("live_location")
+	require.NoError(t, err)
+	mine := core.NewRecord(col)
+	mine.Set("channel", loc)
+	mine.Set("user_uid", "rtalice00000001")
+	require.NoError(t, app.Save(mine))
+	for _, ch := range []string{"loc:" + loc, "locsignal:" + loc} {
+		code, _ = sub(alice, ch)
+		assert.Equal(t, http.StatusOK, code, "делится — "+ch)
+	}
+	require.NoError(t, app.Delete(mine))
+	code, _ = sub(alice, "loc:"+loc)
+	assert.Equal(t, http.StatusForbidden, code, "выключила показ")
+
 	code, _ = sub(alice, "")
 	assert.Equal(t, http.StatusBadRequest, code)
 	code, _ = sub("", "pair:rtpairaaaaaaaaa")
