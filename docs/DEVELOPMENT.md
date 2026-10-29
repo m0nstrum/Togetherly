@@ -8,6 +8,7 @@ Tethered — приложение для пар с E2E-шифрованием и
 
 - [ROADMAP.md](ROADMAP.md) — куда идём, этапы;
 - [BACKLOG.md](BACKLOG.md) — баги и доработки;
+- [AUDIT_2026-10.md](AUDIT_2026-10.md) — аудит состояния проекта 29.10.2026;
 - [E2E.md](E2E.md) — модель угроз и шифрование;
 - [TESTING.md](TESTING.md) — ручная проверка на телефонах;
 - [../deploy/README.md](../deploy/README.md) — развёртывание сервера;
