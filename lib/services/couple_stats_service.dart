@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../fork/e2e/fork_e2e.dart';
+import '../fork/e2e/record_codec.dart' show e2eLockedText, isSealedValue;
 import '../models/mood_entry.dart';
 import 'mood_repository.dart';
 import 'pocketbase_service.dart';
+import 'watch_history_service.dart';
 
 /// Развёрнутая статистика пары одним запросом.
 ///
@@ -54,6 +56,7 @@ class CoupleStatsService {
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       await ForkE2E.patchCoupleStats(groupId, json); // fork: даты пары шифром
       await _patchMoods(groupId, json); // T2: настроения — шифр, считаем здесь
+      await _patchWatchKinds(groupId, json); // B9: площадки просмотров — шифр
       final stats = CoupleStats.fromJson(json);
       _cache[groupId] = _Cached(stats, DateTime.now());
       return stats;
@@ -83,6 +86,39 @@ Future<void> _patchMoods(String groupId, Map<String, dynamic> json) async {
   } catch (e) {
     debugPrint('CoupleStatsService: настроения не посчитались: $e');
   }
+}
+
+/// B9: `watch_history.kind` — шифр, у каждой записи свой: сервер группирует
+/// шифры и отдаёт по строке на ролик. Считаем из расшифрованной истории.
+Future<void> _patchWatchKinds(String groupId, Map<String, dynamic> json) async {
+  final breakdown = json['breakdown'];
+  if (breakdown is! Map) return;
+  try {
+    breakdown['watchKinds'] = watchKindsJson(
+      await WatchHistoryService.all(groupId),
+    );
+  } catch (e) {
+    // Не открылось — не показываем шифр как площадки.
+    breakdown['watchKinds'] = const [];
+    debugPrint('CoupleStatsService: просмотры не посчитались: $e');
+  }
+}
+
+/// Разбивка просмотров по площадкам в форме ответа сервера: `k` — площадка,
+/// `c` — сколько роликов, частые сверху. Нерасшифрованные пропускаются.
+@visibleForTesting
+List<Map<String, dynamic>> watchKindsJson(List<WatchEntry> entries) {
+  final counts = <String, int>{};
+  for (final e in entries) {
+    final k = e.kind.trim();
+    if (isSealedValue(k) || k == e2eLockedText) continue;
+    counts[k] = (counts[k] ?? 0) + 1;
+  }
+  final list = counts.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  return [
+    for (final e in list) {'k': e.key, 'c': e.value},
+  ];
 }
 
 /// Разбивка настроений в форме ответа сервера: `daily` — отметки за 90 дней
