@@ -73,6 +73,17 @@ class WatchHistoryService {
     }
   }
 
+  /// Вся история пары — для разбивки по площадкам в статистике: `kind` лежит
+  /// шифром, сервер его не сгруппирует. Одна запись на ролик, так что даже у
+  /// давней пары это сотни строк, а не тысячи.
+  static Future<List<WatchEntry>> all(String groupId) async {
+    if (groupId.isEmpty) return const [];
+    final items = await _pb
+        .collection(_col)
+        .getFullList(batch: 500, filter: 'group_id = "$groupId"');
+    return items.map(WatchEntry.fromRecord).toList();
+  }
+
   /// Записывает включённый ролик. Если он уже был, обновляет запись —
   /// так лента показывает последние просмотры, а не список дублей.
   static Future<void> remember({
