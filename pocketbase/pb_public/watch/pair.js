@@ -101,16 +101,44 @@
    *  видел «смотрят: 2» (жалоба 20.08.2026, подтверждена присутствием живого
    *  канала). Такие подключения помечены в `chan_info` подписки — метку ставит
    *  сервер, поэтому счёт чинится и у выпущенных сборок. */
-  function countViewers(presence) {
+  function countViewers(presence, heard, now, me) {
     const clients = (presence && presence.clients) || {};
     const people = new Set();
+    if (me) people.add(me);
     Object.keys(clients).forEach((k) => {
       const c = clients[k] || {};
       const info = c.chanInfo || c.chan_info;
       if (info && info.app) return;
       people.add(c.user);
     });
+    // fork (B10): кого СЛЫШНО, тот тоже здесь — см. [hears].
+    const t = now || Date.now();
+    Object.keys(heard || {}).forEach((u) => {
+      if (t - heard[u] < HEARD_MS) people.add(u);
+    });
     return Math.max(1, people.size);
+  }
+
+  /// fork (B10): сколько живёт «слышали» — сообщение зрителя держит его в
+  /// комнате столько миллисекунд, даже если присутствие его не видит.
+  const HEARD_MS = 45000;
+  /// Присутствие переспрашиваем сами: join/leave теряются, пока своя подписка
+  /// переподключается, и счёт застревал до следующего входа.
+  const PRESENCE_POLL_MS = 20000;
+
+  /** fork (B10): сообщение — признак живого зрителя.
+   *
+   *  «Партнёр не в комнате, хотя пишет и жмёт кнопки» (тест 24.10.2026).
+   *  Нативный плеер своего видео сидит в канале подключением приложения, а
+   *  такие подключения из присутствия выброшены (метка `app`, см. выше), — и
+   *  тот, кто жмёт паузу в плеере, для страницы не существовал. Теперь
+   *  зрителем считается и тот, от кого пришла команда, реплика или `hello`.
+   *  Голос (`voice-*` и шифр `e2e`) — не в счёт: его шлёт служебное
+   *  подключение, открытое и тогда, когда человек вовсе не в комнате. */
+  function hears(msg) {
+    if (!msg || typeof msg.from !== 'string' || !msg.from) return false;
+    const t = String(msg.t || '');
+    return t !== 'e2e' && t !== 'bye' && t.indexOf('voice-') !== 0;
   }
 
   /** Browser login only. Native WebViews obtain scoped tickets via Dart. */
@@ -173,6 +201,7 @@
     const h = on || {};
     const ch = {
       room, me: '', centrifuge: null, sub: null, isSubscribed: false, count: 1, outbox: [],
+      presence: null, heard: {}, poll: 0, refresh: null, askedAt: 0,
       subscribed: () => ch.isSubscribed,
       viewers: () => ch.count,
       send: (type, at, extra) => send(ch, type, at, extra),
@@ -186,16 +215,39 @@
       const centrifuge = new Centrifuge(WS, { token: data.connectionToken });
       const sub = centrifuge.newSubscription(data.channel, { token: data.subscriptionToken });
 
+      const recount = (force) => {
+        const n = countViewers(ch.presence, ch.heard, Date.now(), ch.me);
+        if (!force && n === ch.count) return;
+        ch.count = n;
+        if (h.viewers) h.viewers(n);
+      };
       const refreshViewers = () => {
         sub.presence().then((p) => {
-          ch.count = countViewers(p);
-          if (h.viewers) h.viewers(ch.count);
-        }).catch(() => {});
+          ch.presence = p;
+          recount(true);
+        }).catch(() => recount(false));
       };
+      ch.refresh = refreshViewers;
 
       sub.on('publication', (ctx) => {
         const msg = ctx.data;
         if (!msg || msg.from === ch.me) return;
+        if (msg.t === 'bye' && typeof msg.from === 'string') {
+          // Нативный плеер закрыли: не ждём, пока «слышали» протухнет.
+          delete ch.heard[msg.from];
+          recount(false);
+        } else if (hears(msg)) {
+          const fresh = !ch.heard[msg.from];
+          ch.heard[msg.from] = Date.now();
+          if (fresh) {
+            recount(false);
+            // Слышим того, кого присутствие не видит, — переспросим его.
+            if (ch.count <= 1 || Date.now() - ch.askedAt > 5000) {
+              ch.askedAt = Date.now();
+              refreshViewers();
+            }
+          }
+        }
         if (h.message) h.message(msg);
       });
       sub.on('subscribed', () => {
@@ -203,6 +255,12 @@
         if (h.status) h.status('ready');
         refreshViewers();
         flush(ch);
+        if (!ch.poll) {
+          ch.poll = setInterval(() => {
+            if (ch.isSubscribed && ch.refresh) ch.refresh();
+            else recount(false);
+          }, PRESENCE_POLL_MS);
+        }
         // Просим тех, кто уже внутри, прислать своё: ролик, переписку.
         // fork (E2E §10.1): вкладка браузера помечает себя — приложения
         // переходят на открытый чат с пометкой, иначе ей нечего прочесть.
@@ -210,7 +268,12 @@
         if (h.subscribed) h.subscribed(ch);
       });
       sub.on('join', refreshViewers);
-      sub.on('leave', refreshViewers);
+      sub.on('leave', (ctx) => {
+        // Ушло подключение — его «слышали» больше не держит человека в комнате.
+        const who = ctx && ctx.info && ctx.info.user;
+        if (who) delete ch.heard[who];
+        refreshViewers();
+      });
       sub.on('unsubscribed', () => { ch.isSubscribed = false; });
       sub.on('subscribing', () => { ch.isSubscribed = false; });
       sub.on('error', () => { if (h.status) h.status('lost'); });
@@ -417,7 +480,7 @@
   }
 
   window.TgPair = {
-    roomFromHash, inApp, bridge, guestId, countViewers, storedAuth,
+    roomFromHash, inApp, bridge, guestId, countViewers, hears, HEARD_MS, storedAuth,
     open, enter, voice, viewport,
     APP_WAIT_TRIES,
   };

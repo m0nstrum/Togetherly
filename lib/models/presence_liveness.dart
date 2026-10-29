@@ -31,6 +31,14 @@ class PresenceLiveness {
   /// в 12:33», а писателя базы почти не трогает.
   static const Duration lastSeenWrite = Duration(minutes: 5);
 
+  /// На сколько часы партнёра могут спешить, чтобы его отметку ещё приняли.
+  ///
+  /// Отметку в базе ставят часы ЕГО телефона (B10). Пока любое опережение
+  /// давало «отметка из будущего — офлайн», партнёр со спешащими на секунду
+  /// часами в сети не появлялся вовсе. Удары канала теперь меряются по
+  /// времени приёма, и это правило нужно только отметке базы.
+  static const Duration clockSkew = Duration(minutes: 2);
+
   /// В сети ли человек, если последний признак жизни пришёл в [lastSignalMs].
   ///
   /// Сигналом считается и удар по каналу, и отметка в базе — берём тот, что
@@ -43,7 +51,7 @@ class PresenceLiveness {
     final latest = _latest(channelBeatMs, storedSeenMs);
     if (latest == null) return false;
     final age = nowMs - latest;
-    return age >= 0 && age < freshness.inMilliseconds;
+    return age > -clockSkew.inMilliseconds && age < freshness.inMilliseconds;
   }
 
   /// Когда человека видели в последний раз: для подписи «была в 12:33».
