@@ -133,6 +133,12 @@ python3 tool/fork/coverage_summary.py coverage/lcov.info
 flutter test integration_test --dart-define-from-file=env/example.json
 ```
 
+`flutter_tools` ищет MAIN/LAUNCHER только у `<activity>`, а у нас он в
+`<activity-alias>` (иконка по теме), поэтому без подготовки тест падает с
+«launch activity not found». CI на время прогона добавляет этот фильтр
+`MainActivity` (шаг «лаунчер для flutter_tools» в `fork-ci.yml`) — локально
+то же самое, не коммитя правку манифеста.
+
 Остальные воркфлоу:
 
 | Файл | Когда |

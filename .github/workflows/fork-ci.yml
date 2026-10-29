@@ -259,6 +259,25 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # flutter_tools ищет MAIN/LAUNCHER только у <activity>, а у нас он в
+      # <activity-alias> (иконка по теме) — без фильтра у MainActivity тест
+      # не находит, что запускать («launch activity not found»). Правка живёт
+      # только в этом прогоне.
+      - name: лаунчер для flutter_tools
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          p = pathlib.Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text(encoding='utf-8')
+          anchor = 'android:windowSoftInputMode="adjustResize">'
+          assert s.count(anchor) == 1, 'MainActivity в манифесте не найдена'
+          s = s.replace(anchor, anchor + '<intent-filter>'
+                        '<action android:name="android.intent.action.MAIN"/>'
+                        '<category android:name="android.intent.category.LAUNCHER"/>'
+                        '</intent-filter>')
+          p.write_text(s, encoding='utf-8')
+          PY
+
       - name: flutter test integration_test
         uses: reactivecircus/android-emulator-runner@v2
         with:
