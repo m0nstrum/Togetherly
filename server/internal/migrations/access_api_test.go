@@ -440,3 +440,29 @@ func TestFormerPartnerAccess(t *testing.T) {
 	code, _ := call(t, f.app, "GET", "/api/collections/chat_messages/records/"+f.recordOfA["chat_messages"], f.aliceTok, "")
 	assert.Equal(t, 200, code, "archive remains readable")
 }
+
+// D11 на уже развёрнутой базе: правила ставит только миграция, поэтому
+// старое правило геопозиции обязано смениться при обновлении.
+func TestLiveLocationMutualMigration(t *testing.T) {
+	f := newFixture(t)
+	defer f.app.Cleanup()
+	col, err := f.app.FindCollectionByNameOrId("live_location")
+	require.NoError(t, err)
+	old := `@request.auth.id != "" && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`
+	col.ListRule, col.ViewRule = &old, &old
+	require.NoError(t, f.app.Save(col))
+
+	var up func(core.App) error
+	for _, mg := range core.AppMigrations.Items() {
+		if mg.File == "1760000031_live_location_mutual.go" {
+			up = mg.Up
+		}
+	}
+	require.NotNil(t, up, "миграция D11 не зарегистрирована")
+	require.NoError(t, up(f.app))
+
+	col, err = f.app.FindCollectionByNameOrId("live_location")
+	require.NoError(t, err)
+	assert.Contains(t, *col.ListRule, "@collection.live_location:mine")
+	assert.Contains(t, *col.ViewRule, "@collection.live_location:mine")
+}

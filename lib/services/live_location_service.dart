@@ -542,7 +542,9 @@ class LiveLocationService with WidgetsBindingObserver {
       _storeTimer = null;
       _unstored = null;
       _storedAtMs = now;
-      await _data.setLivePoint(channel, _uid, point);
+      if (await _data.setLivePoint(channel, _uid, point)) {
+        _confirmMutual(channel, generation);
+      }
     } else {
       _unstored = point;
       _unstoredChannel = channel;
@@ -576,11 +578,26 @@ class LiveLocationService with WidgetsBindingObserver {
     _unstored = null;
     if (point == null || channel == null || _uid.isEmpty) return;
     _storedAtMs = DateTime.now().millisecondsSinceEpoch;
+    final generation = _sessionGeneration;
     try {
-      await _data.setLivePoint(channel, _uid, point);
+      if (await _data.setLivePoint(channel, _uid, point)) {
+        _confirmMutual(channel, generation);
+      }
     } catch (e) {
       debugPrint('LiveLocationService: последняя точка не записалась: $e');
     }
+  }
+
+  /// fork (D11): точка легла на сервер — значит, своя запись в канале есть.
+  /// Открывает гейт, если флаг при включении не подтвердился (сбой сети):
+  /// иначе человек делился бы, сам не видя партнёра до перезапуска.
+  void _confirmMutual(String channel, int generation) {
+    if (generation != _sessionGeneration ||
+        !sharingEnabled.value ||
+        _activePairId != channel) {
+      return;
+    }
+    if (mutualChannel.value != channel) mutualChannel.value = channel;
   }
 
   Future<void> _cancelStream() async {

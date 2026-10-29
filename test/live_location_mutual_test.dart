@@ -67,4 +67,14 @@ void main() {
       lessThan(start.indexOf('_canStartFgs')),
     );
   });
+
+  test('удачная запись точки открывает гейт, если флаг не подтвердился', () {
+    final push = between('Future<void> _push(', 'Timer? _storeTimer;');
+    expect(push, contains('_confirmMutual'));
+    final flush = between(
+      'Future<void> _flushUnstored(',
+      'Future<void> _cancelStream(',
+    );
+    expect(flush, contains('_confirmMutual'));
+  });
 }

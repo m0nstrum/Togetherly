@@ -406,6 +406,10 @@ class PairMapWidgetService {
 
   Future<void>? _running;
 
+  /// fork (D11): растёт, когда партнёра надо убрать с виджета. Отрисовка,
+  /// начатая при прежнем значении, не публикуется: она держит его точку.
+  int _epoch = 0;
+
   /// Передний план: пара, имена, аватарки и тема известны.
   Future<void> refreshFromApp({
     required String groupId,
@@ -504,6 +508,7 @@ class PairMapWidgetService {
     required String partnerUid,
   }) async {
     if (!Platform.isAndroid && !Platform.isIOS) return;
+    final epoch = _epoch;
     // Спрашиваем WidgetKit, стоит ли виджет, но верим ему только когда
     // картинки уже лежат в контейнере: на iPhone список приходит пустым и
     // тогда, когда виджет на столе есть, а без отрисовки он вечно с заглушкой.
@@ -600,7 +605,7 @@ class PairMapWidgetService {
       ),
       tiles: _loadTile,
     );
-    if (images.isEmpty) return;
+    if (images.isEmpty || epoch != _epoch) return;
     final published = await _publish(
       groupId.isEmpty ? 'solo' : groupId,
       images,
@@ -617,6 +622,14 @@ class PairMapWidgetService {
     required String myUid,
     required String partnerUid,
   }) async {
+    _epoch++;
+    // Отрисовка в пути прочла точку партнёра до выключения: дождаться её
+    // (публиковать она уже не станет) и нарисовать заново.
+    try {
+      await _running;
+    } catch (_) {
+      // тихо: сбой прежней отрисовки не мешает новой.
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_placesKey);
