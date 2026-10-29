@@ -9,6 +9,7 @@ import 'centrifugo_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import '../fork/e2e/fork_e2e.dart';
+import '../fork/realtime/subscribed_stream.dart';
 
 /// Один пакет живого мазка: чей он и что в нём. `data == null` — мазок снят.
 class LivePacket {
@@ -332,13 +333,11 @@ class CanvasRepository {
     String canvasId,
     String myUid,
   ) {
-    RtUnsub? unsub;
-    late StreamController<LivePacket> ctrl;
-    ctrl = StreamController<LivePacket>.broadcast(
-      onListen: () async {
-        unsub = await CentrifugoService.instance.subscribeRaw(
-          _liveChannel(groupId),
-          (m) {
+    // RT-5: уход слушателя до конца подписки не оставляет канал висеть.
+    return subscribedStream<LivePacket>(
+      broadcast: true,
+      subscribe: (add) =>
+          CentrifugoService.instance.subscribeRaw(_liveChannel(groupId), (m) {
             final uid = (m['uid'] ?? '').toString();
             if (uid.isEmpty || uid == myUid) return;
             if ((m['canvasId'] ?? '').toString() != canvasId) return;
@@ -348,17 +347,10 @@ class CanvasRepository {
               'stroke:$uid:$canvasId',
               m['data'],
             );
-            if (!live.ok || ctrl.isClosed) return;
-            ctrl.add(LivePacket(uid: uid, data: live.data));
-          },
-        );
-      },
-      onCancel: () async {
-        await unsub?.call();
-        unsub = null;
-      },
+            if (!live.ok) return;
+            add(LivePacket(uid: uid, data: live.data));
+          }),
     );
-    return ctrl.stream;
   }
 
   /// Опубликовать свой in-progress штрих (эфемерно, мимо БД).

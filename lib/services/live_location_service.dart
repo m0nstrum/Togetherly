@@ -15,6 +15,7 @@ import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import 'pocketbase_service.dart';
 import '../fork/e2e/fork_e2e.dart';
+import '../fork/realtime/subscribed_stream.dart';
 import '../fork/location_consent.dart';
 import '../fork/geo/geo_status.dart';
 import '../fork/wishes/wish_places.dart';
@@ -627,13 +628,11 @@ class LiveLocationService with WidgetsBindingObserver {
   /// коллекцию. Читаем оба источника и показываем тот, что свежее; заодно
   /// запись из базы отдаёт последнюю точку тому, кто открыл карту только что.
   Stream<LivePoint?> _watchPoint(String channel, String uid) {
-    late StreamController<LivePoint?> ctrl;
     StreamSubscription? dbSub;
-    RtUnsub? unsub;
     LivePoint? fromDb;
     LivePoint? fromChannel;
 
-    void emit() {
+    void emit(void Function(LivePoint?) add) {
       final a = fromChannel;
       final b = fromDb;
       LivePoint? best;
@@ -644,11 +643,12 @@ class LiveLocationService with WidgetsBindingObserver {
       } else {
         best = a.updatedAt >= b.updatedAt ? a : b;
       }
-      if (!ctrl.isClosed) ctrl.add(best);
+      add(best);
     }
 
-    ctrl = StreamController<LivePoint?>(
-      onListen: () async {
+    // RT-5: уход слушателя до конца подписки не оставляет канал висеть.
+    return subscribedStream<LivePoint?>(
+      start: (add) {
         dbSub = _rt
             .watchLivePoint(channel, uid)
             .handleError((e) => debugPrint('live location point error: $e'))
@@ -658,31 +658,27 @@ class LiveLocationService with WidgetsBindingObserver {
               fromDb = v is Map ? LivePoint.fromMap(v) : null;
               if (had && fromDb == null)
                 fromChannel = null; // fork: точку убрали — показ выключен
-              emit();
+              emit(add);
             });
-
-        unsub = await CentrifugoService().subscribeRaw('loc:$channel', (raw) {
-          final data = ForkE2E.openPoint(channel, raw);
-          if (data == null) return;
-          if ((data['uid'] ?? '').toString() != uid) return;
-          if (data['t'] == 'stop') {
-            // fork (UX G2): показ выключен
-            fromChannel = null;
-            fromDb = null;
-            emit();
-            return;
-          }
-          if (data['t'] != 'point') return;
-          fromChannel = LivePoint.fromMap(data);
-          emit();
-        });
       },
-      onCancel: () async {
-        await dbSub?.cancel();
-        await unsub?.call();
-      },
+      subscribe: (add) =>
+          CentrifugoService().subscribeRaw('loc:$channel', (raw) {
+            final data = ForkE2E.openPoint(channel, raw);
+            if (data == null) return;
+            if ((data['uid'] ?? '').toString() != uid) return;
+            if (data['t'] == 'stop') {
+              // fork (UX G2): показ выключен
+              fromChannel = null;
+              fromDb = null;
+              emit(add);
+              return;
+            }
+            if (data['t'] != 'point') return;
+            fromChannel = LivePoint.fromMap(data);
+            emit(add);
+          }),
+      stop: () => dbSub?.cancel(),
     );
-    return ctrl.stream;
   }
 
   // ── Настройки геолокации (фон) ────────────────────────────────────────────

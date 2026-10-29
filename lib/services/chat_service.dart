@@ -17,6 +17,7 @@ import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/pb_id.dart';
 import '../fork/e2e/fork_e2e.dart';
+import '../fork/realtime/subscribed_stream.dart';
 import '../fork/ui/feedback.dart';
 import 'centrifugo_service.dart';
 import 'media_service.dart';
@@ -554,14 +555,12 @@ class ChatService {
   Stream<bool> watchTyping(String groupId) {
     if (groupId.isEmpty) return Stream.value(false);
 
-    late StreamController<bool> ctrl;
     StreamSubscription<Map<String, int>>? dbSub;
-    RtUnsub? unsub;
     Timer? ticker;
     final marks = <String, int>{};
     bool? last;
 
-    void emit() {
+    void emit(void Function(bool) add) {
       final now = DateTime.now().millisecondsSinceEpoch;
       var typing = false;
       for (final entry in marks.entries) {
@@ -573,42 +572,41 @@ class ChatService {
       }
       if (typing != last) {
         last = typing;
-        if (!ctrl.isClosed) ctrl.add(typing);
+        add(typing);
       }
     }
 
-    ctrl = StreamController<bool>(
-      onListen: () async {
+    // RT-5: отписка и таймер переживают уход слушателя до конца подписки.
+    return subscribedStream<bool>(
+      start: (add) {
         dbSub = _rt.watchTyping(groupId).listen((fromDb) {
           fromDb.forEach((uid, at) {
             final known = marks[uid] ?? 0;
             if (at > known) marks[uid] = at;
             if (at == 0) marks[uid] = 0;
           });
-          emit();
+          emit(add);
         }, onError: (_) {});
 
-        unsub = await CentrifugoService().subscribeRaw('pair:$groupId', (raw) {
-          final data = ForkE2E.openSignal('pair:$groupId', raw);
-          if (data == null || data['t'] != 'typing') return;
-          final uid = (data['uid'] ?? '').toString();
-          if (uid.isEmpty || uid == _uid) return;
-          final at = data['at'];
-          marks[uid] = at is num ? at.toInt() : 0;
-          emit();
-        });
-
         // Отметка протухает молча, без нового события — гасим сами.
-        ticker = Timer.periodic(const Duration(seconds: 2), (_) => emit());
-        emit();
+        ticker = Timer.periodic(const Duration(seconds: 2), (_) => emit(add));
+        emit(add);
       },
-      onCancel: () async {
-        await dbSub?.cancel();
-        await unsub?.call();
+      subscribe: (add) =>
+          CentrifugoService().subscribeRaw('pair:$groupId', (raw) {
+            final data = ForkE2E.openSignal('pair:$groupId', raw);
+            if (data == null || data['t'] != 'typing') return;
+            final uid = (data['uid'] ?? '').toString();
+            if (uid.isEmpty || uid == _uid) return;
+            final at = data['at'];
+            marks[uid] = at is num ? at.toInt() : 0;
+            emit(add);
+          }),
+      stop: () async {
         ticker?.cancel();
+        await dbSub?.cancel();
       },
     );
-    return ctrl.stream;
   }
 
   // ── Непрочитанные ──────────────────────────────────────────────────────────
