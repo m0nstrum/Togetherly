@@ -11,6 +11,7 @@ import '../models/live_location_tuning.dart';
 import '../models/map_distance.dart';
 import 'locale_service.dart';
 import 'centrifugo_service.dart';
+import 'map/pair_map_widget_service.dart';
 import 'pb_data_service.dart';
 import 'pb_realtime_service.dart';
 import 'pocketbase_service.dart';
@@ -18,9 +19,12 @@ import '../fork/e2e/fork_e2e.dart';
 import '../fork/realtime/subscribed_stream.dart';
 import '../fork/location_consent.dart';
 import '../fork/geo/geo_status.dart';
+import '../fork/geo/mutual_location.dart';
 import '../fork/wishes/wish_places.dart';
 
-const String _kSharingEnabledKey = 'live_location_sharing_enabled';
+/// Флаг «показ включён» в SharedPreferences. Его же читает виджет «Где мы»
+/// в фоне (D11: сам не делишься — партнёра на виджете нет).
+const String kLiveSharingEnabledKey = 'live_location_sharing_enabled';
 
 /// Снимок позиции участника пары. Живёт в PocketBase (коллекция `live_location`,
 /// json `data` в канале пары) и НЕ удаляется на disconnect — поэтому последняя
@@ -91,6 +95,23 @@ class LiveLocationService with WidgetsBindingObserver {
   /// Включён ли шеринг (персистентно, между запусками). UI слушает этот флаг.
   final ValueNotifier<bool> sharingEnabled = ValueNotifier<bool>(false);
 
+  /// fork (D11): канал, где сервер уже знает «я делюсь» — там лежит своя
+  /// запись. Точку партнёра сервер отдаёт только в таком канале, поэтому и
+  /// клиент без него на неё не подписывается. null — не делимся нигде.
+  final ValueNotifier<String?> mutualChannel = ValueNotifier<String?>(null);
+
+  late final Listenable _mutualGate = Listenable.merge([
+    sharingEnabled,
+    mutualChannel,
+  ]);
+
+  /// fork (D11): видно ли сейчас партнёра — только когда делишься сам.
+  bool canSeePartner(String pairId, String partnerUid) =>
+      _mutualOpen(_channel(pairId, partnerUid));
+
+  bool _mutualOpen(String channel) =>
+      sharingEnabled.value && mutualChannel.value == channel;
+
   /// true, пока крутится стрим позиции.
   bool get isSharing => _posSub != null;
 
@@ -112,7 +133,7 @@ class LiveLocationService with WidgetsBindingObserver {
   Future<void> init() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      sharingEnabled.value = prefs.getBool(_kSharingEnabledKey) ?? false;
+      sharingEnabled.value = prefs.getBool(kLiveSharingEnabledKey) ?? false;
     } catch (_) {}
   }
 
@@ -237,6 +258,8 @@ class LiveLocationService with WidgetsBindingObserver {
       await startSharing(pairId, partnerUid: partnerUid);
       return true;
     } else {
+      // fork (D11): точка партнёра прячется сразу, ещё до сети.
+      mutualChannel.value = null;
       await _persist(false);
       issue.value = ShareIssue.none; // fork (UX G3)
       backgroundLimited.value = false;
@@ -250,18 +273,35 @@ class LiveLocationService with WidgetsBindingObserver {
           pairId.isNotEmpty &&
           partnerUid.isNotEmpty &&
           _uid.isNotEmpty) {
-        await _data.clearLivePoint(channel, _uid);
+        // fork (D11): сигнал — пока своя запись жива: без неё сервер уже не
+        // пустит в канал.
         await _announceStop(channel);
+        await _data.clearLivePoint(channel, _uid);
+        await CentrifugoService().release('loc:$channel');
       }
+      _forgetPartnerOnWidget(pairId, partnerUid);
       return false;
     }
+  }
+
+  /// fork (D11): на виджете «Где мы» партнёра больше нет — перерисовать без
+  /// него и забыть районы, по которым видно, где он был.
+  void _forgetPartnerOnWidget(String pairId, String partnerUid) {
+    if (pairId.isEmpty || partnerUid.isEmpty || _uid.isEmpty) return;
+    unawaited(
+      PairMapWidgetService.instance.forgetPartner(
+        groupId: pairId,
+        myUid: _uid,
+        partnerUid: partnerUid,
+      ),
+    );
   }
 
   Future<void> _persist(bool v) async {
     sharingEnabled.value = v;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_kSharingEnabledKey, v);
+      await prefs.setBool(kLiveSharingEnabledKey, v);
     } catch (_) {}
   }
 
@@ -295,6 +335,20 @@ class LiveLocationService with WidgetsBindingObserver {
       );
       return;
     }
+    final channel = _channel(pairId, partnerUid);
+    // fork (D11): своя запись в канале — для сервера флаг «делюсь»; без неё
+    // он не отдаёт ни точку партнёра, ни подписку на его канал. Заводим её
+    // сразу, не дожидаясь первого фикса.
+    if (mutualChannel.value != channel) {
+      final marked = await _data.ensureLiveMarker(channel, _uid);
+      if (generation != _sessionGeneration || _uid.isEmpty) return;
+      if (!sharingEnabled.value) {
+        // Выключили, пока запись создавалась: не оставляем флаг на сервере.
+        if (marked) await _data.clearLivePoint(channel, _uid);
+        return;
+      }
+      if (marked) mutualChannel.value = channel;
+    }
     // Android 12+ запрещает старт foreground-сервиса из фона, а geolocator
     // поднимает location-FGS внутри getPositionStream → из фона это роняет
     // ForegroundServiceStartNotAllowedException (летит мимо try/catch и onError).
@@ -306,7 +360,6 @@ class LiveLocationService with WidgetsBindingObserver {
       debugPrint('LiveLocationService: старт из фона пропущен (FGS запрещён)');
       return;
     }
-    final channel = _channel(pairId, partnerUid);
     if (_activePairId == channel && _posSub != null) return;
 
     // Сменился канал — гасим прежний стрим, точку прежнего канала оставляем.
@@ -555,6 +608,7 @@ class LiveLocationService with WidgetsBindingObserver {
     _unstoredChannel = null;
     _storedAtMs = null;
     myFix.value = null;
+    mutualChannel.value = null; // fork (D11)
     final sub = _posSub;
     _posSub = null;
     if (sub != null) unawaited(sub.cancel().catchError((Object _) {}));
@@ -568,6 +622,7 @@ class LiveLocationService with WidgetsBindingObserver {
     // fork (UX G6): простая остановка оставляет точку партнёру — пусть она
     // будет последней, а не двухминутной давности. При удалении — выбрасываем.
     if (removePoint) {
+      mutualChannel.value = null; // fork (D11): партнёра больше не видно
       _storeTimer?.cancel();
       _storeTimer = null;
       _unstored = null;
@@ -580,9 +635,11 @@ class LiveLocationService with WidgetsBindingObserver {
     final pairId = _activePairId;
     _activePairId = null;
     if (removePoint && pairId != null && _uid.isNotEmpty) {
-      // pairId здесь — канал пары (_activePairId).
-      await _data.clearLivePoint(pairId, _uid);
+      // pairId здесь — канал пары (_activePairId). fork (D11): сигнал
+      // остановки — до удаления записи, пока сервер ещё пускает в канал.
       await _announceStop(pairId); // fork (UX G2)
+      await _data.clearLivePoint(pairId, _uid);
+      await CentrifugoService().release('loc:$pairId');
     }
   }
 
@@ -610,7 +667,14 @@ class LiveLocationService with WidgetsBindingObserver {
     if (pairId.isEmpty || partnerUid.isEmpty) {
       return Stream<LivePoint?>.value(null);
     }
-    return _watchPoint(_channel(pairId, partnerUid), partnerUid);
+    final channel = _channel(pairId, partnerUid);
+    // fork (D11): сам не делишься — партнёра не видно: ни подписки, ни
+    // последней точки. Выключил на ходу — поток сразу отдаёт null.
+    return whileMutual<LivePoint>(
+      gate: _mutualGate,
+      isOpen: () => _mutualOpen(channel),
+      open: () => _watchPoint(channel, partnerUid),
+    );
   }
 
   /// Поток своей последней точки в том же общем узле пары (чтобы своя аватарка
@@ -618,7 +682,13 @@ class LiveLocationService with WidgetsBindingObserver {
   /// для вычисления канонического ключа канала.
   Stream<LivePoint?> watchSelf(String pairId, String partnerUid) {
     if (_uid.isEmpty) return Stream<LivePoint?>.value(null);
-    return _watchPoint(_channel(pairId, partnerUid), _uid);
+    final channel = _channel(pairId, partnerUid);
+    // fork (D11): своей записи без показа нет, а канал сервер не выдаст.
+    return whileMutual<LivePoint>(
+      gate: _mutualGate,
+      isOpen: () => _mutualOpen(channel),
+      open: () => _watchPoint(channel, _uid),
+    );
   }
 
   /// Точка участника: сначала канал, база — как опора и совместимость.

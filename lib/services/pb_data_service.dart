@@ -2333,6 +2333,48 @@ class PbDataService {
     }
   }
 
+  /// fork (D11): своя запись в канале «Где мы» — для сервера флаг «я
+  /// делюсь»: без неё он не отдаёт точку партнёра и подписку на его канал.
+  /// Нет записи — заводим пустую (точку допишет первый фикс), есть — не
+  /// трогаем. true — запись на сервере есть.
+  Future<bool> ensureLiveMarker(String channel, String uid) async {
+    if (channel.isEmpty || uid.isEmpty) return false;
+    final filter = _pb.filter('channel = {:c} && user_uid = {:u}', {
+      'c': channel,
+      'u': uid,
+    });
+    try {
+      await _pb
+          .collection('live_location')
+          .getFirstListItem(filter)
+          .timeout(const Duration(seconds: 15));
+      return true;
+    } on ClientException catch (e) {
+      if (e.statusCode != 404) {
+        debugPrint('PbData.ensureLiveMarker: поиск — $e');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('PbData.ensureLiveMarker: поиск — $e');
+      return false;
+    }
+    try {
+      await _pb
+          .collection('live_location')
+          .create(body: {'channel': channel, 'user_uid': uid})
+          .timeout(const Duration(seconds: 15));
+      return true;
+    } on ClientException catch (e) {
+      // Параллельный setLivePoint успел первым — запись есть, этого и ждали.
+      if (alreadyExists(e)) return true;
+      debugPrint('PbData.ensureLiveMarker failed: $e');
+      return false;
+    } catch (e) {
+      debugPrint('PbData.ensureLiveMarker failed: $e');
+      return false;
+    }
+  }
+
   Future<bool> clearLivePoint(String channel, String uid) async {
     if (channel.isEmpty || uid.isEmpty) return false;
     try {

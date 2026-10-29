@@ -106,7 +106,8 @@ class ShareIssueBar extends StatelessWidget {
 }
 
 /// «Партнёр вас не видит»: свою точку на большой карте человек видит и без
-/// показа, и это легко принять за обоюдность (G5).
+/// показа, и это легко принять за обоюдность (G5). fork (D11): показ
+/// взаимный — без своего не видно и партнёра, об этом и говорим.
 class PartnerBlindBar extends StatelessWidget {
   const PartnerBlindBar({
     super.key,
@@ -120,12 +121,15 @@ class PartnerBlindBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final who = partnerName.trim().isEmpty
-        ? ruEn('Партнёр', 'Your partner')
+        ? ruEn('партнёр', 'your partner')
         : partnerName.trim();
     return ForkStatusBar(
       text: ruEn(
-        '$who не видит вас: показ вашей геопозиции выключен',
-        '$who can’t see you: your location sharing is off',
+        'Включите свою геопозицию, чтобы видеть, где $who. Геопозицией '
+            'делятся только взаимно: пока ваша выключена, вы не видите '
+            'друг друга.',
+        'Turn on your location to see where $who is. Sharing is mutual: '
+            'while yours is off, you can’t see each other.',
       ),
       tone: ForkStatusTone.warning,
       actionLabel: ruEn('Включить', 'Turn on'),

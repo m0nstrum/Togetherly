@@ -780,7 +780,20 @@ class _LiveMapScreenState extends State<LiveMapScreen>
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       padding: EdgeInsets.fromLTRB(22, 22, 20, 16 + bottomInset),
-      child: partner == null
+      // fork (D11): сам не делишься — ждать нечего, партнёра не покажут.
+      child:
+          partner == null && !LiveLocationService.instance.sharingEnabled.value
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PartnerBlindBar(
+                  partnerName: widget.partnerName,
+                  onEnable: _enableSharing,
+                ),
+              ],
+            )
+          : partner == null
           ? Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -24,7 +24,7 @@ import '../../theme/profile_theme.dart';
 import '../../widgets/map/land_shapes.dart';
 import '../../widgets/map/pair_map_widget_art.dart';
 import '../home_widget_service.dart';
-import '../live_location_service.dart' show LivePoint;
+import '../live_location_service.dart' show LivePoint, kLiveSharingEnabledKey;
 import '../locale_service.dart';
 import '../pocketbase_service.dart';
 import '../../fork/battery/battery_share.dart'; // fork: заряд партнёра
@@ -520,7 +520,10 @@ class PairMapWidgetService {
         ? await _fetchPoints(pairMapChannel(groupId, myUid, partnerUid))
         : null;
     final me = points?[myUid];
-    final partner = points?[partnerUid];
+    // fork (D11): сам не делишься — партнёра не рисуем (сервер его и не
+    // отдаст). Фон — другой изолят: флаг перечитываем с диска.
+    final iShare = await _iShare(prefs);
+    final partner = iShare ? (points?[partnerUid]) : null;
     final sizes = await _sizes(prefs);
     final dpr = await _pixelRatio(prefs);
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -605,6 +608,36 @@ class PairMapWidgetService {
     // Не записалось — подпись не ставим, иначе следующий заход решит, что всё
     // уже нарисовано, и виджет останется пустым до смены координат.
     if (published) await prefs.setString(_sigKey, sig);
+  }
+
+  /// fork (D11): показ выключен — партнёра на виджете больше нет. Забываем
+  /// районы (по ним видно, где он был) и подпись, чтобы перерисовать сразу.
+  Future<void> forgetPartner({
+    required String groupId,
+    required String myUid,
+    required String partnerUid,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_placesKey);
+      await prefs.remove(_sigKey);
+    } catch (e) {
+      debugPrint('PairMapWidget: кэш партнёра не очистился: $e');
+    }
+    await refreshInBackground(
+      groupId: groupId,
+      myUid: myUid,
+      partnerUid: partnerUid,
+    );
+  }
+
+  static Future<bool> _iShare(SharedPreferences prefs) async {
+    try {
+      await prefs.reload();
+    } catch (_) {
+      // тихо: не перечиталось — верим тому, что в памяти.
+    }
+    return prefs.getBool(kLiveSharingEnabledKey) ?? false;
   }
 
   /// Лежат ли картинки там, где их ищет виджет. На iPhone это путь внутри
