@@ -70,6 +70,7 @@ import '../services/background_reliability_service.dart';
 import '../services/pb_auth_service.dart';
 import '../services/presence_service.dart';
 import '../services/centrifugo_service.dart';
+import '../services/sync_coordinator.dart';
 import '../services/locale_service.dart';
 import '../services/rate_limiter_service.dart';
 import '../services/hint_queue.dart';
@@ -276,6 +277,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Подарки, которые ждут моего действия: задутой свечи, открытой коробки.
   List<Map<String, dynamic>> _incomingGifts = const [];
   RtUnsub? _giftsUnsub;
+
+  /// Догон подарков, прошедших мимо сокета (RT-2): после переподключения, по
+  /// возврату приложения и когда снова доступен ключ подписи.
+  SyncHandle? _giftsCatchUp;
 
   /// Подарок «Солнце»: утро встречает рассветом и строчкой от партнёра.
   bool get _sunriseOn => isEffectActive(
@@ -558,6 +563,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final giftsOff = _giftsUnsub;
     _giftsUnsub = null;
     if (giftsOff != null) unawaited(giftsOff());
+    _giftsCatchUp?.dispose();
+    _giftsCatchUp = null;
     CatalogService.instance.removeListener(_onCatalogForGifts);
     _syncWidgetsDebounce?.cancel();
     _syncMoodWidgetDebounce?.cancel();
@@ -2645,9 +2652,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final old = _giftsUnsub;
     _giftsUnsub = null;
     if (old != null) unawaited(old());
+    _giftsCatchUp?.dispose();
+    _giftsCatchUp = null;
 
     if (!_pairData.isPaired) return;
     final channel = 'pair:${_pairData.pairId}';
+    _giftsCatchUp = SyncCoordinator.instance.register(
+      sync: () async {
+        if (mounted) await _onGiftEvent();
+      },
+      channel: channel,
+    );
     final unsub = await CentrifugoService.instance.subscribeDelta(
       channel,
       'gifts',
