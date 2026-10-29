@@ -104,9 +104,34 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 
 | Часть | Когда | Что |
 |---|---|---|
-| `analyze + test` | клиент или сервер | `tool/fork/analyze_check.sh` (ошибки и предупреждения сверх `tool/fork/analyze_baseline.txt`; обновить базовую линию — `--update`), `tool/fork/repo_check.py`, `flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime`, `flutter test test/fork --tags fork-runtime` (поведение боевой сборки), живой E2E клиента против сервера |
+| `analyze + test` | клиент или сервер | `tool/fork/analyze_check.sh` (ошибки и предупреждения сверх `tool/fork/analyze_baseline.txt`; обновить базовую линию — `--update`), `tool/fork/repo_check.py`, `flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime`, `flutter test test/fork --tags fork-runtime` (поведение боевой сборки) — оба с `--coverage`, живой E2E клиента против сервера |
 | `server (Go)` | сервер, хуки, `deploy/` | `go test -race`, смоуки с настоящими JS-хуками, паритет |
+| `integration_test (эмулятор Android)` | клиент, только PR | `flutter test integration_test` на эмуляторе Android 14 (x86_64, `reactivecircus/android-emulator-runner`), таймаут 45 мин |
 | `build APK` | клиент | release APK под arm64 с `env/example.json`, проверка `applicationId`, имени, хоста App Links |
+
+Покрытие Dart (CI-3 аудита 29.10). Оба прогона `flutter test` пишут lcov
+(`coverage/lcov.info` и `coverage/fork-runtime.info`), `tool/fork/coverage_summary.py`
+склеивает их и кладёт в сводку прогона (Summary) общий процент и разбивку по
+папкам `lib/`; сами файлы — артефакт `dart-coverage` (14 дней). Порога нет —
+только отчёт: сначала набираем базовую линию, потом решаем, держать ли «не
+ниже базового». Процент считается по файлам, которые загрузил хоть один тест:
+файл `lib/`, который не импортирует ни один тест, в отчёт не попадает. Локально:
+
+```sh
+flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime --coverage
+python3 tool/fork/coverage_summary.py coverage/lcov.info
+```
+
+`integration_test/` — проверки на настоящем Android: кодеки и мосты плагинов,
+которых в `flutter test` нет. Сервер и секреты им не нужны; живой сервер
+поднимает только E2E в `analyze + test`. Эмулятор гоняется на PR, а не на push
+в `main`: PR его уже прошёл, а осечка эмулятора на `main` провалила бы Fork CI
+и задержала образ сервера (`fork-server-image.yml` ждёт зелёный прогон).
+Локально — с подключённым телефоном или эмулятором:
+
+```sh
+flutter test integration_test --dart-define-from-file=env/example.json
+```
 
 Остальные воркфлоу:
 

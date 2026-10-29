@@ -372,4 +372,11 @@ RU/EN без повторов до исчерпания набора; шифро
 ## Что прислать, если не работает
 
 Логи приложения (`adb logcat | grep -E "ForkE2E|MediaProxy|ForkWatchProxy|ForkFcm"`),
+## Автоматически на эмуляторе
+
+`integration_test/` гоняет Fork CI на эмуляторе Android на каждом PR с правками
+клиента (docs/DEVELOPMENT.md, «CI»): сейчас это ужатие снимка для виджета
+настоящим кодеком. На своём телефоне —
+`flutter test integration_test --dart-define-from-file=env/example.json`.
+
 журнал сервера (`docker compose logs server`) и шаг из таблицы.
