@@ -78,4 +78,40 @@ void main() {
     expect(c, contains('onShow: () => visible.add(true)'));
     expect(c, contains('keyRecovered: ForkVerifiedDelta.keyRecovered'));
   });
+
+  // Снимок сервера, снятый до живой дельты, но пришедший после неё, не должен
+  // её откатывать (ревью PR #19): холст партнёра «мигал» бы назад.
+  test('ответ догона не затирает дельты, пришедшие во время запроса', () {
+    expect(
+      _body(
+        src,
+        'Stream<List<RecordModel>> watchList(',
+        'Stream<RecordModel?> watchRecord(',
+      ),
+      contains('duringRefetch?[rec.id] = e'),
+    );
+    expect(
+      _body(
+        src,
+        'Stream<RecordModel?> watchRecord(',
+        'Stream<List<RecordModel>> _watchCached(',
+      ),
+      contains('deltas != seen'),
+    );
+    final cached = _body(
+      src,
+      'Stream<List<RecordModel>> _watchCached(',
+      'Stream<RecordModel?> _watchRecordCached(',
+    );
+    expect(cached, contains('if (syncing > 0) duringSync[rec.id] = e'));
+    expect(cached, contains('await syncGuarded();'));
+    expect(
+      _body(
+        src,
+        'Stream<RecordModel?> _watchRecordCached(',
+        'Stream<RecordModel?> watchGroup(',
+      ),
+      contains('if (cancelled || deltas != seen) return;'),
+    );
+  });
 }

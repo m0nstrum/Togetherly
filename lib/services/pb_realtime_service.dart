@@ -132,6 +132,9 @@ class PbRealtimeService {
     var attempt = 0; // RT-3: счётчик попыток для backoff-ретрая
     SyncHandle? catchUp;
     var loaded = false; // первая загрузка удалась — догону есть что обновлять
+    // Дельты, пришедшие, пока догон ждёт ответа: снимок сервера мог быть снят
+    // раньше них, и без повторного наложения он откатил бы свежее состояние.
+    Map<String, RtEvent>? duringRefetch;
     late StreamController<List<RecordModel>> ctrl;
 
     List<RecordModel> snapshot() {
@@ -171,6 +174,7 @@ class PbRealtimeService {
           (e) {
             final rec = e.record;
             if (rec == null) return;
+            duringRefetch?[rec.id] = e;
             if (e.action == 'delete') {
               byId.remove(rec.id);
             } else {
@@ -213,6 +217,7 @@ class PbRealtimeService {
       if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) {
         return; // первая загрузка ещё идёт или упала — её добьёт ретрай start()
       }
+      final live = duringRefetch = {};
       try {
         final fresh = await _pb
             .collection(collection)
@@ -222,9 +227,18 @@ class PbRealtimeService {
         byId
           ..clear()
           ..addEntries(fresh.map((r) => MapEntry(r.id, r)));
+        for (final e in live.values) {
+          if (e.action == 'delete') {
+            byId.remove(e.record!.id);
+          } else {
+            byId[e.record!.id] = e.record!;
+          }
+        }
         ctrl.add(snapshot());
       } catch (e) {
         debugPrint('PbRealtime.watchList($collection) догон: $e');
+      } finally {
+        duringRefetch = null;
       }
     }
 
@@ -265,6 +279,8 @@ class PbRealtimeService {
     var loaded =
         false; // Фикс #1: начальный getOne уже сделан — на ретрае пропускаем
     SyncHandle? catchUp;
+    // Счётчик дельт: ответ догона старее дельты, пришедшей во время запроса.
+    var deltas = 0;
     late StreamController<RecordModel?> ctrl;
 
     Future<void> start() async {
@@ -298,6 +314,7 @@ class PbRealtimeService {
           rtChannel,
           collection,
           (e) {
+            deltas++;
             if (e.action == 'delete') {
               if (!ctrl.isClosed) ctrl.add(null);
             } else {
@@ -334,14 +351,16 @@ class PbRealtimeService {
     // Догон пропущенного мимо сокета (RT-2): перечитываем документ.
     Future<void> refetch() async {
       if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) return;
+      final seen = deltas;
+      bool stale() => cancelled || ctrl.isClosed || deltas != seen;
       try {
         final rec = await _pb
             .collection(collection)
             .getOne(id)
             .timeout(const Duration(seconds: 12));
-        if (!cancelled && !ctrl.isClosed) ctrl.add(rec);
+        if (!stale()) ctrl.add(rec);
       } on ClientException catch (e) {
-        if (e.statusCode == 404 && !cancelled && !ctrl.isClosed) ctrl.add(null);
+        if (e.statusCode == 404 && !stale()) ctrl.add(null);
       }
     }
 
@@ -393,6 +412,11 @@ class PbRealtimeService {
     SyncHandle? catchUp;
     var cancelled = false;
     var attempt = 0;
+    // Дельты, пришедшие, пока идёт синхронизация: страница сервера могла быть
+    // снята раньше них и записать в кэш старое. После синхронизации их
+    // накладываем ещё раз.
+    var syncing = 0;
+    final duringSync = <String, RtEvent>{};
     late StreamController<List<RecordModel>> ctrl;
 
     // Инкрементальная синхронизация: при первом разе — постранично всё (по
@@ -480,10 +504,30 @@ class PbRealtimeService {
       if (done) await store.setReconcileAt(scope.token, now);
     }
 
+    Future<void> syncGuarded() async {
+      syncing++;
+      try {
+        await syncOnce();
+      } finally {
+        syncing--;
+        final live = duringSync.values.toList();
+        if (syncing == 0) duringSync.clear();
+        for (final e in live) {
+          await applyLiveDelta(
+            store: store,
+            outbox: OutboxService.instance,
+            collection: collection,
+            action: e.action,
+            record: e.record!,
+          );
+        }
+      }
+    }
+
     Future<void> startNetwork() async {
       if (cancelled || !conn.isOnline) return;
       try {
-        await syncOnce();
+        await syncGuarded();
         if (cancelled) return;
         if (reconcile) await reconcileOnce();
         if (cancelled) return;
@@ -494,6 +538,7 @@ class PbRealtimeService {
             (e) {
               final rec = e.record;
               if (rec == null) return;
+              if (syncing > 0) duringSync[rec.id] = e;
               // Только в кэш: водяной знак двигает лишь syncOnce (RT-1).
               unawaited(
                 applyLiveDelta(
@@ -552,7 +597,7 @@ class PbRealtimeService {
         catchUp = SyncCoordinator.instance.register(
           sync: () async {
             if (cancelled || !conn.isOnline) return;
-            await syncOnce();
+            await syncGuarded();
             if (reconcile && !cancelled) await reconcileOnce();
           },
           channel: rtChannel,
@@ -591,15 +636,18 @@ class PbRealtimeService {
     var sawRecord = false;
     var serverSaysGone = false;
     SyncHandle? catchUp;
+    // Счётчик дельт: ответ getOne старее дельты, пришедшей во время запроса.
+    var deltas = 0;
     late StreamController<RecordModel?> ctrl;
 
     Future<void> fetchOnce() async {
+      final seen = deltas;
       try {
         final rec = await _pb
             .collection(collection)
             .getOne(id)
             .timeout(const Duration(seconds: 12));
-        if (cancelled) return;
+        if (cancelled || deltas != seen) return;
         // Не перезатираем локальную запись серверным стейлом, пока её правка
         // ещё не отправлена из очереди — иначе оптимистичное изменение
         // «откатывается» (маскот телепортируется назад, настроение/статус
@@ -610,6 +658,7 @@ class PbRealtimeService {
         }
       } on ClientException catch (e) {
         if (e.statusCode == 404) {
+          if (deltas != seen) return;
           serverSaysGone = true;
           if (!OutboxService.instance.isPending(collection, id)) {
             await store.deleteRecord(collection, id);
@@ -632,6 +681,7 @@ class PbRealtimeService {
             rtChannel,
             collection,
             (e) {
+              deltas++;
               // Не перезатираем запись с неотправленной локальной правкой.
               if (OutboxService.instance.isPending(collection, id)) return;
               if (e.action == 'delete') {
