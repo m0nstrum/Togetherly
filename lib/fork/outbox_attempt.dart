@@ -18,6 +18,9 @@ class ForkOutboxAttempt {
       _status != 408 &&
       _status != 429;
 
+  /// HTTP-код последнего ответа (null — сети не было или таймаут).
+  int? get status => _status;
+
   Future<T> run<T>(Future<T> Function() action) =>
       runZoned(action, zoneValues: {_zoneKey: this});
 

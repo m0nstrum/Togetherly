@@ -56,6 +56,17 @@ class OutboxService {
   // fork: лимит только для постоянных HTTP 4xx; сеть и 5xx ждут без лимита.
   static const int _maxAttempts = 5;
 
+  /// Сколько раз очередь сама (по возврату сети и переподключению сокета)
+  /// возвращает отравленную операцию. Дальше — только кнопкой «Повторить»:
+  /// постоянный 4xx от повтора не исчезнет, а сеть дёргается постоянно.
+  static const int _maxAutoPoisonRetries = 3;
+
+  /// Пауза перед [n]-м авто-повтором отравленной операции (с момента её
+  /// последнего отказа): 1, 4, 16 минут. 401 лимитом не ограничен (лечится
+  /// перелогином), но и он не чаще раза в минуту.
+  static Duration _autoPoisonPause(int n) =>
+      Duration(minutes: 1 << (2 * (n.clamp(0, 5))));
+
   bool _flushing = false;
 
   /// Пока слив в полёте, пришли новые операции — значит нужен ещё один проход.
@@ -68,6 +79,21 @@ class OutboxService {
   @visibleForTesting
   Future<bool> Function(String type, Map<String, dynamic> payload)?
   applyOverride;
+
+  /// ТОЛЬКО для тестов: подменить предел на операцию ([outboxOpTimeout]).
+  @visibleForTesting
+  Duration Function(String type)? timeoutOverride;
+
+  /// Часы для паузы авто-повтора отравленных; тесты двигают время сами.
+  @visibleForTesting
+  DateTime Function() clock = DateTime.now;
+
+  /// Операции, ушедшие в таймаут, чей `apply` всё ещё идёт. `Future.timeout`
+  /// работу не отменяет: без этой отметки следующий проход запускал ту же
+  /// операцию второй раз поверх первой (кружок грузился дважды, счётчик
+  /// прибавлялся дважды). Пока хвост жив, операцию не трогают ни слив, ни
+  /// коалесинг; закончился успехом — запись снимается с очереди.
+  final Map<int, Future<void>> _tails = <int, Future<void>>{};
 
   /// Когда очередь впервые перестала пустеть — чтобы отличить долгую отправку
   /// от залипания и один раз рассказать о нём в Bugsink.
@@ -158,11 +184,11 @@ class OutboxService {
   }) async {
     _connSub ??= (onlineChanges ?? ConnectivityService.instance.onOnlineChanged)
         .listen((online) {
-          if (online) unawaited(retryPoison());
+          if (online) unawaited(_autoRetryPoison());
         });
     _reconnectSub ??= (reconnected ?? CentrifugoService.instance.reconnected)
         .listen((_) {
-          unawaited(retryPoison());
+          unawaited(_autoRetryPoison());
         });
     await _updatePending();
     unawaited(flush()); // дослать то, что осталось с прошлой офлайн-сессии
@@ -208,11 +234,16 @@ class OutboxService {
       return;
     }
     if (!ConnectivityService.instance.isOnline) return;
-    final db = await LocalStore.instance.database();
-    if (db == null) return;
+    // Флаг ставим синхронно, до первого await: иначе два почти одновременных
+    // вызова (enqueue, повтор по сети, init) оба проходили проверку выше и
+    // слали одни и те же операции параллельно — counterInc и
+    // memoryBumpComments считались дважды. Ранние выходы ниже — внутри try,
+    // флаг отпускает finally.
     _flushing = true;
     var anyFailed = false;
     try {
+      final db = await LocalStore.instance.database();
+      if (db == null) return;
       final all = await _store.find(
         db,
         finder: Finder(sortOrders: [SortOrder(Field.key)]),
@@ -294,6 +325,9 @@ class OutboxService {
         return true; // сеть пропала — остальное дошлём при возврате сети
       }
       final key = lane[i];
+      // Прошлый запуск этой операции ушёл в таймаут, но ещё работает. Второй
+      // не стартуем, остаток полосы ждёт: по завершении хвост сам позовёт flush.
+      if (_tails.containsKey(key)) return false;
       // ПЕРЕЧИТЫВАЕМ операцию из БД непосредственно перед отправкой: пока полоса
       // ждала своей очереди, enqueue мог коалесингом смёржить в неё новую правку —
       // применение стейл-снапшота с начала flush тихо теряло бы смерженное
@@ -313,17 +347,22 @@ class OutboxService {
         // Жёсткий потолок на операцию: ни один зависший сетевой вызов не должен
         // заморозить полосу (был баг «Синхронизация…(N)» не уходила, пока flush
         // вечно ждал повисший без таймаута запрос). По таймауту/исключению →
-        // как провал → ретрай; операции идемпотентны по id.
+        // как провал → ретрай; сама работа при этом продолжается — её
+        // дожидается хвост ([_trackTail]), повтор до его конца не стартует.
         final apply = applyOverride ?? _apply;
-        ok = await attempt
-            .run(() => apply(parsed.type, parsed.payload))
-            .timeout(
-              outboxOpTimeout(parsed.type),
-              onTimeout: () {
-                attempt.transient();
-                return false;
-              },
-            );
+        // async-обёртка даёт Future<bool> и в рантайме: подменённый apply
+        // может вернуть Future<Never>, и onTimeout с bool на нём падал бы.
+        final run = attempt.run<bool>(
+          () async => apply(parsed.type, parsed.payload),
+        );
+        ok = await run.timeout(
+          (timeoutOverride ?? outboxOpTimeout)(parsed.type),
+          onTimeout: () {
+            attempt.transient();
+            _trackTail(db, key, run);
+            return false;
+          },
+        );
       } catch (error) {
         attempt.error(error);
         ok = false;
@@ -340,7 +379,9 @@ class OutboxService {
         await _poison.add(db, {
           ...value,
           'attempts': next,
-          'failedAt': DateTime.now().toIso8601String(),
+          'failedAt': clock().toIso8601String(),
+          // Код отказа решает, повторять ли операцию самим (см. _autoRetryPoison).
+          'status': attempt.status,
         });
         await _store.record(key).delete(db);
         // Следующие правки этой записи идут тем же проходом и спрашивают
@@ -358,6 +399,30 @@ class OutboxService {
     }
     return false;
   }
+
+  /// Дождаться конца операции, ушедшей в таймаут (см. [_tails]).
+  void _trackTail(Database db, int key, Future<bool> run) {
+    late final Future<void> tail;
+    tail = run.then((ok) => ok, onError: (Object _) => false).then((ok) async {
+      // Очередь успели очистить (выход из аккаунта) — ключ уже чужой.
+      if (!identical(_tails[key], tail)) return;
+      try {
+        // Операция всё-таки доехала: второй раз её слать не нужно.
+        if (ok) await _store.record(key).delete(db);
+      } catch (e) {
+        debugPrint('Outbox: хвост операции $key: $e');
+      } finally {
+        _tails.remove(key);
+      }
+      await _updatePending();
+      if (ConnectivityService.instance.isOnline) unawaited(flush());
+    });
+    _tails[key] = tail;
+  }
+
+  /// Операцию нельзя трогать коалесингом: её прямо сейчас шлёт слив или
+  /// ещё не закончил запуск, ушедший в таймаут.
+  bool _busy(int key) => _inflightKeys.contains(key) || _tails.containsKey(key);
 
   /// Очередь, которая не пустеет минутами, — это дефект, а не «медленная сеть»:
   /// человек видит вечную плашку «Синхронизация…». Один раз сообщаем, что
@@ -550,6 +615,7 @@ class OutboxService {
     _retryTimer?.cancel();
     _retryTimer = null;
     _retryAttempt = 0;
+    _tails.clear();
     final db = await LocalStore.instance.database();
     if (db != null) {
       await _store.delete(db);
@@ -560,8 +626,48 @@ class OutboxService {
     poisonCount.value = 0;
   }
 
+  /// Возврат сети или переподключение сокета: дослать очередь и вернуть в неё
+  /// те отравленные операции, которым пора (см. [_autoPoisonPause]).
+  ///
+  /// Раньше здесь звался [retryPoison] — и операция, которую сервер отверг
+  /// постоянным 4xx, крутилась вечно: каждая смена сети обнуляла ей попытки.
+  /// Теперь самих повторов не больше [_maxAutoPoisonRetries], с растущей
+  /// паузой, и каждый — одна попытка, а не пять. Сеть и 5xx до отравления
+  /// не доходят вовсе и ждут в очереди как раньше; 401 повторяется без
+  /// лимита (после перелогина он проходит).
+  Future<void> _autoRetryPoison() async {
+    _retryTimer?.cancel();
+    _retryAttempt = 0;
+    final db = await LocalStore.instance.database();
+    if (db == null) return;
+    final now = clock();
+    await db.transaction((txn) async {
+      for (final s in await _poison.find(txn)) {
+        final done = (s.value['autoRetries'] as num?)?.toInt() ?? 0;
+        final unauthorized = s.value['status'] == 401;
+        if (!unauthorized && done >= _maxAutoPoisonRetries) continue;
+        final failedAt = DateTime.tryParse(
+          s.value['failedAt'] as String? ?? '',
+        );
+        final pause = _autoPoisonPause(unauthorized ? 0 : done);
+        if (failedAt != null && now.difference(failedAt) < pause) continue;
+        await _store.add(txn, {
+          'type': s.value['type'],
+          'payload': s.value['payload'],
+          // Одна попытка: снова отвергнут — сразу обратно в отравленные.
+          'attempts': _maxAttempts - 1,
+          'autoRetries': done + 1,
+        });
+        await _poison.record(s.key).delete(txn);
+      }
+    });
+    await _updatePending();
+    unawaited(flush());
+  }
+
   /// Повторить «ядовитые» операции (тап в индикаторе): вернуть в очередь со
-  /// сбросом попыток и слить.
+  /// сбросом попыток и слить. Явное действие человека обнуляет и счёт
+  /// авто-повторов.
   Future<void> retryPoison() async {
     _retryTimer?.cancel();
     _retryAttempt = 0;
@@ -727,7 +833,7 @@ class OutboxService {
         // (404 = успех, если записи на сервере уже/ещё нет).
         final pend = await _store.find(db);
         for (final s in pend) {
-          if (_inflightKeys.contains(s.key)) continue;
+          if (_busy(s.key)) continue;
           if (s.value['type'] == 'memoryUpsert') {
             final pp = _parseOp(s.value)?.payload;
             if (pp != null && pp['id'] == p['id']) {
@@ -756,7 +862,7 @@ class OutboxService {
       finder: Finder(sortOrders: [SortOrder(Field.key)]),
     );
     for (final s in pend) {
-      if (_inflightKeys.contains(s.key) || s.value['type'] != type) continue;
+      if (_busy(s.key) || s.value['type'] != type) continue;
       final parsed = _parseOp(s.value);
       if (parsed == null) continue;
       if (sameKey(parsed.payload, payload)) {
@@ -784,7 +890,7 @@ class OutboxService {
       finder: Finder(sortOrders: [SortOrder(Field.key)]),
     );
     for (final s in pend) {
-      if (_inflightKeys.contains(s.key) || s.value['type'] != type) continue;
+      if (_busy(s.key) || s.value['type'] != type) continue;
       final parsed = _parseOp(s.value);
       if (parsed == null) continue; // битую запись пропускаем (flush её удалит)
       final existing = parsed.payload;
