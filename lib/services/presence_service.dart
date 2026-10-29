@@ -179,7 +179,9 @@ class PresenceService with WidgetsBindingObserver {
   }
 
   void _beat({bool ask = false}) {
-    if (!_started) return;
+    // В фоне молчим: ответ на чужую просьбу после «ушёл» снова показал бы
+    // нас в сети ещё на сорок пять секунд.
+    if (!_started || _away) return;
     final uid = _uid;
     if (uid.isEmpty) return;
     final now = DateTime.now().millisecondsSinceEpoch;

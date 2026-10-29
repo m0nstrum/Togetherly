@@ -203,6 +203,16 @@ void main() {
     expect(wire.sent.last['ask'], isTrue);
   });
 
+  test('в фоне на просьбу партнёра не отвечаем', () {
+    svc.didChangeAppLifecycleState(AppLifecycleState.paused);
+    wire.sent.clear();
+    wire.publish({
+      'sealed': {'t': 'alive', 'uid': 'bob', 'at': now, 'ask': true},
+    });
+    svc.noteActivity('bob');
+    expect(wire.sent, isEmpty, reason: '«ушёл» не отменяется ответом');
+  });
+
   test('свои сигналы и сигналы чужих каналов не путаются', () async {
     wire.publish({
       'sealed': {'t': 'alive', 'uid': 'alice', 'at': now},
