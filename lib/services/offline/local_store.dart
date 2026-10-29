@@ -348,17 +348,6 @@ class LocalStore {
     await _meta.record(token).put(db, {'updated': updated}, merge: true);
   }
 
-  /// Поднять водяной знак ТОЛЬКО вперёд (для SSE-дельт: не откатываем назад).
-  Future<void> bumpWatermark(String token, String updated) async {
-    await init();
-    final db = _db;
-    if (db == null || updated.isEmpty) return;
-    final cur = (await _meta.record(token).get(db))?['updated'] as String?;
-    if (cur == null || updated.compareTo(cur) > 0) {
-      await _meta.record(token).put(db, {'updated': updated}, merge: true);
-    }
-  }
-
   /// Когда область последний раз сверялась с сервером (мс epoch), 0 — никогда.
   ///
   /// Отметка лежит рядом с водяным знаком: сверка нужна ровно там, где

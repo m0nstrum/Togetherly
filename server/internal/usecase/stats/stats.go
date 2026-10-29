@@ -4,8 +4,9 @@
 // Считаются только метаданные, которые сервер и так хранит открыто: кто и
 // когда написал, добавил воспоминание или отметил настроение, тип
 // воспоминания. Содержимое зашифровано (docs/E2E.md), поэтому разбивки по
-// самим настроениям (`mood_daily`, `mood_top`: mood_id — шифр) здесь нет —
-// их считает клиент из своих расшифрованных данных (BACKLOG T2).
+// самим настроениям (`mood_daily`, `mood_top`: mood_id — шифр), площадок
+// просмотров (`watchKinds`) и имён участников здесь нет — их считает клиент
+// из своих расшифрованных данных (BACKLOG T2, B9).
 package stats
 
 import (
@@ -251,12 +252,16 @@ func (s *Service) CoupleStats(ctx context.Context, groupID string, now time.Time
 	}
 	list(&couple, `SELECT created_at AS created, start_date AS start, anniversary_date AS anni,
 		COALESCE(streak_days, 0) AS streak, COALESCE(xp, 0) AS xp FROM groups WHERE id = {:g}`)
+	// Имя участника — шифр (`users.display_name` личным ключом, в паре —
+	// `groups.member_names` ключом пары): сервер отдаёт пустое, клиент
+	// подставляет расшифрованное (ForkE2E.patchCoupleStats). Шифр в ответе
+	// старым сборкам рисовался на экране вместо имени.
 	members := []struct {
 		UID  string `db:"uid" json:"uid"`
 		Name string `db:"name" json:"name"`
 	}{}
-	list(&members, `SELECT je.value AS uid, COALESCE(u.display_name, '') AS name
-		FROM groups gr, json_each(gr.members) je LEFT JOIN users u ON u.id = je.value
+	list(&members, `SELECT je.value AS uid, '' AS name
+		FROM groups gr, json_each(gr.members) je
 		WHERE gr.id = {:g} AND json_valid(gr.members)`)
 
 	media := n("SELECT COUNT(*) AS n FROM media WHERE group_id = {:g}")
@@ -284,9 +289,11 @@ func (s *Service) CoupleStats(ctx context.Context, groupID string, now time.Time
 	missYou, gifts := []byUID{}, []byUID{}
 	list(&missYou, "SELECT user_uid AS uid, COALESCE(SUM(count), 0) AS c FROM miss_you WHERE group_id = {:g} GROUP BY uid")
 	list(&gifts, "SELECT sender_uid AS uid, COUNT(*) AS c FROM gifts WHERE group_id = {:g} GROUP BY uid")
-	giftKinds, watchKinds := []byKind{}, []byKind{}
+	giftKinds := []byKind{}
 	list(&giftKinds, "SELECT gift_key AS k, COUNT(*) AS c FROM gifts WHERE group_id = {:g} GROUP BY k ORDER BY c DESC LIMIT 10")
-	list(&watchKinds, "SELECT kind AS k, COUNT(*) AS c FROM watch_history WHERE group_id = {:g} GROUP BY k ORDER BY c DESC")
+	// Площадка просмотра (`watch_history.kind`) — шифр, у каждой записи свой:
+	// группировка давала по строке на ролик. Разбивку считает клиент.
+	watchKinds := []byKind{}
 	missWeek := []struct {
 		UID string `db:"uid" json:"uid"`
 		W   string `db:"w" json:"w"`
