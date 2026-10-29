@@ -407,6 +407,7 @@
     "id",
     "is_pinned",
     "type",
+    "tz",
     "updated"
   ],
   "memory_comments": [
@@ -420,6 +421,7 @@
     "id",
     "memory_id",
     "text",
+    "tz",
     "updated"
   ],
   "miss_you": [
@@ -454,6 +456,7 @@
     "label",
     "mood_id",
     "timestamp",
+    "tz",
     "updated",
     "user_uid"
   ],

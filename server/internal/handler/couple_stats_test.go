@@ -38,6 +38,11 @@ func TestCoupleStats(t *testing.T) {
 	save("chat_messages", map[string]any{"group_id": "statpairaaaaaaa", "user_uid": "statalice000001", "ts": time.Now().UnixMilli()})
 	save("miss_you", map[string]any{"group_id": "statpairaaaaaaa", "user_uid": "statbob00000001", "count": 7, "by_weekday": `{"2":7}`})
 	save("gifts", map[string]any{"group_id": "statpairaaaaaaa", "sender_uid": "statalice000001", "recipient_uid": "statbob00000001", "state": "sent", "gift_key": "rose"})
+	save("watch_history", map[string]any{"group_id": "statpairaaaaaaa", "url": "e2e1.u", "kind": "e2e1.k1", "added_by": "statalice000001"})
+	aliceRec, err := app.FindRecordById("users", "statalice000001")
+	require.NoError(t, err)
+	aliceRec.Set("display_name", "e2e1.name")
+	require.NoError(t, app.Save(aliceRec))
 
 	code, body := testutil.Do(t, app, http.MethodGet, "/api/couple/stats?groupId=statpairaaaaaaa", alice, "")
 	require.Equal(t, http.StatusOK, code, body)
@@ -58,6 +63,8 @@ func TestCoupleStats(t *testing.T) {
 	assert.EqualValues(t, 7, out.Totals["missYou"])
 	assert.EqualValues(t, 1, out.Totals["gifts"])
 	assert.Len(t, out.Members, 2)
+	// B9: имена и площадки просмотров — шифр, их подставляет клиент.
+	assert.NotContains(t, body, "e2e1.", "шифр не уходит в ответ")
 	require.Len(t, out.ByMember.MissYou, 1)
 	assert.Equal(t, 7, out.ByMember.MissYou[0].C)
 

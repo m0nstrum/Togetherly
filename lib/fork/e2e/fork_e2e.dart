@@ -361,8 +361,10 @@ abstract final class ForkE2E {
     return (ok: open != null, data: open);
   }
 
-  /// Даты пары для экрана статистики: сервер видит в колонках заглушку,
-  /// настоящие — в расшифрованной записи пары. Правит ответ сервера на месте.
+  /// Даты и имена пары для экрана статистики: сервер видит в колонках
+  /// заглушку, а имя берёт из `users.display_name` — шифра личного ключа
+  /// участника. Настоящие — в расшифрованной записи пары. Правит ответ
+  /// сервера на месте.
   static Future<void> patchCoupleStats(
     String groupId,
     Map<String, dynamic> json,
@@ -371,12 +373,33 @@ abstract final class ForkE2E {
       final g = await PocketBaseService().pb
           .collection('groups')
           .getOne(groupId);
-      final couple = json['couple'];
-      if (couple is! Map) return;
-      couple['start'] = g.data['start_date'];
-      couple['anniversary'] = g.data['anniversary_date'];
+      patchCoupleStatsFrom(g.data, json);
     } catch (e) {
-      debugPrint('ForkE2E: даты пары для статистики — $e');
+      debugPrint('ForkE2E: даты и имена пары для статистики — $e');
+    }
+  }
+
+  /// [patchCoupleStats] без сети: [group] — расшифрованная запись пары.
+  /// Имя, которого нет в `member_names` (или не открылось), — пустое: экран
+  /// подпишет «Вы»/«Партнёр», а не покажет шифр.
+  @visibleForTesting
+  static void patchCoupleStatsFrom(
+    Map<String, dynamic> group,
+    Map<String, dynamic> json,
+  ) {
+    final couple = json['couple'];
+    if (couple is Map) {
+      couple['start'] = group['start_date'];
+      couple['anniversary'] = group['anniversary_date'];
+    }
+    final names = group['member_names'];
+    for (final m in (json['members'] as List? ?? const [])) {
+      if (m is! Map) continue;
+      final name = names is Map ? names['${m['uid']}'] : null;
+      m['name'] =
+          name is String && !isSealedValue(name) && name != e2eLockedText
+          ? name
+          : '';
     }
   }
 
