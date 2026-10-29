@@ -274,8 +274,9 @@ void main() async {
   // прочитать или записать то, что тут же стиралось.
   final prefs = await SharedPreferences.getInstance();
   const kInstallKey = 'app_installed_v1';
+  var staleSession = false;
   if (!prefs.containsKey(kInstallKey)) {
-    await PocketBaseService.forgetStoredSession();
+    staleSession = !await PocketBaseService.forgetStoredSession();
     await prefs.clear();
     await prefs.setBool(kInstallKey, true);
   }
@@ -387,6 +388,8 @@ void main() async {
   // Crashlytics, Messaging и Supabase убираем ПОСЛЕДНИМ шагом cutover'а, когда
   // все слои переведены (см. pocketbase/CUTOVER.md §1, §7).
   await PocketBaseService().init();
+  // Keystore первой установки не стёрся — прошлый аккаунт не поднимаем.
+  if (staleSession) PocketBaseService().signOut();
   // Debug → Release переход: при апгрейде SharedPreferences НЕ очищаются,
   // поэтому kInstallKey уже есть и выхода из аккаунта не происходит.
   // Проверяем сразу после init клиента, до ensureOwner и очередей (аудит B-7).

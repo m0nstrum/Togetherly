@@ -41,6 +41,10 @@ void main() {
       expect(clear, lessThan(at(service)), reason: 'очистка после $service');
       expect(sentry, lessThan(at(service)), reason: 'Sentry после $service');
     }
+    // Keystore не стёрся — сессию гасим сразу после init, до сервисов.
+    final stale = at('if (staleSession) PocketBaseService().signOut();');
+    expect(at('PocketBaseService().init()'), lessThan(stale));
+    expect(stale, lessThan(at('LocalStore.instance.ensureOwner(')));
     // opt-in и чистка событий остаются.
     expect(body, contains('ForkCrashReports.configure(options'));
   });
