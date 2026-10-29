@@ -186,7 +186,6 @@ class PbRealtimeService {
         }
         unsub = u;
         attempt = 0; // успех — сбрасываем backoff
-
       } catch (err) {
         // RT-3: вместо «застрять в ошибке навсегда» — авто-ретрай с экспоненциальным
         // backoff (1,2,4,…,32с), пока стрим жив и не отменён. Транзиентные сетевые
@@ -237,7 +236,7 @@ class PbRealtimeService {
             channel: rtChannel,
           );
         }
-        return start();
+        start();
       },
       onCancel: () async {
         cancelled = true;
@@ -354,7 +353,7 @@ class PbRealtimeService {
             channel: rtChannel,
           );
         }
-        return start();
+        start();
       },
       onCancel: () async {
         cancelled = true;
@@ -595,32 +594,32 @@ class PbRealtimeService {
     late StreamController<RecordModel?> ctrl;
 
     Future<void> fetchOnce() async {
-        try {
-          final rec = await _pb
-              .collection(collection)
-              .getOne(id)
-              .timeout(const Duration(seconds: 12));
-          if (cancelled) return;
-          // Не перезатираем локальную запись серверным стейлом, пока её правка
-          // ещё не отправлена из очереди — иначе оптимистичное изменение
-          // «откатывается» (маскот телепортируется назад, настроение/статус
-          // возвращается). После подтверждения отправки isPending снимется и
-          // следующий getOne/дельта принесёт согласованное значение.
-          if (!OutboxService.instance.isPending(collection, id)) {
-            await store.upsert(collection, rec);
-          }
-        } on ClientException catch (e) {
-          if (e.statusCode == 404) {
-            serverSaysGone = true;
-            if (!OutboxService.instance.isPending(collection, id)) {
-              await store.deleteRecord(collection, id);
-            } else if (!ctrl.isClosed) {
-              ctrl.add(null);
-            }
-          } else {
-            rethrow;
-          }
+      try {
+        final rec = await _pb
+            .collection(collection)
+            .getOne(id)
+            .timeout(const Duration(seconds: 12));
+        if (cancelled) return;
+        // Не перезатираем локальную запись серверным стейлом, пока её правка
+        // ещё не отправлена из очереди — иначе оптимистичное изменение
+        // «откатывается» (маскот телепортируется назад, настроение/статус
+        // возвращается). После подтверждения отправки isPending снимется и
+        // следующий getOne/дельта принесёт согласованное значение.
+        if (!OutboxService.instance.isPending(collection, id)) {
+          await store.upsert(collection, rec);
         }
+      } on ClientException catch (e) {
+        if (e.statusCode == 404) {
+          serverSaysGone = true;
+          if (!OutboxService.instance.isPending(collection, id)) {
+            await store.deleteRecord(collection, id);
+          } else if (!ctrl.isClosed) {
+            ctrl.add(null);
+          }
+        } else {
+          rethrow;
+        }
+      }
     }
 
     Future<void> startNetwork() async {

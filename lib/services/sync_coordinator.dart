@@ -93,9 +93,7 @@ class SyncCoordinator {
       catchUp: sync,
       reconnected: _reconnected,
       foreground: _foreground,
-      nudges: channel == null
-          ? null
-          : _keyRecovered.where((c) => c == channel),
+      nudges: channel == null ? null : _keyRecovered.where((c) => c == channel),
       subscribed: () => channel == null || _isSubscribed(channel),
       pollEvery: pollWithoutSocket && channel != null
           ? const Duration(seconds: 15)

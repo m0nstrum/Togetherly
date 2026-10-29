@@ -21,10 +21,22 @@ void main() {
 
   test('кэш-списки, документы и in-memory-списки регистрируют догон', () {
     for (final (start, end) in [
-      ('Stream<List<RecordModel>> watchList(', 'Stream<RecordModel?> watchRecord('),
-      ('Stream<RecordModel?> watchRecord(', 'Stream<List<RecordModel>> _watchCached('),
-      ('Stream<List<RecordModel>> _watchCached(', 'Stream<RecordModel?> _watchRecordCached('),
-      ('Stream<RecordModel?> _watchRecordCached(', 'Stream<RecordModel?> watchGroup('),
+      (
+        'Stream<List<RecordModel>> watchList(',
+        'Stream<RecordModel?> watchRecord(',
+      ),
+      (
+        'Stream<RecordModel?> watchRecord(',
+        'Stream<List<RecordModel>> _watchCached(',
+      ),
+      (
+        'Stream<List<RecordModel>> _watchCached(',
+        'Stream<RecordModel?> _watchRecordCached(',
+      ),
+      (
+        'Stream<RecordModel?> _watchRecordCached(',
+        'Stream<RecordModel?> watchGroup(',
+      ),
     ]) {
       final body = _body(src, start, end);
       expect(
@@ -37,11 +49,7 @@ void main() {
   });
 
   test('чат, пока сокета нет, дотягивает по таймеру', () {
-    final body = _body(
-      src,
-      'Stream<List<RecordModel>> watchMessages(',
-      ');',
-    );
+    final body = _body(src, 'Stream<List<RecordModel>> watchMessages(', ');');
     expect(body, contains('pollWithoutSocket: true'));
   });
 
@@ -51,7 +59,10 @@ void main() {
       'Stream<List<RecordModel>> _watchCached(',
       'Stream<RecordModel?> _watchRecordCached(',
     );
-    expect(body, contains('if (reconcile && !cancelled) await reconcileOnce()'));
+    expect(
+      body,
+      contains('if (reconcile && !cancelled) await reconcileOnce()'),
+    );
   });
 
   test('подарки на главном экране догоняются', () {

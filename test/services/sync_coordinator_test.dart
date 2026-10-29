@@ -134,19 +134,24 @@ void main() {
       );
     });
 
-    test('обрыв сокета → запись пропущена → reconnected → область догнана',
-        () async {
-      final c = signals.coordinator();
-      final r = register(c);
-      // Сокет оборван: партнёр добавил воспоминание, дельта до нас не дошла.
-      server.records.add(memory('m2', '2026-10-29 10:05:00.000Z'));
-      expect(await cached(), {'m1'});
+    test(
+      'обрыв сокета → запись пропущена → reconnected → область догнана',
+      () async {
+        final c = signals.coordinator();
+        final r = register(c);
+        // Сокет оборван: партнёр добавил воспоминание, дельта до нас не дошла.
+        server.records.add(memory('m2', '2026-10-29 10:05:00.000Z'));
+        expect(await cached(), {'m1'});
 
-      signals.reconnected.add(null);
-      await r.runs.first.future.timeout(const Duration(seconds: 5));
-      expect(await cached(), {'m1', 'm2'}, reason: 'm2 догнан по reconnected');
-      r.handle.dispose();
-    });
+        signals.reconnected.add(null);
+        await r.runs.first.future.timeout(const Duration(seconds: 5));
+        expect(await cached(), {
+          'm1',
+          'm2',
+        }, reason: 'm2 догнан по reconnected');
+        r.handle.dispose();
+      },
+    );
 
     test('resumed после фона догоняет область', () async {
       final c = signals.coordinator();
@@ -226,7 +231,9 @@ void main() {
   test('без подписки на канал область не опрашивается, если не просили', () {
     fakeAsync((async) {
       final signals = _Signals()..subscribed = false;
-      final c = signals.coordinator();
+      final c = signals.coordinator(
+        now: async.getClock(DateTime(2026, 10, 29, 12)).now,
+      );
       var plain = 0, chat = 0;
       final a = c.register(channel: 'pair:g1', sync: () async => plain++);
       final b = c.register(
