@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../utils/couple_days.dart';
 import '../utils/safe_text.dart';
@@ -2873,13 +2872,9 @@ class _ConnectPartnerScreenState extends State<ConnectPartnerScreen>
       );
       return;
     }
-    final random = Random();
-    final isRickroll = random.nextInt(100) < 10;
-    final qrData = isRickroll
-        ? 'https://youtu.be/dQw4w9WgXcQ?si=owAivsztmdCvvm6v'
-        // QR кодирует прямой deep link (loveapp://invite/CODE): скан камерой
-        // открывает приложение сразу. Внутренний сканнер тоже парсит '/invite/'.
-        : pair.inviteDeepLink;
+    // QR кодирует прямой deep link (loveapp://invite/CODE): скан камерой
+    // открывает приложение сразу. Внутренний сканнер тоже парсит '/invite/'.
+    final qrData = pair.inviteDeepLink;
     final cs = ProfileTheme.themeFor(widget.theme).colorScheme;
     final s = LocaleService.current;
     showModalSheet(
