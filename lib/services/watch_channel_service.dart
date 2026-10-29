@@ -39,6 +39,26 @@ class WatchChannel {
     });
   }
 
+  /// Подписаться и поздороваться (`hello`) для экрана, который может уйти,
+  /// пока ждём сеть (аудит B-4). [alive] — жив ли ещё экран: ушёл за время
+  /// ожидания — канал закрываем сами и отвечаем false, иначе у партнёра
+  /// остаётся «призрак». Бросил [connect] — канал тоже закрыт, ошибка дальше.
+  Future<bool> join(
+    void Function(Map<String, dynamic>) onMessage, {
+    required bool Function() alive,
+  }) async {
+    try {
+      await connect(onMessage);
+      if (alive()) await send('hello');
+    } catch (_) {
+      await dispose();
+      rethrow;
+    }
+    if (alive()) return true;
+    await dispose();
+    return false;
+  }
+
   /// fork (UX L5): почему последняя [send] не ушла; null — ушла.
   ForkFailure? lastFailure;
 

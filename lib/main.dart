@@ -265,74 +265,20 @@ void main() async {
   // Запоминает, по какой кнопке нажали: из неё вырастет следующий экран.
   UnfoldTouch.install();
 
-  // Android отдаёт приложению 60 Гц, даже когда экран умеет 120: анимации и
-  // перемотка видео на глаз становятся ступенчатыми. Просим максимум.
-  if (Platform.isAndroid) {
-    unawaited(FlutterDisplayMode.setHighRefreshRate());
+  // При первом запуске после установки — стираем сохранённую сессию и
+  // очищаем SharedPreferences. На iOS Keychain переживает удаление
+  // приложения — поэтому сессию стираем безусловно, без проверки входа.
+  // Аудит B-7: до любых сервисов. Раньше очистка шла после
+  // PocketBaseService.init, LocalStore.ensureOwner и неожидаемых
+  // ForkE2E.ensure/OutboxService.init/MediaCache.init — они успевали
+  // прочитать или записать то, что тут же стиралось.
+  final prefs = await SharedPreferences.getInstance();
+  const kInstallKey = 'app_installed_v1';
+  if (!prefs.containsKey(kInstallKey)) {
+    await PocketBaseService.forgetStoredSession();
+    await prefs.clear();
+    await prefs.setBool(kInstallKey, true);
   }
-
-  // iOS: home_widget работает поверх общего App Group контейнера. Любой вызов
-  // saveWidgetData/updateWidget/clearWidget ДО setAppGroupId падает с
-  // PlatformException(-7, «AppGroupId not set. Call setAppGroupId first»).
-  // Группа должна совпадать с App Group из Runner.entitlements и
-  // TogetherlyWidget.entitlements (= group.com.togetherly.love), иначе виджет и
-  // приложение пишут в разные контейнеры. На Android метод — no-op, поэтому
-  // выставляем безусловно и максимально рано, до первой синхронизации виджетов.
-  await HomeWidget.setAppGroupId('group.com.togetherly.love');
-
-  // Принудительно используем системный Android Photo Picker (ACTION_PICK_IMAGES)
-  // вместо legacy ACTION_GET_CONTENT, который на MIUI открывает файловый
-  // проводник (DocumentsUI) вместо галереи.
-  final imagePickerImpl = ImagePickerPlatform.instance;
-  if (imagePickerImpl is ImagePickerAndroid) {
-    imagePickerImpl.useAndroidPhotoPicker = true;
-  }
-
-  // PocketBase — поднимаем клиент и восстанавливаем сессию из SharedPreferences
-  // (миграция Firebase→PB). Сессия переживает перезапуск процесса. signInSilently
-  // лишь освежает токен, если он валиден. Firebase пока инициализируется рядом:
-  // остальные слои (данные/realtime/медиа/пуш) ещё на нём — его инициализацию,
-  // Crashlytics, Messaging и Supabase убираем ПОСЛЕДНИМ шагом cutover'а, когда
-  // все слои переведены (см. pocketbase/CUTOVER.md §1, §7).
-  await PocketBaseService().init();
-  // Офлайн-фундамент: локальный кэш (sembast) + детектор связи. Открываем ДО
-  // первых watch*, чтобы экраны читали из кэша мгновенно и работали офлайн.
-  // fail-open: при ошибке открытия кэша приложение работает как раньше (онлайн).
-  await LocalStore.instance.init();
-  unawaited(ConnectivityService.instance.init());
-  // signInSilently освежает токен СЕТЕВЫМ запросом (authRefresh) — НЕ блокируем
-  // им холодный старт: токен уже восстановлен из SharedPreferences (init выше),
-  // запросы пойдут с ним сразу, а refresh идёт в фоне. Раньше старт висел на
-  // authRefresh, ожидая медленный/перегруженный сервер (на слабой связи — до
-  // таймаута), и UI не показывался даже при наличии локального кэша. userId ниже
-  // берётся из persisted-сессии, поэтому в готовности signInSilently не нуждается.
-  unawaited(
-    PbAuthService().signInSilently().then((_) {
-      // Не уложился в таймаут — сессия остаётся живой, но без записи профиля:
-      // имя и аватар пусты, срок пары считается не от той даты. Пробуем ещё раз,
-      // уже отдельным запросом (правило пауз — в session_restore.dart).
-      unawaited(PbAuthService().ensureProfileLoaded());
-    }),
-  );
-  // Привязываем кэш к владельцу: если на устройстве сменился аккаунт — кэш
-  // полностью чистится (защита от утечки данных между пользователями).
-  await LocalStore.instance.ensureOwner(PocketBaseService().userId);
-  // fork: ключи E2E поднимаем сразу, а не только у пары на главном экране —
-  // без них запись профиля и записи без пары открытыми не уйдут.
-  unawaited(ForkE2E.ensure(PocketBaseService().userId ?? ''));
-  // Виджеты рабочего стола держат свои данные отдельно, в общем хранилище
-  // устройства, — их тоже надо привязать к владельцу. Иначе после смены
-  // аккаунта на столе остаётся пара из прошлой жизни: «на аккаунте где Настя
-  // не присылала ни одного фото, стоит фотка Вики» (14.08.2026).
-  unawaited(HomeWidgetService.instance.ensureOwner(PocketBaseService().userId));
-  // И дальше следим за сессией: выход и вход в другой аккаунт случаются без
-  // перезапуска, а одна проверка на старте их не видит (жалоба 18.08.2026).
-  HomeWidgetService.instance.watchOwner();
-  // Очередь офлайн-записи: дослать на сервер изменения, сделанные офлайн в
-  // прошлой сессии (если уже есть сеть), и реагировать на её появление.
-  unawaited(OutboxService.instance.init());
-  // Отложенные медиа (созданные офлайн) — дослать в PB при появлении сети.
-  unawaited(MediaCache.instance.init());
 
   // Крашрепортинг — self-hosted Bugsink (Sentry-совместимый, наш VPS), замена
   // Firebase Crashlytics. Перехватываем:
@@ -340,6 +286,9 @@ void main() async {
   //  • PlatformDispatcher.onError — необработанные асинхронные ошибки (Future/
   //    Stream), которые иначе молча гасились.
   // В debug DSN пустой → SDK no-op (не шлём тестовые краши на прод-бэкенд).
+  // Аудит B-7: поднимаем сразу после очистки первой установки (согласие
+  // читается уже из чистых настроек), чтобы сбои старта сервисов ниже тоже
+  // попадали в трекер. Без согласия DSN пуст — opt-in не меняется.
   await ForkCrashReports.load(); // fork: согласие на крашрепорты
   await SentryFlutter.init((options) {
     options.dsn = kDebugMode ? '' : SentryConfig.dsn;
@@ -408,34 +357,39 @@ void main() async {
     return true;
   };
 
-  // Supabase убран (миграция на PocketBase). Прежний слой Supabase был
-  // переходным экспериментом дуал-райта; его инициализация удалена. Все вызовы
-  // SupabaseService защищены `isReady` и становятся no-op без init, так что
-  // FirebaseService продолжает работать на Firebase до полного перехода на PB.
-  // Force-update порог теперь читается из PocketBase (`app_config.min_build`).
-
-  // Google UMP + AdMob перенесены за первый кадр (`_LoveAppState`): форма
-  // согласия — модальное окно, а до runApp сцены ещё нет. iOS такому окну
-  // показаться не даёт, Future не завершается, и старт замирает на белом
-  // экране — жалобы «просто белый экран» после выхода в App Store были про
-  // это. Сторож: test/startup_no_modal_before_runapp_test.dart.
-
-  // При первом запуске после установки — принудительно выходим из сессии
-  // и очищаем SharedPreferences. На iOS Firebase Auth хранит токен в Keychain,
-  // который переживает удаление приложения — поэтому signOut() вызывается
-  // безусловно, без проверки isLoggedIn.
-  final prefs = await SharedPreferences.getInstance();
-  const kInstallKey = 'app_installed_v1';
-  if (!prefs.containsKey(kInstallKey)) {
-    try {
-      PocketBaseService().signOut();
-    } catch (_) {}
-    await prefs.clear();
-    await prefs.setBool(kInstallKey, true);
+  // Android отдаёт приложению 60 Гц, даже когда экран умеет 120: анимации и
+  // перемотка видео на глаз становятся ступенчатыми. Просим максимум.
+  if (Platform.isAndroid) {
+    unawaited(FlutterDisplayMode.setHighRefreshRate());
   }
 
+  // iOS: home_widget работает поверх общего App Group контейнера. Любой вызов
+  // saveWidgetData/updateWidget/clearWidget ДО setAppGroupId падает с
+  // PlatformException(-7, «AppGroupId not set. Call setAppGroupId first»).
+  // Группа должна совпадать с App Group из Runner.entitlements и
+  // TogetherlyWidget.entitlements (= group.com.togetherly.love), иначе виджет и
+  // приложение пишут в разные контейнеры. На Android метод — no-op, поэтому
+  // выставляем безусловно и максимально рано, до первой синхронизации виджетов.
+  await HomeWidget.setAppGroupId('group.com.togetherly.love');
+
+  // Принудительно используем системный Android Photo Picker (ACTION_PICK_IMAGES)
+  // вместо legacy ACTION_GET_CONTENT, который на MIUI открывает файловый
+  // проводник (DocumentsUI) вместо галереи.
+  final imagePickerImpl = ImagePickerPlatform.instance;
+  if (imagePickerImpl is ImagePickerAndroid) {
+    imagePickerImpl.useAndroidPhotoPicker = true;
+  }
+
+  // PocketBase — поднимаем клиент и восстанавливаем сессию из SharedPreferences
+  // (миграция Firebase→PB). Сессия переживает перезапуск процесса. signInSilently
+  // лишь освежает токен, если он валиден. Firebase пока инициализируется рядом:
+  // остальные слои (данные/realtime/медиа/пуш) ещё на нём — его инициализацию,
+  // Crashlytics, Messaging и Supabase убираем ПОСЛЕДНИМ шагом cutover'а, когда
+  // все слои переведены (см. pocketbase/CUTOVER.md §1, §7).
+  await PocketBaseService().init();
   // Debug → Release переход: при апгрейде SharedPreferences НЕ очищаются,
   // поэтому kInstallKey уже есть и выхода из аккаунта не происходит.
+  // Проверяем сразу после init клиента, до ensureOwner и очередей (аудит B-7).
   // Если предыдущая сессия была debug, а текущая release — делаем signOut,
   // чтобы стейт debug-тестирования не засорял production-окружение.
   const kLastBuildMode = 'last_build_mode_v1';
@@ -449,6 +403,57 @@ void main() async {
     } catch (_) {}
   }
   await prefs.setString(kLastBuildMode, currentBuildMode);
+
+  // Офлайн-фундамент: локальный кэш (sembast) + детектор связи. Открываем ДО
+  // первых watch*, чтобы экраны читали из кэша мгновенно и работали офлайн.
+  // fail-open: при ошибке открытия кэша приложение работает как раньше (онлайн).
+  await LocalStore.instance.init();
+  unawaited(ConnectivityService.instance.init());
+  // signInSilently освежает токен СЕТЕВЫМ запросом (authRefresh) — НЕ блокируем
+  // им холодный старт: токен уже восстановлен из SharedPreferences (init выше),
+  // запросы пойдут с ним сразу, а refresh идёт в фоне. Раньше старт висел на
+  // authRefresh, ожидая медленный/перегруженный сервер (на слабой связи — до
+  // таймаута), и UI не показывался даже при наличии локального кэша. userId ниже
+  // берётся из persisted-сессии, поэтому в готовности signInSilently не нуждается.
+  unawaited(
+    PbAuthService().signInSilently().then((_) {
+      // Не уложился в таймаут — сессия остаётся живой, но без записи профиля:
+      // имя и аватар пусты, срок пары считается не от той даты. Пробуем ещё раз,
+      // уже отдельным запросом (правило пауз — в session_restore.dart).
+      unawaited(PbAuthService().ensureProfileLoaded());
+    }),
+  );
+  // Привязываем кэш к владельцу: если на устройстве сменился аккаунт — кэш
+  // полностью чистится (защита от утечки данных между пользователями).
+  await LocalStore.instance.ensureOwner(PocketBaseService().userId);
+  // fork: ключи E2E поднимаем сразу, а не только у пары на главном экране —
+  // без них запись профиля и записи без пары открытыми не уйдут.
+  unawaited(ForkE2E.ensure(PocketBaseService().userId ?? ''));
+  // Виджеты рабочего стола держат свои данные отдельно, в общем хранилище
+  // устройства, — их тоже надо привязать к владельцу. Иначе после смены
+  // аккаунта на столе остаётся пара из прошлой жизни: «на аккаунте где Настя
+  // не присылала ни одного фото, стоит фотка Вики» (14.08.2026).
+  unawaited(HomeWidgetService.instance.ensureOwner(PocketBaseService().userId));
+  // И дальше следим за сессией: выход и вход в другой аккаунт случаются без
+  // перезапуска, а одна проверка на старте их не видит (жалоба 18.08.2026).
+  HomeWidgetService.instance.watchOwner();
+  // Очередь офлайн-записи: дослать на сервер изменения, сделанные офлайн в
+  // прошлой сессии (если уже есть сеть), и реагировать на её появление.
+  unawaited(OutboxService.instance.init());
+  // Отложенные медиа (созданные офлайн) — дослать в PB при появлении сети.
+  unawaited(MediaCache.instance.init());
+
+  // Supabase убран (миграция на PocketBase). Прежний слой Supabase был
+  // переходным экспериментом дуал-райта; его инициализация удалена. Все вызовы
+  // SupabaseService защищены `isReady` и становятся no-op без init, так что
+  // FirebaseService продолжает работать на Firebase до полного перехода на PB.
+  // Force-update порог теперь читается из PocketBase (`app_config.min_build`).
+
+  // Google UMP + AdMob перенесены за первый кадр (`_LoveAppState`): форма
+  // согласия — модальное окно, а до runApp сцены ещё нет. iOS такому окну
+  // показаться не даёт, Future не завершается, и старт замирает на белом
+  // экране — жалобы «просто белый экран» после выхода в App Store были про
+  // это. Сторож: test/startup_no_modal_before_runapp_test.dart.
 
   // На Samsung One UI / aggressive battery saver путь
   // HomeWidgetBackgroundReceiver -> JobIntentService нестабилен

@@ -27,6 +27,14 @@ abstract final class ForkSecureAuthStore {
     );
   }
 
+  /// Стереть сохранённую сессию, не поднимая клиент: первая установка
+  /// чистится до [PocketBaseService.init] (аудит B-7), а Keychain на iOS
+  /// переживает удаление приложения.
+  static Future<void> wipe(
+    String prefsKey, {
+    @visibleForTesting FlutterSecureStorage storage = _storage,
+  }) => ForkSecretStorage.delete(storage, prefsKey);
+
   static Future<String?> _migrate(
     String key,
     FlutterSecureStorage storage,

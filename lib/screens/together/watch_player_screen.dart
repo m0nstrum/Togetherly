@@ -103,12 +103,25 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
       return;
     }
 
-    controller.addListener(_onPlayerTick);
     final me = PocketBaseService().userId ?? 'app';
     _me = me;
     final room = WatchChannel(widget.room, me);
-    await room.connect(_onRoomMessage);
-    await room.send('hello');
+    // Аудит B-4: пока ждём комнату, экран могут закрыть, а connect — бросить.
+    // До setState ниже контроллер ничей: dispose экрана о нём не знает,
+    // поэтому освобождаем здесь. Канал при отказе закрывает сам join.
+    var adopted = false;
+    try {
+      final joined = await room.join(_onRoomMessage, alive: () => mounted);
+      if (!joined) return;
+      adopted = true;
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = ForkFailure.of(e).text);
+      return;
+    } finally {
+      if (!adopted) await controller.dispose();
+    }
+    controller.addListener(_onPlayerTick);
 
     // Голос живёт в том же канале, что и команды плеера: отдельный сигналинг
     // ради двух человек — лишняя сущность, а комната у них уже общая.

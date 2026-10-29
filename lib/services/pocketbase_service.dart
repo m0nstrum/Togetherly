@@ -66,6 +66,17 @@ class PocketBaseService {
     debugPrint('PocketBaseService: init, авторизован=$isLoggedIn');
   }
 
+  /// Стереть сохранённую сессию до [init]: первая установка после удаления
+  /// (Keychain на iOS его переживает). Ошибку Keystore глушим — вход
+  /// попросят заново, а старт из-за неё стоять не должен.
+  static Future<void> forgetStoredSession() async {
+    try {
+      await ForkSecureAuthStore.wipe(_authPrefsKey);
+    } catch (e) {
+      debugPrint('PocketBaseService: сессия не стёрта — $e');
+    }
+  }
+
   /// Подставить клиент в тесте: сервер отвечает заглушкой.
   @visibleForTesting
   void debugUse(PocketBase client) {
