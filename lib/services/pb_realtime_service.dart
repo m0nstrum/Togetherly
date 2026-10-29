@@ -59,6 +59,21 @@ class PbRealtimeService {
 
   PocketBase get _pb => PocketBaseService().pb;
 
+  /// Есть ли живая сессия: без неё токен канала не выдадут, и подписка лишь
+  /// заводит клиент сокета, который крутит переподключения впустую. Тогда
+  /// подписку откладываем до следующей попытки ([_noSession]).
+  bool get _liveSession {
+    try {
+      return _pb.authStore.isValid;
+    } catch (_) {
+      return false; // тихо: клиент PocketBase ещё не поднят — сессии нет
+    }
+  }
+
+  /// Подписка отложена до появления сессии: попытка считается неудавшейся,
+  /// её повторит обычный backoff.
+  static final Exception _noSession = Exception('нет сессии: подписка позже');
+
   // RT-3 / Фикс #1: общий джиттер-backoff для авто-ретрая подписок. Джиттер
   // критичен — без него после рестарта/моргания PB все клиенты ломятся
   // переподключаться синхронно (thundering herd). 429 (сервер просит
@@ -156,7 +171,7 @@ class PbRealtimeService {
         // фильтр по collection+match делает CentrifugoService. Без rtChannel —
         // только загрузка (realtime не подключаем). Подписка — до загрузки
         // (RT-4): иначе изменение между ответом сервера и подпиской терялось.
-        if (rtChannel != null && unsub == null) {
+        if (rtChannel != null && unsub == null && _liveSession) {
           final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
           final u = await CentrifugoService.instance.subscribeDelta(
             rtChannel,
@@ -213,6 +228,7 @@ class PbRealtimeService {
             unawaited(refetch());
           }
         }
+        if (rtChannel != null && unsub == null) throw _noSession;
         attempt = 0; // успех — сбрасываем backoff
       } catch (err) {
         // RT-3: вместо «застрять в ошибке навсегда» — авто-ретрай с экспоненциальным
@@ -336,7 +352,7 @@ class PbRealtimeService {
         // может быть несколько записей коллекции, нам нужна ровно эта.
         // Подписка — до загрузки (RT-4): иначе правка между ответом getOne и
         // подпиской терялась.
-        if (rtChannel != null && unsub == null) {
+        if (rtChannel != null && unsub == null && _liveSession) {
           final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
           final u = await CentrifugoService.instance.subscribeDelta(
             rtChannel,
@@ -385,6 +401,7 @@ class PbRealtimeService {
             unawaited(refetch());
           }
         }
+        if (rtChannel != null && unsub == null) throw _noSession;
         attempt = 0; // успех — сбрасываем backoff
       } catch (err) {
         // RT-3: авто-ретрай с backoff (1,2,4,…,32с) вместо застревания в ошибке.
@@ -640,7 +657,7 @@ class PbRealtimeService {
         // сервера и подпиской, иначе терялась до следующего догона. Пока идёт
         // синхронизация, дельты копятся в duringSync и ложатся поверх неё.
         Object? subscribeError;
-        if (unsub == null && rtChannel != null) {
+        if (unsub == null && rtChannel != null && _liveSession) {
           try {
             final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
             final u = await CentrifugoService.instance.subscribeDelta(
@@ -697,6 +714,7 @@ class PbRealtimeService {
         if (reconcile) await reconcileOnce();
         if (cancelled) return;
         if (subscribeError != null) throw subscribeError;
+        if (rtChannel != null && unsub == null) throw _noSession;
         attempt = 0;
       } catch (err) {
         debugPrint(
@@ -835,7 +853,7 @@ class PbRealtimeService {
         // Подписка — до getOne (RT-4): правка между ответом и подпиской иначе
         // терялась. Ответ старее дельты кэш не откатит (applyLiveDelta).
         Object? subscribeError;
-        if (unsub == null && rtChannel != null) {
+        if (unsub == null && rtChannel != null && _liveSession) {
           try {
             final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
             final u = await CentrifugoService.instance.subscribeDelta(
@@ -890,6 +908,7 @@ class PbRealtimeService {
         await fetchOnce();
         if (cancelled) return;
         if (subscribeError != null) throw subscribeError;
+        if (rtChannel != null && unsub == null) throw _noSession;
         attempt = 0;
       } catch (err) {
         debugPrint(
