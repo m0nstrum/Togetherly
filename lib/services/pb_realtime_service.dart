@@ -2,11 +2,9 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:pocketbase/pocketbase.dart';
 
 import '../models/scope_reconcile.dart';
-import 'catch_up_driver.dart';
 import 'centrifugo_service.dart';
 import 'offline/connectivity_service.dart';
 import 'offline/local_store.dart';
@@ -15,6 +13,7 @@ import 'offline/record_scope.dart';
 import 'offline/scope_reconciler.dart';
 import 'offline/scope_sync.dart';
 import 'pocketbase_service.dart';
+import 'sync_coordinator.dart';
 
 /// Realtime-слой (миграция Firebase→PB, Этап 6; транспорт перенесён с SSE PB на
 /// Centrifugo, см. [CentrifugoService] и серверный хук centrifugo.pb.js).
@@ -34,10 +33,11 @@ import 'pocketbase_service.dart';
 ///  дельт: канал `pair:<id>` несёт изменения всей пары, лишнее отсекаем).
 ///
 /// Ограничение (RT-10): события, пропущенные за время обрыва WebSocket, не
-/// переигрываются (history каналов выключен ради экономии RAM). Для кэш-вариантов
-/// это закрывает ре-синхронизация по возврату сети (`conn.onOnlineChanged` →
-/// `syncOnce`); для in-memory-вариантов список может быть устаревшим до следующей
-/// дельты — как и прежде на SSE.
+/// переигрываются (history каналов выключен ради экономии RAM). Это закрывает
+/// догон (RT-2): каждая живая подписка стоит в [SyncCoordinator] и по
+/// переподключению сокета, возврату приложения и возвращению ключа подписи
+/// дотягивает пропущенное — кэш-варианты `syncOnce`, in-memory — перечитыванием
+/// списка. Плюс ре-синхронизация по возврату сети (`conn.onOnlineChanged`).
 /// Означает ли `null` из кэша, что записи нет и на сервере.
 ///
 /// Sembast отвечает на отсутствующую запись сразу, ещё до первого ответа
@@ -96,9 +96,8 @@ class PbRealtimeService {
     bool Function(RecordModel)? rtMatch,
     int? windowLimit,
     String? windowSort,
-    bool refetchOnReconnect = false,
     bool reconcile = false,
-    bool catchUp = false,
+    bool pollWithoutSocket = false,
   }) {
     // Offline-first: при наличии [scope] поток обслуживается из локального кэша
     // (sembast), а сеть лишь досыпает изменения. Без [scope] — прежнее in-memory
@@ -119,7 +118,7 @@ class PbRealtimeService {
         windowLimit,
         windowSort,
         reconcile,
-        catchUp,
+        pollWithoutSocket,
       );
     }
     final byId = <String, RecordModel>{};
@@ -131,7 +130,8 @@ class PbRealtimeService {
     // только что созданную подписку рвём и не сохраняем.
     var cancelled = false;
     var attempt = 0; // RT-3: счётчик попыток для backoff-ретрая
-    StreamSubscription<void>? reconnectSub;
+    SyncHandle? catchUp;
+    var loaded = false; // первая загрузка удалась — догону есть что обновлять
     late StreamController<List<RecordModel>> ctrl;
 
     List<RecordModel> snapshot() {
@@ -155,6 +155,7 @@ class PbRealtimeService {
           byId
             ..clear()
             ..addEntries(initial.map((r) => MapEntry(r.id, r)));
+          loaded = true;
           if (!ctrl.isClosed) ctrl.add(snapshot());
         }
         // Дельты из Centrifugo (вместо SSE PB). Канал несёт изменения всей пары;
@@ -186,36 +187,6 @@ class PbRealtimeService {
         unsub = u;
         attempt = 0; // успех — сбрасываем backoff
 
-        // Подписка переживает обрыв сокета молча: события, случившиеся в
-        // разрыв, не придут никогда. Там, где это видно человеку (общий холст),
-        // после восстановления перечитываем список целиком. Задержка со
-        // случайным разбросом — чтобы все, кто рисовал в этот момент, не пошли
-        // за списком одной секундой.
-        if (refetchOnReconnect && reconnectSub == null) {
-          reconnectSub = CentrifugoService.instance.reconnected.listen((_) {
-            if (cancelled || ctrl.isClosed || !ctrl.hasListener) return;
-            Future.delayed(
-              Duration(milliseconds: 300 + _rnd.nextInt(1200)),
-              () async {
-                if (cancelled || ctrl.isClosed || !ctrl.hasListener) return;
-                try {
-                  final fresh = await _pb
-                      .collection(collection)
-                      .getFullList(filter: filter);
-                  if (cancelled || ctrl.isClosed) return;
-                  byId
-                    ..clear()
-                    ..addEntries(fresh.map((r) => MapEntry(r.id, r)));
-                  ctrl.add(snapshot());
-                } catch (e) {
-                  debugPrint(
-                    'PbRealtime.watchList($collection) догон после обрыва: $e',
-                  );
-                }
-              },
-            );
-          });
-        }
       } catch (err) {
         // RT-3: вместо «застрять в ошибке навсегда» — авто-ретрай с экспоненциальным
         // backoff (1,2,4,…,32с), пока стрим жив и не отменён. Транзиентные сетевые
@@ -236,12 +207,42 @@ class PbRealtimeService {
       }
     }
 
+    // Подписка переживает обрыв сокета молча: события, случившиеся в разрыв,
+    // не придут никогда. По поводам [SyncCoordinator] перечитываем список
+    // целиком (RT-2).
+    Future<void> refetch() async {
+      if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) {
+        return; // первая загрузка ещё идёт или упала — её добьёт ретрай start()
+      }
+      try {
+        final fresh = await _pb
+            .collection(collection)
+            .getFullList(filter: filter)
+            .timeout(const Duration(seconds: 12));
+        if (cancelled || ctrl.isClosed) return;
+        byId
+          ..clear()
+          ..addEntries(fresh.map((r) => MapEntry(r.id, r)));
+        ctrl.add(snapshot());
+      } catch (e) {
+        debugPrint('PbRealtime.watchList($collection) догон: $e');
+      }
+    }
+
     ctrl = StreamController<List<RecordModel>>.broadcast(
-      onListen: start,
+      onListen: () {
+        if (rtChannel != null) {
+          catchUp = SyncCoordinator.instance.register(
+            sync: refetch,
+            channel: rtChannel,
+          );
+        }
+        return start();
+      },
       onCancel: () async {
         cancelled = true;
-        await reconnectSub?.cancel();
-        reconnectSub = null;
+        catchUp?.dispose();
+        catchUp = null;
         await unsub?.call();
         unsub = null;
       },
@@ -264,6 +265,7 @@ class PbRealtimeService {
     var attempt = 0; // RT-3: счётчик попыток для backoff-ретрая
     var loaded =
         false; // Фикс #1: начальный getOne уже сделан — на ретрае пропускаем
+    SyncHandle? catchUp;
     late StreamController<RecordModel?> ctrl;
 
     Future<void> start() async {
@@ -330,10 +332,34 @@ class PbRealtimeService {
       }
     }
 
+    // Догон пропущенного мимо сокета (RT-2): перечитываем документ.
+    Future<void> refetch() async {
+      if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) return;
+      try {
+        final rec = await _pb
+            .collection(collection)
+            .getOne(id)
+            .timeout(const Duration(seconds: 12));
+        if (!cancelled && !ctrl.isClosed) ctrl.add(rec);
+      } on ClientException catch (e) {
+        if (e.statusCode == 404 && !cancelled && !ctrl.isClosed) ctrl.add(null);
+      }
+    }
+
     ctrl = StreamController<RecordModel?>.broadcast(
-      onListen: start,
+      onListen: () {
+        if (rtChannel != null) {
+          catchUp = SyncCoordinator.instance.register(
+            sync: refetch,
+            channel: rtChannel,
+          );
+        }
+        return start();
+      },
       onCancel: () async {
         cancelled = true;
+        catchUp?.dispose();
+        catchUp = null;
         await unsub?.call();
         unsub = null;
       },
@@ -358,16 +384,14 @@ class PbRealtimeService {
     int? windowLimit,
     String? windowSort,
     bool reconcile,
-    bool catchUp,
+    bool pollWithoutSocket,
   ) {
     final store = LocalStore.instance;
     final conn = ConnectivityService.instance;
     UnsubscribeFunc? unsub;
     StreamSubscription<List<RecordModel>>? cacheSub;
     StreamSubscription<bool>? connSub;
-    CatchUpDriver? catchUpDriver;
-    AppLifecycleListener? lifecycle;
-    StreamController<bool>? foreground;
+    SyncHandle? catchUp;
     var cancelled = false;
     var attempt = 0;
     late StreamController<List<RecordModel>> ctrl;
@@ -521,37 +545,25 @@ class PbRealtimeService {
         connSub = conn.onOnlineChanged.listen((online) {
           if (online && !cancelled) startNetwork();
         });
-        // Открытый список дотягивает то, что прошло мимо сокета (TOG-17):
-        // после переподключения, по возврату приложения и, пока сокета нет,
-        // раз в 15 секунд. Без этого сообщение партнёра появлялось только
-        // после выхода из чата и повторного входа.
-        final channel = rtChannel;
-        if (catchUp && channel != null) {
-          final visible = StreamController<bool>.broadcast();
-          foreground = visible;
-          lifecycle = AppLifecycleListener(
-            onShow: () => visible.add(true),
-            onHide: () => visible.add(false),
-          );
-          catchUpDriver = CatchUpDriver(
-            catchUp: () async {
-              if (cancelled || !conn.isOnline) return;
-              await syncOnce();
-            },
-            reconnected: CentrifugoService.instance.reconnected,
-            foreground: visible.stream,
-            subscribed: () => CentrifugoService.instance.isSubscribed(channel),
-          );
-        }
+        // Открытый список дотягивает то, что прошло мимо сокета (TOG-17,
+        // RT-2): после переподключения, по возврату приложения и когда снова
+        // доступен ключ подписи. Без этого изменения партнёра, случившиеся в
+        // разрыв, ждали смены сети устройства. Чат вдобавок, пока сокета нет,
+        // дотягивает раз в 15 секунд ([pollWithoutSocket]).
+        catchUp = SyncCoordinator.instance.register(
+          sync: () async {
+            if (cancelled || !conn.isOnline) return;
+            await syncOnce();
+            if (reconcile && !cancelled) await reconcileOnce();
+          },
+          channel: rtChannel,
+          pollWithoutSocket: pollWithoutSocket,
+        );
       },
       onCancel: () async {
         cancelled = true;
-        catchUpDriver?.dispose();
-        catchUpDriver = null;
-        lifecycle?.dispose();
-        lifecycle = null;
-        await foreground?.close();
-        foreground = null;
+        catchUp?.dispose();
+        catchUp = null;
         await cacheSub?.cancel();
         cacheSub = null;
         await connSub?.cancel();
@@ -579,11 +591,10 @@ class PbRealtimeService {
     // Пустой кэш ≠ «записи нет»: см. [cacheAbsenceIsReal].
     var sawRecord = false;
     var serverSaysGone = false;
+    SyncHandle? catchUp;
     late StreamController<RecordModel?> ctrl;
 
-    Future<void> startNetwork() async {
-      if (cancelled || !conn.isOnline) return;
-      try {
+    Future<void> fetchOnce() async {
         try {
           final rec = await _pb
               .collection(collection)
@@ -610,6 +621,12 @@ class PbRealtimeService {
             rethrow;
           }
         }
+    }
+
+    Future<void> startNetwork() async {
+      if (cancelled || !conn.isOnline) return;
+      try {
+        await fetchOnce();
         if (cancelled) return;
         if (unsub == null && rtChannel != null) {
           final u = await CentrifugoService.instance.subscribeDelta(
@@ -671,9 +688,20 @@ class PbRealtimeService {
         connSub = conn.onOnlineChanged.listen((online) {
           if (online && !cancelled) startNetwork();
         });
+        // Догон пропущенного мимо сокета (RT-2): документ пары и прочие
+        // одиночные записи перечитываются по поводам координатора.
+        catchUp = SyncCoordinator.instance.register(
+          sync: () async {
+            if (cancelled || !conn.isOnline) return;
+            await fetchOnce();
+          },
+          channel: rtChannel,
+        );
       },
       onCancel: () async {
         cancelled = true;
+        catchUp?.dispose();
+        catchUp = null;
         await cacheSub?.cancel();
         cacheSub = null;
         await connSub?.cancel();
@@ -910,7 +938,7 @@ class PbRealtimeService {
         rtChannel: 'pair:$groupId',
         windowLimit: limit,
         windowSort: '-ts',
-        catchUp: true,
+        pollWithoutSocket: true,
       );
 
   /// Маскоты группы — дефолтные первыми, затем по дате.
@@ -939,10 +967,10 @@ class PbRealtimeService {
     }),
     compare: (a, b) => _numAsc(a.data['order_index'], b.data['order_index']),
     rtChannel: 'pair:$groupId',
+    // Пропуск события здесь виден сразу и обоим: у рисующих расходятся
+    // рисунки. После обрыва список перечитывается, как у всех in-memory
+    // списков с каналом (SyncCoordinator).
     rtMatch: (r) => r.data['canvas_id'] == canvasId,
-    // Холст — единственное место, где пропуск события виден сразу и обоим:
-    // у рисующих расходятся рисунки. После обрыва список перечитывается.
-    refetchOnReconnect: true,
   );
 
   /// Виджет-данные группы (оба слота: свой + партнёрский).

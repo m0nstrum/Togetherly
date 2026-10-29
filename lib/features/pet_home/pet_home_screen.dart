@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../fork/e2e/record_codec.dart';
+import '../../fork/realtime/verified_delta.dart';
 import '../../services/catch_up_driver.dart';
 import '../../services/centrifugo_service.dart';
 import '../../services/locale_service.dart';
@@ -95,6 +96,8 @@ class _PetHomeScreenState extends State<_PetHomeContent>
       reconnected: CentrifugoService.instance.reconnected,
       foreground: _visible.stream,
       subscribed: () => CentrifugoService.instance.isSubscribed(channel),
+      // Дельты дома отбрасывались без ключа подписи — ключ вернулся (RT-3).
+      nudges: ForkVerifiedDelta.keyRecovered.where((c) => c == channel),
       // Возврат в приложение догоняет сам экран.
       minAway: const Duration(days: 365),
     );
