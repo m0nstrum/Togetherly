@@ -13,6 +13,7 @@ import 'offline/local_store.dart';
 import 'offline/outbox_service.dart';
 import 'offline/record_scope.dart';
 import 'offline/scope_reconciler.dart';
+import 'offline/scope_sync.dart';
 import 'pocketbase_service.dart';
 
 /// Realtime-слой (миграция Firebase→PB, Этап 6; транспорт перенесён с SSE PB на
@@ -401,49 +402,21 @@ class PbRealtimeService {
         if (toApply.isNotEmpty) await store.applyDelta(collection, toApply);
         return;
       }
-      final token = scope.token;
-      final wm = await store.lastUpdated(token);
-      final baseFilter = networkFilter ?? '';
-      String maxU = wm ?? '';
-      final String pageFilter;
-      if (wm == null) {
-        pageFilter = baseFilter;
-      } else {
-        final wmCond = _pb.filter('updated > {:w}', {'w': wm});
-        pageFilter = baseFilter.isEmpty ? wmCond : '($baseFilter) && ($wmCond)';
-      }
-      var page = 1;
-      while (!cancelled) {
+      await syncScopeIncremental(
+        store: store,
+        outbox: OutboxService.instance,
+        collection: collection,
+        token: scope.token,
+        baseFilter: networkFilter ?? '',
+        afterWatermark: (wm) => _pb.filter('updated > {:w}', {'w': wm}),
         // Per-request таймаут (как выше): застрявший getList → таймаут → ретрай,
         // а не вечный hang страницы под серверным столлом.
-        final res = await _pb
+        fetchPage: (filter, page) => _pb
             .collection(collection)
-            .getList(
-              page: page,
-              perPage: 200,
-              filter: pageFilter,
-              sort: 'updated',
-            )
-            .timeout(const Duration(seconds: 12));
-        if (res.items.isEmpty) break;
-        // Не перезатираем записи с неотправленными локальными правками
-        // (водяной знак двигаем по ВСЕМ, т.к. их серверный `updated` всё равно
-        // старый — после отправки правки строка получит новый `updated` и
-        // до-синхронизируется инкрементом).
-        final toApply = res.items
-            .where((r) => !OutboxService.instance.isPending(collection, r.id))
-            .toList();
-        if (toApply.isNotEmpty) await store.applyDelta(collection, toApply);
-        for (final r in res.items) {
-          final u = r.data['updated'];
-          if (u is String && u.compareTo(maxU) > 0) maxU = u;
-        }
-        if (page >= res.totalPages) break;
-        page++;
-      }
-      if (maxU.isNotEmpty && (wm == null || maxU.compareTo(wm) > 0)) {
-        await store.setLastUpdated(token, maxU);
-      }
+            .getList(page: page, perPage: 200, filter: filter, sort: 'updated')
+            .timeout(const Duration(seconds: 12)),
+        cancelled: () => cancelled,
+      );
     }
 
     /// Сверка состава: что есть на сервере, то и остаётся в кэше.
@@ -498,18 +471,16 @@ class PbRealtimeService {
             (e) {
               final rec = e.record;
               if (rec == null) return;
-              // Запись с неотправленной правкой не трогаем (и водяной знак по ней
-              // не двигаем — до-синхронизируется после отправки правки).
-              if (OutboxService.instance.isPending(collection, rec.id)) return;
-              if (e.action == 'delete') {
-                unawaited(store.deleteRecord(collection, rec.id));
-              } else {
-                unawaited(store.upsert(collection, rec));
-                final upd = rec.data['updated'];
-                if (upd is String && upd.isNotEmpty) {
-                  unawaited(store.bumpWatermark(scope.token, upd));
-                }
-              }
+              // Только в кэш: водяной знак двигает лишь syncOnce (RT-1).
+              unawaited(
+                applyLiveDelta(
+                  store: store,
+                  outbox: OutboxService.instance,
+                  collection: collection,
+                  action: e.action,
+                  record: rec,
+                ),
+              );
             },
             match: rtMatch,
           );

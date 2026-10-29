@@ -119,15 +119,11 @@ void main() {
       },
     );
 
-    test('водяной знак: set/bump монотонны', () async {
+    test('водяной знак: set/get', () async {
       const t = 'memories:g=g1';
       expect(await store.lastUpdated(t), isNull);
       await store.setLastUpdated(t, '2026-01-01 00:00:00.000Z');
       expect(await store.lastUpdated(t), '2026-01-01 00:00:00.000Z');
-      await store.bumpWatermark(t, '2026-03-03 00:00:00.000Z'); // вперёд
-      expect(await store.lastUpdated(t), '2026-03-03 00:00:00.000Z');
-      await store.bumpWatermark(t, '2026-02-02 00:00:00.000Z'); // назад — игнор
-      expect(await store.lastUpdated(t), '2026-03-03 00:00:00.000Z');
     });
 
     test('ensureOwner: смена владельца чистит кэш', () async {
