@@ -4,6 +4,7 @@ import '../../fork/e2e/record_codec.dart';
 import '../../services/catch_up_driver.dart';
 import '../../services/centrifugo_service.dart';
 import '../../services/locale_service.dart';
+import '../../widgets/app_sheet.dart';
 import 'pet_dialogue.dart';
 import 'pet_home_model.dart';
 import 'pet_home_repository.dart';
@@ -552,9 +553,8 @@ class _PetHomeScreenState extends State<_PetHomeContent>
       );
 
   void _feed() {
-    showModalBottomSheet<void>(
+    showModalSheet<void>(
       context: context,
-      useSafeArea: true,
       backgroundColor: petCream,
       builder: (sheet) => Padding(
         padding: const EdgeInsets.all(20),
@@ -618,10 +618,9 @@ class _PetHomeScreenState extends State<_PetHomeContent>
   );
 
   void _furnish() {
-    showModalBottomSheet<void>(
+    showModalSheet<void>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
       backgroundColor: petCream,
       builder: (sheet) => StatefulBuilder(
         builder: (sheet, update) => DraggableScrollableSheet(
