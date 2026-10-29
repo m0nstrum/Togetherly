@@ -201,6 +201,59 @@ void main() {
     );
   });
 
+  test(
+    'запоздавшая версия старее слитой не откатывает поле партнёра',
+    () async {
+      await store.upsertRaw('wishes', 'w2', {
+        'id': 'w2',
+        'done': false,
+        'pos': 'a',
+        'updated': '2026-10-29 10:00:00.000Z',
+      });
+      await outbox.enqueue('wishMark', {
+        'id': 'w2',
+        'fields': {'pos': 'z'},
+      });
+      await store.patchRecordFields('wishes', 'w2', {'pos': 'z'});
+      await waitPending('wishes', 'w2', true);
+
+      Future<void> delta(bool done, String updated) => applyLiveDelta(
+        store: store,
+        outbox: outbox,
+        collection: 'wishes',
+        action: 'update',
+        record: RecordModel({
+          'id': 'w2',
+          'done': done,
+          'pos': 'a',
+          'updated': updated,
+        }),
+      );
+      await delta(true, '2026-10-29 10:05:00.000Z');
+      await delta(false, '2026-10-29 10:01:00.000Z'); // старая страница
+      final rec = await cached('wishes', 'w2');
+      expect(rec['done'], true);
+      expect(rec['pos'], 'z');
+    },
+  );
+
+  test('ответ после очистки кэша (выход) в кэш не ложится', () async {
+    await refetchSettled(
+      store: store,
+      outbox: outbox,
+      collection: 'memories',
+      id: 'm9',
+      fetch: (id) async {
+        await store.clearAll(); // пока ответ летел, человек вышел
+        return RecordModel({
+          'id': id,
+          'data': {'text': 'чужое'},
+        });
+      },
+    );
+    expect(await store.getRecord('memories', 'm9'), isNull);
+  });
+
   group('mergeOverPending', () {
     test('словарь участника: свой ключ свой, чужие — серверные', () {
       final m = mergeOverPending(

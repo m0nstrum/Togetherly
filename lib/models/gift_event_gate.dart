@@ -23,6 +23,13 @@ class GiftEventGate {
   final List<Map<String, dynamic>> Function() shown;
 
   final Set<String> _opened = {};
+
+  /// Подарки, известные очереди на конец её прошлого прохода, — без тех, что
+  /// она нашла новыми, но ещё не открыла. Базу берём отсюда, а не из
+  /// текущего списка: [open] сам перечитывает входящие после ответа, и
+  /// подарок, пришедший во время показа листа, иначе попадал бы в базу и не
+  /// открывался никогда.
+  Set<String>? _known;
   Future<void>? _running;
   bool _again = false;
 
@@ -50,15 +57,23 @@ class GiftEventGate {
   }
 
   Future<void> _pass() async {
-    final before = {for (final g in shown()) _id(g)};
+    final before = _known ?? {for (final g in shown()) _id(g)};
     await load();
-    for (final g in shown()) {
-      final id = _id(g);
-      if (id.isEmpty || before.contains(id) || _opened.contains(id)) continue;
-      _opened.add(id);
-      await open(g);
-      return; // остальные новые — следующим событием, лист за листом
-    }
+    final loaded = {for (final g in shown()) _id(g)};
+    final fresh = [
+      for (final g in shown())
+        if (_id(g).isNotEmpty &&
+            !before.contains(_id(g)) &&
+            !_opened.contains(_id(g)))
+          g,
+    ];
+    // Новые, кроме открываемого сейчас, остаются новыми и для следующего
+    // прохода: лист за листом, а не поверх.
+    _known = loaded.difference({for (final g in fresh.skip(1)) _id(g)});
+    if (fresh.isEmpty) return;
+    if (fresh.length > 1) _again = true;
+    _opened.add(_id(fresh.first));
+    await open(fresh.first);
   }
 
   static String _id(Map<String, dynamic> g) => (g['id'] ?? '').toString();

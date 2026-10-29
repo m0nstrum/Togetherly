@@ -133,27 +133,33 @@ Future<void> applyOverPending({
 }) async {
   final ops = outbox.pendingOps(collection, record.id);
   final server = record.toJson();
-  await store.updateRaw(
-    collection,
-    record.id,
-    (local) => mergeOverPending(server: server, local: local, ops: ops).merged,
-  );
+  await store.updateRaw(collection, record.id, (local) {
+    // Запоздавший ответ или дельта старее того, что уже слито в кэш, не
+    // откатывает чужие поля к прежней версии.
+    if (!isNotOlder(current: local, incoming: server)) return null;
+    return mergeOverPending(server: server, local: local, ops: ops).merged;
+  });
 }
 
 /// Правка покинула очередь: запись перечитываем с сервера, а не считаем
 /// свою версию окончательной (RT-6). [fetch] — `getOne` записи, `null` —
 /// записи на сервере нет. Отравленную правку не трогаем: её запись живёт в
 /// кэше до повтора, и пустой ответ сервера стёр бы её вместе с кнопкой
-/// «Повторить».
+/// «Повторить». [cancelled] — подписка снята, пока ждали ответа; кэш
+/// очищен (выход из аккаунта) — ответ тоже выбрасывается
+/// ([LocalStore.generation]).
 Future<void> refetchSettled({
   required LocalStore store,
   required OutboxService outbox,
   required String collection,
   required String id,
   required Future<RecordModel?> Function(String id) fetch,
+  bool Function()? cancelled,
 }) async {
   if (outbox.isPoisoned(collection, id)) return;
+  final generation = store.generation;
   final rec = await fetch(id);
+  if ((cancelled?.call() ?? false) || store.generation != generation) return;
   // Пока ждали ответа, легла новая правка — её очередь снова перечитает.
   if (outbox.isPending(collection, id) || outbox.isPoisoned(collection, id)) {
     return;

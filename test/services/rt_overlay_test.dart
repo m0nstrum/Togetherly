@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:sembast/sembast_memory.dart';
@@ -84,6 +86,35 @@ void main() {
         reason: 'getOne ответил 404, а запись успели создать',
       );
     });
+  });
+
+  test('догоны по одному: второй не идёт вперехлёст, а следом', () async {
+    var running = 0;
+    var maxRunning = 0;
+    var runs = 0;
+    final gates = <Completer<void>>[];
+    final refetch = singleFlight(() async {
+      running++;
+      runs++;
+      if (running > maxRunning) maxRunning = running;
+      final c = Completer<void>();
+      gates.add(c);
+      await c.future;
+      running--;
+    });
+    final a = refetch();
+    final b = refetch();
+    final c = refetch();
+    await Future<void>.delayed(Duration.zero);
+    gates.first.complete();
+    await Future<void>.delayed(Duration.zero);
+    while (gates.length < 2) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    gates[1].complete();
+    await Future.wait([a, b, c]);
+    expect(maxRunning, 1);
+    expect(runs, 2, reason: 'сколько бы ни просили во время прохода — один');
   });
 
   group('кэш-список', () {

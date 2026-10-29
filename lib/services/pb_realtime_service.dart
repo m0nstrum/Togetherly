@@ -236,8 +236,9 @@ class PbRealtimeService {
 
     // Подписка переживает обрыв сокета молча: события, случившиеся в разрыв,
     // не придут никогда. По поводам [SyncCoordinator] перечитываем список
-    // целиком (RT-2).
-    refetch = () async {
+    // целиком (RT-2). По одному: догон по подтверждению подписки и догон
+    // координатора не идут вперехлёст ([singleFlight]).
+    refetch = singleFlight(() async {
       if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) {
         return; // первая загрузка ещё идёт или упала — её добьёт ретрай start()
       }
@@ -258,7 +259,7 @@ class PbRealtimeService {
       } finally {
         if (identical(duringLoad, live)) duringLoad = null;
       }
-    };
+    });
 
     ctrl = StreamController<List<RecordModel>>.broadcast(
       onListen: () {
@@ -404,16 +405,15 @@ class PbRealtimeService {
     }
 
     // Догон пропущенного мимо сокета (RT-2): перечитываем документ.
-    refetch = () async {
+    refetch = singleFlight(() async {
       if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) return;
-      if (loading) return; // запрос уже в полёте
       try {
         final got = await load(timeout: const Duration(seconds: 12));
         if (got != null && !ctrl.isClosed) ctrl.add(got.record);
       } catch (e) {
         debugPrint('PbRealtime.watchRecord($collection/$id) догон: $e');
       }
-    };
+    });
 
     ctrl = StreamController<RecordModel?>.broadcast(
       onListen: () {
@@ -609,6 +609,7 @@ class PbRealtimeService {
             outbox: OutboxService.instance,
             collection: collection,
             id: id,
+            cancelled: () => cancelled,
             fetch: (id) async {
               try {
                 return await _pb
@@ -779,8 +780,11 @@ class PbRealtimeService {
     var sawRecord = false;
     var serverSaysGone = false;
     SyncHandle? catchUp;
-    // Счётчик дельт: 404 на getOne старее дельты, пришедшей во время запроса.
+    // Счётчики дельт: 404 на getOne старее дельты, пришедшей во время
+    // запроса, а удаление во время запроса его ответ не воскрешает — сверять
+    // `updated` с удалённой записью в кэше уже не с чем.
     var deltas = 0;
+    var deletes = 0;
     // RT-6: серверная версия пришла поверх неотправленной своей правки —
     // после отправки запись перечитываем.
     var deferred = false;
@@ -790,12 +794,13 @@ class PbRealtimeService {
 
     Future<void> fetchOnce() async {
       final seen = deltas;
+      final seenDeletes = deletes;
       try {
         final rec = await _pb
             .collection(collection)
             .getOne(id)
             .timeout(const Duration(seconds: 12));
-        if (cancelled) return;
+        if (cancelled || deletes != seenDeletes) return;
         // Ответ кладётся как живая дельта: не старее кэша (RT-4) и, пока своя
         // правка в очереди, слиянием по полям — оптимистичное изменение не
         // «откатывается» (маскот не телепортируется назад), а правка
@@ -838,6 +843,7 @@ class PbRealtimeService {
               collection,
               (e) {
                 deltas++;
+                if (e.action == 'delete') deletes++;
                 final rec = e.record;
                 if (rec == null) return;
                 if (e.action == 'delete' && !outbox.isPending(collection, id)) {

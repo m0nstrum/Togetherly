@@ -31,6 +31,33 @@ void overlayDeltas(
   }
 }
 
+/// Догон «по одному»: вызов, пришедший во время прохода, не запускает второй
+/// параллельно (их снимки и буферы дельт перепутались бы, и закончивший
+/// последним откатил бы свежее), а просит ещё один проход после текущего.
+Future<void> Function() singleFlight(Future<void> Function() body) {
+  Future<void>? running;
+  var again = false;
+  return () {
+    final cur = running;
+    if (cur != null) {
+      again = true;
+      return cur;
+    }
+    Future<void> drain() async {
+      try {
+        do {
+          again = false;
+          await body();
+        } while (again);
+      } finally {
+        running = null;
+      }
+    }
+
+    return running = drain();
+  };
+}
+
 /// Ответ сервера [loaded] против последней дельты [delta] того же документа,
 /// пришедшей, пока шёл запрос: побеждает более свежая версия (RT-4).
 /// Возвращает, что показать, и удалён ли документ.

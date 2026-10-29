@@ -59,11 +59,16 @@ void main() {
 
   test('подарок, пришедший во время показа, откроется следом', () async {
     final sheet = Completer<void>();
+    Future<void> reload() async => local = List.of(server);
     gate = GiftEventGate(
-      load: () async => local = List.of(server),
+      load: reload,
       open: (g) async {
         opened.add(g['id'] as String);
         if (opened.length == 1) await sheet.future; // лист открыт
+        // Как на главной: после ответа лист сам перечитывает входящие — и
+        // подарок, пришедший во время показа, уже в списке до следующего
+        // прохода очереди.
+        await reload();
       },
       shown: () => local,
     );
@@ -81,5 +86,15 @@ void main() {
     sheet.complete();
     await Future.wait([first, second]);
     expect(opened, ['g1', 'g2']);
+  });
+
+  test('два новых подарка разом — открываются по очереди', () async {
+    server = [
+      {'id': 'g2'},
+      {'id': 'g1'},
+    ];
+    network.complete();
+    await gate.onEvent();
+    expect(opened, ['g2', 'g1']);
   });
 }
