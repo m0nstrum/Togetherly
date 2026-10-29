@@ -38,6 +38,7 @@ jobs:
             client:
               - 'lib/**'
               - 'test/**'
+              - 'integration_test/**'
               - 'assets/**'
               - 'android/**'
               - 'ios/**'
@@ -94,6 +95,7 @@ jobs:
         run: |
           python3 tool/fork/icon_tooltips_test.py
           python3 tool/fork/icon_tooltips.py
+          python3 tool/fork/coverage_summary_test.py
 
       - name: проверки репозитория
         run: python3 tool/fork/repo_check.py
@@ -114,13 +116,31 @@ jobs:
         run: tool/fork/analyze_check.sh
 
       # env/test.json повторяет адреса апстрима: унаследованные тесты сверяют
-      # их буквально. Поведение то же, что у сборки форка.
+      # их буквально. Поведение то же, что у сборки форка. Оба прогона пишут
+      # покрытие (CI-3 аудита 29.10) — своим файлом, сводка склеит.
       - name: flutter test
-        run: flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime
+        run: >-
+          flutter test --dart-define-from-file=env/test.json --exclude-tags fork-runtime
+          --coverage --coverage-path coverage/lcov.info
 
       # Сборка форка без env/test.json — адреса и ключи как в настоящей.
       - name: flutter test (сборка форка)
-        run: flutter test test/fork --tags fork-runtime
+        run: >-
+          flutter test test/fork --tags fork-runtime
+          --coverage --coverage-path coverage/fork-runtime.info
+
+      # Только отчёт, без порога: базовый процент сначала надо увидеть.
+      - name: покрытие Dart
+        run: >-
+          python3 tool/fork/coverage_summary.py coverage/lcov.info coverage/fork-runtime.info
+          >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dart-coverage
+          path: coverage/*.info
+          if-no-files-found: ignore
+          retention-days: 14
 
       # Обмен ключами E2E клиента против настоящего сервера: смоук заводит
       # пару, live_test — две установки с общим ключом пары и сверкой эмодзи.
@@ -203,6 +223,72 @@ jobs:
         run: |
           python -m pip install --quiet websockets cryptography
           scripts/parity.sh
+
+  # integration_test/ на настоящем Android: кодеки и мосты плагинов, которых
+  # в flutter test нет (сейчас — ужатие снимка для виджета). Сервер тестам не
+  # нужен. Только на PR: на push в main эмулятор не гоняем — PR его уже
+  # прошёл, а осечка эмулятора на main провалила бы Fork CI и задержала образ
+  # сервера (fork-server-image.yml ждёт зелёный прогон).
+  device:
+    name: integration_test (эмулятор Android)
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Эмулятору нужен KVM: на ubuntu-latest он есть, но закрыт правами.
+      - name: доступ к KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # flutter_tools ищет MAIN/LAUNCHER только у <activity>, а у нас он в
+      # <activity-alias> (иконка по теме) — без фильтра у MainActivity тест
+      # не находит, что запускать («launch activity not found»). Правка живёт
+      # только в этом прогоне.
+      - name: лаунчер для flutter_tools
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          p = pathlib.Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text(encoding='utf-8')
+          anchor = 'android:windowSoftInputMode="adjustResize">'
+          assert s.count(anchor) == 1, 'MainActivity в манифесте не найдена'
+          s = s.replace(anchor, anchor + '<intent-filter>'
+                        '<action android:name="android.intent.action.MAIN"/>'
+                        '<category android:name="android.intent.category.LAUNCHER"/>'
+                        '</intent-filter>')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: flutter test integration_test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: >-
+            flutter test integration_test -d emulator-5554
+            --dart-define-from-file=env/example.json
 
   apk:
     name: build APK
