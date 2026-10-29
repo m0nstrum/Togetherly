@@ -105,11 +105,26 @@ open class MoodTilesWidgetProvider : HomeWidgetProvider() {
         val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
 
-        val layout = forcedLayout ?: when {
+        val sized = forcedLayout ?: when {
             minWidth >= 200 -> R.layout.tg_mood_4x2
             else -> R.layout.tg_mood_2x2
         }
-        val scale = WidgetSizing.scale(minHeight, 115)
+        // В тесной ячейке — компактный вариант (B7): полные просят 120–123dp
+        // при гарантированных 110dp, и низ срезался.
+        val layout = when (sized) {
+            R.layout.tg_mood_2x2 -> WidgetSizing.fit(
+                context, options, R.layout.tg_mood_2x2, R.layout.tg_mood_2x2_compact, 123,
+            )
+            else -> WidgetSizing.fit(
+                context, options, R.layout.tg_mood_4x2, R.layout.tg_mood_4x2_compact, 120,
+            )
+        }
+        val compact = layout != sized
+        // База растяжения — высота, с которой выбрана полная разметка: от
+        // меньшей строки росли бы быстрее ячейки и снова выталкивали кнопки.
+        // Компактный вариант не растягиваем: он и выбран, потому что места нет.
+        val baseDp = if (sized == R.layout.tg_mood_2x2) 123 else 120
+        val scale = if (compact) 1f else WidgetSizing.scale(minHeight, baseDp)
         val theme = WidgetTheme.from(data)
         val density = context.resources.displayMetrics.density
 
@@ -118,7 +133,7 @@ open class MoodTilesWidgetProvider : HomeWidgetProvider() {
             setTextColor(R.id.header, theme.onSurfaceVariant)
 
             when (layout) {
-                R.layout.tg_mood_2x2 -> {
+                R.layout.tg_mood_2x2, R.layout.tg_mood_2x2_compact -> {
                     setTextColor(R.id.my_line, theme.onSurface)
                     setTextColor(R.id.partner_line, theme.onSurface)
                     tint(R.id.my_dot, if (myLabel.isEmpty()) theme.outline else theme.primary)
@@ -173,7 +188,8 @@ open class MoodTilesWidgetProvider : HomeWidgetProvider() {
 
                     val week = parseWeek(weekRaw)
                     val chartWidthPx = (((minWidth - 30).coerceAtLeast(120)) * density).toInt()
-                    val chartHeightPx = (52 * density).toInt()
+                    // Высота как у ImageView в разметке: 52, в компактной 44.
+                    val chartHeightPx = ((if (compact) 44 else 52) * density).toInt()
                     WidgetImages.moodWeek(
                         chartWidthPx,
                         chartHeightPx,

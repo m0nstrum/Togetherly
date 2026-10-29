@@ -89,19 +89,37 @@ open class TogetherWidgetProvider : HomeWidgetProvider() {
         // Ячейка на телефоне ≈ 70dp: 2×2 ≈ 140dp, 4×2 ≈ 300×140, 4×4 ≈ 300×300.
         // Если виджет поставлен из «своей» позиции списка, раскладка закреплена;
         // иначе подбираем по фактическому размеру после растягивания.
-        val layout = forcedLayout ?: when {
+        val sized = forcedLayout ?: when {
             minWidth >= 200 && minHeight >= 200 -> R.layout.tg_together_4x4
             minWidth >= 200 -> R.layout.tg_together_4x2
             else -> R.layout.tg_together_2x2
         }
-
-        // Разметка свёрстана под нижнюю границу вилки из гайдлайнов; на высокой
-        // ячейке (лончер Xiaomi) кегли растягиваются, иначе карточка пустует.
-        val baseDp = when (layout) {
-            R.layout.tg_together_4x4 -> 185
-            else -> 115
+        // В тесной ячейке — компактный вариант (B7): полный 2×2 просит ≈160dp,
+        // 4×2 — ≈127dp при гарантированных 110dp, 4×4 — ≈271dp при 250dp,
+        // и низ срезался.
+        val layout = when (sized) {
+            R.layout.tg_together_2x2 -> WidgetSizing.fit(
+                context, options, R.layout.tg_together_2x2, R.layout.tg_together_2x2_compact, 168,
+            )
+            R.layout.tg_together_4x2 -> WidgetSizing.fit(
+                context, options, R.layout.tg_together_4x2, R.layout.tg_together_4x2_compact, 134,
+            )
+            else -> WidgetSizing.fit(
+                context, options, R.layout.tg_together_4x4, R.layout.tg_together_4x4_compact, 271,
+            )
         }
-        val scale = WidgetSizing.scale(minHeight, baseDp)
+        val compact = layout != sized
+
+        // На высокой ячейке (лончер Xiaomi) кегли растягиваются, иначе карточка
+        // пустует. База — высота, с которой выбрана полная разметка: от меньшей
+        // число росло бы быстрее ячейки и снова выталкивало низ. Компактный
+        // вариант не растягиваем: он и выбран, потому что места нет.
+        val baseDp = when (sized) {
+            R.layout.tg_together_4x4 -> 271
+            R.layout.tg_together_4x2 -> 134
+            else -> 168
+        }
+        val scale = if (compact) 1f else WidgetSizing.scale(minHeight, baseDp)
         // Цвета берём из активной темы приложения; пока её не прислали —
         // из хендофа (см. WidgetTheme.FALLBACK).
         val theme = WidgetTheme.from(data)
@@ -116,9 +134,11 @@ open class TogetherWidgetProvider : HomeWidgetProvider() {
                 ),
             )
             setTextViewText(R.id.days_value, days.toString())
+            // В компактных — кегль их разметки.
             val bigDp = when (layout) {
                 R.layout.tg_together_2x2 -> 38f
                 R.layout.tg_together_4x2 -> 36f
+                R.layout.tg_together_2x2_compact, R.layout.tg_together_4x2_compact -> 30f
                 else -> 46f
             }
             setTextViewTextSize(R.id.days_value, TypedValue.COMPLEX_UNIT_DIP, bigDp * scale)
@@ -129,7 +149,7 @@ open class TogetherWidgetProvider : HomeWidgetProvider() {
 
             // Фон рисуем сами: растр точками поверх заливки. У RemoteViews нет
             // способа перекрасить обычный drawable, а тем в приложении двадцать.
-            val onFill = layout != R.layout.tg_together_4x4
+            val onFill = sized != R.layout.tg_together_4x4
             val bgColor = if (onFill) theme.primary else theme.surface
             val dotColor = if (onFill) theme.blockOnPrimary else theme.trackOnSurface
             WidgetImages.halftone(cellW, cellH, density, bgColor, dotColor)
@@ -167,7 +187,7 @@ open class TogetherWidgetProvider : HomeWidgetProvider() {
             }
 
             when (layout) {
-                R.layout.tg_together_2x2 -> {
+                R.layout.tg_together_2x2, R.layout.tg_together_2x2_compact -> {
                     setTextColor(R.id.days_label, inkSoft)
                     setTextColor(R.id.mile_prev, inkSoft)
                     setTextColor(R.id.mile_next, inkSoft)
@@ -176,13 +196,14 @@ open class TogetherWidgetProvider : HomeWidgetProvider() {
                     setTextViewText(R.id.mile_next, mileNextTitle)
 
                     WidgetImages.trackLine(
-                        cellW - 28f, 22f, density, milePercent,
+                        // Высота ленты — как у ImageView в разметке.
+                        cellW - 28f, if (compact) 18f else 22f, density, milePercent,
                         milePrevTitle.isNotEmpty(), false,
                         lineTrack, theme.onPrimary, theme.primary,
                     )?.let { setImageViewBitmap(R.id.track, it) }
                 }
 
-                R.layout.tg_together_4x2 -> {
+                R.layout.tg_together_4x2, R.layout.tg_together_4x2_compact -> {
                     setTextColor(R.id.days_word, inkSoft)
                     setTextColor(R.id.start_date, inkSoft)
                     setTextColor(R.id.mile_prev, inkSoft)
@@ -201,7 +222,7 @@ open class TogetherWidgetProvider : HomeWidgetProvider() {
                     setTextViewText(R.id.mile_anni, mileAnniTitle)
 
                     WidgetImages.trackLine(
-                        cellW - 32f, 26f, density, milePercent,
+                        cellW - 32f, if (compact) 20f else 26f, density, milePercent,
                         milePrevTitle.isNotEmpty(), true,
                         lineTrack, theme.onPrimary, theme.primary,
                     )?.let { setImageViewBitmap(R.id.track, it) }

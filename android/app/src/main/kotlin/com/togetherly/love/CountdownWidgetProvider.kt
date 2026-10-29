@@ -78,11 +78,26 @@ open class CountdownWidgetProvider : HomeWidgetProvider() {
         val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
 
-        val layout = forcedLayout ?: when {
+        val sized = forcedLayout ?: when {
             minWidth >= 200 -> R.layout.tg_countdown_4x2
             else -> R.layout.tg_countdown_2x2
         }
-        val scale = WidgetSizing.scale(minHeight, 115)
+        // В тесной ячейке — компактный вариант (B7): полные просят ≈132dp при
+        // гарантированных 110dp, и низ срезался.
+        val layout = when (sized) {
+            R.layout.tg_countdown_2x2 -> WidgetSizing.fit(
+                context, options, R.layout.tg_countdown_2x2, R.layout.tg_countdown_2x2_compact, 132,
+            )
+            else -> WidgetSizing.fit(
+                context, options, R.layout.tg_countdown_4x2, R.layout.tg_countdown_4x2_compact, 133,
+            )
+        }
+        val compact = layout != sized
+        // База растяжения — высота, с которой выбрана полная разметка: от
+        // меньшей число росло бы быстрее ячейки и снова выталкивало низ.
+        // Компактный вариант не растягиваем: он и выбран, потому что места нет.
+        val baseDp = if (sized == R.layout.tg_countdown_2x2) 132 else 133
+        val scale = if (compact) 1f else WidgetSizing.scale(minHeight, baseDp)
         val theme = WidgetTheme.from(data)
         val density = context.resources.displayMetrics.density
 
@@ -101,7 +116,7 @@ open class CountdownWidgetProvider : HomeWidgetProvider() {
             )
 
             when (layout) {
-                R.layout.tg_countdown_2x2 -> {
+                R.layout.tg_countdown_2x2, R.layout.tg_countdown_2x2_compact -> {
                     // Карточка на tertiary-container, как в хендофе.
                     tint(R.id.bg, theme.tertiaryContainer)
                     tint(R.id.event_icon, theme.tertiary)
@@ -111,8 +126,12 @@ open class CountdownWidgetProvider : HomeWidgetProvider() {
 
                     setTextViewText(R.id.days_value, days.toString())
                     setTextViewText(R.id.days_label, "${daysWord(days)} до встречи")
+                    // Кегль как в разметке: 40, в компактной 32.
                     setTextViewTextSize(
-                        R.id.days_value, TypedValue.COMPLEX_UNIT_DIP, 40f * scale)
+                        R.id.days_value,
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        (if (compact) 32f else 40f) * scale,
+                    )
                 }
 
                 else -> {

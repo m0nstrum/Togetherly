@@ -6,8 +6,10 @@ name: tethered
 services:
   server:
     # Готовый образ из GHCR (fork-server-image.yml): на VPS ничего не
-    # собирается. Собрать у себя — docker-compose.build.yml.
-    image: ${TETHERED_IMAGE:-ghcr.io/m0nstrum/tethered-server:latest}
+    # собирается. Собрать у себя — docker-compose.build.yml. Версия
+    # закреплена в .env (TETHERED_VERSION=sha-…): `latest` сам не приедет,
+    # откат — прежний тег (deploy/README.md, «Обновление»).
+    image: ${TETHERED_IMAGE_NAME:-ghcr.io/m0nstrum/tethered-server}:${TETHERED_VERSION:?впишите в .env TETHERED_VERSION=sha-<коммит> (deploy/README.md, «Обновление»)}
     restart: unless-stopped
     environment:
       TETHERED_APP_URL: https://${TETHERED_DOMAIN}

@@ -113,7 +113,7 @@ keytool -genkeypair -v -keystore tethered-release.jks -alias tethered \
 | Файл | Когда |
 |---|---|
 | `fork-release.yml` | вручную — боевой APK, см. ниже |
-| `fork-server-image.yml` | push в `main` с правками сервера — образ сервера |
+| `fork-server-image.yml` | после зелёного Fork CI на `main`, если в нём прошла часть `server (Go)` — образ сервера `sha-…` и `latest` (deploy/README.md, «Обновление») |
 | `android-widget-compile.yml`, `android-sound-clip.yml` | PR и `main`, только при правках своих файлов |
 | `ios-runner-compile.yml`, `ios-widget-*.yml`, `ios-sound-clip.yml` | PR и `main`, только при правках `ios/` — macOS-раннеры дорогие |
 

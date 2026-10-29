@@ -19,7 +19,7 @@ Centrifugo (живые обновления и push через WebSocket), Caddy
 ```sh
 git clone <репозиторий> tethered && cd tethered/deploy
 ./init-env.sh tethered.example.org   # домен и случайные секреты в .env
-$EDITOR .env        # почта (SMTP_*), ключ бэкапов, по желанию WATCH_PROXY
+$EDITOR .env        # TETHERED_VERSION, почта (SMTP_*), ключ бэкапов, по желанию WATCH_PROXY
 docker compose up -d
 docker compose exec server /app/tethered superuser upsert admin@example.org 'длинный-пароль'
 ```
@@ -27,7 +27,10 @@ docker compose exec server /app/tethered superuser upsert admin@example.org 'д�
 Образ в GHCR после первой публикации приватный. Либо один раз сделайте его
 публичным (GitHub → Packages → `tethered-server` → Package settings → Change
 visibility), либо войдите на VPS: `docker login ghcr.io` с токеном, у которого
-есть право `read:packages`. Свой форк — свой образ: `TETHERED_IMAGE` в `.env`.
+есть право `read:packages`. Свой форк — свой образ: `TETHERED_IMAGE_NAME` в `.env`.
+
+`TETHERED_VERSION` — тег образа `sha-<коммит>`: какой взять — ниже, в
+«Обновлении».
 
 ## Администрирование PocketBase
 
@@ -197,15 +200,50 @@ SMOKE_BASE=https://tethered.example.org server/scripts/smoke.sh
 
 ## Обновление
 
+Сервер закреплён на версии: `TETHERED_VERSION=sha-<коммит>` в `.env`.
+Образ с таким тегом публикует `fork-server-image.yml` только после зелёного
+Fork CI на `main` (с проверенной серверной частью) — есть тег, значит коммит
+прошёл тесты. `latest` тоже есть, но в `.env` его не ставьте: он едет на VPS
+при любом `pull` без вашего решения.
+
+Какую версию взять: страница пакета `tethered-server` в GitHub (Packages) —
+свежий тег `sha-…` рядом с `latest`; или последний зелёный запуск
+**Actions → Fork server image**, шаг «теги». Проверить, что тег есть:
+
+```sh
+docker manifest inspect ghcr.io/m0nstrum/tethered-server:sha-1a2b3c4 >/dev/null && echo есть
+```
+
+Обновиться:
+
 ```sh
 git pull                 # если менялись compose, Caddyfile или конфиг Centrifugo
-docker compose pull && docker compose up -d
+grep TETHERED_VERSION .env   # запишите текущую — это точка отката
+sed -i 's/^TETHERED_VERSION=.*/TETHERED_VERSION=sha-1a2b3c4/' .env
+docker compose pull server && docker compose up -d
+docker compose logs --tail=50 server   # миграции и старт без ошибок
 ```
+
+Откатиться — вернуть прежний тег и пересоздать сервер:
+
+```sh
+sed -i 's/^TETHERED_VERSION=.*/TETHERED_VERSION=sha-<прежний>/' .env
+docker compose up -d server
+```
+
+Миграции применяются при старте сервера и обратно не откатываются. Если
+между версиями менялась схема (`server/internal/migrations`), старый сервер
+может не понять новую базу — перед обновлением такой версии убедитесь, что
+свежий бэкап есть («Бэкапы»: `docker compose exec server ls -l /backups`),
+и откатывайтесь вместе с восстановлением из него.
+
+Переход со старого `.env` (`TETHERED_IMAGE=…:latest`): строку
+`TETHERED_IMAGE` удалите (свой форк — `TETHERED_IMAGE_NAME` без тега) и
+добавьте `TETHERED_VERSION`. Без неё `docker compose` откажется стартовать
+и подскажет, что вписать.
 
 Своя сборка образа на машине (нужно ~2 ГБ памяти):
 `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`.
-
-Миграции применяются при старте сервера.
 
 ### Обновление realtime (H3)
 

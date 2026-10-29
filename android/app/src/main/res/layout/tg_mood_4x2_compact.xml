@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  «Настроение» 4×2 в тесной ячейке (B7): макет tg_mood_4x2 с меньшими полями
+  и графиком ниже. Полный просит ≈120dp при гарантированных 110dp — срезалась
+  строка дней. Выбирает MoodTilesWidgetProvider через WidgetSizing.fit,
+  влезание сверяет tool/fork/widget_fit.py. id те же.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/tg_shape_32"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/header"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="11dp"
+                android:textStyle="bold"
+                android:letterSpacing="0.02"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="НЕДЕЛЯ НАСТРОЕНИЙ" />
+
+            <TextView
+                android:id="@+id/matched"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textSize="11dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/chart"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:scaleType="fitXY"
+            android:contentDescription="@null" />
+
+        <!-- Дни отдельными ячейками с равным весом: одной строкой они не
+             встают под столбцы диаграммы. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/day_1"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="10dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="пн" />
+
+            <TextView
+                android:id="@+id/day_2"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="10dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="вт" />
+
+            <TextView
+                android:id="@+id/day_3"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="10dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="ср" />
+
+            <TextView
+                android:id="@+id/day_4"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="10dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="чт" />
+
+            <TextView
+                android:id="@+id/day_5"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="10dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="пт" />
+
+            <TextView
+                android:id="@+id/day_6"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="10dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="сб" />
+
+            <TextView
+                android:id="@+id/day_7"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="10dp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:text="вс" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
