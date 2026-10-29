@@ -70,4 +70,19 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(keystore.containsKey(key), isFalse);
   });
+
+  test('первая установка: сессия стирается без клиента (B-7)', () async {
+    SharedPreferences.setMockInitialValues({});
+    final keystore = fakeKeystore();
+    keystore[key] = '{"token":"from-keychain"}';
+
+    await ForkSecureAuthStore.wipe(key, storage: const FlutterSecureStorage());
+
+    expect(keystore.containsKey(key), isFalse);
+    final store = await ForkSecureAuthStore.open(
+      key,
+      storage: const FlutterSecureStorage(),
+    );
+    expect(store.token, isEmpty);
+  });
 }
