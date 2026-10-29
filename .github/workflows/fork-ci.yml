@@ -55,6 +55,10 @@ jobs:
               # Источник копии server/internal/migrations/schema (go generate).
               - 'pocketbase/collections_schema.json'
               - 'deploy/**'
+              # Входы образа сервера: после зелёной серверной части его
+              # публикует fork-server-image.yml.
+              - '.dockerignore'
+              - '.github/workflows/fork-server-image.yml'
               - '.github/workflows/fork-ci.yml'
 
   check:
