@@ -21,6 +21,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/centrifugo_service.dart';
 import '../../services/pocketbase_service.dart';
+import '../realtime/subscribed_stream.dart';
 
 @immutable
 class ForkBatteryState {
@@ -304,44 +305,33 @@ class ForkBattery {
   /// изменения по каналу пары.
   Stream<ForkBatteryState?> watch(String groupId, String uid) {
     if (groupId.isEmpty || uid.isEmpty) return Stream.value(null);
-    late StreamController<ForkBatteryState?> out;
-    RtUnsub? unsub;
-    Future<void> fetch() async {
+    Future<void> fetch(void Function(ForkBatteryState?) add) async {
       final rec = await _find(groupId, uid);
-      if (!out.isClosed)
-        out.add(
-          rec == null ? null : ForkBatteryState.fromJson(rec.data['state']),
-        );
+      add(rec == null ? null : ForkBatteryState.fromJson(rec.data['state']));
     }
 
-    out = StreamController<ForkBatteryState?>(
-      onListen: () async {
-        unawaited(fetch());
-        unsub = await CentrifugoService.instance.subscribeDelta(
-          'pair:$groupId',
-          collection,
-          (e) {
-            if (e.action == 'delete') {
-              if (!out.isClosed) out.add(null);
-              return;
-            }
-            final s = ForkBatteryState.fromJson(e.record?.data['state']);
-            if (s != null) {
-              if (!out.isClosed) out.add(s);
-            } else {
-              unawaited(
-                fetch(),
-              ); // событие пришло нерасшифрованным — перечитаем
-            }
-          },
-          match: (r) => r.data['user_uid'] == uid,
-        );
-      },
-      onCancel: () async {
-        await unsub?.call();
-        await out.close();
-      },
+    // RT-5: уход слушателя до конца подписки не оставляет канал висеть.
+    return subscribedStream<ForkBatteryState?>(
+      start: (add) => unawaited(fetch(add)),
+      subscribe: (add) => CentrifugoService.instance.subscribeDelta(
+        'pair:$groupId',
+        collection,
+        (e) {
+          if (e.action == 'delete') {
+            add(null);
+            return;
+          }
+          final s = ForkBatteryState.fromJson(e.record?.data['state']);
+          if (s != null) {
+            add(s);
+          } else {
+            unawaited(
+              fetch(add),
+            ); // событие пришло нерасшифрованным — перечитаем
+          }
+        },
+        match: (r) => r.data['user_uid'] == uid,
+      ),
     );
-    return out.stream;
   }
 }
