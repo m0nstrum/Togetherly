@@ -37,6 +37,7 @@ import '../../fork/watch/pair_call.dart'; // fork (UX C0)
 import '../../fork/e2e/reels_chat_bridge.dart';
 import '../../fork/reels/tiktok_comments.dart'; // fork: комментарии TikTok
 import '../../fork/reels/tiktok_rate.dart'; // fork (D1)
+import '../../fork/reels/two_finger_hold.dart'; // fork (D10)
 import '../../services/locale_service.dart';
 import '../../services/pocketbase_service.dart';
 import '../../models/reels_source.dart';
@@ -276,6 +277,16 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
       away
           ? (_feed?.sleep() ?? Future<void>.value())
           : (_feed?.wake() ?? Future<void>.value()),
+    );
+  }
+
+  /// fork (D10): «чистый экран» — пока держат два пальца, страница прячет
+  /// кнопки, чат и шапку поверх ролика (`reelsClear` в reels.js).
+  void _clearReels(bool on) {
+    unawaited(
+      _web?.evaluateJavascript(
+        source: 'window.reelsClear && window.reelsClear($on)',
+      ),
     );
   }
 
@@ -744,9 +755,16 @@ class _WatchRoomScreenState extends State<WatchRoomScreen>
             : Stack(
                 // fork (Rave)
                 children: [
-                  _webView(
-                    context,
-                  ), // fork (Rave): один и тот же браузер в обеих раскладках
+                  // fork (D10): два пальца на ленте прячут её интерфейс.
+                  if (widget.reels)
+                    ForkTwoFingerHold(
+                      onHold: _clearReels,
+                      child: _webView(context),
+                    )
+                  else
+                    _webView(
+                      context,
+                    ), // fork (Rave): один и тот же браузер в обеих раскладках
                   if (_loading)
                     Center(
                       child: M3Loading(

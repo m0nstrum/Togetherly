@@ -331,7 +331,13 @@ body.reels.typing .rl-rail, body.reels.rl-kb .rl-rail { display: none; }
 @keyframes rl-nudge { 25% { transform: translate3d(-5px, 0, 0); } 50% { transform: translate3d(5px, 0, 0); } 75% { transform: translate3d(-2px, 0, 0); } }
 .rl.chat-open .rl-lead { display: none; }
 
+/* fork (D10): «чистый экран» — пока держат два пальца, на ролике только ролик. */
+.rl-ui, .rl-shade { transition: opacity .2s ease; }
+.rl.is-clear .rl-ui, .rl.is-clear .rl-shade { opacity: 0; }
+.rl.is-clear .rl-ui > * { pointer-events: none; }
+
 @media (prefers-reduced-motion: reduce) {
+  .rl-ui, .rl-shade,
   .rl-sheet, .rl-cards, .rl-top, .rl-voice, .rl-rail, .rl-compose, .rl-send, .rl-send .ms { transition: none; }
   .rl-shimmer::before, .rl-card.is-first, .rl-lead, .rl-lead.is-nudge { animation: none; }
   /* Плашки сами исчезают к концу анимации; без неё их снимает таймер. */

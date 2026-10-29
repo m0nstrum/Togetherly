@@ -470,13 +470,53 @@
   // ── жесты по ролику: свайп, касание, двойное касание ─────────────────────
 
   let wheelLock = false;
+
+  // fork (D10): «чистый экран», как в TikTok — пока держат два пальца, кнопки,
+  // чат и шапка уходят с ролика. Пальцы считает приложение (ForkTwoFingerHold
+  // поверх браузера) и зовёт reelsClear; страница следит лишь, чтобы два
+  // пальца не сошли за свайп, касание по ролику или нажатие кнопки.
+  const touching = new Set();
+  let multi = false;
+  function wireMultiTouch() {
+    document.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      // Новое касание после полного отрыва — новый жест.
+      if (!touching.size) multi = false;
+      touching.add(e.pointerId);
+      if (touching.size > 1) multi = true;
+    }, true);
+    const lift = (e) => { touching.delete(e.pointerId); };
+    document.addEventListener('pointerup', lift, true);
+    document.addEventListener('pointercancel', lift, true);
+    // Палец, попавший на кнопку, при отрыве дал бы нажатие.
+    document.addEventListener('click', (e) => {
+      if (!multi) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+  }
+  window.reelsClear = (on) => {
+    if (!el.root) return; // лента ещё не построена
+    // Открытые чат и комментарии, набор реплики — человек занят интерфейсом,
+    // прятать его некстати.
+    const busy = el.root.classList.contains('chat-open') ||
+      el.root.classList.contains('cmts-open') || document.activeElement === el.input;
+    el.root.classList.toggle('is-clear', !!on && !busy);
+  };
+
   function wireGestures() {
+    wireMultiTouch();
     let y0 = 0, t0 = 0, moved = false, down = false, lastTap = 0, single = 0;
     // Скорость пальца — по последним 90 мс движения: по ней решаем, улетит ли
     // ролик, и с какой скоростью он доедет. Раньше любой свайп доезжал за
     // одинаковые 300 мс по одной кривой, и лента ощущалась «деревянной».
     let samples = [], raf = 0, lastDy = 0;
     el.tap.addEventListener('pointerdown', (e) => {
+      // fork (D10): второй палец — не свайп: ролик встаёт на место.
+      if (multi) {
+        if (down) { down = false; cancelAnimationFrame(raf); raf = 0; settleCards(); }
+        return;
+      }
       y0 = e.clientY; t0 = performance.now(); moved = false; down = true;
       samples = [[t0, 0]];
       try { el.tap.setPointerCapture(e.pointerId); } catch (_) {}
@@ -498,6 +538,7 @@
       if (!down) return;
       down = false;
       cancelAnimationFrame(raf); raf = 0;
+      if (multi) { settleCards(); return; } // fork (D10): второй палец лёг на кнопку
       const dy = e.clientY - y0;
       const h = el.stage.clientHeight || 1;
       const [ta, ya] = samples[0];
