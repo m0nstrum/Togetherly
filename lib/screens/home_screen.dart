@@ -25,6 +25,7 @@ import '../models/love_prompt.dart';
 import '../models/memory.dart';
 import '../models/gift.dart';
 import '../models/gift_effect.dart';
+import '../models/gift_event_gate.dart';
 import '../models/incoming_gifts.dart';
 import '../models/sound_clip.dart';
 import '../services/pb_data_service.dart';
@@ -281,6 +282,16 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Догон подарков, прошедших мимо сокета (RT-2): после переподключения, по
   /// возврату приложения и когда снова доступен ключ подписи.
   SyncHandle? _giftsCatchUp;
+
+  /// События подарков обрабатываются по одному и по id (RT-7): create и
+  /// следом update одного подарка не открывают его дважды.
+  late final GiftEventGate _giftGate = GiftEventGate(
+    load: _loadIncomingGifts,
+    open: (g) async {
+      if (mounted) await _openIncomingGift(g);
+    },
+    shown: () => shownIncomingGifts(_incomingGifts),
+  );
 
   /// Подарок «Солнце»: утро встречает рассветом и строчкой от партнёра.
   bool get _sunriseOn => isEffectActive(
@@ -2681,14 +2692,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Пришёл новый подарок — сразу показываем его, с анимацией открытия.
-  Future<void> _onGiftEvent() async {
-    final before = shownIncomingGifts(_incomingGifts).length;
-    await _loadIncomingGifts();
-    final shown = shownIncomingGifts(_incomingGifts);
-    if (!mounted || shown.length <= before) return;
-    // Подарок показываем на любой вкладке — это событие, его ждут.
-    await _openIncomingGift(shown.first);
-  }
+  /// Подарок показываем на любой вкладке — это событие, его ждут.
+  Future<void> _onGiftEvent() => _giftGate.onEvent();
 
   Future<void> _loadIncomingGifts() async {
     if (!_pairData.isPaired) return;

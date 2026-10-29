@@ -21,8 +21,14 @@ void main() {
       body('Widget _incomingGiftEntry()', 400),
       contains('shownIncomingGifts('),
     );
+    // Автопоказ идёт через очередь событий подарков (RT-7), а она берёт
+    // подарки тем же правилом.
     expect(
-      body('Future<void> _onGiftEvent()', 500),
+      body('Future<void> _onGiftEvent()', 200),
+      contains('_giftGate.onEvent()'),
+    );
+    expect(
+      body('late final GiftEventGate _giftGate', 400),
       contains('shownIncomingGifts('),
     );
     expect(

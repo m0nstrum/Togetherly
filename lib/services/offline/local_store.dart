@@ -10,6 +10,7 @@ import 'package:sembast/sembast_memory.dart';
 import 'cache_cipher.dart';
 import 'cache_key_store.dart';
 import 'cache_migration.dart';
+import 'pending_merge.dart';
 import 'record_scope.dart';
 
 /// Локальное офлайн-хранилище (sembast) — «домашняя копия» данных PocketBase
@@ -288,15 +289,52 @@ class LocalStore {
   /// Применить дельту (изменившиеся/новые записи) — точечный upsert. Мягко
   /// удалённые приезжают сюда же как upsert с `deleted=true`; из ленты их
   /// прячет [RecordScope] (scope с `deleted=false`).
-  Future<void> applyDelta(String collection, List<RecordModel> changed) async {
+  ///
+  /// [skipOlder] — не класть запись поверх более свежей (по `updated`) в
+  /// кэше: страница сервера могла быть снята раньше живой дельты, которая
+  /// уже легла в кэш, и откатила бы её (RT-4).
+  Future<void> applyDelta(
+    String collection,
+    List<RecordModel> changed, {
+    bool skipOlder = false,
+  }) async {
     await init();
     final db = _db;
     if (db == null || changed.isEmpty) return;
     await db.transaction((txn) async {
       final store = _col(collection);
       for (final r in changed) {
-        await store.record(r.id).put(txn, _sanitize(r.toJson()));
+        final json = r.toJson();
+        if (skipOlder) {
+          final cur = await store.record(r.id).get(txn);
+          if (!isNotOlder(
+            current: cur == null ? null : _copy(cur),
+            incoming: json,
+          )) {
+            continue;
+          }
+        }
+        await store.record(r.id).put(txn, _sanitize(json));
       }
+    });
+  }
+
+  /// Прочитать и переписать запись одной транзакцией: [update] получает
+  /// текущую (null — её нет) и возвращает новую; null — запись не трогать.
+  /// Между чтением и записью не вклинится другая запись в кэш.
+  Future<void> updateRaw(
+    String collection,
+    String id,
+    Map<String, dynamic>? Function(Map<String, dynamic>? current) update,
+  ) async {
+    await init();
+    final db = _db;
+    if (db == null || id.isEmpty) return;
+    await db.transaction((txn) async {
+      final ref = _col(collection).record(id);
+      final cur = await ref.get(txn);
+      final next = update(cur == null ? null : _copy(cur));
+      if (next != null) await ref.put(txn, _sanitize(next));
     });
   }
 

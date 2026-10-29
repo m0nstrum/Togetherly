@@ -13,6 +13,7 @@ import 'offline/record_scope.dart';
 import 'offline/scope_reconciler.dart';
 import 'offline/scope_sync.dart';
 import 'pocketbase_service.dart';
+import 'rt_overlay.dart';
 import 'sync_coordinator.dart';
 
 /// Realtime-слой (миграция Firebase→PB, Этап 6; транспорт перенесён с SSE PB на
@@ -132,10 +133,15 @@ class PbRealtimeService {
     var attempt = 0; // RT-3: счётчик попыток для backoff-ретрая
     SyncHandle? catchUp;
     var loaded = false; // первая загрузка удалась — догону есть что обновлять
-    // Дельты, пришедшие, пока догон ждёт ответа: снимок сервера мог быть снят
-    // раньше них, и без повторного наложения он откатил бы свежее состояние.
-    Map<String, RtEvent>? duringRefetch;
+    // RT-4: подписка ставится ДО загрузки. Дельты, пришедшие, пока загрузка
+    // (первая или догон) ждёт ответа, копятся здесь и ложатся поверх снимка
+    // сервера — только те, что не старее его ([overlayDeltas]).
+    Map<String, BufferedDelta>? duringLoad;
+    // Подписка подтвердилась сервером, пока шла первая загрузка: снимок мог
+    // быть снят до неё — после загрузки дотягиваем ещё раз.
+    var resyncAfterLoad = false;
     late StreamController<List<RecordModel>> ctrl;
+    late Future<void> Function() refetch;
 
     List<RecordModel> snapshot() {
       final list = byId.values.toList();
@@ -146,11 +152,51 @@ class PbRealtimeService {
     Future<void> start() async {
       cancelled = false;
       try {
+        // Дельты из Centrifugo (вместо SSE PB). Канал несёт изменения всей пары;
+        // фильтр по collection+match делает CentrifugoService. Без rtChannel —
+        // только загрузка (realtime не подключаем). Подписка — до загрузки
+        // (RT-4): иначе изменение между ответом сервера и подпиской терялось.
+        if (rtChannel != null && unsub == null) {
+          final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
+          final u = await CentrifugoService.instance.subscribeDelta(
+            rtChannel,
+            collection,
+            (e) {
+              final rec = e.record;
+              if (rec == null) return;
+              final buffer = duringLoad;
+              if (buffer != null)
+                buffer[rec.id] = (action: e.action, record: rec);
+              if (!loaded) return; // ляжет поверх первой загрузки
+              overlayDeltas(byId, [(action: e.action, record: rec)]);
+              if (!ctrl.isClosed) ctrl.add(snapshot());
+            },
+            match: rtMatch,
+          );
+          if (cancelled) {
+            await u(); // отменили, пока подписывались — рвём и не сохраняем
+            return;
+          }
+          unsub = u;
+          if (!wasLive) {
+            unawaited(
+              CentrifugoService.instance.whenSubscribed(rtChannel).then((ok) {
+                if (!ok || cancelled) return;
+                if (loaded) {
+                  unawaited(refetch());
+                } else {
+                  resyncAfterLoad = true;
+                }
+              }),
+            );
+          }
+        }
         // Фикс #1: начальную ПОЛНУЮ загрузку делаем только если снапшота ещё нет.
         // На ретрае (подписка отвалилась, но данные уже есть) НЕ перекачиваем весь
         // список заново — лишь переподписываемся. Убирает «перекачать всё» при
         // каждом обрыве и снимает часть нагрузки thundering herd после рестарта PB.
-        if (byId.isEmpty) {
+        if (!loaded) {
+          final buffer = duringLoad ??= {};
           final initial = await _pb
               .collection(collection)
               .getFullList(filter: filter);
@@ -158,37 +204,15 @@ class PbRealtimeService {
           byId
             ..clear()
             ..addEntries(initial.map((r) => MapEntry(r.id, r)));
+          overlayDeltas(byId, buffer.values);
+          duringLoad = null;
           loaded = true;
           if (!ctrl.isClosed) ctrl.add(snapshot());
+          if (resyncAfterLoad) {
+            resyncAfterLoad = false;
+            unawaited(refetch());
+          }
         }
-        // Дельты из Centrifugo (вместо SSE PB). Канал несёт изменения всей пары;
-        // фильтр по collection+match делает CentrifugoService. Без rtChannel —
-        // только начальная загрузка (realtime не подключаем).
-        if (rtChannel == null) {
-          attempt = 0;
-          return;
-        }
-        final u = await CentrifugoService.instance.subscribeDelta(
-          rtChannel,
-          collection,
-          (e) {
-            final rec = e.record;
-            if (rec == null) return;
-            duringRefetch?[rec.id] = e;
-            if (e.action == 'delete') {
-              byId.remove(rec.id);
-            } else {
-              byId[rec.id] = rec;
-            }
-            if (!ctrl.isClosed) ctrl.add(snapshot());
-          },
-          match: rtMatch,
-        );
-        if (cancelled) {
-          await u(); // отменили, пока подписывались — рвём и не сохраняем
-          return;
-        }
-        unsub = u;
         attempt = 0; // успех — сбрасываем backoff
       } catch (err) {
         // RT-3: вместо «застрять в ошибке навсегда» — авто-ретрай с экспоненциальным
@@ -213,11 +237,11 @@ class PbRealtimeService {
     // Подписка переживает обрыв сокета молча: события, случившиеся в разрыв,
     // не придут никогда. По поводам [SyncCoordinator] перечитываем список
     // целиком (RT-2).
-    Future<void> refetch() async {
+    refetch = () async {
       if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) {
         return; // первая загрузка ещё идёт или упала — её добьёт ретрай start()
       }
-      final live = duringRefetch = {};
+      final live = duringLoad = {};
       try {
         final fresh = await _pb
             .collection(collection)
@@ -227,20 +251,14 @@ class PbRealtimeService {
         byId
           ..clear()
           ..addEntries(fresh.map((r) => MapEntry(r.id, r)));
-        for (final e in live.values) {
-          if (e.action == 'delete') {
-            byId.remove(e.record!.id);
-          } else {
-            byId[e.record!.id] = e.record!;
-          }
-        }
+        overlayDeltas(byId, live.values);
         ctrl.add(snapshot());
       } catch (e) {
         debugPrint('PbRealtime.watchList($collection) догон: $e');
       } finally {
-        duringRefetch = null;
+        if (identical(duringLoad, live)) duringLoad = null;
       }
-    }
+    };
 
     ctrl = StreamController<List<RecordModel>>.broadcast(
       onListen: () {
@@ -279,56 +297,93 @@ class PbRealtimeService {
     var loaded =
         false; // Фикс #1: начальный getOne уже сделан — на ретрае пропускаем
     SyncHandle? catchUp;
-    // Счётчик дельт: ответ догона старее дельты, пришедшей во время запроса.
-    var deltas = 0;
+    // RT-4: последняя дельта, пришедшая, пока getOne ждёт ответа (первая
+    // загрузка или догон). Ответ сервера мог быть снят раньше неё — побеждает
+    // более свежая версия ([pickFresher]).
+    var loading = false;
+    BufferedDelta? duringLoad;
+    var resyncAfterLoad = false;
     late StreamController<RecordModel?> ctrl;
+    late Future<void> Function() refetch;
+
+    /// getOne c наложением дельт, пришедших во время запроса. 404 → null.
+    Future<({RecordModel? record, bool gone})?> load({
+      Duration? timeout,
+    }) async {
+      loading = true;
+      duringLoad = null;
+      try {
+        RecordModel? rec;
+        try {
+          final f = _pb.collection(collection).getOne(id);
+          rec = await (timeout == null ? f : f.timeout(timeout));
+        } on ClientException catch (e) {
+          if (e.statusCode != 404) rethrow;
+        }
+        if (cancelled || ctrl.isClosed) return null;
+        return pickFresher(loaded: rec, delta: duringLoad);
+      } finally {
+        loading = false;
+        duringLoad = null;
+      }
+    }
 
     Future<void> start() async {
       cancelled = false;
       try {
+        // Дельты одного документа из Centrifugo. match по id — на канале пары
+        // может быть несколько записей коллекции, нам нужна ровно эта.
+        // Подписка — до загрузки (RT-4): иначе правка между ответом getOne и
+        // подпиской терялась.
+        if (rtChannel != null && unsub == null) {
+          final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
+          final u = await CentrifugoService.instance.subscribeDelta(
+            rtChannel,
+            collection,
+            (e) {
+              final rec = e.record;
+              if (loading && rec != null) {
+                duringLoad = (action: e.action, record: rec);
+              }
+              if (!loaded) return; // решит первая загрузка
+              if (e.action == 'delete') {
+                if (!ctrl.isClosed) ctrl.add(null);
+              } else if (rec != null && !ctrl.isClosed) {
+                ctrl.add(rec);
+              }
+            },
+            match: (r) => r.id == id,
+          );
+          if (cancelled) {
+            await u();
+            return;
+          }
+          unsub = u;
+          if (!wasLive) {
+            unawaited(
+              CentrifugoService.instance.whenSubscribed(rtChannel).then((ok) {
+                if (!ok || cancelled) return;
+                if (loaded) {
+                  unawaited(refetch());
+                } else {
+                  resyncAfterLoad = true;
+                }
+              }),
+            );
+          }
+        }
         // Фикс #1: начальный getOne только если ещё не грузили. На ретрае
         // (подписка отвалилась, запись уже есть) — лишь переподписываемся.
         if (!loaded) {
-          try {
-            final rec = await _pb.collection(collection).getOne(id);
-            if (cancelled) return;
-            if (!ctrl.isClosed) ctrl.add(rec);
-            loaded = true;
-          } on ClientException catch (e) {
-            if (e.statusCode == 404) {
-              if (!ctrl.isClosed) ctrl.add(null);
-              loaded = true;
-            } else {
-              rethrow;
-            }
+          final got = await load();
+          if (got == null) return;
+          if (!ctrl.isClosed) ctrl.add(got.record);
+          loaded = true;
+          if (resyncAfterLoad) {
+            resyncAfterLoad = false;
+            unawaited(refetch());
           }
         }
-        if (cancelled) return;
-        // Дельты одного документа из Centrifugo. match по id — на канале пары
-        // может быть несколько записей коллекции, нам нужна ровно эта.
-        if (rtChannel == null) {
-          attempt = 0;
-          return;
-        }
-        final u = await CentrifugoService.instance.subscribeDelta(
-          rtChannel,
-          collection,
-          (e) {
-            deltas++;
-            if (e.action == 'delete') {
-              if (!ctrl.isClosed) ctrl.add(null);
-            } else {
-              final rec = e.record;
-              if (rec != null && !ctrl.isClosed) ctrl.add(rec);
-            }
-          },
-          match: (r) => r.id == id,
-        );
-        if (cancelled) {
-          await u();
-          return;
-        }
-        unsub = u;
         attempt = 0; // успех — сбрасываем backoff
       } catch (err) {
         // RT-3: авто-ретрай с backoff (1,2,4,…,32с) вместо застревания в ошибке.
@@ -349,20 +404,16 @@ class PbRealtimeService {
     }
 
     // Догон пропущенного мимо сокета (RT-2): перечитываем документ.
-    Future<void> refetch() async {
+    refetch = () async {
       if (cancelled || ctrl.isClosed || !ctrl.hasListener || !loaded) return;
-      final seen = deltas;
-      bool stale() => cancelled || ctrl.isClosed || deltas != seen;
+      if (loading) return; // запрос уже в полёте
       try {
-        final rec = await _pb
-            .collection(collection)
-            .getOne(id)
-            .timeout(const Duration(seconds: 12));
-        if (!stale()) ctrl.add(rec);
-      } on ClientException catch (e) {
-        if (e.statusCode == 404 && !stale()) ctrl.add(null);
+        final got = await load(timeout: const Duration(seconds: 12));
+        if (got != null && !ctrl.isClosed) ctrl.add(got.record);
+      } catch (e) {
+        debugPrint('PbRealtime.watchRecord($collection/$id) догон: $e');
       }
-    }
+    };
 
     ctrl = StreamController<RecordModel?>.broadcast(
       onListen: () {
@@ -417,6 +468,11 @@ class PbRealtimeService {
     // накладываем ещё раз.
     var syncing = 0;
     final duringSync = <String, RtEvent>{};
+    // RT-6: записи, чья серверная версия пришла поверх неотправленной своей
+    // правки и легла лишь слиянием. После отправки правки их перечитываем.
+    final deferred = <String>{};
+    void defer(String id) => deferred.add(id);
+    StreamSubscription<Set<String>>? settledSub;
     late StreamController<List<RecordModel>> ctrl;
 
     // Инкрементальная синхронизация: при первом разе — постранично всё (по
@@ -443,10 +499,23 @@ class PbRealtimeService {
             )
             .timeout(const Duration(seconds: 12));
         if (cancelled) return;
-        final toApply = res.items
-            .where((r) => !OutboxService.instance.isPending(collection, r.id))
-            .toList();
-        if (toApply.isNotEmpty) await store.applyDelta(collection, toApply);
+        final toApply = <RecordModel>[];
+        for (final r in res.items) {
+          if (OutboxService.instance.isPending(collection, r.id)) {
+            await applyOverPending(
+              store: store,
+              outbox: OutboxService.instance,
+              collection: collection,
+              record: r,
+            );
+            defer(r.id);
+          } else {
+            toApply.add(r);
+          }
+        }
+        if (toApply.isNotEmpty) {
+          await store.applyDelta(collection, toApply, skipOlder: true);
+        }
         return;
       }
       await syncScopeIncremental(
@@ -463,6 +532,7 @@ class PbRealtimeService {
             .getList(page: page, perPage: 200, filter: filter, sort: 'updated')
             .timeout(const Duration(seconds: 12)),
         cancelled: () => cancelled,
+        onDeferred: defer,
       );
     }
 
@@ -519,6 +589,44 @@ class PbRealtimeService {
             collection: collection,
             action: e.action,
             record: e.record!,
+            onDeferred: defer,
+          );
+        }
+      }
+    }
+
+    // Правка ушла из очереди: отложенные записи перечитываем с сервера, а не
+    // считаем свою версию окончательной (RT-6).
+    Future<void> refetchDeferred(Set<String> keys) async {
+      for (final key in keys) {
+        final sep = key.indexOf(':');
+        if (sep < 0 || key.substring(0, sep) != collection) continue;
+        final id = key.substring(sep + 1);
+        if (!deferred.remove(id) || cancelled || !conn.isOnline) continue;
+        try {
+          await refetchSettled(
+            store: store,
+            outbox: OutboxService.instance,
+            collection: collection,
+            id: id,
+            fetch: (id) async {
+              try {
+                return await _pb
+                    .collection(collection)
+                    .getOne(id)
+                    .timeout(const Duration(seconds: 12));
+              } on ClientException catch (e) {
+                if (e.statusCode == 404) return null;
+                rethrow;
+              }
+            },
+          );
+        } catch (e) {
+          // Не вышло — следующий догон по водяному знаку не поможет (знак
+          // запись уже миновал), поэтому оставляем её в отложенных.
+          deferred.add(id);
+          debugPrint(
+            'PbRealtime._watchCached($collection/$id) после отправки: $e',
           );
         }
       }
@@ -527,37 +635,67 @@ class PbRealtimeService {
     Future<void> startNetwork() async {
       if (cancelled || !conn.isOnline) return;
       try {
+        // Подписка — ДО синхронизации (RT-4): дельта, пришедшая между ответом
+        // сервера и подпиской, иначе терялась до следующего догона. Пока идёт
+        // синхронизация, дельты копятся в duringSync и ложатся поверх неё.
+        Object? subscribeError;
+        if (unsub == null && rtChannel != null) {
+          try {
+            final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
+            final u = await CentrifugoService.instance.subscribeDelta(
+              rtChannel,
+              collection,
+              (e) {
+                final rec = e.record;
+                if (rec == null) return;
+                if (syncing > 0) duringSync[rec.id] = e;
+                // Только в кэш: водяной знак двигает лишь syncOnce (RT-1).
+                unawaited(
+                  applyLiveDelta(
+                    store: store,
+                    outbox: OutboxService.instance,
+                    collection: collection,
+                    action: e.action,
+                    record: rec,
+                    onDeferred: defer,
+                  ),
+                );
+              },
+              match: rtMatch,
+            );
+            if (cancelled) {
+              await u();
+              return;
+            }
+            unsub = u;
+            // Сервер подтвердит подписку позже: что случилось до этого, в
+            // сокет не придёт — дотягиваем инкрементом (дёшево, по знаку).
+            if (!wasLive) {
+              unawaited(
+                CentrifugoService.instance.whenSubscribed(rtChannel).then((
+                  ok,
+                ) async {
+                  if (!ok || cancelled || !conn.isOnline) return;
+                  try {
+                    await syncGuarded();
+                  } catch (e) {
+                    debugPrint(
+                      'PbRealtime._watchCached($collection) догон подписки: $e',
+                    );
+                  }
+                }),
+              );
+            }
+          } catch (err) {
+            // Кэш всё равно досинхронизируем, а подписку повторит backoff ниже.
+            subscribeError = err;
+          }
+        }
         await syncGuarded();
         if (cancelled) return;
         if (reconcile) await reconcileOnce();
         if (cancelled) return;
-        if (unsub == null && rtChannel != null) {
-          final u = await CentrifugoService.instance.subscribeDelta(
-            rtChannel,
-            collection,
-            (e) {
-              final rec = e.record;
-              if (rec == null) return;
-              if (syncing > 0) duringSync[rec.id] = e;
-              // Только в кэш: водяной знак двигает лишь syncOnce (RT-1).
-              unawaited(
-                applyLiveDelta(
-                  store: store,
-                  outbox: OutboxService.instance,
-                  collection: collection,
-                  action: e.action,
-                  record: rec,
-                ),
-              );
-            },
-            match: rtMatch,
-          );
-          if (cancelled) {
-            await u();
-            return;
-          }
-          unsub = u;
-        }
+        if (subscribeError != null) throw subscribeError;
         attempt = 0;
       } catch (err) {
         debugPrint(
@@ -582,6 +720,9 @@ class PbRealtimeService {
           (list) {
             if (!ctrl.isClosed) ctrl.add(list);
           },
+        );
+        settledSub = OutboxService.instance.settled.listen(
+          (keys) => unawaited(refetchDeferred(keys)),
         );
         startNetwork();
         // Переподключение сети → догоняем пропущенные изменения (дельта) и при
@@ -612,6 +753,8 @@ class PbRealtimeService {
         cacheSub = null;
         await connSub?.cancel();
         connSub = null;
+        await settledSub?.cancel();
+        settledSub = null;
         await unsub?.call();
         unsub = null;
       },
@@ -636,9 +779,14 @@ class PbRealtimeService {
     var sawRecord = false;
     var serverSaysGone = false;
     SyncHandle? catchUp;
-    // Счётчик дельт: ответ getOne старее дельты, пришедшей во время запроса.
+    // Счётчик дельт: 404 на getOne старее дельты, пришедшей во время запроса.
     var deltas = 0;
+    // RT-6: серверная версия пришла поверх неотправленной своей правки —
+    // после отправки запись перечитываем.
+    var deferred = false;
+    StreamSubscription<Set<String>>? settledSub;
     late StreamController<RecordModel?> ctrl;
+    final outbox = OutboxService.instance;
 
     Future<void> fetchOnce() async {
       final seen = deltas;
@@ -647,23 +795,28 @@ class PbRealtimeService {
             .collection(collection)
             .getOne(id)
             .timeout(const Duration(seconds: 12));
-        if (cancelled || deltas != seen) return;
-        // Не перезатираем локальную запись серверным стейлом, пока её правка
-        // ещё не отправлена из очереди — иначе оптимистичное изменение
-        // «откатывается» (маскот телепортируется назад, настроение/статус
-        // возвращается). После подтверждения отправки isPending снимется и
-        // следующий getOne/дельта принесёт согласованное значение.
-        if (!OutboxService.instance.isPending(collection, id)) {
-          await store.upsert(collection, rec);
-        }
+        if (cancelled) return;
+        // Ответ кладётся как живая дельта: не старее кэша (RT-4) и, пока своя
+        // правка в очереди, слиянием по полям — оптимистичное изменение не
+        // «откатывается» (маскот не телепортируется назад), а правка
+        // партнёра в другом поле не теряется (RT-6).
+        await applyLiveDelta(
+          store: store,
+          outbox: outbox,
+          collection: collection,
+          action: 'update',
+          record: rec,
+          onDeferred: (_) => deferred = true,
+        );
       } on ClientException catch (e) {
         if (e.statusCode == 404) {
           if (deltas != seen) return;
           serverSaysGone = true;
-          if (!OutboxService.instance.isPending(collection, id)) {
+          if (!outbox.isPending(collection, id)) {
             await store.deleteRecord(collection, id);
-          } else if (!ctrl.isClosed) {
-            ctrl.add(null);
+          } else {
+            deferred = true;
+            if (!ctrl.isClosed) ctrl.add(null);
           }
         } else {
           rethrow;
@@ -674,32 +827,63 @@ class PbRealtimeService {
     Future<void> startNetwork() async {
       if (cancelled || !conn.isOnline) return;
       try {
+        // Подписка — до getOne (RT-4): правка между ответом и подпиской иначе
+        // терялась. Ответ старее дельты кэш не откатит (applyLiveDelta).
+        Object? subscribeError;
+        if (unsub == null && rtChannel != null) {
+          try {
+            final wasLive = CentrifugoService.instance.isSubscribed(rtChannel);
+            final u = await CentrifugoService.instance.subscribeDelta(
+              rtChannel,
+              collection,
+              (e) {
+                deltas++;
+                final rec = e.record;
+                if (rec == null) return;
+                if (e.action == 'delete' && !outbox.isPending(collection, id)) {
+                  serverSaysGone = true;
+                }
+                unawaited(
+                  applyLiveDelta(
+                    store: store,
+                    outbox: outbox,
+                    collection: collection,
+                    action: e.action,
+                    record: rec,
+                    onDeferred: (_) => deferred = true,
+                  ),
+                );
+              },
+              match: (r) => r.id == id,
+            );
+            if (cancelled) {
+              await u();
+              return;
+            }
+            unsub = u;
+            if (!wasLive) {
+              unawaited(
+                CentrifugoService.instance.whenSubscribed(rtChannel).then((
+                  ok,
+                ) async {
+                  if (!ok || cancelled || !conn.isOnline) return;
+                  try {
+                    await fetchOnce();
+                  } catch (e) {
+                    debugPrint(
+                      'PbRealtime._watchRecordCached($collection/$id) догон подписки: $e',
+                    );
+                  }
+                }),
+              );
+            }
+          } catch (err) {
+            subscribeError = err; // getOne всё равно делаем, подписку — ретраем
+          }
+        }
         await fetchOnce();
         if (cancelled) return;
-        if (unsub == null && rtChannel != null) {
-          final u = await CentrifugoService.instance.subscribeDelta(
-            rtChannel,
-            collection,
-            (e) {
-              deltas++;
-              // Не перезатираем запись с неотправленной локальной правкой.
-              if (OutboxService.instance.isPending(collection, id)) return;
-              if (e.action == 'delete') {
-                serverSaysGone = true;
-                unawaited(store.deleteRecord(collection, id));
-              } else {
-                final rec = e.record;
-                if (rec != null) unawaited(store.upsert(collection, rec));
-              }
-            },
-            match: (r) => r.id == id,
-          );
-          if (cancelled) {
-            await u();
-            return;
-          }
-          unsub = u;
-        }
+        if (subscribeError != null) throw subscribeError;
         attempt = 0;
       } catch (err) {
         debugPrint(
@@ -733,6 +917,25 @@ class PbRealtimeService {
           }
           if (!ctrl.isClosed) ctrl.add(rec);
         });
+        // Своя правка ушла из очереди, а серверную версию мы лишь сливали —
+        // перечитываем документ, а не считаем свою версию окончательной.
+        settledSub = outbox.settled.listen((keys) {
+          if (!deferred || !keys.contains('$collection:$id')) return;
+          if (cancelled ||
+              !conn.isOnline ||
+              outbox.isPoisoned(collection, id)) {
+            return;
+          }
+          deferred = false;
+          unawaited(
+            fetchOnce().catchError((Object e) {
+              deferred = true;
+              debugPrint(
+                'PbRealtime._watchRecordCached($collection/$id) после отправки: $e',
+              );
+            }),
+          );
+        });
         startNetwork();
         connSub = conn.onOnlineChanged.listen((online) {
           if (online && !cancelled) startNetwork();
@@ -755,6 +958,8 @@ class PbRealtimeService {
         cacheSub = null;
         await connSub?.cancel();
         connSub = null;
+        await settledSub?.cancel();
+        settledSub = null;
         await unsub?.call();
         unsub = null;
       },

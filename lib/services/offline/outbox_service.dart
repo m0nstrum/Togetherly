@@ -15,6 +15,7 @@ import '../../fork/outbox_attempt.dart'; // fork (PLAN 1.7)
 import '../centrifugo_service.dart'; // fork (PLAN 1.7)
 import '../../models/memory_reaction.dart';
 import '../note_send_status.dart';
+import 'pending_merge.dart';
 
 /// Очередь офлайн-записи (outbox).
 ///
@@ -123,6 +124,22 @@ class OutboxService {
   /// Есть ли в очереди неотправленная правка записи [id] коллекции [collection].
   bool isPending(String collection, String id) =>
       id.isNotEmpty && _pendingKeys.contains('$collection:$id');
+
+  /// Неотправленные операции записи [id] в порядке очереди — по ним кэш-слой
+  /// знает, какие поля своя правка трогает, и сливает с ними дельту партнёра
+  /// (RT-6, [mergeOverPending]). Снимок того же пересчёта, что [isPending].
+  final Map<String, List<PendingOp>> _pendingOps = {};
+
+  List<PendingOp> pendingOps(String collection, String id) =>
+      _pendingOps['$collection:$id'] ?? const [];
+
+  final StreamController<Set<String>> _settled =
+      StreamController<Set<String>>.broadcast();
+
+  /// Ключи (collection:id), чьи правки только что покинули очередь: доехали
+  /// или отравлены. Кэш-слой перечитывает такие записи с сервера, а не считает
+  /// свою версию окончательной.
+  Stream<Set<String>> get settled => _settled.stream;
 
   /// Открытые окна [watchPending]: каждое копит ключи всех записей, что
   /// побывали в очереди, пока окно открыто.
@@ -573,6 +590,7 @@ class OutboxService {
       activeCount.value = 0;
       poisonCount.value = 0;
       _pendingKeys.clear();
+      _pendingOps.clear();
       _poisonKeys.clear();
       return;
     }
@@ -598,13 +616,22 @@ class OutboxService {
     // кэш-слой не должен перезатирать серверным стейлом. Разбор защищён
     // (_parseOp) — битая запись не должна ронять пересчёт счётчика.
     final keys = <String>{};
+    final ops = <String, List<PendingOp>>{};
     for (final s in snaps) {
-      final k = _parseOp(s.value)?.rkey;
-      if (k != null) keys.add(k);
+      final op = _parseOp(s.value);
+      final k = op?.rkey;
+      if (op == null || k == null) continue;
+      keys.add(k);
+      (ops[k] ??= []).add((type: op.type, payload: op.payload));
     }
+    final gone = _pendingKeys.difference(keys);
     _pendingKeys
       ..clear()
       ..addAll(keys);
+    _pendingOps
+      ..clear()
+      ..addAll(ops);
+    if (gone.isNotEmpty) _settled.add(gone);
     for (final w in _watches) {
       w._seen.addAll(keys);
     }

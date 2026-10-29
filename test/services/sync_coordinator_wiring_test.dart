@@ -88,7 +88,12 @@ void main() {
         'Stream<List<RecordModel>> watchList(',
         'Stream<RecordModel?> watchRecord(',
       ),
-      contains('duringRefetch?[rec.id] = e'),
+      // RT-4: дельты копятся, пока загрузка ждёт ответа, и ложатся поверх
+      // снимка без отката более свежего.
+      allOf(
+        contains('buffer[rec.id] = (action: e.action, record: rec)'),
+        contains('overlayDeltas(byId, live.values)'),
+      ),
     );
     expect(
       _body(
@@ -96,7 +101,7 @@ void main() {
         'Stream<RecordModel?> watchRecord(',
         'Stream<List<RecordModel>> _watchCached(',
       ),
-      contains('deltas != seen'),
+      contains('pickFresher(loaded: rec, delta: duringLoad)'),
     );
     final cached = _body(
       src,
@@ -111,7 +116,8 @@ void main() {
         'Stream<RecordModel?> _watchRecordCached(',
         'Stream<RecordModel?> watchGroup(',
       ),
-      contains('if (cancelled || deltas != seen) return;'),
+      // Ответ getOne кладётся как живая дельта: не старее кэша (RT-4).
+      contains('await applyLiveDelta('),
     );
   });
 }
