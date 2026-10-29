@@ -479,7 +479,8 @@
   let multi = false;
   function wireMultiTouch() {
     document.addEventListener('pointerdown', (e) => {
-      if (e.pointerType !== 'touch') return;
+      // Мышь или стилус после двух пальцев — новый жест: их нажатия не глушим.
+      if (e.pointerType !== 'touch') { multi = false; return; }
       // Новое касание после полного отрыва — новый жест.
       if (!touching.size) multi = false;
       touching.add(e.pointerId);
@@ -523,6 +524,9 @@
     });
     el.tap.addEventListener('pointermove', (e) => {
       if (!down) return;
+      // fork (D10): второй палец мог лечь на кнопку, мимо el.tap — ролик всё
+      // равно встаёт на место и больше за пальцем не едет.
+      if (multi) { down = false; cancelAnimationFrame(raf); raf = 0; settleCards(); return; }
       const dy = e.clientY - y0;
       const now = performance.now();
       samples.push([now, dy]);
