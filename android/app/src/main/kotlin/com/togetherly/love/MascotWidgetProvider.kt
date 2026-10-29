@@ -69,8 +69,8 @@ open class MascotWidgetProvider : HomeWidgetProvider() {
 
         val manager = AppWidgetManager.getInstance(context)
         val theme = WidgetTheme.from(data)
-        val layout = forcedLayout ?: R.layout.tg_mascot_2x2
         val options = manager.getAppWidgetOptions(widgetId)
+        val layout = fitted(context, options, forcedLayout ?: R.layout.tg_mascot_2x2)
         val (cellW, cellH) = WidgetSizing.cellDp(context, options)
         val heightDp = if (cellH > 0) cellH else WidgetSizing.heightDp(options)
         val targetPx = (mascotDp(layout, heightDp) * context.resources.displayMetrics.density).toInt()
@@ -100,15 +100,25 @@ open class MascotWidgetProvider : HomeWidgetProvider() {
         }.start()
     }
 
+    /// Компактная полоска в тесной ячейке (B7): полная 4×1 просит 46dp при
+    /// гарантированных 40dp, и персонаж срезался.
+    private fun fitted(context: Context, options: Bundle?, sized: Int): Int = when (sized) {
+        R.layout.tg_mascot_4x1 -> WidgetSizing.fit(
+            context, options, R.layout.tg_mascot_4x1, R.layout.tg_mascot_4x1_compact, 46,
+        )
+        else -> sized
+    }
+
     /// Цвет плитки под персонажем: на нём рисуются кадры прокрутки.
     private fun tileColor(layout: Int, theme: WidgetTheme): Int = when (layout) {
-        R.layout.tg_mascot_4x1 -> theme.primaryContainer
+        R.layout.tg_mascot_4x1, R.layout.tg_mascot_4x1_compact -> theme.primaryContainer
         R.layout.tg_mascot_2x2 -> theme.surface
         else -> theme.primaryContainer
     }
 
     private fun mascotDp(layout: Int, heightDp: Int): Float = when (layout) {
         R.layout.tg_mascot_4x1 -> 46f
+        R.layout.tg_mascot_4x1_compact -> 34f
         R.layout.tg_mascot_2x2 -> (heightDp - 62).coerceIn(40, 120).toFloat()
         R.layout.tg_mascot_4x2 -> (heightDp - 30).coerceIn(48, 140).toFloat()
         // Минус пол (44) и пилюли сверху (30): кадру остаётся середина.
@@ -175,19 +185,22 @@ open class MascotWidgetProvider : HomeWidgetProvider() {
         val widthDp = if (cellWidthDp > 0) cellWidthDp else WidgetSizing.widthDp(options)
         val heightDp = if (cellHeightDp > 0) cellHeightDp else WidgetSizing.heightDp(options)
 
-        val layout = forcedLayout ?: when {
+        val sized = forcedLayout ?: when {
             widthDp >= 200 && heightDp >= 200 -> R.layout.tg_mascot_4x4
             widthDp >= 200 && heightDp >= 100 -> R.layout.tg_mascot_4x2
             widthDp >= 200 -> R.layout.tg_mascot_4x1
             else -> R.layout.tg_mascot_2x2
         }
+        val layout = fitted(context, options, sized)
+        val compact = layout != sized
 
-        val baseDp = when (layout) {
+        val baseDp = when (sized) {
             R.layout.tg_mascot_4x4 -> 250
             R.layout.tg_mascot_4x1 -> 56
             else -> 115
         }
-        val scale = WidgetSizing.scale(heightDp, baseDp)
+        // Компактный вариант не растягиваем: он и выбран, потому что места нет.
+        val scale = if (compact) 1f else WidgetSizing.scale(heightDp, baseDp)
         val theme = WidgetTheme.from(data)
         val density = context.resources.displayMetrics.density
 
@@ -195,7 +208,7 @@ open class MascotWidgetProvider : HomeWidgetProvider() {
         val hasMascot = name.isNotEmpty() && str("frame_day").isNotEmpty()
 
         val views = RemoteViews(context.packageName, layout)
-        views.tint(R.id.bg, if (layout == R.layout.tg_mascot_4x1) theme.primaryContainer else theme.surface)
+        views.tint(R.id.bg, if (sized == R.layout.tg_mascot_4x1) theme.primaryContainer else theme.surface)
 
         // Персонажа не выбрали: виджет обязан назвать себя, а не висеть
         // пустой плиткой — иначе человек решит, что он не добавился.
@@ -231,13 +244,14 @@ open class MascotWidgetProvider : HomeWidgetProvider() {
         views.setTextColor(R.id.record_label, theme.onSurfaceVariant)
 
         when (layout) {
-            R.layout.tg_mascot_4x1 -> {
+            R.layout.tg_mascot_4x1, R.layout.tg_mascot_4x1_compact -> {
                 views.setTextViewText(R.id.name, name)
                 views.setTextViewText(R.id.sub, listOf(stage, nextLabel).filter { it.isNotEmpty() }.joinToString(" · "))
                 views.setTextViewText(R.id.streak_value, "$streak")
                 views.setTextViewText(R.id.streak_label, streakLabel)
                 views.setTextColor(R.id.streak_value, theme.onPrimaryContainer)
-                views.size(R.id.streak_value, 24f * scale)
+                // Кегль как в разметке: 24, в компактной 22.
+                views.size(R.id.streak_value, (if (compact) 22f else 24f) * scale)
             }
 
             R.layout.tg_mascot_2x2 -> {

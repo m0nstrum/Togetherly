@@ -50,6 +50,33 @@ object WidgetSizing {
     }
 
     /**
+     * Высота ячейки для выбора разметки: настоящая по ориентации экрана
+     * ([cellDp]), а если её лончер не сообщил — MIN_HEIGHT. 0 — ничего.
+     */
+    fun cellHeightDp(context: Context, options: Bundle?): Int {
+        val h = cellDp(context, options).second
+        return if (h > 0) h else heightDp(options)
+    }
+
+    /**
+     * Полная разметка или компактная (B7). Блоки фиксированной высоты
+     * (поля, шапка, кегль числа, кнопка) складываются, а растяжка между ними
+     * только растёт: если сумма больше ячейки, RemoteViews молча срезает низ —
+     * так на OnePlus 9R пропала кнопка «Скучаю». Компактный вариант — те же id
+     * без второстепенных строк и с мелкими кеглями.
+     *
+     * Пока лончер не сообщил размер — компактная: лучше пустовато, чем срезано.
+     *
+     * @param fullDp сколько по высоте нужно полной разметке. Число считает
+     *   `tool/fork/widget_fit.py`, а `test/fork/widget_fit_test.dart` падает,
+     *   если разметка выросла, а число здесь — нет.
+     */
+    fun fit(context: Context, options: Bundle?, full: Int, compact: Int, fullDp: Int): Int {
+        val h = cellHeightDp(context, options)
+        return if (h < fullDp) compact else full
+    }
+
+    /**
      * Во сколько раз растягивать кегли: 1.0 на нижней границе вилки и до
      * [max] на верхней. Пока лончер не сообщил размер — 1.0, то есть
      * компактный вариант: лучше пустовато, чем срезано.

@@ -145,11 +145,27 @@ open class MissWidgetProvider : HomeWidgetProvider() {
         val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
 
-        val layout = forcedLayout ?: when {
+        val sized = forcedLayout ?: when {
             minWidth >= 200 && minHeight < 110 -> R.layout.tg_miss_4x1
             minWidth >= 200 -> R.layout.tg_miss_4x2
             else -> R.layout.tg_miss_2x2
         }
+        // В тесной ячейке — компактный вариант (B7): полный 2×2 просит ≈148dp
+        // при гарантированных 110dp, и на OnePlus 9R срезалась кнопка.
+        val layout = when (sized) {
+            R.layout.tg_miss_2x2 -> WidgetSizing.fit(
+                context, options, R.layout.tg_miss_2x2, R.layout.tg_miss_2x2_compact, 148,
+            )
+            R.layout.tg_miss_4x1 -> WidgetSizing.fit(
+                context, options, R.layout.tg_miss_4x1, R.layout.tg_miss_4x1_compact, 64,
+            )
+            // Плитки с числом в тесноте сжимаются и срезают его: полному 4×2
+            // нужно 180dp.
+            else -> WidgetSizing.fit(
+                context, options, R.layout.tg_miss_4x2, R.layout.tg_miss_4x2_compact, 180,
+            )
+        }
+        val compact = layout != sized
 
         val stateIcon = if (sent) R.drawable.ic_tg_check else R.drawable.ic_tg_heart
         // Тап идёт в собственный onReceive, а не сразу в Dart: сначала мгновенно
@@ -166,8 +182,15 @@ open class MissWidgetProvider : HomeWidgetProvider() {
 
         // Та же вилка высот, что и у «Вместе»: на просторной ячейке кегли
         // растягиваются, на тесной остаются компактными.
-        val baseDp = if (layout == R.layout.tg_miss_4x1) 56 else 115
-        val scale = WidgetSizing.scale(minHeight, baseDp)
+        // База растяжения — высота, с которой выбрана полная разметка: от
+        // меньшей число росло бы быстрее ячейки и снова выталкивало кнопку.
+        // Компактный вариант не растягиваем: он и выбран, потому что места нет.
+        val baseDp = when (sized) {
+            R.layout.tg_miss_4x1 -> 64
+            R.layout.tg_miss_2x2 -> 148
+            else -> 180
+        }
+        val scale = if (compact) 1f else WidgetSizing.scale(minHeight, baseDp)
         // Цвета из активной темы приложения; пока не прислали — из хендофа.
         val theme = WidgetTheme.from(data)
 
@@ -201,7 +224,7 @@ open class MissWidgetProvider : HomeWidgetProvider() {
             }
 
             when (layout) {
-                R.layout.tg_miss_2x2 -> {
+                R.layout.tg_miss_2x2, R.layout.tg_miss_2x2_compact -> {
                     tint(R.id.bg, theme.surface)
                     tint(R.id.avatar_bg, theme.avatarPartner)
                     tint(R.id.send_bg, theme.primary)
@@ -220,7 +243,8 @@ open class MissWidgetProvider : HomeWidgetProvider() {
                     setTextViewTextSize(
                         R.id.my_count,
                         TypedValue.COMPLEX_UNIT_DIP,
-                        countSize(myText, 30f * scale),
+                        // Кегль как в разметке: 30, в компактной 24.
+                        countSize(myText, (if (compact) 24f else 30f) * scale),
                     )
                     setTextViewText(R.id.last_time, whenLabel.ifEmpty { todayLabel })
                     setTextViewText(R.id.send_label, sendLabel)
@@ -232,7 +256,7 @@ open class MissWidgetProvider : HomeWidgetProvider() {
                     )
                 }
 
-                R.layout.tg_miss_4x2 -> {
+                R.layout.tg_miss_4x2, R.layout.tg_miss_4x2_compact -> {
                     tint(R.id.bg, theme.surface)
                     tint(R.id.my_tile_bg, theme.primaryContainer)
                     tint(R.id.partner_tile_bg, theme.tertiaryContainer)
@@ -258,13 +282,15 @@ open class MissWidgetProvider : HomeWidgetProvider() {
                     // Кегли считаются по ДЛИННЕЙШЕМУ из двух: плитки одинаковой
                     // ширины, и числа в них должны быть одного роста.
                     val longest = if (myText.length >= partnerText.length) myText else partnerText
-                    val size = countSize(longest, 30f * scale)
+                    // Кегль как в разметке: 30, в компактной 22.
+                    val size = countSize(longest, (if (compact) 22f else 30f) * scale)
                     setTextViewTextSize(R.id.my_count, TypedValue.COMPLEX_UNIT_DIP, size)
                     setTextViewTextSize(R.id.partner_count, TypedValue.COMPLEX_UNIT_DIP, size)
                     setTextViewText(R.id.last_time, whenLabel)
+                    // В компактной строке нет места — она спрятана всегда.
                     setViewVisibility(
                         R.id.last_time,
-                        if (whenLabel.isEmpty()) View.GONE else View.VISIBLE,
+                        if (whenLabel.isEmpty() || compact) View.GONE else View.VISIBLE,
                     )
                     setTextViewText(R.id.send_label, sendLabel)
 
