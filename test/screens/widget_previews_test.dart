@@ -5,9 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:love_app/models/pair_data.dart';
+import 'package:love_app/models/user_data.dart';
 import 'package:love_app/models/timer_item.dart';
 import 'package:love_app/models/year_progress.dart';
 import 'package:love_app/screens/widget_screen/preview_style.dart';
+import 'package:love_app/screens/widget_screen/previews_misc.dart';
 import 'package:love_app/screens/widget_screen/previews_pair.dart';
 import 'package:love_app/screens/widget_screen/previews_time.dart';
 import 'package:love_app/services/locale_service.dart';
@@ -119,6 +121,26 @@ void main() {
       final t = buildAppTheme(kPalettes[0], Brightness.light);
       await pump(tester, PetalTimerPreview(t: t, widgetTimer: null));
       expect(tester.takeException(), isNull);
+    });
+    testWidgets('заметка показывает текст пары, пустая — образец', (
+      tester,
+    ) async {
+      final t = buildAppTheme(kPalettes[0], Brightness.light);
+      Widget note(String text) => CatalogNotePreview(
+        noteText: text,
+        noteAuthor: '',
+        noteAt: '',
+        theme: t,
+        userData: UserData(),
+      );
+      await pump(tester, note('Спасибо'));
+      expect(find.textContaining('Спасибо'), findsOneWidget);
+      await pump(tester, note('   '));
+      expect(find.textContaining('Спасибо'), findsNothing);
+      expect(
+        find.textContaining(LocaleService.current.tgNoteDemo),
+        findsOneWidget,
+      );
     });
   });
 }
