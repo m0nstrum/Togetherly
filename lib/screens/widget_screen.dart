@@ -30,7 +30,6 @@ import 'plus_screen.dart';
 import '../utils/couple_days.dart';
 import '../utils/safe_pick.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../logic/photo_day_widget_logic.dart';
 import '../models/pair_data.dart';
 import '../models/symbol_catalog.dart';
 import '../models/timer_item.dart';
@@ -82,6 +81,7 @@ import 'widget_screen/preview_style.dart';
 import 'widget_screen/previews_time.dart';
 import 'widget_screen/previews_pair.dart';
 import 'widget_screen/previews_misc.dart';
+import 'widget_screen/photo_day_widgets.dart';
 import 'widget_screen/widget_data_sync.dart';
 
 /// Экран виджетов — два тайла (мой / партнёра) + настройки автоотправки.
@@ -213,18 +213,8 @@ class _WidgetScreenState extends State<WidgetScreen>
   /// Подмешивать в «Фото партнёра» его снимки из заданий дня.
   bool _partnerTaskPhotos = false;
 
-  List<int> _personalWidgetIds = [];
-  List<int> _partnerWidgetIds = [];
-  Map<int, String> _photoDayWidgetNames = const {};
-  Map<int, String?> _photoDayWidgetOwnPhotoPaths = const {};
-  // Per-widget кеш URL-ов (длина → счётчик в превью)
-  Map<int, List<String>> _photoDayWidgetUrls = const {};
-  // Per-widget настройки ротации (для подсказок в превью)
-  Map<int, String> _photoDayWidgetRotationType = const {};
-  Map<int, int> _photoDayWidgetRotationInterval = const {};
-
-  int? _selectedPersonalWidgetId;
-  int? _selectedPartnerWidgetId;
+  /// Фото-виджеты на столе: списки, имена, превью, выбор в карточках.
+  PhotoDayWidgets _photoDay = PhotoDayWidgets.empty;
 
   String get _widgetTimerKey => 'widget_timer_id_${_pair.pairId}';
 
@@ -336,7 +326,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     final timerId = results[1] as String?;
     final lockEnabled = results[2] as bool;
     final photoDaySave = results[3] as bool;
-    final photoDayState = results[4] as Map<String, dynamic>;
+    final photoDayState = results[4] as PhotoDayWidgets;
     final statsState = results[5] as Map<String, dynamic>;
     final daysPhotos = results[6] as bool;
     final taskPhotos = await taskPhotosFuture;
@@ -350,25 +340,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       _daysPhotosEnabled = daysPhotos;
       _partnerTaskPhotos = taskPhotos;
       _photoGridCount = photoGridCount;
-      _personalWidgetIds = List<int>.from(photoDayState['personalIds'] ?? []);
-      _partnerWidgetIds = List<int>.from(photoDayState['partnerIds'] ?? []);
-      _photoDayWidgetNames = Map<int, String>.from(
-        photoDayState['names'] ?? {},
-      );
-      _photoDayWidgetOwnPhotoPaths = Map<int, String?>.from(
-        photoDayState['ownPhotoPaths'] ?? {},
-      );
-      _photoDayWidgetUrls = Map<int, List<String>>.from(
-        photoDayState['urls'] ?? {},
-      );
-      _photoDayWidgetRotationType = Map<int, String>.from(
-        photoDayState['rotationType'] ?? {},
-      );
-      _photoDayWidgetRotationInterval = Map<int, int>.from(
-        photoDayState['rotationInterval'] ?? {},
-      );
-      _selectedPersonalWidgetId = photoDayState['selectedPersonal'] as int?;
-      _selectedPartnerWidgetId = photoDayState['selectedPartner'] as int?;
+      _photoDay = photoDayState;
       _memoriesCount = statsState['memoriesCount'] as int?;
       _drawingsCount = statsState['drawingsCount'] as int?;
       _missYouCount = statsState['missYouCount'] as int?;
@@ -435,101 +407,12 @@ class _WidgetScreenState extends State<WidgetScreen>
     };
   }
 
-  Future<Map<String, dynamic>> _loadPhotoDayWidgetsSilent() async {
-    final hws = HomeWidgetService.instance;
-    final allIds = await hws.getPhotoDayWidgetIds();
-    final rawPersonalIds = await hws.getSelfPhotoWidgetIds();
-    final rawPartnerIds = await hws.getPartnerPhotoWidgetIds();
-    final personalIds = <int>[];
-    final partnerIds = <int>[];
-
-    for (final id in rawPersonalIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) personalIds.add(id);
-    }
-
-    for (final id in rawPartnerIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) partnerIds.add(id);
-    }
-
-    final selectedPersonal = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      personalIds,
-      _selectedPersonalWidgetId,
-    );
-    final selectedPartner = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      partnerIds,
-      _selectedPartnerWidgetId,
-    );
-
-    final widgetNames = <int, String>{};
-    final widgetOwnPhotoPaths = <int, String?>{};
-    final widgetUrls = <int, List<String>>{};
-    final widgetRotationType = <int, String>{};
-    final widgetRotationInterval = <int, int>{};
-
-    for (final widgetId in allIds) {
-      widgetNames[widgetId] = (await hws.getPhotoDayWidgetName(widgetId)) ?? '';
-      final widgetDisplay = await hws.getPhotoDayWidgetDisplay(widgetId);
-      final widgetMode = await hws.getPhotoDayWidgetMode(
-        widgetId,
-        fallbackGroupId: _pair.pairId,
-      );
-      final preview = await hws.getPhotoDayWidgetPreview(widgetId);
-      var customPath = await hws.getPhotoDayWidgetCustomPath(widgetId);
-      if (customPath != null &&
-          customPath.isNotEmpty &&
-          !File(customPath).existsSync()) {
-        customPath = null;
-      }
-      final urls = await hws.getPhotoDayWidgetUrls(widgetId);
-      widgetUrls[widgetId] = urls;
-      widgetRotationType[widgetId] = await hws.getPhotoDayWidgetRotationType(
-        widgetId,
-      );
-      widgetRotationInterval[widgetId] = await hws
-          .getPhotoDayWidgetRotationInterval(widgetId);
-
-      final preferredOwnPath = _resolveWidgetPreviewPath(
-        isPartner: widgetDisplay == 'partner',
-        widgetUrls: urls,
-        widgetPreviewPath: preview['path'],
-      );
-
-      final widgetState = PhotoDayWidgetLogic.resolveState(
-        selectedWidgetId: widgetId,
-        mode: widgetMode,
-        display: widgetDisplay,
-        widgetPreviewPath: preview['path'],
-        widgetCustomPath: customPath,
-        fallbackPartnerPhotoPath: _partnerSharedPreviewPath,
-      );
-      widgetOwnPhotoPaths[widgetId] =
-          preferredOwnPath ?? widgetState.ownPhotoPath;
-    }
-
-    return {
-      'personalIds': personalIds,
-      'partnerIds': partnerIds,
-      'names': widgetNames,
-      'ownPhotoPaths': widgetOwnPhotoPaths,
-      'urls': widgetUrls,
-      'rotationType': widgetRotationType,
-      'rotationInterval': widgetRotationInterval,
-      'selectedPersonal': selectedPersonal,
-      'selectedPartner': selectedPartner,
-    };
-  }
+  Future<PhotoDayWidgets> _loadPhotoDayWidgetsSilent() => PhotoDayWidgets.load(
+    pairId: _pair.pairId,
+    selectedPersonal: _photoDay.selectedPersonal,
+    selectedPartner: _photoDay.selectedPartner,
+    partnerSharedPreviewPath: _partnerSharedPreviewPath,
+  );
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -605,118 +488,18 @@ class _WidgetScreenState extends State<WidgetScreen>
   }
 
   Future<void> _loadPhotoDayWidgets() async {
-    final hws = HomeWidgetService.instance;
-    final allIds = await hws.getPhotoDayWidgetIds();
-    final rawPersonalIds = await hws.getSelfPhotoWidgetIds();
-    final rawPartnerIds = await hws.getPartnerPhotoWidgetIds();
-    final personalIds = <int>[];
-    final partnerIds = <int>[];
-
-    for (final id in rawPersonalIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) personalIds.add(id);
-    }
-
-    for (final id in rawPartnerIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) partnerIds.add(id);
-    }
-
-    final selectedPersonal = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      personalIds,
-      _selectedPersonalWidgetId,
-    );
-    final selectedPartner = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      partnerIds,
-      _selectedPartnerWidgetId,
-    );
-
-    final widgetNames = <int, String>{};
-    final widgetOwnPhotoPaths = <int, String?>{};
-    final widgetUrls = <int, List<String>>{};
-    final widgetRotationType = <int, String>{};
-    final widgetRotationInterval = <int, int>{};
-
-    for (final widgetId in allIds) {
-      widgetNames[widgetId] = (await hws.getPhotoDayWidgetName(widgetId)) ?? '';
-      final widgetDisplay = await hws.getPhotoDayWidgetDisplay(widgetId);
-      final widgetMode = await hws.getPhotoDayWidgetMode(
-        widgetId,
-        fallbackGroupId: _pair.pairId,
-      );
-      final preview = await hws.getPhotoDayWidgetPreview(widgetId);
-      var customPath = await hws.getPhotoDayWidgetCustomPath(widgetId);
-      if (customPath != null &&
-          customPath.isNotEmpty &&
-          !File(customPath).existsSync()) {
-        customPath = null;
-      }
-      final urls = await hws.getPhotoDayWidgetUrls(widgetId);
-      widgetUrls[widgetId] = urls;
-      widgetRotationType[widgetId] = await hws.getPhotoDayWidgetRotationType(
-        widgetId,
-      );
-      widgetRotationInterval[widgetId] = await hws
-          .getPhotoDayWidgetRotationInterval(widgetId);
-
-      // Превью: для личного виджета сначала свои URL, для партнёрского —
-      // фото партнёра из Firestore, чтобы карточка сразу показывала именно его.
-      final preferredOwnPath = _resolveWidgetPreviewPath(
-        isPartner: widgetDisplay == 'partner',
-        widgetUrls: urls,
-        widgetPreviewPath: preview['path'],
-      );
-
-      // myPhotoUrl (Firestore) используется только если у виджета есть
-      // собственные URL — иначе новый виджет копировал бы превью уже
-      // настроенного виджета.
-      final widgetState = PhotoDayWidgetLogic.resolveState(
-        selectedWidgetId: widgetId,
-        mode: widgetMode,
-        display: widgetDisplay,
-        widgetPreviewPath: preview['path'],
-        widgetCustomPath: customPath,
-        fallbackPartnerPhotoPath: _partnerSharedPreviewPath,
-      );
-      widgetOwnPhotoPaths[widgetId] =
-          preferredOwnPath ?? widgetState.ownPhotoPath;
-    }
-
+    final next = await _loadPhotoDayWidgetsSilent();
     if (!mounted) return;
-    setState(() {
-      _personalWidgetIds = personalIds;
-      _partnerWidgetIds = partnerIds;
-      _photoDayWidgetNames = widgetNames;
-      _photoDayWidgetOwnPhotoPaths = widgetOwnPhotoPaths;
-      _photoDayWidgetUrls = widgetUrls;
-      _photoDayWidgetRotationType = widgetRotationType;
-      _photoDayWidgetRotationInterval = widgetRotationInterval;
-      _selectedPersonalWidgetId = selectedPersonal;
-      _selectedPartnerWidgetId = selectedPartner;
-    });
+    setState(() => _photoDay = next);
   }
 
   Future<void> _selectPhotoDayWidget(int widgetId) async {
     final hws = HomeWidgetService.instance;
     final kind = await hws.getPhotoDayWidgetKind(widgetId);
     if (!mounted) return;
-    setState(() {
-      if (kind == 'partner') {
-        _selectedPartnerWidgetId = widgetId;
-      } else {
-        _selectedPersonalWidgetId = widgetId;
-      }
-    });
+    setState(
+      () => _photoDay = _photoDay.select(widgetId, partner: kind == 'partner'),
+    );
   }
 
   Future<void> _toggleSavePhotoAsMemory(bool value) async {
@@ -734,19 +517,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     if (singleUrl != null && singleUrl.isNotEmpty) return singleUrl;
 
     return null;
-  }
-
-  String? _resolveWidgetPreviewPath({
-    required bool isPartner,
-    required List<String> widgetUrls,
-    required String? widgetPreviewPath,
-  }) {
-    if (isPartner) {
-      return _partnerSharedPreviewPath ?? widgetPreviewPath;
-    }
-
-    if (widgetUrls.isNotEmpty) return widgetUrls.first;
-    return widgetPreviewPath;
   }
 
   Future<void> _toggleLockScreenMood(bool value) async {
@@ -1036,18 +806,15 @@ class _WidgetScreenState extends State<WidgetScreen>
       trimmedName,
     );
     if (!mounted) return;
-    setState(() {
-      _photoDayWidgetNames = Map<int, String>.from(_photoDayWidgetNames)
-        ..[widgetId] = trimmedName;
-    });
+    setState(() => _photoDay = _photoDay.renamed(widgetId, trimmedName));
   }
 
   void _showPhotoDayWidgetNameEditor(int widgetId, int index) {
     _showTextEditor(
       title: _s.edit,
       hint: _s.name,
-      initial: _photoDayWidgetNames[widgetId]?.trim().isNotEmpty == true
-          ? _photoDayWidgetNames[widgetId]!
+      initial: _photoDay.names[widgetId]?.trim().isNotEmpty == true
+          ? _photoDay.names[widgetId]!
           : _s.widgetSlotTitle(index),
       maxLength: 40,
       onSave: (value) => _renamePhotoDayWidget(widgetId, value),
@@ -3058,7 +2825,7 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   Widget _buildPhotoDayExpandedContent() {
     final s = LocaleService.current;
-    final hasWidgets = _personalWidgetIds.isNotEmpty;
+    final hasWidgets = _photoDay.personalIds.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3105,8 +2872,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
           const SizedBox(height: 10),
           _buildPhotoDayWidgetSelector(
-            ids: _personalWidgetIds,
-            selectedId: _selectedPersonalWidgetId,
+            ids: _photoDay.personalIds,
+            selectedId: _photoDay.selectedPersonal,
             isPartner: false,
           ),
         ],
@@ -3305,8 +3072,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
           const SizedBox(height: 10),
           _buildPhotoDayWidgetSelector(
-            ids: _partnerWidgetIds,
-            selectedId: _selectedPartnerWidgetId,
+            ids: _photoDay.partnerIds,
+            selectedId: _photoDay.selectedPartner,
             isPartner: true,
           ),
         ],
@@ -3349,17 +3116,16 @@ class _WidgetScreenState extends State<WidgetScreen>
         final index = entry.key;
         final widgetId = entry.value;
         final isSelected = widgetId == selectedId;
-        final widgetName = _photoDayWidgetNames[widgetId]?.trim();
-        final ownPhotoPath = _photoDayWidgetOwnPhotoPaths[widgetId];
+        final widgetName = _photoDay.names[widgetId]?.trim();
+        final ownPhotoPath = _photoDay.ownPhotoPaths[widgetId];
 
         // Счёт фото в виджете
         final int photoCount = isPartner
             ? (_ws.firstPartnerData?.sharedPhotoCount ?? 0)
-            : (_photoDayWidgetUrls[widgetId]?.length ?? 0);
+            : (_photoDay.urls[widgetId]?.length ?? 0);
 
-        final rotationType = _photoDayWidgetRotationType[widgetId] ?? 'unlock';
-        final rotationInterval =
-            _photoDayWidgetRotationInterval[widgetId] ?? 60;
+        final rotationType = _photoDay.rotationType[widgetId] ?? 'unlock';
+        final rotationInterval = _photoDay.rotationInterval[widgetId] ?? 60;
         final hasCarousel = photoCount >= 2;
         final String summary = photoCount == 0
             ? (isPartner
