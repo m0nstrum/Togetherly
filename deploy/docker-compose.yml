@@ -66,6 +66,8 @@ services:
       CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: ${CENTRIFUGO_TOKEN_HMAC}
       CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_API_KEY}
       CENTRIFUGO_CLIENT_ALLOWED_ORIGINS: https://${TETHERED_DOMAIN}
+      # /health — для deploy.sh; порт наружу не опубликован.
+      CENTRIFUGO_HEALTH_ENABLED: "true"
     volumes:
       - ./centrifugo/config.json:/centrifugo/config.json:ro
 

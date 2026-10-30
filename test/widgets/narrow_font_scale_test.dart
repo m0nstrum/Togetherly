@@ -70,9 +70,7 @@ void main() {
   });
 
   group('сторожа исходников', () {
-    final widgetScreen = File(
-      'lib/screens/widget_screen.dart',
-    ).readAsStringSync();
+    final widgetScreen = screenSource('lib/screens/widget_screen.dart');
 
     test('превью каталога рисуется без масштабирования шрифта', () {
       expect(

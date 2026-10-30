@@ -16,9 +16,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../support/screen_source.dart';
 
 void main() {
-  final screen = File('lib/screens/widget_screen.dart').readAsStringSync();
+  final screen = screenSource('lib/screens/widget_screen.dart');
   final editor = File(
     'lib/screens/home/widgets/photo_day_carousel_editor.dart',
   ).readAsStringSync();

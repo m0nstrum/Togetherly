@@ -59,7 +59,6 @@ import '../services/miss_you_repository.dart';
 import '../services/home_widget_service.dart';
 import '../services/level_service.dart';
 import '../services/locale_service.dart';
-import '../services/music_meta_service.dart';
 import '../utils/photo_crop.dart';
 import '../services/mood_notification_service.dart';
 import '../services/mood_service.dart';
@@ -97,7 +96,14 @@ import 'postcard/postcard_editor_screen.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/widget_content_view.dart';
-import '../models/ios_widget_gaps.dart';
+import 'widget_screen/text_editor_sheet.dart';
+import 'widget_screen/photo_source_sheet.dart';
+import 'widget_screen/photo_destination_sheet.dart';
+import 'widget_screen/music_editor_sheet.dart';
+import 'widget_screen/catalog.dart';
+import 'widget_screen/catalog_panels.dart';
+import 'widget_screen/controls.dart';
+import 'widget_screen/preview_parts.dart';
 
 /// Экран виджетов — два тайла (мой / партнёра) + настройки автоотправки.
 class WidgetScreen extends StatefulWidget {
@@ -152,80 +158,24 @@ class _WidgetScreenState extends State<WidgetScreen>
   PairData get _pair => widget.pairData;
   AppStrings get _s => LocaleService.current;
 
-  /// Что раскрыто на экране: разделы и карточки. Живёт в prefs
-  /// (`WidgetPanels`), поэтому переживает уход с экрана и перезапуск — до
-  /// 12.09.2026 набор сбрасывался к умолчаниям при каждом заходе.
-  Set<String> _expandedPanels = {...WidgetPanels.byDefault};
+  /// Что раскрыто на экране и какие размеры выбраны в карточках.
+  final WidgetCatalogPanels _panels = WidgetCatalogPanels();
 
-  bool get _pairWidgetExpanded =>
-      _expandedPanels.contains(WidgetPanels.pairWidget);
+  bool get _pairWidgetExpanded => _panels.isExpanded(WidgetPanels.pairWidget);
   bool get _petalTimerWidgetExpanded =>
-      _expandedPanels.contains(WidgetPanels.petalTimer);
-  bool get _daysCounterExpanded =>
-      _expandedPanels.contains(WidgetPanels.daysCounter);
-  bool get _photoDayExpanded => _expandedPanels.contains(WidgetPanels.photoDay);
+      _panels.isExpanded(WidgetPanels.petalTimer);
+  bool get _daysCounterExpanded => _panels.isExpanded(WidgetPanels.daysCounter);
+  bool get _photoDayExpanded => _panels.isExpanded(WidgetPanels.photoDay);
   bool get _partnerPhotoExpanded =>
-      _expandedPanels.contains(WidgetPanels.partnerPhoto);
-  bool get _photoGridExpanded =>
-      _expandedPanels.contains(WidgetPanels.photoGrid);
-
-  /// Человек уже сворачивал что-то в этот заход. Нужен против гонки: чтение
-  /// prefs асинхронное, и ответ, пришедший после первого нажатия, затёр бы
-  /// свежее решение прежним набором.
-  bool _panelsTouched = false;
+      _panels.isExpanded(WidgetPanels.partnerPhoto);
+  bool get _photoGridExpanded => _panels.isExpanded(WidgetPanels.photoGrid);
 
   /// Свернуть или раскрыть и тут же запомнить решение.
-  void _togglePanel(String key) {
-    setState(() {
-      _panelsTouched = true;
-      if (!_expandedPanels.remove(key)) _expandedPanels.add(key);
-    });
-    unawaited(_savePanels());
-  }
+  void _togglePanel(String key) => _panels.toggle(key);
 
-  Future<void> _savePanels() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      WidgetPanels.prefsKey,
-      WidgetPanels.store(_expandedPanels),
-    );
+  void _onPanelsChanged() {
+    if (mounted) setState(() {});
   }
-
-  Future<void> _saveSizeChoice() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      WidgetSizeChoice.prefsKey,
-      WidgetSizeChoice.store(_sizeChoice),
-    );
-  }
-
-  Future<void> _loadPanels() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = WidgetPanels.restore(
-      prefs.getStringList(WidgetPanels.prefsKey),
-    );
-    final sizes = WidgetSizeChoice.restore(
-      prefs.getStringList(WidgetSizeChoice.prefsKey),
-    );
-    if (!mounted || _panelsTouched) return;
-    setState(() {
-      // Выбранный размер — то же самое решение человека, что и раскрытие:
-      // выбрал «4×4», ушёл на главную, вернулся — размер обязан остаться.
-      // `putIfAbsent`, а не `addAll`: чтение асинхронное, и тот, кто успел
-      // ткнуть размер до ответа prefs, не должен получить прежний обратно.
-      sizes.forEach((k, v) => _sizeChoice.putIfAbsent(k, () => v));
-      // Карточку, раскрытую тапом по виджету рабочего стола, не закрываем:
-      // человек пришёл сюда именно ради неё.
-      _expandedPanels = {
-        ..._expandedPanels.intersection({WidgetPanels.pairWidget}),
-        ...saved,
-      };
-    });
-  }
-
-  /// Выбранный размер в карточке нового каталога, ключ — `widgetType`.
-  /// По умолчанию 4×2: он есть у каждого виджета и лучше всех читается.
-  final Map<String, int> _sizeChoice = {};
 
   // Скролл галереи + ключ карточки «Парный виджет» — чтобы прокрутить к ней
   // при открытии по тапу на виджет рабочего стола.
@@ -349,7 +299,8 @@ class _WidgetScreenState extends State<WidgetScreen>
     // устаревшее значение.
     _mascotService.resyncStreakWidget();
     _loadAllInitialPrefs();
-    _loadPanels();
+    _panels.addListener(_onPanelsChanged);
+    unawaited(_panels.load());
 
     // Открыты по тапу на парный виджет → сразу разворачиваем его настройки.
     if (widget.openPairEditorOnStart) {
@@ -360,7 +311,7 @@ class _WidgetScreenState extends State<WidgetScreen>
   /// Разворачивает карточку «Парный виджет» и прокручивает к ней.
   void _openPairEditor() {
     if (!mounted) return;
-    setState(() => _expandedPanels.add(WidgetPanels.pairWidget));
+    _panels.open(WidgetPanels.pairWidget);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = _pairWidgetKey.currentContext;
       if (ctx != null) {
@@ -1516,6 +1467,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     _moodService.removeListener(_onDataChanged);
     _mascotService.removeListener(_onDataChanged);
     _galleryScrollController.dispose();
+    _panels.dispose();
     super.dispose();
   }
 
@@ -1600,7 +1552,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                   child: Column(
                     children: [
                       // ── Виджетов нет у системы, а не у нас ──
-                      _buildIosWidgetsUnavailable(),
+                      IosWidgetsUnavailable(cs: _cs),
                       // ── Открытки ──
                       _buildPostcardBanner(),
                       const SizedBox(height: 16),
@@ -1614,51 +1566,6 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
         ),
       ],
-    );
-  }
-
-  /// Полоса для iPhone на iOS 15 и 16: у них расширения виджетов нет вовсе.
-  ///
-  /// Оно собрано с минимальной версией 17 — ветку `if #available` внутри
-  /// `WidgetBundle` держать нельзя, она роняет расширение целиком и уносит из
-  /// галереи ВСЕ виджеты (разбор 17.08.2026). На старых системах человек
-  /// открывает каталог, ставит виджет по инструкции и не находит Togetherly в
-  /// системном списке: «с обновлением виджет пропал» (iPhone 7 Plus,
-  /// 19.08.2026). Пусть каталог скажет это сам, а не оставляет искать поломку
-  /// в своём телефоне.
-  Widget _buildIosWidgetsUnavailable() {
-    if (!Platform.isIOS ||
-        iosWidgetsSupported(Platform.operatingSystemVersion)) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _cs.secondaryContainer,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 20,
-            color: _cs.onSecondaryContainer,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _s.iosWidgetsNeedIos17,
-              style: AppFonts.onest(
-                size: 13,
-                height: 1.35,
-                color: _cs.onSecondaryContainer,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1747,7 +1654,7 @@ class _WidgetScreenState extends State<WidgetScreen>
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildPreviewHalf(
+                    child: PairPreviewHalf(
                       data: my,
                       photoUrl: myPhoto,
                       panelColor: const Color(0xFFFFCDD9),
@@ -1758,7 +1665,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                   // разметке; см. PairPreviewDivider.
                   const PairPreviewDivider(),
                   Expanded(
-                    child: _buildPreviewHalf(
+                    child: PairPreviewHalf(
                       data: partner,
                       photoUrl: partnerPhoto,
                       panelColor: const Color(0xFFE8DAFF),
@@ -1774,116 +1681,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     );
   }
 
-  Widget _buildPreviewHalf({
-    required WidgetData data,
-    required String photoUrl,
-    required Color panelColor,
-    required bool isLeft,
-  }) {
-    final hasPhoto = photoUrl.isNotEmpty;
-    final textColor = hasPhoto ? Colors.white : const Color(0xCC000000);
-    final subColor = hasPhoto
-        ? Colors.white.withOpacity(0.85)
-        : const Color(0x99000000);
-
-    Widget panel() => ColoredBox(color: panelColor);
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Фон: фото (cover) или цветная панель
-        if (hasPhoto)
-          StorageImage(
-            imageUrl: photoUrl,
-            fit: BoxFit.cover,
-            placeholder: (_, __) => panel(),
-            errorWidget: (_, __, ___) => panel(),
-          )
-        else
-          panel(),
-        // Лёгкое затемнение поверх фото
-        if (hasPhoto) const ColoredBox(color: Color(0x1A000000)),
-        // Центральный контент
-        Padding(
-          padding: const EdgeInsets.all(6),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (data.hasMood)
-                  ClipOval(
-                    child: MoodImage(
-                      data.moodEmoji,
-                      width: 38,
-                      height: 38,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                if (data.hasStatus) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    data.status,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.onest(
-                      size: 10,
-                      weight: 600,
-                      color: textColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (data.hasMessage) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    data.message,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.onest(size: 9, color: subColor),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (data.hasMusic) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    '♪ ${data.musicTitle}',
-                    textAlign: TextAlign.center,
-                    style: AppFonts.onest(size: 8, color: subColor),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        // Аватар в нижнем углу (как в нативном виджете)
-        if (data.avatarUrl.isNotEmpty)
-          Positioned(
-            bottom: 4,
-            left: isLeft ? 4 : null,
-            right: isLeft ? null : 4,
-            child: Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              child: ClipOval(
-                child: StorageImage(
-                  imageUrl: data.avatarUrl,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) =>
-                      ColoredBox(color: Colors.white.withOpacity(0.4)),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
   // WIDGET GALLERY — все виджеты с превью и кнопкой «Добавить»
   // ════════════════════════════════════════════════════════════════════════════
@@ -1892,7 +1689,7 @@ class _WidgetScreenState extends State<WidgetScreen>
   ///
   /// Пустой раздел не оставляет после себя дырку: у человека без пары пусты
   /// почти все, и стопка пустых отступов читалась бы как оборванный экран.
-  List<Widget> _sections(List<_CatalogCard> cards, bool isPaired) {
+  List<Widget> _sections(List<CatalogCard> cards, bool isPaired) {
     final out = <Widget>[];
     void gap() {
       if (out.isNotEmpty) out.add(const SizedBox(height: 14));
@@ -1918,47 +1715,47 @@ class _WidgetScreenState extends State<WidgetScreen>
   /// список по возрасту кода: человеку это ничего не говорит, а «Где мы»
   /// вовсе лежал сбоку от обоих. Теперь виджеты разложены по смыслу, а
   /// платные помечены замком внутри своего раздела.
-  List<_CatalogCard> _catalogCards(bool isPaired, List<Widget> halfTiles) {
+  List<CatalogCard> _catalogCards(bool isPaired, List<Widget> halfTiles) {
     // На iPhone у некупившего Togetherly+ платных карточек не видно вовсе:
     // вести на оплату мимо Apple запрещает 3.1.1.
     final plusShown = PlusService.instance.visible;
     final locked = !PlusService.instance.active;
     final photoOwner = isPaired || _pair.isSolo;
-    _CatalogCard plus(String section, Widget Function(bool) build) =>
-        _CatalogCard(section, () => build(locked));
+    CatalogCard plus(String section, Widget Function(bool) build) =>
+        CatalogCard(section, () => build(locked));
     return [
       // ── Вы вдвоём ──
-      if (isPaired) _CatalogCard(WidgetPanels.sectionPair, _cardPair),
+      if (isPaired) CatalogCard(WidgetPanels.sectionPair, _cardPair),
       if (isPaired && plusShown) plus(WidgetPanels.sectionPair, _cardTogether),
       if (isPaired && plusShown) plus(WidgetPanels.sectionPair, _cardMiss),
-      if (isPaired) _CatalogCard(WidgetPanels.sectionPair, _cardMap),
-      if (isPaired) _CatalogCard(WidgetPanels.sectionPair, _cardStats),
-      if (isPaired) _CatalogCard(WidgetPanels.sectionPair, _cardMascot),
-      if (isPaired) _CatalogCard(WidgetPanels.sectionPhotos, _cardCanvas),
+      if (isPaired) CatalogCard(WidgetPanels.sectionPair, _cardMap),
+      if (isPaired) CatalogCard(WidgetPanels.sectionPair, _cardStats),
+      if (isPaired) CatalogCard(WidgetPanels.sectionPair, _cardMascot),
+      if (isPaired) CatalogCard(WidgetPanels.sectionPhotos, _cardCanvas),
 
       // ── Дни и таймеры ──
-      if (isPaired) _CatalogCard(WidgetPanels.sectionTime, _cardDaysCounter),
+      if (isPaired) CatalogCard(WidgetPanels.sectionTime, _cardDaysCounter),
       if (halfTiles.isNotEmpty)
-        _CatalogCard(
+        CatalogCard(
           WidgetPanels.sectionTime,
           () => _halfGrid(halfTiles),
           count: halfTiles.length,
         ),
-      _CatalogCard(WidgetPanels.sectionTime, _cardPetalTimer),
+      CatalogCard(WidgetPanels.sectionTime, _cardPetalTimer),
       if (isPaired && plusShown) plus(WidgetPanels.sectionTime, _cardCountdown),
       if (isPaired && plusShown) plus(WidgetPanels.sectionTime, _cardYearRing),
       if (isPaired && plusShown) plus(WidgetPanels.sectionTime, _cardYearGrid),
 
       // ── Фотографии ──
-      if (photoOwner) _CatalogCard(WidgetPanels.sectionPhotos, _cardSelfPhoto),
-      if (isPaired) _CatalogCard(WidgetPanels.sectionPhotos, _cardPartnerPhoto),
-      if (isPaired) _CatalogCard(WidgetPanels.sectionPhotos, _cardPhotoGrid),
+      if (photoOwner) CatalogCard(WidgetPanels.sectionPhotos, _cardSelfPhoto),
+      if (isPaired) CatalogCard(WidgetPanels.sectionPhotos, _cardPartnerPhoto),
+      if (isPaired) CatalogCard(WidgetPanels.sectionPhotos, _cardPhotoGrid),
 
       // ── Настроение ──
-      if (isPaired) _CatalogCard(WidgetPanels.sectionMood, _cardMood),
+      if (isPaired) CatalogCard(WidgetPanels.sectionMood, _cardMood),
       if (isPaired && plusShown) plus(WidgetPanels.sectionMood, _cardMoodTiles),
       if (isPaired)
-        _CatalogCard(WidgetPanels.sectionMood, _buildLockScreenMoodCard),
+        CatalogCard(WidgetPanels.sectionMood, _buildLockScreenMoodCard),
 
       // ── Заметки ──
       if (isPaired && plusShown) plus(WidgetPanels.sectionNotes, _cardNote),
@@ -2005,20 +1802,20 @@ class _WidgetScreenState extends State<WidgetScreen>
   }
 
   /// Раздел каталога: карточки с отступом между ними.
-  Widget _sectionBlock(String key, List<_CatalogCard> cards) {
+  Widget _sectionBlock(String key, List<CatalogCard> cards) {
     final here = [
       for (final c in cards)
         if (c.section == key) c,
     ];
     if (here.isEmpty) return const SizedBox.shrink();
     final (title, subtitle, icon) = _sectionHead(key);
-    return _CollapsibleWidgetSection(
+    return CollapsibleWidgetSection(
       cs: _cs,
       title: title,
       subtitle: subtitle,
       icon: icon,
-      expanded: _expandedPanels.contains(key),
-      onToggle: () => setState(() => _togglePanel(key)),
+      expanded: _panels.isExpanded(key),
+      onToggle: () => _togglePanel(key),
       count: here.fold(0, (n, c) => n + c.count),
       itemsBuilder: () => [
         for (var i = 0; i < here.length; i++) ...[
@@ -2143,7 +1940,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         ('4×2', _s.tgSizeHintWide, MapWidgetSize.m),
         ('4×4', _s.tgSizeHintLarge, MapWidgetSize.l),
       ])
-        _WidgetSizeOption(
+        WidgetSizeOption(
           label: label,
           hint: hint,
           qualifiedName:
@@ -2169,19 +1966,19 @@ class _WidgetScreenState extends State<WidgetScreen>
     widgetType: 'together',
     locked: locked,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.TogetherWidget2x2Provider',
         previewBuilder: () => _togetherPreview(TogetherCardSize.small),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.TogetherWidget4x2Provider',
         previewBuilder: () => _togetherPreview(TogetherCardSize.medium),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.TogetherWidget4x4Provider',
@@ -2396,19 +2193,19 @@ class _WidgetScreenState extends State<WidgetScreen>
           )
         : null,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.NoteWidget2x2Provider',
         previewBuilder: () => _buildNotePreview(compact: true),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.NoteWidget4x2Provider',
         previewBuilder: () => _buildNotePreview(),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.NoteWidget4x4Provider',
@@ -2426,19 +2223,19 @@ class _WidgetScreenState extends State<WidgetScreen>
     widgetType: 'note_paper',
     locked: locked,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.NoteWidget2x2Provider',
         previewBuilder: () => _buildNotePreview(compact: true, paper: true),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.NoteWidget4x2Provider',
         previewBuilder: () => _buildNotePreview(paper: true),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.NoteWidget4x4Provider',
@@ -2456,19 +2253,19 @@ class _WidgetScreenState extends State<WidgetScreen>
     widgetType: 'miss',
     locked: locked,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.MissWidget2x2Provider',
         previewBuilder: () => _missPreview(MissCardSize.small),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.MissWidget4x2Provider',
         previewBuilder: () => _missPreview(MissCardSize.medium),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×1',
         hint: _s.tgSizeHintStrip,
         qualifiedName: 'com.togetherly.love.MissWidget4x1Provider',
@@ -2486,13 +2283,13 @@ class _WidgetScreenState extends State<WidgetScreen>
     widgetType: 'mood_tiles',
     locked: locked,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintToday,
         qualifiedName: 'com.togetherly.love.MoodTilesWidget2x2Provider',
         previewBuilder: () => _buildMoodTiles2x2Preview(),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWeek,
         qualifiedName: 'com.togetherly.love.MoodTilesWidget4x2Provider',
@@ -2510,13 +2307,13 @@ class _WidgetScreenState extends State<WidgetScreen>
     widgetType: 'countdown',
     locked: locked,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.CountdownWidget2x2Provider',
         previewBuilder: () => _buildCountdown2x2Preview(),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.CountdownWidget4x2Provider',
@@ -2534,13 +2331,13 @@ class _WidgetScreenState extends State<WidgetScreen>
     widgetType: 'year_ring',
     locked: locked,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.YearRingWidget2x2Provider',
         previewBuilder: () => _buildYearRing2x2Preview(),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.YearRingWidget4x2Provider',
@@ -2557,19 +2354,19 @@ class _WidgetScreenState extends State<WidgetScreen>
     qualifiedName: 'com.togetherly.love.CanvasWidget2x3Provider',
     widgetType: 'canvas',
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.CanvasWidget2x2Provider',
         previewBuilder: () => _buildCanvasPreview(1),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×3',
         hint: _s.canvasWidgetSizeTall,
         qualifiedName: 'com.togetherly.love.CanvasWidget2x3Provider',
         previewBuilder: () => _buildCanvasPreview(2 / 3),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.CanvasWidget4x4Provider',
@@ -2662,29 +2459,29 @@ class _WidgetScreenState extends State<WidgetScreen>
     qualifiedName: 'com.togetherly.love.MascotWidget2x2Provider',
     widgetType: 'mascot',
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×1',
         hint: _s.tgSizeHintStrip,
         qualifiedName: 'com.togetherly.love.MascotWidget4x1Provider',
-        previewBuilder: () => _buildMascotPreview(_MascotPreviewSize.strip),
+        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.strip),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.MascotWidget2x2Provider',
-        previewBuilder: () => _buildMascotPreview(_MascotPreviewSize.small),
+        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.small),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.MascotWidget4x2Provider',
-        previewBuilder: () => _buildMascotPreview(_MascotPreviewSize.wide),
+        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.wide),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.MascotWidget4x4Provider',
-        previewBuilder: () => _buildMascotPreview(_MascotPreviewSize.large),
+        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.large),
       ),
     ],
   );
@@ -2698,13 +2495,13 @@ class _WidgetScreenState extends State<WidgetScreen>
     widgetType: 'year_grid',
     locked: locked,
     sizes: [
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.YearGridWidget2x2Provider',
         previewBuilder: () => _buildYearGrid2x2Preview(),
       ),
-      _WidgetSizeOption(
+      WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.YearGridWidget4x2Provider',
@@ -2779,7 +2576,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
         ),
 
-        if (!isPaired) ...[_buildNotPairedBanner(), const SizedBox(height: 16)],
+        if (!isPaired) ...[NotPairedBanner(t: _t), const SizedBox(height: 16)],
 
         ..._sections(cards, isPaired),
       ],
@@ -3705,12 +3502,12 @@ class _WidgetScreenState extends State<WidgetScreen>
   ///
   /// Так же устроена заметка — в каталоге она показывает свой текст. Человек
   /// выбирает размер по тому, что реально встанет на стол.
-  Widget _buildMascotPreview(_MascotPreviewSize size) {
+  Widget _buildMascotPreview(MascotPreviewSize size) {
     final aspect = switch (size) {
-      _MascotPreviewSize.strip => 424 / 92,
-      _MascotPreviewSize.small => 1.0,
-      _MascotPreviewSize.wide => 424 / 200,
-      _MascotPreviewSize.large => 1.0,
+      MascotPreviewSize.strip => 424 / 92,
+      MascotPreviewSize.small => 1.0,
+      MascotPreviewSize.wide => 424 / 200,
+      MascotPreviewSize.large => 1.0,
     };
 
     final mascotState = widget.mascotService.state;
@@ -3833,7 +3630,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     );
 
     final body = switch (size) {
-      _MascotPreviewSize.strip => Row(
+      MascotPreviewSize.strip => Row(
         children: [
           figure(40),
           const SizedBox(width: 8),
@@ -3867,7 +3664,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
         ],
       ),
-      _MascotPreviewSize.small => Column(
+      MascotPreviewSize.small => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
@@ -3893,7 +3690,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           label(labels.next, fontSize: 9),
         ],
       ),
-      _MascotPreviewSize.wide => Row(
+      MascotPreviewSize.wide => Row(
         children: [
           Container(
             width: 96,
@@ -3930,7 +3727,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
         ],
       ),
-      _MascotPreviewSize.large => Column(
+      MascotPreviewSize.large => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
@@ -4020,11 +3817,11 @@ class _WidgetScreenState extends State<WidgetScreen>
     return AspectRatio(
       aspectRatio: aspect,
       child: Container(
-        padding: EdgeInsets.all(size == _MascotPreviewSize.large ? 8 : 10),
+        padding: EdgeInsets.all(size == MascotPreviewSize.large ? 8 : 10),
         decoration: BoxDecoration(
           // Тот же фон, что у виджета на столе: карточка каталога сама
           // розоватая, и на surfaceContainer превью сливалось с ней.
-          color: size == _MascotPreviewSize.strip
+          color: size == MascotPreviewSize.strip
               ? _wr('primaryContainer')
               : _wr('surface'),
           borderRadius: BorderRadius.circular(22),
@@ -4335,7 +4132,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         (12 * dot + 11 * gap) * shrink,
         (rows * dot + (rows - 1) * gap) * shrink,
       ),
-      painter: _MonthsGridPainter(
+      painter: MonthsGridPainter(
         filled: p.monthsCompleted,
         rows: rows,
         dot: dot * shrink,
@@ -4440,80 +4237,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     );
   }
 
-  /// Сегменты выбора размера: «2×2 · 4×2 · 4×4». Каждый размер — отдельный
-  /// провайдер, поэтому выбор меняет и превью, и то, что уйдёт на рабочий стол.
-  Widget _sizePicker({
-    required List<_WidgetSizeOption> options,
-    required int selected,
-    required ValueChanged<int> onSelect,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: _cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < options.length; i++)
-            Expanded(
-              child: GestureDetector(
-                onTap: () => onSelect(i),
-                behavior: HitTestBehavior.opaque,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOut,
-                  // Высота минимальная, а не жёсткая: при системном шрифте
-                  // 1.3 метка «4×2» с подписью не влезала в 36 точек, и
-                  // каждая пилюля рисовала полосу «BOTTOM OVERFLOWED BY 3.0
-                  // PIXELS» — а таких рядов в каталоге полтора десятка.
-                  constraints: const BoxConstraints(minHeight: 36),
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == selected ? _cs.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        options[i].label,
-                        style: TextStyle(
-                          fontFamily: 'Onest',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          fontVariations: const [FontVariation('wght', 700)],
-                          color: i == selected
-                              ? _cs.onPrimary
-                              : _cs.onSurfaceVariant,
-                        ),
-                      ),
-                      if (options[i].hint != null)
-                        Text(
-                          options[i].hint!,
-                          style: TextStyle(
-                            fontFamily: 'Onest',
-                            fontSize: 9.5,
-                            height: 1.1,
-                            color:
-                                (i == selected
-                                        ? _cs.onPrimary
-                                        : _cs.onSurfaceVariant)
-                                    .withValues(alpha: 0.75),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildGalleryItem({
     required String title,
     required String subtitle,
@@ -4524,7 +4247,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     Widget? expandedContent,
     bool isExpanded = false,
     VoidCallback? onToggleExpand,
-    List<_WidgetSizeOption> sizes = const [],
+    List<WidgetSizeOption> sizes = const [],
     bool locked = false,
     ({String label, IconData icon, VoidCallback onTap})? extraAction,
   }) {
@@ -4533,13 +4256,14 @@ class _WidgetScreenState extends State<WidgetScreen>
     final hasSizes = sizes.isNotEmpty;
     final choiceKey = widgetType ?? qualifiedName;
     final index = hasSizes
-        ? (_sizeChoice[choiceKey] ?? 0).clamp(0, sizes.length - 1)
+        ? (_panels.sizeOf(choiceKey) ?? 0).clamp(0, sizes.length - 1)
         : 0;
     final chosen = hasSizes ? sizes[index] : null;
     final effectivePreview = chosen != null ? chosen.previewBuilder() : preview;
     final effectiveName = chosen?.qualifiedName ?? qualifiedName;
 
-    return _buildGlassCard(
+    return CatalogGlassCard(
+      cs: _cs,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -4643,13 +4367,11 @@ class _WidgetScreenState extends State<WidgetScreen>
           // ── Выбор размера ──
           if (hasSizes) ...[
             const SizedBox(height: 14),
-            _sizePicker(
+            SizePicker(
+              cs: _cs,
               options: sizes,
               selected: index,
-              onSelect: (i) {
-                setState(() => _sizeChoice[choiceKey] = i);
-                unawaited(_saveSizeChoice());
-              },
+              onSelect: (i) => _panels.chooseSize(choiceKey, i),
             ),
           ],
           if (effectivePreview != null) ...[
@@ -5313,7 +5035,8 @@ class _WidgetScreenState extends State<WidgetScreen>
         ],
         if (hasWidgets) ...[
           const SizedBox(height: 12),
-          _buildGlassCard(
+          CatalogGlassCard(
+            cs: _cs,
             child: Row(
               children: [
                 Expanded(
@@ -5458,7 +5181,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
         ],
         const SizedBox(height: 12),
-        _buildGlassCard(
+        CatalogGlassCard(
+          cs: _cs,
           child: Row(
             children: [
               Expanded(
@@ -5520,7 +5244,8 @@ class _WidgetScreenState extends State<WidgetScreen>
   }) {
     final s = LocaleService.current;
     if (ids.isEmpty) {
-      return _buildGlassCard(
+      return CatalogGlassCard(
+        cs: _cs,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -5828,7 +5553,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                     Row(
                       children: [
                         Expanded(
-                          child: _buildRotationRadio(
+                          child: RotationRadio(
+                            t: _t,
                             title: LocaleService.current.onUnlockOption,
                             value: 'unlock',
                             groupValue: rotationType,
@@ -5838,7 +5564,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _buildRotationRadio(
+                          child: RotationRadio(
+                            t: _t,
                             title: LocaleService.current.byTimeOption,
                             value: 'time',
                             groupValue: rotationType,
@@ -5942,56 +5669,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     );
   }
 
-  Widget _buildRotationRadio({
-    required String title,
-    required String value,
-    required String groupValue,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final isSelected = value == groupValue;
-    return GestureDetector(
-      onTap: () => onChanged(value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? _t.primary.withOpacity(0.1) : Colors.transparent,
-          border: Border.all(
-            color: isSelected ? _t.primary : _t.divider,
-            width: isSelected ? 1.5 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: isSelected ? _t.primary : _t.textMuted,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                title,
-                style:
-                    AppFonts.onest(
-                      size: 12,
-                      color: isSelected ? _t.primary : _t.textSecondary,
-                    ).copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
   // КАРТОЧКА: Настроение на экране блокировки
   // ════════════════════════════════════════════════════════════════════════════
@@ -6017,7 +5694,8 @@ class _WidgetScreenState extends State<WidgetScreen>
         ? _pair.partnerName
         : s.partner;
 
-    return _buildGlassCard(
+    return CatalogGlassCard(
+      cs: _cs,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -6089,7 +5767,8 @@ class _WidgetScreenState extends State<WidgetScreen>
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildLockMoodHalf(
+                    child: LockMoodHalf(
+                      t: _t,
                       entry: myEntry,
                       name: myName,
                       isLeft: true,
@@ -6113,7 +5792,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                     ),
                   ),
                   Expanded(
-                    child: _buildLockMoodHalf(
+                    child: LockMoodHalf(
+                      t: _t,
                       entry: partnerEntry,
                       name: partnerName,
                       isLeft: false,
@@ -6143,57 +5823,6 @@ class _WidgetScreenState extends State<WidgetScreen>
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildLockMoodHalf({
-    required MoodEntry? entry,
-    required String name,
-    required bool isLeft,
-    required String noMoodLabel,
-  }) {
-    return Column(
-      crossAxisAlignment: isLeft
-          ? CrossAxisAlignment.start
-          : CrossAxisAlignment.end,
-      children: [
-        Text(
-          name,
-          style: AppFonts.onest(
-            size: 11,
-            weight: 700,
-            letterSpacing: 0.3,
-            color: _t.textMuted,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 6),
-        if (entry != null) ...[
-          ClipOval(
-            child: MoodImage(
-              entry.imagePath,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            entry.localizedLabel,
-            style: AppFonts.onest(size: 12, weight: 700, color: _t.primary),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ] else ...[
-          const Text('😶', style: TextStyle(fontSize: 36)),
-          const SizedBox(height: 4),
-          Text(
-            noMoodLabel,
-            style: AppFonts.onest(size: 12, color: _t.textMuted),
-          ),
-        ],
-      ],
     );
   }
 
@@ -6254,7 +5883,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           Row(
             children: [
               Expanded(
-                child: _buildSmallStatBox(
+                child: SmallStatBox(
+                  t: _t,
                   icon: Icons.calendar_today_rounded,
                   color: _t.iconCalendar,
                   value: '$daysNum',
@@ -6264,7 +5894,8 @@ class _WidgetScreenState extends State<WidgetScreen>
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildSmallStatBox(
+                child: SmallStatBox(
+                  t: _t,
                   icon: Icons.photo_library_rounded,
                   color: _t.iconPost,
                   value: '${_memoriesCount ?? 0}',
@@ -6278,7 +5909,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           Row(
             children: [
               Expanded(
-                child: _buildSmallStatBox(
+                child: SmallStatBox(
+                  t: _t,
                   icon: Icons.brush_rounded,
                   color: _t.iconDraw,
                   value: '${_drawingsCount ?? 0}',
@@ -6288,7 +5920,8 @@ class _WidgetScreenState extends State<WidgetScreen>
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildSmallStatBox(
+                child: SmallStatBox(
+                  t: _t,
                   icon: Icons.favorite_rounded,
                   color: _t.primary,
                   value: '${_missYouCount ?? 0}',
@@ -6297,46 +5930,6 @@ class _WidgetScreenState extends State<WidgetScreen>
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSmallStatBox({
-    required IconData icon,
-    required Color color,
-    required String value,
-    required String label,
-    required Color bg,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _t.cardSurface,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppFonts.onest(size: 18, weight: 800, color: _t.textPrimary),
-          ),
-          Text(
-            label,
-            style: AppFonts.onest(size: 9, weight: 600, color: _t.textMuted),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -6367,7 +5960,8 @@ class _WidgetScreenState extends State<WidgetScreen>
   Widget _buildMyTile() {
     final data = _ws.myData ?? WidgetData(uid: '');
 
-    return _buildGlassCard(
+    return CatalogGlassCard(
+      cs: _cs,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -6408,13 +6002,14 @@ class _WidgetScreenState extends State<WidgetScreen>
                 ],
               ),
               const Spacer(),
-              _buildEditBadge(),
+              EditBadge(t: _t),
             ],
           ),
           const SizedBox(height: 16),
 
           // ── Слоты ──
-          _buildSlotRow(
+          SlotRow(
+            cs: _cs,
             icon: Icons.emoji_emotions_outlined,
             iconColor: _t.iconMood,
             label: _s.mood,
@@ -6438,7 +6033,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                   }
                 : null,
           ),
-          _buildSlotRow(
+          SlotRow(
+            cs: _cs,
             icon: Icons.chat_bubble_outline_rounded,
             iconColor: _t.primary,
             label: _s.status,
@@ -6452,7 +6048,8 @@ class _WidgetScreenState extends State<WidgetScreen>
             ),
             onClear: data.hasStatus ? () => _ws.clearStatus() : null,
           ),
-          _buildSlotRow(
+          SlotRow(
+            cs: _cs,
             icon: Icons.mail_outline_rounded,
             iconColor: _t.primary,
             label: _s.message,
@@ -6466,7 +6063,8 @@ class _WidgetScreenState extends State<WidgetScreen>
             ),
             onClear: data.hasMessage ? () => _ws.clearMessage() : null,
           ),
-          _buildSlotRow(
+          SlotRow(
+            cs: _cs,
             icon: Icons.photo_camera_outlined,
             iconColor: _t.iconPost,
             label: _s.photo,
@@ -6532,7 +6130,8 @@ class _WidgetScreenState extends State<WidgetScreen>
             onTap: () => _pickPhoto(),
             onClear: data.hasPhoto ? () => _ws.clearPhoto() : null,
           ),
-          _buildSlotRow(
+          SlotRow(
+            cs: _cs,
             icon: Icons.music_note_rounded,
             iconColor: _t.iconCalendar,
             label: _s.music,
@@ -6562,7 +6161,8 @@ class _WidgetScreenState extends State<WidgetScreen>
     final partnerPhoto = WidgetService.pairPhotoOfPartner(partner);
     final hasPartnerPhoto = partnerPhoto.isNotEmpty;
 
-    return _buildGlassCard(
+    return CatalogGlassCard(
+      cs: _cs,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -6652,7 +6252,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           const SizedBox(height: 16),
 
           // ── Слоты (read-only) ──
-          _buildReadonlySlot(
+          ReadonlySlot(
+            cs: _cs,
             icon: Icons.emoji_emotions_outlined,
             iconColor: _t.iconMood,
             label: _s.mood,
@@ -6669,7 +6270,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                   )
                 : null,
           ),
-          _buildReadonlySlot(
+          ReadonlySlot(
+            cs: _cs,
             icon: Icons.chat_bubble_outline_rounded,
             iconColor: _t.primary,
             label: _s.status,
@@ -6681,7 +6283,8 @@ class _WidgetScreenState extends State<WidgetScreen>
               text: partner.status,
             ),
           ),
-          _buildReadonlySlot(
+          ReadonlySlot(
+            cs: _cs,
             icon: Icons.mail_outline_rounded,
             iconColor: _t.primary,
             label: _s.message,
@@ -6694,7 +6297,8 @@ class _WidgetScreenState extends State<WidgetScreen>
               quoted: true,
             ),
           ),
-          _buildReadonlySlot(
+          ReadonlySlot(
+            cs: _cs,
             icon: Icons.photo_camera_outlined,
             iconColor: _t.iconPost,
             label: _s.photo,
@@ -6752,7 +6356,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                   )
                 : null,
           ),
-          _buildReadonlySlot(
+          ReadonlySlot(
+            cs: _cs,
             icon: Icons.music_note_rounded,
             iconColor: _t.iconCalendar,
             label: _s.music,
@@ -6823,10 +6428,12 @@ class _WidgetScreenState extends State<WidgetScreen>
             ],
           ),
         ),
-        _buildGlassCard(
+        CatalogGlassCard(
+          cs: _cs,
           child: Column(
             children: [
-              _buildSettingToggle(
+              SettingToggle(
+                t: _t,
                 icon: Icons.photo_library_outlined,
                 iconColor: _t.iconPost,
                 title: _s.photoToMemoryLane,
@@ -6834,8 +6441,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                 value: _ws.autoSendPhotoToMemory,
                 onChanged: (v) => _ws.setAutoSendPhotoToMemory(v),
               ),
-              _settingDivider(),
-              _buildSettingToggle(
+              SettingDivider(t: _t),
+              SettingToggle(
+                t: _t,
                 icon: Icons.chat_outlined,
                 iconColor: _t.primary,
                 title: _s.messagestoMemoryLane,
@@ -6843,8 +6451,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                 value: _ws.autoSendMessageToMemory,
                 onChanged: (v) => _ws.setAutoSendMessageToMemory(v),
               ),
-              _settingDivider(),
-              _buildSettingToggle(
+              SettingDivider(t: _t),
+              SettingToggle(
+                t: _t,
                 icon: Icons.music_note_outlined,
                 iconColor: _t.iconCalendar,
                 title: _s.musicToMemoryLane,
@@ -6852,8 +6461,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                 value: _ws.autoSendMusicToMemory,
                 onChanged: (v) => _ws.setAutoSendMusicToMemory(v),
               ),
-              _settingDivider(),
-              _buildSettingToggle(
+              SettingDivider(t: _t),
+              SettingToggle(
+                t: _t,
                 icon: Icons.calendar_month_outlined,
                 iconColor: _t.iconMood,
                 title: _s.moodToCalendar,
@@ -6871,316 +6481,6 @@ class _WidgetScreenState extends State<WidgetScreen>
   // ════════════════════════════════════════════════════════════════════════════
   // SLOT ROWS
   // ════════════════════════════════════════════════════════════════════════════
-
-  /// Слот содержимого виджета: настроение, статус, сообщение, фото, музыка.
-  ///
-  /// Заполненный — сплошная карточка со значением, пустой — та же карточка
-  /// пунктиром: сразу видно, что место свободно. Раньше все слоты были
-  /// одинаковыми строками с разделителями, и «пусто» отличалось только
-  /// кнопкой «+ Добавить» разной ширины.
-  Widget _buildSlotRow({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    String? value,
-    Color? valueColor,
-    Widget? trailing,
-    String? subtitle,
-    required VoidCallback onTap,
-    VoidCallback? onClear,
-  }) {
-    final hasValue = value != null;
-    final radius = BorderRadius.circular(22);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: hasValue ? _cs.surfaceContainerHigh : _cs.surfaceContainerLow,
-        clipBehavior: Clip.antiAlias,
-        // Форму задаёт только shape: Material не принимает его вместе с
-        // borderRadius и валит сборку экрана ассертом.
-        shape: hasValue
-            ? RoundedRectangleBorder(borderRadius: radius)
-            : RoundedRectangleBorder(
-                borderRadius: radius,
-                side: BorderSide(color: _cs.outlineVariant),
-              ),
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: hasValue
-                        ? _cs.primaryContainer
-                        : _cs.surfaceContainerHighest,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 22,
-                    color: hasValue
-                        ? _cs.onPrimaryContainer
-                        : _cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: AppFonts.onest(
-                          size: hasValue ? 11.5 : 14.5,
-                          weight: hasValue ? 500 : 600,
-                          color: hasValue
-                              ? _cs.onSurfaceVariant
-                              : _cs.onSurface,
-                        ),
-                      ),
-                      if (hasValue) ...[
-                        const SizedBox(height: 1),
-                        Text(
-                          value,
-                          style: AppFonts.onest(
-                            size: 14.5,
-                            weight: 600,
-                            color: valueColor ?? _cs.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          subtitle,
-                          style: AppFonts.onest(
-                            size: 11,
-                            weight: 500,
-                            height: 1.25,
-                            color: _cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (trailing != null) ...[const SizedBox(width: 8), trailing],
-                if (onClear != null) ...[
-                  const SizedBox(width: 4),
-                  IconButton(
-                    tooltip: ruEn('Очистить', 'Clear'),
-                    onPressed: onClear,
-                    visualDensity: VisualDensity.compact,
-                    icon: Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: _cs.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-                if (!hasValue) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
-                    decoration: BoxDecoration(
-                      color: _cs.secondaryContainer,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.add_rounded,
-                          size: 16,
-                          color: _cs.onSecondaryContainer,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _s.addBtn,
-                          style: AppFonts.onest(
-                            size: 12.5,
-                            weight: 600,
-                            color: _cs.onSecondaryContainer,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Слот половины партнёра — та же карточка, что и своя, но правку заменяет
-  /// просмотр: чужое содержимое мы не меняем, а вот раскрыть его целиком нужно.
-  ///
-  /// [onOpen] задан там, где содержимое в строку не помещается: письмо, статус,
-  /// снимок, песня. Пока его не было, строка молчала на нажатие, и длинное
-  /// сообщение обрывалось многоточием навсегда.
-  Widget _buildReadonlySlot({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    String? value,
-    Color? valueColor,
-    Widget? trailing,
-    VoidCallback? onOpen,
-  }) {
-    final hasValue = value != null;
-    final canOpen = hasValue && onOpen != null;
-    final radius = BorderRadius.circular(22);
-
-    final row = Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: hasValue
-                  ? _cs.primaryContainer
-                  : _cs.surfaceContainerHighest,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 22,
-              color: hasValue ? _cs.onPrimaryContainer : _cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppFonts.onest(
-                    size: hasValue ? 11.5 : 14.5,
-                    weight: hasValue ? 500 : 600,
-                    color: hasValue ? _cs.onSurfaceVariant : _cs.onSurface,
-                  ),
-                ),
-                if (hasValue) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    value,
-                    style: AppFonts.onest(
-                      size: 14.5,
-                      weight: 600,
-                      color: valueColor ?? _cs.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (trailing != null) ...[const SizedBox(width: 8), trailing],
-          // Шеврон — единственный признак, что строку можно раскрыть.
-          if (canOpen) ...[
-            const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
-              color: _cs.onSurfaceVariant,
-            ),
-          ],
-          if (!hasValue)
-            Text(
-              '—',
-              style: TextStyle(fontSize: 14, color: _cs.onSurfaceVariant),
-            ),
-        ],
-      ),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: hasValue ? _cs.surfaceContainerHigh : _cs.surfaceContainerLow,
-        clipBehavior: Clip.antiAlias,
-        // Форму задаёт только shape: Material не принимает его вместе с
-        // borderRadius и валит сборку экрана ассертом.
-        shape: hasValue
-            ? RoundedRectangleBorder(borderRadius: radius)
-            : RoundedRectangleBorder(
-                borderRadius: radius,
-                side: BorderSide(color: _cs.outlineVariant),
-              ),
-        child: canOpen ? InkWell(onTap: onOpen, child: row) : row,
-      ),
-    );
-  }
-
-  Widget _buildSettingToggle({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 20, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppFonts.onest(
-                    size: 13,
-                    weight: 600,
-                    color: _t.textPrimary,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: AppFonts.onest(size: 11, color: _t.textMuted),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 28,
-            child: Switch.adaptive(
-              value: value,
-              onChanged: onChanged,
-              activeColor: _t.primary,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ════════════════════════════════════════════════════════════════════════════
   // ФОТО-СЕТКА
@@ -7461,7 +6761,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _PhotoSourceSheet(theme: _t),
+      builder: (ctx) => PhotoSourceSheet(theme: _t),
     );
     if (source == null) return;
 
@@ -7627,88 +6927,9 @@ class _WidgetScreenState extends State<WidgetScreen>
     );
   }
 
-  Widget _buildGlassCard({required Widget child}) {
-    // M3 Expressive как на Подключении: тональный контейнер, крупный радиус,
-    // плоско (без рамки и тени) — глубина передаётся тоном.
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildEditBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: _t.primaryLight,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.edit_rounded, size: 12, color: _t.primary),
-          const SizedBox(width: 4),
-          Text(
-            _s.editBtn,
-            style: AppFonts.onest(size: 11, weight: 700, color: _t.primary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _settingDivider() =>
-      Divider(color: _t.divider, height: 8, thickness: 1);
-
   // ════════════════════════════════════════════════════════════════════════════
   // NOT PAIRED PLACEHOLDER
   // ════════════════════════════════════════════════════════════════════════════
-
-  Widget _buildNotPairedBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _t.cardSurface.withOpacity(0.82),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _t.primary.withOpacity(0.12)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: _t.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.timer_rounded,
-              size: 30,
-              color: _t.primary.withOpacity(0.75),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            LocaleService.current.soloTimerBannerTitle,
-            textAlign: TextAlign.center,
-            style: AppFonts.onest(size: 16, weight: 700, color: _t.textPrimary),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            LocaleService.current.soloTimerBannerSubtitle,
-            textAlign: TextAlign.center,
-            style: AppFonts.onest(size: 13, height: 1.5, color: _t.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ════════════════════════════════════════════════════════════════════════════
   // DIALOGS / EDITORS
@@ -7742,7 +6963,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _TextEditorSheet(
+      builder: (ctx) => WidgetTextEditorSheet(
         theme: _t,
         title: title,
         hint: hint,
@@ -7860,14 +7081,14 @@ class _WidgetScreenState extends State<WidgetScreen>
     final choice = await showModalBottomSheet<Object>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _PhotoSourceSheet(theme: _t, liveActive: liveActive),
+      builder: (ctx) => PhotoSourceSheet(theme: _t, liveActive: liveActive),
     );
     if (choice == null || !mounted) return;
-    if (choice == _kPickLiveVideo) {
+    if (choice == kPickLiveVideo) {
       await _pickLiveVideo();
       return;
     }
-    if (choice == _kDropLiveVideo) {
+    if (choice == kDropLiveVideo) {
       await WidgetAnimService.instance.clear();
       if (!mounted) return;
       _liveSnack(ruEn('Живое фото убрано', 'Live photo removed'));
@@ -7904,11 +7125,11 @@ class _WidgetScreenState extends State<WidgetScreen>
     // Куда отправить фото — три независимых тумблера (запоминаются).
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    final dest = await showModalSheet<_PhotoDestinations>(
+    final dest = await showModalSheet<PhotoDestinations>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _PhotoDestinationSheet(
+      builder: (ctx) => PhotoDestinationSheet(
         theme: _t,
         partnerName: _pair.partnerName,
         initialToPairWidget:
@@ -8031,7 +7252,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _MusicEditorSheet(
+      builder: (ctx) => MusicEditorSheet(
         theme: _t,
         initialTitle: data.musicTitle ?? '',
         initialArtist: data.musicArtist ?? '',
@@ -8070,1492 +7291,3 @@ class _WidgetScreenState extends State<WidgetScreen>
     }
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MD3 PHOTO LOADER — анимация загрузки фото
-// ══════════════════════════════════════════════════════════════════════════════
-
-class _MD3PhotoLoader extends StatefulWidget {
-  final Color color;
-  const _MD3PhotoLoader({required this.color});
-
-  @override
-  State<_MD3PhotoLoader> createState() => _MD3PhotoLoaderState();
-}
-
-class _MD3PhotoLoaderState extends State<_MD3PhotoLoader>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _pulse;
-  late final Animation<double> _ring;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..repeat(reverse: true);
-    _pulse = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
-    _ring = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOutSine);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.color;
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (_, __) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Внешнее пульсирующее кольцо
-            Transform.scale(
-              scale: 1.0 + _pulse.value * 0.12,
-              child: Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withOpacity(0.08 + _pulse.value * 0.07),
-                ),
-              ),
-            ),
-            // Среднее кольцо — чуть в противофазе
-            Transform.scale(
-              scale: 1.0 + (1 - _ring.value) * 0.08,
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withOpacity(0.06 + (1 - _ring.value) * 0.06),
-                ),
-              ),
-            ),
-            // MD3 индикатор загрузки
-            SizedBox(
-              width: 44,
-              height: 44,
-              child: CircularProgressIndicator(
-                color: color,
-                strokeWidth: 3.5,
-                strokeCap: StrokeCap.round,
-                backgroundColor: color.withOpacity(0.12),
-              ),
-            ),
-            // Иконка фото в центре
-            Opacity(
-              opacity: 0.25 + _pulse.value * 0.35,
-              child: Icon(Icons.image_rounded, size: 18, color: color),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// TEXT EDITOR SHEET
-// ══════════════════════════════════════════════════════════════════════════════
-
-class _TextEditorSheet extends StatefulWidget {
-  final AppTheme theme;
-  final String title;
-  final String hint;
-  final String initial;
-  final int maxLength;
-  final ValueChanged<String> onSave;
-
-  const _TextEditorSheet({
-    required this.theme,
-    required this.title,
-    required this.hint,
-    required this.initial,
-    required this.maxLength,
-    required this.onSave,
-  });
-
-  @override
-  State<_TextEditorSheet> createState() => _TextEditorSheetState();
-}
-
-class _TextEditorSheetState extends State<_TextEditorSheet> {
-  late TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.initial);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: widget.theme.cardSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: widget.theme.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              widget.title,
-              style: AppFonts.onest(
-                size: 18,
-                weight: 800,
-                color: widget.theme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _ctrl,
-              autofocus: true,
-              maxLength: widget.maxLength,
-              maxLines: widget.maxLength > 100 ? 3 : 1,
-              style: AppFonts.onest(size: 16),
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                hintStyle: TextStyle(
-                  fontFamily: AppFonts.body,
-                  color: widget.theme.textMuted,
-                ),
-                filled: true,
-                fillColor: widget.theme.surfaceMuted,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: widget.theme.primary,
-                    width: 1.5,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => widget.onSave(_ctrl.text.trim()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.theme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  LocaleService.current.save,
-                  style: AppFonts.onest(size: 15, weight: 700),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PHOTO SOURCE SHEET
-// ══════════════════════════════════════════════════════════════════════════════
-
-/// Маркер листа выбора: человек нажал «Живое фото», а не выбрал источник снимка.
-const String _kPickLiveVideo = 'live-video';
-
-/// Маркер: человек хочет вернуть виджету обычную фотографию.
-const String _kDropLiveVideo = 'live-video-off';
-
-class _PhotoSourceSheet extends StatelessWidget {
-  final AppTheme theme;
-
-  /// Стоит ли сейчас живое фото — от этого зависит, показывать ли «убрать».
-  final bool liveActive;
-
-  const _PhotoSourceSheet({required this.theme, this.liveActive = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.divider,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            LocaleService.current.chooseSource,
-            style: AppFonts.onest(
-              size: 18,
-              weight: 800,
-              color: theme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _sourceButton(
-                  context,
-                  icon: Icons.camera_alt_rounded,
-                  label: LocaleService.current.camera,
-                  source: ImageSource.camera,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _sourceButton(
-                  context,
-                  icon: Icons.photo_library_rounded,
-                  label: LocaleService.current.gallery,
-                  source: ImageSource.gallery,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Живое фото: короткое видео или гифка вместо снимка. Кадры из файла
-          // делает сервер, здесь человек просто выбирает его в галерее.
-          _liveButton(context),
-          if (liveActive) ...[
-            const SizedBox(height: 8),
-            _dropLiveButton(context),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// «Живое фото» отдаёт не источник, а признак: дальше вызывающий сам берёт
-  /// файл из галереи (`pickMedia`) и отправляет его на подготовку кадров.
-  Widget _liveButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.pop(context, _kPickLiveVideo),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: theme.primary.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.primary.withOpacity(0.15)),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.motion_photos_on_rounded,
-              size: 30,
-              color: theme.primary,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              ruEn(
-                'Живое фото — видео или гифка',
-                'Live photo — a video or a GIF',
-              ),
-              style: AppFonts.onest(
-                size: 13,
-                weight: 600,
-                color: theme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Выход из живого фото. Отдельная строка нужна потому, что снимок его больше
-  /// не вытесняет молча: раскадровка лежит своими ключами, и без явного сброса
-  /// виджет оставался с видео навсегда.
-  Widget _dropLiveButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.pop(context, _kDropLiveVideo),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: theme.textSecondary.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.motion_photos_off_rounded,
-              size: 20,
-              color: theme.textSecondary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              ruEn('Убрать живое фото', 'Remove the live photo'),
-              style: AppFonts.onest(
-                size: 13,
-                weight: 600,
-                color: theme.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sourceButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required ImageSource source,
-  }) {
-    return GestureDetector(
-      onTap: () => Navigator.pop(context, source),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          color: theme.primary.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.primary.withOpacity(0.15)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: theme.primary),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: AppFonts.onest(
-                size: 13,
-                weight: 600,
-                color: theme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PHOTO DESTINATION SHEET — куда отправить фото из парного виджета
-// ══════════════════════════════════════════════════════════════════════════════
-
-/// Результат выбора направлений для загруженного фото.
-class _PhotoDestinations {
-  final bool toPairWidget;
-  final bool toPartnerWidget;
-  final bool toMemories;
-  const _PhotoDestinations({
-    required this.toPairWidget,
-    required this.toPartnerWidget,
-    required this.toMemories,
-  });
-}
-
-class _PhotoDestinationSheet extends StatefulWidget {
-  final AppTheme theme;
-  final String partnerName;
-  final bool initialToPairWidget;
-  final bool initialToPartnerWidget;
-  final bool initialToMemories;
-
-  const _PhotoDestinationSheet({
-    required this.theme,
-    required this.partnerName,
-    required this.initialToPairWidget,
-    required this.initialToPartnerWidget,
-    required this.initialToMemories,
-  });
-
-  @override
-  State<_PhotoDestinationSheet> createState() => _PhotoDestinationSheetState();
-}
-
-class _PhotoDestinationSheetState extends State<_PhotoDestinationSheet> {
-  late bool _toPairWidget = widget.initialToPairWidget;
-  late bool _toPartnerWidget = widget.initialToPartnerWidget;
-  late bool _toMemories = widget.initialToMemories;
-
-  AppTheme get _t => widget.theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final partner = widget.partnerName.isNotEmpty
-        ? widget.partnerName
-        : LocaleService.current.partnerFallback;
-    final nothingSelected = !_toPairWidget && !_toPartnerWidget && !_toMemories;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: _t.cardSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: _t.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            LocaleService.current.whereToSendPhoto,
-            style: AppFonts.onest(size: 18, weight: 800, color: _t.textPrimary),
-          ),
-          const SizedBox(height: 16),
-          _destTile(
-            icon: Icons.dashboard_customize_rounded,
-            title: LocaleService.current.captionDestPairWidget,
-            subtitle: LocaleService.current.captionDestPairWidgetSub(partner),
-            value: _toPairWidget,
-            onChanged: (v) => setState(() => _toPairWidget = v),
-          ),
-          _destTile(
-            icon: Icons.favorite_rounded,
-            title: LocaleService.current.captionDestPartnerWidget,
-            subtitle: LocaleService.current.captionDestPartnerWidgetSub(
-              partner,
-            ),
-            value: _toPartnerWidget,
-            onChanged: (v) => setState(() => _toPartnerWidget = v),
-          ),
-          _destTile(
-            icon: Icons.photo_album_rounded,
-            title: LocaleService.current.captionDestMemories,
-            subtitle: LocaleService.current.captionDestMemoriesSub,
-            value: _toMemories,
-            onChanged: (v) => setState(() => _toMemories = v),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              onPressed: nothingSelected
-                  ? null
-                  : () => Navigator.pop(
-                      context,
-                      _PhotoDestinations(
-                        toPairWidget: _toPairWidget,
-                        toPartnerWidget: _toPartnerWidget,
-                        toMemories: _toMemories,
-                      ),
-                    ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _t.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: _t.surfaceMuted,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                LocaleService.current.sendLabel,
-                style: AppFonts.onest(size: 15, weight: 700),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _destTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _t.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 20, color: _t.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppFonts.onest(
-                    size: 14,
-                    weight: 700,
-                    color: _t.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppFonts.onest(
-                    size: 11.5,
-                    height: 1.25,
-                    color: _t.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Switch.adaptive(
-            value: value,
-            activeColor: _t.primary,
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MUSIC EDITOR SHEET
-// ══════════════════════════════════════════════════════════════════════════════
-
-/// Supported music services for the info dialog
-const List<Map<String, dynamic>> _musicServicesList = [
-  {
-    'name': 'Spotify',
-    'supported': true,
-    'color': Color(0xFF1DB954),
-    'icon': Icons.music_note_rounded,
-  },
-  {
-    'name': 'YouTube Music',
-    'supported': true,
-    'color': Color(0xFFFF0000),
-    'icon': Icons.play_circle_rounded,
-  },
-  {
-    'name': 'Apple Music',
-    'supported': true,
-    'color': Color(0xFFFC3C44),
-    'icon': Icons.apple_rounded,
-  },
-  {
-    'name': 'Deezer',
-    'supported': true,
-    'color': Color(0xFFA238FF),
-    'icon': Icons.album_rounded,
-  },
-  {
-    'name': 'SoundCloud',
-    'supported': true,
-    'color': Color(0xFFFF5500),
-    'icon': Icons.cloud_rounded,
-  },
-  {
-    'name': 'Yandex Music',
-    'supported': true,
-    'color': Color(0xFFFFCC00),
-    'icon': Icons.library_music_rounded,
-  },
-  {
-    'name': 'Tidal',
-    'supported': true,
-    'color': Color(0xFF000000),
-    'icon': Icons.waves_rounded,
-  },
-  {
-    'name': 'VK Music',
-    'supported': true,
-    'color': Color(0xFF0077FF),
-    'icon': Icons.music_video_rounded,
-  },
-  {
-    'name': 'YouTube',
-    'supported': true,
-    'color': Color(0xFFFF0000),
-    'icon': Icons.smart_display_rounded,
-  },
-  {
-    'name': 'Audio file',
-    'supported': true,
-    'color': Color(0xFF8B5CF6),
-    'icon': Icons.audio_file_rounded,
-  },
-  {
-    'name': 'Amazon Music',
-    'supported': false,
-    'color': Color(0xFF25D1DA),
-    'icon': Icons.shopping_bag_rounded,
-  },
-  {
-    'name': 'Pandora',
-    'supported': false,
-    'color': Color(0xFF005483),
-    'icon': Icons.radio_rounded,
-  },
-];
-
-class _MusicEditorSheet extends StatefulWidget {
-  final AppTheme theme;
-  final String initialTitle;
-  final String initialArtist;
-  final String initialUrl;
-  final String initialCoverUrl;
-  final void Function({
-    required String title,
-    required String artist,
-    String? url,
-    String? coverUrl,
-  })
-  onSave;
-
-  const _MusicEditorSheet({
-    required this.theme,
-    required this.initialTitle,
-    required this.initialArtist,
-    required this.initialUrl,
-    required this.initialCoverUrl,
-    required this.onSave,
-  });
-
-  @override
-  State<_MusicEditorSheet> createState() => _MusicEditorSheetState();
-}
-
-class _MusicEditorSheetState extends State<_MusicEditorSheet> {
-  late TextEditingController _titleCtrl;
-  late TextEditingController _artistCtrl;
-  late TextEditingController _urlCtrl;
-  late FocusNode _urlFocus;
-
-  bool _isFetching = false;
-  String? _coverUrl;
-  Timer? _debounce;
-  String? _lastFetchedUrl;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleCtrl = TextEditingController(text: widget.initialTitle);
-    _artistCtrl = TextEditingController(text: widget.initialArtist);
-    _urlCtrl = TextEditingController(text: widget.initialUrl);
-    _coverUrl = widget.initialCoverUrl.isNotEmpty
-        ? widget.initialCoverUrl
-        : null;
-
-    _urlFocus = FocusNode();
-    _urlFocus.addListener(() {
-      if (!_urlFocus.hasFocus) _triggerFetch();
-    });
-  }
-
-  /// Сохранение с догрузкой. Прежняя кнопка на пустых полях просто выходила
-  /// молча (`if (title.isEmpty || artist.isEmpty) return`), и человек с
-  /// вставленной ссылкой упирался в мёртвую кнопку без единого слова.
-  Future<void> _saveMusic() async {
-    final url = _urlCtrl.text.trim();
-    final needMeta =
-        _titleCtrl.text.trim().isEmpty || _artistCtrl.text.trim().isEmpty;
-    if (needMeta && url.isNotEmpty && url != _lastFetchedUrl) {
-      await _triggerFetch();
-    }
-    if (!mounted) return;
-
-    final title = _titleCtrl.text.trim();
-    final artist = _artistCtrl.text.trim();
-    if (title.isEmpty || artist.isEmpty) {
-      // Снекбар отсюда не виден: лист лежит маршрутом поверх Scaffold, и
-      // сообщение уезжает под него (те же грабли, что у «Ждём человека»).
-      setState(() => _error = LocaleService.current.musicMetaNotFound);
-      return;
-    }
-    widget.onSave(
-      title: title,
-      artist: artist,
-      url: url.isNotEmpty ? url : null,
-      coverUrl: _coverUrl,
-    );
-  }
-
-  /// Подгрузка по вставке ссылки, а не по уходу курсора из поля. Раньше
-  /// сработать успевал только тот, кто нажимал куда-то ещё перед сохранением;
-  /// остальные вписывали автора и название руками, хотя приложение умеет их
-  /// доставать само.
-  void _onUrlChanged(String value) {
-    final url = value.trim();
-    if (_error != null) setState(() => _error = null);
-    _debounce?.cancel();
-    if (!url.startsWith('http') || !url.contains('.')) return;
-    _debounce = Timer(const Duration(milliseconds: 600), () {
-      if (url != _lastFetchedUrl) _triggerFetch();
-    });
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _titleCtrl.dispose();
-    _artistCtrl.dispose();
-    _urlCtrl.dispose();
-    _urlFocus.dispose();
-    super.dispose();
-  }
-
-  Future<void> _triggerFetch() async {
-    final url = _urlCtrl.text.trim();
-    if (url.isEmpty || !url.startsWith('http')) return;
-    if (!mounted || _isFetching) return;
-    _lastFetchedUrl = url;
-    setState(() => _isFetching = true);
-    final meta = await _fetchMusicMeta(url);
-    if (!mounted) return;
-    setState(() {
-      _isFetching = false;
-      if ((meta['title']?.isNotEmpty ?? false) && _titleCtrl.text.isEmpty) {
-        _titleCtrl.text = meta['title']!;
-      }
-      if ((meta['artist']?.isNotEmpty ?? false) && _artistCtrl.text.isEmpty) {
-        _artistCtrl.text = meta['artist']!;
-      }
-      if (meta['cover']?.isNotEmpty ?? false) {
-        _coverUrl = meta['cover'];
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = widget.theme.primary;
-    // Ссылка, обложка и два поля выше маленького экрана, особенно с открытой
-    // клавиатурой: лист листается, а не обрезает «Сохранить».
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: widget.theme.cardSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: widget.theme.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            // ── Header with info button ──
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    LocaleService.current.music,
-                    style: AppFonts.onest(
-                      size: 18,
-                      weight: 800,
-                      color: widget.theme.textPrimary,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _showServicesInfo(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primary.withOpacity(0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      size: 20,
-                      color: primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // ─── Link Section (first — paste link to auto-fill below) ───
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: widget.theme.surfaceMuted,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: widget.theme.divider),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.link_rounded,
-                          size: 16,
-                          color: Color(0xFF22C55E),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        LocaleService.current.streamingLink,
-                        style: AppFonts.onest(
-                          size: 14,
-                          weight: 700,
-                          color: widget.theme.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  // URL field with fetch button
-                  TextField(
-                    controller: _urlCtrl,
-                    focusNode: _urlFocus,
-                    keyboardType: TextInputType.url,
-                    style: AppFonts.onest(size: 15),
-                    onChanged: _onUrlChanged,
-                    onSubmitted: (_) => _triggerFetch(),
-                    decoration: InputDecoration(
-                      hintText: LocaleService.current.pasteLinkFromService,
-                      hintStyle: TextStyle(
-                        fontFamily: AppFonts.body,
-                        color: widget.theme.textMuted,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.link_rounded,
-                        color: primary,
-                        size: 20,
-                      ),
-                      suffixIcon: _isFetching
-                          ? const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            )
-                          : IconButton(
-                              icon: Icon(
-                                Icons.manage_search_rounded,
-                                color: primary,
-                              ),
-                              tooltip: LocaleService.current.autoFetchSongInfo,
-                              onPressed: _triggerFetch,
-                            ),
-                      filled: true,
-                      fillColor: widget.theme.cardSurface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: primary, width: 1.5),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ─── Song Details Section ───
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    primary.withOpacity(0.04),
-                    const Color(0xFFEC4899).withOpacity(0.03),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: primary.withOpacity(0.12)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      // Album cover preview
-                      if (_coverUrl != null)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: StorageImage(
-                              imageUrl: _coverUrl!,
-                              width: 44,
-                              height: 44,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.music_note_rounded,
-                                  size: 22,
-                                  color: primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.music_note_rounded,
-                              size: 16,
-                              color: primary,
-                            ),
-                          ),
-                        ),
-                      Text(
-                        LocaleService.current.songDetails,
-                        style: AppFonts.onest(
-                          size: 14,
-                          weight: 700,
-                          color: widget.theme.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  _buildField(
-                    _titleCtrl,
-                    LocaleService.current.trackName,
-                    Icons.audiotrack_rounded,
-                  ),
-                  const SizedBox(height: 10),
-                  _buildField(
-                    _artistCtrl,
-                    LocaleService.current.artist,
-                    Icons.person_rounded,
-                  ),
-                ],
-              ),
-            ),
-
-            if (_error != null) ...[
-              const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  _error!,
-                  style: AppFonts.onest(
-                    size: 13.5,
-                    color: Theme.of(context).colorScheme.onErrorContainer,
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isFetching ? null : _saveMusic,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  LocaleService.current.save,
-                  style: AppFonts.onest(size: 15, weight: 700),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Music metadata fetching (same logic as Memory Lane) ──
-
-  /// Метаданные трека по ссылке. Разбор живёт в [MusicMetaService] — одной
-  /// копией на оба экрана: пока копий было две, они разошлись, и в виджете
-  /// Яндекс.Музыка подставляла в поля мусор вместо названия.
-  Future<Map<String, String?>> _fetchMusicMeta(String url) =>
-      MusicMetaService.instance.fetch(url);
-
-  void _showServicesInfo(BuildContext context) {
-    final primary = widget.theme.primary;
-    showAppSheet<void>(
-      context,
-      builder: (ctx) => SheetScaffold(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      primary.withOpacity(0.15),
-                      const Color(0xFFEC4899).withOpacity(0.1),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.music_note_rounded, color: primary, size: 28),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Supported Services',
-                style: AppFonts.onest(
-                  size: 18,
-                  weight: 800,
-                  color: widget.theme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Paste a link from any supported service',
-                style: AppFonts.onest(size: 12, color: widget.theme.textMuted),
-              ),
-              const SizedBox(height: 18),
-              ..._musicServicesList.map(
-                (svc) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: (svc['color'] as Color).withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: (svc['color'] as Color).withOpacity(0.12),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          svc['icon'] as IconData,
-                          size: 20,
-                          color: svc['color'] as Color,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            svc['name'] as String,
-                            style: AppFonts.onest(
-                              size: 14,
-                              weight: 600,
-                              color: widget.theme.textPrimary,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          svc['supported'] == true
-                              ? Icons.check_circle_rounded
-                              : Icons.cancel_rounded,
-                          size: 20,
-                          color: svc['supported'] == true
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFEF4444),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: TextButton.styleFrom(
-                    foregroundColor: primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Got it',
-                    style: TextStyle(
-                      fontFamily: AppFonts.body,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildField(TextEditingController ctrl, String hint, IconData icon) {
-    return TextField(
-      controller: ctrl,
-      style: AppFonts.onest(size: 15),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          fontFamily: AppFonts.body,
-          color: widget.theme.textMuted,
-        ),
-        prefixIcon: Icon(icon, color: widget.theme.primary, size: 20),
-        filled: true,
-        fillColor: widget.theme.surfaceMuted,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: widget.theme.primary, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
-    );
-  }
-}
-
-/// Один размер виджета в карточке каталога.
-///
-/// В Android каждый размер — свой `AppWidgetProvider`, общего «виджета с
-/// выбором размера» не бывает. Поэтому размер выбирается до установки:
-/// выбранный вариант определяет и превью, и того провайдера, что уйдёт на
-/// рабочий стол.
-/// Сетка месяцев для превью каталога: точка — месяц, ряд — год.
-/// Повторяет `WidgetImages.monthsGrid` на нативной стороне.
-class _MonthsGridPainter extends CustomPainter {
-  const _MonthsGridPainter({
-    required this.filled,
-    required this.rows,
-    required this.dot,
-    required this.gap,
-    required this.past,
-    required this.current,
-    required this.future,
-  });
-
-  final int filled;
-  final int rows;
-  final double dot;
-  final double gap;
-  final Color past;
-  final Color current;
-  final Color future;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..isAntiAlias = true;
-    final r = dot / 2;
-    for (var row = 0; row < rows; row++) {
-      for (var col = 0; col < 12; col++) {
-        final i = row * 12 + col;
-        paint.color = i < filled
-            ? past
-            : i == filled
-            ? current
-            : future;
-        canvas.drawCircle(
-          Offset(col * (dot + gap) + r, row * (dot + gap) + r),
-          r,
-          paint,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_MonthsGridPainter old) =>
-      old.filled != filled ||
-      old.rows != rows ||
-      old.dot != dot ||
-      old.past != past ||
-      old.current != current ||
-      old.future != future;
-}
-
-class _WidgetSizeOption {
-  const _WidgetSizeOption({
-    required this.label,
-    required this.qualifiedName,
-    required this.previewBuilder,
-    this.hint,
-  });
-
-  /// Метка сегмента, например «4×2».
-  final String label;
-
-  /// Подпись под меткой: чем этот размер отличается.
-  final String? hint;
-
-  final String qualifiedName;
-
-  /// Построитель превью. Именно функция: карточка собирала превью всех трёх
-  /// размеров разом, а показывала одно — на раскрытии раздела это стоило
-  /// заметной паузы.
-  final Widget Function() previewBuilder;
-}
-
-/// Сворачивающийся раздел каталога виджетов.
-///
-/// Заголовок с иконкой и счётчиком, содержимое раскрывается анимацией. Нужен,
-/// чтобы прежние виджеты не заслоняли новый каталог: их список длинный, а
-/// смотреть в первую очередь надо новые.
-/// Карточка каталога: в каком разделе стоит и как строится.
-///
-/// Строится лениво — свёрнутый раздел не должен собирать превью.
-class _CatalogCard {
-  const _CatalogCard(this.section, this.build, {this.count = 1});
-
-  /// Ключ раздела из [WidgetPanels].
-  final String section;
-  final Widget Function() build;
-
-  /// Сколько виджетов стоит за карточкой: у сетки мелких плиток их два, и
-  /// бейдж раздела обязан считать виджеты, а не карточки.
-  final int count;
-}
-
-class _CollapsibleWidgetSection extends StatelessWidget {
-  const _CollapsibleWidgetSection({
-    required this.cs,
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.expanded,
-    required this.onToggle,
-    required this.itemsBuilder,
-    required this.count,
-  });
-
-  final ColorScheme cs;
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool expanded;
-  final VoidCallback onToggle;
-
-  /// Содержимое строится лениво — только когда раздел раскрыт.
-  ///
-  /// Раньше сюда приходил готовый список, и все карточки со всеми превью
-  /// строились на каждый build, даже у свёрнутого раздела. Раскрытие после
-  /// этого перестраивало полтора десятка превью разом, и приложение заметно
-  /// подвисало.
-  final List<Widget> Function() itemsBuilder;
-
-  /// Число в бейдже. Считается без построения виджетов: карточки, без
-  /// разделительных отступов и рекламы.
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    if (count == 0) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Material(
-          color: cs.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(26),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onToggle,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: cs.secondaryContainer,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(icon, size: 20, color: cs.onSecondaryContainer),
-                  ),
-                  const SizedBox(width: 13),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontFamily: 'Unbounded',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            fontVariations: const [FontVariation('wght', 700)],
-                            letterSpacing: -0.3,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '$count',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  AnimatedRotation(
-                    turns: expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.expand_more_rounded,
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        AnimatedSize(
-          alignment: Alignment.topCenter,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          child: expanded
-              ? Padding(
-                  padding: const EdgeInsets.only(top: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: itemsBuilder(),
-                  ),
-                )
-              : const SizedBox(width: double.infinity),
-        ),
-      ],
-    );
-  }
-}
-
-/// Размеры превью маскота в каталоге: те же четыре, что и на столе.
-enum _MascotPreviewSize { strip, small, wide, large }

@@ -2,13 +2,14 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/services/mascot/mascot_widget_keys.dart';
+import '../support/screen_source.dart';
 
 /// Имя провайдера живёт в четырёх местах разом: константа Dart, класс Kotlin,
 /// приёмник в манифесте и карточка каталога. Разъехались — виджет либо не
 /// ставится, либо стоит и не обновляется, и увидеть это можно только на
 /// устройстве.
 void main() {
-  final screen = File('lib/screens/widget_screen.dart').readAsStringSync();
+  final screen = screenSource('lib/screens/widget_screen.dart');
   final kotlin = File(
     'android/app/src/main/kotlin/com/togetherly/love/MascotWidgetProvider.kt',
   ).readAsStringSync();

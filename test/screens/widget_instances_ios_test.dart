@@ -1,13 +1,13 @@
 // «Виджеты на рабочем столе» строится по номерам виджетов Android. На iPhone
 // номеров нет, и раздел всегда писал «Виджет ещё не добавлен», хотя виджеты
 // стояли на столе (обращение 284, 18.10.2026). На iPhone раздела нет вовсе.
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import '../support/screen_source.dart';
 
 void main() {
   test('раздел экземпляров фото-виджетов спрятан на iPhone', () {
-    final src = File('lib/screens/widget_screen.dart').readAsStringSync();
+    final src = screenSource('lib/screens/widget_screen.dart');
     final uses = RegExp(r'widgetInstances,').allMatches(src).toList();
     expect(
       uses,
