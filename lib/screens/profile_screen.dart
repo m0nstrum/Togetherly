@@ -3198,7 +3198,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       birthDate: widget.userData.birthDate,
     );
     if (mounted) setState(() {});
-    if (mounted) {
+    if (context.mounted) {
       await _offerCounterFromAnniversary(context, picked, previous: previous);
     }
   }
@@ -3243,7 +3243,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final saved = await widget.timerService.updateTimer(
       timer.copyWith(startDate: a),
     );
-    if (!mounted) return;
+    if (!mounted || !context.mounted) return;
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -4316,9 +4316,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             : () async {
                 final rootCtx = context;
                 final awarded = await widget.userData.claimDailyBonus();
-                if (!mounted) return;
+                if (!rootCtx.mounted) return;
                 if (awarded) {
-                  // ignore: use_build_context_synchronously
                   CoinRewardToast.show(
                     rootCtx,
                     amount: 1,
@@ -4692,7 +4691,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
     final ok = await widget.userData.purchaseTheme(t.index);
     if (!ok) return 'cancel';
-    if (mounted) {
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_s.themePurchased),

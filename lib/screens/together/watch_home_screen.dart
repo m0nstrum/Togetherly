@@ -226,6 +226,7 @@ class _WatchHomeScreenState extends State<WatchHomeScreen>
       );
       return;
     }
+    if (!mounted) return;
 
     // fork (UX V3): «Загружаю N МБ…» с отменой, причина сбоя словами.
     setState(() {

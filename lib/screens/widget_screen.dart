@@ -409,6 +409,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     final statsState = results[5] as Map<String, dynamic>;
     final daysPhotos = results[6] as bool;
     final taskPhotos = await taskPhotosFuture;
+    if (!mounted) return;
 
     setState(() {
       _canPinWidgets = canPin;

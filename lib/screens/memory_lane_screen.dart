@@ -6457,7 +6457,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                       );
                                     }
                                   }
-                                  setState(() => isLoadingLocation = false);
+                                  if (context.mounted) {
+                                    setState(() => isLoadingLocation = false);
+                                  }
                                 },
                           icon: isLoadingLocation
                               ? SizedBox(
@@ -7126,6 +7128,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       if (type == MemoryType.photo &&
           mediaPaths != null &&
           mediaPaths.isNotEmpty) {
+        if (!mounted) return false;
         // fork: D1 — часть фото не залилась: «загружено N из M», повтор или отказ
         final urls = await uploadPhotosConfirmed(
           context,
