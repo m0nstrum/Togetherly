@@ -169,6 +169,26 @@ class CentrifugoService {
     );
   }
 
+  /// Своя связь для [channel] есть: сокет поднят и подписка на канал стоит.
+  ///
+  /// Для «нет связи» на экранах (B11): раньше это значило «последняя отправка
+  /// не удалась», и одна потерянная отправка держала надпись, пока человек не
+  /// коснётся экрана снова, хотя сокет давно жив.
+  bool linkUp(String channel) =>
+      _client?.state == centrifuge.State.connected &&
+      isSubscribed(ForkVerifiedDelta.signalChannel(channel));
+
+  /// Кто публикует в [channel] (сырые публикации): uid отправителя, как его
+  /// видит сервер. Признак жизни партнёра, даже если сам пакет не открылся
+  /// (B10). Слушать — после [subscribeRaw] того же канала.
+  Stream<String> publishers(String channel) =>
+      _hub(ForkVerifiedDelta.signalChannel(channel))._publishers.stream;
+
+  /// Подписка на [channel] встала: в первый раз и после каждого
+  /// переподключения. Тот, кто здоровается в канале, здоровается снова.
+  Stream<void> subscribedTo(String channel) =>
+      _hub(ForkVerifiedDelta.signalChannel(channel))._ready.stream;
+
   _ChannelHub _hub(String channel) {
     _ensureClient();
     return _channels.putIfAbsent(
@@ -223,6 +243,15 @@ class CentrifugoService {
     ForkVerifiedDelta.signalChannel(channel),
   ).publish(data, requireDelivery: requireDelivery);
 
+  /// Отпустить подписку [channel], которую держала только публикация
+  /// ([publish] поднимает её и не снимает). fork (D11): после выключения
+  /// показа сервер в геоканал больше не пустит, и брошенная подписка
+  /// просила бы токен по кругу.
+  Future<void> release(String channel) async {
+    final hub = _channels[ForkVerifiedDelta.signalChannel(channel)];
+    if (hub != null && hub.isEmpty) await hub.idle();
+  }
+
   /// fork: публикация, пришедшая не по сокету (будильник FCM,
   /// lib/fork/push/fcm_wake.dart), — слушателям канала, как с сокета.
   void deliver(String channel, Map<String, dynamic> publication) =>
@@ -261,6 +290,12 @@ class _ChannelHub {
   // Слушатели СЫРЫХ публикаций (эфемерные данные мимо PB, напр. live-штрихи).
   final List<void Function(Map<String, dynamic>)> _rawListeners = [];
   StreamSubscription<centrifuge.PublicationEvent>? _pubSub;
+  StreamSubscription<centrifuge.SubscribedEvent>? _readySub;
+  // Синхронно и ДО раздачи пакета: «ушёл» в самом пакете должен лечь после
+  // «слышали» по отправителю, а не наоборот.
+  final StreamController<String> _publishers =
+      StreamController<String>.broadcast(sync: true);
+  final StreamController<void> _ready = StreamController<void>.broadcast();
   bool _subscribed = false;
 
   bool get isSubscribed =>
@@ -279,11 +314,16 @@ class _ChannelHub {
       ),
     );
     _pubSub = _sub.publication.listen(_onPublication);
+    _readySub = _sub.subscribed.listen((_) {
+      if (!_ready.isClosed) _ready.add(null);
+    });
     _subscribed = true;
     _sub.subscribe();
   }
 
   Future<void> _onPublication(centrifuge.PublicationEvent ev) async {
+    final who = ev.info?.user ?? '';
+    if (who.isNotEmpty && !_publishers.isClosed) _publishers.add(who);
     try {
       final envelope = jsonDecode(utf8.decode(ev.data)) as Map<String, dynamic>;
       if (_listeners.isNotEmpty) {
@@ -337,7 +377,10 @@ class _ChannelHub {
 
   void _ensureSubscribed() {
     // Канал мог быть переведён в idle (unsubscribe) при опустении — поднимаем.
-    if (!_subscribed) {
+    // fork (D11): или его снял сервер (выключенный показ снимает геоканал):
+    // тогда флаг ещё стоит, а подписки уже нет.
+    if (!_subscribed ||
+        _sub.state == centrifuge.SubscriptionState.unsubscribed) {
       _subscribed = true;
       _sub.subscribe();
     }
@@ -405,6 +448,10 @@ class _ChannelHub {
   Future<void> dispose() async {
     await _pubSub?.cancel();
     _pubSub = null;
+    await _readySub?.cancel();
+    _readySub = null;
+    await _publishers.close();
+    await _ready.close();
     _listeners.clear();
     try {
       await _sub.unsubscribe();

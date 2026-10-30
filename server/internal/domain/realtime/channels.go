@@ -88,3 +88,18 @@ func nonEmpty(prefix, id string) []string {
 	}
 	return []string{prefix + id}
 }
+
+// Revoked — у кого и какие подписки снять после удаления записи. Своя точка
+// в `live_location` — флаг «делюсь» (D11): удалил — геоканал партнёра больше
+// не твой, и ждать истечения токена (две минуты) незачем. Пустой user —
+// снимать нечего.
+func Revoked(r Record) (user string, channels []string) {
+	if r == nil || r.CollectionName() != "live_location" {
+		return "", nil
+	}
+	user, ch := r.String("user_uid"), r.String("channel")
+	if user == "" || ch == "" {
+		return "", nil
+	}
+	return user, []string{"loc:" + ch, "locsignal:" + ch}
+}

@@ -111,3 +111,21 @@ func TestPresence(t *testing.T) {
 	_, err = centrifugo.New("", "", time.Second).Presence(context.Background(), "watch:x")
 	assert.ErrorIs(t, err, centrifugo.ErrDisabled)
 }
+
+func TestUnsubscribe(t *testing.T) {
+	var got map[string]string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/unsubscribe", r.URL.Path)
+		assert.Equal(t, "secret", r.Header.Get("X-API-Key"))
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	p := centrifugo.New(srv.URL+"/api", "secret", time.Second)
+	require.NoError(t, p.Unsubscribe(context.Background(), "u1", "loc:pair_a_b"))
+	assert.Equal(t, map[string]string{"user": "u1", "channel": "loc:pair_a_b"}, got)
+
+	err := centrifugo.New("", "", time.Second).Unsubscribe(context.Background(), "u1", "x")
+	assert.ErrorIs(t, err, centrifugo.ErrDisabled)
+}

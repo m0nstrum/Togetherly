@@ -24,6 +24,8 @@ def check(method, path, token, body=None, expected=200):
     return value
 
 presence = check('POST', '/api/collections/user_presence/records', bt, {'user_uid': b})
+# D11: геоканал выдаётся только тому, кто делится сам.
+check('POST', '/api/collections/live_location/records', at, {'channel': 'pair_' + a + '_' + b, 'user_uid': a})
 for ch in ('user:' + b, 'pair:' + pair, 'loc:pair_' + a + '_' + b):
     check('POST', '/api/centrifugo/subscription-token', at, {'channel': ch})
 check('GET', '/api/user/card?uid=' + b, at)

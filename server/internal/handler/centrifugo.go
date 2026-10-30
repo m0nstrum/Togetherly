@@ -71,6 +71,13 @@ func RealtimeTokens(r *router.Router[*core.RequestEvent], secret string) {
 	}).Bind(apis.RequireAuth())
 }
 
+// sharesLocation — делится ли uid геопозицией в канале: своя запись в
+// `live_location` и есть флаг «делюсь» (правило коллекции, access.Collections).
+func sharesLocation(app core.App, uid, channel string) bool {
+	_, err := app.FindFirstRecordByFilter("live_location", "channel = {:c} && user_uid = {:u}", dbx.Params{"c": channel, "u": uid})
+	return err == nil
+}
+
 // canSubscribe — пускает ли канал человека uid. Пары — только действующие.
 func canSubscribe(app core.App, s realtime.Scope, uid, secret string) bool {
 	live := func(filter string, params dbx.Params) bool {
@@ -86,7 +93,8 @@ func canSubscribe(app core.App, s realtime.Scope, uid, secret string) bool {
 	case "user":
 		return s.Target == uid || (s.Target != "" && together(uid, s.Target))
 	case "loc":
-		return s.A != "" && s.B != "" && together(s.A, s.B)
+		// D11: геоканал партнёра — только тому, кто делится сам.
+		return s.A != "" && s.B != "" && together(s.A, s.B) && sharesLocation(app, uid, "pair_"+s.A+"_"+s.B)
 	case "watch":
 		if secret == "" || s.Target == "" {
 			return false

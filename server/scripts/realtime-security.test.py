@@ -25,7 +25,12 @@ def claims(jwt):
 data=request('POST','/api/centrifugo/connection-token',{})
 c=claims(data['token'])
 assert c['sub']==a and 0<c['exp']-time.time()<=121
-channels=['pair:'+pair,'signal:'+pair,'loc:pair_'+a+'_'+b,'locsignal:pair_'+a+'_'+b,'user:'+b]
+loc_channels=['loc:pair_'+a+'_'+b,'locsignal:pair_'+a+'_'+b]
+channels=['pair:'+pair,'signal:'+pair,*loc_channels,'user:'+b]
+# D11: геоканал партнёра — только тому, кто делится сам (своя запись в канале).
+for channel in loc_channels:
+    request('POST','/api/centrifugo/subscription-token',{'channel':channel},403)
+request('POST','/api/collections/live_location/records',{'channel':'pair_'+a+'_'+b,'user_uid':a})
 for channel in channels:
     c=claims(request('POST','/api/centrifugo/subscription-token',{'channel':channel})['token'])
     assert c['channel']==channel and c['sub']==a and 0<c['exp']-time.time()<=121
@@ -38,4 +43,4 @@ request('GET','/api/fork/realtime-key',expected=401,auth='')
 request('PATCH','/api/collections/groups/records/'+pair,{'disbanded':True})
 for channel in channels:
     request('POST','/api/centrifugo/subscription-token',{'channel':channel},403)
-print('ok: realtime key authenticated; token TTL <=120s; revoked pair cannot refresh data or signals')
+print('ok: realtime key authenticated; token TTL <=120s; location only while sharing; revoked pair cannot refresh data or signals')
