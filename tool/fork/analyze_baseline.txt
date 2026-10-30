@@ -1,10 +1,5 @@
 warning • A value for optional parameter 'color' isn't ever given. Try removing the unused parameter • lib/screens/mascot_gallery_screen.dart • unused_element_parameter
 warning • Argument 'codePoint' must be a constant. Try replacing the argument with a constant • lib/models/symbol_catalog.dart • non_const_argument_for_const_parameter
-warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/canvas_storage_service.dart • unawaited_return_in_try_block
-warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/canvas_storage_service.dart • unawaited_return_in_try_block
-warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/pb_data_service.dart • unawaited_return_in_try_block
-warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/pb_data_service.dart • unawaited_return_in_try_block
-warning • Returning a 'Future' without 'await' inside a try block. Try adding an 'await' • lib/services/pb_data_service.dart • unawaited_return_in_try_block
 warning • The declaration '_ActionTile' isn't referenced. Try removing the declaration of '_ActionTile' • lib/screens/mascot_gallery_screen.dart • unused_element
 warning • The declaration '_VoiceLockTarget' isn't referenced. Try removing the declaration of '_VoiceLockTarget' • lib/screens/chat_screen.dart • unused_element
 warning • The declaration '_actionTile' isn't referenced. Try removing the declaration of '_actionTile' • lib/screens/connect_partner_screen.dart • unused_element
