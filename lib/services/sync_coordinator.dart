@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import '../fork/realtime/verified_delta.dart';
 import 'catch_up_driver.dart';
 import 'centrifugo_service.dart';
+import 'recovery_tracker.dart';
 
 /// Единый догон того, что прошло мимо сокета (RT-2, RT-3).
 ///
@@ -16,7 +17,9 @@ import 'centrifugo_service.dart';
 ///
 /// Каждая живая область (кэш-список, документ, подписка экрана) регистрирует
 /// здесь свой `sync` и получает догон по трём поводам:
-///  * сокет переподключился ([CentrifugoService.reconnected]);
+///  * сокет переподключился ([CentrifugoService.reconnected]); для каналов с
+///    историей (`pair:`, `user:`) — только если пропущенное не пришло из
+///    истории Centrifugo ([CentrifugoService.unrecovered], A11);
 ///  * приложение вернулось на экран после паузы;
 ///  * снова доступен ключ подписи сервера, а дельты канала области до этого
 ///    отбрасывались ([ForkVerifiedDelta.keyRecovered]).
@@ -31,6 +34,7 @@ class SyncCoordinator {
     required Stream<bool> foreground,
     required Stream<String> keyRecovered,
     required bool Function(String channel) isSubscribed,
+    Stream<String>? unrecovered,
     this.minInterval = const Duration(seconds: 3),
     Duration Function()? jitter,
     DateTime Function()? now,
@@ -38,6 +42,7 @@ class SyncCoordinator {
        _foreground = foreground,
        _keyRecovered = keyRecovered,
        _isSubscribed = isSubscribed,
+       _unrecovered = unrecovered,
        _jitter = jitter,
        _now = now;
 
@@ -61,6 +66,7 @@ class SyncCoordinator {
       foreground: visible.stream,
       keyRecovered: ForkVerifiedDelta.keyRecovered,
       isSubscribed: CentrifugoService.instance.isSubscribed,
+      unrecovered: CentrifugoService.instance.unrecovered,
     );
   }
 
@@ -68,6 +74,7 @@ class SyncCoordinator {
   final Stream<bool> _foreground;
   final Stream<String> _keyRecovered;
   final bool Function(String channel) _isSubscribed;
+  final Stream<String>? _unrecovered;
   final Duration Function()? _jitter;
   final DateTime Function()? _now;
 
@@ -91,7 +98,7 @@ class SyncCoordinator {
   }) {
     final driver = CatchUpDriver(
       catchUp: sync,
-      reconnected: _reconnected,
+      reconnected: _reconnectedFor(channel),
       foreground: _foreground,
       nudges: channel == null ? null : _keyRecovered.where((c) => c == channel),
       subscribed: () => channel == null || _isSubscribed(channel),
@@ -107,6 +114,18 @@ class SyncCoordinator {
       driver.dispose();
       _active--;
     });
+  }
+
+  /// Повод «переподключились» для области канала [channel]. Канал с историей
+  /// догоняется, только если история пропущенное не вернула.
+  Stream<void> _reconnectedFor(String? channel) {
+    final unrecovered = _unrecovered;
+    if (channel == null ||
+        unrecovered == null ||
+        !RecoveryTracker.recoverable(channel)) {
+      return _reconnected;
+    }
+    return unrecovered.where((c) => c == channel);
   }
 }
 
