@@ -139,9 +139,14 @@
    *  Только они: голос (`voice-*`, шифр `e2e`) и нативный чат комнаты (`rk?`,
    *  `rk`, `log`, `chat`) шлёт служебное подключение под uid аккаунта — того
    *  же человека, чья страница уже есть в присутствии под гостевым именем, и
-   *  он посчитался бы дважды. */
-  function hears(msg) {
+   *  он посчитался бы дважды.
+   *
+   *  [sender] — отправитель, как его назвал сервер (`ctx.info.user`). Поле
+   *  `from` пишет сам клиент: не совпало — не верим, иначе любой в комнате
+   *  раздул бы счёт выдуманными именами. */
+  function hears(msg, sender) {
     if (!msg || typeof msg.from !== 'string' || !msg.from) return false;
+    if (msg.from !== sender) return false;
     return VIEWER_SAYS[String(msg.t || '')] === 1;
   }
 
@@ -236,11 +241,12 @@
       sub.on('publication', (ctx) => {
         const msg = ctx.data;
         if (!msg || msg.from === ch.me) return;
-        if (msg.t === 'bye' && typeof msg.from === 'string') {
+        const sender = ctx.info && ctx.info.user;
+        if (msg.t === 'bye' && typeof msg.from === 'string' && msg.from === sender) {
           // Нативный плеер закрыли: не ждём, пока «слышали» протухнет.
           delete ch.heard[msg.from];
           recount(false);
-        } else if (hears(msg)) {
+        } else if (hears(msg, sender)) {
           const fresh = !ch.heard[msg.from];
           ch.heard[msg.from] = Date.now();
           if (fresh) {

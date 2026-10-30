@@ -125,7 +125,12 @@ class CentrifugoService {
       ServerReach.instance.reached();
       if (_reconnects.onConnected() && !_reconnected.isClosed) {
         // A11: каналы с историей ждут ответа подписки — восстановились ли.
-        _recovery.reconnected(_channels.keys);
+        // Простаивающие (idle) не переподписываются — их не ждём, иначе
+        // таймер записал бы им ложный разрыв.
+        _recovery.reconnected([
+          for (final e in _channels.entries)
+            if (e.value.wantsSubscription) e.key,
+        ]);
         _reconnected.add(null);
       }
     });
@@ -450,6 +455,10 @@ class _ChannelHub {
   }
 
   bool get isEmpty => _listeners.isEmpty && _rawListeners.isEmpty;
+
+  /// Подписка нужна (не переведена в idle): после переподключения она
+  /// встанет снова.
+  bool get wantsSubscription => _subscribed;
 
   /// Слушателей не осталось — освобождаем серверную подписку, но объект
   /// Subscription сохраняем (переиспользуем при повторном add → subscribe).

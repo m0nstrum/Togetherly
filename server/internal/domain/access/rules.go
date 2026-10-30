@@ -233,7 +233,11 @@ var Collections = map[string]Rules{
 		List:   s(locationView),
 		View:   s(locationView),
 		Create: s(authed + ` && user_uid = @request.auth.id && ` + locationChannel),
-		Update: s(authed + ` && user_uid = @request.auth.id && ` + locationChannel),
+		// Канал записи не меняется: перенос флага «делюсь» в другой канал
+		// оставил бы подписку на прежний геоканал (её снимает только удаление,
+		// realtime.Revoked). Своё тело `channel` клиент шлёт тем же значением.
+		Update: s(authed + ` && user_uid = @request.auth.id && ` + locationChannel +
+			` && (@request.body.channel:isset = false || @request.body.channel = channel)`),
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
 	},
 

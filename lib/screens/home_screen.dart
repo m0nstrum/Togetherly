@@ -2693,7 +2693,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Пришёл новый подарок — сразу показываем его, с анимацией открытия.
   /// Подарок показываем на любой вкладке — это событие, его ждут.
-  Future<void> _onGiftEvent() => _giftGate.onEvent();
+  /// Сбой перечитывания или показа не уходит наверх необработанным: событие
+  /// приходит из подписки, ждать его некому.
+  Future<void> _onGiftEvent() => _giftGate.onEvent().catchError((Object e) {
+    debugPrint('home: подарок не открылся: $e');
+  });
 
   Future<void> _loadIncomingGifts() async {
     if (!_pairData.isPaired) return;
