@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/flat_source.dart';
+import '../support/screen_source.dart';
 import 'package:love_app/widgets/memory/adult_veil.dart';
 import 'package:love_app/widgets/memory/media_strip.dart';
 
@@ -82,7 +83,7 @@ void main() {
     String src(String path) => flatSource(path);
     // Плёнка под обложкой в ленте и на странице записи.
     expect(
-      src('lib/screens/memory_lane_screen.dart'),
+      flat(screenSource('lib/screens/memory_lane_screen.dart')),
       contains(flat('blurred: memory.isAdult')),
     );
     expect(
@@ -95,7 +96,7 @@ void main() {
       contains(flat('blurred: widget.items[i].adult')),
     );
     expect(
-      src('lib/screens/memory_lane_screen.dart'),
+      flat(screenSource('lib/screens/memory_lane_screen.dart')),
       contains(flat('adult: m.isAdult')),
     );
     // Превью ленты на главной и карта воспоминаний.

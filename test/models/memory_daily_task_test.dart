@@ -1,9 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/l10n/dict/memory_lane_feed.dart';
 import 'package:love_app/models/daily_task.dart';
 import 'package:love_app/models/memory.dart';
+
+import '../support/screen_source.dart';
 
 /// Ответ на задание дня должен быть виден в ленте.
 ///
@@ -54,7 +54,7 @@ void main() {
   });
 
   test('лента показывает подпись у каждой карточки, а не у одного типа', () {
-    final feed = File('lib/screens/memory_lane_screen.dart').readAsStringSync();
+    final feed = screenSource('lib/screens/memory_lane_screen.dart');
     final header = RegExp(
       r'Widget _cardHeader\(([\s\S]*?)\n  \}\n',
     ).firstMatch(feed);
@@ -76,7 +76,7 @@ void main() {
   test('каждая карточка ленты без общей шапки ставит подпись сама', () {
     // Стикер текстовой заметки шапки не рисует, и текстовые ответы на
     // задания стояли без подписи (обращение 236, 05.10.2026).
-    final feed = File('lib/screens/memory_lane_screen.dart').readAsStringSync();
+    final feed = screenSource('lib/screens/memory_lane_screen.dart');
     final tiles = RegExp(
       r'\n  Widget (_[a-zA-Z]+Tile)\(Memory memory\) \{([\s\S]*?)\n  \}\n',
     ).allMatches(feed);

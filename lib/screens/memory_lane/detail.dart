@@ -612,8 +612,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   /// Подпись пин не показывает: под ним она идёт целиком, а не в две строки.
   Widget _videoLinkCover(Memory memory, ColorScheme cs) {
     final url = memory.videoUrl ?? '';
-    final platformName =
-        _MemoryLaneScreenState._detectVideoPlatform(url)['name'] as String;
+    final platformName = VideoLinkMeta.detectPlatform(url)['name'] as String;
     if (platformName == 'YouTube') {
       return _YouTubeInlineCard(
         memory: memory,
@@ -633,7 +632,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
       fill: context.appTheme.fillColor,
       url: url,
       platformName: platformName,
-      platformIcon: _MemoryLaneScreenState._videoPlatformIcon(platformName),
+      platformIcon: VideoLinkMeta.platformIcon(platformName),
       thumbUrl: memory.imageUrl?.isNotEmpty == true
           ? memory.imageUrl
           : videoLinkThumb(url),
@@ -2476,9 +2475,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
   }
 
   Widget _buildVideoLinkMedia(Memory memory, Color p) {
-    final platform = _MemoryLaneScreenState._detectVideoPlatform(
-      memory.videoUrl ?? '',
-    );
+    final platform = VideoLinkMeta.detectPlatform(memory.videoUrl ?? '');
     final platformColor = platform['color'] as Color;
     final platformName = platform['name'] as String;
     final hasThumb = memory.imageUrl?.isNotEmpty == true;
@@ -2563,9 +2560,7 @@ class _MemoryDetailSheetState extends State<_MemoryDetailSheet>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _MemoryLaneScreenState._videoPlatformIcon(
-                              platformName,
-                            ),
+                            VideoLinkMeta.platformIcon(platformName),
                             size: 12,
                             color: Colors.white,
                           ),

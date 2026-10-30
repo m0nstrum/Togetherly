@@ -6,11 +6,12 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/flat_source.dart';
+import '../support/screen_source.dart';
 
 String _read(String p) => flatSource(p);
 
 void main() {
-  final lane = _read('lib/screens/memory_lane_screen.dart');
+  final lane = flat(screenSource('lib/screens/memory_lane_screen.dart'));
   final detail = _read('lib/screens/memory_lane/detail.dart');
   final gallery = _read('lib/screens/memory_lane/gallery.dart');
   final all = '$lane\n$detail\n$gallery';
