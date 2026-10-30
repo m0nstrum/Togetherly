@@ -152,6 +152,23 @@ class CentrifugoService {
   bool isSubscribed(String channel) =>
       _channels[channel]?.isSubscribed ?? false;
 
+  /// Дождаться, пока подписка на [channel] станет живой (RT-4). `subscribe`
+  /// уходит на сервер раундтрипом с токеном, и события до его подтверждения
+  /// не придут: список, загруженный в это окно, догоняют по этому сигналу.
+  /// `false` — не дождались за [timeout] (сокета нет, канал отвергнут).
+  Future<bool> whenSubscribed(
+    String channel, {
+    Duration timeout = const Duration(seconds: 30),
+  }) {
+    final hub = _channels[channel];
+    if (hub == null) return Future.value(false);
+    return awaitSubscribed(
+      isSubscribed: () => hub.isSubscribed,
+      onSubscribed: () => hub._sub.subscribed.first,
+      timeout: timeout,
+    );
+  }
+
   /// Своя связь для [channel] есть: сокет поднят и подписка на канал стоит.
   ///
   /// Для «нет связи» на экранах (B11): раньше это значило «последняя отправка
