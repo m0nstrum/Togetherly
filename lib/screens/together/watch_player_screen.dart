@@ -55,6 +55,11 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
   /// Голосовая связь в комнате: микрофон, звук, соединение между двумя.
   WatchVoiceService? _voice;
   Timer? _heartbeat;
+
+  /// fork (B10): «я здесь» для страницы комнаты. Плеер сидит в канале
+  /// подключением приложения, а его присутствие страница не считает, —
+  /// без этого партнёр видел «не в комнате», пока здесь стоит пауза.
+  Timer? _here;
   Timer? _hideControls;
 
   bool _ready = false;
@@ -146,6 +151,9 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
         at: v.value.position.inMilliseconds / 1000,
         extra: {'playing': true},
       );
+    });
+    _here = Timer.periodic(const Duration(seconds: 20), (_) {
+      unawaited(room.send('here'));
     });
     _scheduleHide();
   }
@@ -317,6 +325,7 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
   void dispose() {
     ScreenAwake.release(this);
     _heartbeat?.cancel();
+    _here?.cancel();
     _hideControls?.cancel();
     _voice?.removeListener(_onVoiceChanged);
     _voice?.dispose();
@@ -335,7 +344,14 @@ class _WatchPlayerScreenState extends State<WatchPlayerScreen>
       );
     }
     _video?.dispose();
-    unawaited(_room?.dispose() ?? Future<void>.value());
+    final room = _room;
+    if (room != null) {
+      // fork (B10): ушли из плеера — страница партнёра убирает нас сразу.
+      unawaited(() async {
+        await room.send('bye');
+        await room.dispose();
+      }());
+    }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }

@@ -208,6 +208,8 @@ void main() {
   test(
     'failed publish is visible; a held finger renews after recovery',
     () async {
+      await settle();
+      bus.wire.clear(); // «я здесь» обеих сторон со старта
       bus.failing = true;
       alice.point(const Offset(.5, .5));
       await settle();
@@ -285,6 +287,8 @@ void main() {
   );
 
   test('missing key never sends a plaintext fallback', () async {
+    await settle();
+    bus.wire.clear(); // «я здесь» alice и bob со старта
     final app = ForkTouchSession(
       group: 'other',
       me: 'alice',
@@ -301,5 +305,128 @@ void main() {
     expect(app.failed, isTrue);
     expect(bus.wire, isEmpty);
     app.dispose();
+  });
+
+  group('B11: связь и присутствие на экране', () {
+    test(
+      '«нет связи» — только когда своей связи нет дольше отсрочки',
+      () async {
+        var link = true;
+        final app = ForkTouchSession(
+          group: 'group',
+          me: 'carol',
+          partner: 'bob',
+          codec: codec,
+          transport: Transport(bus),
+          allowed: () => true,
+          linkUp: () => link,
+          now: () => time,
+          vibrate: () async {},
+        );
+        addTearDown(app.dispose);
+        await app.start();
+        expect(app.offline, isFalse, reason: 'подписка ещё встаёт — не пугаем');
+        link = false;
+        app.tick();
+        time = time.add(const Duration(seconds: 1));
+        app.tick();
+        expect(
+          app.offline,
+          isFalse,
+          reason: 'переподключение за секунду — не обрыв',
+        );
+        time = time.add(ForkTouchSession.linkGrace);
+        app.tick();
+        expect(app.offline, isTrue);
+        link = true;
+        app.tick();
+        expect(app.offline, isFalse);
+      },
+    );
+
+    test(
+      'одна неудачная отправка повторяется сама и «нет связи» не зажигает',
+      () async {
+        bus.failing = true;
+        alice.point(null);
+        await settle();
+        expect(alice.failed, isTrue);
+        expect(alice.offline, isFalse);
+        bus.failing = false;
+        time = time.add(const Duration(milliseconds: 400));
+        alice.tick(); // без нового касания
+        await settle();
+        expect(alice.failed, isFalse);
+        expect(alice.offline, isFalse);
+      },
+    );
+
+    test(
+      'отправка не проходит дольше отсрочки — честное «нет связи»',
+      () async {
+        bus.failing = true;
+        alice.point(const Offset(.5, .5));
+        await settle();
+        time = time.add(ForkTouchSession.linkGrace);
+        alice.tick();
+        await settle();
+        expect(alice.offline, isTrue);
+      },
+    );
+
+    test('партнёр на экране без пальца — «здесь»; тишина — ушёл', () async {
+      await settle();
+      expect(
+        alice.partnerHere,
+        isTrue,
+        reason: 'bob сказал «я здесь» на старте',
+      );
+      expect(alice.peer, isNull);
+      time = time.add(ForkTouchSession.here + const Duration(seconds: 1));
+      bob.tick(); // «я здесь» по расписанию
+      await settle();
+      time = time.add(const Duration(seconds: 5));
+      expect(alice.partnerHere, isTrue, reason: '«я здесь» продлило');
+      time = time.add(ForkTouchSession.away);
+      expect(alice.partnerHere, isFalse);
+    });
+
+    test(
+      'закрыл экран — партнёр видит уход сразу; пакет — признак жизни',
+      () async {
+        var seen = 0;
+        final carol = ForkTouchSession(
+          group: 'group',
+          me: 'carol',
+          partner: 'dave',
+          codec: codec,
+          transport: Transport(bus),
+          allowed: () => true,
+          onPartnerSeen: () => seen++,
+          now: () => time,
+          vibrate: () async {},
+        );
+        final dave = ForkTouchSession(
+          group: 'group',
+          me: 'dave',
+          partner: 'carol',
+          codec: codec,
+          transport: Transport(bus),
+          allowed: () => true,
+          now: () => time,
+          vibrate: () async {},
+        );
+        addTearDown(carol.dispose);
+        await carol.start();
+        await dave.start();
+        await settle();
+        expect(carol.partnerHere, isTrue);
+        expect(seen, greaterThan(0));
+        time = time.add(const Duration(milliseconds: 10));
+        dave.dispose();
+        await settle();
+        expect(carol.partnerHere, isFalse);
+      },
+    );
   });
 }

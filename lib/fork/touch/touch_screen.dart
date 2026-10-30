@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../dict_strings.dart' show ruEn;
 import '../../services/centrifugo_service.dart';
 import '../../services/pocketbase_service.dart';
+import '../../services/presence_service.dart';
 import '../e2e/e2e_service.dart' show PairE2EStatus;
 import '../e2e/fork_e2e.dart';
 import '../e2e/room_chat.dart' show RoomTransport;
@@ -57,6 +58,10 @@ class _ForkTouchScreenState extends State<ForkTouchScreen>
   bool _loading = true, _inviting = false, _invited = false, _front = true;
   int? _pointer;
   bool _member = false, _starting = false;
+
+  /// Не дошли до сервера (пара, ключи) — это «нет связи», а не «нет ключей»:
+  /// раньше любой сбой старта звал проверить шифрование (B11).
+  bool _unreachable = false;
   Future<void> Function()? _groupSub;
   bool _allowed() {
     final status = ForkE2E.service.value?.status.value[widget.groupId];
@@ -78,7 +83,10 @@ class _ForkTouchScreenState extends State<ForkTouchScreen>
     if (_starting) return;
     _starting = true;
     _member = false;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _unreachable = false;
+    });
     try {
       if (widget.session != null) {
         _session = widget.session!;
@@ -128,14 +136,21 @@ class _ForkTouchScreenState extends State<ForkTouchScreen>
         transport: _Transport('pair:${widget.groupId}'),
         allowed: _allowed,
         vibrate: HapticFeedback.vibrate,
+        linkUp: () =>
+            CentrifugoService.instance.linkUp('pair:${widget.groupId}'),
+        onPartnerSeen: () => PresenceService().noteActivity(widget.partnerUid),
       );
       _session?.removeListener(_changed);
       _session?.dispose();
       _session = session;
       session.addListener(_changed);
       await session.start();
+    } on StateError {
+      // тихо: не пара или нет ключа — экран скажет про ключи; открытого
+      // запасного пути нет
     } catch (_) {
-      /* retry below; no unencrypted fallback */
+      // Сеть, сервер, таймаут: повторить, а не чинить шифрование.
+      _unreachable = true;
     } finally {
       _starting = false;
       if (mounted) setState(() => _loading = false);
@@ -215,10 +230,15 @@ class _ForkTouchScreenState extends State<ForkTouchScreen>
                 const CircularProgressIndicator()
               else if (s == null || !s.canTouch) ...[
                 Text(
-                  ruEn(
-                    'Нужны действующие ключи пары. Проверьте шифрование и повторите.',
-                    'Current pair keys are required. Check encryption and try again.',
-                  ),
+                  _unreachable
+                      ? ruEn(
+                          'Нет связи с сервером. Проверьте интернет и повторите.',
+                          'Can’t reach the server. Check your connection and try again.',
+                        )
+                      : ruEn(
+                          'Нужны действующие ключи пары. Проверьте шифрование и повторите.',
+                          'Current pair keys are required. Check encryption and try again.',
+                        ),
                 ),
                 TextButton(
                   onPressed: _start,
@@ -226,21 +246,29 @@ class _ForkTouchScreenState extends State<ForkTouchScreen>
                 ),
               ] else ...[
                 Text(
-                  s.failed
+                  key: const ValueKey('fork-touch-status'),
+                  // «Нет связи» — только когда нет СВОЕЙ связи. Партнёр не на
+                  // экране — отдельное состояние с приглашением (B11).
+                  s.offline
                       ? ruEn(
-                          'Нет связи — пробуем снова',
-                          'Connection lost — retrying',
+                          'Нет связи — переподключаемся…',
+                          'Offline — reconnecting…',
                         )
                       : s.matched
                       ? ruEn('Вы рядом', 'You are together')
-                      : s.peer == null
+                      : s.peer != null
                       ? ruEn(
-                          'Ждём прикосновения партнёра',
-                          'Waiting for your partner’s touch',
-                        )
-                      : ruEn(
                           'Найдите точку партнёра',
                           'Find your partner’s point',
+                        )
+                      : s.partnerHere
+                      ? ruEn(
+                          'Партнёр здесь — коснитесь экрана',
+                          'Your partner is here — touch the screen',
+                        )
+                      : ruEn(
+                          'Партнёра нет на этом экране — позовите его',
+                          'Your partner isn’t on this screen — invite them',
                         ),
                 ),
                 const SizedBox(height: 12),
