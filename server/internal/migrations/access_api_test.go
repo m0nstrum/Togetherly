@@ -284,6 +284,14 @@ func TestLiveLocationMutual(t *testing.T) {
 		assert.True(t, sees(f.aliceTok))
 	})
 
+	t.Run("канал своей записи не переносится", func(t *testing.T) {
+		code, body := call(t, f.app, http.MethodPatch, base+"/"+mine, f.aliceTok, `{"channel":"`+pairA+`"}`)
+		assert.NotEqual(t, http.StatusOK, code, body)
+		code, body = call(t, f.app, http.MethodPatch, base+"/"+mine, f.aliceTok,
+			`{"channel":"`+channel+`","data":{"c":"sealed"}}`)
+		assert.Equal(t, http.StatusOK, code, body)
+	})
+
 	t.Run("выключила — снова не видит", func(t *testing.T) {
 		code, _ := call(t, f.app, http.MethodDelete, base+"/"+mine, f.aliceTok, "")
 		require.Equal(t, http.StatusNoContent, code)

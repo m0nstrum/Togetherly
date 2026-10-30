@@ -44,12 +44,18 @@ test('без ответа присутствия себя всё равно сч
 
 test('голос, шифр и нативный чат служебного подключения — не признак зрителя', () => {
   const P = load();
-  assert.equal(P.hears({t: 'pause', from: 'uPartner', at: 3}), true);
-  assert.equal(P.hears({t: 'here', from: 'uPartner'}), true);
+  assert.equal(P.hears({t: 'pause', from: 'uPartner', at: 3}, 'uPartner'), true);
+  assert.equal(P.hears({t: 'here', from: 'uPartner'}, 'uPartner'), true);
   // Нативный чат комнаты — служебное подключение того, кто уже в счёте.
   for (const t of ['chat', 'rk?', 'rk', 'log']) assert.equal(P.hears({t, from: 'uMine'}), false);
   assert.equal(P.hears({t: 'e2e', from: 'uPartner'}), false);
   assert.equal(P.hears({t: 'voice-hello', from: 'uPartner'}), false);
   assert.equal(P.hears({t: 'bye', from: 'uPartner'}), false);
   assert.equal(P.hears({t: 'pause'}), false);
+});
+
+test('отправитель — по серверу, а не по полю from', () => {
+  const P = load();
+  assert.equal(P.hears({t: 'hello', from: 'uFake'}, 'uPartner'), false);
+  assert.equal(P.hears({t: 'hello', from: 'uPartner'}), false);
 });
