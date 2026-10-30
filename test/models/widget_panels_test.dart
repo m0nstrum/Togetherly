@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/widget_panels.dart';
+import '../support/screen_source.dart';
 
 /// Раскрытые разделы и карточки каталога виджетов.
 ///
@@ -62,7 +61,7 @@ void main() {
   });
 
   group('экран виджетов', () {
-    final src = File('lib/screens/widget_screen.dart').readAsStringSync();
+    final src = screenSource('lib/screens/widget_screen.dart');
 
     test('состояние раскрытия не живёт отдельными полями в памяти', () {
       for (final dead in [
@@ -81,9 +80,11 @@ void main() {
       }
     });
 
-    test('набор читается из prefs при открытии и пишется при нажатии', () {
-      expect(src.contains('_loadPanels();'), isTrue);
-      expect(src.contains('WidgetPanels.prefsKey'), isTrue);
+    // Чтение и запись prefs — поведенческие тесты контроллера,
+    // test/screens/widget_catalog_panels_test.dart. Здесь — что экран им
+    // пользуется.
+    test('экран читает набор при открытии и переключает по ключу', () {
+      expect(src.contains('_panels.load()'), isTrue);
       expect(
         src.contains('_togglePanel(key)'),
         isTrue,

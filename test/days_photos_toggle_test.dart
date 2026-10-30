@@ -13,6 +13,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/services/widget_photo_cache.dart';
+import 'support/screen_source.dart';
 
 void main() {
   group('daysPhotosApplied', () {
@@ -76,7 +77,7 @@ void main() {
     });
 
     test('экран возвращает тумблер в исходное, когда фото не вышли', () {
-      final src = File('lib/screens/widget_screen.dart').readAsStringSync();
+      final src = screenSource('lib/screens/widget_screen.dart');
       final start = src.indexOf('Future<void> _setDaysPhotos(');
       expect(start, greaterThan(0));
       final body = src.substring(start, start + 1200);

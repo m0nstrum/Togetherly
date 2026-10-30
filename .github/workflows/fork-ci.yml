@@ -195,6 +195,10 @@ jobs:
       - name: статика
         run: sh scripts/sync-public.sh "$RUNNER_TEMP/pb_public"
 
+      # Деплой с откатом (deploy/deploy.sh) на заглушках docker и curl.
+      - name: деплой-скрипт
+        run: bash ../deploy/deploy.test.sh
+
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'

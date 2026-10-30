@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/widget_data.dart';
+import 'support/screen_source.dart';
 
 // Обращение 12 в приёмной: партнёр отправил одно фото одиночным полем, карусель
 // пуста — а экран «Виджеты» писал «ещё не поделился» и «Нет фото от партнёра»,
@@ -30,7 +29,7 @@ void main() {
   });
 
   test('экран «Виджеты» не считает фото партнёра через ?? от списка', () {
-    final src = File('lib/screens/widget_screen.dart').readAsStringSync();
+    final src = screenSource('lib/screens/widget_screen.dart');
     expect(src.contains('photoForPartnerUrls.length ??'), isFalse);
   });
 }
