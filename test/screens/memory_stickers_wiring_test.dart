@@ -8,6 +8,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/screen_source.dart';
+
 String _read(String path) => File(path).readAsStringSync();
 
 /// Вызовы `name(memory, …)`, как бы ни были перенесены строки.
@@ -18,7 +20,7 @@ int _count(String text, String needle) => needle.allMatches(text).length;
 
 void main() {
   test('каждый вид пина в ленте несёт слой наклеек', () {
-    final feed = _read('lib/screens/memory_lane_screen.dart');
+    final feed = screenSource('lib/screens/memory_lane_screen.dart');
     // Обложка фото, ролик без кадра, место, музыка, заметка, книга, кино,
     // видео по ссылке.
     expect(_calls(feed, '_stickerAnchor'), greaterThanOrEqualTo(8));
@@ -45,14 +47,14 @@ void main() {
   });
 
   test('меню долгого нажатия получает карточку', () {
-    final feed = _read('lib/screens/memory_lane_screen.dart');
+    final feed = screenSource('lib/screens/memory_lane_screen.dart');
     expect(feed, contains('StickerCardScope(\n'));
     expect(feed, contains('card: StickerCardScope.maybeOf(cardContext)'));
     expect(feed, contains("trKey('stickerAdd')"));
   });
 
   test('лист наклеек знает пару: без неё нет «Своих»', () {
-    final feed = _read('lib/screens/memory_lane_screen.dart');
+    final feed = screenSource('lib/screens/memory_lane_screen.dart');
     final call = RegExp(r'showStickerPicker\(([^;]*)\);').firstMatch(feed);
     expect(call, isNotNull);
     expect(call!.group(1), contains('groupId: _groupId'));

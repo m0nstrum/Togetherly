@@ -4,7 +4,6 @@ import '../services/plus_access.dart';
 import 'plus_screen.dart';
 import 'pair_book_screen.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -28,7 +27,6 @@ import '../utils/video_link_thumb.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:exif/exif.dart';
-import 'package:http/http.dart' as http;
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 // PlayerState объявлен и в just_audio, и в плеере YouTube: разводим
 // импортом с префиксом, иначе сборка падает на неоднозначности.
@@ -40,7 +38,6 @@ import 'package:video_player/video_player.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../models/daily_task.dart';
 import '../dict_strings.dart';
-import '../models/feed_category.dart';
 import '../models/memory.dart';
 import '../models/sound_clip.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -48,7 +45,6 @@ import '../models/memory_media.dart';
 import '../models/memory_menu.dart';
 import '../models/upload_failure.dart';
 import '../fork/memories/photo_batch.dart'; // fork: D1/D6
-import '../fork/memories/search.dart'; // fork: D10
 import '../fork/ui/feedback.dart'; // fork: D13
 import '../fork/ui/upload_notice.dart'; // fork: D5
 import '../services/media_save_queue.dart';
@@ -62,7 +58,6 @@ import '../widgets/memory_save/save_options_sheet.dart';
 import '../widgets/memory_save/save_split_button.dart';
 import '../utils/lost_pick.dart';
 import '../models/memory_sort.dart';
-import '../services/ui_prefs.dart';
 import '../models/comment.dart';
 import '../models/pair_data.dart';
 import '../models/user_data.dart';
@@ -136,6 +131,12 @@ import '../widgets/common/zoomable_photo.dart';
 import '../models/memory_reaction.dart';
 import '../services/live_location_service.dart';
 import '../widgets/common/keyboard_aware.dart';
+import 'memory_lane/feed_chips.dart';
+import 'memory_lane/feed_controller.dart';
+import 'memory_lane/supported_services_sheet.dart';
+import 'memory_lane/video_link_meta.dart';
+
+export 'memory_lane/feed_controller.dart' show MemoryFilterMode;
 
 // Экран разбит на части (один большой файл → читаемые модули). Все части —
 // `part of` этой библиотеки: приватные классы остаются библиотечно-приватными,
@@ -166,9 +167,6 @@ String _svgAssetForType(MemoryType type) {
       return 'assets/icons/ic_movie.svg';
   }
 }
-
-/// Filter mode for Memory Lane pinned memories.
-enum MemoryFilterMode { none, day, month }
 
 /// Открытое воспоминание без ленты — только для снимков в тестах
 /// (`test/goldens/memory_detail_preview.dart`): сам экран закрыт в ленте.
@@ -238,20 +236,16 @@ class MemoryLaneScreen extends StatefulWidget {
 }
 
 class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
-  /// Чем упорядочена лента. Выбор человека живёт в prefs: он про привычку, а
-  /// не про конкретный заход.
-  MemorySort _sortOrder = MemorySort.eventDate;
+  /// Лента: подписка, порядок, фильтры, поиск, секреты, окно пагинации.
+  late final MemoryFeedController _feed = MemoryFeedController(
+    filterMode: widget.filterMode,
+  );
 
   /// Задание дня, из строки которого открыта форма. Живёт до сохранения пина:
   /// форма сама решает тип по вложенному медиа, и без этой памяти ответ на
   /// текстовое задание со снимком не закрывал ничего. Вход из листа выбора
   /// типов ставит null — там человек выбирает сам, задание ни при чём.
   String? _formTaskId;
-
-  Future<void> _loadSortOrder() async {
-    final saved = await UiPrefs.memorySort();
-    if (mounted) setState(() => _sortOrder = memorySortFromName(saved));
-  }
 
   /// Выбор порядка: по дате события или по дате добавления.
   Future<void> _openSortSheet() async {
@@ -287,7 +281,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                         ? s.memorySortByEventHint
                         : s.memorySortByAddedHint,
                   ),
-                  trailing: _sortOrder == order
+                  trailing: _feed.sortOrder == order
                       ? Icon(Icons.check_rounded, color: cs.primary)
                       : null,
                   onTap: () => Navigator.of(ctx).pop(order),
@@ -297,15 +291,13 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         ),
       ),
     );
-    if (picked != null) await _setSortOrder(picked);
-  }
-
-  Future<void> _setSortOrder(MemorySort order) async {
-    setState(() => _sortOrder = order);
-    await UiPrefs.setMemorySort(order.name);
+    if (picked != null) await _feed.setSortOrder(picked);
   }
 
   Color get primary => widget.theme.primary;
+
+  /// Название, канал и обложка видео по ссылке (форма «видео по ссылке»).
+  final VideoLinkMeta _videoMeta = VideoLinkMeta();
 
   final MemoryRepository _memRepo = MemoryRepository();
 
@@ -337,74 +329,28 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     return memory.authorName;
   }
 
-  List<Memory> _memories = [];
-  bool _loading = true;
+  List<Memory> get _memories => _feed.memories;
+  bool get _loading => _feed.loading;
 
   /// Роли схемы активной темы. Всё цветное на экране берётся отсюда: вшитые
   /// красный, серый и синий в двадцати пяти темах и тёмном режиме выглядели
   /// чужими (шлифовка 28.09.2026).
   ColorScheme get _cs => ProfileTheme.schemeFor(widget.theme);
 
-  // Ленивая пагинация ленты: рендерим окно из последних N воспоминаний и растим
-  // его по мере прокрутки. Данные все в кэше — это окно ПО UI, не по сети.
-  static const int _feedPageSize = 30;
-  int _visibleLimit = _feedPageSize;
+  // Ленивая пагинация ленты: окно растёт по мере прокрутки (см. _feed).
   final ScrollController _feedScroll = ScrollController();
   // Пагинация мертва: на PB чтения бесплатны → лента целиком live (см.
   // _subscribeMemories). Поля сохранены, чтобы не трогать UI «загрузить ещё»:
   // _loadedAll=true → блок подгрузки не рендерится, _loadingMore всегда false.
   final bool _loadingMore = false;
   bool _loadedAll = true;
-  StreamSubscription<List<Memory>>? _memSub;
   bool _firstMemLoad = true;
 
-  // ── Фильтр-теги ленты (этап 2 редизайна) ───────────────────────────────────
-  // «Моменты» = фото+видео (общий бейдж «Момент»); остальные категории —
-  // один-в-один к [_typeBadgeMeta]. null = «Всё». [_favoritesOnly] —
-  // независимый круглый тег слева: показывает только личные закладки (savedBy).
-  String? _categoryKey;
-  bool _favoritesOnly = false;
-
   /// Поиск по ленте: строка в шапке разворачивается в поле ввода, запрос
-  /// сравнивается с названием, подписью и местом записи.
+  /// сравнивается с названием, подписью и местом записи (см. _feed).
   bool _searching = false;
-  String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
-
-  /// Секретные воспоминания раскрыты в этой сессии экрана (после ввода PIN).
-  /// Сбрасывается при выходе с экрана — секреты снова прячутся.
-  bool _secretUnlocked = false;
-
-  /// Категории, реально присутствующие в ленте (чтобы не показывать пустые теги).
-  List<FeedCategory> get _presentCategories => presentFeedCategories(_memories);
-
-  bool get _feedFiltered => _favoritesOnly || _categoryKey != null;
-
-  /// Проходит ли воспоминание текущий тег-фильтр (категория + «Избранное»).
-  bool _passesFeedFilter(Memory m) {
-    // Секретные скрыты из ленты, пока не введён PIN (см. [_secretUnlocked]).
-    if (m.isSecret && !_secretUnlocked) return false;
-    if (_favoritesOnly && !m.isSavedBy(_myUid ?? '')) return false;
-    if (!_matchesQuery(m)) return false;
-    if (_categoryKey == null) return true;
-    final cat = kFeedCategories.firstWhere(
-      (c) => c.key == _categoryKey,
-      orElse: () => kFeedCategories.first,
-    );
-    return cat.matches(m);
-  }
-
-  /// Подходит ли запись под строку поиска. Пустой запрос пропускает всё.
-  bool _matchesQuery(Memory m) {
-    final q = _searchQuery.trim().toLowerCase();
-    if (q.isEmpty) return true;
-    // fork: D10 — ищем и по песням, книгам, фильмам
-    return memoryMatchesQuery(m, q);
-  }
-
-  bool get _hasVisibleMemories =>
-      _pinnedMemories.isNotEmpty || _groupedByDate.isNotEmpty;
 
   // User location for distance display
   double? _userLat;
@@ -423,7 +369,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSortOrder();
+    _feed.addListener(_onFeedChanged);
+    _feed.loadSortOrder();
     _subscribeMemories();
     // Сохранение в галерею, оборванное закрытием приложения, доезжает само.
     MediaSaveQueue.instance.resume();
@@ -492,59 +439,47 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     );
   }
 
-  /// Живая подписка на ленту воспоминаний (PocketBase SSE). Заменяет
-  /// пагинацию/cache-first: на self-hosted PB чтения бесплатны → вся лента
-  /// приезжает разом и обновляется в реальном времени (свои и партнёрские
-  /// добавления/правки/удаления — без кнопок «обновить»/«загрузить ещё»).
+  void _onFeedChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// Живая подписка на ленту (см. [MemoryFeedController.subscribe]); здесь —
+  /// то, что экран делает с каждой новой лентой.
   void _subscribeMemories() {
-    if (_groupId.isEmpty) {
-      if (mounted) setState(() => _loading = false);
-      return;
-    }
-    _memSub?.cancel();
-    _memSub = _memRepo
-        .watch(_groupId)
-        .listen(
-          (memories) {
-            if (!mounted) return;
-            setState(() {
-              _memories = memories;
-              _loading = false;
-            });
-            if (_firstMemLoad) {
-              _firstMemLoad = false;
-              if (widget.initialMemoryId != null) {
-                _openInitialMemory();
-              } else {
-                // Человек пришёл по уведомлению «капсула открылась» — показываем
-                // именно ту капсулу, а не общий список.
-                unawaited(
-                  CapsuleNotificationService.instance.takePending().then((id) {
-                    if (id != null && id.isNotEmpty) _openInitialMemory(id);
-                  }),
-                );
-              }
-            }
-            // Планируем «капсула открылась» на дату каждой ещё запечатанной капсулы
-            // (и у автора, и у партнёра — капсула прилетает через realtime). Сервис
-            // идемпотентен по id, так что повторные апдейты ленты безопасны.
-            for (final m in memories) {
-              if (m.sealedNow() && m.openAt != null) {
-                unawaited(
-                  CapsuleNotificationService.instance.schedule(
-                    m.id,
-                    m.openAt!,
-                    capsuleTitle: m.title,
-                  ),
-                );
-              }
-            }
-          },
-          onError: (e) {
-            debugPrint('memory_lane: watch error: $e');
-            if (mounted) setState(() => _loading = false);
-          },
-        );
+    _feed.subscribe(
+      _groupId,
+      onData: (memories) {
+        if (!mounted) return;
+        if (_firstMemLoad) {
+          _firstMemLoad = false;
+          if (widget.initialMemoryId != null) {
+            _openInitialMemory();
+          } else {
+            // Человек пришёл по уведомлению «капсула открылась» — показываем
+            // именно ту капсулу, а не общий список.
+            unawaited(
+              CapsuleNotificationService.instance.takePending().then((id) {
+                if (id != null && id.isNotEmpty) _openInitialMemory(id);
+              }),
+            );
+          }
+        }
+        // Планируем «капсула открылась» на дату каждой ещё запечатанной капсулы
+        // (и у автора, и у партнёра — капсула прилетает через realtime). Сервис
+        // идемпотентен по id, так что повторные апдейты ленты безопасны.
+        for (final m in memories) {
+          if (m.sealedNow() && m.openAt != null) {
+            unawaited(
+              CapsuleNotificationService.instance.schedule(
+                m.id,
+                m.openAt!,
+                capsuleTitle: m.title,
+              ),
+            );
+          }
+        }
+      },
+    );
   }
 
   /// Бесконечная прокрутка больше не нужна (вся лента live). Оставлено как no-op,
@@ -553,42 +488,27 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
 
   /// Подрастить окно ленты (ленивая пагинация по скроллу).
   void _growWindow() {
-    if (!_canShowMore) return;
-    setState(() => _visibleLimit += _feedPageSize);
+    if (!_feed.canShowMore) return;
+    setState(() => _feed.growWindow());
   }
 
   void _onFeedScroll() {
-    if (!_feedScroll.hasClients || !_canShowMore) return;
+    if (!_feedScroll.hasClients || !_feed.canShowMore) return;
     final pos = _feedScroll.position;
     if (pos.pixels >= pos.maxScrollExtent - 600) _growWindow();
   }
 
   @override
   void dispose() {
-    _memSub?.cancel();
+    _feed
+      ..removeListener(_onFeedChanged)
+      ..dispose();
     _feedScroll.dispose();
     widget.pairData.removeListener(_onPairChanged);
     super.dispose();
   }
 
   // ── Organize memories ──
-
-  List<Memory>? _otdSource;
-  DateTime? _otdDay;
-  List<OnThisDayShelf> _otdCache = const [];
-
-  /// Полка «В этот день». Пересчёт только при новой ленте или смене дня:
-  /// лента пересобирается на каждое касание, а записей бывают тысячи.
-  List<OnThisDayShelf> get _onThisDay {
-    final now = DateTime.now();
-    final day = DateTime(now.year, now.month, now.day);
-    if (!identical(_otdSource, _memories) || _otdDay != day) {
-      _otdSource = _memories;
-      _otdDay = day;
-      _otdCache = onThisDay(_memories, now: now);
-    }
-    return _otdCache;
-  }
 
   /// Одна запись — сразу её карточка, несколько — лист со всеми записями дня.
   void _openOnThisDay(OnThisDayShelf shelf) {
@@ -614,98 +534,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     );
   }
 
-  List<Memory> get _pinnedMemories {
-    if (widget.filterMode != MemoryFilterMode.none) return [];
-    return _memories.where((m) => m.isPinned && _passesFeedFilter(m)).toList();
-  }
-
-  /// Memories filtered by current day/month across all years, grouped by year
-  Map<String, List<Memory>> get _filteredByDateAcrossYears {
-    final now = DateTime.now();
-    List<Memory> filtered;
-    if (widget.filterMode == MemoryFilterMode.day) {
-      filtered = _memories
-          .where(
-            (m) => m.createdAt.month == now.month && m.createdAt.day == now.day,
-          )
-          .toList();
-    } else if (widget.filterMode == MemoryFilterMode.month) {
-      filtered = _memories
-          .where((m) => m.createdAt.month == now.month)
-          .toList();
-    } else {
-      return {};
-    }
-    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final Map<String, List<Memory>> grouped = {};
-    for (var m in filtered) {
-      final key = '${m.createdAt.year}';
-      grouped.putIfAbsent(key, () => []).add(m);
-    }
-    return grouped;
-  }
-
-  /// Все непин-воспоминания, прошедшие фильтр, новые первыми (без окна).
-  ///
-  /// Порядок выбирает человек: по дате события (когда это случилось) или по
-  /// дате добавления. Просьба тестера — «добавьте сортировку по указанной
-  /// дате»: фотография со свадьбы, занесённая сегодня, уезжала в конец ленты.
-  List<Memory> get _nonPinnedSortedAll {
-    if (widget.filterMode != MemoryFilterMode.none) return const [];
-    return _memories.where((m) => !m.isPinned && _passesFeedFilter(m)).toList()
-      // Срок капсулы передаём в сортировку: с днём открытия капсула
-      // становится сегодняшним событием и поднимается наверх, иначе человек
-      // получал уведомление и не находил её в ленте (жалоба 31.08.2026).
-      ..sort(
-        (a, b) => compareMemories(
-          _sortOrder,
-          aEvent: a.createdAt,
-          bEvent: b.createdAt,
-          aAdded: a.addedAt,
-          bAdded: b.addedAt,
-          aOpenAt: a.openAt,
-          bOpenAt: b.openAt,
-        ),
-      );
-  }
-
-  /// Есть ли воспоминания за пределами текущего окна (для подгрузки по скроллу).
-  bool get _canShowMore =>
-      widget.filterMode == MemoryFilterMode.none &&
-      _nonPinnedSortedAll.length > _visibleLimit;
-
-  /// Group non-pinned memories by date, newest first — ОКНО (_visibleLimit).
-  Map<String, List<Memory>> get _groupedByDate {
-    if (widget.filterMode != MemoryFilterMode.none) return {};
-    final Map<String, List<Memory>> grouped = {};
-    for (final m in _nonPinnedSortedAll.take(_visibleLimit)) {
-      grouped.putIfAbsent(_dateKey(m.createdAt), () => []).add(m);
-    }
-    return grouped;
-  }
-
-  String _dateKey(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final date = DateTime(dt.year, dt.month, dt.day);
-    final diff = today.difference(date).inDays;
-
-    final s = LocaleService.current;
-    if (diff == 0) return s.todayDate;
-    if (diff == 1) return s.yesterday;
-    if (diff < 7) return s.shortWeekdays[dt.weekday - 1];
-
-    final months = s.shortMonths;
-    if (dt.year == now.year) {
-      return '${months[dt.month - 1]} ${dt.day}';
-    }
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-  }
-
   /// Секции ленты: заголовок даты и тайлы этого дня.
   List<Widget> _buildDateGroupedSlivers() {
     final slivers = <Widget>[];
-    for (final entry in _groupedByDate.entries) {
+    for (final entry in _feed.groupedByDate.entries) {
       slivers.add(_sectionHeader(entry.key));
       slivers.add(_memoryTilesSliver(entry.value));
     }
@@ -738,14 +570,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   //  BUILD
   // ══════════════════════════════════════════════
   // ── Встроенный режим (превью на главном): настоящие карточки, лимит N ──
-
-  List<Memory> _previewMemories(int n) {
-    final all = <Memory>[
-      ..._pinnedMemories,
-      ..._nonPinnedSortedAll,
-    ].where((m) => !m.isSecret || _secretUnlocked).toList();
-    return all.length > n ? all.sublist(0, n) : all;
-  }
 
   void _openFullLane() {
     Navigator.push(
@@ -828,7 +652,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         child: Center(child: M3PageLoading(color: t.primaryLight)),
       );
     } else {
-      final items = _previewMemories(widget.previewLimit);
+      final items = _feed.previewMemories(widget.previewLimit);
       if (items.isEmpty) {
         content = Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -947,30 +771,30 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                   )
                 else if (_memories.isEmpty)
                   _buildEmpty()
-                else if (_feedFiltered && !_hasVisibleMemories) ...[
+                else if (_feed.feedFiltered && !_feed.hasVisibleMemories) ...[
                   const SliverToBoxAdapter(child: SizedBox(height: 6)),
                   _buildFilteredEmpty(),
                 ] else ...[
                   const SliverToBoxAdapter(child: SizedBox(height: 6)),
                   // «В этот день»: что было месяц и год назад. Только в обычной
                   // ленте — в фильтре и в режиме выбора она сбивала бы с толку.
-                  if (!_feedFiltered &&
+                  if (!_feed.feedFiltered &&
                       !_selecting &&
                       widget.filterMode == MemoryFilterMode.none &&
-                      _onThisDay.isNotEmpty) ...[
+                      _feed.onThisDayShelves.isNotEmpty) ...[
                     _sectionHeader(
                       trKey('otdTitle'),
                       icon: Icons.history_rounded,
                     ),
                     SliverToBoxAdapter(
                       child: OnThisDayShelfRow(
-                        items: _onThisDay,
+                        items: _feed.onThisDayShelves,
                         onOpen: _openOnThisDay,
                       ),
                     ),
                   ],
                   // Pinned section (only in normal mode)
-                  if (_pinnedMemories.isNotEmpty) ...[
+                  if (_feed.pinnedMemories.isNotEmpty) ...[
                     _sectionHeader(
                       LocaleService.current.pinned,
                       icon: Icons.push_pin_rounded,
@@ -979,18 +803,20 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
-                          (_, i) => _memoryTile(_pinnedMemories[i]),
-                          childCount: _pinnedMemories.length,
+                          (_, i) => _memoryTile(_feed.pinnedMemories[i]),
+                          childCount: _feed.pinnedMemories.length,
                         ),
                       ),
                     ),
                   ],
                   // Day/Month filter — grouped by year across all years
                   if (widget.filterMode != MemoryFilterMode.none) ...[
-                    if (_filteredByDateAcrossYears.isEmpty)
+                    if (_feed.filteredByDateAcrossYears.isEmpty)
                       _buildEmpty()
                     else
-                      ..._filteredByDateAcrossYears.entries.expand((entry) {
+                      ..._feed.filteredByDateAcrossYears.entries.expand((
+                        entry,
+                      ) {
                         return [
                           _sectionHeader(entry.key),
                           SliverPadding(
@@ -1147,7 +973,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       leading: Padding(
         padding: const EdgeInsets.only(left: 10),
         child: Center(
-          child: _roundBarButton(
+          child: RoundBarButton(
+            theme: widget.theme,
             icon: Icons.arrow_back_rounded,
             onTap: () => Navigator.pop(context),
             tooltip: LocaleService.current.back,
@@ -1173,7 +1000,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 10, left: 8),
           child: Center(
-            child: _roundBarButton(
+            child: RoundBarButton(
+              theme: widget.theme,
               icon: Icons.more_vert_rounded,
               onTap: _openLaneMenu,
               tooltip: LocaleService.current.moreActions,
@@ -1182,31 +1010,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         ),
       ],
     );
-  }
-
-  /// Круглая кнопка шапки: тональный контейнер 48, как у блоков M3.
-  Widget _roundBarButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    String? tooltip,
-    Color? background,
-    Color? foreground,
-  }) {
-    final t = widget.theme;
-    final btn = Material(
-      color: background ?? t.cardSurface,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: SizedBox(
-          width: 48,
-          height: 48,
-          child: Icon(icon, size: 22, color: foreground ?? t.textPrimary),
-        ),
-      ),
-    );
-    return tooltip == null ? btn : Tooltip(message: tooltip, child: btn);
   }
 
   /// Строка поиска во всю ширину: подсказка и аватарки пары справа.
@@ -1232,7 +1035,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                     focusNode: _searchFocus,
                     autofocus: true,
                     textInputAction: TextInputAction.search,
-                    onChanged: (v) => setState(() => _searchQuery = v),
+                    onChanged: (v) => setState(() => _feed.searchQuery = v),
                     style: AppFonts.onest(
                       size: 15,
                       weight: 500,
@@ -1273,7 +1076,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),
               onPressed: () => setState(() {
                 _searchCtrl.clear();
-                _searchQuery = '';
+                _feed.searchQuery = '';
                 _searching = false;
                 _searchFocus.unfocus();
               }),
@@ -1413,7 +1216,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                           .where(
                             (m) =>
                                 !m.sealedNow() &&
-                                !(m.isSecret && !_secretUnlocked),
+                                !(m.isSecret && !_feed.secretUnlocked),
                           )
                           .toList(),
                       theme: widget.theme,
@@ -1434,7 +1237,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
               if (hasSecret) ...[
                 const SizedBox(height: 4),
                 row(
-                  icon: _secretUnlocked
+                  icon: _feed.secretUnlocked
                       ? Icons.lock_open_rounded
                       : Icons.lock_rounded,
                   title: LocaleService.current.secretMemories,
@@ -1492,7 +1295,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   PreferredSizeWidget? _filterBar() {
     if (widget.filterMode != MemoryFilterMode.none) return null;
     if (_loading || _memories.isEmpty) return null;
-    final cats = _presentCategories;
+    final cats = _feed.presentCategories;
     final hasFavorites = _memories.any((m) => m.isSavedBy(_myUid ?? ''));
     // Нечего фильтровать (один тип контента и ни одной закладки) — прячем бар.
     if (cats.length < 2 && !hasFavorites) return null;
@@ -1504,33 +1307,37 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
           children: [
-            _filterTag(
+            FeedFilterTag(
+              theme: widget.theme,
               label: LocaleService.current.feedFilterAll,
               icon: Icons.apps_rounded,
-              selected: _categoryKey == null && !_favoritesOnly,
+              selected: _feed.categoryKey == null && !_feed.favoritesOnly,
               onTap: () => setState(() {
-                _categoryKey = null;
-                _favoritesOnly = false;
+                _feed.categoryKey = null;
+                _feed.favoritesOnly = false;
               }),
             ),
             for (final c in cats) ...[
               const SizedBox(width: 6),
-              _filterTag(
+              FeedFilterTag(
+                theme: widget.theme,
                 label: trKey(c.dictKey),
                 icon: c.icon,
-                selected: _categoryKey == c.key,
-                onTap: () => setState(() => _categoryKey = c.key),
+                selected: _feed.categoryKey == c.key,
+                onTap: () => setState(() => _feed.categoryKey = c.key),
               ),
             ],
             if (hasFavorites) ...[
               const SizedBox(width: 6),
-              _filterTag(
+              FeedFilterTag(
+                theme: widget.theme,
                 label: LocaleService.current.feedFilterFavorites,
-                icon: _favoritesOnly
+                icon: _feed.favoritesOnly
                     ? Icons.favorite_rounded
                     : Icons.favorite_border_rounded,
-                selected: _favoritesOnly,
-                onTap: () => setState(() => _favoritesOnly = !_favoritesOnly),
+                selected: _feed.favoritesOnly,
+                onTap: () =>
+                    setState(() => _feed.favoritesOnly = !_feed.favoritesOnly),
               ),
             ],
           ],
@@ -1539,51 +1346,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     );
   }
 
-  /// Чип фильтра: один вид на все — иконка и подпись, выбранный залит
-  /// акцентом. Прежний круглый значок «Избранное» выбивался из ряда.
-  Widget _filterTag({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-    IconData? icon,
-  }) {
-    final t = widget.theme;
-    final bg = selected ? t.fillColor : t.cardSurface;
-    final fg = selected
-        ? AppThemes.onColor(t.fillColor, mode: t.brightness)
-        : t.textPrimary;
-    final iconColor = selected ? fg : t.textSecondary;
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: 40,
-          alignment: Alignment.center,
-          padding: EdgeInsets.only(left: icon == null ? 14 : 11, right: 14),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 18, color: iconColor),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: AppFonts.onest(size: 14, weight: 600, color: fg),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   /// Пустое состояние при активном фильтре (тег не дал результатов).
   SliverToBoxAdapter _buildFilteredEmpty() {
-    final favEmpty = _favoritesOnly;
+    final favEmpty = _feed.favoritesOnly;
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 70, 24, 24),
@@ -1897,40 +1662,16 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// без теней/бордера (требование), лёгкая подложка цветом темы.
   Widget _typeBadge(Memory memory) {
     final meta = _typeBadgeMeta(memory.type);
-    return _badgeChip(meta.$1, meta.$2);
+    return FeedBadgeChip(meta.$1, meta.$2, theme: widget.theme);
   }
 
   /// Значок запечатанной капсулы: тип у неё записи (текст или фото), но
   /// показывать его до срока незачем.
-  Widget _capsuleBadge() => _badgeChip(
+  Widget _capsuleBadge() => FeedBadgeChip(
     LocaleService.current.memBadgeCapsule,
     Icons.hourglass_top_rounded,
+    theme: widget.theme,
   );
-
-  Widget _badgeChip(String label, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: primary.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: primary),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: primary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   (String, IconData) _typeBadgeMeta(MemoryType type) {
     switch (type) {
@@ -2215,7 +1956,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         children: [
           _cardHeader(
             memory,
-            trailing: total > 1 ? _frameCountChip(total) : null,
+            trailing: total > 1
+                ? FrameCountChip(total, theme: widget.theme)
+                : null,
           ),
           if (title.isNotEmpty || caption.isNotEmpty)
             Padding(
@@ -2352,34 +2095,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           ),
         ],
       ],
-    );
-  }
-
-  /// Чип в шапке карточки: сколько кадров внутри записи.
-  Widget _frameCountChip(int count) {
-    final t = widget.theme;
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.only(left: 8, right: 10),
-      decoration: BoxDecoration(
-        color: t.bgGradient[0],
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.photo_library_rounded, size: 16, color: t.textSecondary),
-          const SizedBox(width: 5),
-          Text(
-            '$count',
-            style: AppFonts.onest(
-              size: 12.5,
-              weight: 700,
-              color: t.textPrimary,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -2571,9 +2286,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       imageUrl: thumbUrl,
                       fit: BoxFit.cover,
                       memCacheWidth: 140,
-                      errorWidget: (_, __, ___) => _pinIconBox(),
+                      errorWidget: (_, __, ___) =>
+                          PinIconBox(theme: widget.theme),
                     )
-                  : _pinIconBox(),
+                  : PinIconBox(theme: widget.theme),
             ),
           ),
           const SizedBox(width: 10),
@@ -2593,14 +2309,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           if (hasCoords) ...[const SizedBox(width: 8), _routeChip(memory)],
         ],
       ),
-    );
-  }
-
-  Widget _pinIconBox() {
-    return Container(
-      color: primary.withOpacity(0.10),
-      alignment: Alignment.center,
-      child: Icon(Icons.location_on_rounded, color: primary, size: 22),
     );
   }
 
@@ -2829,13 +2537,13 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                             runSpacing: 4,
                             children: [
                               if (hasYear)
-                                _bookChip(
+                                BookChip(
                                   Icons.calendar_today_rounded,
                                   memory.bookYear!,
                                   primary,
                                 ),
                               if (hasPublisher)
-                                _bookChip(
+                                BookChip(
                                   Icons.business_rounded,
                                   memory.bookPublisher!,
                                   primary,
@@ -2866,36 +2574,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             ),
           _locationDistancePill(memory),
           const SizedBox(height: 12),
-        ],
-      ),
-    );
-  }
-
-  Widget _bookChip(IconData icon, String label, Color accent) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: accent),
-          const SizedBox(width: 4),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 120),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: accent,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -2989,16 +2667,24 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                             runSpacing: 4,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              _movieKindChip(memory.movieKind, isRu),
+                              MovieKindChip(
+                                memory.movieKind,
+                                isRu,
+                                theme: widget.theme,
+                              ),
                               if (hasYear)
-                                _bookChip(
+                                BookChip(
                                   Icons.calendar_today_rounded,
                                   memory.movieYear!,
                                   primary,
                                 ),
-                              if (hasKp) _kpChip(memory.movieRatingKp!),
+                              if (hasKp)
+                                KpChip(
+                                  memory.movieRatingKp!,
+                                  theme: widget.theme,
+                                ),
                               if (hasGenres)
-                                _bookChip(
+                                BookChip(
                                   Icons.theaters_rounded,
                                   memory.movieGenres!,
                                   primary,
@@ -3034,57 +2720,11 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     );
   }
 
-  Widget _movieKindChip(String? kind, bool isRu) {
-    final label = movieKindLabel(kind, isRu: isRu);
-    final isSeries = kind != null && kind != 'movie' && kind != 'cartoon';
-    final color = isSeries ? const Color(0xFF8B5CF6) : primary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  Widget _kpChip(String rating) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: _cs.tertiaryContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.star_rounded, size: 11, color: _cs.onTertiaryContainer),
-          const SizedBox(width: 4),
-          Text(
-            LocaleService.current.kpRating(rating),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: _cs.onTertiaryContainer,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ═══════════════════════════════════════════════════
   //  VIDEO LINK TILE — card for shared web video link
   // ═══════════════════════════════════════════════════
   Widget _videoLinkTile(Memory memory) {
-    final platform = _detectVideoPlatform(memory.videoUrl ?? '');
+    final platform = VideoLinkMeta.detectPlatform(memory.videoUrl ?? '');
     final platformName = platform['name'] as String;
     final url = memory.videoUrl ?? '';
     void openOutside() {
@@ -3118,7 +2758,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                       fill: widget.theme.fillColor,
                       url: url,
                       platformName: platformName,
-                      platformIcon: _videoPlatformIcon(platformName),
+                      platformIcon: VideoLinkMeta.platformIcon(platformName),
                       thumbUrl: videoThumbFor(memory.imageUrl, url),
                       title: memory.title,
                       author: memory.musicArtist,
@@ -3134,183 +2774,6 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
         ],
       ),
     );
-  }
-
-  // ── Platform detection for video URLs ──
-  static Map<String, dynamic> _detectVideoPlatform(String url) {
-    final lower = url.toLowerCase();
-    if (lower.contains('youtube.com') || lower.contains('youtu.be')) {
-      return {'name': 'YouTube', 'color': const Color(0xFFFF0000)};
-    } else if (lower.contains('vimeo.com')) {
-      return {'name': 'Vimeo', 'color': const Color(0xFF1AB7EA)};
-    } else if (lower.contains('dailymotion.com')) {
-      return {'name': 'Dailymotion', 'color': const Color(0xFF0066DC)};
-    } else if (lower.contains('twitch.tv')) {
-      return {'name': 'Twitch', 'color': const Color(0xFF9146FF)};
-    } else if (lower.contains('tiktok.com')) {
-      return {'name': 'TikTok', 'color': const Color(0xFF010101)};
-    } else if (lower.contains('instagram.com')) {
-      return {'name': 'Instagram', 'color': const Color(0xFFE1306C)};
-    } else if (lower.contains('facebook.com') || lower.contains('fb.watch')) {
-      return {'name': 'Facebook', 'color': const Color(0xFF1877F2)};
-    } else if (lower.contains('twitter.com') || lower.contains('x.com')) {
-      return {'name': 'Twitter/X', 'color': const Color(0xFF000000)};
-    } else if (lower.contains('rutube.ru')) {
-      return {'name': 'Rutube', 'color': const Color(0xFF1482C8)};
-    } else if (lower.contains('vk.com') || lower.contains('vkvideo.ru')) {
-      return {'name': 'VK Video', 'color': const Color(0xFF0077FF)};
-    } else if (lower.contains('dzen.ru')) {
-      return {
-        'name': LocaleService.instance.isRussian ? 'Дзен' : 'Dzen',
-        'color': const Color(0xFF000000),
-      };
-    } else {
-      return {
-        'name': LocaleService.current.video,
-        'color': const Color(0xFF6B7280),
-      };
-    }
-  }
-
-  static IconData _videoPlatformIcon(String platformName) {
-    switch (platformName) {
-      case 'YouTube':
-        return Icons.smart_display_rounded;
-      case 'Twitch':
-        return Icons.live_tv_rounded;
-      case 'TikTok':
-        return Icons.music_video_rounded;
-      case 'Instagram':
-        return Icons.camera_alt_rounded;
-      case 'Facebook':
-        return Icons.facebook_rounded;
-      case 'Vimeo':
-      case 'Dailymotion':
-        return Icons.play_circle_rounded;
-      case 'Rutube':
-      case 'VK Video':
-        return Icons.play_circle_outline_rounded;
-      default:
-        return Icons.videocam_rounded;
-    }
-  }
-
-  /// Fetch video metadata (title, channel, thumbnail) from a URL
-  Future<Map<String, String?>> _fetchVideoMeta(String url) async {
-    final lower = url.toLowerCase();
-
-    // ── YouTube (official oEmbed — no API key required) ──
-    if (lower.contains('youtube.com') || lower.contains('youtu.be')) {
-      try {
-        final resp = await http.get(
-          Uri.parse(
-            'https://www.youtube.com/oembed?url=${Uri.encodeComponent(url)}&format=json',
-          ),
-        );
-        if (resp.statusCode == 200) {
-          final data = json.decode(resp.body) as Map<String, dynamic>;
-          return {
-            'title': data['title'] as String?,
-            'author': data['author_name'] as String?,
-            'cover': data['thumbnail_url'] as String?,
-          };
-        }
-      } catch (e) {
-        debugPrint('YouTube video meta error: $e');
-      }
-      return {};
-    }
-
-    // ── Vimeo via oEmbed ──
-    if (lower.contains('vimeo.com')) {
-      try {
-        final resp = await http.get(
-          Uri.parse(
-            'https://vimeo.com/api/oembed.json?url=${Uri.encodeComponent(url)}',
-          ),
-        );
-        if (resp.statusCode == 200) {
-          final data = json.decode(resp.body) as Map<String, dynamic>;
-          return {
-            'title': data['title'] as String?,
-            'author': data['author_name'] as String?,
-            'cover': data['thumbnail_url'] as String?,
-          };
-        }
-      } catch (e) {
-        debugPrint('Vimeo meta error: $e');
-      }
-    }
-
-    // ── Dailymotion via oEmbed ──
-    if (lower.contains('dailymotion.com')) {
-      try {
-        final resp = await http.get(
-          Uri.parse(
-            'https://www.dailymotion.com/services/oembed?url=${Uri.encodeComponent(url)}&format=json',
-          ),
-        );
-        if (resp.statusCode == 200) {
-          final data = json.decode(resp.body) as Map<String, dynamic>;
-          return {
-            'title': data['title'] as String?,
-            'author': data['author_name'] as String?,
-            'cover': data['thumbnail_url'] as String?,
-          };
-        }
-      } catch (e) {
-        debugPrint('Dailymotion meta error: $e');
-      }
-    }
-
-    // ── Generic noembed.com fallback ──
-    try {
-      final resp = await http.get(
-        Uri.parse('https://noembed.com/embed?url=${Uri.encodeComponent(url)}'),
-      );
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as Map<String, dynamic>;
-        if (data['error'] == null) {
-          return {
-            'title': data['title'] as String?,
-            'author': data['author_name'] as String?,
-            'cover': data['thumbnail_url'] as String?,
-          };
-        }
-      }
-    } catch (_) {}
-
-    // ── OG tags fallback ──
-    try {
-      final resp = await http.get(
-        Uri.parse(url),
-        headers: {'User-Agent': 'Mozilla/5.0 (compatible; Twitterbot/1.0)'},
-      );
-      if (resp.statusCode == 200) {
-        final body = resp.body;
-        final titleMatch = RegExp(
-          r'property="og:title"\s+content="([^"]+)"',
-          caseSensitive: false,
-        ).firstMatch(body);
-        final imageMatch = RegExp(
-          r'property="og:image"\s+content="([^"]+)"',
-          caseSensitive: false,
-        ).firstMatch(body);
-        final authorMatch = RegExp(
-          r'name="author"\s+content="([^"]+)"',
-          caseSensitive: false,
-        ).firstMatch(body);
-        if (titleMatch != null) {
-          return {
-            'title': _decodeHtmlEntities(titleMatch.group(1) ?? ''),
-            'author': authorMatch?.group(1),
-            'cover': imageMatch?.group(1),
-          };
-        }
-      }
-    } catch (_) {}
-
-    return {};
   }
 
   // ═══════════════════════════════════════════════════
@@ -3485,8 +2948,8 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   static const String _kPinForgot = 'forgot';
 
   Future<void> _toggleSecretLock() async {
-    if (_secretUnlocked) {
-      setState(() => _secretUnlocked = false);
+    if (_feed.secretUnlocked) {
+      setState(() => _feed.secretUnlocked = false);
       return;
     }
     final pin = await _askPin(create: false);
@@ -3498,7 +2961,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     final ok = await SecretPinService.verify(pin);
     if (!mounted) return;
     if (ok) {
-      setState(() => _secretUnlocked = true);
+      setState(() => _feed.secretUnlocked = true);
     } else {
       _secretSnack(LocaleService.current.wrongPin, error: true);
     }
@@ -3523,7 +2986,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     if (fresh == null || fresh == _kPinForgot || !mounted) return;
     await SecretPinService.setPin(fresh);
     if (!mounted) return;
-    setState(() => _secretUnlocked = true);
+    setState(() => _feed.secretUnlocked = true);
   }
 
   /// Пометить/снять «секретное». При первой пометке (нет PIN) — просим задать.
@@ -3533,7 +2996,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
       final pin = await _askPin(create: true);
       if (pin == null) return;
       await SecretPinService.setPin(pin);
-      if (mounted) setState(() => _secretUnlocked = true);
+      if (mounted) setState(() => _feed.secretUnlocked = true);
     }
     await _memRepo.update(
       groupId: _groupId,
@@ -3738,7 +3201,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
             ),
             if (memoryMediaFiles(
               memory,
-              secretUnlocked: _secretUnlocked,
+              secretUnlocked: _feed.secretUnlocked,
             ).isNotEmpty)
               ListTile(
                 leading: Icon(Icons.download_rounded, color: primary),
@@ -3985,7 +3448,10 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   /// открывал браузер для каждого файла и не сохранил ни одного (жалоба
   /// 19.09.2026). Теперь путь один на все экраны — `saveToGallery`.
   Future<void> _saveMemoryToGallery(Memory memory) async {
-    final files = memoryMediaFiles(memory, secretUnlocked: _secretUnlocked);
+    final files = memoryMediaFiles(
+      memory,
+      secretUnlocked: _feed.secretUnlocked,
+    );
     if (files.isEmpty) return;
     await saveToGallery(
       context,
@@ -3998,7 +3464,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
   // ── Выбор нескольких записей ──
 
   List<MediaFile> _filesOf(Memory m) =>
-      memoryMediaFiles(m, secretUnlocked: _secretUnlocked);
+      memoryMediaFiles(m, secretUnlocked: _feed.secretUnlocked);
 
   void _startSelecting(Memory first) {
     setState(() {
@@ -4142,7 +3608,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     ];
     // Секретная запись под замком файлов не отдаёт — говорим, сколько
     // пропущено, иначе человек ищет их в галерее.
-    final skipped = chosen.where((m) => m.isSecret && !_secretUnlocked).length;
+    final skipped = chosen
+        .where((m) => m.isSecret && !_feed.secretUnlocked)
+        .length;
     if (items.isEmpty) {
       showFloatingNote(
         context,
@@ -4841,381 +4309,15 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     }
   }
 
-  /// Fetch track metadata from YouTube (stream-based) or Spotify (oEmbed).
-  /// Supported music services list for the info dialog
-  static const List<Map<String, dynamic>> _supportedMusicServices = [
-    {
-      'name': 'Spotify',
-      'supported': true,
-      'color': Color(0xFF1DB954),
-      'icon': Icons.music_note_rounded,
-    },
-    {
-      'name': 'YouTube Music',
-      'supported': true,
-      'color': Color(0xFFFF0000),
-      'icon': Icons.play_circle_rounded,
-    },
-    {
-      'name': 'Apple Music',
-      'supported': true,
-      'color': Color(0xFFFC3C44),
-      'icon': Icons.apple_rounded,
-    },
-    {
-      'name': 'Deezer',
-      'supported': true,
-      'color': Color(0xFFA238FF),
-      'icon': Icons.album_rounded,
-    },
-    {
-      'name': 'SoundCloud',
-      'supported': true,
-      'color': Color(0xFFFF5500),
-      'icon': Icons.cloud_rounded,
-    },
-    {
-      'name': 'Яндекс Музыка',
-      'supported': true,
-      'color': Color(0xFFFFCC00),
-      'icon': Icons.library_music_rounded,
-    },
-    {
-      'name': 'Tidal',
-      'supported': true,
-      'color': Color(0xFF000000),
-      'icon': Icons.waves_rounded,
-    },
-    {
-      'name': 'YouTube Music',
+  void _showSupportedVideoServicesDialog() => showAppSheet<void>(
+    context,
+    builder: (_) => SupportedVideoServicesSheet(theme: widget.theme),
+  );
 
-      'supported': true,
-      'color': Color(0xFFFF0000),
-      'icon': Icons.smart_display_rounded,
-    },
-    {
-      'name': 'Audio file',
-      'supported': true,
-      'color': Color(0xFF8B5CF6),
-      'icon': Icons.audio_file_rounded,
-    },
-    {
-      'name': 'Amazon Music',
-      'supported': false,
-      'color': Color(0xFF25D1DA),
-      'icon': Icons.shopping_bag_rounded,
-    },
-    {
-      'name': 'Pandora',
-      'supported': false,
-      'color': Color(0xFF005483),
-      'icon': Icons.radio_rounded,
-    },
-  ];
-
-  static const List<Map<String, dynamic>> _supportedVideoServices = [
-    {
-      'name': 'YouTube',
-      'supported': true,
-      'color': Color(0xFFFF0000),
-      'icon': Icons.smart_display_rounded,
-    },
-    {
-      'name': 'Vimeo',
-      'supported': true,
-      'color': Color(0xFF1AB7EA),
-      'icon': Icons.play_circle_rounded,
-    },
-    {
-      'name': 'Dailymotion',
-      'supported': true,
-      'color': Color(0xFF0066DC),
-      'icon': Icons.play_circle_outline_rounded,
-    },
-    {
-      'name': 'Twitch',
-      'supported': true,
-      'color': Color(0xFF9146FF),
-      'icon': Icons.live_tv_rounded,
-    },
-    {
-      'name': 'TikTok',
-      'supported': true,
-      'color': Color(0xFF010101),
-      'icon': Icons.music_video_rounded,
-    },
-    {
-      'name': 'Instagram',
-      'supported': true,
-      'color': Color(0xFFE1306C),
-      'icon': Icons.camera_alt_rounded,
-    },
-    {
-      'name': 'Facebook',
-      'supported': true,
-      'color': Color(0xFF1877F2),
-      'icon': Icons.facebook_rounded,
-    },
-    {
-      'name': 'Twitter / X',
-      'supported': true,
-      'color': Color(0xFF000000),
-      'icon': Icons.alternate_email_rounded,
-    },
-    {
-      'name': 'Rutube',
-      'supported': true,
-      'color': Color(0xFF1482C8),
-      'icon': Icons.play_circle_outline_rounded,
-    },
-    {
-      'name': 'VK Video',
-      'supported': true,
-      'color': Color(0xFF0077FF),
-      'icon': Icons.play_circle_outline_rounded,
-    },
-  ];
-
-  void _showSupportedVideoServicesDialog() {
-    final primary = widget.theme.primary;
-    showAppSheet<void>(
-      context,
-      builder: (ctx) => SheetScaffold(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      primary.withOpacity(0.15),
-                      const Color(0xFFFF0000).withOpacity(0.1),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.smart_display_rounded,
-                  color: primary,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                LocaleService.current.supportedPlatforms,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: widget.theme.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                LocaleService.current.pasteLinkSupported,
-                style: TextStyle(fontSize: 12, color: widget.theme.textMuted),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 400),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: _supportedVideoServices.map((svc) {
-                      final svcColor = svc['color'] as Color;
-                      final row = Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: svcColor.withOpacity(0.06),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: svcColor.withOpacity(0.12),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                svc['icon'] as IconData,
-                                size: 20,
-                                color: svcColor,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  svc['name'] as String,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: widget.theme.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.check_circle_rounded,
-                                size: 20,
-                                color: const Color(0xFF22C55E),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                      return row;
-                    }).toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: TextButton.styleFrom(
-                    foregroundColor: primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    LocaleService.current.gotIt,
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showSupportedServicesDialog() {
-    final primary = widget.theme.primary;
-    showAppSheet<void>(
-      context,
-      builder: (ctx) => SheetScaffold(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      primary.withOpacity(0.15),
-                      const Color(0xFFEC4899).withOpacity(0.1),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.music_note_rounded, color: primary, size: 28),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                LocaleService.current.supportedServices,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: widget.theme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                LocaleService.current.pasteLinkFromService,
-                style: TextStyle(fontSize: 12, color: widget.theme.textMuted),
-              ),
-              const SizedBox(height: 18),
-              ..._supportedMusicServices.map(
-                (svc) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: (svc['color'] as Color).withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: (svc['color'] as Color).withOpacity(0.12),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          svc['icon'] as IconData,
-                          size: 20,
-                          color: svc['color'] as Color,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            svc['name'] as String,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: widget.theme.textPrimary,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          svc['supported'] == true
-                              ? Icons.check_circle_rounded
-                              : Icons.cancel_rounded,
-                          size: 20,
-                          color: svc['supported'] == true
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFEF4444),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: TextButton.styleFrom(
-                    foregroundColor: primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    LocaleService.current.gotIt,
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _decodeHtmlEntities(String text) {
-    return text
-        .replaceAll('&amp;', '&')
-        .replaceAll('&lt;', '<')
-        .replaceAll('&gt;', '>')
-        .replaceAll('&quot;', '"')
-        .replaceAll('&#39;', "'")
-        .replaceAll('&apos;', "'")
-        .replaceAll('&#x27;', "'")
-        .replaceAll('&nbsp;', ' ');
-  }
+  void _showSupportedServicesDialog() => showAppSheet<void>(
+    context,
+    builder: (_) => SupportedMusicServicesSheet(theme: widget.theme),
+  );
 
   /// Метаданные трека по ссылке. Разбор живёт в [MusicMetaService] — одной
   /// копией на оба экрана: пока копий было две, они разошлись, и в виджете
@@ -6045,7 +5147,9 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
                                         setState(
                                           () => isFetchingVideoMeta = true,
                                         );
-                                        final meta = await _fetchVideoMeta(url);
+                                        final meta = await _videoMeta.fetch(
+                                          url,
+                                        );
                                         if (!context.mounted) return;
                                         setState(() {
                                           isFetchingVideoMeta = false;
@@ -7566,7 +6670,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
     for (final m in sorted) {
       // Не светим фото запечатанной капсулы (до открытия) и секретных до PIN.
       if (m.sealedNow()) continue;
-      if (m.isSecret && !_secretUnlocked) continue;
+      if (m.isSecret && !_feed.secretUnlocked) continue;
       if (m.type == MemoryType.photo) {
         final urls = <String>[
           if (m.imageUrls?.isNotEmpty == true)
@@ -7636,7 +6740,7 @@ class _MemoryLaneScreenState extends State<MemoryLaneScreen> {
           memories: _memories,
           theme: widget.theme,
           coupleTitle: title.isEmpty ? LocaleService.current.bookTitle : title,
-          secretUnlocked: _secretUnlocked,
+          secretUnlocked: _feed.secretUnlocked,
         ),
         settings: const RouteSettings(name: '/pair_book'),
       ),

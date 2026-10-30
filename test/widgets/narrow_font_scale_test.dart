@@ -110,7 +110,7 @@ void main() {
         'lib/screens/home/home_memory_preview.dart',
         'lib/screens/memory_lane_screen.dart',
       ]) {
-        final src = File(path).readAsStringSync();
+        final src = screenSource(path);
         final i = src.indexOf('relationshipMemoryLane');
         expect(i, greaterThan(0), reason: '$path потерял заголовок ленты');
         final before = src.substring(0, i);
@@ -128,9 +128,7 @@ void main() {
       // С 19.09.2026 лист — полка в ряд, высоту задаёт подпись. Сетка с
       // childAspectRatio резала подписи при шрифте 1.3; рендер на 320 dp
       // держит test/widgets/add_memory_sheet_test.dart.
-      final lane = File(
-        'lib/screens/memory_lane_screen.dart',
-      ).readAsStringSync();
+      final lane = screenSource('lib/screens/memory_lane_screen.dart');
       expect(lane.contains('AddMemorySheetBody('), isTrue);
       final sheet = File(
         'lib/widgets/memory/add_memory_sheet.dart',

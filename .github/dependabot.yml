@@ -1,0 +1,36 @@
+# Обновления зависимостей (аудит CI-4, пункт A14e). Раз в неделю, по одной
+# группе на экосистему, чтобы не заваливать PR-ами; мажорные версии — отдельно,
+# их ломающие изменения смотрим глазами.
+version: 2
+updates:
+  # Flutter-клиент.
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      pub-minor:
+        update-types: [minor, patch]
+
+  # Go-сервер.
+  - package-ecosystem: gomod
+    directory: /server
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      gomod-minor:
+        update-types: [minor, patch]
+
+  # GitHub Actions: обновляет SHA вместе с комментарием версии (`# v4`).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      actions:
+        patterns: ['*']
