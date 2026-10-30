@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:love_app/screens/widget_screen/widget_data_sync.dart';
 import 'package:love_app/services/mascot/mascot_widget_keys.dart';
 import '../support/screen_source.dart';
 
@@ -45,13 +46,13 @@ void main() {
   test('виджет привязывается к паре своим типом', () {
     // Без этой ветки привязка уходит в timer_next_bind_group и перехватывает
     // группу у «Таймера», а сам виджет остаётся без пары.
-    expect(screen.contains("'mascot' => 'mascot'"), isTrue);
+    expect(WidgetDataSync.pinBindKey('mascot'), 'mascot');
     expect(kotlin.contains('"mascot"'), isTrue);
   });
 
   test('после установки виджет сразу получает данные', () {
     expect(screen.contains("case 'mascot':"), isTrue);
-    expect(screen.contains('mascotService.resyncStreakWidget()'), isTrue);
+    expect(screen.contains('mascot.resyncStreakWidget()'), isTrue);
   });
 
   test('у каждого размера есть превью в списке лончера', () {

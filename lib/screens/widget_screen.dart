@@ -5,14 +5,11 @@ import '../fork/identity.dart'; // fork: полное имя класса вид
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../widgets/note_editor_sheet.dart';
 import '../widgets/mood_image.dart';
 import '../widgets/storage_image.dart';
-import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import '../theme/fonts.dart';
 import 'package:home_widget/home_widget.dart';
@@ -22,27 +19,19 @@ import '../services/widget_anim_service.dart';
 import '../services/plus_service.dart';
 import '../services/ui_prefs.dart';
 import '../dict_strings.dart' show ruEn, trKey, zhForEnglishIfZh;
-import '../models/countdown_widget.dart';
-import '../models/note_preview.dart';
-import '../models/together_milestones.dart';
 import '../models/widget_panels.dart';
 import '../widgets/miss_widget_card.dart';
 import '../widgets/together_track_card.dart';
 import '../services/widget_theme_sync.dart';
 import '../models/pair_map_widget_view.dart';
-import '../models/year_ring_spec.dart';
 import '../services/map/pair_map_widget_service.dart';
 import '../widgets/map/pair_map_widget_preview.dart';
-import '../widgets/year_ring_card.dart';
 import 'plus_screen.dart';
 import '../utils/couple_days.dart';
-import '../widgets/avatar_widget.dart';
 import '../utils/safe_pick.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../logic/photo_day_widget_logic.dart';
 import '../models/pair_data.dart';
 import '../models/symbol_catalog.dart';
-import '../models/together_caption.dart';
 import '../models/timer_item.dart';
 import '../models/widget_data.dart';
 import '../models/year_progress.dart';
@@ -62,33 +51,17 @@ import '../services/locale_service.dart';
 import '../utils/photo_crop.dart';
 import '../services/mood_notification_service.dart';
 import '../services/mood_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../models/canvas_meta.dart';
-import '../models/mascot.dart';
-import '../models/mascot_anim.dart';
-import '../models/mascot_widget_data.dart';
-import '../services/catalog_service.dart';
-import '../services/offline/media_view_cache.dart';
-import '../services/canvas/canvas_widget_service.dart';
-import '../services/canvas_repository.dart';
 import '../services/canvas_storage_service.dart';
-import '../services/mascot/mascot_art_source.dart';
-import '../services/mascot/mascot_widget_service.dart';
 import '../services/mascot_service.dart';
-import '../widgets/draw/canvas_preview.dart';
-import '../widgets/mascot/pixel_mascot_view.dart';
-import '../widgets/active_mascot_widget.dart' show buildMascotAssetImage;
 import '../services/timer_service.dart';
 import '../services/widget_rotation.dart';
 import '../services/widget_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/profile_theme.dart';
 import '../widgets/common/m3_loading.dart';
-import '../widgets/petal_timer_dial.dart';
-import '../widgets/mood_hearts_preview.dart';
 import '../widgets/pair_preview_divider.dart';
-import '../models/mood_widget_payload.dart';
 import 'home/widgets/mood_picker_dialog.dart';
 import 'home/widgets/photo_day_carousel_editor.dart';
 import 'home/widgets/memory_photo_picker.dart';
@@ -104,6 +77,12 @@ import 'widget_screen/catalog.dart';
 import 'widget_screen/catalog_panels.dart';
 import 'widget_screen/controls.dart';
 import 'widget_screen/preview_parts.dart';
+import 'widget_screen/preview_style.dart';
+import 'widget_screen/previews_time.dart';
+import 'widget_screen/previews_pair.dart';
+import 'widget_screen/previews_misc.dart';
+import 'widget_screen/photo_day_widgets.dart';
+import 'widget_screen/widget_data_sync.dart';
 
 /// Экран виджетов — два тайла (мой / партнёра) + настройки автоотправки.
 class WidgetScreen extends StatefulWidget {
@@ -142,6 +121,7 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   AppTheme get _t => widget.theme;
   ColorScheme get _cs => ProfileTheme.themeFor(_t).colorScheme;
+  PreviewStyle get _ps => PreviewStyle(_cs);
   WidgetService get _ws => widget.widgetService;
 
   /// Текст заметки на двоих — тот самый, что лежит на рабочем столе.
@@ -233,18 +213,8 @@ class _WidgetScreenState extends State<WidgetScreen>
   /// Подмешивать в «Фото партнёра» его снимки из заданий дня.
   bool _partnerTaskPhotos = false;
 
-  List<int> _personalWidgetIds = [];
-  List<int> _partnerWidgetIds = [];
-  Map<int, String> _photoDayWidgetNames = const {};
-  Map<int, String?> _photoDayWidgetOwnPhotoPaths = const {};
-  // Per-widget кеш URL-ов (длина → счётчик в превью)
-  Map<int, List<String>> _photoDayWidgetUrls = const {};
-  // Per-widget настройки ротации (для подсказок в превью)
-  Map<int, String> _photoDayWidgetRotationType = const {};
-  Map<int, int> _photoDayWidgetRotationInterval = const {};
-
-  int? _selectedPersonalWidgetId;
-  int? _selectedPartnerWidgetId;
+  /// Фото-виджеты на столе: списки, имена, превью, выбор в карточках.
+  PhotoDayWidgets _photoDay = PhotoDayWidgets.empty;
 
   String get _widgetTimerKey => 'widget_timer_id_${_pair.pairId}';
 
@@ -356,7 +326,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     final timerId = results[1] as String?;
     final lockEnabled = results[2] as bool;
     final photoDaySave = results[3] as bool;
-    final photoDayState = results[4] as Map<String, dynamic>;
+    final photoDayState = results[4] as PhotoDayWidgets;
     final statsState = results[5] as Map<String, dynamic>;
     final daysPhotos = results[6] as bool;
     final taskPhotos = await taskPhotosFuture;
@@ -370,25 +340,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       _daysPhotosEnabled = daysPhotos;
       _partnerTaskPhotos = taskPhotos;
       _photoGridCount = photoGridCount;
-      _personalWidgetIds = List<int>.from(photoDayState['personalIds'] ?? []);
-      _partnerWidgetIds = List<int>.from(photoDayState['partnerIds'] ?? []);
-      _photoDayWidgetNames = Map<int, String>.from(
-        photoDayState['names'] ?? {},
-      );
-      _photoDayWidgetOwnPhotoPaths = Map<int, String?>.from(
-        photoDayState['ownPhotoPaths'] ?? {},
-      );
-      _photoDayWidgetUrls = Map<int, List<String>>.from(
-        photoDayState['urls'] ?? {},
-      );
-      _photoDayWidgetRotationType = Map<int, String>.from(
-        photoDayState['rotationType'] ?? {},
-      );
-      _photoDayWidgetRotationInterval = Map<int, int>.from(
-        photoDayState['rotationInterval'] ?? {},
-      );
-      _selectedPersonalWidgetId = photoDayState['selectedPersonal'] as int?;
-      _selectedPartnerWidgetId = photoDayState['selectedPartner'] as int?;
+      _photoDay = photoDayState;
       _memoriesCount = statsState['memoriesCount'] as int?;
       _drawingsCount = statsState['drawingsCount'] as int?;
       _missYouCount = statsState['missYouCount'] as int?;
@@ -412,7 +364,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           _missCounts = counts;
           _missYouCount = counts.values.fold<int>(0, (s, v) => s + v);
         });
-        unawaited(_syncMissWidget());
+        unawaited(_sync.miss());
       }
     });
   }
@@ -455,101 +407,12 @@ class _WidgetScreenState extends State<WidgetScreen>
     };
   }
 
-  Future<Map<String, dynamic>> _loadPhotoDayWidgetsSilent() async {
-    final hws = HomeWidgetService.instance;
-    final allIds = await hws.getPhotoDayWidgetIds();
-    final rawPersonalIds = await hws.getSelfPhotoWidgetIds();
-    final rawPartnerIds = await hws.getPartnerPhotoWidgetIds();
-    final personalIds = <int>[];
-    final partnerIds = <int>[];
-
-    for (final id in rawPersonalIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) personalIds.add(id);
-    }
-
-    for (final id in rawPartnerIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) partnerIds.add(id);
-    }
-
-    final selectedPersonal = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      personalIds,
-      _selectedPersonalWidgetId,
-    );
-    final selectedPartner = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      partnerIds,
-      _selectedPartnerWidgetId,
-    );
-
-    final widgetNames = <int, String>{};
-    final widgetOwnPhotoPaths = <int, String?>{};
-    final widgetUrls = <int, List<String>>{};
-    final widgetRotationType = <int, String>{};
-    final widgetRotationInterval = <int, int>{};
-
-    for (final widgetId in allIds) {
-      widgetNames[widgetId] = (await hws.getPhotoDayWidgetName(widgetId)) ?? '';
-      final widgetDisplay = await hws.getPhotoDayWidgetDisplay(widgetId);
-      final widgetMode = await hws.getPhotoDayWidgetMode(
-        widgetId,
-        fallbackGroupId: _pair.pairId,
-      );
-      final preview = await hws.getPhotoDayWidgetPreview(widgetId);
-      var customPath = await hws.getPhotoDayWidgetCustomPath(widgetId);
-      if (customPath != null &&
-          customPath.isNotEmpty &&
-          !File(customPath).existsSync()) {
-        customPath = null;
-      }
-      final urls = await hws.getPhotoDayWidgetUrls(widgetId);
-      widgetUrls[widgetId] = urls;
-      widgetRotationType[widgetId] = await hws.getPhotoDayWidgetRotationType(
-        widgetId,
-      );
-      widgetRotationInterval[widgetId] = await hws
-          .getPhotoDayWidgetRotationInterval(widgetId);
-
-      final preferredOwnPath = _resolveWidgetPreviewPath(
-        isPartner: widgetDisplay == 'partner',
-        widgetUrls: urls,
-        widgetPreviewPath: preview['path'],
-      );
-
-      final widgetState = PhotoDayWidgetLogic.resolveState(
-        selectedWidgetId: widgetId,
-        mode: widgetMode,
-        display: widgetDisplay,
-        widgetPreviewPath: preview['path'],
-        widgetCustomPath: customPath,
-        fallbackPartnerPhotoPath: _partnerSharedPreviewPath,
-      );
-      widgetOwnPhotoPaths[widgetId] =
-          preferredOwnPath ?? widgetState.ownPhotoPath;
-    }
-
-    return {
-      'personalIds': personalIds,
-      'partnerIds': partnerIds,
-      'names': widgetNames,
-      'ownPhotoPaths': widgetOwnPhotoPaths,
-      'urls': widgetUrls,
-      'rotationType': widgetRotationType,
-      'rotationInterval': widgetRotationInterval,
-      'selectedPersonal': selectedPersonal,
-      'selectedPartner': selectedPartner,
-    };
-  }
+  Future<PhotoDayWidgets> _loadPhotoDayWidgetsSilent() => PhotoDayWidgets.load(
+    pairId: _pair.pairId,
+    selectedPersonal: _photoDay.selectedPersonal,
+    selectedPartner: _photoDay.selectedPartner,
+    partnerSharedPreviewPath: _partnerSharedPreviewPath,
+  );
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -625,118 +488,18 @@ class _WidgetScreenState extends State<WidgetScreen>
   }
 
   Future<void> _loadPhotoDayWidgets() async {
-    final hws = HomeWidgetService.instance;
-    final allIds = await hws.getPhotoDayWidgetIds();
-    final rawPersonalIds = await hws.getSelfPhotoWidgetIds();
-    final rawPartnerIds = await hws.getPartnerPhotoWidgetIds();
-    final personalIds = <int>[];
-    final partnerIds = <int>[];
-
-    for (final id in rawPersonalIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) personalIds.add(id);
-    }
-
-    for (final id in rawPartnerIds) {
-      final widgetGroupId = await hws.getPhotoDayWidgetGroupId(id);
-      final isCurrentGroup = _pair.pairId.isEmpty
-          ? (widgetGroupId == null ||
-                widgetGroupId.isEmpty ||
-                widgetGroupId == 'solo')
-          : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-      if (isCurrentGroup) partnerIds.add(id);
-    }
-
-    final selectedPersonal = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      personalIds,
-      _selectedPersonalWidgetId,
-    );
-    final selectedPartner = PhotoDayWidgetLogic.resolveSelectedWidgetId(
-      partnerIds,
-      _selectedPartnerWidgetId,
-    );
-
-    final widgetNames = <int, String>{};
-    final widgetOwnPhotoPaths = <int, String?>{};
-    final widgetUrls = <int, List<String>>{};
-    final widgetRotationType = <int, String>{};
-    final widgetRotationInterval = <int, int>{};
-
-    for (final widgetId in allIds) {
-      widgetNames[widgetId] = (await hws.getPhotoDayWidgetName(widgetId)) ?? '';
-      final widgetDisplay = await hws.getPhotoDayWidgetDisplay(widgetId);
-      final widgetMode = await hws.getPhotoDayWidgetMode(
-        widgetId,
-        fallbackGroupId: _pair.pairId,
-      );
-      final preview = await hws.getPhotoDayWidgetPreview(widgetId);
-      var customPath = await hws.getPhotoDayWidgetCustomPath(widgetId);
-      if (customPath != null &&
-          customPath.isNotEmpty &&
-          !File(customPath).existsSync()) {
-        customPath = null;
-      }
-      final urls = await hws.getPhotoDayWidgetUrls(widgetId);
-      widgetUrls[widgetId] = urls;
-      widgetRotationType[widgetId] = await hws.getPhotoDayWidgetRotationType(
-        widgetId,
-      );
-      widgetRotationInterval[widgetId] = await hws
-          .getPhotoDayWidgetRotationInterval(widgetId);
-
-      // Превью: для личного виджета сначала свои URL, для партнёрского —
-      // фото партнёра из Firestore, чтобы карточка сразу показывала именно его.
-      final preferredOwnPath = _resolveWidgetPreviewPath(
-        isPartner: widgetDisplay == 'partner',
-        widgetUrls: urls,
-        widgetPreviewPath: preview['path'],
-      );
-
-      // myPhotoUrl (Firestore) используется только если у виджета есть
-      // собственные URL — иначе новый виджет копировал бы превью уже
-      // настроенного виджета.
-      final widgetState = PhotoDayWidgetLogic.resolveState(
-        selectedWidgetId: widgetId,
-        mode: widgetMode,
-        display: widgetDisplay,
-        widgetPreviewPath: preview['path'],
-        widgetCustomPath: customPath,
-        fallbackPartnerPhotoPath: _partnerSharedPreviewPath,
-      );
-      widgetOwnPhotoPaths[widgetId] =
-          preferredOwnPath ?? widgetState.ownPhotoPath;
-    }
-
+    final next = await _loadPhotoDayWidgetsSilent();
     if (!mounted) return;
-    setState(() {
-      _personalWidgetIds = personalIds;
-      _partnerWidgetIds = partnerIds;
-      _photoDayWidgetNames = widgetNames;
-      _photoDayWidgetOwnPhotoPaths = widgetOwnPhotoPaths;
-      _photoDayWidgetUrls = widgetUrls;
-      _photoDayWidgetRotationType = widgetRotationType;
-      _photoDayWidgetRotationInterval = widgetRotationInterval;
-      _selectedPersonalWidgetId = selectedPersonal;
-      _selectedPartnerWidgetId = selectedPartner;
-    });
+    setState(() => _photoDay = next);
   }
 
   Future<void> _selectPhotoDayWidget(int widgetId) async {
     final hws = HomeWidgetService.instance;
     final kind = await hws.getPhotoDayWidgetKind(widgetId);
     if (!mounted) return;
-    setState(() {
-      if (kind == 'partner') {
-        _selectedPartnerWidgetId = widgetId;
-      } else {
-        _selectedPersonalWidgetId = widgetId;
-      }
-    });
+    setState(
+      () => _photoDay = _photoDay.select(widgetId, partner: kind == 'partner'),
+    );
   }
 
   Future<void> _toggleSavePhotoAsMemory(bool value) async {
@@ -754,19 +517,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     if (singleUrl != null && singleUrl.isNotEmpty) return singleUrl;
 
     return null;
-  }
-
-  String? _resolveWidgetPreviewPath({
-    required bool isPartner,
-    required List<String> widgetUrls,
-    required String? widgetPreviewPath,
-  }) {
-    if (isPartner) {
-      return _partnerSharedPreviewPath ?? widgetPreviewPath;
-    }
-
-    if (widgetUrls.isNotEmpty) return widgetUrls.first;
-    return widgetPreviewPath;
   }
 
   Future<void> _toggleLockScreenMood(bool value) async {
@@ -1056,18 +806,15 @@ class _WidgetScreenState extends State<WidgetScreen>
       trimmedName,
     );
     if (!mounted) return;
-    setState(() {
-      _photoDayWidgetNames = Map<int, String>.from(_photoDayWidgetNames)
-        ..[widgetId] = trimmedName;
-    });
+    setState(() => _photoDay = _photoDay.renamed(widgetId, trimmedName));
   }
 
   void _showPhotoDayWidgetNameEditor(int widgetId, int index) {
     _showTextEditor(
       title: _s.edit,
       hint: _s.name,
-      initial: _photoDayWidgetNames[widgetId]?.trim().isNotEmpty == true
-          ? _photoDayWidgetNames[widgetId]!
+      initial: _photoDay.names[widgetId]?.trim().isNotEmpty == true
+          ? _photoDay.names[widgetId]!
           : _s.widgetSlotTitle(index),
       maxLength: 40,
       onSave: (value) => _renamePhotoDayWidget(widgetId, value),
@@ -1110,49 +857,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         );
       }
 
-      // Save next_bind_group so Kotlin picks it up on first onUpdate.
-      // 'streak' uses global keys (not per-group binding) — skip it, otherwise
-      // the default switch branch would wrongly hijack the timer binding.
-      if (widgetType != null &&
-          !widgetType.startsWith('photo_day') &&
-          widgetType != 'streak') {
-        final realType = widgetType;
-        final bindTypeKey = switch (realType) {
-          // Оба оформления заметки — один и тот же виджет, отличается только
-          // стиль: он и уходит отдельным ключом.
-          'note' || 'note_paper' => 'note',
-          'petal_timer' => 'petal_timer',
-          'days_counter' => 'days_counter',
-          'mood' => 'mood',
-          'stats' || 'relationship_stats' => 'stats',
-          // Новый каталог: Kotlin ждёт together_/miss_. Без этих веток
-          // привязка уходила в timer_next_bind_group и перехватывала группу
-          // у виджета «Таймер», а сами новые виджеты оставались без группы.
-          'together' => 'together',
-          'miss' => 'miss',
-          'year_ring' => 'year_ring',
-          'mascot' => 'mascot',
-          'canvas' => 'canvas',
-          'year_grid' => 'year_grid',
-          'map' => 'map',
-          // Парный виджет тоже помнит свою связь: до 04.09.2026 он один на все
-          // пары показывал ту, что открыта в приложении последней. Ключ зовётся
-          // по ТИПУ виджета (`pair_next_bind_group`) — его и ищет
-          // WidgetGroupHelper, — а сами данные лежат под `love_<пара>_<поле>`.
-          'pair' => 'pair',
-          _ => 'timer', // 'timer' and others
-        };
-        await HomeWidget.saveWidgetData<String>(
-          '${bindTypeKey}_next_bind_group',
-          _pair.pairId,
-        );
-        if (bindTypeKey == 'note') {
-          await HomeWidget.saveWidgetData<String>(
-            'note_next_style',
-            realType == 'note_paper' ? 'paper' : 'm3',
-          );
-        }
-      }
+      await _sync.saveBindGroup(widgetType);
 
       await _pinConfirmation.request(
         ForkIdentity.widgetClass(className),
@@ -1193,7 +898,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           _pair.pairId,
         );
         // Немедленно записать актуальные данные в виджет
-        await _syncWidgetDataAfterPin(widgetType);
+        await _sync.afterPin(widgetType);
         if (widgetType.startsWith('photo_day')) {
           await _loadPhotoDayWidgets();
         }
@@ -1205,236 +910,6 @@ class _WidgetScreenState extends State<WidgetScreen>
         AppSnack.error(context, ForkFailure.of(e).text);
       }
     }
-  }
-
-  /// Сразу после пина записывает данные текущей группы в виджет.
-  Future<void> _syncWidgetDataAfterPin(String widgetType) async {
-    final hws = HomeWidgetService.instance;
-    switch (widgetType) {
-      case 'days_counter':
-        // Используем тот же алгоритм выбора таймера, что и Timer-виджет,
-        // чтобы Days Counter всегда показывал дни того же таймера.
-        final activeTimer = await hws.resolveActiveTimerPublic(
-          _timerService.timers,
-          _pair.pairId,
-        );
-        final timer =
-            activeTimer ??
-            _timerService.systemTimer ??
-            _timerService.defaultTimer;
-        final start = timer?.startDate ?? _pair.startDate;
-        final emoji = timer?.emoji ?? _pair.relationshipEmoji;
-        final days = timer != null
-            ? timer.daysElapsed.abs()
-            : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-        final startLabel = start != null
-            ? '${start.day.toString().padLeft(2, '0')}.${start.month.toString().padLeft(2, '0')}.${start.year}'
-            : '';
-        final names = _pair.partnerName.isNotEmpty ? _pair.partnerName : '';
-        await hws.syncDaysCounter(
-          groupId: _pair.pairId,
-          daysCount: days,
-          coupleNames: names,
-          emoji: emoji,
-          startDate: startLabel,
-          start: start,
-          myGender: widget.userData.gender?.name ?? '',
-          partnerGender: _ws.firstPartnerData?.gender ?? '',
-        );
-        break;
-      case 'miss':
-        await _syncMissWidget();
-        break;
-      case 'together':
-        // Дни — из активного таймера, как и у остальных счётчиков.
-        final timer = _timerService.defaultTimer ?? _timerService.systemTimer;
-        final start = timer?.startDate ?? _pair.startDate;
-        final days = timer != null
-            ? timer.daysElapsed.abs()
-            : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-        final startLabel = start == null
-            ? ''
-            : _s.tgYearSince('${_s.dayLogDate(start)} ${start.year}');
-        final myName = widget.userData.displayName.trim();
-        final partnerName = _pair.partnerDisplayName.trim();
-        final anniversary = start == null ? '' : _s.dayLogDate(start);
-        await hws.syncTogether(
-          groupId: _pair.pairId,
-          days: days,
-          startDate: startLabel,
-          start: start,
-          myInitial: myName.isEmpty
-              ? ''
-              : myName.characters.first.toUpperCase(),
-          partnerInitial: partnerName.isEmpty
-              ? ''
-              : partnerName.characters.first.toUpperCase(),
-          names: [myName, partnerName].where((n) => n.isNotEmpty).join(' + '),
-          anniversary: anniversary,
-          myAvatarUrl: widget.userData.avatarUrl,
-          partnerAvatarUrl: _pair.partnerAvatarUrl,
-        );
-        break;
-      case 'timer':
-      case 'petal_timer':
-        final timer = _widgetTimer;
-        if (timer != null) await hws.syncTimer(timer, groupId: _pair.pairId);
-        break;
-      case 'photo_day_self':
-      case 'photo_day_partner':
-      case 'photo_day':
-        // Ждём, пока система зарегистрирует новый виджет (requestPinWidget возвращает
-        // управление сразу, а ID появляется только когда пользователь бросает виджет
-        // на рабочий стол). Без задержки новый виджет ещё не виден в getPhotoDayWidgetIds.
-        await Future<void>.delayed(const Duration(milliseconds: 1500));
-        final ids = await hws.getPhotoDayWidgetIds();
-        // Передаём kind явно, чтобы не было race condition когда Kotlin ещё
-        // не записал kind='partner' в SharedPreferences через assignConfig().
-        final partnerIds = (await hws.getPartnerPhotoWidgetIds()).toSet();
-        for (final widgetId in ids) {
-          final widgetGroupId = await hws.getPhotoDayWidgetGroupId(widgetId);
-          // For solo mode, sync widgets without group or with empty group
-          final shouldSync = _pair.pairId.isEmpty
-              ? (widgetGroupId == null || widgetGroupId.isEmpty)
-              : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-          if (shouldSync) {
-            await hws.refreshPhotoOfDay(
-              _pair.pairId,
-              widgetId: widgetId,
-              overrideKind: partnerIds.contains(widgetId) ? 'partner' : null,
-            );
-          }
-        }
-        if (ids.isEmpty) {
-          await hws.refreshPhotoOfDay(_pair.pairId);
-        }
-        break;
-      case 'photo_grid':
-        // Photo grid requires a group (partner), skip for solo mode
-        if (_pair.pairId.isNotEmpty) {
-          await hws.refreshPhotoGrid(_pair.pairId);
-        }
-        break;
-      case 'mood_tiles':
-        await _syncMoodTilesWidget();
-        break;
-      case 'countdown':
-        await _syncCountdownWidget();
-        break;
-      case 'pair':
-        // Парный виджет синхронизируется WidgetService
-        break;
-      case 'mood':
-        // Ждём, пока система зарегистрирует новый виджет перед синхронизацией.
-        await Future<void>.delayed(const Duration(milliseconds: 1500));
-        // Синхронизируем из Mood Calendar за сегодня
-        {
-          final today = DateTime.now();
-          final myEntries = _moodService.myEntriesForDay(today);
-          final myEntry = myEntries.isNotEmpty ? myEntries.first : null;
-          final partnerUid = _pair.partners.isNotEmpty
-              ? _pair.partners.first.uid
-              : '';
-          final partnerEntries = partnerUid.isNotEmpty
-              ? _moodService.partnerEntriesForDay(partnerUid, today)
-              : <MoodEntry>[];
-          final partnerEntry = partnerEntries.isNotEmpty
-              ? partnerEntries.first
-              : null;
-          // Записи за сегодня главнее, иначе последнее известное настроение из
-          // widget_data — то же правило, что на главном экране; см.
-          // moodHalfPayload.
-          final mine = moodHalfPayload(
-            entry: myEntry,
-            widgetMoodEmoji: _ws.myData?.moodEmoji ?? '',
-            widgetMoodLabel: _ws.myData?.moodLabel ?? '',
-            gender: widget.userData.gender?.name ?? '',
-          );
-          final theirs = moodHalfPayload(
-            entry: partnerEntry,
-            widgetMoodEmoji: _ws.firstPartnerData?.moodEmoji ?? '',
-            widgetMoodLabel: _ws.firstPartnerData?.moodLabel ?? '',
-            gender: _ws.firstPartnerData?.gender ?? '',
-          );
-          await hws.syncMood(
-            groupId: _pair.pairId,
-            moodEmojiAssetPath: mine.imagePath,
-            moodLabel: mine.label,
-            moodScore: mine.score,
-            moodColor: mine.colorHex,
-            userName: _ws.myData?.displayName ?? '',
-            partnerMoodEmojiAssetPath: theirs.imagePath,
-            partnerMoodLabel: theirs.label,
-            partnerMoodColor: theirs.colorHex,
-            partnerMoodScore: theirs.score,
-            partnerUserName: _pair.partnerName,
-            noMoodText: _s.noMoodRecorded,
-            nameFallbackMe: _s.me,
-            nameFallbackPartner: _s.partner,
-            ratingPrefix: _s.moodScorePrefix,
-          );
-        }
-        break;
-      case 'relationship_stats':
-        // «Дни вместе» от ОСНОВНОГО (дефолтного) таймера — как Days Counter и
-        // круг; системный таймер хранит дату пары (≈сегодня) → давал бы 0.
-        final relTimer =
-            _timerService.defaultTimer ?? _timerService.systemTimer;
-        final start = relTimer?.startDate ?? _pair.startDate;
-        await hws.syncRelationshipStats(
-          groupId: _pair.pairId,
-          daysTogether: start != null
-              ? calendarDaysBetween(start, DateTime.now())
-              : 0,
-          memoriesCount: _memoriesCount ?? 0,
-          drawingsCount: _drawingsCount ?? 0,
-          missYouCount: _missYouCount ?? 0,
-          daysLabel: LocaleService.current.daysTogetherStat,
-          memoriesLabel: LocaleService.current.memoriesStat,
-          drawingsLabel: LocaleService.current.drawingsStat,
-          missYouLabel: LocaleService.current.missYousStat,
-        );
-        break;
-      case 'map':
-        // Картинка нарисуется, когда виджет встанет на стол: лончер разбудит
-        // Dart. Здесь — имена, аватарки и тема для фоновой отрисовки.
-        await PairMapWidgetService.instance.refreshFromApp(
-          groupId: _pair.pairId,
-          myUid: widget.userData.uid,
-          partnerUid: _pair.partnerUid,
-          myName: widget.userData.displayName,
-          partnerName: _pair.partnerDisplayName,
-          myAvatarUrl: widget.userData.avatarUrl,
-          partnerAvatarUrl: _pair.partnerAvatarUrl,
-          theme: _t,
-        );
-        break;
-      case 'year_ring':
-      case 'year_grid':
-        await _syncYearWidgets();
-        break;
-      case 'mascot':
-        // Кадры режет сервис маскота: у него и персонаж, и серия, и окно сна.
-        widget.mascotService.resyncStreakWidget();
-        break;
-      case 'canvas':
-        await _syncCanvasWidget();
-        break;
-    }
-  }
-
-  /// Данные «Кольца года» и «Календаря лет».
-  ///
-  /// Дата начала — от основного таймера, как у остальных счётчиков: системный
-  /// таймер держит дату регистрации пары и дал бы почти нулевой стаж.
-  Future<void> _syncYearWidgets() async {
-    final start = _togetherStart();
-    await HomeWidgetService.instance.syncYearWidgets(
-      groupId: _pair.pairId,
-      start: start,
-      memoriesCount: _memoriesCount ?? 0,
-      startDateLabel: start == null ? '' : _s.tgYearSince(_formatDate(start)),
-    );
   }
 
   @override
@@ -1848,7 +1323,15 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.daysCounterSubtitle,
     svgString: _calendarSvg,
     qualifiedName: 'com.togetherly.love.DaysCounterWidgetProvider',
-    preview: _buildDaysCounterPreview(),
+    preview: DaysCounterPreview(
+      t: _t,
+      daysPhotosEnabled: _daysPhotosEnabled,
+      pair: _pair,
+      timerService: _timerService,
+      widgetTimer: _widgetTimer,
+      ws: _ws,
+      userData: widget.userData,
+    ),
     widgetType: 'days_counter',
     expandedContent: _buildDaysPhotosCard(),
     isExpanded: _daysCounterExpanded,
@@ -1861,7 +1344,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.widgetPetalTimerSubtitle,
     svgString: _timerSvg,
     qualifiedName: 'com.togetherly.love.PetalTimerWidgetProvider',
-    preview: _buildPetalTimerPreview(),
+    preview: PetalTimerPreview(t: _t, widgetTimer: _widgetTimer),
     widgetType: 'petal_timer',
     expandedContent: _buildTimerSelector(),
     isExpanded: _petalTimerWidgetExpanded,
@@ -1874,7 +1357,12 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.moodWidgetSubtitle,
     svgString: _moodSvg,
     qualifiedName: 'com.togetherly.love.MoodWidgetProvider',
-    preview: _buildMoodPreview(),
+    preview: MoodPreview(
+      t: _t,
+      moodService: _moodService,
+      pair: _pair,
+      ws: _ws,
+    ),
     widgetType: 'mood',
   );
 
@@ -1884,7 +1372,14 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.relationshipStatsSubtitle,
     svgString: _statsSvg,
     qualifiedName: 'com.togetherly.love.RelationshipStatsWidgetProvider',
-    preview: _buildRelationshipStatsPreview(),
+    preview: RelationshipStatsPreview(
+      t: _t,
+      drawingsCount: _drawingsCount,
+      memoriesCount: _memoriesCount,
+      missYouCount: _missYouCount,
+      pair: _pair,
+      timerService: _timerService,
+    ),
     widgetType: 'relationship_stats',
   );
 
@@ -1970,183 +1465,46 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.TogetherWidget2x2Provider',
-        previewBuilder: () => _togetherPreview(TogetherCardSize.small),
+        previewBuilder: () => TogetherPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          pair: _pair,
+          togetherDays: _togetherDays(),
+          togetherStart: _togetherStart(),
+          size: TogetherCardSize.small,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.TogetherWidget4x2Provider',
-        previewBuilder: () => _togetherPreview(TogetherCardSize.medium),
+        previewBuilder: () => TogetherPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          pair: _pair,
+          togetherDays: _togetherDays(),
+          togetherStart: _togetherStart(),
+          size: TogetherCardSize.medium,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.TogetherWidget4x4Provider',
-        previewBuilder: () => _togetherPreview(TogetherCardSize.large),
+        previewBuilder: () => TogetherPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          pair: _pair,
+          togetherDays: _togetherDays(),
+          togetherStart: _togetherStart(),
+          size: TogetherCardSize.large,
+        ),
       ),
     ],
   );
-
-  /// Превью «Вместе» для каталога: тот же растр и та же дорожка, что рисует
-  /// натив, и те же вехи — считает их общая модель, а не экран.
-  Widget _togetherPreview(TogetherCardSize size) {
-    final start = _togetherStart();
-    final days = _togetherDays();
-    final track = start == null
-        ? null
-        : milestoneTrack(
-            start: start,
-            today: DateTime.now(),
-            anniversary: _pair.anniversaryDate,
-          );
-    final labels = track == null
-        ? null
-        : trackLabels(
-            track,
-            LocaleService.current,
-            LocaleService.current.dayLogDate,
-          );
-
-    Widget face(String uid, String url, String name, Color bg, Color fg) =>
-        Container(
-          decoration: BoxDecoration(
-            color: bg,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: size == TogetherCardSize.large
-                  ? _wr('surface')
-                  : _wr('primary'),
-              width: 2,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          alignment: Alignment.center,
-          child: url.isNotEmpty
-              ? AvatarWidget(
-                  uid: uid,
-                  liveUrl: url,
-                  name: name,
-                  size: 30,
-                  primary: bg,
-                )
-              : Text(
-                  _initialOf(name),
-                  style: TextStyle(
-                    fontFamily: 'Onest',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: fg,
-                  ),
-                ),
-        );
-
-    return AspectRatio(
-      aspectRatio: switch (size) {
-        TogetherCardSize.small => 1,
-        TogetherCardSize.medium => 338 / 158,
-        TogetherCardSize.large => 1,
-      },
-      child: TogetherTrackCard(
-        size: size,
-        days: days,
-        daysLabel: LocaleService.current.tgDaysTogetherCaption(days),
-        percent: track?.percent ?? 0,
-        roles: WidgetThemeSync.rolesOf(_cs),
-        startDate: start == null
-            ? ''
-            : 'С ${LocaleService.current.dayLogDate(start)} ${start.year}',
-        names: [
-          widget.userData.displayName.trim(),
-          _pair.partnerDisplayName.trim(),
-        ].where((n) => n.isNotEmpty).join(' + '),
-        previousTitle: labels?.previousTitle ?? '',
-        previousSub: labels?.previousSub ?? '',
-        todayTitle: labels?.todayTitle ?? '',
-        todaySub: labels?.todaySub ?? '',
-        nextTitle: labels?.nextTitle ?? '',
-        nextSub: labels?.nextSub ?? '',
-        anniversaryTitle: labels?.anniversaryTitle ?? '',
-        anniversarySub: labels?.anniversarySub ?? '',
-        myAvatar: face(
-          widget.userData.uid,
-          widget.userData.avatarUrl,
-          widget.userData.displayName,
-          _wr('avatarMine'),
-          _wr('onPrimaryContainer'),
-        ),
-        partnerAvatar: face(
-          _pair.partnerUid,
-          _pair.partnerAvatarUrl,
-          _pair.partnerDisplayName,
-          _wr('avatarPartner'),
-          _wr('onTertiaryContainer'),
-        ),
-      ),
-    );
-  }
-
-  /// Превью «Скучаю» для каталога: тот же вид, что на рабочем столе.
-  Widget _missPreview(MissCardSize size) {
-    final myCount = _missCounts[widget.userData.uid] ?? 0;
-    final partnerCount = _missCounts[_pair.partnerUid] ?? 0;
-    final s = LocaleService.current;
-
-    Widget face(String uid, String url, String name, Color bg, Color fg) =>
-        Container(
-          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-          clipBehavior: Clip.antiAlias,
-          alignment: Alignment.center,
-          child: url.isNotEmpty
-              ? AvatarWidget(
-                  uid: uid,
-                  liveUrl: url,
-                  name: name,
-                  size: 26,
-                  primary: bg,
-                )
-              : Text(
-                  _initialOf(name),
-                  style: TextStyle(
-                    fontFamily: 'Onest',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: fg,
-                  ),
-                ),
-        );
-
-    return AspectRatio(
-      aspectRatio: switch (size) {
-        MissCardSize.small => 1,
-        MissCardSize.medium => 338 / 158,
-        MissCardSize.strip => 338 / 74,
-      },
-      child: MissWidgetCard(
-        size: size,
-        myCount: myCount,
-        partnerCount: partnerCount,
-        roles: WidgetThemeSync.rolesOf(_cs),
-        meLabel: s.tgMissMe,
-        partnerName: _pair.partnerDisplayName.trim(),
-        sendLabel: s.tgMissTitle,
-        whenLabel: s.tgMissToday,
-        myFace: face(
-          widget.userData.uid,
-          widget.userData.avatarUrl,
-          widget.userData.displayName,
-          _wr('avatarMine'),
-          _wr('onPrimaryContainer'),
-        ),
-        partnerFace: face(
-          _pair.partnerUid,
-          _pair.partnerAvatarUrl,
-          _pair.partnerDisplayName,
-          _wr('avatarPartner'),
-          _wr('onTertiaryContainer'),
-        ),
-      ),
-    );
-  }
 
   /// Перечитать заметку: её правят и отсюда, и прямо с рабочего стола.
   Future<void> _loadNote() async {
@@ -2197,19 +1555,39 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.NoteWidget2x2Provider',
-        previewBuilder: () => _buildNotePreview(compact: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          compact: true,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.NoteWidget4x2Provider',
-        previewBuilder: () => _buildNotePreview(),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.NoteWidget4x4Provider',
-        previewBuilder: () => _buildNotePreview(big: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          big: true,
+        ),
       ),
     ],
   );
@@ -2227,19 +1605,42 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.NoteWidget2x2Provider',
-        previewBuilder: () => _buildNotePreview(compact: true, paper: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          compact: true,
+          paper: true,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.NoteWidget4x2Provider',
-        previewBuilder: () => _buildNotePreview(paper: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          paper: true,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.NoteWidget4x4Provider',
-        previewBuilder: () => _buildNotePreview(big: true, paper: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          big: true,
+          paper: true,
+        ),
       ),
     ],
   );
@@ -2257,19 +1658,40 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.MissWidget2x2Provider',
-        previewBuilder: () => _missPreview(MissCardSize.small),
+        previewBuilder: () => MissPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          missCounts: _missCounts,
+          pair: _pair,
+          size: MissCardSize.small,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.MissWidget4x2Provider',
-        previewBuilder: () => _missPreview(MissCardSize.medium),
+        previewBuilder: () => MissPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          missCounts: _missCounts,
+          pair: _pair,
+          size: MissCardSize.medium,
+        ),
       ),
       WidgetSizeOption(
         label: '4×1',
         hint: _s.tgSizeHintStrip,
         qualifiedName: 'com.togetherly.love.MissWidget4x1Provider',
-        previewBuilder: () => _missPreview(MissCardSize.strip),
+        previewBuilder: () => MissPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          missCounts: _missCounts,
+          pair: _pair,
+          size: MissCardSize.strip,
+        ),
       ),
     ],
   );
@@ -2287,13 +1709,22 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintToday,
         qualifiedName: 'com.togetherly.love.MoodTilesWidget2x2Provider',
-        previewBuilder: () => _buildMoodTiles2x2Preview(),
+        previewBuilder: () => MoodTiles2x2Preview(
+          ps: _ps,
+          moodService: _moodService,
+          pair: _pair,
+          partnerGender: _partnerGender,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWeek,
         qualifiedName: 'com.togetherly.love.MoodTilesWidget4x2Provider',
-        previewBuilder: () => _buildMoodTiles4x2Preview(),
+        previewBuilder: () => MoodTiles4x2Preview(
+          ps: _ps,
+          moodService: _moodService,
+          pair: _pair,
+        ),
       ),
     ],
   );
@@ -2311,13 +1742,18 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.CountdownWidget2x2Provider',
-        previewBuilder: () => _buildCountdown2x2Preview(),
+        previewBuilder: () =>
+            Countdown2x2Preview(ps: _ps, nextEvent: _nextCountdown()),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.CountdownWidget4x2Provider',
-        previewBuilder: () => _buildCountdown4x2Preview(),
+        previewBuilder: () => Countdown4x2Preview(
+          ps: _ps,
+          nextEvent: _nextCountdown(),
+          togetherStart: _togetherStart(),
+        ),
       ),
     ],
   );
@@ -2358,64 +1794,40 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.CanvasWidget2x2Provider',
-        previewBuilder: () => _buildCanvasPreview(1),
+        previewBuilder: () => CatalogCanvasPreview(
+          ps: _ps,
+          canvases: _canvases,
+          pair: _pair,
+          userData: widget.userData,
+          aspect: 1,
+        ),
       ),
       WidgetSizeOption(
         label: '2×3',
         hint: _s.canvasWidgetSizeTall,
         qualifiedName: 'com.togetherly.love.CanvasWidget2x3Provider',
-        previewBuilder: () => _buildCanvasPreview(2 / 3),
+        previewBuilder: () => CatalogCanvasPreview(
+          ps: _ps,
+          canvases: _canvases,
+          pair: _pair,
+          userData: widget.userData,
+          aspect: 2 / 3,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.CanvasWidget4x4Provider',
-        previewBuilder: () => _buildCanvasPreview(1),
+        previewBuilder: () => CatalogCanvasPreview(
+          ps: _ps,
+          canvases: _canvases,
+          pair: _pair,
+          userData: widget.userData,
+          aspect: 1,
+        ),
       ),
     ],
   );
-
-  /// Превью: настоящий холст пары, тот же, что встанет на стол.
-  Widget _buildCanvasPreview(double aspect) {
-    final meta = _canvases.isEmpty ? null : _canvases.first;
-    if (meta == null) {
-      return AspectRatio(
-        aspectRatio: aspect,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _wr('surfaceContainer'),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            _s.canvasWidgetEmpty,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Onest',
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: _wr('onSurfaceVariant'),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return AspectRatio(
-      aspectRatio: aspect,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: CanvasPreview(
-          meta: meta,
-          uid: widget.userData.uid,
-          groupId: _pair.pairId,
-          background: Colors.white,
-          placeholder: Container(color: _wr('surfaceContainer')),
-        ),
-      ),
-    );
-  }
 
   /// Подтягивает холсты и сразу готовит картинки для виджета.
   Future<void> _loadCanvases() async {
@@ -2426,29 +1838,10 @@ class _WidgetScreenState extends State<WidgetScreen>
       );
       if (!mounted) return;
       setState(() => _canvases = list);
-      await _syncCanvasWidget();
+      await _sync.canvas();
     } catch (e) {
       debugPrint('widget_screen: холсты не загрузились — $e');
     }
-  }
-
-  Future<void> _syncCanvasWidget() async {
-    if (_canvases.isEmpty) return;
-    await CanvasWidgetService.instance.publish(
-      groupId: _pair.pairId,
-      canvases: _canvases,
-      activeId: _canvases.first.id,
-      strokesOf: (meta) => _pair.pairId.isEmpty
-          ? CanvasStorageService.instance.loadLocalStrokes(
-              widget.userData.uid,
-              meta.id,
-            )
-          : CanvasRepository.instance.previewStrokes(
-              _pair.pairId,
-              meta.id,
-              limit: kPreviewStrokeLimit,
-            ),
-    );
   }
 
   /// Маскот на столе: пиксельный персонаж пары в четырёх размерах.
@@ -2463,25 +1856,45 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '4×1',
         hint: _s.tgSizeHintStrip,
         qualifiedName: 'com.togetherly.love.MascotWidget4x1Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.strip),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.strip,
+        ),
       ),
       WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.MascotWidget2x2Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.small),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.small,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.MascotWidget4x2Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.wide),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.wide,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.MascotWidget4x4Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.large),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.large,
+        ),
       ),
     ],
   );
@@ -2499,13 +1912,18 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.YearGridWidget2x2Provider',
-        previewBuilder: () => _buildYearGrid2x2Preview(),
+        previewBuilder: () =>
+            YearGrid2x2Preview(ps: _ps, progress: _yearProgress()),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.YearGridWidget4x2Provider',
-        previewBuilder: () => _buildYearGrid4x2Preview(),
+        previewBuilder: () => YearGrid4x2Preview(
+          ps: _ps,
+          progress: _yearProgress(),
+          togetherStart: _togetherStart(),
+        ),
       ),
     ],
   );
@@ -2793,6 +2211,25 @@ class _WidgetScreenState extends State<WidgetScreen>
     anniversary: _pair.anniversaryDate,
   );
 
+  /// Запись данных в виджеты рабочего стола — по свежему снимку экрана.
+  WidgetDataSync get _sync => WidgetDataSync(
+    user: widget.userData,
+    pair: _pair,
+    ws: _ws,
+    moods: _moodService,
+    timers: _timerService,
+    mascot: _mascotService,
+    theme: _t,
+    ps: _ps,
+    widgetTimer: _widgetTimer,
+    togetherStart: _togetherStart(),
+    memoriesCount: _memoriesCount,
+    drawingsCount: _drawingsCount,
+    missYouCount: _missYouCount,
+    missCounts: _missCounts,
+    canvases: _canvases,
+  );
+
   int _togetherDays() =>
       coupleDaysTogether(
         timerStart: (_timerService.defaultTimer ?? _timerService.systemTimer)
@@ -2801,192 +2238,6 @@ class _WidgetScreenState extends State<WidgetScreen>
         anniversary: _pair.anniversaryDate,
       ) ??
       0;
-
-  static const List<String> _monthsGenitive = [
-    'января',
-    'февраля',
-    'марта',
-    'апреля',
-    'мая',
-    'июня',
-    'июля',
-    'августа',
-    'сентября',
-    'октября',
-    'ноября',
-    'декабря',
-  ];
-
-  static const List<String> _monthsGenitiveEn = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String _formatDayMonth(DateTime d) =>
-      switch (LocaleService.instance.language) {
-        AppLanguage.ru => '${d.day} ${_monthsGenitive[d.month - 1]}',
-        AppLanguage.zh => '${d.month}月${d.day}日',
-        _ => '${_monthsGenitiveEn[d.month - 1]} ${d.day}',
-      };
-
-  /// Цвет виджета по роли активной темы.
-  ///
-  /// Тот же справочник ролей, что уходит в нативные виджеты
-  /// (`WidgetThemeSync.rolesOf`), поэтому превью в каталоге и карточка на
-  /// рабочем столе не расходятся ни в одной из двадцати тем.
-  Color _wr(String role) => WidgetThemeSync.rolesOf(_cs)[role] ?? _cs.primary;
-
-  /// Инициал для кружка-аватара: пусто заменяем сердечком, а не пустотой.
-  String _initialOf(String name) {
-    final n = name.trim();
-    return n.isEmpty ? '' : n.characters.first.toUpperCase();
-  }
-
-  /// Превью «Вместе» 2×2: фон primary #6750A4, стек аватаров и число 54/800.
-  /// Превью листика в каталоге. [paper] — бумажный стикер, иначе карточка M3.
-  Widget _buildNotePreview({
-    bool compact = false,
-    bool big = false,
-    bool paper = false,
-  }) {
-    final cs = ProfileTheme.schemeFor(widget.theme);
-    const paperBg = Color(0xFFFFF3C4);
-    const paperInk = Color(0xFF4A3D13);
-    final bg = paper ? paperBg : cs.surfaceContainer;
-    final ink = paper ? paperInk : cs.onSurface;
-    final faded = paper ? const Color(0xFF8A7A45) : cs.onSurfaceVariant;
-
-    // Настоящая заметка пары; пока её нет — образец, потому что пустой
-    // листик в каталоге читается как сломанный виджет.
-    final text = notePreviewText(_noteText, demo: _s.tgNoteDemo);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!paper) ...[
-            Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.sticky_note_2_rounded,
-                    size: 14,
-                    color: cs.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  _s.tgNoteTitle.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                    color: faded,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ] else ...[
-            Center(
-              child: Container(
-                width: 46,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.14),
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-          Text(
-            text,
-            maxLines: big ? 5 : 3,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: compact ? 13 : 14,
-              height: 1.35,
-              fontWeight: FontWeight.w700,
-              color: ink,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: paper
-                      ? Colors.black.withValues(alpha: 0.18)
-                      : cs.tertiaryContainer,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  [
-                    _noteAuthor.isEmpty
-                        ? widget.userData.displayName
-                        : _noteAuthor,
-                    if (_noteAt.isNotEmpty) _noteAt,
-                  ].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: faded,
-                  ),
-                ),
-              ),
-              Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: paper ? paperInk : cs.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.edit_rounded,
-                  size: 14,
-                  color: paper ? paperBg : cs.onPrimary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Какую долю ширины карточки занимает превью размера [label] («2×2»,
   /// «4×2», «4×4»). Ряд на рабочем столе — четыре ячейки, от этого и считаем.
@@ -3000,234 +2251,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     return (width / 4).clamp(0.25, 1.0);
   }
 
-  /// Превью «Настроение» 2×2: отметки обоих и три кнопки выбора.
-  Widget _buildMoodTiles2x2Preview() {
-    final today = DateTime.now();
-    final partnerUid = _pair.partnerUid;
-    final myEntry = _moodService.myEntriesForDay(today).firstOrNull;
-    final partnerEntry = partnerUid.isEmpty
-        ? null
-        : _moodService.partnerEntriesForDay(partnerUid, today).firstOrNull;
-    final partnerName = _pair.partnerDisplayName.trim();
-
-    Widget line(String text, Color dot, bool filled) => Padding(
-      padding: const EdgeInsets.only(top: 5),
-      child: Row(
-        children: [
-          Container(
-            width: 9,
-            height: 9,
-            decoration: BoxDecoration(
-              color: filled ? dot : _wr('outline'),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: _wr('onSurface'),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    Widget pick(IconData icon, bool active) => Expanded(
-      child: Container(
-        height: 32,
-        decoration: BoxDecoration(
-          color: active ? _wr('primaryContainer') : _wr('surfaceContainer'),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          icon,
-          size: 17,
-          color: active ? _wr('onPrimaryContainer') : _wr('onSurfaceVariant'),
-        ),
-      ),
-    );
-
-    final myId = myEntry?.moodId ?? '';
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: _wr('surface'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _s.tgMoodToday,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.4,
-                color: _wr('onSurfaceVariant'),
-              ),
-            ),
-            const SizedBox(height: 4),
-            line(
-              myEntry == null
-                  ? '${_s.tgMoodMe} · ${_s.tgMoodNotSet}'
-                  : '${_s.tgMoodMe} · ${myEntry.labelFor(MoodGenders.mine)}',
-              _wr('primary'),
-              myEntry != null,
-            ),
-            line(
-              partnerEntry == null
-                  ? '${partnerName.isEmpty ? _s.tgMoodPartner : partnerName} · ${_s.tgMoodNotSet}'
-                  : '${partnerName.isEmpty ? _s.tgMoodPartner : partnerName} · ${partnerEntry.labelFor(_partnerGender)}',
-              _wr('tertiary'),
-              partnerEntry != null,
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                pick(Icons.sentiment_very_satisfied_rounded, myId == 'happy'),
-                const SizedBox(width: 6),
-                pick(Icons.sentiment_neutral_rounded, myId == 'no_emotion'),
-                const SizedBox(width: 6),
-                pick(Icons.sentiment_dissatisfied_rounded, myId == 'sad'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Превью «Настроение» 4×2: неделя двумя рядами столбиков.
-  Widget _buildMoodTiles4x2Preview() {
-    final today = DateTime.now();
-    final partnerUid = _pair.partnerUid;
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-
-    double heightOf(MoodEntry? e) =>
-        e == null ? -1 : ((e.score - 1) / 4) * 0.8 + 0.2;
-
-    final bars = <List<double>>[];
-    var matched = 0;
-    for (var i = 0; i < 7; i++) {
-      final day = DateTime(monday.year, monday.month, monday.day + i);
-      final mine = _moodService.myEntriesForDay(day).firstOrNull;
-      final theirs = partnerUid.isEmpty
-          ? null
-          : _moodService.partnerEntriesForDay(partnerUid, day).firstOrNull;
-      bars.add([heightOf(mine), heightOf(theirs)]);
-      if (mine != null && theirs != null && mine.score == theirs.score)
-        matched++;
-    }
-
-    final labels = _s.shortWeekdays.map((d) => d.toLowerCase()).toList();
-
-    Widget bar(double value, Color color) => Expanded(
-      child: FractionallySizedBox(
-        alignment: Alignment.bottomCenter,
-        // Отрицательное значение — день без отметки: рисуем подложку.
-        heightFactor: value < 0 ? 0.12 : value,
-        child: Container(
-          decoration: BoxDecoration(
-            color: value < 0 ? _wr('surfaceContainer') : color,
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
-      ),
-    );
-
-    return AspectRatio(
-      aspectRatio: 424 / 200,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
-        decoration: BoxDecoration(
-          color: _wr('surface'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _s.tgMoodWeekTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.2,
-                      color: _wr('onSurfaceVariant'),
-                    ),
-                  ),
-                ),
-                if (matched > 0)
-                  Text(
-                    _s.tgMoodMatched(matched),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _wr('outline'),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (var i = 0; i < 7; i++) ...[
-                    if (i > 0) const SizedBox(width: 9),
-                    Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          bar(bars[i].first, _wr('primary')),
-                          const SizedBox(width: 3),
-                          bar(bars[i].last, _wr('tertiary')),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 5),
-            Row(
-              children: [
-                for (var i = 0; i < 7; i++) ...[
-                  if (i > 0) const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      labels[i],
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: _wr('outline'),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Ближайший обратный отсчёт для превью «До встречи».
   TimerItem? _nextCountdown() {
     final now = DateTime.now();
@@ -3237,203 +2260,6 @@ class _WidgetScreenState extends State<WidgetScreen>
             .toList()
           ..sort((a, b) => a.startDate.compareTo(b.startDate));
     return upcoming.isEmpty ? null : upcoming.first;
-  }
-
-  /// Превью «До встречи» 2×2.
-  Widget _buildCountdown2x2Preview() {
-    final event = _nextCountdown();
-    final left = event == null
-        ? Duration.zero
-        : event.startDate.difference(DateTime.now());
-
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: _wr('tertiaryContainer'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              event == null
-                  ? _s.tgCountdownEmpty
-                  : '${event.title} · ${_formatDayMonth(event.startDate)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: _wr('tertiary'),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              event == null ? '—' : '${left.inDays}',
-              style: TextStyle(
-                fontSize: 40,
-                height: 1.05,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1.6,
-                color: _wr('onTertiaryContainer'),
-              ),
-            ),
-            Text(
-              _s.tgCountdownDaysLeft(left.inDays),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: _wr('onTertiaryContainer'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Превью «До встречи» 4×2: дни, часы, минуты и прогресс.
-  Widget _buildCountdown4x2Preview() {
-    final event = _nextCountdown();
-    final now = DateTime.now();
-    final left = event == null
-        ? Duration.zero
-        : event.startDate.difference(now);
-
-    final from = _togetherStart() ?? now.subtract(const Duration(days: 30));
-    final total = event == null
-        ? 0
-        : event.startDate.difference(from).inMinutes;
-    final passed = now.difference(from).inMinutes;
-    final percent = (event == null || total <= 0)
-        ? 0.0
-        : (passed / total).clamp(0.0, 1.0);
-
-    Widget tile(String value, String label, Color bg, Color fg, Color sub) =>
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 24,
-                    height: 1,
-                    fontWeight: FontWeight.w800,
-                    color: fg,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: sub,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-
-    return AspectRatio(
-      aspectRatio: 424 / 200,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
-        decoration: BoxDecoration(
-          color: _wr('surface'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    event?.title ?? _s.tgCountdownEmpty,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: _wr('onSurface'),
-                    ),
-                  ),
-                ),
-                if (event != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _wr('tertiaryContainer'),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      _formatDayMonth(event.startDate).toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: _wr('onTertiaryContainer'),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                tile(
-                  '${left.inDays}',
-                  _s.tgCountdownDays,
-                  _wr('primaryContainer'),
-                  _wr('onPrimaryContainer'),
-                  _wr('onContainerSoft'),
-                ),
-                const SizedBox(width: 8),
-                tile(
-                  '${left.inHours % 24}',
-                  _s.tgCountdownHours,
-                  _wr('surfaceContainer'),
-                  _wr('onSurface'),
-                  _wr('onSurfaceVariant'),
-                ),
-                const SizedBox(width: 8),
-                tile(
-                  '${left.inMinutes % 60}',
-                  _s.tgCountdownMinutes,
-                  _wr('surfaceContainer'),
-                  _wr('onSurface'),
-                  _wr('onSurfaceVariant'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 9),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(100),
-              child: LinearProgressIndicator(
-                value: percent,
-                minHeight: 8,
-                backgroundColor: _wr('trackOnSurface'),
-                valueColor: AlwaysStoppedAnimation<Color>(_wr('primary')),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Разметка совместного времени для превью «Кольца года» и «Календаря лет».
@@ -3448,794 +2274,19 @@ class _WidgetScreenState extends State<WidgetScreen>
   /// (`YearRingCard` рисует её в точках среднего виджета iPhone и вписывает в
   /// карточку). До 14.09.2026 превью было своей вёрсткой, и плитки вылезали
   /// за низ карточки, а подписи обрезались многоточием.
-  Widget _buildYearRing2x2Preview() => _buildYearRingPreview(small: true);
-
-  Widget _buildYearRing4x2Preview() => _buildYearRingPreview(small: false);
-
-  Widget _buildYearRingPreview({required bool small}) {
-    final p = _yearProgress();
-    if (p == null) {
-      return AspectRatio(
-        aspectRatio: small
-            ? 1
-            : YearRingSpec.mediumWidth / YearRingSpec.mediumHeight,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _wr('primary'),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: _widgetEmptyLabel(_wr('onPrimarySoft')),
-        ),
-      );
-    }
-    final memories = _memoriesCount ?? 0;
-    return YearRingCard(
-      small: small,
-      colors: YearRingColors(
-        primary: _wr('primary'),
-        onPrimary: _wr('onPrimary'),
-        tertiaryContainer: _wr('tertiaryContainer'),
-      ),
-      texts: YearRingTexts(
-        daysCaption: small
-            ? _s.tgYearDaysWord(p.daysTotal)
-            : _s.tgYearDaysTogether(p.daysTotal),
-        untilAnniversary: _s.tgYearUntilAnniversary,
-        daysLeftUnit: _s.tgYearDaysUnit(p.daysToNextAnniversary),
-        anniversaryLine: _s.tgYearAnniversaryOn.replaceAll(
-          '{date}',
-          _formatDayMonth(p.nextAnniversary),
-        ),
-        monthsShort: _s.tgYearMonthsShort,
-        memoriesUnit: _s.memoriesUnit(memories),
-        smallLine: _s.tgYearDaysLeft(p.daysToNextAnniversary),
-      ),
-      daysTotal: p.daysTotal,
-      daysLeft: p.daysToNextAnniversary,
-      months: p.monthsCompleted,
-      memories: memories,
-      progress: p.ringProgress,
-    );
-  }
-
-  /// Превью виджета маскота: НАСТОЯЩИЙ персонаж пары, а не образец.
-  ///
-  /// Так же устроена заметка — в каталоге она показывает свой текст. Человек
-  /// выбирает размер по тому, что реально встанет на стол.
-  Widget _buildMascotPreview(MascotPreviewSize size) {
-    final aspect = switch (size) {
-      MascotPreviewSize.strip => 424 / 92,
-      MascotPreviewSize.small => 1.0,
-      MascotPreviewSize.wide => 424 / 200,
-      MascotPreviewSize.large => 1.0,
-    };
-
-    final mascotState = widget.mascotService.state;
-    final id = mascotState.activeMascotId ?? '';
-    final mascot = widget.mascotService.activeMascot;
-    // Атлас есть только у пиксельных из каталога; у встроенных, каталожных
-    // рисунков и нарисованных вручную его нет, и превью берёт их картинку.
-    final anim = id.isEmpty ? null : CatalogService.instance.animById(id);
-
-    if (mascot == null || (!mascot.hasImage && anim == null)) {
-      return AspectRatio(
-        aspectRatio: aspect,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _wr('surfaceContainer'),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            _s.mascotWidgetNoMascot,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Onest',
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: _wr('onSurfaceVariant'),
-            ),
-          ),
-        ),
-      );
-    }
-
-    final streak = widget.mascotService.activeStreak;
-    final record = mascot.recordStreak;
-    final sleep = widget.userData.sleepOf(id);
-    final data = MascotWidgetData(
-      mascotId: id,
-      name: mascot.localizedName,
-      streakDays: streak,
-      recordStreak: record > streak ? record : streak,
-      sad: streak == 0 && (mascotState.streakLastOpenedDate ?? '').isNotEmpty,
-      sleep: mascotSleepsInWidget(anim)
-          ? MascotSleepWindow(from: sleep.from, to: sleep.to)
-          : MascotSleepWindow.none,
-    );
-    final labels = buildMascotWidgetLabels(data);
-
-    Widget figure(double side) => SizedBox(
-      width: side,
-      height: side,
-      child: anim != null
-          ? PixelMascotView(
-              anim: anim,
-              state: MascotAnimState.live,
-              size: side,
-              level: data.level,
-              sleep: sleep,
-            )
-          : _mascotPicture(mascot),
-    );
-
-    Widget chip(
-      String text, {
-      required Color bg,
-      required Color ink,
-      double fontSize = 10,
-    }) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontFamily: 'Onest',
-          fontWeight: FontWeight.w700,
-          fontSize: fontSize,
-          color: ink,
-        ),
-      ),
-    );
-
-    Widget label(
-      String text, {
-      double fontSize = 10,
-      FontWeight weight = FontWeight.w600,
-      Color? color,
-    }) => Text(
-      text,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontFamily: 'Onest',
-        fontWeight: weight,
-        fontSize: fontSize,
-        color: color ?? _wr('onSurfaceVariant'),
-      ),
-    );
-
-    Widget bar(double width) => Container(
-      height: 6,
-      decoration: BoxDecoration(
-        color: _wr('trackOnContainer'),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: data.percent / 100,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _wr('primary'),
-            borderRadius: BorderRadius.circular(99),
-          ),
-        ),
-      ),
-    );
-
-    final body = switch (size) {
-      MascotPreviewSize.strip => Row(
-        children: [
-          figure(40),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                label(
-                  data.name,
-                  fontSize: 13,
-                  weight: FontWeight.w800,
-                  color: _wr('onSurface'),
-                ),
-                label('${labels.stage} · ${labels.next}'),
-              ],
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              label(
-                '${data.streakDays}',
-                fontSize: 20,
-                weight: FontWeight.w800,
-                color: _wr('onPrimaryContainer'),
-              ),
-              label(labels.streak, fontSize: 9),
-            ],
-          ),
-        ],
-      ),
-      MascotPreviewSize.small => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: label(
-                  data.name,
-                  fontSize: 12,
-                  weight: FontWeight.w800,
-                  color: _wr('onSurface'),
-                ),
-              ),
-              chip(
-                labels.stage,
-                bg: _wr('tertiaryContainer'),
-                ink: _wr('onTertiaryContainer'),
-              ),
-            ],
-          ),
-          Expanded(child: Center(child: figure(64))),
-          bar(double.infinity),
-          const SizedBox(height: 4),
-          label(labels.next, fontSize: 9),
-        ],
-      ),
-      MascotPreviewSize.wide => Row(
-        children: [
-          Container(
-            width: 96,
-            decoration: BoxDecoration(
-              color: _wr('primaryContainer'),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            alignment: Alignment.center,
-            child: figure(74),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                label(
-                  data.name,
-                  fontSize: 17,
-                  weight: FontWeight.w800,
-                  color: _wr('onSurface'),
-                ),
-                const SizedBox(height: 2),
-                label(
-                  '${labels.stage} · ${data.streakDays} ${labels.streak}',
-                  fontSize: 11,
-                ),
-                const SizedBox(height: 10),
-                bar(double.infinity),
-                const SizedBox(height: 6),
-                label(labels.next, fontSize: 10),
-              ],
-            ),
-          ),
-        ],
-      ),
-      MascotPreviewSize.large => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 59,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _wr('primaryContainer'),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: FractionallySizedBox(
-                      heightFactor: 0.28,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _wr('trackOnContainer'),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: FractionallySizedBox(
-                      heightFactor: 0.72,
-                      alignment: Alignment.topCenter,
-                      child: Center(child: figure(92)),
-                    ),
-                  ),
-                  Positioned(
-                    left: 10,
-                    top: 10,
-                    child: chip(
-                      '${data.name} · ${labels.stage}',
-                      bg: _wr('surface'),
-                      ink: _wr('onSurface'),
-                    ),
-                  ),
-                  Positioned(
-                    right: 10,
-                    top: 10,
-                    child: chip(
-                      labels.sleepDay,
-                      bg: _wr('tertiaryContainer'),
-                      ink: _wr('onTertiaryContainer'),
-                      fontSize: 9,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            flex: 26,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _mascotTile(
-                    value: '${data.streakDays}',
-                    caption: labels.streak,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _mascotTile(
-                    child: bar(double.infinity),
-                    caption: labels.next,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _mascotTile(
-                    value: '${data.recordStreak}',
-                    caption: labels.record.split(' ').first,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    };
-
-    return AspectRatio(
-      aspectRatio: aspect,
-      child: Container(
-        padding: EdgeInsets.all(size == MascotPreviewSize.large ? 8 : 10),
-        decoration: BoxDecoration(
-          // Тот же фон, что у виджета на столе: карточка каталога сама
-          // розоватая, и на surfaceContainer превью сливалось с ней.
-          color: size == MascotPreviewSize.strip
-              ? _wr('primaryContainer')
-              : _wr('surface'),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: body,
-      ),
-    );
-  }
-
-  /// Картинка непиксельного маскота: встроенного, каталожного или
-  /// нарисованного человеком. Порядок тот же, что на главной.
-  Widget _mascotPicture(Mascot mascot) {
-    final asset = mascot.defaultAsset;
-    if (asset != null && asset.isNotEmpty) {
-      return buildMascotAssetImage(asset, fit: BoxFit.contain);
-    }
-    final catalogUrl = mascot.catalogUrl;
-    if (catalogUrl != null && catalogUrl.isNotEmpty) {
-      return CachedNetworkImage(
-        cacheManager: OfflineImageCacheManager.instance,
-        imageUrl: catalogUrl,
-        fit: BoxFit.contain,
-        placeholder: (_, __) => const SizedBox.shrink(),
-        errorWidget: (_, __, ___) => const SizedBox.shrink(),
-      );
-    }
-    final drawn = mascot.imageUrl;
-    if (drawn != null && drawn.isNotEmpty) {
-      return StorageImage(
-        imageUrl: drawn,
-        fit: BoxFit.contain,
-        placeholder: (_, __) => const SizedBox.shrink(),
-        errorWidget: (_, __, ___) => const SizedBox.shrink(),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  /// Плитка нижнего ряда «Комнаты»: крупное число или полоса и подпись.
-  Widget _mascotTile({String? value, Widget? child, required String caption}) =>
-      Container(
-        decoration: BoxDecoration(
-          color: _wr('primaryContainer'),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (value != null)
-              FittedBox(
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontFamily: 'Unbounded',
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                    color: _wr('onPrimaryContainer'),
-                  ),
-                ),
-              ),
-            if (child != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: child,
-              ),
-            const SizedBox(height: 4),
-            Text(
-              caption,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Onest',
-                fontWeight: FontWeight.w600,
-                fontSize: 8.5,
-                color: _wr('onSurfaceVariant'),
-              ),
-            ),
-          ],
-        ),
-      );
-
-  /// Превью «Календарь лет» 2×2: сетка сверху, число снизу.
-  Widget _buildYearGrid2x2Preview() {
-    final p = _yearProgress();
-    // Как и у 4×2: рисуем в дизайнерском квадрате и ужимаем целиком, иначе
-    // сетка месяцев с числом не влезают в узкую карточку каталога.
-    return AspectRatio(
-      aspectRatio: 1,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: SizedBox(
-          width: 200,
-          height: 200,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: _wr('surface'),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: _wr('trackOnSurface')),
-            ),
-            child: p == null
-                ? _widgetEmptyLabel(_wr('onSurfaceVariant'))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _monthsGrid(p, dot: 8, gap: 4),
-                      // Число дней растёт вместе с парой, и в тесном квадрате 2×2
-                      // подпись под ним налезала на строку ниже (скриншот тестера,
-                      // 13 августа 2026). Блок ужимается целиком, а не обрезается.
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.bottomLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '${p.daysTotal}',
-                                style: TextStyle(
-                                  fontSize: 52,
-                                  height: 1.02,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -2.3,
-                                  color: _wr('onSurface'),
-                                ),
-                              ),
-                              Text(
-                                _s.tgYearDaysTogether(p.daysTotal),
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: _wr('primary'),
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                _s.tgYearCurrentYearShort(
-                                  p.yearsCompleted + 1,
-                                  p.daysToNextAnniversary,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: _wr('onSurfaceVariant'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Превью «Календарь лет» 4×2: число и годы сверху, сетка и отсчёт снизу.
-  Widget _buildYearGrid4x2Preview() {
-    final p = _yearProgress();
-    final start = _togetherStart();
-
-    // Кегли, сетка месяцев и плашка «до года» подобраны под ширину макета
-    // (424). В каталоге карточка уже, и содержимое не ужималось, а
-    // переполнялось: плашка наезжала на точки (снимок 20.09.2026). Рисуем в
-    // дизайнерском размере и ужимаем картинку целиком, как превью «Вместе».
-    return AspectRatio(
-      aspectRatio: 424 / 200,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: SizedBox(
-          width: 424,
-          height: 200,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
-            decoration: BoxDecoration(
-              color: _wr('surface'),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: _wr('trackOnSurface')),
-            ),
-            child: p == null
-                ? _widgetEmptyLabel(_wr('onSurfaceVariant'))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${p.daysTotal}',
-                            style: TextStyle(
-                              fontSize: 60,
-                              height: 1,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -2.8,
-                              color: _wr('onSurface'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              _s.tgYearDaysWord(p.daysTotal),
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: _wr('onSurfaceVariant'),
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _s.tgYearsAndDays(
-                                  p.yearsCompleted,
-                                  p.daysIntoYear,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: _wr('primary'),
-                                ),
-                              ),
-                              if (start != null)
-                                Text(
-                                  _s.tgYearSince(_formatDate(start)),
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: _wr('onSurfaceVariant'),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          _monthsGrid(p, dot: 9, gap: 5),
-                          const SizedBox(width: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                              vertical: 11,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _wr('surfaceContainer'),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '${p.daysToNextAnniversary}',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    height: 1.05,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.8,
-                                    color: _wr('primary'),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  _s.tgYearToAnniversary(p.yearsCompleted + 1),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: _wr('onSurfaceVariant'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Сетка месяцев для превью «Календаря лет».
-  ///
-  /// Колонок всегда двенадцать, рядов — шесть на каждое прожитое шестилетие,
-  /// как в нативном виджете. Точка мельчает, число колонок не меняется.
-  Widget _monthsGrid(
-    YearProgress p, {
-    required double dot,
-    required double gap,
-  }) {
-    final rows = (p.monthsCompleted ~/ 72 + 1) * 6;
-    final shrink = 6 / rows;
-    return CustomPaint(
-      size: Size(
-        (12 * dot + 11 * gap) * shrink,
-        (rows * dot + (rows - 1) * gap) * shrink,
-      ),
-      painter: MonthsGridPainter(
-        filled: p.monthsCompleted,
-        rows: rows,
-        dot: dot * shrink,
-        gap: gap * shrink,
-        past: _wr('primary'),
-        current: _wr('tertiary'),
-        future: _wr('trackOnSurface'),
-      ),
-    );
-  }
-
-  /// Дата цифрами, как в подписи «с 30.09.2020».
-  String _formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}.'
-      '${d.month.toString().padLeft(2, '0')}.${d.year}';
-
-  /// Подпись пустого состояния: дата начала не задана, считать нечего.
-  Widget _widgetEmptyLabel(Color color) => Center(
-    child: Text(
-      _s.tgYearNoStartDate,
-      textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: color),
-    ),
+  Widget _buildYearRing2x2Preview() => YearRingPreview(
+    ps: _ps,
+    progress: _yearProgress(),
+    memoriesCount: _memoriesCount,
+    small: true,
   );
 
-  /// Отдаём виджету «Настроение» сегодняшние отметки обоих и неделю.
-  ///
-  /// Неделя — семь пар «моё/партнёра» в процентах высоты столбика. Балл
-  /// настроения в приложении от 1 до 5, поэтому переводим его в проценты;
-  /// день без отметки уезжает как -1 и рисуется пустой подложкой, а не нулём:
-  /// «не отмечался» и «было плохо» — разные вещи.
-  Future<void> _syncMoodTilesWidget() async {
-    final today = DateTime.now();
-    final partnerUid = _pair.partnerUid;
-
-    MoodEntry? entryOf(List<MoodEntry> list) =>
-        list.isNotEmpty ? list.first : null;
-
-    int percentOf(MoodEntry? e) =>
-        e == null ? -1 : (((e.score - 1) / 4) * 80 + 20).round().clamp(20, 100);
-
-    final week = <List<int>>[];
-    var matched = 0;
-    // От понедельника этой недели к воскресенью.
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-    for (var i = 0; i < 7; i++) {
-      final day = DateTime(monday.year, monday.month, monday.day + i);
-      final mine = entryOf(_moodService.myEntriesForDay(day));
-      final theirs = partnerUid.isEmpty
-          ? null
-          : entryOf(_moodService.partnerEntriesForDay(partnerUid, day));
-      week.add([percentOf(mine), percentOf(theirs)]);
-      if (mine != null && theirs != null && mine.score == theirs.score) {
-        matched++;
-      }
-    }
-
-    final myToday = entryOf(_moodService.myEntriesForDay(today));
-    final partnerToday = partnerUid.isEmpty
-        ? null
-        : entryOf(_moodService.partnerEntriesForDay(partnerUid, today));
-
-    await HomeWidgetService.instance.syncMoodTiles(
-      groupId: _pair.pairId,
-      myLabel: myToday == null ? '' : myToday.labelFor(MoodGenders.mine),
-      myMoodId: myToday?.moodId ?? '',
-      partnerLabel: partnerToday == null
-          ? ''
-          : partnerToday.labelFor(_partnerGender),
-      partnerName: _pair.partnerDisplayName.trim(),
-      week: week,
-      matchedDays: matched,
-    );
-  }
-
-  /// Отдаём виджету «До встречи» ближайшие обратные отсчёты. Остаток виджет
-  /// считает сам; полоса идёт от даты пары.
-  Future<void> _syncCountdownWidget() async {
-    await HomeWidgetService.instance.syncCountdownEvents(
-      groupId: _pair.pairId,
-      events: countdownEventsFor(
-        _timerService.timers,
-        now: DateTime.now(),
-        dateLabel: _formatDayMonth,
-      ),
-      from: _togetherStart(),
-    );
-  }
-
-  /// Отдаём виджету «Скучаю» свежие счётчики обоих.
-  Future<void> _syncMissWidget() async {
-    final partnerName = _pair.partnerDisplayName.trim();
-    await HomeWidgetService.instance.syncMiss(
-      groupId: _pair.pairId,
-      myCount: _missCounts[widget.userData.uid] ?? 0,
-      partnerCount: _missCounts[_pair.partnerUid] ?? 0,
-      partnerName: partnerName,
-      partnerInitial: partnerName.isEmpty
-          ? ''
-          : partnerName.characters.first.toUpperCase(),
-      partnerAvatarUrl: _pair.partnerAvatarUrl,
-    );
-  }
+  Widget _buildYearRing4x2Preview() => YearRingPreview(
+    ps: _ps,
+    progress: _yearProgress(),
+    memoriesCount: _memoriesCount,
+    small: false,
+  );
 
   Widget _buildGalleryItem({
     required String title,
@@ -4521,173 +2572,6 @@ class _WidgetScreenState extends State<WidgetScreen>
   // ВИДЖЕТ-ПРЕВЬЮ: Счётчик дней
   // ════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildDaysCounterPreview() {
-    final s = LocaleService.current;
-    // Берём тот же активный таймер, что и виджет на рабочем столе
-    final timer = _widgetTimer ?? _timerService.systemTimer;
-    final start = timer?.startDate ?? _pair.startDate;
-    final totalDays = timer != null
-        ? timer.daysElapsed.abs()
-        : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-    final startLabel = start != null
-        ? '${start.day.toString().padLeft(2, '0')}.${start.month.toString().padLeft(2, '0')}.${start.year}'
-        : '';
-
-    final myGender = widget.userData.gender?.name ?? '';
-    final partnerGender = _ws.firstPartnerData?.gender.isNotEmpty == true
-        ? _ws.firstPartnerData!.gender
-        : '';
-
-    String imgName = 'widget_couple_mf';
-    bool flipCouple = false;
-    if (myGender == 'female' && partnerGender == 'female') {
-      imgName = 'widget_couple_ff';
-    } else if (myGender == 'male' && partnerGender == 'male') {
-      imgName = 'widget_couple_mm';
-    } else if (myGender == 'female' && partnerGender == 'male') {
-      // User (female) on left → mirror the mf image horizontally
-      flipCouple = true;
-    }
-
-    // Подпись считается тем же правилом, что и на самом виджете: годы
-    // календарные, а до первой годовщины счёт идёт на месяцы.
-    final yearsText = start != null
-        ? togetherAlreadyCaption(YearProgress.between(start, DateTime.now()), s)
-        : '';
-
-    final myAvatar = widget.userData.avatarUrl;
-    final partnerAvatar = _pair.partnerAvatarUrl;
-    final showPhotos =
-        _daysPhotosEnabled && myAvatar.isNotEmpty && partnerAvatar.isNotEmpty;
-
-    return Container(
-      width: double.infinity,
-      height: 200,
-      decoration: BoxDecoration(
-        color: _t.cardSurface,
-        border: Border.all(color: _t.primary.withOpacity(0.15), width: 3),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Stack(
-        children: [
-          if (showPhotos)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 14,
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _daysPreviewAvatar(myAvatar),
-                    Transform.translate(
-                      offset: const Offset(-10, 0),
-                      child: _daysPreviewAvatar(partnerAvatar),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(21),
-                ),
-                child: Transform.scale(
-                  scaleX: flipCouple ? -1.0 : 1.0,
-                  child: Image.asset(
-                    'assets/images/widget/$imgName.webp',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
-          Positioned(
-            top: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                yearsText,
-                style: AppFonts.onest(
-                  size: 12,
-                  weight: 700,
-                  color: _t.primary.withOpacity(0.7),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$totalDays',
-                  style: AppFonts.onest(
-                    size: 36,
-                    weight: 700,
-                    height: 1.0,
-                    color: _t.primary,
-                  ),
-                ),
-                Text(
-                  LocaleService.current.daysCounterLabel,
-                  style: AppFonts.onest(
-                    size: 14,
-                    weight: 700,
-                    color: _t.primary.withOpacity(0.8),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  startLabel,
-                  style: AppFonts.onest(
-                    size: 10,
-                    weight: 700,
-                    color: _t.primary.withOpacity(0.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Кружок-аватарка для превью счётчика дней.
-  Widget _daysPreviewAvatar(String url) {
-    // Кайма — это отступ, а не `Border`. У круглого `Container` рамка рисуется
-    // ВНУТРЬ, а картинка внутри просилась во все 56 px: она не влезала в
-    // оставшиеся 52 и обрезалась по краям — на превью аватар выглядел
-    // подрезанным сбоку. Теперь картинка занимает ровно внутреннюю область.
-    return Container(
-      width: 56,
-      height: 56,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(shape: BoxShape.circle, color: _t.cardSurface),
-      child: ClipOval(
-        child: ColoredBox(
-          color: _t.primary.withValues(alpha: 0.1),
-          child: StorageImage(
-            imageUrl: url,
-            width: 52,
-            height: 52,
-            fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => Icon(
-              Icons.person_rounded,
-              color: _t.primary.withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// Карточка настройки «Наши фото на виджете Дни вместе» (за коины).
   Widget _buildDaysPhotosCard() {
     final ud = widget.userData;
@@ -4839,46 +2723,6 @@ class _WidgetScreenState extends State<WidgetScreen>
   // ВИДЖЕТ-ПРЕВЬЮ: Лепестковый таймер
   // ════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildPetalTimerPreview() {
-    final timer = _widgetTimer;
-
-    if (timer == null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-        decoration: BoxDecoration(
-          color: _t.primary.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _t.primary.withOpacity(0.08)),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.timer_off_rounded, size: 36, color: _t.textMuted),
-            const SizedBox(height: 8),
-            Text(
-              LocaleService.current.noTimersWidget,
-              style: AppFonts.onest(size: 13, color: _t.textMuted),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Center(
-      child: RepaintBoundary(
-        child: SizedBox(
-          width: 200,
-          height: 200,
-          child: PetalTimerDial(
-            theme: _t,
-            startDate: timer.startDate,
-            isCountdown: timer.isCountdown,
-          ),
-        ),
-      ),
-    );
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
   // ВЫБОР ТАЙМЕРА ДЛЯ ВИДЖЕТА
   // ════════════════════════════════════════════════════════════════════════════
@@ -4981,7 +2825,7 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   Widget _buildPhotoDayExpandedContent() {
     final s = LocaleService.current;
-    final hasWidgets = _personalWidgetIds.isNotEmpty;
+    final hasWidgets = _photoDay.personalIds.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -5028,8 +2872,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
           const SizedBox(height: 10),
           _buildPhotoDayWidgetSelector(
-            ids: _personalWidgetIds,
-            selectedId: _selectedPersonalWidgetId,
+            ids: _photoDay.personalIds,
+            selectedId: _photoDay.selectedPersonal,
             isPartner: false,
           ),
         ],
@@ -5228,8 +3072,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           ),
           const SizedBox(height: 10),
           _buildPhotoDayWidgetSelector(
-            ids: _partnerWidgetIds,
-            selectedId: _selectedPartnerWidgetId,
+            ids: _photoDay.partnerIds,
+            selectedId: _photoDay.selectedPartner,
             isPartner: true,
           ),
         ],
@@ -5272,17 +3116,16 @@ class _WidgetScreenState extends State<WidgetScreen>
         final index = entry.key;
         final widgetId = entry.value;
         final isSelected = widgetId == selectedId;
-        final widgetName = _photoDayWidgetNames[widgetId]?.trim();
-        final ownPhotoPath = _photoDayWidgetOwnPhotoPaths[widgetId];
+        final widgetName = _photoDay.names[widgetId]?.trim();
+        final ownPhotoPath = _photoDay.ownPhotoPaths[widgetId];
 
         // Счёт фото в виджете
         final int photoCount = isPartner
             ? (_ws.firstPartnerData?.sharedPhotoCount ?? 0)
-            : (_photoDayWidgetUrls[widgetId]?.length ?? 0);
+            : (_photoDay.urls[widgetId]?.length ?? 0);
 
-        final rotationType = _photoDayWidgetRotationType[widgetId] ?? 'unlock';
-        final rotationInterval =
-            _photoDayWidgetRotationInterval[widgetId] ?? 60;
+        final rotationType = _photoDay.rotationType[widgetId] ?? 'unlock';
+        final rotationInterval = _photoDay.rotationInterval[widgetId] ?? 60;
         final hasCarousel = photoCount >= 2;
         final String summary = photoCount == 0
             ? (isPartner
@@ -5830,111 +3673,9 @@ class _WidgetScreenState extends State<WidgetScreen>
   // ВИДЖЕТ-ПРЕВЬЮ: Настроение
   // ════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildMoodPreview() {
-    final s = LocaleService.current;
-    final today = DateTime.now();
-
-    final myEntries = _moodService.myEntriesForDay(today);
-    final partnerUid = _pair.partners.isNotEmpty
-        ? _pair.partners.first.uid
-        : '';
-    final partnerEntries = partnerUid.isNotEmpty
-        ? _moodService.partnerEntriesForDay(partnerUid, today)
-        : <MoodEntry>[];
-
-    final myName = _ws.myData?.displayName.isNotEmpty == true
-        ? _ws.myData!.displayName
-        : s.me;
-    final partnerName = _pair.partnerName.isNotEmpty
-        ? _pair.partnerName
-        : s.partner;
-
-    return MoodHeartsPreview(
-      myEntries: myEntries,
-      partnerEntries: partnerEntries,
-      myName: myName,
-      partnerName: partnerName,
-      primaryColor: _t.primary,
-    );
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
   // ВИДЖЕТ-ПРЕВЬЮ: Статистика отношений
   // ════════════════════════════════════════════════════════════════════════════
-
-  Widget _buildRelationshipStatsPreview() {
-    final s = LocaleService.current;
-    final sysTimer = _timerService.systemTimer;
-    final start = sysTimer?.startDate ?? _pair.startDate;
-    final daysNum = start != null
-        ? calendarDaysBetween(start, DateTime.now())
-        : 0;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: _t.cardSurface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _t.cardBorder),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.calendar_today_rounded,
-                  color: _t.iconCalendar,
-                  value: '$daysNum',
-                  label: s.daysTogetherStat,
-                  bg: _t.iconCalendar.withOpacity(0.08),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.photo_library_rounded,
-                  color: _t.iconPost,
-                  value: '${_memoriesCount ?? 0}',
-                  label: s.memoriesStat,
-                  bg: _t.iconPost.withOpacity(0.08),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.brush_rounded,
-                  color: _t.iconDraw,
-                  value: '${_drawingsCount ?? 0}',
-                  label: s.drawingsStat,
-                  bg: _t.iconDraw.withOpacity(0.08),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.favorite_rounded,
-                  color: _t.primary,
-                  value: '${_missYouCount ?? 0}',
-                  label: s.missYousStat,
-                  bg: _t.primary.withOpacity(0.08),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   // ════════════════════════════════════════════════════════════════════════════
   // PAIR WIDGET — раскрытые настройки
@@ -6497,69 +4238,13 @@ class _WidgetScreenState extends State<WidgetScreen>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: _buildPhotoGridMockup(),
+          child: PhotoGridMockup(
+            t: _t,
+            photoGridCount: _photoGridCount,
+            ws: _ws,
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPhotoGridMockup() {
-    // Превью показывает фото ПАРТНЁРА (то, что отображается на рабочем столе)
-    final partnerUrls = _ws.firstPartnerData?.photoGridUrls ?? [];
-    final partnerCount = _ws.firstPartnerData?.photoGridCount ?? 1;
-    final slots = partnerUrls.isNotEmpty ? partnerCount : _photoGridCount;
-
-    Widget cell(int index) {
-      if (index < partnerUrls.length && partnerUrls[index].isNotEmpty) {
-        return StorageImage(
-          imageUrl: partnerUrls[index],
-          fit: BoxFit.cover,
-          placeholder: (_, __) => _photoGridPlaceholder('⏳'),
-          errorWidget: (_, __, ___) => _photoGridPlaceholder('📷'),
-        );
-      }
-      return _photoGridPlaceholder('📷');
-    }
-
-    if (slots == 1) return cell(0);
-    if (slots == 2) {
-      return Row(
-        children: [
-          Expanded(child: cell(0)),
-          const SizedBox(width: 2),
-          Expanded(child: cell(1)),
-        ],
-      );
-    }
-    return Column(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(child: cell(0)),
-              const SizedBox(width: 2),
-              Expanded(child: cell(1)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 2),
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(child: cell(2)),
-              const SizedBox(width: 2),
-              Expanded(child: cell(3)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _photoGridPlaceholder(String emoji) {
-    return Container(
-      color: _t.primary.withOpacity(0.07),
-      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
     );
   }
 
