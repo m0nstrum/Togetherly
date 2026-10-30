@@ -23,7 +23,6 @@ import '../services/plus_service.dart';
 import '../services/ui_prefs.dart';
 import '../dict_strings.dart' show ruEn, trKey, zhForEnglishIfZh;
 import '../models/countdown_widget.dart';
-import '../models/note_preview.dart';
 import '../models/widget_panels.dart';
 import '../widgets/miss_widget_card.dart';
 import '../widgets/together_track_card.dart';
@@ -38,7 +37,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../logic/photo_day_widget_logic.dart';
 import '../models/pair_data.dart';
 import '../models/symbol_catalog.dart';
-import '../models/together_caption.dart';
 import '../models/timer_item.dart';
 import '../models/widget_data.dart';
 import '../models/year_progress.dart';
@@ -58,23 +56,13 @@ import '../services/locale_service.dart';
 import '../utils/photo_crop.dart';
 import '../services/mood_notification_service.dart';
 import '../services/mood_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../models/canvas_meta.dart';
-import '../models/mascot.dart';
-import '../models/mascot_anim.dart';
-import '../models/mascot_widget_data.dart';
-import '../services/catalog_service.dart';
-import '../services/offline/media_view_cache.dart';
 import '../services/canvas/canvas_widget_service.dart';
 import '../services/canvas_repository.dart';
 import '../services/canvas_storage_service.dart';
-import '../services/mascot/mascot_art_source.dart';
-import '../services/mascot/mascot_widget_service.dart';
 import '../services/mascot_service.dart';
 import '../widgets/draw/canvas_preview.dart';
-import '../widgets/mascot/pixel_mascot_view.dart';
-import '../widgets/active_mascot_widget.dart' show buildMascotAssetImage;
 import '../services/timer_service.dart';
 import '../services/widget_rotation.dart';
 import '../services/widget_service.dart';
@@ -101,6 +89,7 @@ import 'widget_screen/preview_parts.dart';
 import 'widget_screen/preview_style.dart';
 import 'widget_screen/previews_time.dart';
 import 'widget_screen/previews_pair.dart';
+import 'widget_screen/previews_misc.dart';
 
 /// Экран виджетов — два тайла (мой / партнёра) + настройки автоотправки.
 class WidgetScreen extends StatefulWidget {
@@ -1848,7 +1837,15 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.daysCounterSubtitle,
     svgString: _calendarSvg,
     qualifiedName: 'com.togetherly.love.DaysCounterWidgetProvider',
-    preview: _buildDaysCounterPreview(),
+    preview: DaysCounterPreview(
+      t: _t,
+      daysPhotosEnabled: _daysPhotosEnabled,
+      pair: _pair,
+      timerService: _timerService,
+      widgetTimer: _widgetTimer,
+      ws: _ws,
+      userData: widget.userData,
+    ),
     widgetType: 'days_counter',
     expandedContent: _buildDaysPhotosCard(),
     isExpanded: _daysCounterExpanded,
@@ -2072,19 +2069,39 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.NoteWidget2x2Provider',
-        previewBuilder: () => _buildNotePreview(compact: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          compact: true,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.NoteWidget4x2Provider',
-        previewBuilder: () => _buildNotePreview(),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.NoteWidget4x4Provider',
-        previewBuilder: () => _buildNotePreview(big: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          big: true,
+        ),
       ),
     ],
   );
@@ -2102,19 +2119,42 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.NoteWidget2x2Provider',
-        previewBuilder: () => _buildNotePreview(compact: true, paper: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          compact: true,
+          paper: true,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.NoteWidget4x2Provider',
-        previewBuilder: () => _buildNotePreview(paper: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          paper: true,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.NoteWidget4x4Provider',
-        previewBuilder: () => _buildNotePreview(big: true, paper: true),
+        previewBuilder: () => CatalogNotePreview(
+          noteText: _noteText,
+          noteAuthor: _noteAuthor,
+          noteAt: _noteAt,
+          theme: widget.theme,
+          userData: widget.userData,
+          big: true,
+          paper: true,
+        ),
       ),
     ],
   );
@@ -2268,64 +2308,40 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.CanvasWidget2x2Provider',
-        previewBuilder: () => _buildCanvasPreview(1),
+        previewBuilder: () => CatalogCanvasPreview(
+          ps: _ps,
+          canvases: _canvases,
+          pair: _pair,
+          userData: widget.userData,
+          aspect: 1,
+        ),
       ),
       WidgetSizeOption(
         label: '2×3',
         hint: _s.canvasWidgetSizeTall,
         qualifiedName: 'com.togetherly.love.CanvasWidget2x3Provider',
-        previewBuilder: () => _buildCanvasPreview(2 / 3),
+        previewBuilder: () => CatalogCanvasPreview(
+          ps: _ps,
+          canvases: _canvases,
+          pair: _pair,
+          userData: widget.userData,
+          aspect: 2 / 3,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.CanvasWidget4x4Provider',
-        previewBuilder: () => _buildCanvasPreview(1),
+        previewBuilder: () => CatalogCanvasPreview(
+          ps: _ps,
+          canvases: _canvases,
+          pair: _pair,
+          userData: widget.userData,
+          aspect: 1,
+        ),
       ),
     ],
   );
-
-  /// Превью: настоящий холст пары, тот же, что встанет на стол.
-  Widget _buildCanvasPreview(double aspect) {
-    final meta = _canvases.isEmpty ? null : _canvases.first;
-    if (meta == null) {
-      return AspectRatio(
-        aspectRatio: aspect,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _ps.wr('surfaceContainer'),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            _s.canvasWidgetEmpty,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Onest',
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: _ps.wr('onSurfaceVariant'),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return AspectRatio(
-      aspectRatio: aspect,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: CanvasPreview(
-          meta: meta,
-          uid: widget.userData.uid,
-          groupId: _pair.pairId,
-          background: Colors.white,
-          placeholder: Container(color: _ps.wr('surfaceContainer')),
-        ),
-      ),
-    );
-  }
 
   /// Подтягивает холсты и сразу готовит картинки для виджета.
   Future<void> _loadCanvases() async {
@@ -2373,25 +2389,45 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '4×1',
         hint: _s.tgSizeHintStrip,
         qualifiedName: 'com.togetherly.love.MascotWidget4x1Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.strip),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.strip,
+        ),
       ),
       WidgetSizeOption(
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.MascotWidget2x2Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.small),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.small,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.MascotWidget4x2Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.wide),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.wide,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.MascotWidget4x4Provider',
-        previewBuilder: () => _buildMascotPreview(MascotPreviewSize.large),
+        previewBuilder: () => CatalogMascotPreview(
+          ps: _ps,
+          mascotService: widget.mascotService,
+          userData: widget.userData,
+          size: MascotPreviewSize.large,
+        ),
       ),
     ],
   );
@@ -2717,142 +2753,6 @@ class _WidgetScreenState extends State<WidgetScreen>
       ) ??
       0;
 
-  /// Превью «Вместе» 2×2: фон primary #6750A4, стек аватаров и число 54/800.
-  /// Превью листика в каталоге. [paper] — бумажный стикер, иначе карточка M3.
-  Widget _buildNotePreview({
-    bool compact = false,
-    bool big = false,
-    bool paper = false,
-  }) {
-    final cs = ProfileTheme.schemeFor(widget.theme);
-    const paperBg = Color(0xFFFFF3C4);
-    const paperInk = Color(0xFF4A3D13);
-    final bg = paper ? paperBg : cs.surfaceContainer;
-    final ink = paper ? paperInk : cs.onSurface;
-    final faded = paper ? const Color(0xFF8A7A45) : cs.onSurfaceVariant;
-
-    // Настоящая заметка пары; пока её нет — образец, потому что пустой
-    // листик в каталоге читается как сломанный виджет.
-    final text = notePreviewText(_noteText, demo: _s.tgNoteDemo);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!paper) ...[
-            Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.sticky_note_2_rounded,
-                    size: 14,
-                    color: cs.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  _s.tgNoteTitle.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                    color: faded,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ] else ...[
-            Center(
-              child: Container(
-                width: 46,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.14),
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-          Text(
-            text,
-            maxLines: big ? 5 : 3,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: compact ? 13 : 14,
-              height: 1.35,
-              fontWeight: FontWeight.w700,
-              color: ink,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: paper
-                      ? Colors.black.withValues(alpha: 0.18)
-                      : cs.tertiaryContainer,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  [
-                    _noteAuthor.isEmpty
-                        ? widget.userData.displayName
-                        : _noteAuthor,
-                    if (_noteAt.isNotEmpty) _noteAt,
-                  ].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: faded,
-                  ),
-                ),
-              ),
-              Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: paper ? paperInk : cs.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.edit_rounded,
-                  size: 14,
-                  color: paper ? paperBg : cs.onPrimary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Какую долю ширины карточки занимает превью размера [label] («2×2»,
   /// «4×2», «4×4»). Ряд на рабочем столе — четыре ячейки, от этого и считаем.
   /// Ширина карточки каталога на экране 360 dp: под неё подобраны кегли и
@@ -2901,371 +2801,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     memoriesCount: _memoriesCount,
     small: false,
   );
-
-  /// Превью виджета маскота: НАСТОЯЩИЙ персонаж пары, а не образец.
-  ///
-  /// Так же устроена заметка — в каталоге она показывает свой текст. Человек
-  /// выбирает размер по тому, что реально встанет на стол.
-  Widget _buildMascotPreview(MascotPreviewSize size) {
-    final aspect = switch (size) {
-      MascotPreviewSize.strip => 424 / 92,
-      MascotPreviewSize.small => 1.0,
-      MascotPreviewSize.wide => 424 / 200,
-      MascotPreviewSize.large => 1.0,
-    };
-
-    final mascotState = widget.mascotService.state;
-    final id = mascotState.activeMascotId ?? '';
-    final mascot = widget.mascotService.activeMascot;
-    // Атлас есть только у пиксельных из каталога; у встроенных, каталожных
-    // рисунков и нарисованных вручную его нет, и превью берёт их картинку.
-    final anim = id.isEmpty ? null : CatalogService.instance.animById(id);
-
-    if (mascot == null || (!mascot.hasImage && anim == null)) {
-      return AspectRatio(
-        aspectRatio: aspect,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _ps.wr('surfaceContainer'),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            _s.mascotWidgetNoMascot,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Onest',
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: _ps.wr('onSurfaceVariant'),
-            ),
-          ),
-        ),
-      );
-    }
-
-    final streak = widget.mascotService.activeStreak;
-    final record = mascot.recordStreak;
-    final sleep = widget.userData.sleepOf(id);
-    final data = MascotWidgetData(
-      mascotId: id,
-      name: mascot.localizedName,
-      streakDays: streak,
-      recordStreak: record > streak ? record : streak,
-      sad: streak == 0 && (mascotState.streakLastOpenedDate ?? '').isNotEmpty,
-      sleep: mascotSleepsInWidget(anim)
-          ? MascotSleepWindow(from: sleep.from, to: sleep.to)
-          : MascotSleepWindow.none,
-    );
-    final labels = buildMascotWidgetLabels(data);
-
-    Widget figure(double side) => SizedBox(
-      width: side,
-      height: side,
-      child: anim != null
-          ? PixelMascotView(
-              anim: anim,
-              state: MascotAnimState.live,
-              size: side,
-              level: data.level,
-              sleep: sleep,
-            )
-          : _mascotPicture(mascot),
-    );
-
-    Widget chip(
-      String text, {
-      required Color bg,
-      required Color ink,
-      double fontSize = 10,
-    }) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontFamily: 'Onest',
-          fontWeight: FontWeight.w700,
-          fontSize: fontSize,
-          color: ink,
-        ),
-      ),
-    );
-
-    Widget label(
-      String text, {
-      double fontSize = 10,
-      FontWeight weight = FontWeight.w600,
-      Color? color,
-    }) => Text(
-      text,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontFamily: 'Onest',
-        fontWeight: weight,
-        fontSize: fontSize,
-        color: color ?? _ps.wr('onSurfaceVariant'),
-      ),
-    );
-
-    Widget bar(double width) => Container(
-      height: 6,
-      decoration: BoxDecoration(
-        color: _ps.wr('trackOnContainer'),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: data.percent / 100,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _ps.wr('primary'),
-            borderRadius: BorderRadius.circular(99),
-          ),
-        ),
-      ),
-    );
-
-    final body = switch (size) {
-      MascotPreviewSize.strip => Row(
-        children: [
-          figure(40),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                label(
-                  data.name,
-                  fontSize: 13,
-                  weight: FontWeight.w800,
-                  color: _ps.wr('onSurface'),
-                ),
-                label('${labels.stage} · ${labels.next}'),
-              ],
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              label(
-                '${data.streakDays}',
-                fontSize: 20,
-                weight: FontWeight.w800,
-                color: _ps.wr('onPrimaryContainer'),
-              ),
-              label(labels.streak, fontSize: 9),
-            ],
-          ),
-        ],
-      ),
-      MascotPreviewSize.small => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: label(
-                  data.name,
-                  fontSize: 12,
-                  weight: FontWeight.w800,
-                  color: _ps.wr('onSurface'),
-                ),
-              ),
-              chip(
-                labels.stage,
-                bg: _ps.wr('tertiaryContainer'),
-                ink: _ps.wr('onTertiaryContainer'),
-              ),
-            ],
-          ),
-          Expanded(child: Center(child: figure(64))),
-          bar(double.infinity),
-          const SizedBox(height: 4),
-          label(labels.next, fontSize: 9),
-        ],
-      ),
-      MascotPreviewSize.wide => Row(
-        children: [
-          Container(
-            width: 96,
-            decoration: BoxDecoration(
-              color: _ps.wr('primaryContainer'),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            alignment: Alignment.center,
-            child: figure(74),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                label(
-                  data.name,
-                  fontSize: 17,
-                  weight: FontWeight.w800,
-                  color: _ps.wr('onSurface'),
-                ),
-                const SizedBox(height: 2),
-                label(
-                  '${labels.stage} · ${data.streakDays} ${labels.streak}',
-                  fontSize: 11,
-                ),
-                const SizedBox(height: 10),
-                bar(double.infinity),
-                const SizedBox(height: 6),
-                label(labels.next, fontSize: 10),
-              ],
-            ),
-          ),
-        ],
-      ),
-      MascotPreviewSize.large => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 59,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _ps.wr('primaryContainer'),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: FractionallySizedBox(
-                      heightFactor: 0.28,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _ps.wr('trackOnContainer'),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: FractionallySizedBox(
-                      heightFactor: 0.72,
-                      alignment: Alignment.topCenter,
-                      child: Center(child: figure(92)),
-                    ),
-                  ),
-                  Positioned(
-                    left: 10,
-                    top: 10,
-                    child: chip(
-                      '${data.name} · ${labels.stage}',
-                      bg: _ps.wr('surface'),
-                      ink: _ps.wr('onSurface'),
-                    ),
-                  ),
-                  Positioned(
-                    right: 10,
-                    top: 10,
-                    child: chip(
-                      labels.sleepDay,
-                      bg: _ps.wr('tertiaryContainer'),
-                      ink: _ps.wr('onTertiaryContainer'),
-                      fontSize: 9,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            flex: 26,
-            child: Row(
-              children: [
-                Expanded(
-                  child: MascotTile(
-                    ps: _ps,
-                    value: '${data.streakDays}',
-                    caption: labels.streak,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: MascotTile(
-                    ps: _ps,
-                    child: bar(double.infinity),
-                    caption: labels.next,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: MascotTile(
-                    ps: _ps,
-                    value: '${data.recordStreak}',
-                    caption: labels.record.split(' ').first,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    };
-
-    return AspectRatio(
-      aspectRatio: aspect,
-      child: Container(
-        padding: EdgeInsets.all(size == MascotPreviewSize.large ? 8 : 10),
-        decoration: BoxDecoration(
-          // Тот же фон, что у виджета на столе: карточка каталога сама
-          // розоватая, и на surfaceContainer превью сливалось с ней.
-          color: size == MascotPreviewSize.strip
-              ? _ps.wr('primaryContainer')
-              : _ps.wr('surface'),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: body,
-      ),
-    );
-  }
-
-  /// Картинка непиксельного маскота: встроенного, каталожного или
-  /// нарисованного человеком. Порядок тот же, что на главной.
-  Widget _mascotPicture(Mascot mascot) {
-    final asset = mascot.defaultAsset;
-    if (asset != null && asset.isNotEmpty) {
-      return buildMascotAssetImage(asset, fit: BoxFit.contain);
-    }
-    final catalogUrl = mascot.catalogUrl;
-    if (catalogUrl != null && catalogUrl.isNotEmpty) {
-      return CachedNetworkImage(
-        cacheManager: OfflineImageCacheManager.instance,
-        imageUrl: catalogUrl,
-        fit: BoxFit.contain,
-        placeholder: (_, __) => const SizedBox.shrink(),
-        errorWidget: (_, __, ___) => const SizedBox.shrink(),
-      );
-    }
-    final drawn = mascot.imageUrl;
-    if (drawn != null && drawn.isNotEmpty) {
-      return StorageImage(
-        imageUrl: drawn,
-        fit: BoxFit.contain,
-        placeholder: (_, __) => const SizedBox.shrink(),
-        errorWidget: (_, __, ___) => const SizedBox.shrink(),
-      );
-    }
-    return const SizedBox.shrink();
-  }
 
   /// Отдаём виджету «Настроение» сегодняшние отметки обоих и неделю.
   ///
@@ -3629,173 +3164,6 @@ class _WidgetScreenState extends State<WidgetScreen>
   // ════════════════════════════════════════════════════════════════════════════
   // ВИДЖЕТ-ПРЕВЬЮ: Счётчик дней
   // ════════════════════════════════════════════════════════════════════════════
-
-  Widget _buildDaysCounterPreview() {
-    final s = LocaleService.current;
-    // Берём тот же активный таймер, что и виджет на рабочем столе
-    final timer = _widgetTimer ?? _timerService.systemTimer;
-    final start = timer?.startDate ?? _pair.startDate;
-    final totalDays = timer != null
-        ? timer.daysElapsed.abs()
-        : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-    final startLabel = start != null
-        ? '${start.day.toString().padLeft(2, '0')}.${start.month.toString().padLeft(2, '0')}.${start.year}'
-        : '';
-
-    final myGender = widget.userData.gender?.name ?? '';
-    final partnerGender = _ws.firstPartnerData?.gender.isNotEmpty == true
-        ? _ws.firstPartnerData!.gender
-        : '';
-
-    String imgName = 'widget_couple_mf';
-    bool flipCouple = false;
-    if (myGender == 'female' && partnerGender == 'female') {
-      imgName = 'widget_couple_ff';
-    } else if (myGender == 'male' && partnerGender == 'male') {
-      imgName = 'widget_couple_mm';
-    } else if (myGender == 'female' && partnerGender == 'male') {
-      // User (female) on left → mirror the mf image horizontally
-      flipCouple = true;
-    }
-
-    // Подпись считается тем же правилом, что и на самом виджете: годы
-    // календарные, а до первой годовщины счёт идёт на месяцы.
-    final yearsText = start != null
-        ? togetherAlreadyCaption(YearProgress.between(start, DateTime.now()), s)
-        : '';
-
-    final myAvatar = widget.userData.avatarUrl;
-    final partnerAvatar = _pair.partnerAvatarUrl;
-    final showPhotos =
-        _daysPhotosEnabled && myAvatar.isNotEmpty && partnerAvatar.isNotEmpty;
-
-    return Container(
-      width: double.infinity,
-      height: 200,
-      decoration: BoxDecoration(
-        color: _t.cardSurface,
-        border: Border.all(color: _t.primary.withOpacity(0.15), width: 3),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Stack(
-        children: [
-          if (showPhotos)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 14,
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _daysPreviewAvatar(myAvatar),
-                    Transform.translate(
-                      offset: const Offset(-10, 0),
-                      child: _daysPreviewAvatar(partnerAvatar),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(21),
-                ),
-                child: Transform.scale(
-                  scaleX: flipCouple ? -1.0 : 1.0,
-                  child: Image.asset(
-                    'assets/images/widget/$imgName.webp',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
-          Positioned(
-            top: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                yearsText,
-                style: AppFonts.onest(
-                  size: 12,
-                  weight: 700,
-                  color: _t.primary.withOpacity(0.7),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$totalDays',
-                  style: AppFonts.onest(
-                    size: 36,
-                    weight: 700,
-                    height: 1.0,
-                    color: _t.primary,
-                  ),
-                ),
-                Text(
-                  LocaleService.current.daysCounterLabel,
-                  style: AppFonts.onest(
-                    size: 14,
-                    weight: 700,
-                    color: _t.primary.withOpacity(0.8),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  startLabel,
-                  style: AppFonts.onest(
-                    size: 10,
-                    weight: 700,
-                    color: _t.primary.withOpacity(0.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Кружок-аватарка для превью счётчика дней.
-  Widget _daysPreviewAvatar(String url) {
-    // Кайма — это отступ, а не `Border`. У круглого `Container` рамка рисуется
-    // ВНУТРЬ, а картинка внутри просилась во все 56 px: она не влезала в
-    // оставшиеся 52 и обрезалась по краям — на превью аватар выглядел
-    // подрезанным сбоку. Теперь картинка занимает ровно внутреннюю область.
-    return Container(
-      width: 56,
-      height: 56,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(shape: BoxShape.circle, color: _t.cardSurface),
-      child: ClipOval(
-        child: ColoredBox(
-          color: _t.primary.withValues(alpha: 0.1),
-          child: StorageImage(
-            imageUrl: url,
-            width: 52,
-            height: 52,
-            fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => Icon(
-              Icons.person_rounded,
-              color: _t.primary.withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   /// Карточка настройки «Наши фото на виджете Дни вместе» (за коины).
   Widget _buildDaysPhotosCard() {
@@ -5464,69 +4832,13 @@ class _WidgetScreenState extends State<WidgetScreen>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: _buildPhotoGridMockup(),
+          child: PhotoGridMockup(
+            t: _t,
+            photoGridCount: _photoGridCount,
+            ws: _ws,
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPhotoGridMockup() {
-    // Превью показывает фото ПАРТНЁРА (то, что отображается на рабочем столе)
-    final partnerUrls = _ws.firstPartnerData?.photoGridUrls ?? [];
-    final partnerCount = _ws.firstPartnerData?.photoGridCount ?? 1;
-    final slots = partnerUrls.isNotEmpty ? partnerCount : _photoGridCount;
-
-    Widget cell(int index) {
-      if (index < partnerUrls.length && partnerUrls[index].isNotEmpty) {
-        return StorageImage(
-          imageUrl: partnerUrls[index],
-          fit: BoxFit.cover,
-          placeholder: (_, __) => _photoGridPlaceholder('⏳'),
-          errorWidget: (_, __, ___) => _photoGridPlaceholder('📷'),
-        );
-      }
-      return _photoGridPlaceholder('📷');
-    }
-
-    if (slots == 1) return cell(0);
-    if (slots == 2) {
-      return Row(
-        children: [
-          Expanded(child: cell(0)),
-          const SizedBox(width: 2),
-          Expanded(child: cell(1)),
-        ],
-      );
-    }
-    return Column(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(child: cell(0)),
-              const SizedBox(width: 2),
-              Expanded(child: cell(1)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 2),
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(child: cell(2)),
-              const SizedBox(width: 2),
-              Expanded(child: cell(3)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _photoGridPlaceholder(String emoji) {
-    return Container(
-      color: _t.primary.withOpacity(0.07),
-      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
     );
   }
 
