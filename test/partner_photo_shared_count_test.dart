@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/widget_data.dart';
 import 'support/screen_source.dart';

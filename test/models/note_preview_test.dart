@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/note_preview.dart';
 import '../support/screen_source.dart';
