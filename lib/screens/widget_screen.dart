@@ -30,10 +30,8 @@ import '../widgets/miss_widget_card.dart';
 import '../widgets/together_track_card.dart';
 import '../services/widget_theme_sync.dart';
 import '../models/pair_map_widget_view.dart';
-import '../models/year_ring_spec.dart';
 import '../services/map/pair_map_widget_service.dart';
 import '../widgets/map/pair_map_widget_preview.dart';
-import '../widgets/year_ring_card.dart';
 import 'plus_screen.dart';
 import '../utils/couple_days.dart';
 import '../widgets/avatar_widget.dart';
@@ -104,6 +102,8 @@ import 'widget_screen/catalog.dart';
 import 'widget_screen/catalog_panels.dart';
 import 'widget_screen/controls.dart';
 import 'widget_screen/preview_parts.dart';
+import 'widget_screen/preview_style.dart';
+import 'widget_screen/previews_time.dart';
 
 /// Экран виджетов — два тайла (мой / партнёра) + настройки автоотправки.
 class WidgetScreen extends StatefulWidget {
@@ -142,6 +142,7 @@ class _WidgetScreenState extends State<WidgetScreen>
 
   AppTheme get _t => widget.theme;
   ColorScheme get _cs => ProfileTheme.themeFor(_t).colorScheme;
+  PreviewStyle get _ps => PreviewStyle(_cs);
   WidgetService get _ws => widget.widgetService;
 
   /// Текст заметки на двоих — тот самый, что лежит на рабочем столе.
@@ -1433,7 +1434,9 @@ class _WidgetScreenState extends State<WidgetScreen>
       groupId: _pair.pairId,
       start: start,
       memoriesCount: _memoriesCount ?? 0,
-      startDateLabel: start == null ? '' : _s.tgYearSince(_formatDate(start)),
+      startDateLabel: start == null
+          ? ''
+          : _s.tgYearSince(_ps.formatDate(start)),
     );
   }
 
@@ -2014,8 +2017,8 @@ class _WidgetScreenState extends State<WidgetScreen>
             shape: BoxShape.circle,
             border: Border.all(
               color: size == TogetherCardSize.large
-                  ? _wr('surface')
-                  : _wr('primary'),
+                  ? _ps.wr('surface')
+                  : _ps.wr('primary'),
               width: 2,
             ),
           ),
@@ -2030,7 +2033,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                   primary: bg,
                 )
               : Text(
-                  _initialOf(name),
+                  _ps.initialOf(name),
                   style: TextStyle(
                     fontFamily: 'Onest',
                     fontSize: 12,
@@ -2071,15 +2074,15 @@ class _WidgetScreenState extends State<WidgetScreen>
           widget.userData.uid,
           widget.userData.avatarUrl,
           widget.userData.displayName,
-          _wr('avatarMine'),
-          _wr('onPrimaryContainer'),
+          _ps.wr('avatarMine'),
+          _ps.wr('onPrimaryContainer'),
         ),
         partnerAvatar: face(
           _pair.partnerUid,
           _pair.partnerAvatarUrl,
           _pair.partnerDisplayName,
-          _wr('avatarPartner'),
-          _wr('onTertiaryContainer'),
+          _ps.wr('avatarPartner'),
+          _ps.wr('onTertiaryContainer'),
         ),
       ),
     );
@@ -2105,7 +2108,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                   primary: bg,
                 )
               : Text(
-                  _initialOf(name),
+                  _ps.initialOf(name),
                   style: TextStyle(
                     fontFamily: 'Onest',
                     fontSize: 11,
@@ -2134,15 +2137,15 @@ class _WidgetScreenState extends State<WidgetScreen>
           widget.userData.uid,
           widget.userData.avatarUrl,
           widget.userData.displayName,
-          _wr('avatarMine'),
-          _wr('onPrimaryContainer'),
+          _ps.wr('avatarMine'),
+          _ps.wr('onPrimaryContainer'),
         ),
         partnerFace: face(
           _pair.partnerUid,
           _pair.partnerAvatarUrl,
           _pair.partnerDisplayName,
-          _wr('avatarPartner'),
-          _wr('onTertiaryContainer'),
+          _ps.wr('avatarPartner'),
+          _ps.wr('onTertiaryContainer'),
         ),
       ),
     );
@@ -2311,13 +2314,18 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.CountdownWidget2x2Provider',
-        previewBuilder: () => _buildCountdown2x2Preview(),
+        previewBuilder: () =>
+            Countdown2x2Preview(ps: _ps, nextEvent: _nextCountdown()),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.CountdownWidget4x2Provider',
-        previewBuilder: () => _buildCountdown4x2Preview(),
+        previewBuilder: () => Countdown4x2Preview(
+          ps: _ps,
+          nextEvent: _nextCountdown(),
+          togetherStart: _togetherStart(),
+        ),
       ),
     ],
   );
@@ -2383,7 +2391,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         aspectRatio: aspect,
         child: Container(
           decoration: BoxDecoration(
-            color: _wr('surfaceContainer'),
+            color: _ps.wr('surfaceContainer'),
             borderRadius: BorderRadius.circular(22),
           ),
           alignment: Alignment.center,
@@ -2395,7 +2403,7 @@ class _WidgetScreenState extends State<WidgetScreen>
               fontFamily: 'Onest',
               fontWeight: FontWeight.w700,
               fontSize: 12,
-              color: _wr('onSurfaceVariant'),
+              color: _ps.wr('onSurfaceVariant'),
             ),
           ),
         ),
@@ -2411,7 +2419,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           uid: widget.userData.uid,
           groupId: _pair.pairId,
           background: Colors.white,
-          placeholder: Container(color: _wr('surfaceContainer')),
+          placeholder: Container(color: _ps.wr('surfaceContainer')),
         ),
       ),
     );
@@ -2499,13 +2507,18 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.YearGridWidget2x2Provider',
-        previewBuilder: () => _buildYearGrid2x2Preview(),
+        previewBuilder: () =>
+            YearGrid2x2Preview(ps: _ps, progress: _yearProgress()),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.YearGridWidget4x2Provider',
-        previewBuilder: () => _buildYearGrid4x2Preview(),
+        previewBuilder: () => YearGrid4x2Preview(
+          ps: _ps,
+          progress: _yearProgress(),
+          togetherStart: _togetherStart(),
+        ),
       ),
     ],
   );
@@ -2802,56 +2815,6 @@ class _WidgetScreenState extends State<WidgetScreen>
       ) ??
       0;
 
-  static const List<String> _monthsGenitive = [
-    'января',
-    'февраля',
-    'марта',
-    'апреля',
-    'мая',
-    'июня',
-    'июля',
-    'августа',
-    'сентября',
-    'октября',
-    'ноября',
-    'декабря',
-  ];
-
-  static const List<String> _monthsGenitiveEn = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String _formatDayMonth(DateTime d) =>
-      switch (LocaleService.instance.language) {
-        AppLanguage.ru => '${d.day} ${_monthsGenitive[d.month - 1]}',
-        AppLanguage.zh => '${d.month}月${d.day}日',
-        _ => '${_monthsGenitiveEn[d.month - 1]} ${d.day}',
-      };
-
-  /// Цвет виджета по роли активной темы.
-  ///
-  /// Тот же справочник ролей, что уходит в нативные виджеты
-  /// (`WidgetThemeSync.rolesOf`), поэтому превью в каталоге и карточка на
-  /// рабочем столе не расходятся ни в одной из двадцати тем.
-  Color _wr(String role) => WidgetThemeSync.rolesOf(_cs)[role] ?? _cs.primary;
-
-  /// Инициал для кружка-аватара: пусто заменяем сердечком, а не пустотой.
-  String _initialOf(String name) {
-    final n = name.trim();
-    return n.isEmpty ? '' : n.characters.first.toUpperCase();
-  }
-
   /// Превью «Вместе» 2×2: фон primary #6750A4, стек аватаров и число 54/800.
   /// Превью листика в каталоге. [paper] — бумажный стикер, иначе карточка M3.
   Widget _buildNotePreview({
@@ -3018,7 +2981,7 @@ class _WidgetScreenState extends State<WidgetScreen>
             width: 9,
             height: 9,
             decoration: BoxDecoration(
-              color: filled ? dot : _wr('outline'),
+              color: filled ? dot : _ps.wr('outline'),
               shape: BoxShape.circle,
             ),
           ),
@@ -3031,7 +2994,7 @@ class _WidgetScreenState extends State<WidgetScreen>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: _wr('onSurface'),
+                color: _ps.wr('onSurface'),
               ),
             ),
           ),
@@ -3043,13 +3006,17 @@ class _WidgetScreenState extends State<WidgetScreen>
       child: Container(
         height: 32,
         decoration: BoxDecoration(
-          color: active ? _wr('primaryContainer') : _wr('surfaceContainer'),
+          color: active
+              ? _ps.wr('primaryContainer')
+              : _ps.wr('surfaceContainer'),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Icon(
           icon,
           size: 17,
-          color: active ? _wr('onPrimaryContainer') : _wr('onSurfaceVariant'),
+          color: active
+              ? _ps.wr('onPrimaryContainer')
+              : _ps.wr('onSurfaceVariant'),
         ),
       ),
     );
@@ -3060,7 +3027,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       child: Container(
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
-          color: _wr('surface'),
+          color: _ps.wr('surface'),
           borderRadius: BorderRadius.circular(32),
         ),
         child: Column(
@@ -3073,7 +3040,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.4,
-                color: _wr('onSurfaceVariant'),
+                color: _ps.wr('onSurfaceVariant'),
               ),
             ),
             const SizedBox(height: 4),
@@ -3081,14 +3048,14 @@ class _WidgetScreenState extends State<WidgetScreen>
               myEntry == null
                   ? '${_s.tgMoodMe} · ${_s.tgMoodNotSet}'
                   : '${_s.tgMoodMe} · ${myEntry.labelFor(MoodGenders.mine)}',
-              _wr('primary'),
+              _ps.wr('primary'),
               myEntry != null,
             ),
             line(
               partnerEntry == null
                   ? '${partnerName.isEmpty ? _s.tgMoodPartner : partnerName} · ${_s.tgMoodNotSet}'
                   : '${partnerName.isEmpty ? _s.tgMoodPartner : partnerName} · ${partnerEntry.labelFor(_partnerGender)}',
-              _wr('tertiary'),
+              _ps.wr('tertiary'),
               partnerEntry != null,
             ),
             const SizedBox(height: 10),
@@ -3138,7 +3105,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         heightFactor: value < 0 ? 0.12 : value,
         child: Container(
           decoration: BoxDecoration(
-            color: value < 0 ? _wr('surfaceContainer') : color,
+            color: value < 0 ? _ps.wr('surfaceContainer') : color,
             borderRadius: BorderRadius.circular(5),
           ),
         ),
@@ -3150,7 +3117,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       child: Container(
         padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
         decoration: BoxDecoration(
-          color: _wr('surface'),
+          color: _ps.wr('surface'),
           borderRadius: BorderRadius.circular(32),
         ),
         child: Column(
@@ -3167,7 +3134,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.2,
-                      color: _wr('onSurfaceVariant'),
+                      color: _ps.wr('onSurfaceVariant'),
                     ),
                   ),
                 ),
@@ -3177,7 +3144,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: _wr('outline'),
+                      color: _ps.wr('outline'),
                     ),
                   ),
               ],
@@ -3193,9 +3160,9 @@ class _WidgetScreenState extends State<WidgetScreen>
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          bar(bars[i].first, _wr('primary')),
+                          bar(bars[i].first, _ps.wr('primary')),
                           const SizedBox(width: 3),
-                          bar(bars[i].last, _wr('tertiary')),
+                          bar(bars[i].last, _ps.wr('tertiary')),
                         ],
                       ),
                     ),
@@ -3215,7 +3182,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: _wr('outline'),
+                        color: _ps.wr('outline'),
                       ),
                     ),
                   ),
@@ -3239,203 +3206,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     return upcoming.isEmpty ? null : upcoming.first;
   }
 
-  /// Превью «До встречи» 2×2.
-  Widget _buildCountdown2x2Preview() {
-    final event = _nextCountdown();
-    final left = event == null
-        ? Duration.zero
-        : event.startDate.difference(DateTime.now());
-
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: _wr('tertiaryContainer'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              event == null
-                  ? _s.tgCountdownEmpty
-                  : '${event.title} · ${_formatDayMonth(event.startDate)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: _wr('tertiary'),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              event == null ? '—' : '${left.inDays}',
-              style: TextStyle(
-                fontSize: 40,
-                height: 1.05,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1.6,
-                color: _wr('onTertiaryContainer'),
-              ),
-            ),
-            Text(
-              _s.tgCountdownDaysLeft(left.inDays),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: _wr('onTertiaryContainer'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Превью «До встречи» 4×2: дни, часы, минуты и прогресс.
-  Widget _buildCountdown4x2Preview() {
-    final event = _nextCountdown();
-    final now = DateTime.now();
-    final left = event == null
-        ? Duration.zero
-        : event.startDate.difference(now);
-
-    final from = _togetherStart() ?? now.subtract(const Duration(days: 30));
-    final total = event == null
-        ? 0
-        : event.startDate.difference(from).inMinutes;
-    final passed = now.difference(from).inMinutes;
-    final percent = (event == null || total <= 0)
-        ? 0.0
-        : (passed / total).clamp(0.0, 1.0);
-
-    Widget tile(String value, String label, Color bg, Color fg, Color sub) =>
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 24,
-                    height: 1,
-                    fontWeight: FontWeight.w800,
-                    color: fg,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: sub,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-
-    return AspectRatio(
-      aspectRatio: 424 / 200,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
-        decoration: BoxDecoration(
-          color: _wr('surface'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    event?.title ?? _s.tgCountdownEmpty,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: _wr('onSurface'),
-                    ),
-                  ),
-                ),
-                if (event != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _wr('tertiaryContainer'),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      _formatDayMonth(event.startDate).toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: _wr('onTertiaryContainer'),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                tile(
-                  '${left.inDays}',
-                  _s.tgCountdownDays,
-                  _wr('primaryContainer'),
-                  _wr('onPrimaryContainer'),
-                  _wr('onContainerSoft'),
-                ),
-                const SizedBox(width: 8),
-                tile(
-                  '${left.inHours % 24}',
-                  _s.tgCountdownHours,
-                  _wr('surfaceContainer'),
-                  _wr('onSurface'),
-                  _wr('onSurfaceVariant'),
-                ),
-                const SizedBox(width: 8),
-                tile(
-                  '${left.inMinutes % 60}',
-                  _s.tgCountdownMinutes,
-                  _wr('surfaceContainer'),
-                  _wr('onSurface'),
-                  _wr('onSurfaceVariant'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 9),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(100),
-              child: LinearProgressIndicator(
-                value: percent,
-                minHeight: 8,
-                backgroundColor: _wr('trackOnSurface'),
-                valueColor: AlwaysStoppedAnimation<Color>(_wr('primary')),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Разметка совместного времени для превью «Кольца года» и «Календаря лет».
   /// Тот же расчёт, что уходит в нативные виджеты, поэтому карточка в каталоге
   /// и виджет на столе показывают одно число.
@@ -3448,55 +3218,19 @@ class _WidgetScreenState extends State<WidgetScreen>
   /// (`YearRingCard` рисует её в точках среднего виджета iPhone и вписывает в
   /// карточку). До 14.09.2026 превью было своей вёрсткой, и плитки вылезали
   /// за низ карточки, а подписи обрезались многоточием.
-  Widget _buildYearRing2x2Preview() => _buildYearRingPreview(small: true);
+  Widget _buildYearRing2x2Preview() => YearRingPreview(
+    ps: _ps,
+    progress: _yearProgress(),
+    memoriesCount: _memoriesCount,
+    small: true,
+  );
 
-  Widget _buildYearRing4x2Preview() => _buildYearRingPreview(small: false);
-
-  Widget _buildYearRingPreview({required bool small}) {
-    final p = _yearProgress();
-    if (p == null) {
-      return AspectRatio(
-        aspectRatio: small
-            ? 1
-            : YearRingSpec.mediumWidth / YearRingSpec.mediumHeight,
-        child: Container(
-          decoration: BoxDecoration(
-            color: _wr('primary'),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: _widgetEmptyLabel(_wr('onPrimarySoft')),
-        ),
-      );
-    }
-    final memories = _memoriesCount ?? 0;
-    return YearRingCard(
-      small: small,
-      colors: YearRingColors(
-        primary: _wr('primary'),
-        onPrimary: _wr('onPrimary'),
-        tertiaryContainer: _wr('tertiaryContainer'),
-      ),
-      texts: YearRingTexts(
-        daysCaption: small
-            ? _s.tgYearDaysWord(p.daysTotal)
-            : _s.tgYearDaysTogether(p.daysTotal),
-        untilAnniversary: _s.tgYearUntilAnniversary,
-        daysLeftUnit: _s.tgYearDaysUnit(p.daysToNextAnniversary),
-        anniversaryLine: _s.tgYearAnniversaryOn.replaceAll(
-          '{date}',
-          _formatDayMonth(p.nextAnniversary),
-        ),
-        monthsShort: _s.tgYearMonthsShort,
-        memoriesUnit: _s.memoriesUnit(memories),
-        smallLine: _s.tgYearDaysLeft(p.daysToNextAnniversary),
-      ),
-      daysTotal: p.daysTotal,
-      daysLeft: p.daysToNextAnniversary,
-      months: p.monthsCompleted,
-      memories: memories,
-      progress: p.ringProgress,
-    );
-  }
+  Widget _buildYearRing4x2Preview() => YearRingPreview(
+    ps: _ps,
+    progress: _yearProgress(),
+    memoriesCount: _memoriesCount,
+    small: false,
+  );
 
   /// Превью виджета маскота: НАСТОЯЩИЙ персонаж пары, а не образец.
   ///
@@ -3522,7 +3256,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         aspectRatio: aspect,
         child: Container(
           decoration: BoxDecoration(
-            color: _wr('surfaceContainer'),
+            color: _ps.wr('surfaceContainer'),
             borderRadius: BorderRadius.circular(22),
           ),
           alignment: Alignment.center,
@@ -3534,7 +3268,7 @@ class _WidgetScreenState extends State<WidgetScreen>
               fontFamily: 'Onest',
               fontWeight: FontWeight.w700,
               fontSize: 12,
-              color: _wr('onSurfaceVariant'),
+              color: _ps.wr('onSurfaceVariant'),
             ),
           ),
         ),
@@ -3607,14 +3341,14 @@ class _WidgetScreenState extends State<WidgetScreen>
         fontFamily: 'Onest',
         fontWeight: weight,
         fontSize: fontSize,
-        color: color ?? _wr('onSurfaceVariant'),
+        color: color ?? _ps.wr('onSurfaceVariant'),
       ),
     );
 
     Widget bar(double width) => Container(
       height: 6,
       decoration: BoxDecoration(
-        color: _wr('trackOnContainer'),
+        color: _ps.wr('trackOnContainer'),
         borderRadius: BorderRadius.circular(99),
       ),
       child: FractionallySizedBox(
@@ -3622,7 +3356,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         widthFactor: data.percent / 100,
         child: Container(
           decoration: BoxDecoration(
-            color: _wr('primary'),
+            color: _ps.wr('primary'),
             borderRadius: BorderRadius.circular(99),
           ),
         ),
@@ -3643,7 +3377,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                   data.name,
                   fontSize: 13,
                   weight: FontWeight.w800,
-                  color: _wr('onSurface'),
+                  color: _ps.wr('onSurface'),
                 ),
                 label('${labels.stage} · ${labels.next}'),
               ],
@@ -3657,7 +3391,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                 '${data.streakDays}',
                 fontSize: 20,
                 weight: FontWeight.w800,
-                color: _wr('onPrimaryContainer'),
+                color: _ps.wr('onPrimaryContainer'),
               ),
               label(labels.streak, fontSize: 9),
             ],
@@ -3674,13 +3408,13 @@ class _WidgetScreenState extends State<WidgetScreen>
                   data.name,
                   fontSize: 12,
                   weight: FontWeight.w800,
-                  color: _wr('onSurface'),
+                  color: _ps.wr('onSurface'),
                 ),
               ),
               chip(
                 labels.stage,
-                bg: _wr('tertiaryContainer'),
-                ink: _wr('onTertiaryContainer'),
+                bg: _ps.wr('tertiaryContainer'),
+                ink: _ps.wr('onTertiaryContainer'),
               ),
             ],
           ),
@@ -3695,7 +3429,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           Container(
             width: 96,
             decoration: BoxDecoration(
-              color: _wr('primaryContainer'),
+              color: _ps.wr('primaryContainer'),
               borderRadius: BorderRadius.circular(18),
             ),
             alignment: Alignment.center,
@@ -3711,7 +3445,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                   data.name,
                   fontSize: 17,
                   weight: FontWeight.w800,
-                  color: _wr('onSurface'),
+                  color: _ps.wr('onSurface'),
                 ),
                 const SizedBox(height: 2),
                 label(
@@ -3734,7 +3468,7 @@ class _WidgetScreenState extends State<WidgetScreen>
             flex: 59,
             child: Container(
               decoration: BoxDecoration(
-                color: _wr('primaryContainer'),
+                color: _ps.wr('primaryContainer'),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Stack(
@@ -3745,7 +3479,7 @@ class _WidgetScreenState extends State<WidgetScreen>
                       heightFactor: 0.28,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: _wr('trackOnContainer'),
+                          color: _ps.wr('trackOnContainer'),
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
@@ -3764,8 +3498,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                     top: 10,
                     child: chip(
                       '${data.name} · ${labels.stage}',
-                      bg: _wr('surface'),
-                      ink: _wr('onSurface'),
+                      bg: _ps.wr('surface'),
+                      ink: _ps.wr('onSurface'),
                     ),
                   ),
                   Positioned(
@@ -3773,8 +3507,8 @@ class _WidgetScreenState extends State<WidgetScreen>
                     top: 10,
                     child: chip(
                       labels.sleepDay,
-                      bg: _wr('tertiaryContainer'),
-                      ink: _wr('onTertiaryContainer'),
+                      bg: _ps.wr('tertiaryContainer'),
+                      ink: _ps.wr('onTertiaryContainer'),
                       fontSize: 9,
                     ),
                   ),
@@ -3788,21 +3522,24 @@ class _WidgetScreenState extends State<WidgetScreen>
             child: Row(
               children: [
                 Expanded(
-                  child: _mascotTile(
+                  child: MascotTile(
+                    ps: _ps,
                     value: '${data.streakDays}',
                     caption: labels.streak,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _mascotTile(
+                  child: MascotTile(
+                    ps: _ps,
                     child: bar(double.infinity),
                     caption: labels.next,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _mascotTile(
+                  child: MascotTile(
+                    ps: _ps,
                     value: '${data.recordStreak}',
                     caption: labels.record.split(' ').first,
                   ),
@@ -3822,8 +3559,8 @@ class _WidgetScreenState extends State<WidgetScreen>
           // Тот же фон, что у виджета на столе: карточка каталога сама
           // розоватая, и на surfaceContainer превью сливалось с ней.
           color: size == MascotPreviewSize.strip
-              ? _wr('primaryContainer')
-              : _wr('surface'),
+              ? _ps.wr('primaryContainer')
+              : _ps.wr('surface'),
           borderRadius: BorderRadius.circular(22),
         ),
         child: body,
@@ -3859,304 +3596,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     }
     return const SizedBox.shrink();
   }
-
-  /// Плитка нижнего ряда «Комнаты»: крупное число или полоса и подпись.
-  Widget _mascotTile({String? value, Widget? child, required String caption}) =>
-      Container(
-        decoration: BoxDecoration(
-          color: _wr('primaryContainer'),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (value != null)
-              FittedBox(
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontFamily: 'Unbounded',
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                    color: _wr('onPrimaryContainer'),
-                  ),
-                ),
-              ),
-            if (child != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: child,
-              ),
-            const SizedBox(height: 4),
-            Text(
-              caption,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Onest',
-                fontWeight: FontWeight.w600,
-                fontSize: 8.5,
-                color: _wr('onSurfaceVariant'),
-              ),
-            ),
-          ],
-        ),
-      );
-
-  /// Превью «Календарь лет» 2×2: сетка сверху, число снизу.
-  Widget _buildYearGrid2x2Preview() {
-    final p = _yearProgress();
-    // Как и у 4×2: рисуем в дизайнерском квадрате и ужимаем целиком, иначе
-    // сетка месяцев с числом не влезают в узкую карточку каталога.
-    return AspectRatio(
-      aspectRatio: 1,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: SizedBox(
-          width: 200,
-          height: 200,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: _wr('surface'),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: _wr('trackOnSurface')),
-            ),
-            child: p == null
-                ? _widgetEmptyLabel(_wr('onSurfaceVariant'))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _monthsGrid(p, dot: 8, gap: 4),
-                      // Число дней растёт вместе с парой, и в тесном квадрате 2×2
-                      // подпись под ним налезала на строку ниже (скриншот тестера,
-                      // 13 августа 2026). Блок ужимается целиком, а не обрезается.
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.bottomLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '${p.daysTotal}',
-                                style: TextStyle(
-                                  fontSize: 52,
-                                  height: 1.02,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -2.3,
-                                  color: _wr('onSurface'),
-                                ),
-                              ),
-                              Text(
-                                _s.tgYearDaysTogether(p.daysTotal),
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: _wr('primary'),
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                _s.tgYearCurrentYearShort(
-                                  p.yearsCompleted + 1,
-                                  p.daysToNextAnniversary,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: _wr('onSurfaceVariant'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Превью «Календарь лет» 4×2: число и годы сверху, сетка и отсчёт снизу.
-  Widget _buildYearGrid4x2Preview() {
-    final p = _yearProgress();
-    final start = _togetherStart();
-
-    // Кегли, сетка месяцев и плашка «до года» подобраны под ширину макета
-    // (424). В каталоге карточка уже, и содержимое не ужималось, а
-    // переполнялось: плашка наезжала на точки (снимок 20.09.2026). Рисуем в
-    // дизайнерском размере и ужимаем картинку целиком, как превью «Вместе».
-    return AspectRatio(
-      aspectRatio: 424 / 200,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: SizedBox(
-          width: 424,
-          height: 200,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
-            decoration: BoxDecoration(
-              color: _wr('surface'),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: _wr('trackOnSurface')),
-            ),
-            child: p == null
-                ? _widgetEmptyLabel(_wr('onSurfaceVariant'))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${p.daysTotal}',
-                            style: TextStyle(
-                              fontSize: 60,
-                              height: 1,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -2.8,
-                              color: _wr('onSurface'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              _s.tgYearDaysWord(p.daysTotal),
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: _wr('onSurfaceVariant'),
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _s.tgYearsAndDays(
-                                  p.yearsCompleted,
-                                  p.daysIntoYear,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: _wr('primary'),
-                                ),
-                              ),
-                              if (start != null)
-                                Text(
-                                  _s.tgYearSince(_formatDate(start)),
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: _wr('onSurfaceVariant'),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          _monthsGrid(p, dot: 9, gap: 5),
-                          const SizedBox(width: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                              vertical: 11,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _wr('surfaceContainer'),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '${p.daysToNextAnniversary}',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    height: 1.05,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.8,
-                                    color: _wr('primary'),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  _s.tgYearToAnniversary(p.yearsCompleted + 1),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: _wr('onSurfaceVariant'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Сетка месяцев для превью «Календаря лет».
-  ///
-  /// Колонок всегда двенадцать, рядов — шесть на каждое прожитое шестилетие,
-  /// как в нативном виджете. Точка мельчает, число колонок не меняется.
-  Widget _monthsGrid(
-    YearProgress p, {
-    required double dot,
-    required double gap,
-  }) {
-    final rows = (p.monthsCompleted ~/ 72 + 1) * 6;
-    final shrink = 6 / rows;
-    return CustomPaint(
-      size: Size(
-        (12 * dot + 11 * gap) * shrink,
-        (rows * dot + (rows - 1) * gap) * shrink,
-      ),
-      painter: MonthsGridPainter(
-        filled: p.monthsCompleted,
-        rows: rows,
-        dot: dot * shrink,
-        gap: gap * shrink,
-        past: _wr('primary'),
-        current: _wr('tertiary'),
-        future: _wr('trackOnSurface'),
-      ),
-    );
-  }
-
-  /// Дата цифрами, как в подписи «с 30.09.2020».
-  String _formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}.'
-      '${d.month.toString().padLeft(2, '0')}.${d.year}';
-
-  /// Подпись пустого состояния: дата начала не задана, считать нечего.
-  Widget _widgetEmptyLabel(Color color) => Center(
-    child: Text(
-      _s.tgYearNoStartDate,
-      textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: color),
-    ),
-  );
 
   /// Отдаём виджету «Настроение» сегодняшние отметки обоих и неделю.
   ///
@@ -4216,7 +3655,7 @@ class _WidgetScreenState extends State<WidgetScreen>
       events: countdownEventsFor(
         _timerService.timers,
         now: DateTime.now(),
-        dateLabel: _formatDayMonth,
+        dateLabel: _ps.formatDayMonth,
       ),
       from: _togetherStart(),
     );
