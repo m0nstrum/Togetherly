@@ -79,7 +79,7 @@
 | A14c | Go-тесты `groupops`, `pethome` | P3 | ⏳ можно сразу |
 | A14d | JS-хуки апстрима (~3 тыс. строк) → Go, по хуку на PR, с тестами | P3 | ⏳ после A14c |
 | A14e | Dependabot (pub, gomod, actions) + пиннинг actions по SHA; CI-6 | P3 | ⏳ можно сразу |
-| A14f | Деплой-скрипт с откатом на прошлый `sha-…` и проверкой здоровья | P3 | ⏳ можно сразу |
+| A14f | Деплой-скрипт с откатом на прошлый `sha-…` и проверкой здоровья | P3 | ✅ `deploy/deploy.sh sha-…`: ждёт `/api/health` через Caddy и `/health` Centrifugo, не дождался — прежний `sha-…` и код ≠ 0; `latest` не принимает. Тест на заглушках `deploy/deploy.test.sh` — в CI (server); deploy/README.md, «Деплой скриптом» |
 
 ## Хвосты этапа форка
 

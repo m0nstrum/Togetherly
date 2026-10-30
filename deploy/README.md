@@ -245,6 +245,35 @@ docker compose up -d server
 Своя сборка образа на машине (нужно ~2 ГБ памяти):
 `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`.
 
+### Деплой скриптом
+
+То же самое с проверкой и откатом делает `deploy.sh`:
+
+```sh
+git pull                 # если менялись compose, Caddyfile или конфиг Centrifugo
+./deploy.sh sha-1a2b3c4
+```
+
+Скрипт принимает только `sha-…` (`latest` и прочие теги — отказ),
+запоминает текущий `TETHERED_VERSION`, вписывает новый в `.env`, делает
+`docker compose pull server` и `docker compose up -d`, затем до 120 с ждёт
+здоровья: `https://<домен>/api/health` через свой Caddy (curl резолвит домен
+в `127.0.0.1`, DNS не нужен) и `/health` Centrifugo изнутри сети compose.
+
+- Здоров — код 0, в выводе прежняя версия: это точка отката.
+- Образ не скачался (нет тега, нет доступа к GHCR) — `.env` возвращается как
+  был, контейнеры не трогаются, код 1.
+- Не дождался — прежний `sha-…` обратно в `.env`, `docker compose up -d`,
+  снова проверка: откат здоров — код 1, нет — код 2, разбираться руками
+  (`docker compose logs --tail=100 server centrifugo`).
+
+Откатиться вручную на конкретную версию — тот же скрипт с прежним тегом:
+`./deploy.sh sha-<прежний>`. Миграции он назад не откатывает — про схему и
+бэкап см. выше. Ожидание и адрес проверки меняются переменными
+`DEPLOY_TIMEOUT`, `DEPLOY_INTERVAL`, `DEPLOY_HEALTH_URL`, `DEPLOY_RESOLVE`
+(описаны в начале `deploy.sh`). Тест скрипта на заглушках —
+`bash deploy/deploy.test.sh`, гоняется в CI.
+
 ### Обновление realtime (H3)
 
 Сервер подписывает публикации pair/loc/user ключом Ed25519, производным
