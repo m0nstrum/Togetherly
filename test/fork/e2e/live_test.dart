@@ -376,6 +376,10 @@ void main() {
               'data': {'lat': 55.75, 'lng': 37.61},
             },
           );
+      // D11: точку партнёра сервер отдаёт только тому, кто делится сам.
+      await bobChat
+          .collection('live_location')
+          .create(body: {'channel': channel, 'user_uid': b.uid});
       final rawLoc =
           await (PocketBase(url)..authStore.save(env['SMOKE_BTOK']!, null))
               .collection('live_location')

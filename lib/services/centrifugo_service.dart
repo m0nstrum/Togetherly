@@ -226,6 +226,15 @@ class CentrifugoService {
     ForkVerifiedDelta.signalChannel(channel),
   ).publish(data, requireDelivery: requireDelivery);
 
+  /// Отпустить подписку [channel], которую держала только публикация
+  /// ([publish] поднимает её и не снимает). fork (D11): после выключения
+  /// показа сервер в геоканал больше не пустит, и брошенная подписка
+  /// просила бы токен по кругу.
+  Future<void> release(String channel) async {
+    final hub = _channels[ForkVerifiedDelta.signalChannel(channel)];
+    if (hub != null && hub.isEmpty) await hub.idle();
+  }
+
   /// fork: публикация, пришедшая не по сокету (будильник FCM,
   /// lib/fork/push/fcm_wake.dart), — слушателям канала, как с сокета.
   void deliver(String channel, Map<String, dynamic> publication) =>
@@ -351,7 +360,10 @@ class _ChannelHub {
 
   void _ensureSubscribed() {
     // Канал мог быть переведён в idle (unsubscribe) при опустении — поднимаем.
-    if (!_subscribed) {
+    // fork (D11): или его снял сервер (выключенный показ снимает геоканал):
+    // тогда флаг ещё стоит, а подписки уже нет.
+    if (!_subscribed ||
+        _sub.state == centrifuge.SubscriptionState.unsubscribed) {
       _subscribed = true;
       _sub.subscribe();
     }

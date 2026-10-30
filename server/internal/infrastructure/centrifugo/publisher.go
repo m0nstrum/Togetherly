@@ -62,6 +62,33 @@ func (p *Publisher) Publish(ctx context.Context, channel string, data any) error
 	return nil
 }
 
+// Unsubscribe снимает подписку user на channel со всех его подключений.
+func (p *Publisher) Unsubscribe(ctx context.Context, user, channel string) error {
+	if !p.Enabled() {
+		return ErrDisabled
+	}
+	body, err := json.Marshal(map[string]any{"user": user, "channel": channel})
+	if err != nil {
+		return fmt.Errorf("centrifugo: тело: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.api+"/unsubscribe", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("centrifugo: запрос: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", p.key)
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("centrifugo: unsubscribe %s: %w", channel, err)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	if resp.StatusCode/100 != 2 {
+		return fmt.Errorf("centrifugo: unsubscribe %s: HTTP %d", channel, resp.StatusCode)
+	}
+	return nil
+}
+
 // Client — подключение в канале: кто и с какой меткой подписки.
 type Client struct {
 	User string

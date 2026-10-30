@@ -316,8 +316,26 @@ func bindRealtime(app core.App, pub *centrifugo.Publisher, observe func(error), 
 	})
 	app.OnRecordAfterDeleteSuccess().BindFunc(func(e *core.RecordEvent) error {
 		publish(realtime.EventDelete, e.Record)
+		user, channels := realtime.Revoked(recordAdapter{e.Record})
+		revoke(pub, user, channels, timeout, log)
 		return e.Next()
 	})
+}
+
+// revoke снимает подписки, право на которые пропало вместе с записью (D11).
+func revoke(pub *centrifugo.Publisher, user string, channels []string, timeout time.Duration, log *slog.Logger) {
+	if user == "" {
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		for _, ch := range channels {
+			if err := pub.Unsubscribe(ctx, user, ch); err != nil {
+				log.Warn("centrifugo: снятие подписки", "channel", ch, "err", err)
+			}
+		}
+	}()
 }
 
 // broadcastPayload — публикация изменения записи: то, что получает клиент из

@@ -101,6 +101,16 @@ func own(ownerField string) Rules {
 	return same(authed + ` && ` + ownerField + ` = @request.auth.id`)
 }
 
+// locationChannel — канал геопозиции свой: `pair_<a>_<b>` с твоим uid или
+// id твоей группы.
+const locationChannel = `(channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`
+
+// locationView — своя точка или точка из канала, где у тебя тоже есть
+// запись. Оба условия на `mine` стоят под `?=` одного псевдонима и потому
+// относятся к одной записи: запись в другом канале не открывает этот.
+const locationView = authed + ` && ` + locationChannel + ` && (user_uid = @request.auth.id || ` +
+	`(@collection.live_location:mine.channel ?= channel && @collection.live_location:mine.user_uid ?= @request.auth.id))`
+
 // Collections — правила форка. Коллекции, которых здесь нет, не создаются
 // (их нет и в схеме форка, см. migrations.Dropped).
 var Collections = map[string]Rules{
@@ -213,11 +223,17 @@ var Collections = map[string]Rules{
 	// §2): createRule проверял только автора. Теперь канал обязан быть своим;
 	// что `pair_a_b` — настоящая пара автора, проверяет страж на Go
 	// (infrastructure/pocketbase/guards.go).
+	//
+	// Взаимность (D11): чужую точку видит только тот, кто делится сам. Флаг
+	// «делюсь» — своя запись в том же канале (координаты в ней шифром, сервер
+	// их не видит): клиент заводит её при включении показа и удаляет при
+	// выключении. Тот же флаг проверяет выдача токена на `loc:`
+	// (handler.canSubscribe).
 	"live_location": {
-		List:   s(authed + ` && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
-		View:   s(authed + ` && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
-		Create: s(authed + ` && user_uid = @request.auth.id && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
-		Update: s(authed + ` && user_uid = @request.auth.id && (channel ~ @request.auth.id || @request.auth.group_ids.id ?= channel)`),
+		List:   s(locationView),
+		View:   s(locationView),
+		Create: s(authed + ` && user_uid = @request.auth.id && ` + locationChannel),
+		Update: s(authed + ` && user_uid = @request.auth.id && ` + locationChannel),
 		Delete: s(authed + ` && user_uid = @request.auth.id`),
 	},
 
