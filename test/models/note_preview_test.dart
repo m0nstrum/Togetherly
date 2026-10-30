@@ -1,7 +1,7 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/models/note_preview.dart';
+import '../support/screen_source.dart';
 
 /// Превью заметки в каталоге виджетов.
 ///
@@ -23,7 +23,7 @@ void main() {
   });
 
   test('в превью каталога нет зашитого текста заметки', () {
-    final src = File('lib/screens/widget_screen.dart').readAsStringSync();
+    final src = screenSource('lib/screens/widget_screen.dart');
     expect(
       src.contains('Купи молоко'),
       isFalse,

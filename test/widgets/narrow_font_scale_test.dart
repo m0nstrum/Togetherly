@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:love_app/screens/home/widgets/mood_picker_dialog.dart';
+import '../support/screen_source.dart';
 
 /// Крупный системный шрифт на узком экране.
 ///
@@ -69,9 +70,7 @@ void main() {
   });
 
   group('сторожа исходников', () {
-    final widgetScreen = File(
-      'lib/screens/widget_screen.dart',
-    ).readAsStringSync();
+    final widgetScreen = screenSource('lib/screens/widget_screen.dart');
 
     test('превью каталога рисуется без масштабирования шрифта', () {
       expect(
