@@ -5,14 +5,11 @@ import '../fork/identity.dart'; // fork: полное имя класса вид
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../widgets/note_editor_sheet.dart';
 import '../widgets/mood_image.dart';
 import '../widgets/storage_image.dart';
-import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import '../theme/fonts.dart';
 import 'package:home_widget/home_widget.dart';
@@ -22,7 +19,6 @@ import '../services/widget_anim_service.dart';
 import '../services/plus_service.dart';
 import '../services/ui_prefs.dart';
 import '../dict_strings.dart' show ruEn, trKey, zhForEnglishIfZh;
-import '../models/countdown_widget.dart';
 import '../models/widget_panels.dart';
 import '../widgets/miss_widget_card.dart';
 import '../widgets/together_track_card.dart';
@@ -58,11 +54,8 @@ import '../services/mood_notification_service.dart';
 import '../services/mood_service.dart';
 
 import '../models/canvas_meta.dart';
-import '../services/canvas/canvas_widget_service.dart';
-import '../services/canvas_repository.dart';
 import '../services/canvas_storage_service.dart';
 import '../services/mascot_service.dart';
-import '../widgets/draw/canvas_preview.dart';
 import '../services/timer_service.dart';
 import '../services/widget_rotation.dart';
 import '../services/widget_service.dart';
@@ -70,7 +63,6 @@ import '../theme/app_theme.dart';
 import '../theme/profile_theme.dart';
 import '../widgets/common/m3_loading.dart';
 import '../widgets/pair_preview_divider.dart';
-import '../models/mood_widget_payload.dart';
 import 'home/widgets/mood_picker_dialog.dart';
 import 'home/widgets/photo_day_carousel_editor.dart';
 import 'home/widgets/memory_photo_picker.dart';
@@ -90,6 +82,7 @@ import 'widget_screen/preview_style.dart';
 import 'widget_screen/previews_time.dart';
 import 'widget_screen/previews_pair.dart';
 import 'widget_screen/previews_misc.dart';
+import 'widget_screen/widget_data_sync.dart';
 
 /// Экран виджетов — два тайла (мой / партнёра) + настройки автоотправки.
 class WidgetScreen extends StatefulWidget {
@@ -399,7 +392,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           _missCounts = counts;
           _missYouCount = counts.values.fold<int>(0, (s, v) => s + v);
         });
-        unawaited(_syncMissWidget());
+        unawaited(_sync.miss());
       }
     });
   }
@@ -1097,49 +1090,7 @@ class _WidgetScreenState extends State<WidgetScreen>
         );
       }
 
-      // Save next_bind_group so Kotlin picks it up on first onUpdate.
-      // 'streak' uses global keys (not per-group binding) — skip it, otherwise
-      // the default switch branch would wrongly hijack the timer binding.
-      if (widgetType != null &&
-          !widgetType.startsWith('photo_day') &&
-          widgetType != 'streak') {
-        final realType = widgetType;
-        final bindTypeKey = switch (realType) {
-          // Оба оформления заметки — один и тот же виджет, отличается только
-          // стиль: он и уходит отдельным ключом.
-          'note' || 'note_paper' => 'note',
-          'petal_timer' => 'petal_timer',
-          'days_counter' => 'days_counter',
-          'mood' => 'mood',
-          'stats' || 'relationship_stats' => 'stats',
-          // Новый каталог: Kotlin ждёт together_/miss_. Без этих веток
-          // привязка уходила в timer_next_bind_group и перехватывала группу
-          // у виджета «Таймер», а сами новые виджеты оставались без группы.
-          'together' => 'together',
-          'miss' => 'miss',
-          'year_ring' => 'year_ring',
-          'mascot' => 'mascot',
-          'canvas' => 'canvas',
-          'year_grid' => 'year_grid',
-          'map' => 'map',
-          // Парный виджет тоже помнит свою связь: до 04.09.2026 он один на все
-          // пары показывал ту, что открыта в приложении последней. Ключ зовётся
-          // по ТИПУ виджета (`pair_next_bind_group`) — его и ищет
-          // WidgetGroupHelper, — а сами данные лежат под `love_<пара>_<поле>`.
-          'pair' => 'pair',
-          _ => 'timer', // 'timer' and others
-        };
-        await HomeWidget.saveWidgetData<String>(
-          '${bindTypeKey}_next_bind_group',
-          _pair.pairId,
-        );
-        if (bindTypeKey == 'note') {
-          await HomeWidget.saveWidgetData<String>(
-            'note_next_style',
-            realType == 'note_paper' ? 'paper' : 'm3',
-          );
-        }
-      }
+      await _sync.saveBindGroup(widgetType);
 
       await _pinConfirmation.request(
         ForkIdentity.widgetClass(className),
@@ -1180,7 +1131,7 @@ class _WidgetScreenState extends State<WidgetScreen>
           _pair.pairId,
         );
         // Немедленно записать актуальные данные в виджет
-        await _syncWidgetDataAfterPin(widgetType);
+        await _sync.afterPin(widgetType);
         if (widgetType.startsWith('photo_day')) {
           await _loadPhotoDayWidgets();
         }
@@ -1192,238 +1143,6 @@ class _WidgetScreenState extends State<WidgetScreen>
         AppSnack.error(context, ForkFailure.of(e).text);
       }
     }
-  }
-
-  /// Сразу после пина записывает данные текущей группы в виджет.
-  Future<void> _syncWidgetDataAfterPin(String widgetType) async {
-    final hws = HomeWidgetService.instance;
-    switch (widgetType) {
-      case 'days_counter':
-        // Используем тот же алгоритм выбора таймера, что и Timer-виджет,
-        // чтобы Days Counter всегда показывал дни того же таймера.
-        final activeTimer = await hws.resolveActiveTimerPublic(
-          _timerService.timers,
-          _pair.pairId,
-        );
-        final timer =
-            activeTimer ??
-            _timerService.systemTimer ??
-            _timerService.defaultTimer;
-        final start = timer?.startDate ?? _pair.startDate;
-        final emoji = timer?.emoji ?? _pair.relationshipEmoji;
-        final days = timer != null
-            ? timer.daysElapsed.abs()
-            : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-        final startLabel = start != null
-            ? '${start.day.toString().padLeft(2, '0')}.${start.month.toString().padLeft(2, '0')}.${start.year}'
-            : '';
-        final names = _pair.partnerName.isNotEmpty ? _pair.partnerName : '';
-        await hws.syncDaysCounter(
-          groupId: _pair.pairId,
-          daysCount: days,
-          coupleNames: names,
-          emoji: emoji,
-          startDate: startLabel,
-          start: start,
-          myGender: widget.userData.gender?.name ?? '',
-          partnerGender: _ws.firstPartnerData?.gender ?? '',
-        );
-        break;
-      case 'miss':
-        await _syncMissWidget();
-        break;
-      case 'together':
-        // Дни — из активного таймера, как и у остальных счётчиков.
-        final timer = _timerService.defaultTimer ?? _timerService.systemTimer;
-        final start = timer?.startDate ?? _pair.startDate;
-        final days = timer != null
-            ? timer.daysElapsed.abs()
-            : (start != null ? calendarDaysBetween(start, DateTime.now()) : 0);
-        final startLabel = start == null
-            ? ''
-            : _s.tgYearSince('${_s.dayLogDate(start)} ${start.year}');
-        final myName = widget.userData.displayName.trim();
-        final partnerName = _pair.partnerDisplayName.trim();
-        final anniversary = start == null ? '' : _s.dayLogDate(start);
-        await hws.syncTogether(
-          groupId: _pair.pairId,
-          days: days,
-          startDate: startLabel,
-          start: start,
-          myInitial: myName.isEmpty
-              ? ''
-              : myName.characters.first.toUpperCase(),
-          partnerInitial: partnerName.isEmpty
-              ? ''
-              : partnerName.characters.first.toUpperCase(),
-          names: [myName, partnerName].where((n) => n.isNotEmpty).join(' + '),
-          anniversary: anniversary,
-          myAvatarUrl: widget.userData.avatarUrl,
-          partnerAvatarUrl: _pair.partnerAvatarUrl,
-        );
-        break;
-      case 'timer':
-      case 'petal_timer':
-        final timer = _widgetTimer;
-        if (timer != null) await hws.syncTimer(timer, groupId: _pair.pairId);
-        break;
-      case 'photo_day_self':
-      case 'photo_day_partner':
-      case 'photo_day':
-        // Ждём, пока система зарегистрирует новый виджет (requestPinWidget возвращает
-        // управление сразу, а ID появляется только когда пользователь бросает виджет
-        // на рабочий стол). Без задержки новый виджет ещё не виден в getPhotoDayWidgetIds.
-        await Future<void>.delayed(const Duration(milliseconds: 1500));
-        final ids = await hws.getPhotoDayWidgetIds();
-        // Передаём kind явно, чтобы не было race condition когда Kotlin ещё
-        // не записал kind='partner' в SharedPreferences через assignConfig().
-        final partnerIds = (await hws.getPartnerPhotoWidgetIds()).toSet();
-        for (final widgetId in ids) {
-          final widgetGroupId = await hws.getPhotoDayWidgetGroupId(widgetId);
-          // For solo mode, sync widgets without group or with empty group
-          final shouldSync = _pair.pairId.isEmpty
-              ? (widgetGroupId == null || widgetGroupId.isEmpty)
-              : (widgetGroupId == _pair.pairId || widgetGroupId == null);
-          if (shouldSync) {
-            await hws.refreshPhotoOfDay(
-              _pair.pairId,
-              widgetId: widgetId,
-              overrideKind: partnerIds.contains(widgetId) ? 'partner' : null,
-            );
-          }
-        }
-        if (ids.isEmpty) {
-          await hws.refreshPhotoOfDay(_pair.pairId);
-        }
-        break;
-      case 'photo_grid':
-        // Photo grid requires a group (partner), skip for solo mode
-        if (_pair.pairId.isNotEmpty) {
-          await hws.refreshPhotoGrid(_pair.pairId);
-        }
-        break;
-      case 'mood_tiles':
-        await _syncMoodTilesWidget();
-        break;
-      case 'countdown':
-        await _syncCountdownWidget();
-        break;
-      case 'pair':
-        // Парный виджет синхронизируется WidgetService
-        break;
-      case 'mood':
-        // Ждём, пока система зарегистрирует новый виджет перед синхронизацией.
-        await Future<void>.delayed(const Duration(milliseconds: 1500));
-        // Синхронизируем из Mood Calendar за сегодня
-        {
-          final today = DateTime.now();
-          final myEntries = _moodService.myEntriesForDay(today);
-          final myEntry = myEntries.isNotEmpty ? myEntries.first : null;
-          final partnerUid = _pair.partners.isNotEmpty
-              ? _pair.partners.first.uid
-              : '';
-          final partnerEntries = partnerUid.isNotEmpty
-              ? _moodService.partnerEntriesForDay(partnerUid, today)
-              : <MoodEntry>[];
-          final partnerEntry = partnerEntries.isNotEmpty
-              ? partnerEntries.first
-              : null;
-          // Записи за сегодня главнее, иначе последнее известное настроение из
-          // widget_data — то же правило, что на главном экране; см.
-          // moodHalfPayload.
-          final mine = moodHalfPayload(
-            entry: myEntry,
-            widgetMoodEmoji: _ws.myData?.moodEmoji ?? '',
-            widgetMoodLabel: _ws.myData?.moodLabel ?? '',
-            gender: widget.userData.gender?.name ?? '',
-          );
-          final theirs = moodHalfPayload(
-            entry: partnerEntry,
-            widgetMoodEmoji: _ws.firstPartnerData?.moodEmoji ?? '',
-            widgetMoodLabel: _ws.firstPartnerData?.moodLabel ?? '',
-            gender: _ws.firstPartnerData?.gender ?? '',
-          );
-          await hws.syncMood(
-            groupId: _pair.pairId,
-            moodEmojiAssetPath: mine.imagePath,
-            moodLabel: mine.label,
-            moodScore: mine.score,
-            moodColor: mine.colorHex,
-            userName: _ws.myData?.displayName ?? '',
-            partnerMoodEmojiAssetPath: theirs.imagePath,
-            partnerMoodLabel: theirs.label,
-            partnerMoodColor: theirs.colorHex,
-            partnerMoodScore: theirs.score,
-            partnerUserName: _pair.partnerName,
-            noMoodText: _s.noMoodRecorded,
-            nameFallbackMe: _s.me,
-            nameFallbackPartner: _s.partner,
-            ratingPrefix: _s.moodScorePrefix,
-          );
-        }
-        break;
-      case 'relationship_stats':
-        // «Дни вместе» от ОСНОВНОГО (дефолтного) таймера — как Days Counter и
-        // круг; системный таймер хранит дату пары (≈сегодня) → давал бы 0.
-        final relTimer =
-            _timerService.defaultTimer ?? _timerService.systemTimer;
-        final start = relTimer?.startDate ?? _pair.startDate;
-        await hws.syncRelationshipStats(
-          groupId: _pair.pairId,
-          daysTogether: start != null
-              ? calendarDaysBetween(start, DateTime.now())
-              : 0,
-          memoriesCount: _memoriesCount ?? 0,
-          drawingsCount: _drawingsCount ?? 0,
-          missYouCount: _missYouCount ?? 0,
-          daysLabel: LocaleService.current.daysTogetherStat,
-          memoriesLabel: LocaleService.current.memoriesStat,
-          drawingsLabel: LocaleService.current.drawingsStat,
-          missYouLabel: LocaleService.current.missYousStat,
-        );
-        break;
-      case 'map':
-        // Картинка нарисуется, когда виджет встанет на стол: лончер разбудит
-        // Dart. Здесь — имена, аватарки и тема для фоновой отрисовки.
-        await PairMapWidgetService.instance.refreshFromApp(
-          groupId: _pair.pairId,
-          myUid: widget.userData.uid,
-          partnerUid: _pair.partnerUid,
-          myName: widget.userData.displayName,
-          partnerName: _pair.partnerDisplayName,
-          myAvatarUrl: widget.userData.avatarUrl,
-          partnerAvatarUrl: _pair.partnerAvatarUrl,
-          theme: _t,
-        );
-        break;
-      case 'year_ring':
-      case 'year_grid':
-        await _syncYearWidgets();
-        break;
-      case 'mascot':
-        // Кадры режет сервис маскота: у него и персонаж, и серия, и окно сна.
-        widget.mascotService.resyncStreakWidget();
-        break;
-      case 'canvas':
-        await _syncCanvasWidget();
-        break;
-    }
-  }
-
-  /// Данные «Кольца года» и «Календаря лет».
-  ///
-  /// Дата начала — от основного таймера, как у остальных счётчиков: системный
-  /// таймер держит дату регистрации пары и дал бы почти нулевой стаж.
-  Future<void> _syncYearWidgets() async {
-    final start = _togetherStart();
-    await HomeWidgetService.instance.syncYearWidgets(
-      groupId: _pair.pairId,
-      start: start,
-      memoriesCount: _memoriesCount ?? 0,
-      startDateLabel: start == null
-          ? ''
-          : _s.tgYearSince(_ps.formatDate(start)),
-    );
   }
 
   @override
@@ -2352,29 +2071,10 @@ class _WidgetScreenState extends State<WidgetScreen>
       );
       if (!mounted) return;
       setState(() => _canvases = list);
-      await _syncCanvasWidget();
+      await _sync.canvas();
     } catch (e) {
       debugPrint('widget_screen: холсты не загрузились — $e');
     }
-  }
-
-  Future<void> _syncCanvasWidget() async {
-    if (_canvases.isEmpty) return;
-    await CanvasWidgetService.instance.publish(
-      groupId: _pair.pairId,
-      canvases: _canvases,
-      activeId: _canvases.first.id,
-      strokesOf: (meta) => _pair.pairId.isEmpty
-          ? CanvasStorageService.instance.loadLocalStrokes(
-              widget.userData.uid,
-              meta.id,
-            )
-          : CanvasRepository.instance.previewStrokes(
-              _pair.pairId,
-              meta.id,
-              limit: kPreviewStrokeLimit,
-            ),
-    );
   }
 
   /// Маскот на столе: пиксельный персонаж пары в четырёх размерах.
@@ -2744,6 +2444,25 @@ class _WidgetScreenState extends State<WidgetScreen>
     anniversary: _pair.anniversaryDate,
   );
 
+  /// Запись данных в виджеты рабочего стола — по свежему снимку экрана.
+  WidgetDataSync get _sync => WidgetDataSync(
+    user: widget.userData,
+    pair: _pair,
+    ws: _ws,
+    moods: _moodService,
+    timers: _timerService,
+    mascot: _mascotService,
+    theme: _t,
+    ps: _ps,
+    widgetTimer: _widgetTimer,
+    togetherStart: _togetherStart(),
+    memoriesCount: _memoriesCount,
+    drawingsCount: _drawingsCount,
+    missYouCount: _missYouCount,
+    missCounts: _missCounts,
+    canvases: _canvases,
+  );
+
   int _togetherDays() =>
       coupleDaysTogether(
         timerStart: (_timerService.defaultTimer ?? _timerService.systemTimer)
@@ -2801,85 +2520,6 @@ class _WidgetScreenState extends State<WidgetScreen>
     memoriesCount: _memoriesCount,
     small: false,
   );
-
-  /// Отдаём виджету «Настроение» сегодняшние отметки обоих и неделю.
-  ///
-  /// Неделя — семь пар «моё/партнёра» в процентах высоты столбика. Балл
-  /// настроения в приложении от 1 до 5, поэтому переводим его в проценты;
-  /// день без отметки уезжает как -1 и рисуется пустой подложкой, а не нулём:
-  /// «не отмечался» и «было плохо» — разные вещи.
-  Future<void> _syncMoodTilesWidget() async {
-    final today = DateTime.now();
-    final partnerUid = _pair.partnerUid;
-
-    MoodEntry? entryOf(List<MoodEntry> list) =>
-        list.isNotEmpty ? list.first : null;
-
-    int percentOf(MoodEntry? e) =>
-        e == null ? -1 : (((e.score - 1) / 4) * 80 + 20).round().clamp(20, 100);
-
-    final week = <List<int>>[];
-    var matched = 0;
-    // От понедельника этой недели к воскресенью.
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-    for (var i = 0; i < 7; i++) {
-      final day = DateTime(monday.year, monday.month, monday.day + i);
-      final mine = entryOf(_moodService.myEntriesForDay(day));
-      final theirs = partnerUid.isEmpty
-          ? null
-          : entryOf(_moodService.partnerEntriesForDay(partnerUid, day));
-      week.add([percentOf(mine), percentOf(theirs)]);
-      if (mine != null && theirs != null && mine.score == theirs.score) {
-        matched++;
-      }
-    }
-
-    final myToday = entryOf(_moodService.myEntriesForDay(today));
-    final partnerToday = partnerUid.isEmpty
-        ? null
-        : entryOf(_moodService.partnerEntriesForDay(partnerUid, today));
-
-    await HomeWidgetService.instance.syncMoodTiles(
-      groupId: _pair.pairId,
-      myLabel: myToday == null ? '' : myToday.labelFor(MoodGenders.mine),
-      myMoodId: myToday?.moodId ?? '',
-      partnerLabel: partnerToday == null
-          ? ''
-          : partnerToday.labelFor(_partnerGender),
-      partnerName: _pair.partnerDisplayName.trim(),
-      week: week,
-      matchedDays: matched,
-    );
-  }
-
-  /// Отдаём виджету «До встречи» ближайшие обратные отсчёты. Остаток виджет
-  /// считает сам; полоса идёт от даты пары.
-  Future<void> _syncCountdownWidget() async {
-    await HomeWidgetService.instance.syncCountdownEvents(
-      groupId: _pair.pairId,
-      events: countdownEventsFor(
-        _timerService.timers,
-        now: DateTime.now(),
-        dateLabel: _ps.formatDayMonth,
-      ),
-      from: _togetherStart(),
-    );
-  }
-
-  /// Отдаём виджету «Скучаю» свежие счётчики обоих.
-  Future<void> _syncMissWidget() async {
-    final partnerName = _pair.partnerDisplayName.trim();
-    await HomeWidgetService.instance.syncMiss(
-      groupId: _pair.pairId,
-      myCount: _missCounts[widget.userData.uid] ?? 0,
-      partnerCount: _missCounts[_pair.partnerUid] ?? 0,
-      partnerName: partnerName,
-      partnerInitial: partnerName.isEmpty
-          ? ''
-          : partnerName.characters.first.toUpperCase(),
-      partnerAvatarUrl: _pair.partnerAvatarUrl,
-    );
-  }
 
   Widget _buildGalleryItem({
     required String title,
