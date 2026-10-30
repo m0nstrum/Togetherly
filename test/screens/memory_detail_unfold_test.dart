@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/screen_source.dart';
+
 /// Запись из ленты открывается переходом «экран вырастает из карточки»
 /// (макет https://claude.ai/artifact/Ssgdjfc37xm7TigCWy6NGC, вариант А).
 ///
@@ -10,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// карточке и на экране записи обязаны совпадать. Разъедутся — обложка просто
 /// перестанет лететь, без единой ошибки.
 void main() {
-  final feed = File('lib/screens/memory_lane_screen.dart').readAsStringSync();
+  final feed = screenSource('lib/screens/memory_lane_screen.dart');
   final detail = File('lib/screens/memory_lane/detail.dart').readAsStringSync();
 
   Set<String> tags(String source) => RegExp(
