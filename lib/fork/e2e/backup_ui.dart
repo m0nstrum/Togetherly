@@ -228,6 +228,7 @@ class _ForkE2EBackupScreenState extends State<ForkE2EBackupScreen> {
 
   Future<void> _pickPhrase() async {
     final words = await ForkE2E.wordlist();
+    if (!mounted) return;
     setState(() {
       _method = BackupMethod.phrase;
       _phrase = RecoveryPhrase.generate(_svc.crypto, words);
@@ -545,8 +546,10 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       await _svc.restore(secret);
       if (mounted) Navigator.of(context).maybePop();
     } on FormatException catch (e) {
+      if (!mounted) return;
       setState(() => _error = _formatError(e));
     } on E2EVerifyError {
+      if (!mounted) return;
       setState(
         () => _error = _t(
           'Не подошло — проверьте фразу или пароль',
@@ -555,6 +558,7 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
       );
     } catch (e) {
       // Сеть, сервер: фраза верная, просто повторить (UX_AUDIT A5).
+      if (!mounted) return;
       setState(() => _error = ForkFailure.of(e).text);
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -606,7 +610,7 @@ class _ForkE2ERestoreScreenState extends State<ForkE2ERestoreScreen> {
         ],
       ),
     );
-    if (ok != true) return;
+    if (ok != true || !mounted) return;
     setState(() => _busy = true);
     try {
       await _svc.startFresh();

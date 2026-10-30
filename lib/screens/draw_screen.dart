@@ -3189,6 +3189,7 @@ class _DrawScreenState extends State<DrawScreen>
         '${dir.path}/fill_${DateTime.now().millisecondsSinceEpoch}.png',
       );
       await file.writeAsBytes(png.buffer.asUint8List());
+      if (!mounted) return;
 
       final id = 'fill_${DateTime.now().millisecondsSinceEpoch}_$_orderCounter';
       final stroke = DrawStroke(

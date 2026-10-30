@@ -71,6 +71,7 @@ class _SnapCaptureScreenState extends State<SnapCaptureScreen>
   Future<void> _start() async {
     try {
       _cameras = await availableCameras();
+      if (!mounted) return;
       if (_cameras.isEmpty) {
         setState(() => _failed = true);
         return;

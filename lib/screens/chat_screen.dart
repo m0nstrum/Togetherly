@@ -1922,7 +1922,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       return;
     }
-    if (action != 'change') return;
+    if (action != 'change' || !mounted) return;
 
     final ud = widget.userData;
     if (ud == null) return;

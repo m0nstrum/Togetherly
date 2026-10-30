@@ -962,7 +962,8 @@ class _MemoryPhotoFormScreenState extends State<MemoryPhotoFormScreen> {
         ),
       ),
     );
-    if (value != null) setState(() => ctrl.text = value);
+    if (value == null || !mounted) return;
+    setState(() => ctrl.text = value);
   }
 
   /// Убрать кадр из записи — по общему ряду: сперва прежние, затем новые.

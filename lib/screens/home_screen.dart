@@ -3152,6 +3152,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const Duration(seconds: 3),
       onTimeout: () => (lat: null, lng: null, name: null),
     );
+    if (!mounted) return;
 
     // Show loading
     showDialog(

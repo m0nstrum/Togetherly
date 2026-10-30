@@ -120,7 +120,7 @@ class _PairBookScreenState extends State<PairBookScreen> {
       lastDate: DateTime(now.year, now.month, now.day),
       initialDateRange: _custom,
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     setState(() {
       _custom = picked;
       _period = BookPeriod.custom;

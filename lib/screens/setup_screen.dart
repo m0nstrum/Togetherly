@@ -100,6 +100,7 @@ class _SetupScreenState extends State<SetupScreen>
 
   void _goToStep(int step) {
     _fadeController.reverse().then((_) {
+      if (!mounted) return;
       setState(() => _step = step);
       _fadeController.forward();
     });

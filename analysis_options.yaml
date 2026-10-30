@@ -12,6 +12,11 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+  errors:
+    # Аудит B-5: context после await без проверки mounted роняет снятый экран.
+    # Для setState такого линта нет — его стережёт
+    # test/screens/set_state_after_await_test.dart.
+    use_build_context_synchronously: error
 include: package:flutter_lints/flutter.yaml
 
 linter:
