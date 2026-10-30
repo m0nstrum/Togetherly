@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # Значения идут через env, а не подстановкой в скрипт: так их нельзя
       # превратить в команду оболочки.
@@ -58,7 +58,8 @@ jobs:
             '(input) + {PB_URL: $pb, CENTRIFUGO_WS: $ws, SITE_URL: $site,
               SUPPORT_EMAIL: $mail, SENTRY_DSN: $dsn, RELEASES_URL: $rel}' \
             env/example.json > env/release.local.json
-          cat env/release.local.json
+          # Только ключи: значения (DSN Sentry, адреса) в публичный лог не печатаем (CI-6).
+          jq -r 'keys[]' env/release.local.json
 
       # Без ключа не собираем: debug-ключ у каждого раннера свой, и следующая
       # сборка не встанет поверх установленной.
@@ -104,12 +105,12 @@ jobs:
             exit 1
           }
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -154,7 +155,7 @@ jobs:
           fi
           grep 'SHA-256' <<< "$certs"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ steps.build.outputs.tag }}
           path: ${{ steps.build.outputs.apk }}

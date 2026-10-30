@@ -78,7 +78,7 @@
 | A14b | i18n: `locale_service.dart`/`strings_*`/`ruEn(...)` → ARB + gen_l10n; сначала инфраструктура и одна область, потом по областям | P3 | ⏳ трогает экраны — в тихое окно |
 | A14c | Go-тесты `groupops`, `pethome` | P3 | ⏳ можно сразу |
 | A14d | JS-хуки апстрима (~3 тыс. строк) → Go, по хуку на PR, с тестами | P3 | ⏳ после A14c |
-| A14e | Dependabot (pub, gomod, actions) + пиннинг actions по SHA; CI-6 | P3 | ⏳ можно сразу |
+| A14e | Dependabot (pub, gomod, actions) + пиннинг actions по SHA; CI-6 | P3 | ✅ `.github/dependabot.yml` (раз в неделю, minor/patch группой; actions — раз в месяц); все `uses:` — на SHA с `# vN`; релиз печатает только ключи `release.local.json`; страж `test/config/actions_pinned_test.dart` |
 | A14f | Деплой-скрипт с откатом на прошлый `sha-…` и проверкой здоровья | P3 | ⏳ можно сразу |
 
 ## Хвосты этапа форка
