@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:love_app/models/pair_data.dart';
 import 'package:love_app/models/timer_item.dart';
 import 'package:love_app/models/year_progress.dart';
 import 'package:love_app/screens/widget_screen/preview_style.dart';
+import 'package:love_app/screens/widget_screen/previews_pair.dart';
 import 'package:love_app/screens/widget_screen/previews_time.dart';
 import 'package:love_app/services/locale_service.dart';
+import 'package:love_app/services/timer_service.dart';
+import 'package:love_app/theme/app_palettes.dart';
 import 'package:love_app/services/widget_theme_sync.dart';
 
 void main() {
@@ -89,6 +93,32 @@ void main() {
       await pump(tester, Countdown2x2Preview(ps: ps, nextEvent: event));
       expect(find.text('10'), findsOneWidget);
       expect(find.textContaining('Отпуск'), findsOneWidget);
+    });
+    testWidgets('статистика пары — числа экрана, пустые — нулём', (
+      tester,
+    ) async {
+      final t = buildAppTheme(kPalettes[0], Brightness.light);
+      Widget stats({int? memories, int? drawings, int? miss}) =>
+          RelationshipStatsPreview(
+            t: t,
+            drawingsCount: drawings,
+            memoriesCount: memories,
+            missYouCount: miss,
+            pair: PairData(),
+            timerService: TimerService(),
+          );
+      await pump(tester, stats(memories: 7, drawings: 3, miss: 12));
+      for (final v in ['7', '3', '12']) {
+        expect(find.text(v), findsOneWidget, reason: v);
+      }
+      await pump(tester, stats());
+      expect(find.text('0'), findsNWidgets(4), reason: 'дни и три счётчика');
+    });
+
+    testWidgets('лепестковый таймер без таймера не падает', (tester) async {
+      final t = buildAppTheme(kPalettes[0], Brightness.light);
+      await pump(tester, PetalTimerPreview(t: t, widgetTimer: null));
+      expect(tester.takeException(), isNull);
     });
   });
 }

@@ -24,7 +24,6 @@ import '../services/ui_prefs.dart';
 import '../dict_strings.dart' show ruEn, trKey, zhForEnglishIfZh;
 import '../models/countdown_widget.dart';
 import '../models/note_preview.dart';
-import '../models/together_milestones.dart';
 import '../models/widget_panels.dart';
 import '../widgets/miss_widget_card.dart';
 import '../widgets/together_track_card.dart';
@@ -34,7 +33,6 @@ import '../services/map/pair_map_widget_service.dart';
 import '../widgets/map/pair_map_widget_preview.dart';
 import 'plus_screen.dart';
 import '../utils/couple_days.dart';
-import '../widgets/avatar_widget.dart';
 import '../utils/safe_pick.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../logic/photo_day_widget_logic.dart';
@@ -83,8 +81,6 @@ import '../services/widget_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/profile_theme.dart';
 import '../widgets/common/m3_loading.dart';
-import '../widgets/petal_timer_dial.dart';
-import '../widgets/mood_hearts_preview.dart';
 import '../widgets/pair_preview_divider.dart';
 import '../models/mood_widget_payload.dart';
 import 'home/widgets/mood_picker_dialog.dart';
@@ -104,6 +100,7 @@ import 'widget_screen/controls.dart';
 import 'widget_screen/preview_parts.dart';
 import 'widget_screen/preview_style.dart';
 import 'widget_screen/previews_time.dart';
+import 'widget_screen/previews_pair.dart';
 
 /// Экран виджетов — два тайла (мой / партнёра) + настройки автоотправки.
 class WidgetScreen extends StatefulWidget {
@@ -1864,7 +1861,7 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.widgetPetalTimerSubtitle,
     svgString: _timerSvg,
     qualifiedName: 'com.togetherly.love.PetalTimerWidgetProvider',
-    preview: _buildPetalTimerPreview(),
+    preview: PetalTimerPreview(t: _t, widgetTimer: _widgetTimer),
     widgetType: 'petal_timer',
     expandedContent: _buildTimerSelector(),
     isExpanded: _petalTimerWidgetExpanded,
@@ -1877,7 +1874,12 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.moodWidgetSubtitle,
     svgString: _moodSvg,
     qualifiedName: 'com.togetherly.love.MoodWidgetProvider',
-    preview: _buildMoodPreview(),
+    preview: MoodPreview(
+      t: _t,
+      moodService: _moodService,
+      pair: _pair,
+      ws: _ws,
+    ),
     widgetType: 'mood',
   );
 
@@ -1887,7 +1889,14 @@ class _WidgetScreenState extends State<WidgetScreen>
     subtitle: LocaleService.current.relationshipStatsSubtitle,
     svgString: _statsSvg,
     qualifiedName: 'com.togetherly.love.RelationshipStatsWidgetProvider',
-    preview: _buildRelationshipStatsPreview(),
+    preview: RelationshipStatsPreview(
+      t: _t,
+      drawingsCount: _drawingsCount,
+      memoriesCount: _memoriesCount,
+      missYouCount: _missYouCount,
+      pair: _pair,
+      timerService: _timerService,
+    ),
     widgetType: 'relationship_stats',
   );
 
@@ -1973,183 +1982,46 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.TogetherWidget2x2Provider',
-        previewBuilder: () => _togetherPreview(TogetherCardSize.small),
+        previewBuilder: () => TogetherPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          pair: _pair,
+          togetherDays: _togetherDays(),
+          togetherStart: _togetherStart(),
+          size: TogetherCardSize.small,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.TogetherWidget4x2Provider',
-        previewBuilder: () => _togetherPreview(TogetherCardSize.medium),
+        previewBuilder: () => TogetherPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          pair: _pair,
+          togetherDays: _togetherDays(),
+          togetherStart: _togetherStart(),
+          size: TogetherCardSize.medium,
+        ),
       ),
       WidgetSizeOption(
         label: '4×4',
         hint: _s.tgSizeHintLarge,
         qualifiedName: 'com.togetherly.love.TogetherWidget4x4Provider',
-        previewBuilder: () => _togetherPreview(TogetherCardSize.large),
+        previewBuilder: () => TogetherPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          pair: _pair,
+          togetherDays: _togetherDays(),
+          togetherStart: _togetherStart(),
+          size: TogetherCardSize.large,
+        ),
       ),
     ],
   );
-
-  /// Превью «Вместе» для каталога: тот же растр и та же дорожка, что рисует
-  /// натив, и те же вехи — считает их общая модель, а не экран.
-  Widget _togetherPreview(TogetherCardSize size) {
-    final start = _togetherStart();
-    final days = _togetherDays();
-    final track = start == null
-        ? null
-        : milestoneTrack(
-            start: start,
-            today: DateTime.now(),
-            anniversary: _pair.anniversaryDate,
-          );
-    final labels = track == null
-        ? null
-        : trackLabels(
-            track,
-            LocaleService.current,
-            LocaleService.current.dayLogDate,
-          );
-
-    Widget face(String uid, String url, String name, Color bg, Color fg) =>
-        Container(
-          decoration: BoxDecoration(
-            color: bg,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: size == TogetherCardSize.large
-                  ? _ps.wr('surface')
-                  : _ps.wr('primary'),
-              width: 2,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          alignment: Alignment.center,
-          child: url.isNotEmpty
-              ? AvatarWidget(
-                  uid: uid,
-                  liveUrl: url,
-                  name: name,
-                  size: 30,
-                  primary: bg,
-                )
-              : Text(
-                  _ps.initialOf(name),
-                  style: TextStyle(
-                    fontFamily: 'Onest',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: fg,
-                  ),
-                ),
-        );
-
-    return AspectRatio(
-      aspectRatio: switch (size) {
-        TogetherCardSize.small => 1,
-        TogetherCardSize.medium => 338 / 158,
-        TogetherCardSize.large => 1,
-      },
-      child: TogetherTrackCard(
-        size: size,
-        days: days,
-        daysLabel: LocaleService.current.tgDaysTogetherCaption(days),
-        percent: track?.percent ?? 0,
-        roles: WidgetThemeSync.rolesOf(_cs),
-        startDate: start == null
-            ? ''
-            : 'С ${LocaleService.current.dayLogDate(start)} ${start.year}',
-        names: [
-          widget.userData.displayName.trim(),
-          _pair.partnerDisplayName.trim(),
-        ].where((n) => n.isNotEmpty).join(' + '),
-        previousTitle: labels?.previousTitle ?? '',
-        previousSub: labels?.previousSub ?? '',
-        todayTitle: labels?.todayTitle ?? '',
-        todaySub: labels?.todaySub ?? '',
-        nextTitle: labels?.nextTitle ?? '',
-        nextSub: labels?.nextSub ?? '',
-        anniversaryTitle: labels?.anniversaryTitle ?? '',
-        anniversarySub: labels?.anniversarySub ?? '',
-        myAvatar: face(
-          widget.userData.uid,
-          widget.userData.avatarUrl,
-          widget.userData.displayName,
-          _ps.wr('avatarMine'),
-          _ps.wr('onPrimaryContainer'),
-        ),
-        partnerAvatar: face(
-          _pair.partnerUid,
-          _pair.partnerAvatarUrl,
-          _pair.partnerDisplayName,
-          _ps.wr('avatarPartner'),
-          _ps.wr('onTertiaryContainer'),
-        ),
-      ),
-    );
-  }
-
-  /// Превью «Скучаю» для каталога: тот же вид, что на рабочем столе.
-  Widget _missPreview(MissCardSize size) {
-    final myCount = _missCounts[widget.userData.uid] ?? 0;
-    final partnerCount = _missCounts[_pair.partnerUid] ?? 0;
-    final s = LocaleService.current;
-
-    Widget face(String uid, String url, String name, Color bg, Color fg) =>
-        Container(
-          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-          clipBehavior: Clip.antiAlias,
-          alignment: Alignment.center,
-          child: url.isNotEmpty
-              ? AvatarWidget(
-                  uid: uid,
-                  liveUrl: url,
-                  name: name,
-                  size: 26,
-                  primary: bg,
-                )
-              : Text(
-                  _ps.initialOf(name),
-                  style: TextStyle(
-                    fontFamily: 'Onest',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: fg,
-                  ),
-                ),
-        );
-
-    return AspectRatio(
-      aspectRatio: switch (size) {
-        MissCardSize.small => 1,
-        MissCardSize.medium => 338 / 158,
-        MissCardSize.strip => 338 / 74,
-      },
-      child: MissWidgetCard(
-        size: size,
-        myCount: myCount,
-        partnerCount: partnerCount,
-        roles: WidgetThemeSync.rolesOf(_cs),
-        meLabel: s.tgMissMe,
-        partnerName: _pair.partnerDisplayName.trim(),
-        sendLabel: s.tgMissTitle,
-        whenLabel: s.tgMissToday,
-        myFace: face(
-          widget.userData.uid,
-          widget.userData.avatarUrl,
-          widget.userData.displayName,
-          _ps.wr('avatarMine'),
-          _ps.wr('onPrimaryContainer'),
-        ),
-        partnerFace: face(
-          _pair.partnerUid,
-          _pair.partnerAvatarUrl,
-          _pair.partnerDisplayName,
-          _ps.wr('avatarPartner'),
-          _ps.wr('onTertiaryContainer'),
-        ),
-      ),
-    );
-  }
 
   /// Перечитать заметку: её правят и отсюда, и прямо с рабочего стола.
   Future<void> _loadNote() async {
@@ -2260,19 +2132,40 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintCompact,
         qualifiedName: 'com.togetherly.love.MissWidget2x2Provider',
-        previewBuilder: () => _missPreview(MissCardSize.small),
+        previewBuilder: () => MissPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          missCounts: _missCounts,
+          pair: _pair,
+          size: MissCardSize.small,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWide,
         qualifiedName: 'com.togetherly.love.MissWidget4x2Provider',
-        previewBuilder: () => _missPreview(MissCardSize.medium),
+        previewBuilder: () => MissPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          missCounts: _missCounts,
+          pair: _pair,
+          size: MissCardSize.medium,
+        ),
       ),
       WidgetSizeOption(
         label: '4×1',
         hint: _s.tgSizeHintStrip,
         qualifiedName: 'com.togetherly.love.MissWidget4x1Provider',
-        previewBuilder: () => _missPreview(MissCardSize.strip),
+        previewBuilder: () => MissPreview(
+          cs: _cs,
+          ps: _ps,
+          userData: widget.userData,
+          missCounts: _missCounts,
+          pair: _pair,
+          size: MissCardSize.strip,
+        ),
       ),
     ],
   );
@@ -2290,13 +2183,22 @@ class _WidgetScreenState extends State<WidgetScreen>
         label: '2×2',
         hint: _s.tgSizeHintToday,
         qualifiedName: 'com.togetherly.love.MoodTilesWidget2x2Provider',
-        previewBuilder: () => _buildMoodTiles2x2Preview(),
+        previewBuilder: () => MoodTiles2x2Preview(
+          ps: _ps,
+          moodService: _moodService,
+          pair: _pair,
+          partnerGender: _partnerGender,
+        ),
       ),
       WidgetSizeOption(
         label: '4×2',
         hint: _s.tgSizeHintWeek,
         qualifiedName: 'com.togetherly.love.MoodTilesWidget4x2Provider',
-        previewBuilder: () => _buildMoodTiles4x2Preview(),
+        previewBuilder: () => MoodTiles4x2Preview(
+          ps: _ps,
+          moodService: _moodService,
+          pair: _pair,
+        ),
       ),
     ],
   );
@@ -2961,238 +2863,6 @@ class _WidgetScreenState extends State<WidgetScreen>
   double _previewWidthFactor(String? label) {
     final width = int.tryParse((label ?? '').split('×').first) ?? 4;
     return (width / 4).clamp(0.25, 1.0);
-  }
-
-  /// Превью «Настроение» 2×2: отметки обоих и три кнопки выбора.
-  Widget _buildMoodTiles2x2Preview() {
-    final today = DateTime.now();
-    final partnerUid = _pair.partnerUid;
-    final myEntry = _moodService.myEntriesForDay(today).firstOrNull;
-    final partnerEntry = partnerUid.isEmpty
-        ? null
-        : _moodService.partnerEntriesForDay(partnerUid, today).firstOrNull;
-    final partnerName = _pair.partnerDisplayName.trim();
-
-    Widget line(String text, Color dot, bool filled) => Padding(
-      padding: const EdgeInsets.only(top: 5),
-      child: Row(
-        children: [
-          Container(
-            width: 9,
-            height: 9,
-            decoration: BoxDecoration(
-              color: filled ? dot : _ps.wr('outline'),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: _ps.wr('onSurface'),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    Widget pick(IconData icon, bool active) => Expanded(
-      child: Container(
-        height: 32,
-        decoration: BoxDecoration(
-          color: active
-              ? _ps.wr('primaryContainer')
-              : _ps.wr('surfaceContainer'),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          icon,
-          size: 17,
-          color: active
-              ? _ps.wr('onPrimaryContainer')
-              : _ps.wr('onSurfaceVariant'),
-        ),
-      ),
-    );
-
-    final myId = myEntry?.moodId ?? '';
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: _ps.wr('surface'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _s.tgMoodToday,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.4,
-                color: _ps.wr('onSurfaceVariant'),
-              ),
-            ),
-            const SizedBox(height: 4),
-            line(
-              myEntry == null
-                  ? '${_s.tgMoodMe} · ${_s.tgMoodNotSet}'
-                  : '${_s.tgMoodMe} · ${myEntry.labelFor(MoodGenders.mine)}',
-              _ps.wr('primary'),
-              myEntry != null,
-            ),
-            line(
-              partnerEntry == null
-                  ? '${partnerName.isEmpty ? _s.tgMoodPartner : partnerName} · ${_s.tgMoodNotSet}'
-                  : '${partnerName.isEmpty ? _s.tgMoodPartner : partnerName} · ${partnerEntry.labelFor(_partnerGender)}',
-              _ps.wr('tertiary'),
-              partnerEntry != null,
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                pick(Icons.sentiment_very_satisfied_rounded, myId == 'happy'),
-                const SizedBox(width: 6),
-                pick(Icons.sentiment_neutral_rounded, myId == 'no_emotion'),
-                const SizedBox(width: 6),
-                pick(Icons.sentiment_dissatisfied_rounded, myId == 'sad'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Превью «Настроение» 4×2: неделя двумя рядами столбиков.
-  Widget _buildMoodTiles4x2Preview() {
-    final today = DateTime.now();
-    final partnerUid = _pair.partnerUid;
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-
-    double heightOf(MoodEntry? e) =>
-        e == null ? -1 : ((e.score - 1) / 4) * 0.8 + 0.2;
-
-    final bars = <List<double>>[];
-    var matched = 0;
-    for (var i = 0; i < 7; i++) {
-      final day = DateTime(monday.year, monday.month, monday.day + i);
-      final mine = _moodService.myEntriesForDay(day).firstOrNull;
-      final theirs = partnerUid.isEmpty
-          ? null
-          : _moodService.partnerEntriesForDay(partnerUid, day).firstOrNull;
-      bars.add([heightOf(mine), heightOf(theirs)]);
-      if (mine != null && theirs != null && mine.score == theirs.score)
-        matched++;
-    }
-
-    final labels = _s.shortWeekdays.map((d) => d.toLowerCase()).toList();
-
-    Widget bar(double value, Color color) => Expanded(
-      child: FractionallySizedBox(
-        alignment: Alignment.bottomCenter,
-        // Отрицательное значение — день без отметки: рисуем подложку.
-        heightFactor: value < 0 ? 0.12 : value,
-        child: Container(
-          decoration: BoxDecoration(
-            color: value < 0 ? _ps.wr('surfaceContainer') : color,
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
-      ),
-    );
-
-    return AspectRatio(
-      aspectRatio: 424 / 200,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
-        decoration: BoxDecoration(
-          color: _ps.wr('surface'),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _s.tgMoodWeekTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.2,
-                      color: _ps.wr('onSurfaceVariant'),
-                    ),
-                  ),
-                ),
-                if (matched > 0)
-                  Text(
-                    _s.tgMoodMatched(matched),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _ps.wr('outline'),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (var i = 0; i < 7; i++) ...[
-                    if (i > 0) const SizedBox(width: 9),
-                    Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          bar(bars[i].first, _ps.wr('primary')),
-                          const SizedBox(width: 3),
-                          bar(bars[i].last, _ps.wr('tertiary')),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 5),
-            Row(
-              children: [
-                for (var i = 0; i < 7; i++) ...[
-                  if (i > 0) const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      labels[i],
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: _ps.wr('outline'),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Ближайший обратный отсчёт для превью «До встречи».
@@ -4278,46 +3948,6 @@ class _WidgetScreenState extends State<WidgetScreen>
   // ВИДЖЕТ-ПРЕВЬЮ: Лепестковый таймер
   // ════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildPetalTimerPreview() {
-    final timer = _widgetTimer;
-
-    if (timer == null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-        decoration: BoxDecoration(
-          color: _t.primary.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _t.primary.withOpacity(0.08)),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.timer_off_rounded, size: 36, color: _t.textMuted),
-            const SizedBox(height: 8),
-            Text(
-              LocaleService.current.noTimersWidget,
-              style: AppFonts.onest(size: 13, color: _t.textMuted),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Center(
-      child: RepaintBoundary(
-        child: SizedBox(
-          width: 200,
-          height: 200,
-          child: PetalTimerDial(
-            theme: _t,
-            startDate: timer.startDate,
-            isCountdown: timer.isCountdown,
-          ),
-        ),
-      ),
-    );
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
   // ВЫБОР ТАЙМЕРА ДЛЯ ВИДЖЕТА
   // ════════════════════════════════════════════════════════════════════════════
@@ -5269,111 +4899,9 @@ class _WidgetScreenState extends State<WidgetScreen>
   // ВИДЖЕТ-ПРЕВЬЮ: Настроение
   // ════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildMoodPreview() {
-    final s = LocaleService.current;
-    final today = DateTime.now();
-
-    final myEntries = _moodService.myEntriesForDay(today);
-    final partnerUid = _pair.partners.isNotEmpty
-        ? _pair.partners.first.uid
-        : '';
-    final partnerEntries = partnerUid.isNotEmpty
-        ? _moodService.partnerEntriesForDay(partnerUid, today)
-        : <MoodEntry>[];
-
-    final myName = _ws.myData?.displayName.isNotEmpty == true
-        ? _ws.myData!.displayName
-        : s.me;
-    final partnerName = _pair.partnerName.isNotEmpty
-        ? _pair.partnerName
-        : s.partner;
-
-    return MoodHeartsPreview(
-      myEntries: myEntries,
-      partnerEntries: partnerEntries,
-      myName: myName,
-      partnerName: partnerName,
-      primaryColor: _t.primary,
-    );
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
   // ВИДЖЕТ-ПРЕВЬЮ: Статистика отношений
   // ════════════════════════════════════════════════════════════════════════════
-
-  Widget _buildRelationshipStatsPreview() {
-    final s = LocaleService.current;
-    final sysTimer = _timerService.systemTimer;
-    final start = sysTimer?.startDate ?? _pair.startDate;
-    final daysNum = start != null
-        ? calendarDaysBetween(start, DateTime.now())
-        : 0;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: _t.cardSurface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _t.cardBorder),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.calendar_today_rounded,
-                  color: _t.iconCalendar,
-                  value: '$daysNum',
-                  label: s.daysTogetherStat,
-                  bg: _t.iconCalendar.withOpacity(0.08),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.photo_library_rounded,
-                  color: _t.iconPost,
-                  value: '${_memoriesCount ?? 0}',
-                  label: s.memoriesStat,
-                  bg: _t.iconPost.withOpacity(0.08),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.brush_rounded,
-                  color: _t.iconDraw,
-                  value: '${_drawingsCount ?? 0}',
-                  label: s.drawingsStat,
-                  bg: _t.iconDraw.withOpacity(0.08),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SmallStatBox(
-                  t: _t,
-                  icon: Icons.favorite_rounded,
-                  color: _t.primary,
-                  value: '${_missYouCount ?? 0}',
-                  label: s.missYousStat,
-                  bg: _t.primary.withOpacity(0.08),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   // ════════════════════════════════════════════════════════════════════════════
   // PAIR WIDGET — раскрытые настройки
