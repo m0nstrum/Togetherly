@@ -11,6 +11,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'pocketbase_service.dart';
 import 'publish_gate.dart';
 import 'reconnect_detector.dart';
+import 'recovery_tracker.dart';
 import '../fork/config/endpoints.dart';
 import '../fork/e2e/fork_e2e.dart';
 
@@ -123,6 +124,8 @@ class CentrifugoService {
       if (kDebugMode) debugPrint('Centrifugo connected: ${e.client}');
       ServerReach.instance.reached();
       if (_reconnects.onConnected() && !_reconnected.isClosed) {
+        // A11: каналы с историей ждут ответа подписки — восстановились ли.
+        _recovery.reconnected(_channels.keys);
         _reconnected.add(null);
       }
     });
@@ -131,6 +134,7 @@ class CentrifugoService {
       // Сорвалось — проверяем, нет ли сети или не закрыт ли сервер (TOG-16).
       ServerReach.instance.missed();
       _reconnects.onDisconnected();
+      _recovery.dropped();
     });
     if (kDebugMode) {
       c.error.listen((e) => debugPrint('Centrifugo error: ${e.error}'));
@@ -141,12 +145,17 @@ class CentrifugoService {
   }
 
   final ReconnectDetector _reconnects = ReconnectDetector();
+  final RecoveryTracker _recovery = RecoveryTracker();
   final StreamController<void> _reconnected =
       StreamController<void>.broadcast();
 
   /// Сокет ожил после обрыва. Подписки, где потеря событий видна человеку,
   /// перечитывают по этому сигналу свой список.
   Stream<void> get reconnected => _reconnected.stream;
+
+  /// Каналы с историей (`pair:`, `user:`), чьё пропущенное за обрыв не
+  /// пришло из истории Centrifugo (A11). Для них это вместо [reconnected].
+  Stream<String> get unrecovered => _recovery.gaps;
 
   /// Подписка на [channel] сейчас живая: события канала доходят.
   bool isSubscribed(String channel) =>
@@ -193,7 +202,7 @@ class CentrifugoService {
     _ensureClient();
     return _channels.putIfAbsent(
       channel,
-      () => _ChannelHub(_ensureClient(), channel, _pb),
+      () => _ChannelHub(_ensureClient(), channel, _pb, _recovery),
     );
   }
 
@@ -263,6 +272,7 @@ class CentrifugoService {
       await hub.dispose();
     }
     _channels.clear();
+    _recovery.reset();
     final c = _client;
     _client = null;
     if (c != null) {
@@ -285,12 +295,14 @@ class _ChannelHub {
   final centrifuge.Client _client;
   final String channel;
   final PocketBase _pb;
+  final RecoveryTracker _recovery;
   late final centrifuge.Subscription _sub;
   final List<_ChannelListener> _listeners = [];
   // Слушатели СЫРЫХ публикаций (эфемерные данные мимо PB, напр. live-штрихи).
   final List<void Function(Map<String, dynamic>)> _rawListeners = [];
   StreamSubscription<centrifuge.PublicationEvent>? _pubSub;
   StreamSubscription<centrifuge.SubscribedEvent>? _readySub;
+  StreamSubscription<centrifuge.SubscriptionErrorEvent>? _errorSub;
   // Синхронно и ДО раздачи пакета: «ушёл» в самом пакете должен лечь после
   // «слышали» по отправителю, а не наоборот.
   final StreamController<String> _publishers =
@@ -301,7 +313,7 @@ class _ChannelHub {
   bool get isSubscribed =>
       _sub.state == centrifuge.SubscriptionState.subscribed;
 
-  _ChannelHub(this._client, this.channel, this._pb) {
+  _ChannelHub(this._client, this.channel, this._pb, this._recovery) {
     _sub = _client.newSubscription(
       channel,
       centrifuge.SubscriptionConfig(
@@ -311,12 +323,16 @@ class _ChannelHub {
               '/api/centrifugo/subscription-token',
               body: {'channel': e.channel},
             ),
+        // A11: каналы с историей переподписываются с recover.
+        recoverable: RecoveryTracker.recoverable(channel),
       ),
     );
     _pubSub = _sub.publication.listen(_onPublication);
-    _readySub = _sub.subscribed.listen((_) {
+    _readySub = _sub.subscribed.listen((e) {
+      _recovery.subscribed(channel, recovered: e.recovered);
       if (!_ready.isClosed) _ready.add(null);
     });
+    _errorSub = _sub.error.listen((_) => _recovery.failed(channel));
     _subscribed = true;
     _sub.subscribe();
   }
@@ -450,6 +466,8 @@ class _ChannelHub {
     _pubSub = null;
     await _readySub?.cancel();
     _readySub = null;
+    await _errorSub?.cancel();
+    _errorSub = null;
     await _publishers.close();
     await _ready.close();
     _listeners.clear();
